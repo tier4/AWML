@@ -1,9 +1,9 @@
-# === AWMLdetection3D ===
+# Autoware-ML
 /data
 /work_dirs
-compute_detection_metrics_main
-*.bin
 tests/samplefiles/data
+.vscode
+*.bin
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
