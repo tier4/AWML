@@ -5,7 +5,7 @@ ML library for Autoware based on [mmdetection3d v1.4.0](https://github.com/open-
 ## Supported model
 ### 3D detection
 
-- [BEVFusion](projects/BEVfusion/README.md)
+- [BEVFusion](projects/BEVFusion/README.md)
 - TransFusion
 - PointPainting CenterPoint
 - CenterPoint
