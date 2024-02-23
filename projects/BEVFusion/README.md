@@ -2,7 +2,7 @@
 ## Usage
 ### Setup
 
-- Compile
+- Run docker and compile
 
 ```sh
 python projects/BEVFusion/setup.py develop
