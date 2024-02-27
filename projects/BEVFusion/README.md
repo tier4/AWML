@@ -16,15 +16,16 @@ python projects/BEVFusion/setup.py develop
 python tools/train.py projects/BEVFusion/configs/nuscenes/bevfusion_lidar_voxel0075_second_secfpn_1xb1-cyclic-20e_nus-3d.py
 
 # Rename config file to use for multi GPU and batch size
-# bash third_party/mmdetection3d/tools/dist_train.sh projects/BEVFusion/configs/bevfusion_lidar_voxel0075_second_secfpn_2xb2-cyclic-20e_nus-3d.py 1
+# bash tools/dist_train.sh projects/BEVFusion/configs/nuscenes/bevfusion_lidar_voxel0075_second_secfpn_2xb2-cyclic-20e_nus-3d.py 2
 ```
 
 2. Train with Camera-LiDAR fusion model
    - Download the [Swin pre-trained model](https://download.openmmlab.com/mmdetection3d/v1.1.0_models/bevfusion/swint-nuimages-pretrained.pth).
    - Given the image pre-trained backbone and the lidar-only pre-trained detector, you could train the lidar-camera fusion model.
+   - Note that if you want to reduce CUDA memory usage and computational overhead, you could directly add --amp on the tail of the above commands. The model under this setting will be trained in fp16 mode.
 
 ```sh
-python third_party/mmdetection3d/tools/train.py projects/BEVFusion/configs/bevfusion_lidar_voxel0075_second_secfpn_1xb2-cyclic-20e_nus-3d.py
+python tools/train.py projects/BEVFusion/configs/nuscenes/bevfusion_lidar-cam_voxel0075_second_secfpn_1xb2-cyclic-20e_nus-3d.py --cfg-options load_from=${LIDAR_PRETRAINED_CHECKPOINT} model.img_backbone.init_cfg.checkpoint=${IMAGE_PRETRAINED_BACKBONE}
 ```
 
 ### Deploy

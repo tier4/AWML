@@ -1,8 +1,3 @@
-user_name = ""
-#Don't forget to last '_'
-#user_name = "user_name_"
-
-#_base_ = ['../../../third_party/mmdetection3d/configs/_base_/default_runtime.py']
 _base_ = ['../../../configs/_base_/default_runtime.py']
 custom_imports = dict(
     imports=['projects.BEVFusion.bevfusion'], allow_failed_imports=False)
@@ -32,6 +27,7 @@ data_prefix = dict(
     CAM_BACK_LEFT='samples/CAM_BACK_LEFT',
     sweeps='sweeps/LIDAR_TOP')
 input_modality = dict(use_lidar=True, use_camera=False)
+
 # backend_args = dict(
 #     backend='petrel',
 #     path_mapping=dict({
@@ -158,7 +154,7 @@ model = dict(
 
 db_sampler = dict(
     data_root=data_root,
-    info_path=data_root + user_name +'nuscenes_dbinfos_train.pkl',
+    info_path=data_root +'nuscenes_dbinfos_train.pkl',
     rate=1.0,
     prepare=dict(
         filter_by_difficulty=[-1],
@@ -281,7 +277,7 @@ train_dataloader = dict(
         dataset=dict(
             type=dataset_type,
             data_root=data_root,
-            ann_file= user_name + 'nuscenes_infos_train.pkl',
+            ann_file= 'nuscenes_infos_train.pkl',
             pipeline=train_pipeline,
             metainfo=metainfo,
             modality=input_modality,
@@ -300,7 +296,7 @@ val_dataloader = dict(
     dataset=dict(
         type=dataset_type,
         data_root=data_root,
-        ann_file= user_name + 'nuscenes_infos_val.pkl',
+        ann_file= 'nuscenes_infos_val.pkl',
         pipeline=test_pipeline,
         metainfo=metainfo,
         modality=input_modality,
@@ -313,7 +309,7 @@ test_dataloader = val_dataloader
 val_evaluator = dict(
     type='NuScenesMetric',
     data_root=data_root,
-    ann_file=data_root + user_name +'nuscenes_infos_val.pkl',
+    ann_file=data_root + 'nuscenes_infos_val.pkl',
     metric='bbox',
     backend_args=backend_args)
 test_evaluator = val_evaluator
@@ -380,7 +376,8 @@ optim_wrapper = dict(
 #   - `enable` means enable scaling LR automatically
 #       or not by default.
 #   - `base_batch_size` = (8 GPUs) x (4 samples per GPU).
-auto_scale_lr = dict(enable=False, base_batch_size=32)
+# auto_scale_lr = dict(enable=False, base_batch_size=32)
+auto_scale_lr = dict(enable=False, base_batch_size=1)
 log_processor = dict(window_size=50)
 
 default_hooks = dict(

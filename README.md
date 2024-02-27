@@ -1,21 +1,21 @@
 # Autoware-ML
 
-ML library for Autoware based on [mmdetection3d v1.4.0](https://github.com/open-mmlab/mmdetection3d/tree/v1.4.0) and mmdet v3.3
+This repository is ML library for Autoware based on [mmdetection3d v1.4.0](https://github.com/open-mmlab/mmdetection3d/tree/v1.4.0) and [mmdetection v3.3.0](https://github.com/open-mmlab/mmdetection/tree/v3.3.0).
 
 ## Supported model
 ### 3D detection
 
-- [BEVFusion](projects/BEVFusion/README.md)
+- [BEVFusion](projects/BEVFusion)
 - TransFusion
-- PointPainting CenterPoint
 - CenterPoint
 
-|                           | T4dataset | NuScenes | Waymo | aimotive |
-| ------------------------- | :-------: | :------: | :---: | :------: |
-| BEVFusion                 |           |    ✅     |       |          |
-| TransFusion               |           |          |       |          |
-| CenterPoint               |           |          |       |          |
-| PointPainting CenterPoint |           |          |       |          |
+|                             | T4dataset | NuScenes | aimotive |
+| --------------------------- | :-------: | :------: | :------: |
+| BEVFusion (LiDAR-only)      |           |    ✅     |          |
+| BEVFusion (Camera-LiDAR)    |           |    ✅     |          |
+| TransFusion                 |           |          |          |
+| CenterPoint                 |           |          |          |
+| CenterPoint (PointPainting) |           |          |          |
 
 ### 2D detection
 
