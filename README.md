@@ -55,27 +55,27 @@ ln -s {path_to_dataset} data
 docker build -t autoware-ml docker/
 ```
 
+### Make pkl files
+
 - Run docker
 
 ```sh
 docker run -it --rm --gpus all --shm-size=64g -v $PWD/:/workspace -v $PWD/data:/workspace/data autoware-ml
 ```
 
-- Make info files
-  - Change {user_name} to your user name
+- Make info files for nuScenes
+  - If you want to make own pkl, you should change from "nuscenes" to "custom_name"
 
 ```
-python tools/create_data.py nuscenes --root-path ./data/nuscenes --out-dir ./data/nuscenes --extra-tag {user_name}_nuscenes
+python tools/create_data.py nuscenes --root-path ./data/nuscenes --out-dir ./data/nuscenes --extra-tag nuscenes
 ```
+
+- Make info files for T4dataset
+
+TBD
 
 ### Train and evaluation
 
 - Change config
-  - The name of pkl file is `{user_name}_nuscenes_infos_train.pkl`.
-
-```py
-#user_name = ""
-user_name = "{user_name}_"
-```
-
+  - If you use custom pkl file, you need to change pkl file from `nuscenes_infos_train.pkl`.
 - See each [projects](projects) for train and evaluation.
