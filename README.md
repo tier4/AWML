@@ -12,7 +12,7 @@ This repository is ML library for Autoware based on [mmdetection3d v1.4.0](https
 |                             | T4dataset | NuScenes | aimotive |
 | --------------------------- | :-------: | :------: | :------: |
 | BEVFusion (LiDAR-only)      |           |    ✅     |          |
-| BEVFusion (Camera-LiDAR)    |           |    ✅     |          |
+| BEVFusion (Camera-LiDAR)    |           |         |          |
 | TransFusion                 |           |          |          |
 | CenterPoint                 |           |          |          |
 | CenterPoint (PointPainting) |           |          |          |
@@ -52,7 +52,7 @@ ln -s {path_to_dataset} data
 - Build docker
 
 ```sh
-docker build -t autoware-ml docker/
+docker build -t autoware-ml .
 ```
 
 ### Make pkl files
@@ -79,3 +79,4 @@ TBD
 - Change config
   - If you use custom pkl file, you need to change pkl file from `nuscenes_infos_train.pkl`.
 - See each [projects](projects) for train and evaluation.
+
