@@ -39,12 +39,6 @@ RUN mim install mmcv==${MMCV}
 RUN mim install mmdet==${MMDET}
 RUN mim install mmdet3d==${MMDET3D}
 
-#RUN conda clean --all \
-#   && git clone https://github.com/open-mmlab/mmdetection3d.git -b v1.4.0 /mmdetection3d \
-#   && cd /mmdetection3d \
-#   && pip install --no-cache-dir -e .
-# WORKDIR /mmdetection3d
-
 ARG WORKSPACE
 WORKDIR /workspace
 
@@ -56,7 +50,3 @@ COPY setup.py setup.py
 COPY README.md README.md
 
 RUN pip install --no-cache-dir -e .
-
-# COPY third_party/mmdetection3d third_party/mmdetection3d 
-# RUN conda clean --all && cd third_party/mmdetection3d && pip install --no-cache-dir -e .
-
