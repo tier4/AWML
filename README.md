@@ -3,21 +3,21 @@
 This repository is ML library for Autoware based on [mmdetection3d v1.4.0](https://github.com/open-mmlab/mmdetection3d/tree/v1.4.0) and [mmdetection v3.3.0](https://github.com/open-mmlab/mmdetection/tree/v3.3.0).
 
 ## Supported model
-### 3D detection
+### 3D Detection
 
-- [BEVFusion](projects/BEVFusion)
-- TransFusion
-- CenterPoint
+- [BEVFusion (Camera-LiDAR fusion)](projects/BEVFusion)
+- TransFusion (LiDAR only)
+- CenterPoint (LiDAR only)
+- PointPainted-CenterPoint (Camera-LiDAR fusion)
 
-|                             | T4dataset | NuScenes | aimotive |
-| --------------------------- | :-------: | :------: | :------: |
-| BEVFusion (LiDAR-only)      |           |    ✅     |          |
-| BEVFusion (Camera-LiDAR)    |           |         |          |
-| TransFusion                 |           |          |          |
-| CenterPoint                 |           |          |          |
-| CenterPoint (PointPainting) |           |          |          |
+|                | T4dataset | NuScenes | aimotive |
+| -------------- | :-------: | :------: | :------: |
+| BEVFusion-CL   |           |    ✅     |          |
+| TransFusion-L  |           |          |          |
+| CenterPoint    |           |          |          |
+| PP-CenterPoint |           |          |          |
 
-### 2D detection
+### 2D Detection
 
 - YOLOX-opt
 - TwinTransformer
@@ -28,6 +28,12 @@ This repository is ML library for Autoware based on [mmdetection3d v1.4.0](https
 | TwinTransformer |           |          |       |
 
 ### 2D classification
+
+- EfficientNet
+
+|              | T4dataset | NuImages | COCO  |
+| ------------ | :-------: | :------: | :---: |
+| EfficientNet |           |          |       |
 
 ## Get started
 ### Set environment
@@ -79,4 +85,3 @@ TBD
 - Change config
   - If you use custom pkl file, you need to change pkl file from `nuscenes_infos_train.pkl`.
 - See each [projects](projects) for train and evaluation.
-
