@@ -47,7 +47,13 @@ TBD
 
 - Change config
   - If you use custom pkl file, you need to change pkl file from `nuscenes_infos_train.pkl`.
-- See each [projects](projects) for train and evaluation.
+- You can use docker command for training as below.
+  - See each [projects](projects) for detail command of training and evaluation.
+
+```
+docker run -it --rm --gpus '"device=1"' --name autoware-ml --shm-size=64g -d -v $PWD/:/workspace -v $PWD/data:/workspace/data autoware-ml bash -c '
+python tools/train.py projects/BEVFusion/configs/nuscenes/bevfusion_lidar_voxel0075_second_secfpn_1xb1-cyclic-20e_nus-3d.py'
+```
 
 ## Visualization
 
