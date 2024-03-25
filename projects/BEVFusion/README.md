@@ -1,3 +1,12 @@
+## Supported feature
+
+- [x] Train LiDAR-only model
+- [ ] Train Camera-LiDAR fusion model
+- [x] Train with single GPU
+- [ ] Train with multi GPU
+- [ ] Make .onnx file and deploy to Autoware
+- [ ] Unit test
+
 ## Usage
 ### Setup
 

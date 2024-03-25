@@ -20,45 +20,40 @@ This repository is ML library for Autoware.
 ### Tools
 
 - 3D
-  - [x] Train code
-  - [ ] Evaluation code
   - [ ] Make mp4 files for visualization
   - [ ] Make mcap files for visualization
 - 2D
-  - [ ] Train code
-  - [ ] Evaluation code
   - [ ] Make mp4 files for visualization
   - [ ] Make mcap files for visualization
 
 ### 3D Detection model
 
-- [BEVFusion (Camera-LiDAR fusion)](projects/BEVFusion)
-- TransFusion (LiDAR only)
+- [BEVFusion-CL (BEVFusion Camera-LiDAR fusion)](projects/BEVFusion)
+- TransFusion-L (TransFusion LiDAR only)
 - CenterPoint (LiDAR only)
 - PointPainted-CenterPoint (Camera-LiDAR fusion)
 
-|                | Onnx deploy | T4dataset | NuScenes | aimotive |
-| -------------- | :---------: | :-------: | :------: | :------: |
-| BEVFusion-CL   |             |           |    ✅     |          |
-| TransFusion-L  |             |           |          |          |
-| CenterPoint    |             |           |          |          |
-| PP-CenterPoint |             |           |          |          |
+|                | T4dataset | NuScenes | aimotive |
+| -------------- | :-------: | :------: | :------: |
+| BEVFusion-CL   |           |          |          |
+| TransFusion-L  |           |          |          |
+| CenterPoint    |           |          |          |
+| PP-CenterPoint |           |          |          |
 
 ### 2D Detection
 
 - YOLOX-opt
 - TwinTransformer
 
-|                 | Onnx deploy | T4dataset | NuImages | COCO  |
-| --------------- | :---------: | :-------: | :------: | :---: |
-| YOLOX-opt       |             |           |          |       |
-| TwinTransformer |             |           |          |       |
+|                 | T4dataset | NuImages | COCO  |
+| --------------- | :-------: | :------: | :---: |
+| YOLOX-opt       |           |          |       |
+| TwinTransformer |           |          |       |
 
 ### 2D classification
 
 - EfficientNet
 
-|              | Onnx deploy | T4dataset | NuImages | COCO  |
-| ------------ | :---------: | :-------: | :------: | :---: |
-| EfficientNet |             |           |          |       |
-
+|              | T4dataset | NuImages | COCO  |
+| ------------ | :-------: | :------: | :---: |
+| EfficientNet |           |          |       |
