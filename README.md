@@ -5,6 +5,8 @@ This repository is ML library for Autoware.
 ## Docs
 
 - [Get started](docs/get_started.md)
+- [Design docs](docs/design.md)
+- [Release note](docs/release_note.md)
 
 ## Supported environment
 
