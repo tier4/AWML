@@ -1,5 +1,5 @@
 
-## Set environment
+## 1. Set environment
 
 - Set environment
 
@@ -24,8 +24,11 @@ ln -s {path_to_dataset} data
 docker build -t autoware-ml .
 ```
 
-## Prepare dataset
-### nuScenes
+## 2. Prepare dataset
+
+Prepare the dataset you use.
+
+### 2.1 [Option] nuScenes
 
 - Download dataset from official website
 - Run docker
@@ -41,9 +44,9 @@ docker run -it --rm --gpus all --shm-size=64g -v $PWD/:/workspace -v $PWD/data:/
 python tools/create_data.py nuscenes --root-path ./data/nuscenes --out-dir ./data/nuscenes --extra-tag nuscenes
 ```
 
-### T4 dataset
+### 2.2 [Option] T4 dataset
 
-- Download dataset
+- [Option] Download dataset
 
 ```sh
 # download xx1 dataset
@@ -67,7 +70,7 @@ python tools/create_data_t4dataset.py t4xx1  --root_path ./data/t4dataset --max_
 python tools/create_data_t4dataset.py t4xx1  --root_path ./data/t4dataset --max_sweeps 2 --dataset_config configs/dataset/x2.yaml
 ```
 
-## Train and evaluation
+## 3. Train and evaluation
 
 - Change config
   - If you use custom pkl file, you need to change pkl file from `nuscenes_infos_train.pkl`.
@@ -78,6 +81,6 @@ python tools/create_data_t4dataset.py t4xx1  --root_path ./data/t4dataset --max_
 docker run -it --rm --gpus '"device=1"' --name autoware-ml --shm-size=64g -d -v $PWD/:/workspace -v $PWD/data:/workspace/data autoware-ml bash -c '<command for each projects>'
 ```
 
-## Visualization
+## 4. Visualization
 
 TBD

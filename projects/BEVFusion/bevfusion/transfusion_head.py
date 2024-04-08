@@ -6,18 +6,17 @@ import numpy as np
 import torch
 import torch.nn.functional as F
 from mmcv.cnn import ConvModule, build_conv_layer
+from mmdet3d.models import circle_nms, draw_heatmap_gaussian, gaussian_radius
+from mmdet3d.models.dense_heads.centerpoint_head import SeparateHead
+from mmdet3d.models.layers import nms_bev
+from mmdet3d.registry import MODELS
+from mmdet3d.structures import xywhr2xyxyr
 from mmdet.models.task_modules import (AssignResult, PseudoSampler,
                                        build_assigner, build_bbox_coder,
                                        build_sampler)
 from mmdet.models.utils import multi_apply
 from mmengine.structures import InstanceData
 from torch import nn
-
-from mmdet3d.models import circle_nms, draw_heatmap_gaussian, gaussian_radius
-from mmdet3d.models.dense_heads.centerpoint_head import SeparateHead
-from mmdet3d.models.layers import nms_bev
-from mmdet3d.registry import MODELS
-from mmdet3d.structures import xywhr2xyxyr
 
 
 def clip_sigmoid(x, eps=1e-4):
@@ -236,17 +235,17 @@ class TransFusionHead(nn.Module):
         local_max[:, :, padding:(-padding),
                   padding:(-padding)] = local_max_inner
         # for Pedestrian & Traffic_cone in nuScenes
-        if self.test_cfg['dataset'] == 'nuScenes':
-            local_max[:, 8, ] = F.max_pool2d(
-                heatmap[:, 8], kernel_size=1, stride=1, padding=0)
-            local_max[:, 9, ] = F.max_pool2d(
-                heatmap[:, 9], kernel_size=1, stride=1, padding=0)
-        elif self.test_cfg[
-                'dataset'] == 'Waymo':  # for Pedestrian & Cyclist in Waymo
-            local_max[:, 1, ] = F.max_pool2d(
-                heatmap[:, 1], kernel_size=1, stride=1, padding=0)
-            local_max[:, 2, ] = F.max_pool2d(
-                heatmap[:, 2], kernel_size=1, stride=1, padding=0)
+        #if self.test_cfg['dataset'] == 'nuScenes':
+        #    local_max[:, 8, ] = F.max_pool2d(
+        #        heatmap[:, 8], kernel_size=1, stride=1, padding=0)
+        #    local_max[:, 9, ] = F.max_pool2d(
+        #        heatmap[:, 9], kernel_size=1, stride=1, padding=0)
+        #elif self.test_cfg[
+        #        'dataset'] == 'Waymo':  # for Pedestrian & Cyclist in Waymo
+        #    local_max[:, 1, ] = F.max_pool2d(
+        #        heatmap[:, 1], kernel_size=1, stride=1, padding=0)
+        #    local_max[:, 2, ] = F.max_pool2d(
+        #        heatmap[:, 2], kernel_size=1, stride=1, padding=0)
         heatmap = heatmap * (heatmap == local_max)
         heatmap = heatmap.view(batch_size, heatmap.shape[1], -1)
 

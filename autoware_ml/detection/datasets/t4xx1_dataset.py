@@ -1,4 +1,4 @@
-from autoware_ml.registry import DATASETS
+from mmengine.registry import DATASETS
 
 from .t4dataset import T4Dataset
 
