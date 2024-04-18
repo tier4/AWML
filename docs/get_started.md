@@ -4,7 +4,7 @@
 - Set environment
 
 ```sh
-git clone  https://github.com/tier4/mmdetection3d_bevfusion
+git clone  https://github.com/tier4/autoware-ml
 ln -s {path_to_dataset} data
 ```
 
@@ -21,7 +21,7 @@ ln -s {path_to_dataset} data
 - Build docker
 
 ```sh
-docker build -t autoware-ml .
+DOCKER_BUILDKIT=1 docker build -t autoware-ml .
 ```
 
 ## 2. Prepare dataset
@@ -34,7 +34,7 @@ Prepare the dataset you use.
 - Run docker
 
 ```sh
-docker run -it --rm --gpus all --shm-size=64g -v $PWD/:/workspace -v $PWD/data:/workspace/data autoware-ml
+docker run -it --rm --gpus all --shm-size=64g --name awml -p 6006:6006 -v $PWD/:/workspace -v $PWD/data:/workspace/data autoware-ml
 ```
 
 - Make info files for nuScenes
@@ -58,7 +58,7 @@ python scripts/download_t4dataset.py config/dataset_config/x2.yaml --project-id 
 - Run docker
 
 ```sh
-docker run -it --rm --gpus all --shm-size=64g -v $PWD/:/workspace -v $PWD/data:/workspace/data autoware-ml
+docker run -it --rm --gpus all --shm-size=64g --name awml -p 6006:6006 -v $PWD/:/workspace -v $PWD/data:/workspace/data autoware-ml
 ```
 
 - Make info files for T4dataset
@@ -71,9 +71,13 @@ python tools/create_data_t4dataset.py t4xx1  --root_path ./data/t4dataset --max_
 ```
 
 ## 3. Train and evaluation
+### 3.1 Change config
 
-- Change config
-  - If you use custom pkl file, you need to change pkl file from `nuscenes_infos_train.pkl`.
+- You can change batchsize by file name.
+- If you use custom pkl file, you need to change pkl file from `nuscenes_infos_train.pkl`.
+
+### 3.2 Training
+
 - You can use docker command for training as below.
   - See each [projects](projects) for detail command of training and evaluation.
 
@@ -81,6 +85,24 @@ python tools/create_data_t4dataset.py t4xx1  --root_path ./data/t4dataset --max_
 docker run -it --rm --gpus '"device=1"' --name autoware-ml --shm-size=64g -d -v $PWD/:/workspace -v $PWD/data:/workspace/data autoware-ml bash -c '<command for each projects>'
 ```
 
+### 3.3. [Option] Log analysis by Tensorboard
+
+- Add backend to config
+
+```python
+vis_backends = [dict(type='LocalVisBackend'), dict(type='TensorboardVisBackend')]
+```
+
+- Run the TensorBoard and navigate to http://127.0.0.1:6006/
+
+```sh
+tensorboard --logdir work_dirs --bind_all
+```
+
 ## 4. Visualization
 
 TBD
+
+## 5. Deploy
+
+- See each projects

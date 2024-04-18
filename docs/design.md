@@ -6,15 +6,15 @@ TBD
 
 ### Architecture
 
-The architecture of Autoware-ML is based on [mmdetection3d v1.4](https://github.com/open-mmlab/mmdetection3d/tree/v1.4.0).
+The architecture of autoware-ml is based on [mmdetection3d v1.4](https://github.com/open-mmlab/mmdetection3d/tree/v1.4.0).
 
 - /docs
 
-Documents for Autoware-ML.
+Documents for autoware-ml.
 
 - /configs
 
-Base configs for datase and train parameters.
+Base configs for datasets and train parameters.
 
 - /tools
 
@@ -58,7 +58,7 @@ For PR review list with code owner for Autoware-ML
 
 ### Fix code in a project.
 
-You can fix code in a project more casually than fixing codes with `autoware_ml`.
+You can fix code in a project more casually than fixing codes with `autoware_ml/*`.
 
 For PR review list with code owner for the project
 - [ ] Performing test with the model

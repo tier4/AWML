@@ -1,0 +1,19 @@
+diff --git a/mmdeploy/codebase/mmdet3d/models/mvx_two_stage.py b/mmdeploy/codebase/mmdet3d/models/mvx_two_stage.py
+index 17ad7113..1e94e21e 100644
+--- a/mmdeploy/codebase/mmdet3d/models/mvx_two_stage.py
++++ b/mmdeploy/codebase/mmdet3d/models/mvx_two_stage.py
+@@ -81,12 +81,12 @@ def mvxtwostagedetector__forward(self, voxels: torch.Tensor,
+     }
+ 
+     _, pts_feats = self.extract_feat(batch_inputs_dict=batch_inputs_dict)
+-    outs = self.pts_bbox_head(pts_feats)
++    outs = self.pts_bbox_head(pts_feats, None)
+ 
+     if type(outs[0][0]) is dict:
+         bbox_preds, scores, dir_scores = [], [], []
+         for task_res in outs:
+-            bbox_preds.append(task_res[0]['reg'])
++            bbox_preds.append(task_res[0]['center'])
+             bbox_preds.append(task_res[0]['height'])
+             bbox_preds.append(task_res[0]['dim'])
+             if 'vel' in task_res[0].keys():

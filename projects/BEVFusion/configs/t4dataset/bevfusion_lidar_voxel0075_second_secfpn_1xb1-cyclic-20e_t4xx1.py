@@ -78,7 +78,7 @@ model = dict(
         upsample_cfg=dict(type='deconv', bias=False),
         use_conv_for_no_stride=True),
     bbox_head=dict(
-        type='TransFusionHead',
+        type='BEVFusionHead',
         num_proposals=200,
         auxiliary=True,
         in_channels=512,

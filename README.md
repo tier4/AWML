@@ -10,13 +10,14 @@ This repository is ML library for Autoware.
 
 ## Supported environment
 
-- Tested by [Docker environment](Dockerfile) on Ubuntu22.04LTS
-- NVIDIA dependency: CUDA 11 + cuDNN 8
+- Tested by [Docker environment](Dockerfile) on Ubuntu 22.04LTS
+- NVIDIA dependency: CUDA 12.1 + cuDNN 8
 - Library
-  - pytorch: 1.9.0
-  - mmcv v2.0.0rc4
+  - [pytorch v2.2.0](https://github.com/pytorch/pytorch/tree/v2.2.0)
+  - [mmcv v2.1.0](https://github.com/open-mmlab/mmcv/tree/v2.1.0)
   - [mmdetection3d v1.4.0](https://github.com/open-mmlab/mmdetection3d/tree/v1.4.0)
   - [mmdetection v3.3.0](https://github.com/open-mmlab/mmdetection/tree/v3.3.0)
+  - [mmdeploy v1.3.1](https://github.com/open-mmlab/mmdeploy/tree/v1.3.1)
 
 ## Supported feature
 ### Tools
@@ -35,12 +36,12 @@ This repository is ML library for Autoware.
 - CenterPoint (LiDAR only)
 - PointPainted-CenterPoint (Camera-LiDAR fusion)
 
-|                | T4dataset | NuScenes | aimotive |
-| -------------- | :-------: | :------: | :------: |
-| BEVFusion-CL   |           |          |          |
-| TransFusion-L  |           |          |          |
-| CenterPoint    |           |          |          |
-| PP-CenterPoint |           |          |          |
+|                | T4dataset | NuScenes | argoverse2 |
+| -------------- | :-------: | :------: | :--------: |
+| BEVFusion-CL   |           |          |            |
+| TransFusion-L  |           |    ✅     |            |
+| CenterPoint    |           |          |            |
+| PP-CenterPoint |           |          |            |
 
 ### 2D Detection
 

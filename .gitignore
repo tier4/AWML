@@ -3,6 +3,8 @@
 /work_dirs
 tests/samplefiles/data
 *.bin
+*.onnx
+*.engine
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
