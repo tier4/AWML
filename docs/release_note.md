@@ -1,28 +1,48 @@
 ## For next release
-### New feature
+### Core library
+#### New feature
+
+- Add T4dataset
+  - https://github.com/tier4/autoware-ml/pull/17
+  - https://github.com/tier4/autoware-ml/pull/19
+
+#### Fix
+
+### Tools
+#### New feature
+
+- Add dataset converter
+  - https://github.com/tier4/autoware-ml/pull/9
+- Add train code for 2D
+  - https://github.com/tier4/autoware-ml/pull/14
+
+#### Fix
+
+### Projects
+#### New feature
 
 - Add BEVFusion model
-  - https://github.com/tier4/mmdetection3d_bevfusion/pull/1
-  - https://github.com/tier4/mmdetection3d_bevfusion/pull/2
-  - https://github.com/tier4/mmdetection3d_bevfusion/pull/12
-- Add dataset converter
-  - https://github.com/tier4/mmdetection3d_bevfusion/pull/9
-- Add train code for 2D
-  - https://github.com/tier4/mmdetection3d_bevfusion/pull/14
+  - https://github.com/tier4/autoware-ml/pull/1
+  - https://github.com/tier4/autoware-ml/pull/2
+  - https://github.com/tier4/autoware-ml/pull/12
+- Add TransFusion model
+  - https://github.com/tier4/autoware-ml/pull/20
+
+#### Fix
 
 ### Chore
 
 - Update docs
-  - https://github.com/tier4/mmdetection3d_bevfusion/pull/3
-  - https://github.com/tier4/mmdetection3d_bevfusion/pull/4
-  - https://github.com/tier4/mmdetection3d_bevfusion/pull/5
-  - https://github.com/tier4/mmdetection3d_bevfusion/pull/6
-  - https://github.com/tier4/mmdetection3d_bevfusion/pull/7
-  - https://github.com/tier4/mmdetection3d_bevfusion/pull/8
-  - https://github.com/tier4/mmdetection3d_bevfusion/pull/10
-  - https://github.com/tier4/mmdetection3d_bevfusion/pull/11
-  - https://github.com/tier4/mmdetection3d_bevfusion/pull/13
-  - https://github.com/tier4/mmdetection3d_bevfusion/pull/16
+  - https://github.com/tier4/autoware-ml/pull/3
+  - https://github.com/tier4/autoware-ml/pull/4
+  - https://github.com/tier4/autoware-ml/pull/5
+  - https://github.com/tier4/autoware-ml/pull/6
+  - https://github.com/tier4/autoware-ml/pull/7
+  - https://github.com/tier4/autoware-ml/pull/8
+  - https://github.com/tier4/autoware-ml/pull/10
+  - https://github.com/tier4/autoware-ml/pull/11
+  - https://github.com/tier4/autoware-ml/pull/13
+  - https://github.com/tier4/autoware-ml/pull/16
 
 ## v0.1.0
 
