@@ -1,7 +1,7 @@
 _base_ = ['../../../../configs/_base_/default_runtime.py']
 custom_imports = dict(
     imports=['projects.TransFusion.transfusion', 'autoware_ml.detection.datasets.t4xx1_dataset'], allow_failed_imports=False)
-point_cloud_range = [-51.2, -51.2, -5.0, 51.2, 51.2, 3.0]
+point_cloud_range = [-76.8, -76.8, -3.0, 76.8, 76.8, 5.0]
 class_names = [
     "car",
     "truck",
@@ -10,7 +10,7 @@ class_names = [
     "pedestrian",
 ]
 metainfo = dict(classes=class_names)
-voxel_size = [0.2, 0.2, 8]
+voxel_size = [0.3, 0.3, 8]
 out_size_factor = 4
 evaluation = dict(interval=1)
 dataset_type = "T4XX1Dataset"

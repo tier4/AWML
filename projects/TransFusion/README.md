@@ -40,7 +40,7 @@ python tools/train.py projects/TransFusion/configs/nuscenes/transfusion_lidar_pi
 python tools/train.py projects/TransFusion/configs/t4dataset/transfusion_lidar_pillar02_second_secfpn_1xb4-cyclic-20e_t4xx1.py
 ```
 
-### 3. deploy
+### 3. Deploy
 
 - Docker build for deploy
 
@@ -54,7 +54,14 @@ DOCKER_BUILDKIT=1 docker build -t autoware-ml-transfusion-deploy projects/TransF
 docker run -it --rm --gpus all --shm-size=64g --name awml-deploy -v $PWD/:/workspace -v $PWD/data:/workspace/data autoware-ml-transfusion-deploy
 
 cd /workspace
-python tools/deploy.py projects/TransFusion/configs/nuscenes/transfusion_lidar_tensorrt_dynamic-nus-20x5.py projects/TransFusion/configs/nuscenes/transfusion_lidar_pillar02_second_secfpn_1xb8-cyclic-20e_nus-3d.py work_dirs/transfusion_lidar_pillar02_second_secfpn_1xb8-cyclic-20e_nus-3d/epoch_20.pth data/nuscenes/samples/LIDAR_TOP/n008-2018-05-21-11-06-59-0400__LIDAR_TOP__1526915243047392.pcd.bin --device cuda:0 --work-dir /workspace
+
+# for nuScenes dataset
+python tools/deploy.py projects/TransFusion/configs/deploy/transfusion_lidar_tensorrt_dynamic-20x5.py projects/TransFusion/configs/nuscenes/transfusion_lidar_pillar02_second_secfpn_1xb8-cyclic-20e_nus-3d.py work_dirs/transfusion_lidar_pillar02_second_secfpn_1xb8-cyclic-20e_nus-3d/epoch_20.pth data/nuscenes/samples/LIDAR_TOP/n008-2018-05-21-11-06-59-0400__LIDAR_TOP__1526915243047392.pcd.bin --device cuda:0 --work-dir /workspace
+
+# for t4xx1 dataset
+python tools/deploy.py projects/TransFusion/configs/deploy/transfusion_lidar_tensorrt_dynamic-20x5.py projects/TransFusion/configs/t4dataset/transfusion_lidar_pillar02_second_secfpn_1xb4-cyclic-20e_t4xx1.py work_dirs/transfusion_lidar_pillar02_second_secfpn_1xb4-cyclic-20e_t4xx1/epoch_20.pth data/t4dataset/t4xx1/023b4b43-2b00-444c-bb63-4ee602e30779/data/LIDAR_CONCAT/0.pcd.bin --device cuda:0 --work-dir /workspace
+
+# fix the graph
 python projects/TransFusion/scripts/fix_graph.py end2end.onnx
 ```
 
@@ -85,7 +92,7 @@ TBD
 ### Failed to create TensorRT engine
 
 Currently `mmdeploy` supports CUDA 11 only, where autoware-ml Docker image base on CUDA 12.
-You can validate missing mmdeploy's missing dependencies with command:
+You can validate mmdeploy's missing dependencies with command:
 
 ```sh
 ldd /opt/conda/lib/python3.10/site-packages/mmdeploy/lib/libmmdeploy_tensorrt_ops.so
