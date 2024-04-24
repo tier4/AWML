@@ -1,17 +1,17 @@
 """https://github.com/lyft/nuscenes-devkit/blob/master/lyft_dataset_sdk/eval/detection/mAP_evaluation.py"""
 from __future__ import annotations
-
-from collections import defaultdict
 import math
+from collections import defaultdict
 from os import path as osp
 from typing import Dict, List
 
-from lyft_dataset_sdk.eval.detection.mAP_evaluation import Box3D as _Box3D
-from lyft_dataset_sdk.eval.detection.mAP_evaluation import get_ap, get_ious, group_by_key
 import mmengine
-from mmengine.logging import print_log
 import numpy as np
 import pandas as pd
+from lyft_dataset_sdk.eval.detection.mAP_evaluation import Box3D as _Box3D
+from lyft_dataset_sdk.eval.detection.mAP_evaluation import (get_ap, get_ious,
+                                                            group_by_key)
+from mmengine.logging import print_log
 
 
 class Box3D(_Box3D):

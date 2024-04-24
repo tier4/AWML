@@ -1,19 +1,16 @@
 import copy
 from typing import Dict, List
 
-from mmdet3d.datasets.utils import convert_quaternion_to_matrix
 import mmengine
 import numpy as np
+from mmdet3d.datasets.utils import convert_quaternion_to_matrix
 from nuscenes import NuScenes
 from nuscenes.nuscenes import Box
 from pyquaternion import Quaternion
 
-from tools.t4dataset_converters.t4dataset_converter import _obtain_sensor2top
+from tools.t4dataset_converters.t4dataset_converter import obtain_sensor2top
 from tools.t4dataset_converters.update_infos_to_v2 import (
-    clear_instance_unused_keys,
-    get_empty_instance,
-    get_single_lidar_sweep,
-)
+    clear_instance_unused_keys, get_empty_instance, get_single_lidar_sweep)
 
 
 def get_ego2global(pose_record: Dict) -> Dict[str, List]:
@@ -66,7 +63,7 @@ def get_lidar_sweeps_info(
         if not sd_rec["prev"] == "":
             sweep = get_single_lidar_sweep()
 
-            v1_sweep = _obtain_sensor2top(
+            v1_sweep = obtain_sensor2top(
                 nusc,
                 sd_rec["prev"],
                 l2e_t,

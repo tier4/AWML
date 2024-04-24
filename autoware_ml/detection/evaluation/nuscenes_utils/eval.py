@@ -39,7 +39,6 @@ def toEvalBoxes(nusc_boxes: Dict[str, List[Dict]], box_cls: EvalBox = DetectionB
     """
     return EvalBoxes.deserialize(nusc_boxes, box_cls)
 
-
 class DetectionConfig:
     """Data class that specifies the detection evaluation settings."""
 

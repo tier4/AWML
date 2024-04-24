@@ -21,20 +21,15 @@
 
 import torch
 from mmcv.parallel import MMDistributedDataParallel
-from mmcv.runner import (
-    DistSamplerSeedHook,
-    EpochBasedRunner,
-    GradientCumulativeFp16OptimizerHook,
-    Fp16OptimizerHook,
-    OptimizerHook,
-    build_optimizer,
-    build_runner,
-)
+from mmcv.runner import (DistSamplerSeedHook, EpochBasedRunner,
+                         Fp16OptimizerHook,
+                         GradientCumulativeFp16OptimizerHook, OptimizerHook,
+                         build_optimizer, build_runner)
 from mmdet3d.runner import CustomEpochBasedRunner
-
 from mmdet3d.utils import get_root_logger
 from mmdet.core import DistEvalHook
-from mmdet.datasets import build_dataloader, build_dataset, replace_ImageToTensor
+from mmdet.datasets import (build_dataloader, build_dataset,
+                            replace_ImageToTensor)
 
 
 def qat_train(

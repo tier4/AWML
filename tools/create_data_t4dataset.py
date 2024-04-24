@@ -5,26 +5,21 @@ import os.path as osp
 from typing import Dict, List, Optional
 
 import mmengine
+import yaml
 from mmengine.logging import print_log
 from nuscenes import NuScenes
-import yaml
 
 from autoware_ml.detection.datasets import camera_types, classes
 from autoware_ml.detection.datasets.name_mappings import get_mapping
-from tools.t4dataset_converters.t4converter import (
-    extract_nuscenes_data,
-    get_annotations,
-    get_ego2global,
-    get_lidar_points_info,
-    get_lidar_sweeps_info,
-)
+from tools.t4dataset_converters.t4converter import (extract_nuscenes_data,
+                                                    get_annotations,
+                                                    get_ego2global,
+                                                    get_lidar_points_info,
+                                                    get_lidar_sweeps_info)
 from tools.t4dataset_converters.t4dataset_converter import get_lidar_token
 from tools.t4dataset_converters.update_infos_to_v2 import (
-    get_empty_lidar_points,
-    get_empty_radar_points,
-    get_empty_standard_data_info,
-    get_single_image_sweep,
-)
+    get_empty_lidar_points, get_empty_radar_points,
+    get_empty_standard_data_info, get_single_image_sweep)
 
 
 def get_empty_standard_data_info(camera_types=["CAM0", "CAM1", "CAM2", "CAM3", "CAM4"]):
@@ -81,10 +76,8 @@ def t4dataset_data_prep(
             in (
                 "t4xx1",
                 "t4x2",
-                "t4x2_awsim",
                 "t4xx1_uc2",
             ),
-            version.startswith("t4pl_"),
         ]
     ), f"unexpected version: {version}"
 
@@ -106,8 +99,7 @@ def t4dataset_data_prep(
 
     name_mapping: Dict[str, str] = get_mapping(version)
 
-    include_camera = not version.startswith("t4pl_")
-    cameras = camera_types.T4DATASET if include_camera else []
+    cameras = camera_types.T4DATASET
 
     do_not_check_valid_flag = version in ["t4xx1_uc2"]
 

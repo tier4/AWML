@@ -1,12 +1,8 @@
 
-_base_ = ['../../../../configs/_base_/default_runtime.py']
-custom_imports = dict(imports=['projects.BEVFusion.bevfusion', 'autoware_ml.detection.datasets.t4xx1_dataset'], allow_failed_imports=False)
+_base_ = ['../../../../configs/_base_/default_runtime.py', '../../../../configs/_base_/dataset/t4dataset_xx1.py']
 
-# model settings
-# Voxel size for voxel encoder
-# Usually voxel size is changed consistently with the point cloud range
-# If point cloud range is modified, do remember to change all related
-# keys in the config.
+custom_imports = dict(imports=['projects.BEVFusion.bevfusion'], allow_failed_imports=False)
+custom_imports['imports'] += _base_.custom_imports['imports']
 
 #voxel_size = [0.075, 0.075, 0.2]
 voxel_size = [0.18, 0.18, 0.2]
@@ -313,11 +309,14 @@ val_dataloader = dict(
 test_dataloader = val_dataloader
 
 val_evaluator = dict(
-    type='NuScenesMetric',
+    type='T4Metric',
     data_root=data_root,
-    ann_file= "t4dataset_infos_val.pkl",
+    ann_file=data_root + "t4dataset_infos_val.pkl",
     metric='bbox',
-    backend_args=backend_args)
+    backend_args=backend_args,
+    class_names=class_names,
+    data_mapping=_base_.data_mapping,
+)
 test_evaluator = val_evaluator
 
 vis_backends = [dict(type='LocalVisBackend')]

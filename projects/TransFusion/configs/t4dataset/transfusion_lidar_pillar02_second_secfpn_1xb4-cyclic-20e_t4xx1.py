@@ -1,6 +1,8 @@
-_base_ = ['../../../../configs/_base_/default_runtime.py']
+_base_ = ['../../../../configs/_base_/default_runtime.py', '../../../../configs/_base_/dataset/t4dataset_xx1.py']
 custom_imports = dict(
-    imports=['projects.TransFusion.transfusion', 'autoware_ml.detection.datasets.t4xx1_dataset'], allow_failed_imports=False)
+    imports=['projects.TransFusion.transfusion'], allow_failed_imports=False)
+custom_imports['imports'] += _base_.custom_imports['imports']
+
 point_cloud_range = [-76.8, -76.8, -3.0, 76.8, 76.8, 5.0]
 class_names = [
     "car",
@@ -293,7 +295,7 @@ train_dataloader = dict(
 )
 val_dataloader = dict(
     batch_size=2,
-    num_workers=4,
+    num_workers=3,
     persistent_workers=True,
     sampler=dict(type='DefaultSampler', shuffle=False),
     dataset=dict(
@@ -310,12 +312,16 @@ val_dataloader = dict(
 )
 test_dataloader = val_dataloader
 
+
 val_evaluator = dict(
-    type='NuScenesMetric',
+    type='T4Metric',
     data_root=data_root,
-    ann_file='t4dataset_infos_val.pkl',
+    ann_file=data_root + "t4dataset_infos_val.pkl",
     metric='bbox',
-    backend_args=backend_args)
+    backend_args=backend_args,
+    class_names=class_names,
+    data_mapping=_base_.data_mapping,
+)
 test_evaluator = val_evaluator
 
 vis_backends = [dict(type='LocalVisBackend'), dict(type='TensorboardVisBackend')]

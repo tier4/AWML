@@ -2,22 +2,23 @@ import itertools
 import json
 import logging
 import os
+import warnings
 from os import path as osp
 from typing import Any, Dict, List, Optional, Union
-import warnings
 
-from mmdet3d.datasets import NuScenesDataset
-from mmdet3d.evaluation.metrics.nuscenes_metric import output_to_nusc_box
-from mmdet3d.structures import LiDARInstance3DBoxes
 import mmengine
-from mmengine.logging import print_log
 import numpy as np
 import pandas as pd
 import pyquaternion
 import torch
+from mmdet3d.datasets import NuScenesDataset
+from mmdet3d.evaluation.metrics.nuscenes_metric import output_to_nusc_box
+from mmdet3d.structures import LiDARInstance3DBoxes
+from mmengine.logging import print_log
 
 from autoware_ml.detection.datasets.class_mapping import map_dataset_classes
-from autoware_ml.detection.evaluation import hdl_utils, lyft_utils, nuscenes_utils
+from autoware_ml.detection.evaluation import (hdl_utils, lyft_utils,
+                                              nuscenes_utils)
 
 
 class T4Dataset(NuScenesDataset):

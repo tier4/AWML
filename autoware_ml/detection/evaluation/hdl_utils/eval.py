@@ -2,30 +2,29 @@
 
 import json
 import logging
-from typing import Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Optional, Tuple
 
-from mmdet3d.structures import limit_period
-from mmdet3d.structures.ops.iou3d_calculator import bbox_overlaps_nearest_3d
 import numpy as np
 import pandas as pd
-from sklearn.metrics import confusion_matrix
 import torch
+from mmdet3d.structures import LiDARInstance3DBoxes, limit_period
+from mmdet3d.structures.ops.iou3d_calculator import bbox_overlaps_nearest_3d
+from sklearn.metrics import confusion_matrix
 
-from .utils import (
-    EvalLiDARInstance3DBoxes,
-    MultiDistanceMatrix,
-    _get_attributes,
-    _mmdet3d_bbox_from_dicts,
-)
+from .utils import (EvalLiDARInstance3DBoxes, MultiDistanceMatrix,
+                    _get_attributes, boxes_to_eval_boxes)
 
 
 class InvalidHDLEvaluationConfigError(Exception):
     """Error for the case HDLEvaluationConfig is invalid"""
+
     pass
 
 
+# MIGRATED
 class HDLEvaluationConfig:
     """Config for HDLEvaluator."""
+
     es_box_filter: str = ""  # filter for the estimated boxes
     gt_box_filter: str = ""  # filter for the ground-truth boxes
 
@@ -137,6 +136,8 @@ class HDLEvaluator:
         config: HDLEvaluationConfig,
         es_boxes: dict,
         gt_boxes: dict,
+        with_velocity: bool = False,
+        origin: Tuple[float, float, float] = (0.5, 0.5, 0.0),
     ):
         """Initialize HDLEvaluator.
 
@@ -150,6 +151,8 @@ class HDLEvaluator:
         self.logger = logging.getLogger(name=type(self).__name__)
         self.config = config
         self.config.validate()
+        self.with_velocity = with_velocity
+        self.origin = origin
 
         # Store boxes as DataFrame
         self.es_boxes_df = {key: pd.DataFrame.from_dict(value) for key, value in es_boxes.items()}
@@ -340,13 +343,14 @@ class HDLEvaluator:
 
         return argminmax_fn
 
-    def evaluate(self):
+    def evaluate(self) -> Dict[str, Any]:
         """Conduct evaluation."""
         scores = self._evaluate(
             es_boxes=list(self.es_boxes.values()),
             gt_boxes=list(self.gt_boxes.values()),
         )
         scores["evaluation_conditions"] = self.config.serialize()
+
         return scores
 
     def get_confusion_matrix(self, labels: List[str]):
@@ -382,25 +386,37 @@ class HDLEvaluator:
         """Prepare bounding boxes."""
         # Filter boxes
         es_boxes_df_filtered = {
-            key: value.query(self.config.es_box_filter)
-            if len(value) > 0 and self.config.es_box_filter != ""
-            else value
+            key: (
+                value.query(self.config.es_box_filter)
+                if len(value) > 0 and self.config.es_box_filter != ""
+                else value
+            )
             for key, value in self.es_boxes_df.items()
         }
         gt_boxes_df_filtered = {
-            key: value.query(self.config.gt_box_filter)
-            if len(value) > 0 and self.config.gt_box_filter != ""
-            else value
+            key: (
+                value.query(self.config.gt_box_filter)
+                if len(value) > 0 and self.config.gt_box_filter != ""
+                else value
+            )
             for key, value in self.gt_boxes_df.items()
         }
 
         # Convert DataFrames to BBox objects
         es_boxes = {
-            key: _mmdet3d_bbox_from_dicts(value.to_dict(orient="records"))
+            key: boxes_to_eval_boxes(
+                value.to_dict(orient="records"),
+                box_dim=9 if self.with_velocity else 7,
+                origin=self.origin,
+            )
             for key, value in es_boxes_df_filtered.items()
         }
         gt_boxes = {
-            key: _mmdet3d_bbox_from_dicts(value.to_dict(orient="records"))
+            key: boxes_to_eval_boxes(
+                value.to_dict(orient="records"),
+                box_dim=9 if self.with_velocity else 7,
+                origin=self.origin,
+            )
             for key, value in gt_boxes_df_filtered.items()
         }
 
@@ -515,8 +531,8 @@ class HDLEvaluator:
 
         distance_matrix = self._get_overlap_distance_matrix(gt_boxes, es_boxes)
 
-        gt_tp_flags = np.zeros(len(gt_boxes), dtype=np.bool)
-        es_tp_flags = np.zeros(len(es_boxes), dtype=np.bool)
+        gt_tp_flags = np.zeros(len(gt_boxes), dtype=bool)
+        es_tp_flags = np.zeros(len(es_boxes), dtype=bool)
         while self._cond_fn(self._minmax_fn(distance_matrix)):
             row, col = np.unravel_index(
                 self._argminmax_fn(distance_matrix), shape=distance_matrix.shape
@@ -605,6 +621,9 @@ class HDLEvaluator:
             ]
         )
 
+        # TODO(kan-bayashi): If the distance-based threshold is low, sometimes TP per objects
+        #   will be more than one, and as a results, recall will be larger than 1.0.
+        # Get the best and arg-best of f-values.
         if hard_decision_threshold is None:
             best_f_value_idx = np.argmax(f_values)
             best_f_value_threshold = float(scores[best_f_value_idx])
