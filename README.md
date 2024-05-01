@@ -6,7 +6,8 @@ This repository is machine learning library for [Autoware](https://github.com/au
 
 - [Get started for 3D detection](docs/get_started_3d_detection.md)
 - [Get started for 2D detection](docs/get_started_2d_detection.md)
-- [Design docs](docs/design.md)
+- [Design docs](docs/design.md): If you want to know the design of `autoware-ml`, please see this document
+- [Contribution](docs/contribution.md): If you want to contribute, please see this document
 - [Release note](docs/release_note.md)
 
 ## Supported environment
@@ -20,34 +21,47 @@ This repository is machine learning library for [Autoware](https://github.com/au
   - [mmdetection v3.3.0](https://github.com/open-mmlab/mmdetection/tree/v3.3.0)
   - [mmdeploy v1.3.1](https://github.com/open-mmlab/mmdeploy/tree/v1.3.1)
 
-## Supported feature
-### 3D Detection model
+## Supported model
+### 3D detection
 
-- [BEVFusion-CL (BEVFusion Camera-LiDAR fusion)](projects/BEVFusion)
-- TransFusion-L (TransFusion LiDAR only)
-- CenterPoint (LiDAR only)
-- PointPainted-CenterPoint (Camera-LiDAR fusion)
+- [BEVFusion](projects/BEVFusion)
+  - ROS package: TBD
+  - Supported model
+    - Camera-LiDAR fusion model (spconv)
+- [TransFusion](projects/TransFusion)
+  - ROS package: TBD
+  - Supported model
+    - LiDAR-only model (pillar)
 
-|                | T4dataset | NuScenes | Argoverse2 | Aimotive |
-| -------------- | :-------: | :------: | :--------: | :------: |
-| BEVFusion-CL   |           |          |            |          |
-| TransFusion-L  |           |          |            |          |
-| CenterPoint    |           |          |            |          |
-| PP-CenterPoint |           |          |            |          |
+|             | T4dataset | NuScenes |
+| ----------- | :-------: | :------: |
+| BEVFusion   |           |          |
+| TransFusion |     ✅     |    ✅     |
 
-### 2D Detection
+### 2D detection
 
-- YOLOX-opt
-- TwinTransformer
+- (TBD) YOLOX-opt
+  - ROS package: [tensorrt_yolox](https://github.com/autowarefoundation/autoware.universe/tree/main/perception/tensorrt_yolox)
+- (TBD) TwinTransformer
+  - ROS package: Not supported
+  - Supported model
+    - Mask-RCNN with FPN model: This is used for BEVFusion image backbone
 
 |                 | T4dataset | COCO  | NuImages |
 | --------------- | :-------: | :---: | :------: |
 | YOLOX-opt       |           |       |          |
 | TwinTransformer |           |       |          |
 
+### 2D segmentation
+
+- (TBD) SegmentAnything
+  - ROS package: Not supported
+  - This model is used for evaluation and labeling tools
+
 ### 2D classification
 
-- EfficientNet
+- (TBD) EfficientNet
+  - ROS package: [traffic_light_classifier](https://github.com/autowarefoundation/autoware.universe/tree/main/perception/traffic_light_classifier)
 
 |              | T4dataset | COCO  | NuImages |
 | ------------ | :-------: | :---: | :------: |

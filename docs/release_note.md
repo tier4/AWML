@@ -5,6 +5,7 @@
 - Add T4dataset
   - https://github.com/tier4/autoware-ml/pull/17
   - https://github.com/tier4/autoware-ml/pull/19
+  - https://github.com/tier4/autoware-ml/pull/23
 
 #### Fix
 
@@ -27,6 +28,7 @@
   - https://github.com/tier4/autoware-ml/pull/12
 - Add TransFusion model
   - https://github.com/tier4/autoware-ml/pull/20
+  - https://github.com/tier4/autoware-ml/pull/22
 
 #### Fix
 
@@ -43,6 +45,7 @@
   - https://github.com/tier4/autoware-ml/pull/11
   - https://github.com/tier4/autoware-ml/pull/13
   - https://github.com/tier4/autoware-ml/pull/16
+  - https://github.com/tier4/autoware-ml/pull/21
 
 ## v0.1.0
 
