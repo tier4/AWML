@@ -1,11 +1,16 @@
-custom_imports = dict(imports=['autoware_ml.detection.evaluation.t4metric', 'autoware_ml.detection.datasets.t4xx1_dataset'])
+custom_imports = dict(
+    imports=[
+        "autoware_ml.detection3d.evaluation.t4metric",
+        "autoware_ml.detection3d.datasets.t4xx1_dataset",
+    ]
+)
 data_mapping = {
     # DBv1.0
     "vehicle.car": "car",
-    #"vehicle.construction": "truck",
-    #"vehicle.emergency (ambulance & police)": "car",
-    #"vehicle.motorcycle": "bicycle",
-    #"vehicle.trailer": "truck",
+    # "vehicle.construction": "truck",
+    # "vehicle.emergency (ambulance & police)": "car",
+    # "vehicle.motorcycle": "bicycle",
+    # "vehicle.trailer": "truck",
     "vehicle.truck": "truck",
     "vehicle.bicycle": "bicycle",
     "vehicle.bus (bendy & rigid)": "bus",

@@ -28,7 +28,7 @@ DOCKER_BUILDKIT=1 docker build -t autoware-ml .
 
 Prepare the dataset you use.
 
-### 2.1 [Option] nuScenes
+### 2.1 nuScenes
 
 - Download dataset from official website
 - Run docker
@@ -41,19 +41,10 @@ docker run -it --rm --gpus all --shm-size=64g --name awml -p 6006:6006 -v $PWD/:
   - If you want to make own pkl, you should change from "nuscenes" to "custom_name"
 
 ```sh
-python tools/create_data.py nuscenes --root-path ./data/nuscenes --out-dir ./data/nuscenes --extra-tag nuscenes
+python tools/detection3d/create_data.py nuscenes --root-path ./data/nuscenes --out-dir ./data/nuscenes --extra-tag nuscenes
 ```
 
-### 2.2 [Option] T4 dataset
-
-- [Option] Download dataset
-
-```sh
-# download xx1 dataset
-python scripts/download_t4dataset.py config/dataset_config/xx1.yaml --project-id prd_jt
-# download x2 dataset
-python scripts/download_t4dataset.py config/dataset_config/x2.yaml --project-id x2_dev
-```
+### 2.2 T4 dataset
 
 - Run docker
 
@@ -65,9 +56,9 @@ docker run -it --rm --gpus all --shm-size=64g --name awml -p 6006:6006 -v $PWD/:
 
 ```sh
 # for XX1
-python tools/create_data_t4dataset.py t4xx1  --root_path ./data/t4dataset --max_sweeps 2 --dataset_config configs/dataset/xx1.yaml
+python tools/detection3d/create_data_t4dataset.py t4xx1  --root_path ./data/t4dataset --max_sweeps 2 --dataset_config autoware_ml/configs/detection3d/dataset/t4dataset/database_v1_1.yaml
 # for X2
-python tools/create_data_t4dataset.py t4xx1  --root_path ./data/t4dataset --max_sweeps 2 --dataset_config configs/dataset/x2.yaml
+python tools/detection3d/create_data_t4dataset.py t4xx1  --root_path ./data/t4dataset --max_sweeps 2 --dataset_config autoware_ml/configs/detection3d/dataset/t4dataset/database_v3_0.yaml
 ```
 
 ## 3. Train and evaluation
@@ -85,13 +76,7 @@ python tools/create_data_t4dataset.py t4xx1  --root_path ./data/t4dataset --max_
 docker run -it --rm --gpus '"device=1"' --name autoware-ml --shm-size=64g -d -v $PWD/:/workspace -v $PWD/data:/workspace/data autoware-ml bash -c '<command for each projects>'
 ```
 
-### 3.3. [Option] Log analysis by Tensorboard
-
-- Add backend to config
-
-```python
-vis_backends = [dict(type='LocalVisBackend'), dict(type='TensorboardVisBackend')]
-```
+### 3.3. Log analysis by Tensorboard
 
 - Run the TensorBoard and navigate to http://127.0.0.1:6006/
 
@@ -105,4 +90,4 @@ TBD
 
 ## 5. Deploy
 
-- See each projects
+See each projects

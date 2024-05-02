@@ -3,17 +3,23 @@ from typing import Dict, List, Optional, Tuple, Union
 
 import mmengine
 from mmdet3d.evaluation.metrics import NuScenesMetric
-#from autoware_ml.registry import METRICS, TRANSFORMS
+
+# from autoware_ml.registry import METRICS, TRANSFORMS
 from mmdet3d.registry import METRICS, TRANSFORMS
 from mmengine import ConfigDict, load
 from mmengine.logging import MMLogger, print_log
 from nuscenes import NuScenes
 from nuscenes.eval.common.data_classes import EvalBoxes
 
-from autoware_ml.detection.evaluation.utils.eval import (
-    BaseNameMapping, T4DetectionConfig, T4DetectionEvaluation,
-    print_metrics_table, t4metric_load_gt, t4metric_load_prediction,
-    validate_model_output_mapping)
+from autoware_ml.detection3d.evaluation.utils.eval import (
+    BaseNameMapping,
+    T4DetectionConfig,
+    T4DetectionEvaluation,
+    print_metrics_table,
+    t4metric_load_gt,
+    t4metric_load_prediction,
+    validate_model_output_mapping,
+)
 
 __all__ = ["T4Metric"]
 
@@ -28,8 +34,12 @@ import pyquaternion
 import torch
 from mmdet3d.models.layers import box3d_multiclass_nms
 from mmdet3d.registry import METRICS
-from mmdet3d.structures import (CameraInstance3DBoxes, LiDARInstance3DBoxes,
-                                bbox3d2result, xywhr2xyxyr)
+from mmdet3d.structures import (
+    CameraInstance3DBoxes,
+    LiDARInstance3DBoxes,
+    bbox3d2result,
+    xywhr2xyxyr,
+)
 from mmengine import Config, load
 from mmengine.evaluator import BaseMetric
 from mmengine.logging import MMLogger
@@ -411,7 +421,7 @@ class T4Metric(NuScenesMetric):
         self,
         results: List[dict],
         classes: Optional[List[str]] = None,
-        jsonfile_prefix: Optional[str] = None
+        jsonfile_prefix: Optional[str] = None,
     ) -> Tuple[dict, Union[tempfile.TemporaryDirectory, None]]:
         """Format the mmdet3d results to standard NuScenes json file.
 
@@ -430,36 +440,40 @@ class T4Metric(NuScenesMetric):
             directory created for saving json files when ``jsonfile_prefix`` is
             not specified.
         """
-        assert isinstance(results, list), 'results must be a list'
+        assert isinstance(results, list), "results must be a list"
 
         if jsonfile_prefix is None:
             tmp_dir = tempfile.TemporaryDirectory()
-            jsonfile_prefix = osp.join(tmp_dir.name, 'results')
+            jsonfile_prefix = osp.join(tmp_dir.name, "results")
         else:
             tmp_dir = None
         result_dict = dict()
-        sample_idx_list = [result['sample_idx'] for result in results]
+        sample_idx_list = [result["sample_idx"] for result in results]
 
         for name in results[0]:
-            if 'pred' in name and '3d' in name and name[0] != '_':
-                print(f'\nFormating bboxes of {name}')
+            if "pred" in name and "3d" in name and name[0] != "_":
+                print(f"\nFormating bboxes of {name}")
                 results_ = [out[name] for out in results]
                 tmp_file_ = osp.join(jsonfile_prefix, name)
-                box_type_3d = type(results_[0]['bboxes_3d'])
+                box_type_3d = type(results_[0]["bboxes_3d"])
                 if box_type_3d == LiDARInstance3DBoxes:
                     result_dict[name] = self._format_lidar_bbox(
-                        results_, sample_idx_list, classes, tmp_file_)
+                        results_, sample_idx_list, classes, tmp_file_
+                    )
                 elif box_type_3d == CameraInstance3DBoxes:
                     result_dict[name] = self._format_camera_bbox(
-                        results_, sample_idx_list, classes, tmp_file_)
+                        results_, sample_idx_list, classes, tmp_file_
+                    )
 
         return result_dict, tmp_dir
 
-    def _format_lidar_bbox(self,
-                           results: List[dict],
-                           sample_idx_list: List[int],
-                           classes: Optional[List[str]] = None,
-                           jsonfile_prefix: Optional[str] = None) -> str:
+    def _format_lidar_bbox(
+        self,
+        results: List[dict],
+        sample_idx_list: List[int],
+        classes: Optional[List[str]] = None,
+        jsonfile_prefix: Optional[str] = None,
+    ) -> str:
         """Convert the results to the standard format.
 
         Args:
@@ -476,35 +490,35 @@ class T4Metric(NuScenesMetric):
         """
         nusc_annos = {}
 
-        print('Start to convert detection format...')
+        print("Start to convert detection format...")
         for i, det in enumerate(mmengine.track_iter_progress(results)):
             annos = []
             boxes, attrs = output_to_nusc_box(det)
             sample_idx = sample_idx_list[i]
-            sample_token = self.data_infos[sample_idx]['token']
-            boxes = lidar_nusc_box_to_global(self.data_infos[sample_idx],
-                                             boxes, classes,
-                                             self.eval_detection_configs)
+            sample_token = self.data_infos[sample_idx]["token"]
+            boxes = lidar_nusc_box_to_global(
+                self.data_infos[sample_idx], boxes, classes, self.eval_detection_configs
+            )
             for i, box in enumerate(boxes):
                 name = classes[box.label]
-                if np.sqrt(box.velocity[0]**2 + box.velocity[1]**2) > 0.2:
+                if np.sqrt(box.velocity[0] ** 2 + box.velocity[1] ** 2) > 0.2:
                     if name in [
-                            'car',
-                            'construction_vehicle',
-                            'bus',
-                            'truck',
-                            'trailer',
+                        "car",
+                        "construction_vehicle",
+                        "bus",
+                        "truck",
+                        "trailer",
                     ]:
-                        attr = 'vehicle.moving'
-                    elif name in ['bicycle', 'motorcycle']:
-                        attr = 'cycle.with_rider'
+                        attr = "vehicle.moving"
+                    elif name in ["bicycle", "motorcycle"]:
+                        attr = "cycle.with_rider"
                     else:
                         attr = self.DefaultAttribute[name]
                 else:
-                    if name in ['pedestrian']:
-                        attr = 'pedestrian.standing'
-                    elif name in ['bus']:
-                        attr = 'vehicle.stopped'
+                    if name in ["pedestrian"]:
+                        attr = "pedestrian.standing"
+                    elif name in ["bus"]:
+                        attr = "vehicle.stopped"
                     else:
                         attr = self.DefaultAttribute[name]
 
@@ -516,18 +530,20 @@ class T4Metric(NuScenesMetric):
                     velocity=box.velocity[:2].tolist(),
                     detection_name=name,
                     detection_score=box.score,
-                    attribute_name=attr)
+                    attribute_name=attr,
+                )
                 annos.append(nusc_anno)
             nusc_annos[sample_token] = annos
         nusc_submissions = {
-            'meta': self.modality,
-            'results': nusc_annos,
+            "meta": self.modality,
+            "results": nusc_annos,
         }
         mmengine.mkdir_or_exist(jsonfile_prefix)
-        res_path = osp.join(jsonfile_prefix, 'results_nusc.json')
-        print(f'Results writes to {res_path}')
+        res_path = osp.join(jsonfile_prefix, "results_nusc.json")
+        print(f"Results writes to {res_path}")
         mmengine.dump(nusc_submissions, res_path)
         return res_path
+
 
 def concatenate_eval_boxes(eval_boxes1: EvalBoxes, eval_boxes2: EvalBoxes) -> EvalBoxes:
     """
@@ -553,9 +569,10 @@ def concatenate_eval_boxes(eval_boxes1: EvalBoxes, eval_boxes2: EvalBoxes) -> Ev
 
     return new_eval_boxes
 
+
 def lidar_nusc_box_to_global(
-        info: dict, boxes: List[NuScenesBox], classes: List[str],
-        eval_configs: DetectionConfig) -> List[NuScenesBox]:
+    info: dict, boxes: List[NuScenesBox], classes: List[str], eval_configs: DetectionConfig
+) -> List[NuScenesBox]:
     """Convert the box from ego to global coordinate.
 
     Args:
@@ -572,9 +589,8 @@ def lidar_nusc_box_to_global(
     box_list = []
     for box in boxes:
         # Move box to ego vehicle coord system
-        lidar2ego = np.array(info['lidar_points']['lidar2ego'])
-        box.rotate(
-            pyquaternion.Quaternion(matrix=lidar2ego, rtol=1e-05, atol=1e-07))
+        lidar2ego = np.array(info["lidar_points"]["lidar2ego"])
+        box.rotate(pyquaternion.Quaternion(matrix=lidar2ego, rtol=1e-05, atol=1e-07))
         box.translate(lidar2ego[:3, 3])
         # filter det in ego.
         cls_range_map = eval_configs.class_range
@@ -583,15 +599,14 @@ def lidar_nusc_box_to_global(
         if radius > det_range:
             continue
         # Move box to global coord system
-        ego2global = np.array(info['ego2global'])
-        box.rotate(
-            pyquaternion.Quaternion(matrix=ego2global, rtol=1e-05, atol=1e-07))
+        ego2global = np.array(info["ego2global"])
+        box.rotate(pyquaternion.Quaternion(matrix=ego2global, rtol=1e-05, atol=1e-07))
         box.translate(ego2global[:3, 3])
         box_list.append(box)
     return box_list
 
-def output_to_nusc_box(
-        detection: dict) -> Tuple[List[NuScenesBox], Union[np.ndarray, None]]:
+
+def output_to_nusc_box(detection: dict) -> Tuple[List[NuScenesBox], Union[np.ndarray, None]]:
     """Convert the output to the box class in the nuScenes.
 
     Args:
@@ -605,12 +620,12 @@ def output_to_nusc_box(
         Tuple[List[:obj:`NuScenesBox`], np.ndarray or None]: List of standard
         NuScenesBoxes and attribute labels.
     """
-    bbox3d = detection['bboxes_3d']
-    scores = detection['scores_3d'].numpy()
-    labels = detection['labels_3d'].numpy()
+    bbox3d = detection["bboxes_3d"]
+    scores = detection["scores_3d"].numpy()
+    labels = detection["labels_3d"].numpy()
     attrs = None
-    if 'attr_labels' in detection:
-        attrs = detection['attr_labels'].numpy()
+    if "attr_labels" in detection:
+        attrs = detection["attr_labels"].numpy()
 
     box_gravity_center = bbox3d.gravity_center.numpy()
     box_dims = bbox3d.dims.numpy()
@@ -634,7 +649,8 @@ def output_to_nusc_box(
                 quat,
                 label=labels[i],
                 score=scores[i],
-                velocity=velocity)
+                velocity=velocity,
+            )
             box_list.append(box)
     elif isinstance(bbox3d, CameraInstance3DBoxes):
         # our Camera coordinate system -> nuScenes box coordinate system
@@ -642,8 +658,7 @@ def output_to_nusc_box(
         nus_box_dims = box_dims[:, [2, 0, 1]]
         nus_box_yaw = -box_yaw
         for i in range(len(bbox3d)):
-            q1 = pyquaternion.Quaternion(
-                axis=[0, 0, 1], radians=nus_box_yaw[i])
+            q1 = pyquaternion.Quaternion(axis=[0, 0, 1], radians=nus_box_yaw[i])
             q2 = pyquaternion.Quaternion(axis=[1, 0, 0], radians=np.pi / 2)
             quat = q2 * q1
             velocity = (bbox3d.tensor[i, 7], 0.0, bbox3d.tensor[i, 8])
@@ -653,11 +668,12 @@ def output_to_nusc_box(
                 quat,
                 label=labels[i],
                 score=scores[i],
-                velocity=velocity)
+                velocity=velocity,
+            )
             box_list.append(box)
     else:
         raise NotImplementedError(
-            f'Do not support convert {type(bbox3d)} bboxes '
-            'to standard NuScenesBoxes.')
+            f"Do not support convert {type(bbox3d)} bboxes " "to standard NuScenesBoxes."
+        )
 
     return box_list, attrs

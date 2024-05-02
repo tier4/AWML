@@ -7,10 +7,11 @@ from mmengine.evaluator import BaseMetric
 from mmengine.logging import MMLogger, print_log
 from numpy import who
 
-from autoware_ml.detection.evaluation.hdl_utils import (HDLEvaluationConfig,
-                                                        HDLEvaluator)
-from autoware_ml.detection.evaluation.utils.eval import (
-    print_metrics_table, validate_model_output_mapping)
+from autoware_ml.detection3d.evaluation.hdl_utils import HDLEvaluationConfig, HDLEvaluator
+from autoware_ml.detection3d.evaluation.utils.eval import (
+    print_metrics_table,
+    validate_model_output_mapping,
+)
 from autoware_ml.structures import CameraInstance3DBoxes, LiDARInstance3DBoxes
 
 

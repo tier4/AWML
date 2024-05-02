@@ -16,9 +16,8 @@ from mmdet3d.evaluation.metrics.nuscenes_metric import output_to_nusc_box
 from mmdet3d.structures import LiDARInstance3DBoxes
 from mmengine.logging import print_log
 
-from autoware_ml.detection.datasets.class_mapping import map_dataset_classes
-from autoware_ml.detection.evaluation import (hdl_utils, lyft_utils,
-                                              nuscenes_utils)
+from autoware_ml.detection3d.datasets.class_mapping import map_dataset_classes
+from autoware_ml.detection3d.evaluation import hdl_utils, lyft_utils, nuscenes_utils
 
 
 class T4Dataset(NuScenesDataset):
@@ -694,7 +693,6 @@ class T4Dataset(NuScenesDataset):
                 confusion_matrix = evaluator.get_confusion_matrix(
                     labels=sorted(set(self.CLASSES), key=self.CLASSES.index)
                 )
-
 
         df = pd.DataFrame.from_dict(evaluation_scores, orient="index")
         df.drop(columns=["evaluation_conditions"], inplace=True)
