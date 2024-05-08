@@ -46,7 +46,6 @@ RUN mim install \
 WORKDIR /workspace
 
 COPY autoware_ml autoware_ml
-COPY configs configs
 COPY projects projects
 COPY tools tools
 COPY setup.py setup.py
