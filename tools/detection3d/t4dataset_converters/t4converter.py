@@ -8,8 +8,8 @@ from nuscenes import NuScenes
 from nuscenes.nuscenes import Box
 from pyquaternion import Quaternion
 
-from tools.t4dataset_converters.t4dataset_converter import obtain_sensor2top
-from tools.t4dataset_converters.update_infos_to_v2 import (
+from tools.detection3d.t4dataset_converters.t4dataset_converter import obtain_sensor2top
+from tools.detection3d.t4dataset_converters.update_infos_to_v2 import (
     clear_instance_unused_keys, get_empty_instance, get_single_lidar_sweep)
 
 

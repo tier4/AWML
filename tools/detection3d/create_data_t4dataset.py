@@ -11,15 +11,15 @@ from nuscenes import NuScenes
 
 from autoware_ml.detection3d.datasets import camera_types, classes
 from autoware_ml.detection3d.datasets.name_mappings import get_mapping
-from tools.t4dataset_converters.t4converter import (
+from tools.detection3d.t4dataset_converters.t4converter import (
     extract_nuscenes_data,
     get_annotations,
     get_ego2global,
     get_lidar_points_info,
     get_lidar_sweeps_info,
 )
-from tools.t4dataset_converters.t4dataset_converter import get_lidar_token
-from tools.t4dataset_converters.update_infos_to_v2 import (
+from tools.detection3d.t4dataset_converters.t4dataset_converter import get_lidar_token
+from tools.detection3d.t4dataset_converters.update_infos_to_v2 import (
     get_empty_lidar_points,
     get_empty_radar_points,
     get_empty_standard_data_info,
