@@ -1,28 +1,6 @@
-
 ## 1. Set environment
 
-- Set environment
-
-```sh
-git clone  https://github.com/tier4/autoware-ml
-ln -s {path_to_dataset} data
-```
-
-```sh
-├── data
-│  └── nuscenes
-│  └── t4dataset
-├── Dockerfile
-├── projects
-├── README.md
-└── work_dirs
-```
-
-- Build docker
-
-```sh
-DOCKER_BUILDKIT=1 docker build -t autoware-ml .
-```
+See [README](/README.md)
 
 ## 2. Prepare dataset
 
@@ -52,12 +30,15 @@ python tools/detection3d/create_data.py nuscenes --root-path ./data/nuscenes --o
 docker run -it --rm --gpus all --shm-size=64g --name awml -p 6006:6006 -v $PWD/:/workspace -v $PWD/data:/workspace/data autoware-ml
 ```
 
-- Make info files for T4dataset
+- [choice] Make info files for T4dataset XX1
 
 ```sh
-# for XX1
 python tools/detection3d/create_data_t4dataset.py t4xx1  --root_path ./data/t4dataset --max_sweeps 2 --dataset_config autoware_ml/configs/detection3d/dataset/t4dataset/database_v1_1.yaml
-# for X2
+```
+
+- [choice] Make info files for T4dataset X2
+
+```sh
 python tools/detection3d/create_data_t4dataset.py t4xx1  --root_path ./data/t4dataset --max_sweeps 2 --dataset_config autoware_ml/configs/detection3d/dataset/t4dataset/database_v3_0.yaml
 ```
 

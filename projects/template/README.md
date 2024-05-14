@@ -1,3 +1,4 @@
+# Model name
 ## Supported feature
 
 - [ ] Train with single GPU
@@ -5,20 +6,20 @@
 - [ ] Make .onnx file and deploy to Autoware
 - [ ] Unit test
 
-## Usage
-### Setup
+## Limited feature
 
 TBD
 
-### Train
+## Get started
+### 1. Setup
 
 TBD
 
-### Test
+### 2. Train
 
 TBD
 
-### Deploy
+### 3. Deploy
 
 TBD
 

@@ -2,7 +2,8 @@
 
 This repository is machine learning library for [Autoware](https://github.com/autowarefoundation/autoware).
 
-## Supported environment
+## Environment
+### Supported environment
 
 - Tested by [Docker environment](Dockerfile) on Ubuntu 22.04LTS
 - NVIDIA dependency: CUDA 12.1 + cuDNN 8
@@ -13,6 +14,33 @@ This repository is machine learning library for [Autoware](https://github.com/au
   - [mmdetection3d v1.4.0](https://github.com/open-mmlab/mmdetection3d/tree/v1.4.0)
   - [mmdetection v3.3.0](https://github.com/open-mmlab/mmdetection/tree/v3.3.0)
   - [mmdeploy v1.3.1](https://github.com/open-mmlab/mmdeploy/tree/v1.3.1)
+
+### Setup for environment
+
+- Set environment
+
+```sh
+git clone https://github.com/tier4/autoware-ml
+ln -s {path_to_dataset} data
+```
+
+```sh
+├── data
+│  └── nuscenes
+│  └── t4dataset
+│  └── nuimages
+│  └── coco
+├── Dockerfile
+├── projects
+├── README.md
+└── work_dirs
+```
+
+- Build docker
+
+```sh
+DOCKER_BUILDKIT=1 docker build -t autoware-ml .
+```
 
 ## Docs
 
@@ -34,7 +62,7 @@ This repository is machine learning library for [Autoware](https://github.com/au
   - Supported model
     - Camera-LiDAR fusion model (spconv)
 - [TransFusion](projects/TransFusion)
-  - ROS package: TBD
+  - ROS package: [lidar_transfusion](https://github.com/autowarefoundation/autoware.universe/tree/main/perception/lidar_transfusion)
   - Supported model
     - LiDAR-only model (pillar)
 

@@ -24,23 +24,30 @@ python projects/BEVFusion/setup.py develop
 ```
 
 ### 2. Train
+#### 2.1. Train the LiDAR-only model first:
 
-1. Train the LiDAR-only model first:
+- [choice] For nuScenes with single GPU
 
 ```sh
-# for nuScenes with single GPU
 python tools/detection3d/train.py projects/BEVFusion/configs/nuscenes/bevfusion_lidar_voxel0075_second_secfpn_1xb1-cyclic-20e_nus-3d.py
+```
 
-# for nuScenes with multiple GPU
-# Rename config file to use for multi GPU and batch size
-# bash tools/dist_train.sh projects/BEVFusion/configs/nuscenes/bevfusion_lidar_voxel0075_second_secfpn_2xb2-cyclic-20e_nus-3d.py 2
+- [choice] For nuScenes with single GPU
+  - Rename config file to use for multi GPU and batch size
 
-# for T4dataset with single GPU
+```sh
+bash tools/dist_train.sh projects/BEVFusion/configs/nuscenes/bevfusion_lidar_voxel0075_second_secfpn_2xb2-cyclic-20e_nus-3d.py 2
+```
+
+- [choice] For T4dataset with single GPU
+
+```sh
 python tools/detection3d/train.py projects/BEVFusion/configs/t4dataset/bevfusion_lidar_voxel0075_second_secfpn_1xb1-cyclic-20e_t4xx1.py
 ```
 
-2. Train with Camera-LiDAR fusion model
-  - Download the [Swin pre-trained model](https://download.openmmlab.com/mmdetection3d/v1.1.0_models/bevfusion/swint-nuimages-pretrained.pth).
+#### 2.2. Train with Camera-LiDAR fusion model
+
+- Download the [Swin pre-trained model](https://download.openmmlab.com/mmdetection3d/v1.1.0_models/bevfusion/swint-nuimages-pretrained.pth).
   - Given the image pre-trained backbone and the lidar-only pre-trained detector, you could train the lidar-camera fusion model.
   - Note that if you want to reduce CUDA memory usage and computational overhead, you could directly add --amp on the tail of the above commands. The model under this setting will be trained in fp16 mode.
 
