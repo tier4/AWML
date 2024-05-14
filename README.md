@@ -5,7 +5,7 @@ This repository is machine learning library for [Autoware](https://github.com/au
 ## Environment
 ### Supported environment
 
-- Tested by [Docker environment](Dockerfile) on Ubuntu 22.04LTS
+- Tested by [Docker environment](Dockerfile) on Ubuntu 22.04LTS and Ubuntu 20.04LTS
 - NVIDIA dependency: CUDA 12.1 + cuDNN 8
   - Need > 530.xx.xx NVIDIA device driver
 - Library
@@ -45,7 +45,7 @@ DOCKER_BUILDKIT=1 docker build -t autoware-ml .
 ## Docs
 
 - [Design docs](docs/design.md): If you want to know the design of `autoware-ml`, please see this document
-- [Contribution](docs/contribution.md): If you want to contribute for autoware-ml, please see this document
+- [Contribution](docs/contribution.md): If you want to contribute for `autoware-ml`, please see this document
 - [Release note](docs/release_note.md)
 
 ## Supported tool
@@ -61,6 +61,7 @@ DOCKER_BUILDKIT=1 docker build -t autoware-ml .
   - ROS package: TBD
   - Supported model
     - Camera-LiDAR fusion model (spconv)
+    - LiDAR-only model (spconv)
 - [TransFusion](projects/TransFusion)
   - ROS package: [lidar_transfusion](https://github.com/autowarefoundation/autoware.universe/tree/main/perception/lidar_transfusion)
   - Supported model
@@ -75,7 +76,7 @@ DOCKER_BUILDKIT=1 docker build -t autoware-ml .
 
 - (TBD) YOLOX-opt
   - ROS package: [tensorrt_yolox](https://github.com/autowarefoundation/autoware.universe/tree/main/perception/tensorrt_yolox)
-- (TBD) TwinTransformer
+- (TBD) SwinTransformer
   - ROS package: Not supported
   - Supported model
     - Mask-RCNN with FPN model: This is used for BEVFusion image backbone

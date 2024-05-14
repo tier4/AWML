@@ -24,32 +24,40 @@ python projects/BEVFusion/setup.py develop
 ```
 
 ### 2. Train
-#### 2.1. Train the LiDAR-only model first:
+#### 2.1. Train the LiDAR-only model first
 
-- [choice] For nuScenes with single GPU
+- [choice] Train for nuScenes with single GPU
 
 ```sh
 python tools/detection3d/train.py projects/BEVFusion/configs/nuscenes/bevfusion_lidar_voxel0075_second_secfpn_1xb1-cyclic-20e_nus-3d.py
 ```
 
-- [choice] For nuScenes with single GPU
-  - Rename config file to use for multi GPU and batch size
-
-```sh
-bash tools/dist_train.sh projects/BEVFusion/configs/nuscenes/bevfusion_lidar_voxel0075_second_secfpn_2xb2-cyclic-20e_nus-3d.py 2
-```
-
-- [choice] For T4dataset with single GPU
+- [choice] Train for T4dataset with single GPU
 
 ```sh
 python tools/detection3d/train.py projects/BEVFusion/configs/t4dataset/bevfusion_lidar_voxel0075_second_secfpn_1xb1-cyclic-20e_t4xx1.py
 ```
 
-#### 2.2. Train with Camera-LiDAR fusion model
+- [choice] Train for T4dataset with multi GPU
+  - Rename config file to use for multi GPU and batch size
+
+```sh
+bash tools/dist_train.sh projects/BEVFusion/configs/t4dataset/bevfusion_lidar_voxel0075_second_secfpn_2xb2-cyclic-20e_t4xx1.py 2
+```
+
+#### 2.2. Train the camera backbone
 
 - Download the [Swin pre-trained model](https://download.openmmlab.com/mmdetection3d/v1.1.0_models/bevfusion/swint-nuimages-pretrained.pth).
-  - Given the image pre-trained backbone and the lidar-only pre-trained detector, you could train the lidar-camera fusion model.
-  - Note that if you want to reduce CUDA memory usage and computational overhead, you could directly add --amp on the tail of the above commands. The model under this setting will be trained in fp16 mode.
+- [choice] If you want to train the image backbone for fine tuning. you train as below
+
+```sh
+TBD
+```
+
+#### 2.3. Train with Camera-LiDAR fusion model
+
+- Note that if you want to reduce CUDA memory usage and computational overhead, you could directly add --amp on the tail of the above commands. The model under this setting will be trained in fp16 mode.
+- [choice] Train for nuScenes with single GPU
 
 ```sh
 python tools/detection3d/train.py projects/BEVFusion/configs/nuscenes/bevfusion_lidar-cam_voxel0075_second_secfpn_1xb2-cyclic-20e_nus-3d.py --cfg-options load_from=${LIDAR_PRETRAINED_CHECKPOINT} model.img_backbone.init_cfg.checkpoint=${IMAGE_PRETRAINED_BACKBONE}
