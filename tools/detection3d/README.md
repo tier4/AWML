@@ -65,10 +65,10 @@ docker run -it --rm --gpus '"device=1"' --name autoware-ml --shm-size=64g -d -v 
 tensorboard --logdir work_dirs --bind_all
 ```
 
-## 4. Visualization
+### 3.4. Visualization
 
 TBD
 
-## 5. Deploy
+## 4. Deploy
 
 See each projects

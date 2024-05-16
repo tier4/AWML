@@ -1,6 +1,7 @@
 # autoware-ml
 
-This repository is machine learning library for [Autoware](https://github.com/autowarefoundation/autoware).
+This repository is machine learning library for [Autoware](https://github.com/autowarefoundation/autoware) based on [OpenMMLab library](https://github.com/open-mmlab).
+`autoware-ml` support training with [T4dataset format](https://github.com/tier4/tier4_perception_dataset) in addition to open dataset.
 
 ## Environment
 ### Supported environment
@@ -44,9 +45,10 @@ DOCKER_BUILDKIT=1 docker build -t autoware-ml .
 
 ## Docs
 
-- [Design docs](docs/design.md): If you want to know the design of `autoware-ml`, please see this document
-- [Contribution](docs/contribution.md): If you want to contribute for `autoware-ml`, please see this document
-- [Release note](docs/release_note.md)
+- [Design docs](/docs/design.md): If you want to know the design of `autoware-ml`, please see this document
+- [Contribution](/docs/contribution.md): If you want to contribute for `autoware-ml`, please see this document
+- [Dataset docs](/docs/dataset.md)
+- [Release note](/docs/release_note.md)
 
 ## Supported tool
 

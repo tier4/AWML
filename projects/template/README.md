@@ -26,7 +26,9 @@ TBD
 ## Results and models
 ### NuScenes
 
-TBD
+|       | mAP | Car | Truck | CV  | Bus | Tra | Bar | Mot | Bic | Ped | Cone |
+| ----- | --- | --- | ----- | --- | --- | --- | --- | --- | --- | --- | ---- |
+| model |     |     |       |     |     |     |     |     |     |     |      |
 
 ### T4 dataset
 

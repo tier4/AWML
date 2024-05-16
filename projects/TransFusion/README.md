@@ -86,21 +86,13 @@ python projects/TransFusion/scripts/fix_graph.py end2end.onnx
 ## Results and models
 ### NuScenes
 
-- LiDAR only model (pillar)
+|                        | mAP  | Car  | Truck | CV   | Bus  | Tra  | Bar  | Mot  | Bic  | Ped  | Cone |
+| ---------------------- | ---- | ---- | ----- | ---- | ---- | ---- | ---- | ---- | ---- | ---- | ---- |
+| TransFusion-L (pillar) | 55.0 | 85.6 | 54.8  | 14.6 | 71.1 | 33.0 | 58.7 | 49.5 | 32.7 | 79.5 | 56.8 |
 
-```
-car_AP_dist_1.0: 0.8560
-truck_AP_dist_1.0: 0.5484
-construction_vehicle_AP_dist_1.0: 0.1463
-bus_AP_dist_1.0: 0.7105
-trailer_AP_dist_1.0: 0.3302
-barrier_AP_dist_1.0: 0.5871
-motorcycle_AP_dist_1.0: 0.4949
-bicycle_AP_dist_1.0: 0.3265
-pedestrian_AP_dist_1.0: 0.7946
-traffic_cone_AP_dist_1.0: 0.5678
-mAP: 0.5501
-```
+- LiDAR only model (pillar)
+  - model: TBD
+  - logs: TBD
 
 ### T4 dataset
 

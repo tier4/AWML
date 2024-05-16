@@ -69,42 +69,17 @@ TBD
 
 ## Results and models
 ### NuScenes
+|                       | mAP  | Car  | Truck | CV   | Bus  | Tra  | Bar  | Mot  | Bic  | Ped  | Cone |
+| --------------------- | ---- | ---- | ----- | ---- | ---- | ---- | ---- | ---- | ---- | ---- | ---- |
+| BEVFusion-L (spconv)  | 64.6 | 87.7 | 59.7  | 19.3 | 72.8 | 40.9 | 70.0 | 72.0 | 54.7 | 86.5 | 73.9 |
+| BEVFusion-CL (spconv) | 66.1 | 88.3 | 53.6  | 21.8 | 73.3 | 38.1 | 72.4 | 76.2 | 61.2 | 87.4 | 78.0 |
 
 - [LiDAR only model (spconv, voxel 0.075)](./configs/bevfusion_lidar_voxel0075_second_secfpn_1xb1-cyclic-20e_nus-3d.py)
   - [model](https://download.openmmlab.com/mmdetection3d/v1.1.0_models/bevfusion/bevfusion_lidar_voxel0075_second_secfpn_8xb4-cyclic-20e_nus-3d-2628f933.pth)
   - [logs](https://download.openmmlab.com/mmdetection3d/v1.1.0_models/bevfusion/bevfusion_lidar_voxel0075_second_secfpn_8xb4-cyclic-20e_nus-3d_20230322_053447.log)
-
-```
-car_AP_dist_1.0: 0.8771
-truck_AP_dist_1.0: 0.5971
-construction_vehicle_AP_dist_1.0: 0.1929
-bus_AP_dist_1.0: 0.7284
-trailer_AP_dist_1.0: 0.4088
-barrier_AP_dist_1.0: 0.7009
-motorcycle_AP_dist_1.0: 0.7197
-bicycle_AP_dist_1.0: 0.5468
-pedestrian_AP_dist_1.0: 0.8648
-traffic_cone_AP_dist_1.0: 0.7388
-mAP: 0.6485
-```
-
 - [Camera-LiDAR model (spconv, voxel 0.075)](./configs/bevfusion_lidar-cam_voxel0075_second_secfpn_1xb1-cyclic-20e_nus-3d.py)
   - [model](https://download.openmmlab.com/mmdetection3d/v1.1.0_models/bevfusion/bevfusion_lidar-cam_voxel0075_second_secfpn_8xb4-cyclic-20e_nus-3d-5239b1af.pth)
   - [logs](https://download.openmmlab.com/mmdetection3d/v1.1.0_models/bevfusion/bevfusion_lidar-cam_voxel0075_second_secfpn_8xb4-cyclic-20e_nus-3d_20230524_001539.log)
-
-```
-car_AP_dist_1.0: 0.8828
-truck_AP_dist_1.0: 0.5359
-construction_vehicle_AP_dist_1.0: 0.2179
-bus_AP_dist_1.0: 0.7329
-trailer_AP_dist_1.0: 0.3807
-barrier_AP_dist_1.0: 0.7235
-motorcycle_AP_dist_1.0: 0.7621
-bicycle_AP_dist_1.0: 0.6124
-pedestrian_AP_dist_1.0: 0.8738
-traffic_cone_AP_dist_1.0: 0.7803
-mAP: 0.6609
-```
 
 ### T4 dataset
 
