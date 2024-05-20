@@ -33,13 +33,13 @@ docker run -it --rm --gpus all --shm-size=64g --name awml -p 6006:6006 -v $PWD/:
 - [choice] Make info files for T4dataset XX1
 
 ```sh
-python tools/detection3d/create_data_t4dataset.py t4xx1  --root_path ./data/t4dataset --max_sweeps 2 --dataset_config autoware_ml/configs/detection3d/dataset/t4dataset/database_v1_1.yaml
+python tools/detection3d/create_data_t4dataset.py --root_path ./data/t4dataset --config autoware_ml/configs/detection3d/dataset/t4dataset/xx1.py --version xx1 --max_sweeps 2 --out_dir ./data/t4dataset/info/user_name
 ```
 
 - [choice] Make info files for T4dataset X2
 
 ```sh
-python tools/detection3d/create_data_t4dataset.py t4xx1  --root_path ./data/t4dataset --max_sweeps 2 --dataset_config autoware_ml/configs/detection3d/dataset/t4dataset/database_v3_0.yaml
+TBD
 ```
 
 ## 3. Train and evaluation
@@ -48,12 +48,21 @@ python tools/detection3d/create_data_t4dataset.py t4xx1  --root_path ./data/t4da
 - You can change batchsize by file name.
 - If you use custom pkl file, you need to change pkl file from `nuscenes_infos_train.pkl`.
 
-### 3.2 Training
+### 3.2 Training and evaluation
 
-- You can use docker command for training as below.
+- Training and evaluation in general by below command.
   - See each [projects](projects) for detail command of training and evaluation.
 
+```sh
+# Trainging
+python tools/detection3d/train.py {config_file}
+# Evaluation
+python tools/detection3d/test.py {config_file} {checkpoint_file}
 ```
+
+- You can use docker command for training as below.
+
+```sh
 docker run -it --rm --gpus '"device=1"' --name autoware-ml --shm-size=64g -d -v $PWD/:/workspace -v $PWD/data:/workspace/data autoware-ml bash -c '<command for each projects>'
 ```
 

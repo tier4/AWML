@@ -3,7 +3,6 @@ from typing import Dict, List, Optional, Tuple, Union
 
 import mmengine
 from mmdet3d.evaluation.metrics import NuScenesMetric
-
 # from autoware_ml.registry import METRICS, TRANSFORMS
 from mmdet3d.registry import METRICS, TRANSFORMS
 from mmengine import ConfigDict, load
@@ -12,34 +11,23 @@ from nuscenes import NuScenes
 from nuscenes.eval.common.data_classes import EvalBoxes
 
 from autoware_ml.detection3d.evaluation.utils.eval import (
-    BaseNameMapping,
-    T4DetectionConfig,
-    T4DetectionEvaluation,
-    print_metrics_table,
-    t4metric_load_gt,
-    t4metric_load_prediction,
-    validate_model_output_mapping,
-)
+    BaseNameMapping, T4DetectionConfig, T4DetectionEvaluation,
+    print_metrics_table, t4metric_load_gt, t4metric_load_prediction)
 
 __all__ = ["T4Metric"]
 
 # temp
 import tempfile
 from os import path as osp
-from typing import Dict, List, Optional, Sequence, Tuple, Union
+from typing import Dict, List, Optional, Tuple, Union
 
 import mmengine
 import numpy as np
 import pyquaternion
-import torch
 from mmdet3d.models.layers import box3d_multiclass_nms
 from mmdet3d.registry import METRICS
-from mmdet3d.structures import (
-    CameraInstance3DBoxes,
-    LiDARInstance3DBoxes,
-    bbox3d2result,
-    xywhr2xyxyr,
-)
+from mmdet3d.structures import (CameraInstance3DBoxes, LiDARInstance3DBoxes,
+                                bbox3d2result, xywhr2xyxyr)
 from mmengine import Config, load
 from mmengine.evaluator import BaseMetric
 from mmengine.logging import MMLogger
@@ -100,7 +88,6 @@ class T4Metric(NuScenesMetric):
         class_names: List[str] = [],
         eval_class_range: Optional[Dict[str, int]] = None,
         default_range_value: int = 75,
-        name_mapping: Optional[ConfigDict] = None,  # type should be derived from BaseNameMapping
         model_mapping: Optional[dict] = None,
         data_mapping: Optional[dict] = None,
         version: str = "",
@@ -123,8 +110,8 @@ class T4Metric(NuScenesMetric):
         # this ensures that every class has a range associated with it
         if self.data_mapping is not None:
             self.class_names = [self.data_mapping.get(name, name) for name in self.class_names]
-        if self.model_mapping is not None:
-            validate_model_output_mapping(self.model_mapping, self.class_names)
+        #if self.model_mapping is not None:
+        #    validate_model_output_mapping(self.model_mapping, self.class_names)
         if eval_class_range is None:
             eval_class_range = {name: default_range_value for name in self.class_names}
         else:
@@ -138,11 +125,12 @@ class T4Metric(NuScenesMetric):
         self.scene_tokens, self.directory_names = self._get_scene_info(self.data_infos)
         self.loaded_scenes = self._load_subsets()
         self.eval_detection_configs = self._get_nusc_eval_config()
-        if name_mapping:
-            # TODO: Add check that config dict contains valid type
-            self.name_mapping = TRANSFORMS.build(name_mapping)
-        else:
-            self.name_mapping = None
+        self.name_mapping = None
+        #if name_mapping:
+        #    # TODO: Add check that config dict contains valid type
+        #    self.name_mapping = TRANSFORMS.build(name_mapping)
+        #else:
+        #    self.name_mapping = None
 
     def _get_nusc_eval_config(self):
         # Note: same as the default values except class_range.
@@ -170,17 +158,18 @@ class T4Metric(NuScenesMetric):
         self.existing_dirs = []
         self.existing_scenes = []
         for directory, scene_token in zip(self.directory_names, self.scene_tokens):
-            path = os.path.join(self.data_root, directory, "annotation")
-            if os.path.exists(path):
+            scene_directory_path = os.path.join(self.data_root, directory)
+
+            if os.path.exists(scene_directory_path):
                 loaded_dirs[scene_token] = NuScenes(
-                    version=self.version,
-                    dataroot=os.path.join(self.data_root, directory, "annotation"),
+                    version="annotation",
+                    dataroot=scene_directory_path,
                     verbose=False,
                 )
                 self.existing_dirs.append(directory)
                 self.existing_scenes.append(scene_token)
             else:
-                print(f"Skipped non-existing {path} in {self.__class__.__name__}")
+                print(f"Skipped non-existing {scene_directory_path} in {self.__class__.__name__}")
         self.directory_names = self.existing_dirs
         self.scene_tokens = self.existing_scenes
 
@@ -200,7 +189,10 @@ class T4Metric(NuScenesMetric):
         directories = []
         for info in data_infos:
             scene_token = info["scene_token"]
-            directory = info["lidar_points"]["lidar_path"].split("/")[-4]
+            # ['database_v1_0', '3a13032b-6045-4db4-8632-9c52c3dd2fd9', 'data', 'LIDAR_CONCAT', '98.pcd.bin']
+            directory_list = info["lidar_points"]["lidar_path"].split("/")
+            # 'database_v1_0/3a13032b-6045-4db4-8632-9c52c3dd2fd9'
+            directory = osp.join(*directory_list[0:2])
             if directory not in directories:
                 scene_tokens.append(scene_token)
                 directories.append(directory)
@@ -217,13 +209,7 @@ class T4Metric(NuScenesMetric):
             the metrics, and the values are corresponding results.
         """
         logger: MMLogger = MMLogger.get_current_instance()
-
         result_dict, tmp_dir = self.format_results(results, self.class_names, self.jsonfile_prefix)
-
-        if self.model_mapping is not None:
-            for key in result_dict:
-                result_dict[key] = result_dict[key]
-
         metric_dict = {}
 
         if self.format_only and self.jsonfile_prefix:
@@ -232,19 +218,20 @@ class T4Metric(NuScenesMetric):
 
         all_preds = EvalBoxes()
         all_gts = EvalBoxes()
-        for metric in self.metrics:
-            for scene in self.scene_tokens:
-                ap_dict, preds, gts = self.t4_evaluate(
-                    scene, result_dict, classes=self.class_names, metric=metric, logger=logger
-                )
-                all_preds = concatenate_eval_boxes(all_preds, preds)
-                all_gts = concatenate_eval_boxes(all_gts, gts)
 
-            ap_dict = self.t4_evaluate_all_scenes(
-                result_dict, all_preds, all_gts, self.class_names, metric, logger=logger
+        for scene in self.scene_tokens:
+            ap_dict, preds, gts = self.t4_evaluate(
+                scene, result_dict, classes=self.class_names
             )
-            for result in ap_dict:
-                metric_dict[result] = ap_dict[result]
+
+            all_preds = concatenate_eval_boxes(all_preds, preds)
+            all_gts = concatenate_eval_boxes(all_gts, gts)
+
+        ap_dict = self.t4_evaluate_all_scenes(
+            result_dict, all_preds, all_gts, self.class_names, logger
+        )
+        for result in ap_dict:
+            metric_dict[result] = ap_dict[result]
 
         if tmp_dir is not None:
             tmp_dir.cleanup()
@@ -256,8 +243,6 @@ class T4Metric(NuScenesMetric):
         preds: EvalBoxes,
         gts: EvalBoxes,
         classes: List[str],
-        # TODO(boczekbartek): remove unused arguments
-        metric: str,
         logger: MMLogger,
     ) -> Dict[str, float]:
         all_detail = dict()
@@ -295,8 +280,6 @@ class T4Metric(NuScenesMetric):
         scene_token: str,
         result_dict: dict,
         classes: List[str],
-        metric: str,
-        logger: MMLogger,
     ) -> Tuple[Dict[str, float], EvalBoxes, EvalBoxes]:
         """Evaluate the results in T4 format.
 
@@ -304,7 +287,6 @@ class T4Metric(NuScenesMetric):
             scene_token (str): The scene token.
             result_dict (dict): Formatted results of the dataset.
             classes (List[str]): The class names.
-            metric (str): The metric to be evaluated.
             logger (MMLogger): The logger.
 
         Returns:
@@ -315,7 +297,7 @@ class T4Metric(NuScenesMetric):
         all_gts = EvalBoxes()
         for name in result_dict:
             ret_dict, preds, gts = self._evaluate_scene(
-                scene_token, result_dict[name], classes=classes, result_name=name, logger=logger
+                scene_token, result_dict[name], classes=classes
             )
             all_preds = concatenate_eval_boxes(all_preds, preds)
             all_gts = concatenate_eval_boxes(all_gts, gts)
@@ -326,9 +308,7 @@ class T4Metric(NuScenesMetric):
         self,
         scene_token: str,
         result_path: str,
-        logger: MMLogger,
         classes: Optional[List[str]] = None,
-        result_name: str = "pred_instances_3d",
     ) -> Tuple[Dict[str, float], EvalBoxes, EvalBoxes]:
         """Evaluation for a single model in nuScenes protocol.
 
@@ -357,7 +337,6 @@ class T4Metric(NuScenesMetric):
             name_mapping=self.name_mapping,
             post_mapping_dict=self.data_mapping,
         )
-
         preds, _ = t4metric_load_prediction(
             nusc,
             self.eval_detection_configs,
@@ -379,18 +358,11 @@ class T4Metric(NuScenesMetric):
             prediction_boxes=preds,
         )
         _, metrics_table = evaluator.run_and_save_eval()
-        # print_log(f"==== {scene_token} ====", logger)
-        # print_metrics_table(
-        #     metrics_table["header"],
-        #     metrics_table["data"],
-        #     metrics_table["total_mAP"],
-        #     type(self).__name__,
-        #     logger,
-        # )
 
         # record metrics
         metrics = load(os.path.join(output_dir, "metrics_summary.json"))
         detail = self._create_detail(metrics, classes)
+
         return detail, preds, gt_boxes
 
     def _create_detail(self, metrics: dict, classes: Optional[List[str]]) -> Dict[str, float]:

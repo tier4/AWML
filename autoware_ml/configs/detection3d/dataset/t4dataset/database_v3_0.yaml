@@ -1,3 +1,5 @@
+version: 3.0
+
 train:
   - 36d1f7f5-b3a5-448d-b404-9fa437eae18d # DBv2.0_1-1
   - 5ed60909-6523-428a-9f97-4d5845615945 # DBv2.0_nishi_shinjuku_1-2

@@ -38,6 +38,7 @@ ln -s {path_to_dataset} data
 ```
 
 - Build docker
+  - Note that this process need for long time.
 
 ```sh
 DOCKER_BUILDKIT=1 docker build -t autoware-ml .

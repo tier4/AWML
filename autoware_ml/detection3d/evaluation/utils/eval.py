@@ -210,11 +210,11 @@ class T4DetectionEvaluation(DetectionEval):
             "AP@1.0m",
             "AP@2.0m",
             "AP@4.0m",
-            "error@trans_err",
-            "error@scale_err",
-            "error@orient_err",
-            "error@vel_err",
-            "error@attr_err",
+            #"error@trans_err",
+            #"error@scale_err",
+            #"error@orient_err",
+            #"error@vel_err",
+            #"error@attr_err",
         ]
         data = []
         class_aps = metrics_summary["mean_dist_aps"]
@@ -224,16 +224,16 @@ class T4DetectionEvaluation(DetectionEval):
             data.append(
                 [
                     class_name,
-                    "{:.3g}".format(class_aps[class_name]),
-                    "{:.3g}".format(label_aps[class_name][0.5]),
-                    "{:.3g}".format(label_aps[class_name][1.0]),
-                    "{:.3g}".format(label_aps[class_name][2.0]),
-                    "{:.3g}".format(label_aps[class_name][4.0]),
-                    "{:.3g}".format(class_tps[class_name]["trans_err"]),
-                    "{:.3g}".format(class_tps[class_name]["scale_err"]),
-                    "{:.3g}".format(class_tps[class_name]["orient_err"]),
-                    "{:.3g}".format(class_tps[class_name]["vel_err"]),
-                    "{:.3g}".format(class_tps[class_name]["attr_err"]),
+                    "{:.1f}".format(class_aps[class_name] * 100.0),
+                    "{:.1f}".format(label_aps[class_name][0.5] * 100.0),
+                    "{:.1f}".format(label_aps[class_name][1.0] * 100.0),
+                    "{:.1f}".format(label_aps[class_name][2.0] * 100.0),
+                    "{:.1f}".format(label_aps[class_name][4.0] * 100.0),
+                    #"{:.3g}".format(class_tps[class_name]["trans_err"]),
+                    #"{:.3g}".format(class_tps[class_name]["scale_err"]),
+                    #"{:.3g}".format(class_tps[class_name]["orient_err"]),
+                    #"{:.3g}".format(class_tps[class_name]["vel_err"]),
+                    #"{:.3g}".format(class_tps[class_name]["attr_err"]),
                 ]
             )
         metrics_table = {
@@ -273,8 +273,10 @@ def print_metrics_table(
 
     # Format header
     header_str = (
-        "| " + " | ".join(header[i].ljust(col_widths[i]) for i in range(len(header))) + " |"
+        "| " + " | ".join(header[i].ljust(col_widths[i]) for i in range(len(header))) + " |\n"
     )
+    # Format table_middle
+    table_middle_str = "|" + " ---- |" * len(header) + "\n"
 
     # Format data rows
     rows = []
@@ -282,18 +284,19 @@ def print_metrics_table(
         row_str = (
             "| "
             + " | ".join("{{:<{}}}".format(col_widths[i]).format(row[i]) for i in range(len(row)))
-            + " |"
+            + " |\n"
         )
         rows.append(row_str)
 
     # Print table
-    print_log(f"------------- {metric_name} results -------------")
-    print_log(header_str, logger)
-    print_log("|" + "-" * (sum(col_widths) + len(header) * 3 - 1) + "|", logger)
+    print_str = f"\n------------- {metric_name} results -------------\n"
+    print_str += header_str
+    print_str += table_middle_str
     for line in rows:
-        print_log(line, logger)
+        print_str += line
     if total_mAP != "":
-        print_log(f"| Total mAP: {total_mAP}", logger)
+        print_str += f"\nTotal mAP: {total_mAP}"
+    print_log(print_str, logger)
 
 
 # modified version from https://github.com/nutonomy/nuscenes-devkit/blob/9b165b1018a64623b65c17b64f3c9dd746040f36/python-sdk/nuscenes/eval/common/loaders.py#L53
@@ -303,8 +306,10 @@ def t4metric_load_gt(
     config: DetectionConfig,
     scene: str,
     verbose: bool = False,
-    name_mapping: Optional[BaseNameMapping] = None,
+    #name_mapping: Optional[BaseNameMapping] = None,
+    name_mapping = None,
     post_mapping_dict: Optional[Dict[str, str]] = None,
+    filter_attributions = [["vehicle.bicycle", "vehicle_state.parked"], ["vehicle.motorcycle", "vehicle_state.parked"]]
 ) -> EvalBoxes:
     """
     Loads ground truth boxes from DB.
@@ -346,8 +351,18 @@ def t4metric_load_gt(
                 attribute_name = get_attr_name(nusc, sample_annotation)
             except ValueError:
                 attribute_name = ""
-            if name_mapping:
-                detection_name = name_mapping.map_name(detection_name, attribute_name, scene_name)
+
+            # if name_mapping:
+            #     #detection_name = name_mapping.map_name(detection_name, attribute_name, scene_name)
+
+            if filter_attributions:
+                is_filter = False
+
+                for filter_attribution in filter_attributions:
+                    if detection_name == filter_attribution[0] and attribute_name == filter_attribution[1]:
+                        is_filter = True
+                if is_filter is True:
+                    continue
 
             if post_mapping_dict:
                 detection_name = post_mapping_dict.get(detection_name, detection_name)
@@ -368,7 +383,6 @@ def t4metric_load_gt(
                     detection_score=-1.0,  # GT samples do not have a score.
                 )
             )
-
         all_annotations.add_boxes(sample_token, sample_boxes)
 
     if verbose:
@@ -384,7 +398,6 @@ def t4metric_load_gt(
     if verbose:
         print("Filtering ground truth annotations")
     all_annotations = filter_eval_boxes(nusc, all_annotations, config.class_range, verbose=verbose)
-
     return all_annotations
 
 
@@ -461,6 +474,7 @@ def map_detection_names(
     :param post_mapping_dict: A dictionary to map detection names after the name mapping. Optional
     :return: The mapped boxes.
     """
+
     if name_mapping is not None:
         for sample_token in boxes["results"]:
             for box in boxes["results"][sample_token]:
@@ -612,12 +626,6 @@ def filter_eval_boxes(
 
     return eval_boxes
 
-
-def validate_model_output_mapping(model_mapping: dict, class_names: List[str]):
-    for val in model_mapping.values():
-        assert (
-            val in class_names
-        ), f"Invalid class name {val} in model mapping\n model mapping must map onto classes in class names (after data mapping)"
 
 def get_attr_name(nusc: NuScenes, anno: dict, attr_categories_mapper=lambda x: x) -> str:
     if len(anno["attribute_tokens"]) == 0:

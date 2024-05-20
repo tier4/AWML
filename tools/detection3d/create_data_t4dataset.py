@@ -6,25 +6,18 @@ from typing import Dict, List, Optional
 
 import mmengine
 import yaml
+from mmengine.config import Config
 from mmengine.logging import print_log
 from nuscenes import NuScenes
 
-from autoware_ml.detection3d.datasets import camera_types, classes
-from autoware_ml.detection3d.datasets.name_mappings import get_mapping
 from tools.detection3d.t4dataset_converters.t4converter import (
-    extract_nuscenes_data,
-    get_annotations,
-    get_ego2global,
-    get_lidar_points_info,
-    get_lidar_sweeps_info,
-)
-from tools.detection3d.t4dataset_converters.t4dataset_converter import get_lidar_token
+    extract_nuscenes_data, get_annotations, get_ego2global,
+    get_lidar_points_info, get_lidar_sweeps_info)
+from tools.detection3d.t4dataset_converters.t4dataset_converter import \
+    get_lidar_token
 from tools.detection3d.t4dataset_converters.update_infos_to_v2 import (
-    get_empty_lidar_points,
-    get_empty_radar_points,
-    get_empty_standard_data_info,
-    get_single_image_sweep,
-)
+    get_empty_lidar_points, get_empty_radar_points,
+    get_empty_standard_data_info, get_single_image_sweep)
 
 
 def get_empty_standard_data_info(camera_types=["CAM0", "CAM1", "CAM2", "CAM3", "CAM4"]):
@@ -57,13 +50,13 @@ def get_empty_standard_data_info(camera_types=["CAM0", "CAM1", "CAM2", "CAM3", "
 
 def t4dataset_data_prep(
     root_path: str,
-    info_prefix: str,
     version: str,
     out_dir: str,
+    dataset_version_list: List[str],
+    class_names: List[str],
+    name_mapping: List[str],
+    camera_types: List[str],
     max_sweeps: int = 1,
-    dataset_config: Optional[str] = None,
-    overwrite_root_path: Optional[str] = None,
-    use_2d_annotation=False,
 ):
     """Prepare data related to nuScenes dataset.
     Related data consists of '.pkl' files recording basic infos,
@@ -75,101 +68,79 @@ def t4dataset_data_prep(
         out_dir (str): Output directory of the groundtruth database info.
         max_sweeps (int): Number of input consecutive frames. Default: 1
     """
-    assert any(
-        [
-            version
-            in (
-                "t4xx1",
-                "t4x2",
-                "t4xx1_uc2",
-            ),
-        ]
-    ), f"unexpected version: {version}"
-
-    in_dir = osp.join(root_path, version)
-    assert osp.exists(in_dir), f"{in_dir} doesn't exist"
-
-    assert dataset_config is not None, "--dataset_config must be specified."
-
-    out_dir = osp.join(out_dir, version)
-
-    with open(dataset_config, "r") as f:
-        dataset_config_dict: Dict[str, List[str]] = yaml.safe_load(f)
-
     t4_infos = {
         "train": [],
         "val": [],
         "test": [],
     }
+    metainfo = dict(classes=class_names, version=version)
 
-    name_mapping: Dict[str, str] = get_mapping(version)
+    for dataset_version in dataset_version_list:
+        dataset_version_config_root = "autoware_ml/configs/detection3d/dataset/t4dataset/"
+        dataset_list = osp.join(dataset_version_config_root, dataset_version + ".yaml")
+        with open(dataset_list, "r") as f:
+            dataset_list_dict: Dict[str, List[str]] = yaml.safe_load(f)
 
-    cameras = camera_types.T4DATASET
+        for split in ["train", "val", "test"]:
+            print_log(f"Creating data info for split: {split}", logger="current")
+            for scene_id in dataset_list_dict.get(split, []):
+                scene_dir = osp.join(root_path, dataset_version, scene_id)
+                if not osp.isdir(scene_dir):
+                    raise ValueError(f"{scene_dir} does not exist.")
 
-    do_not_check_valid_flag = version in ["t4xx1_uc2"]
+                nusc = NuScenes(version="annotation", dataroot=scene_dir, verbose=False)
 
-    metainfo = dict(classes=classes.T4DATASET, version=version)
-
-    for split in ["train", "val", "test"]:
-        print_log(f"Creating data info for split: {split}", logger="current")
-        for scene_id in dataset_config_dict.get(split, []):
-            scene_dir = osp.join(root_path, version, scene_id)
-            if not osp.isdir(scene_dir):
-                raise ValueError(f"{scene_dir} does not exist.")
-
-            nusc = NuScenes(version="annotation", dataroot=scene_dir, verbose=False)
-
-            for i, sample in enumerate(nusc.sample):
-                lidar_token = get_lidar_token(sample)
-                if lidar_token is None:
-                    print_log(
-                        f"sample {sample['token']} doesn't have lidar", level=logging.WARNING
-                    )
-                    continue
-                (
-                    pose_record,
-                    cs_record,
-                    sd_record,
-                    scene_record,
-                    log_record,
-                    boxes,
-                    lidar_path,
-                    e2g_r_mat,
-                    l2e_r_mat,
-                ) = extract_nuscenes_data(nusc, sample, lidar_token)
-
-                info = get_empty_standard_data_info(cameras)
-
-                basic_info = dict(
-                    sample_idx=i,
-                    token=sample["token"],
-                    timestamp=sample["timestamp"] / 1e6,
-                    scene_token=sample["scene_token"],
-                    location=log_record["location"],
-                    scene_name=scene_record["name"],
-                )
-
-                for new_info in [
-                    basic_info,
-                    get_ego2global(pose_record),
-                    get_lidar_points_info(lidar_path, cs_record),
-                    get_lidar_sweeps_info(nusc, cs_record, pose_record, sd_record, max_sweeps),
-                    get_annotations(
-                        nusc,
-                        sample["anns"],
+                for i, sample in enumerate(nusc.sample):
+                    lidar_token = get_lidar_token(sample)
+                    if lidar_token is None:
+                        print_log(
+                            f"sample {sample['token']} doesn't have lidar",
+                            level=logging.WARNING,
+                        )
+                        continue
+                    (
+                        pose_record,
+                        cs_record,
+                        sd_record,
+                        scene_record,
+                        log_record,
                         boxes,
+                        lidar_path,
                         e2g_r_mat,
                         l2e_r_mat,
-                        name_mapping,
-                        classes.T4DATASET,
-                        do_not_check_valid_flag,
-                    ),
-                ]:
-                    info.update(new_info)
-                t4_infos[split].append(info)
+                    ) = extract_nuscenes_data(nusc, sample, lidar_token)
 
+                    info = get_empty_standard_data_info(camera_types)
+
+                    basic_info = dict(
+                        sample_idx=i,
+                        token=sample["token"],
+                        timestamp=sample["timestamp"] / 1e6,
+                        scene_token=sample["scene_token"],
+                        location=log_record["location"],
+                        scene_name=scene_record["name"],
+                    )
+
+                    for new_info in [
+                        basic_info,
+                        get_ego2global(pose_record),
+                        get_lidar_points_info(lidar_path, cs_record),
+                        get_lidar_sweeps_info(
+                            nusc, cs_record, pose_record, sd_record, max_sweeps
+                        ),
+                        get_annotations(
+                            nusc,
+                            sample["anns"],
+                            boxes,
+                            e2g_r_mat,
+                            l2e_r_mat,
+                            name_mapping,
+                            class_names,
+                        ),
+                    ]:
+                        info.update(new_info)
+                    t4_infos[split].append(info)
     assert sum(len(split) for split in t4_infos.values()) > 0, "dataset isn't available"
-
     print(
         f"train sample: {len(t4_infos['train'])}, "
         f"val sample: {len(t4_infos['val'])}, "
@@ -177,7 +148,7 @@ def t4dataset_data_prep(
     )
 
     def save(_infos, _split):
-        _info_path = osp.join(out_dir, f"{info_prefix}_infos_{_split}.pkl")
+        _info_path = osp.join(out_dir, f"t4dataset_{version}_infos_{_split}.pkl")
         mmengine.dump(dict(data_list=_infos, metainfo=metainfo), _info_path)
 
     save(t4_infos["train"], "train")
@@ -188,9 +159,13 @@ def t4dataset_data_prep(
 
 
 def parse_args():
-    parser = argparse.ArgumentParser(description="Data converter")
-
-    parser.add_argument("version", help="name of the dataset")
+    parser = argparse.ArgumentParser(description="Create data info for T4dataset")
+    parser.add_argument(
+        "--config",
+        type=str,
+        required=True,
+        help="config for T4dataset",
+    )
     parser.add_argument(
         "--root_path",
         type=str,
@@ -198,96 +173,45 @@ def parse_args():
         help="specify the root path of dataset",
     )
     parser.add_argument(
+        "--version",
+        type=str,
+        required=True,
+        help="product version",
+    )
+    parser.add_argument(
         "--max_sweeps",
         type=int,
-        default=10,
-        help="[Optional]specify sweeps of lidar per example.(Default: 10)",
+        required=True,
+        help="specify sweeps of lidar per example",
     )
     parser.add_argument(
         "-o",
         "--out_dir",
         type=str,
-        help="[Optional]output directory of info file. if None, data/<dataset>",
-    )
-    parser.add_argument(
-        "--info_prefix",
-        type=str,
-        help="[Optional]prefix for info files. if None, <dataset>",
-    )
-    parser.add_argument(
-        "--workers",
-        type=int,
-        default=8,
-        help="[Optional]number of threads to be used in waymo conversion.(Default: 4)",
-    )
-    parser.add_argument(
-        "--overwrite_root_path",
-        type=str,
-        default=None,
-        help="specify the root path for sagemaker",
-    )
-    parser.add_argument(
-        "--use_2d_annotation",
-        action="store_true",
-        help="whether need to include 2d object annotation",
-    )
-    parser.add_argument(
-        "--save_image_in_waymo",
-        action="store_true",
-        help="whether need to save image in waymo info creation",
-    )
-    parser.add_argument(
-        "--dataset_config",
-        type=str,
-        default=None,
-        help="specify the dataset config",
+        required=True,
+        help="output directory of info file",
     )
     args = parser.parse_args()
     return args
 
 
-def process_dataset(
-    dataset: str,
-    root_path: str,
-    version: str,
-    max_sweeps: int,
-    out_dir: str,
-    info_prefix: str = None,
-    workers: int = 8,
-    overwrite_root_path: str = None,
-    use_2d_annotation: bool = False,
-    save_image_in_waymo: bool = False,
-    dataset_config: str = None,
-) -> None:
-    info_prefix = dataset if info_prefix is None else info_prefix
-    out_dir = os.path.join("data", dataset) if out_dir is None else out_dir
-    os.makedirs(out_dir, exist_ok=True)
-    t4dataset_data_prep(
-        root_path=root_path,
-        info_prefix=info_prefix,
-        version=version,
-        out_dir=out_dir,
-        max_sweeps=max_sweeps,
-        dataset_config=dataset_config,
-        overwrite_root_path=overwrite_root_path,
-        use_2d_annotation=use_2d_annotation,
-    )
-
-
 def main():
     args = parse_args()
-    process_dataset(
-        "t4dataset",
-        args.root_path,
-        args.version,
-        args.max_sweeps,
-        args.out_dir,
-        args.info_prefix,
-        args.workers,
-        args.overwrite_root_path,
-        args.use_2d_annotation,
-        args.save_image_in_waymo,
-        args.dataset_config,
+
+    # load config
+    cfg = Config.fromfile(args.config)
+
+    os.makedirs(args.out_dir, exist_ok=True)
+
+    t4dataset_data_prep(
+        root_path=args.root_path,
+        version=args.version,
+        out_dir=args.out_dir,
+        max_sweeps=args.max_sweeps,
+        dataset_version_list=cfg.dataset_version_list,
+        name_mapping=cfg.name_mapping,
+        class_names=cfg.class_names,
+        camera_types=cfg.camera_types,
     )
 
 

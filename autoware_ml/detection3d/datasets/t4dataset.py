@@ -15,11 +15,10 @@ from mmdet3d.datasets import NuScenesDataset
 from mmdet3d.evaluation.metrics.nuscenes_metric import output_to_nusc_box
 from mmdet3d.structures import LiDARInstance3DBoxes
 from mmengine.logging import print_log
-
-from autoware_ml.detection3d.datasets.class_mapping import map_dataset_classes
-from autoware_ml.detection3d.evaluation import hdl_utils, lyft_utils, nuscenes_utils
+from mmengine.registry import DATASETS
 
 
+@DATASETS.register_module()
 class T4Dataset(NuScenesDataset):
     """T4Dataset Dataset base class
 
@@ -33,33 +32,11 @@ class T4Dataset(NuScenesDataset):
     Apply _format_bboxes to the detection results.py
     """
 
-    # This is default classes of training target and can be overwritten
-    # by the config of `data.SPLIT.classes`.
-    CLASSES = (
-        "car",
-        "truck",
-        "bus",
-        "bicycle",
-        "pedestrian",
-    )
-    # To evaluate a model trained with waymo-open-dataset
-    SimpleClassNameMapping = {
-        "car": "car",
-        "truck": "car",
-        "bus": "car",
-        "construction_vehicle": "car",
-        "bicycle": "bicycle",
-        "motorcycle": "bicycle",
-        "pedestrian": "pedestrian",
-    }
+    # TODO move to variable
+    # METAINFO = {
+    #     'classes': ("car", "truck", "bus", "bicycle", "pedestrian")
+    # }
 
-    # --------------------------------------------------------------------------
-    # CAUTION!
-    # You can't change EVAL_CLASS_RANGE after T4Dataset.__init__
-    # These configs are loaded into NuScenesDataset in T4Dataset.__init__
-    # --------------------------------------------------------------------------
-    # These ranges are used for filtering the ground-truth and estimated objects for evaluation.
-    # This filtering is applied in format_results() and _format_bboxes() functions.
     EVAL_CLASS_RANGE = {
         "car": 75,
         "truck": 75,
@@ -80,8 +57,10 @@ class T4Dataset(NuScenesDataset):
 
     def __init__(
         self,
-        ignore_without_rider=False,
-        target_location: Optional[str] = None,
+        class_names,
+        metainfo,
+        #ignore_without_rider=False,
+        ignore_without_rider=True,
         evaluate_model_trained_with_waymo: bool = False,
         eval_class_range: Optional[dict] = None,
         **kwargs,
@@ -112,11 +91,12 @@ class T4Dataset(NuScenesDataset):
             - annotations_2d (dict[str, dict]):
         """
 
+        T4Dataset.METAINFO = metainfo
         super().__init__(**kwargs)
-
+        self.class_names = class_names
         # NOTE(yukke42): get_eval_class_range() must be before _get_nusc_eval_config().
         self.EVAL_CLASS_RANGE = self.get_eval_class_range(eval_class_range)
-        self.eval_detection_configs = self._get_nusc_eval_config()
+        #self.eval_detection_configs = self._get_nusc_eval_config()
         self.evaluate_model_trained_with_waymo = evaluate_model_trained_with_waymo
         self.ignore_without_rider = ignore_without_rider
 
@@ -127,16 +107,16 @@ class T4Dataset(NuScenesDataset):
         # - lidar_cuboid_odaiba_2hz
         # - x2_gsm8_v1-0_nishishinjuku_3d
         # - x2_gsm8_v1-0_glp-atsugi_3d
-        if target_location is not None:
-            data_info_size = len(self.data_infos)
-            self.data_infos = list(
-                filter(lambda info: info["location"] == target_location, self.data_infos)
-            )
-            print_log(
-                f"data_infos is filtered by location name of `{target_location}`:"
-                f" {data_info_size} -> {len(self.data_infos)}"
-            )
-            assert len(self.data_infos) > 0, f"No target location: {target_location}"
+        # if target_location is not None:
+        #     data_info_size = len(self.data_infos)
+        #     self.data_infos = list(
+        #         filter(lambda info: info["location"] == target_location, self.data_infos)
+        #     )
+        #     print_log(
+        #         f"data_infos is filtered by location name of `{target_location}`:"
+        #         f" {data_info_size} -> {len(self.data_infos)}"
+        #     )
+        #     assert len(self.data_infos) > 0, f"No target location: {target_location}"
 
     @classmethod
     def get_eval_class_range(cls, eval_class_range: Optional[dict] = None):
@@ -192,6 +172,7 @@ class T4Dataset(NuScenesDataset):
         if "instance_tokens" in info:
             instance_tokens = np.array(info["instance_tokens"])[mask]
 
+        # TODO
         # new class of motorcycle and bicycle
         # in t4dataset, bicycle with and without rider are annotated as `bicycle``
         # if not any(
@@ -212,9 +193,6 @@ class T4Dataset(NuScenesDataset):
 
         gt_labels_3d = []
         for cat in gt_names_3d:
-            if self.evaluate_model_trained_with_waymo:
-                cat = self.SimpleClassNameMapping.get(cat, "ignore")
-
             if cat in self.CLASSES:
                 gt_labels_3d.append(self.CLASSES.index(cat))
             else:
@@ -320,7 +298,7 @@ class T4Dataset(NuScenesDataset):
     def _get_nusc_eval_config(self):
         # Note: same as the default values except class_range.
         eval_config_dict = {
-            "class_names": self.CLASSES,
+            "class_names": self.class_names,
             "class_range": self.EVAL_CLASS_RANGE,
             "dist_fcn": "center_distance",
             "dist_ths": [0.5, 1.0, 2.0, 4.0],
@@ -1223,69 +1201,3 @@ def lidar_nusc_box_to_global(
         box.translate(np.array(info["ego2global_translation"]))
         box_list.append(box)
     return box_list
-
-
-if __name__ == "__main__":
-    import argparse
-
-    from awml_det3d.detection_3d.datasets import build_dataset
-    from awml_det3d.detection_3d.tools.utils import load_base_config
-    from mmengine import DictAction
-    from mmengine.fileio.io import load
-
-    parser = argparse.ArgumentParser(
-        description="Evaluation",
-        formatter_class=argparse.RawTextHelpFormatter,
-    )
-    parser.add_argument(
-        "config",
-        help="config file path",
-    )
-    parser.add_argument(
-        "result_path",
-        help="config file path",
-    )
-    parser.add_argument(
-        "--eval",
-        type=str,
-        nargs="+",
-        help=(
-            "evaluation metrics, which depends on the dataset, e.g., 'bbox', "
-            "'segm', 'proposal' for COCO, and 'mAP', 'recall' for PASCAL VOC"
-        ),
-    )
-    parser.add_argument(
-        "--cfg-options",
-        nargs="+",
-        action=DictAction,
-        help=(
-            "override some settings in the used config, the key-value pair "
-            "in xxx=yyy format will be merged into config file. If the value to "
-            'be overwritten is a list, it should be like key="[a,b]" or key=a,b '
-            'It also allows nested list/tuple values, e.g. key="[(a,b),(c,d)]" '
-            "Note that the quotation marks are necessary and that no white space "
-            "is allowed."
-        ),
-    )
-    parser.add_argument(
-        "--eval-options",
-        nargs="+",
-        action=DictAction,
-        help=(
-            "custom options for evaluation, the key-value pair in xxx=yyy "
-            "format will be kwargs for dataset.evaluate() function"
-        ),
-    )
-    args = parser.parse_args()
-
-    config = load_base_config(args.config, args.cfg_options)
-    dataset = build_dataset(config.data.test)
-    outputs = load(args.result_path)
-
-    kwargs = {} if args.eval_options is None else args.eval_options
-    eval_kwargs = config.get("evaluation", {}).copy()
-    # hard-code way to remove EvalHook args
-    for key in ["interval", "tmpdir", "startdir", "gpu_collect", "save_best", "rule"]:
-        eval_kwargs.pop(key, None)
-    eval_kwargs.update(dict(metric=args.eval, **kwargs))
-    print(dataset.evaluate(outputs, **eval_kwargs))

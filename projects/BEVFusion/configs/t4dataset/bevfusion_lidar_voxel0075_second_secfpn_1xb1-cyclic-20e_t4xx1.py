@@ -6,32 +6,21 @@ _base_ = [
 custom_imports = dict(imports=["projects.BEVFusion.bevfusion"], allow_failed_imports=False)
 custom_imports["imports"] += _base_.custom_imports["imports"]
 
-# voxel_size = [0.075, 0.075, 0.2]
 voxel_size = [0.18, 0.18, 0.2]
 voxel_size_test = [0.18, 0.18]
-# point_cloud_range = [-54.0, -54.0, -5.0, 54.0, 54.0, 3.0]
 point_cloud_range = [-129.6, -129.6, -5.0, 129.6, 129.6, 3.0]
-pc_range = [-129.6, -129.6]
-
-class_names = [
-    "car",
-    "truck",
-    "bus",
-    "bicycle",
-    "pedestrian",
-]
-num_class = len(class_names)
 point_load_dim = 5  # x, y, z, intensity, ring_id
 point_use_dim = 5
 point_intensity_dim = 3
+dataset_type = "T4Dataset"
+data_root = "data/t4dataset/"
+info_directory_path = "info/user_name/"
+max_epochs = 20
+evaluation = dict(interval=1)
 
-metainfo = dict(classes=class_names)
-dataset_type = "T4XX1Dataset"
-data_root = "data/t4dataset/t4xx1/"
 # no prefix for T4dataset
 data_prefix = dict(pts="", sweeps="")
 input_modality = dict(use_lidar=True, use_camera=False)
-
 backend_args = None
 
 model = dict(
@@ -82,7 +71,7 @@ model = dict(
         auxiliary=True,
         in_channels=512,
         hidden_channel=128,
-        num_classes=num_class,
+        num_classes=_base_.num_class,
         nms_kernel_size=3,
         bn_momentum=0.1,
         num_decoder_layers=1,
@@ -123,13 +112,13 @@ model = dict(
             grid_size=[1440, 1440, 41],
             out_size_factor=8,
             voxel_size=voxel_size_test,
-            pc_range=pc_range,
+            pc_range=point_cloud_range[0:2],
             nms_type=None,
         ),
         common_heads=dict(center=[2, 2], height=[1, 2], dim=[3, 2], rot=[2, 2], vel=[2, 2]),
         bbox_coder=dict(
             type="TransFusionBBoxCoder",
-            pc_range=pc_range,
+            pc_range=point_cloud_range[0:2],
             post_center_range=point_cloud_range,
             score_threshold=0.0,
             out_size_factor=8,
@@ -312,15 +301,13 @@ train_dataloader = dict(
         dataset=dict(
             type=dataset_type,
             data_root=data_root,
-            ann_file="t4dataset_infos_train.pkl",
+            ann_file= info_directory_path + "t4dataset_xx1_infos_train.pkl",
             pipeline=train_pipeline,
-            metainfo=metainfo,
+            metainfo=_base_.metainfo,
+            class_names=_base_.class_names,
             modality=input_modality,
             test_mode=False,
             data_prefix=data_prefix,
-            use_valid_flag=True,
-            # we use box_type_3d='LiDAR' in kitti and nuscenes dataset
-            # and box_type_3d='Depth' in sunrgbd and scannet dataset.
             box_type_3d="LiDAR",
         ),
     ),
@@ -329,14 +316,14 @@ val_dataloader = dict(
     batch_size=1,
     num_workers=1,
     persistent_workers=True,
-    drop_last=False,
     sampler=dict(type="DefaultSampler", shuffle=False),
     dataset=dict(
         type=dataset_type,
         data_root=data_root,
-        ann_file="t4dataset_infos_val.pkl",
+        ann_file= info_directory_path + "t4dataset_xx1_infos_val.pkl",
         pipeline=test_pipeline,
-        metainfo=metainfo,
+        metainfo=_base_.metainfo,
+        class_names=_base_.class_names,
         modality=input_modality,
         data_prefix=data_prefix,
         test_mode=True,
@@ -349,12 +336,13 @@ test_dataloader = val_dataloader
 val_evaluator = dict(
     type="T4Metric",
     data_root=data_root,
-    ann_file=data_root + "t4dataset_infos_val.pkl",
+    ann_file= data_root + info_directory_path + "t4dataset_xx1_infos_val.pkl",
     metric="bbox",
     backend_args=backend_args,
-    class_names=class_names,
-    data_mapping=_base_.data_mapping,
+    class_names=_base_.class_names,
+    data_mapping= _base_.name_mapping,
 )
+
 test_evaluator = val_evaluator
 
 vis_backends = [dict(type="LocalVisBackend")]
@@ -369,19 +357,19 @@ param_scheduler = [
     # lr * 1e-4
     dict(
         type="CosineAnnealingLR",
-        T_max=8,
+        T_max=16,
         eta_min=lr * 10,
         begin=0,
-        end=8,
+        end=16,
         by_epoch=True,
         convert_to_iter_based=True,
     ),
     dict(
         type="CosineAnnealingLR",
-        T_max=12,
+        T_max=24,
         eta_min=lr * 1e-4,
-        begin=8,
-        end=20,
+        begin=16,
+        end=max_epochs,
         by_epoch=True,
         convert_to_iter_based=True,
     ),
@@ -390,26 +378,26 @@ param_scheduler = [
     # during the next 12 epochs, momentum increases from 0.85 / 0.95 to 1
     dict(
         type="CosineAnnealingMomentum",
-        T_max=8,
+        T_max=16,
         eta_min=0.85 / 0.95,
         begin=0,
-        end=8,
+        end=16,
         by_epoch=True,
         convert_to_iter_based=True,
     ),
     dict(
         type="CosineAnnealingMomentum",
-        T_max=12,
+        T_max=24,
         eta_min=1,
-        begin=8,
-        end=20,
+        begin=16,
+        end=max_epochs,
         by_epoch=True,
         convert_to_iter_based=True,
     ),
 ]
 
 # runtime settings
-train_cfg = dict(by_epoch=True, max_epochs=20, val_interval=5)
+train_cfg = dict(by_epoch=True, max_epochs=max_epochs, val_interval=5)
 val_cfg = dict()
 test_cfg = dict()
 

@@ -8,7 +8,8 @@ from nuscenes import NuScenes
 from nuscenes.nuscenes import Box
 from pyquaternion import Quaternion
 
-from tools.detection3d.t4dataset_converters.t4dataset_converter import obtain_sensor2top
+from tools.detection3d.t4dataset_converters.t4dataset_converter import \
+    obtain_sensor2top
 from tools.detection3d.t4dataset_converters.update_infos_to_v2 import (
     clear_instance_unused_keys, get_empty_instance, get_single_lidar_sweep)
 
@@ -23,8 +24,8 @@ def get_ego2global(pose_record: Dict) -> Dict[str, List]:
     )
 
 def parse_lidar_path(lidar_path: str) -> str:
-    """leave only {scene_id}/annotations/{lidar_token}/{frame}.bin from path"""
-    return "/".join(lidar_path.split("/")[-4:])
+    """leave only {database_version}/{scene_id}/data/{lidar_token}/{frame}.bin from path"""
+    return "/".join(lidar_path.split("/")[-5:])
 
 def get_lidar_points_info(lidar_path: str, cs_record: Dict, num_features: int = 5):
     lidar2ego = convert_quaternion_to_matrix(
@@ -155,9 +156,13 @@ def get_gt_attrs(nusc, annotations, attr_categories_mapper) -> List:
                 gt_attrs.append(
                     attr_names[attr_categories.index(attr_categories_mapper("cycle_state"))]
                 )
-            elif attr_categories_mapper("vehicle_state"):
+            elif attr_categories_mapper("vehicle_state") in attr_categories:
                 gt_attrs.append(
                     attr_names[attr_categories.index(attr_categories_mapper("vehicle_state"))]
+                )
+            elif attr_categories_mapper("occlusion_state") in attr_categories:
+                gt_attrs.append(
+                    attr_names[attr_categories.index(attr_categories_mapper("occlusion_state"))]
                 )
             else:
                 raise ValueError(f"invalid attributes: {attr_names}")
@@ -165,7 +170,15 @@ def get_gt_attrs(nusc, annotations, attr_categories_mapper) -> List:
 
 
 def get_instances(
-    gt_boxes, names, class_names, velocity, boxes, annotations, valid_flag, gt_attrs
+    gt_boxes,
+    names,
+    class_names,
+    velocity,
+    boxes,
+    annotations,
+    valid_flag,
+    gt_attrs,
+    filter_attributions = [["vehicle.bicycle", "vehicle_state.parked"], ["vehicle.motorcycle", "vehicle_state.parked"]]
 ):
     instances = []
     ignore_class_name = set()
@@ -173,7 +186,16 @@ def get_instances(
         empty_instance = get_empty_instance()
         empty_instance["bbox_3d"] = box.tolist()
         if names[i] in class_names:
-            empty_instance["bbox_label"] = class_names.index(names[i])
+            is_filter = False
+            if filter_attributions:
+                for filter_attribution in filter_attributions:
+                    if boxes[i].name == filter_attribution[0] and gt_attrs[i] == filter_attribution[1]:
+                        is_filter = True
+            if is_filter is True:
+                empty_instance["bbox_label"] = -1
+            else:
+                empty_instance["bbox_label"] = class_names.index(names[i])
+
         else:
             ignore_class_name.add(names[i])
             empty_instance["bbox_label"] = -1
@@ -199,8 +221,8 @@ def get_annotations(
     l2e_r_mat: np.array,
     name_mapping: dict,
     class_names: List[str],
-    do_not_check_valid_flag: bool = False,
     attr_categories_mapper=lambda x: x,
+    filter_attributions = [["vehicle.bicycle", "vehicle_state.parked"], ["vehicle.motorcycle", "vehicle_state.parked"]]
 ) -> dict:
     annotations = [nusc.get("sample_annotation", token) for token in anns]
     instance_tokens = [ann["instance_token"] for ann in annotations]
@@ -209,14 +231,7 @@ def get_annotations(
     rots = np.array([b.orientation.yaw_pitch_roll[0] for b in boxes]).reshape(-1, 1)
     velocity = np.array([nusc.box_velocity(token)[:2] for token in anns])
 
-    if not do_not_check_valid_flag:
-        valid_flag = np.array(
-            [anno["num_lidar_pts"] > 0 for anno in annotations], dtype=bool
-        ).reshape(-1)
-    else:
-        # NOTE(kan-bayashi): UCv2.0 dataset does not contain meaningful num_lidar_pts,
-        #   i.e., all anntations have num_lidar_pts = 0.
-        valid_flag = np.array([True for anno in annotations], dtype=bool).reshape(-1)
+    valid_flag = np.array([anno["num_lidar_pts"] > 0 for anno in annotations], dtype=bool).reshape(-1)
 
     # convert velo from global to lidar
     for i in range(len(boxes)):
@@ -226,7 +241,6 @@ def get_annotations(
 
     names = np.array([name_mapping.get(b.name, b.name) for b in boxes])
     # we need to convert rot to SECOND format.
-
     # Copied from https://github.com/open-mmlab/mmdetection3d/blob/0f9dfa97a35ef87e16b700742d3c358d0ad15452/tools/dataset_converters/nuscenes_converter.py#L258
     gt_boxes = np.concatenate([locs, dims[:, [1, 0, 2]], rots], axis=1)
     assert len(gt_boxes) == len(annotations), f"{len(gt_boxes)}, {len(annotations)}"
@@ -239,4 +253,5 @@ def get_annotations(
     instances = get_instances(
         gt_boxes, names, class_names, velocity, boxes, annotations, valid_flag, gt_attrs
     )
+
     return dict(instances=instances)

@@ -4,6 +4,8 @@ import warnings
 from enum import Enum
 from typing import Dict, Optional
 
+from autoware_ml.configs.detection3d.dataset.t4dataset import x2
+
 warnings.simplefilter("always")
 
 import mmengine
@@ -11,8 +13,6 @@ import numpy as np
 from nuimages import NuImages
 from nuscenes.nuscenes import NuScenes
 from pyquaternion import Quaternion
-
-from autoware_ml.detection3d.datasets import t4x2_dataset, t4xx1_dataset
 
 
 class SplitType(Enum):
@@ -79,7 +79,7 @@ def create_t4dataset_infos_by_split_type(
     if version in ["t4xx1", "t4xx1_uc2"]:
         name_mapping = t4xx1_dataset.T4XX1Dataset.NameMapping
     elif version == "t4x2":
-        name_mapping = t4x2_dataset.T4X2Dataset.NameMapping
+        name_mapping = x2.T4X2Dataset.NameMapping
     else:
         raise ValueError(f"not supported version: {version}")
 
@@ -281,14 +281,14 @@ def _fill_infos(
 
         if include_camera:
             # obtain 6 image's information per frame
-            camera_types = [
-                "CAM_FRONT",
-                "CAM_FRONT_RIGHT",
-                "CAM_FRONT_LEFT",
-                "CAM_BACK",
-                "CAM_BACK_LEFT",
-                "CAM_BACK_RIGHT",
-            ]
+            # camera_types = [
+            #     "CAM_FRONT",
+            #     "CAM_FRONT_RIGHT",
+            #     "CAM_FRONT_LEFT",
+            #     "CAM_BACK",
+            #     "CAM_BACK_LEFT",
+            #     "CAM_BACK_RIGHT",
+            # ]
             for cam in camera_types:
                 cam_token = sample["data"].get(cam)
                 # Note(yukke42): some data have missing camera data.
