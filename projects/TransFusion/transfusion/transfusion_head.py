@@ -585,9 +585,11 @@ class TransFusionHead(nn.Module):
             bboxes_tensor_layer = bboxes_tensor[self.num_proposals *
                                                 idx_layer:self.num_proposals *
                                                 (idx_layer + 1), :]
-            score_layer = score[..., self.num_proposals *
-                                idx_layer:self.num_proposals *
-                                (idx_layer + 1), ]
+            score_layer = score[
+                ...,
+                self.num_proposals * idx_layer:self.num_proposals *
+                (idx_layer + 1),
+            ]
 
             if self.train_cfg.assigner.type == 'HungarianAssigner3D':
                 assign_result = self.bbox_assigner.assign(
@@ -771,16 +773,21 @@ class TransFusionHead(nn.Module):
             else:
                 prefix = f'layer_{idx_layer}'
 
-            layer_labels = labels[..., idx_layer *
-                                  self.num_proposals:(idx_layer + 1) *
-                                  self.num_proposals, ].reshape(-1)
+            layer_labels = labels[
+                ...,
+                idx_layer * self.num_proposals:(idx_layer + 1) *
+                self.num_proposals,
+            ].reshape(-1)
             layer_label_weights = label_weights[
-                ..., idx_layer * self.num_proposals:(idx_layer + 1) *
-                self.num_proposals, ].reshape(-1)
-            layer_score = preds_dict['heatmap'][..., idx_layer *
-                                                self.num_proposals:(idx_layer +
-                                                                    1) *
-                                                self.num_proposals, ]
+                ...,
+                idx_layer * self.num_proposals:(idx_layer + 1) *
+                self.num_proposals,
+            ].reshape(-1)
+            layer_score = preds_dict['heatmap'][
+                ...,
+                idx_layer * self.num_proposals:(idx_layer + 1) *
+                self.num_proposals,
+            ]
             layer_cls_score = layer_score.permute(0, 2, 1).reshape(
                 -1, self.num_classes)
             layer_loss_cls = self.loss_cls(
@@ -790,28 +797,35 @@ class TransFusionHead(nn.Module):
                 avg_factor=max(num_pos, 1),
             )
 
-            layer_center = preds_dict['center'][..., idx_layer *
-                                                self.num_proposals:(idx_layer +
-                                                                    1) *
-                                                self.num_proposals, ]
-            layer_height = preds_dict['height'][..., idx_layer *
-                                                self.num_proposals:(idx_layer +
-                                                                    1) *
-                                                self.num_proposals, ]
-            layer_rot = preds_dict['rot'][..., idx_layer *
-                                          self.num_proposals:(idx_layer + 1) *
-                                          self.num_proposals, ]
-            layer_dim = preds_dict['dim'][..., idx_layer *
-                                          self.num_proposals:(idx_layer + 1) *
-                                          self.num_proposals, ]
+            layer_center = preds_dict['center'][
+                ...,
+                idx_layer * self.num_proposals:(idx_layer + 1) *
+                self.num_proposals,
+            ]
+            layer_height = preds_dict['height'][
+                ...,
+                idx_layer * self.num_proposals:(idx_layer + 1) *
+                self.num_proposals,
+            ]
+            layer_rot = preds_dict['rot'][
+                ...,
+                idx_layer * self.num_proposals:(idx_layer + 1) *
+                self.num_proposals,
+            ]
+            layer_dim = preds_dict['dim'][
+                ...,
+                idx_layer * self.num_proposals:(idx_layer + 1) *
+                self.num_proposals,
+            ]
             preds = torch.cat(
                 [layer_center, layer_height, layer_dim, layer_rot],
                 dim=1).permute(0, 2, 1)  # [BS, num_proposals, code_size]
             if 'vel' in preds_dict.keys():
-                layer_vel = preds_dict['vel'][..., idx_layer *
-                                              self.num_proposals:(idx_layer +
-                                                                  1) *
-                                              self.num_proposals, ]
+                layer_vel = preds_dict['vel'][
+                    ...,
+                    idx_layer * self.num_proposals:(idx_layer + 1) *
+                    self.num_proposals,
+                ]
                 preds = torch.cat([
                     layer_center, layer_height, layer_dim, layer_rot, layer_vel
                 ],
@@ -819,16 +833,20 @@ class TransFusionHead(nn.Module):
                                       0, 2,
                                       1)  # [BS, num_proposals, code_size]
             code_weights = self.train_cfg.get('code_weights', None)
-            layer_bbox_weights = bbox_weights[:, idx_layer *
-                                              self.num_proposals:(idx_layer +
-                                                                  1) *
-                                              self.num_proposals, :, ]
+            layer_bbox_weights = bbox_weights[
+                :,
+                idx_layer * self.num_proposals:(idx_layer + 1) *
+                self.num_proposals,
+                :,
+            ]
             layer_reg_weights = layer_bbox_weights * layer_bbox_weights.new_tensor(  # noqa: E501
                 code_weights)
-            layer_bbox_targets = bbox_targets[:, idx_layer *
-                                              self.num_proposals:(idx_layer +
-                                                                  1) *
-                                              self.num_proposals, :, ]
+            layer_bbox_targets = bbox_targets[
+                :,
+                idx_layer * self.num_proposals:(idx_layer + 1) *
+                self.num_proposals,
+                :,
+            ]
             layer_loss_bbox = self.loss_bbox(
                 preds,
                 layer_bbox_targets,

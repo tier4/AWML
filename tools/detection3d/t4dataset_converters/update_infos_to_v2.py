@@ -8,6 +8,7 @@ import mmengine
 # The code is copied from the following repo:
 # https://github.com/open-mmlab/mmdetection3d/blob/v1.2.0/tools/dataset_converters/update_infos_to_v2.py
 
+
 def get_empty_instance():
     """
     Empty annotation for single instance.
@@ -53,6 +54,7 @@ def get_empty_instance():
     )
     return instance
 
+
 def get_empty_lidar_points():
     lidar_points = dict(
         # (int, optional) : Number of features for each point.
@@ -68,7 +70,6 @@ def get_empty_lidar_points():
     return lidar_points
 
 
-
 def get_empty_radar_points():
     radar_points = dict(
         # (int, optional) : Number of features for each point.
@@ -81,7 +82,6 @@ def get_empty_radar_points():
         radar2ego=None,
     )
     return radar_points
-
 
 
 def get_empty_img_info():
@@ -109,7 +109,6 @@ def get_empty_img_info():
     return img_info
 
 
-
 def get_single_image_sweep(camera_types):
     single_image_sweep = dict(
         # (float, optional) : Timestamp of the current frame.
@@ -125,7 +124,9 @@ def get_single_image_sweep(camera_types):
     single_image_sweep["images"] = images
     return single_image_sweep
 
-def get_empty_standard_data_info(camera_types=["CAM0", "CAM1", "CAM2", "CAM3", "CAM4"]):
+
+def get_empty_standard_data_info(
+        camera_types=["CAM0", "CAM1", "CAM2", "CAM3", "CAM4"]):
     data_info = dict(
         # (str): Sample id of the frame.
         sample_idx=None,
@@ -152,12 +153,14 @@ def get_empty_standard_data_info(camera_types=["CAM0", "CAM1", "CAM2", "CAM3", "
     )
     return data_info
 
+
 def clear_instance_unused_keys(instance):
     keys = list(instance.keys())
     for k in keys:
         if instance[k] is None:
             del instance[k]
     return instance
+
 
 def get_single_lidar_sweep():
     single_lidar_sweep = dict(
@@ -170,6 +173,7 @@ def get_single_lidar_sweep():
         lidar_points=get_empty_lidar_points(),
     )
     return single_lidar_sweep
+
 
 def update_nuscenes_infos(
     pkl_path,
@@ -186,7 +190,8 @@ def update_nuscenes_infos(
 ):
     print(f"{pkl_path} will be modified.")
     if out_dir in pkl_path:
-        print(f"Warning, you may overwriting " f"the original data {pkl_path}.")
+        print(f"Warning, you may overwriting "
+              f"the original data {pkl_path}.")
     print(f"Reading from input file: {pkl_path}.")
     data_list = mmengine.load(pkl_path)
     METAINFO = {
@@ -203,53 +208,67 @@ def update_nuscenes_infos(
             "barrier",
         ),
     }
-    nusc = NuScenes(version=data_list["metadata"]["version"], dataroot=dataroot, verbose=True)
+    nusc = NuScenes(
+        version=data_list["metadata"]["version"],
+        dataroot=dataroot,
+        verbose=True)
 
     print("Start updating:")
     converted_list = []
     ignore_class_name = set()
-    for i, ori_info_dict in enumerate(mmengine.track_iter_progress(data_list["infos"])):
-        temp_data_info = get_empty_standard_data_info(camera_types=camera_types)
+    for i, ori_info_dict in enumerate(
+            mmengine.track_iter_progress(data_list["infos"])):
+        temp_data_info = get_empty_standard_data_info(
+            camera_types=camera_types)
         temp_data_info["sample_idx"] = i
         temp_data_info["token"] = ori_info_dict["token"]
         temp_data_info["ego2global"] = convert_quaternion_to_matrix(
-            ori_info_dict["ego2global_rotation"], ori_info_dict["ego2global_translation"]
-        )
-        temp_data_info["lidar_points"]["num_pts_feats"] = ori_info_dict.get("num_features", 5)
-        temp_data_info["lidar_points"]["lidar_path"] = Path(ori_info_dict["lidar_path"]).name
-        temp_data_info["lidar_points"]["lidar2ego"] = convert_quaternion_to_matrix(
-            ori_info_dict["lidar2ego_rotation"], ori_info_dict["lidar2ego_translation"]
-        )
+            ori_info_dict["ego2global_rotation"],
+            ori_info_dict["ego2global_translation"])
+        temp_data_info["lidar_points"]["num_pts_feats"] = ori_info_dict.get(
+            "num_features", 5)
+        temp_data_info["lidar_points"]["lidar_path"] = Path(
+            ori_info_dict["lidar_path"]).name
+        temp_data_info["lidar_points"][
+            "lidar2ego"] = convert_quaternion_to_matrix(
+                ori_info_dict["lidar2ego_rotation"],
+                ori_info_dict["lidar2ego_translation"])
         # bc-breaking: Timestamp has divided 1e6 in pkl infos.
         temp_data_info["timestamp"] = ori_info_dict["timestamp"] / 1e6
         for ori_sweep in ori_info_dict["sweeps"]:
             temp_lidar_sweep = get_single_lidar_sweep()
-            temp_lidar_sweep["lidar_points"]["lidar2ego"] = convert_quaternion_to_matrix(
-                ori_sweep["sensor2ego_rotation"], ori_sweep["sensor2ego_translation"]
-            )
+            temp_lidar_sweep["lidar_points"][
+                "lidar2ego"] = convert_quaternion_to_matrix(
+                    ori_sweep["sensor2ego_rotation"],
+                    ori_sweep["sensor2ego_translation"])
             temp_lidar_sweep["ego2global"] = convert_quaternion_to_matrix(
-                ori_sweep["ego2global_rotation"], ori_sweep["ego2global_translation"]
-            )
+                ori_sweep["ego2global_rotation"],
+                ori_sweep["ego2global_translation"])
             lidar2sensor = np.eye(4)
             rot = ori_sweep["sensor2lidar_rotation"]
             trans = ori_sweep["sensor2lidar_translation"]
             lidar2sensor[:3, :3] = rot.T
             lidar2sensor[:3, 3:4] = -1 * np.matmul(rot.T, trans.reshape(3, 1))
-            temp_lidar_sweep["lidar_points"]["lidar2sensor"] = lidar2sensor.astype(
-                np.float32
-            ).tolist()
+            temp_lidar_sweep["lidar_points"][
+                "lidar2sensor"] = lidar2sensor.astype(np.float32).tolist()
             temp_lidar_sweep["timestamp"] = ori_sweep["timestamp"] / 1e6
-            temp_lidar_sweep["lidar_points"]["lidar_path"] = ori_sweep["data_path"]
-            temp_lidar_sweep["sample_data_token"] = ori_sweep["sample_data_token"]
+            temp_lidar_sweep["lidar_points"]["lidar_path"] = ori_sweep[
+                "data_path"]
+            temp_lidar_sweep["sample_data_token"] = ori_sweep[
+                "sample_data_token"]
             temp_data_info["lidar_sweeps"].append(temp_lidar_sweep)
         temp_data_info["images"] = {}
         for cam in ori_info_dict["cams"]:
             empty_img_info = get_empty_img_info()
-            empty_img_info["img_path"] = Path(ori_info_dict["cams"][cam]["data_path"]).name
-            empty_img_info["cam2img"] = ori_info_dict["cams"][cam]["cam_intrinsic"].tolist()
-            empty_img_info["sample_data_token"] = ori_info_dict["cams"][cam]["sample_data_token"]
+            empty_img_info["img_path"] = Path(
+                ori_info_dict["cams"][cam]["data_path"]).name
+            empty_img_info["cam2img"] = ori_info_dict["cams"][cam][
+                "cam_intrinsic"].tolist()
+            empty_img_info["sample_data_token"] = ori_info_dict["cams"][cam][
+                "sample_data_token"]
             # bc-breaking: Timestamp has divided 1e6 in pkl infos.
-            empty_img_info["timestamp"] = ori_info_dict["cams"][cam]["timestamp"] / 1e6
+            empty_img_info[
+                "timestamp"] = ori_info_dict["cams"][cam]["timestamp"] / 1e6
             empty_img_info["cam2ego"] = convert_quaternion_to_matrix(
                 ori_info_dict["cams"][cam]["sensor2ego_rotation"],
                 ori_info_dict["cams"][cam]["sensor2ego_translation"],
@@ -259,37 +278,43 @@ def update_nuscenes_infos(
             trans = ori_info_dict["cams"][cam]["sensor2lidar_translation"]
             lidar2sensor[:3, :3] = rot.T
             lidar2sensor[:3, 3:4] = -1 * np.matmul(rot.T, trans.reshape(3, 1))
-            empty_img_info["lidar2cam"] = lidar2sensor.astype(np.float32).tolist()
+            empty_img_info["lidar2cam"] = lidar2sensor.astype(
+                np.float32).tolist()
             temp_data_info["images"][cam] = empty_img_info
         ignore_class_name = set()
         if "gt_boxes" in ori_info_dict:
             num_instances = ori_info_dict["gt_boxes"].shape[0]
             for i in range(num_instances):
                 empty_instance = get_empty_instance()
-                empty_instance["bbox_3d"] = ori_info_dict["gt_boxes"][i, :].tolist()
+                empty_instance["bbox_3d"] = ori_info_dict["gt_boxes"][
+                    i, :].tolist()
                 if ori_info_dict["gt_names"][i] in METAINFO["classes"]:
                     empty_instance["bbox_label"] = METAINFO["classes"].index(
-                        ori_info_dict["gt_names"][i]
-                    )
+                        ori_info_dict["gt_names"][i])
                 else:
                     ignore_class_name.add(ori_info_dict["gt_names"][i])
                     empty_instance["bbox_label"] = -1
-                empty_instance["bbox_label_3d"] = copy.deepcopy(empty_instance["bbox_label"])
-                empty_instance["velocity"] = ori_info_dict["gt_velocity"][i, :].tolist()
-                empty_instance["num_lidar_pts"] = ori_info_dict["num_lidar_pts"][i]
-                empty_instance["num_radar_pts"] = ori_info_dict["num_radar_pts"][i]
-                empty_instance["bbox_3d_isvalid"] = ori_info_dict["valid_flag"][i]
+                empty_instance["bbox_label_3d"] = copy.deepcopy(
+                    empty_instance["bbox_label"])
+                empty_instance["velocity"] = ori_info_dict["gt_velocity"][
+                    i, :].tolist()
+                empty_instance["num_lidar_pts"] = ori_info_dict[
+                    "num_lidar_pts"][i]
+                empty_instance["num_radar_pts"] = ori_info_dict[
+                    "num_radar_pts"][i]
+                empty_instance["bbox_3d_isvalid"] = ori_info_dict[
+                    "valid_flag"][i]
                 empty_instance = clear_instance_unused_keys(empty_instance)
                 temp_data_info["instances"].append(empty_instance)
-            temp_data_info["cam_instances"] = generate_nuscenes_camera_instances(
-                ori_info_dict,
-                nusc,
-                camera_types,
-            )
+            temp_data_info[
+                "cam_instances"] = generate_nuscenes_camera_instances(
+                    ori_info_dict,
+                    nusc,
+                    camera_types,
+                )
         if "pts_semantic_mask_path" in ori_info_dict:
             temp_data_info["pts_semantic_mask_path"] = Path(
-                ori_info_dict["pts_semantic_mask_path"]
-            ).name
+                ori_info_dict["pts_semantic_mask_path"]).name
         temp_data_info, _ = clear_data_info_unused_keys(temp_data_info)
         converted_list.append(temp_data_info)
     pkl_name = Path(pkl_path).name

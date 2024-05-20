@@ -70,19 +70,14 @@ def fuse_bn_weights(conv_w_OKI, conv_b, bn_rm, bn_rv, bn_eps, bn_w, bn_b):
         bn_b = torch.zeros_like(bn_rm)
     bn_var_rsqrt = torch.rsqrt(bn_rv + bn_eps)
 
-    conv_w_OIK = conv_w_OIK * (bn_w * bn_var_rsqrt).reshape(
-        [-1] + [1] * (len(conv_w_OIK.shape) - 1)
-    )
+    conv_w_OIK = conv_w_OIK * (
+        bn_w * bn_var_rsqrt).reshape([-1] + [1] * (len(conv_w_OIK.shape) - 1))
     conv_b = (conv_b - bn_rm) * bn_var_rsqrt * bn_w + bn_b
-    permute = (
-        [
-            0,
-        ]
-        + [i + 2 for i in range(NDim)]
-        + [
-            1,
-        ]
-    )
+    permute = ([
+        0,
+    ] + [i + 2 for i in range(NDim)] + [
+        1,
+    ])
     conv_w_OKI = conv_w_OIK.permute(*permute).contiguous()
     return torch.nn.Parameter(conv_w_OKI), torch.nn.Parameter(conv_b)
 
@@ -114,7 +109,7 @@ def load_checkpoint(model, file, startsname=None):
         new_ckpt = collections.OrderedDict()
         for key, val in ckpt.items():
             if key.startswith(startsname):
-                newkey = key[len(startsname) + 1 :]
+                newkey = key[len(startsname) + 1:]
                 new_ckpt[newkey] = val
 
     model.load_state_dict(new_ckpt, strict=True)
@@ -125,13 +120,13 @@ def replace_feature(self, feature: torch.Tensor):
     due to limit of torch.fx
     """
     # assert feature.shape[0] == self.indices.shape[0], "replaced num of features not equal to indices"
-    new_spt = SparseConvTensor(
-        feature, self.indices, self.spatial_shape, self.batch_size, self.grid
-    )
+    new_spt = SparseConvTensor(feature, self.indices, self.spatial_shape,
+                               self.batch_size, self.grid)
     return new_spt
 
 
 class new_sparse_basic_block_forward:
+
     def __init__(self, obj, is_fuse_relu):
         self.obj = obj
         self.is_fuse_relu = is_fuse_relu
@@ -150,7 +145,8 @@ class new_sparse_basic_block_forward:
             identity = self.downsample(x)
 
         if hasattr(self, "quant_add"):
-            out = replace_feature(out, self.quant_add(out.features, identity.features))
+            out = replace_feature(
+                out, self.quant_add(out.features, identity.features))
         else:
             out = replace_feature(out, out.features + identity.features)
         out = replace_feature(out, self.relu(out.features))
@@ -174,7 +170,9 @@ def fuse_sparse_basic_block(self, is_fuse_bn=False, is_fuse_relu=True):
 
 
 def layer_fusion_bn(model):
+
     def set_attr_by_path(m, path, newval):
+
         def set_attr_by_array(parent, arr):
             if len(arr) == 1:
                 setattr(parent, arr[0], newval)
@@ -194,14 +192,17 @@ def layer_fusion_bn(model):
                 c = SparseSequential(c, r)
                 set_attr_by_path(model, name, c)
         elif isinstance(module, SparseBasicBlock):
-            fuse_sparse_basic_block(module, is_fuse_bn=True, is_fuse_relu=False)
+            fuse_sparse_basic_block(
+                module, is_fuse_bn=True, is_fuse_relu=False)
         elif isinstance(module, torch.nn.ReLU):
             module.inplace = False
     return model
 
 
 def fuse_relu_only(model):
+
     def set_attr_by_path(m, path, newval):
+
         def set_attr_by_array(parent, arr):
             if len(arr) == 1:
                 setattr(parent, arr[0], newval)
@@ -219,14 +220,17 @@ def fuse_relu_only(model):
                 c.act_type = "ReLU"
                 set_attr_by_path(model, name, c)
         elif isinstance(module, SparseBasicBlock):
-            fuse_sparse_basic_block(module, is_fuse_bn=False, is_fuse_relu=True)
+            fuse_sparse_basic_block(
+                module, is_fuse_bn=False, is_fuse_relu=True)
         elif isinstance(module, torch.nn.ReLU):
             module.inplace = False
     return model
 
 
 def layer_fusion_bn_relu(model):
+
     def set_attr_by_path(m, path, newval):
+
         def set_attr_by_array(parent, arr):
             if len(arr) == 1:
                 setattr(parent, arr[0], newval)
@@ -239,7 +243,8 @@ def layer_fusion_bn_relu(model):
 
     for name, module in model.named_modules():
         if isinstance(module, SparseSequential):
-            if isinstance(module[0], SubMConv3d) or isinstance(module[0], SparseConv3d):
+            if isinstance(module[0], SubMConv3d) or isinstance(
+                    module[0], SparseConv3d):
                 c, b, r = [module[i] for i in range(3)]
                 fuse_bn(c, b)
                 c.act_type = "ReLU"

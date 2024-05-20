@@ -1,6 +1,6 @@
 _base_ = ["../../../../autoware_ml/configs/detection3d/default_runtime.py"]
-custom_imports = dict(imports=["projects.BEVFusion.bevfusion"], allow_failed_imports=False)
-
+custom_imports = dict(
+    imports=["projects.BEVFusion.bevfusion"], allow_failed_imports=False)
 
 # model settings
 # Voxel size for voxel encoder
@@ -71,7 +71,8 @@ model = dict(
         sparse_shape=[1440, 1440, 41],
         order=("conv", "norm", "act"),
         norm_cfg=dict(type="BN1d", eps=0.001, momentum=0.01),
-        encoder_channels=((16, 16, 32), (32, 32, 64), (64, 64, 128), (128, 128)),
+        encoder_channels=((16, 16, 32), (32, 32, 64), (64, 64, 128), (128,
+                                                                      128)),
         encoder_paddings=((0, 0, 1), (0, 0, 1), (0, 0, (1, 1, 0)), (0, 0)),
         block_type="basicblock",
     ),
@@ -130,7 +131,11 @@ model = dict(
             assigner=dict(
                 type="HungarianAssigner3D",
                 iou_calculator=dict(type="BboxOverlaps3D", coordinate="lidar"),
-                cls_cost=dict(type="mmdet.FocalLossCost", gamma=2.0, alpha=0.25, weight=0.15),
+                cls_cost=dict(
+                    type="mmdet.FocalLossCost",
+                    gamma=2.0,
+                    alpha=0.25,
+                    weight=0.15),
                 reg_cost=dict(type="BBoxBEVL1Cost", weight=0.25),
                 iou_cost=dict(type="IoU3DCost", weight=0.25),
             ),
@@ -143,7 +148,8 @@ model = dict(
             pc_range=[-54.0, -54.0],
             nms_type=None,
         ),
-        common_heads=dict(center=[2, 2], height=[1, 2], dim=[3, 2], rot=[2, 2], vel=[2, 2]),
+        common_heads=dict(
+            center=[2, 2], height=[1, 2], dim=[3, 2], rot=[2, 2], vel=[2, 2]),
         bbox_coder=dict(
             type="TransFusionBBoxCoder",
             pc_range=[-54.0, -54.0],
@@ -161,8 +167,10 @@ model = dict(
             reduction="mean",
             loss_weight=1.0,
         ),
-        loss_heatmap=dict(type="mmdet.GaussianFocalLoss", reduction="mean", loss_weight=1.0),
-        loss_bbox=dict(type="mmdet.L1Loss", reduction="mean", loss_weight=0.25),
+        loss_heatmap=dict(
+            type="mmdet.GaussianFocalLoss", reduction="mean", loss_weight=1.0),
+        loss_bbox=dict(
+            type="mmdet.L1Loss", reduction="mean", loss_weight=0.25),
     ),
 )
 
@@ -224,7 +232,11 @@ train_pipeline = [
         remove_close=True,
         backend_args=backend_args,
     ),
-    dict(type="LoadAnnotations3D", with_bbox_3d=True, with_label_3d=True, with_attr_label=False),
+    dict(
+        type="LoadAnnotations3D",
+        with_bbox_3d=True,
+        with_label_3d=True,
+        with_attr_label=False),
     dict(type="ObjectSample", db_sampler=db_sampler),
     dict(
         type="GlobalRotScaleTrans",
@@ -253,7 +265,10 @@ train_pipeline = [
     dict(type="PointShuffle"),
     dict(
         type="Pack3DDetInputs",
-        keys=["points", "img", "gt_bboxes_3d", "gt_labels_3d", "gt_bboxes", "gt_labels"],
+        keys=[
+            "points", "img", "gt_bboxes_3d", "gt_labels_3d", "gt_bboxes",
+            "gt_labels"
+        ],
         meta_keys=[
             "cam2img",
             "ori_cam2img",
@@ -293,7 +308,9 @@ test_pipeline = [
         remove_close=True,
         backend_args=backend_args,
     ),
-    dict(type="PointsRangeFilter", point_cloud_range=[-54.0, -54.0, -5.0, 54.0, 54.0, 3.0]),
+    dict(
+        type="PointsRangeFilter",
+        point_cloud_range=[-54.0, -54.0, -5.0, 54.0, 54.0, 3.0]),
     dict(
         type="Pack3DDetInputs",
         keys=["img", "points", "gt_bboxes_3d", "gt_labels_3d"],
@@ -369,7 +386,8 @@ val_evaluator = dict(
 test_evaluator = val_evaluator
 
 vis_backends = [dict(type="LocalVisBackend")]
-visualizer = dict(type="Det3DLocalVisualizer", vis_backends=vis_backends, name="visualizer")
+visualizer = dict(
+    type="Det3DLocalVisualizer", vis_backends=vis_backends, name="visualizer")
 
 # learning rate
 lr = 0.0001
@@ -439,6 +457,6 @@ auto_scale_lr = dict(enable=False, base_batch_size=1)
 log_processor = dict(window_size=50)
 
 default_hooks = dict(
-    logger=dict(type="LoggerHook", interval=50), checkpoint=dict(type="CheckpointHook", interval=5)
-)
+    logger=dict(type="LoggerHook", interval=50),
+    checkpoint=dict(type="CheckpointHook", interval=5))
 custom_hooks = [dict(type="DisableObjectSampleHook", disable_after_epoch=15)]

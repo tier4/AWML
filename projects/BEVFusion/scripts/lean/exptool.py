@@ -104,12 +104,12 @@ def symbolic_sparse_convolution(self, ilayer, y, x):
     inputs = [
         get_tensor_id(x),
         append_initializer(
-            self.weight.data.permute(4, 0, 1, 2, 3), f"spconv{ilayer}.weight"
-        ),
+            self.weight.data.permute(4, 0, 1, 2, 3), f"spconv{ilayer}.weight"),
     ]
 
     if self.bias is not None:
-        inputs.append(append_initializer(self.bias.data, f"spconv{ilayer}.bias"))
+        inputs.append(
+            append_initializer(self.bias.data, f"spconv{ilayer}.bias"))
 
     output_bound = 200000
     if hasattr(self, "output_bound"):
@@ -140,8 +140,7 @@ def symbolic_sparse_convolution(self, ilayer, y, x):
             activation=getattr(self, "act_type", "None"),
             input_shape=x.features.shape,
             output_shape=y.features.shape,
-        )
-    )
+        ))
 
 
 @register_node("SparseConvolutionQunat.forward")
@@ -176,12 +175,12 @@ def symbolic_sparse_convolution_quant(self, ilayer, y, x):
     inputs = [
         get_tensor_id(x),
         append_initializer(
-            self.weight.data.permute(4, 0, 1, 2, 3), f"spconv{ilayer}.weight"
-        ),
+            self.weight.data.permute(4, 0, 1, 2, 3), f"spconv{ilayer}.weight"),
     ]
 
     if self.bias is not None:
-        inputs.append(append_initializer(self.bias.data, f"spconv{ilayer}.bias"))
+        inputs.append(
+            append_initializer(self.bias.data, f"spconv{ilayer}.bias"))
 
     output_bound = 200000
     if hasattr(self, "output_bound"):
@@ -213,28 +212,25 @@ def symbolic_sparse_convolution_quant(self, ilayer, y, x):
             input_shape=x.features.shape,
             output_shape=y.features.shape,
             input_dynamic_range=self._input_quantizer.amax.cpu().item(),
-            weight_dynamic_ranges=self._weight_quantizer.amax.cpu()
-            .view(-1)
-            .numpy()
-            .tolist(),
-            precision="fp16" if hasattr(self, "precision") is None else self.precision,
-            output_precision="fp16"
-            if hasattr(self, "output_precision") is None
-            else self.output_precision,
-        )
-    )
+            weight_dynamic_ranges=self._weight_quantizer.amax.cpu().view(
+                -1).numpy().tolist(),
+            precision="fp16"
+            if hasattr(self, "precision") is None else self.precision,
+            output_precision="fp16" if hasattr(self, "output_precision")
+            is None else self.output_precision,
+        ))
 
 
 @register_node("torch.nn.ReLU.forward")
 def symbolic_relu(self, ilayer, y, x):
     register_tensor(y)
-    print(f"   --> ReLU{ilayer} -> Input {get_tensor_id(x)}, Output {get_tensor_id(y)}")
+    print(
+        f"   --> ReLU{ilayer} -> Input {get_tensor_id(x)}, Output {get_tensor_id(y)}"
+    )
 
     nodes.append(
-        helper.make_node(
-            "Relu", [get_tensor_id(x)], [get_tensor_id(y)], f"relu{ilayer}"
-        )
-    )
+        helper.make_node("Relu", [get_tensor_id(x)], [get_tensor_id(y)],
+                         f"relu{ilayer}"))
 
 
 @register_node("QuantAdd.forward")
@@ -252,12 +248,11 @@ def symbolic_add_quant(self, ilayer, y, a, b):
             f"add{ilayer}",
             input0_dynamic_range=self._input_quantizer.amax.cpu().item(),
             input1_dynamic_range=self._input_quantizer.amax.cpu().item(),
-            precision="fp16" if hasattr(self, "precision") is None else self.precision,
-            output_precision="fp16"
-            if hasattr(self, "output_precision") is None
-            else self.output_precision,
-        )
-    )
+            precision="fp16"
+            if hasattr(self, "precision") is None else self.precision,
+            output_precision="fp16" if hasattr(self, "output_precision")
+            is None else self.output_precision,
+        ))
 
 
 @register_node("torch.Tensor.__add__")
@@ -273,8 +268,7 @@ def symbolic_add(a, ilayer, y, b):
             [get_tensor_id(a), get_tensor_id(b)],
             [get_tensor_id(y)],
             f"add{ilayer}",
-        )
-    )
+        ))
 
 
 @register_node("spconv.structure.SparseConvTensor.dense")
@@ -297,8 +291,7 @@ def node_sparse_conv_tensor_dense(self, ilayer, y):
             input_spatial_shape=self.spatial_shape,
             format=format,
             output_shape=list(y.size()),
-        )
-    )
+        ))
 
 
 @register_node("torch.Tensor.reshape")
@@ -315,8 +308,7 @@ def node_view(self, ilayer, y, *dims):
             [get_tensor_id(y)],
             f"reshape{ilayer}",
             dims=dims,
-        )
-    )
+        ))
 
 
 @register_node("torch.Tensor.permute")
@@ -333,8 +325,7 @@ def node_permute(self, ilayer, y, *dims):
             [get_tensor_id(y)],
             f"transpose{ilayer}",
             dims=dims,
-        )
-    )
+        ))
 
 
 def printtensor(x):
@@ -343,11 +334,12 @@ def printtensor(x):
 
 
 def make_model_forward_hook(self, inverse_indices=False):
+
     def impl(voxel_features, coors, batch_size, **kwargs):
         coors = coors.int()
-        input_sp_tensor = spconv.SparseConvTensor(
-            voxel_features, coors, self.sparse_shape, batch_size
-        )
+        input_sp_tensor = spconv.SparseConvTensor(voxel_features, coors,
+                                                  self.sparse_shape,
+                                                  batch_size)
         x = self.conv_input(input_sp_tensor)
 
         encode_features = []
@@ -379,8 +371,7 @@ def append_initializer(value, name):
             dims=list(value.shape),
             vals=value.cpu().data.numpy().astype(np.float16).tobytes(),
             raw=True,
-        )
-    )
+        ))
     return name
 
 
@@ -420,7 +411,8 @@ def inverse_model(model: nn.Module):
     for name, module in model.named_modules():
         if isinstance(module, spconv.conv.SparseConvolution):
             # (xyz) I, O
-            module.weight.data = module.weight.data.permute(2, 1, 0, 3, 4).contiguous()
+            module.weight.data = module.weight.data.permute(2, 1, 0, 3,
+                                                            4).contiguous()
             module.padding = module.padding[::-1]
             module.stride = module.stride[::-1]
             module.dilation = module.dilation[::-1]
@@ -428,9 +420,8 @@ def inverse_model(model: nn.Module):
             module.output_padding = module.output_padding[::-1]
 
 
-def inference_and_save_tensor(
-    model: nn.Module, voxels, coors, batch_size, inverse, save_tensor
-):
+def inference_and_save_tensor(model: nn.Module, voxels, coors, batch_size,
+                              inverse, save_tensor):
     # process model weight/stride/padding/output_padding/dilation etc...
     if inverse:
         coors = coors[:, [0, 3, 2, 1]]
@@ -461,10 +452,13 @@ def inference_and_save_tensor(
     )
     tensor.save(y, f"{save_tensor}.dense")
 
-    print(f"   --> Save spatial_shape is {spatial_shape}, batch size is {batch_size}")
+    print(
+        f"   --> Save spatial_shape is {spatial_shape}, batch size is {batch_size}"
+    )
 
 
-def export_onnx(model: nn.Module, voxels, coors, batch_size, inverse, save_onnx):
+def export_onnx(model: nn.Module, voxels, coors, batch_size, inverse,
+                save_onnx):
     global avoid_reuse_container, obj_to_tensor_id, nodes, initializers, enable_trace, inverse_indices
     avoid_reuse_container = []
     obj_to_tensor_id = {}
@@ -501,8 +495,8 @@ def export_onnx(model: nn.Module, voxels, coors, batch_size, inverse, save_onnx)
         helper.make_value_info(
             name="0",
             type_proto=helper.make_tensor_type_proto(
-                elem_type=helper.TensorProto.DataType.FLOAT16, shape=voxels.size()
-            ),
+                elem_type=helper.TensorProto.DataType.FLOAT16,
+                shape=voxels.size()),
         )
     ]
 
@@ -510,8 +504,7 @@ def export_onnx(model: nn.Module, voxels, coors, batch_size, inverse, save_onnx)
         helper.make_value_info(
             name=get_tensor_id(y),
             type_proto=helper.make_tensor_type_proto(
-                elem_type=helper.TensorProto.DataType.FLOAT16, shape=y.size()
-            ),
+                elem_type=helper.TensorProto.DataType.FLOAT16, shape=y.size()),
         )
     ]
 
@@ -526,10 +519,14 @@ def export_onnx(model: nn.Module, voxels, coors, batch_size, inverse, save_onnx)
     opset = [helper.make_operatorsetid("ai.onnx", 11)]
 
     model = helper.make_model(
-        graph, opset_imports=opset, producer_name="pytorch", producer_version="1.9"
-    )
+        graph,
+        opset_imports=opset,
+        producer_name="pytorch",
+        producer_version="1.9")
     onnx.save_model(model, save_onnx)
-    print(f"🚀 The export is completed. ONNX save as {save_onnx} 🤗, Have a nice day~")
+    print(
+        f"🚀 The export is completed. ONNX save as {save_onnx} 🤗, Have a nice day~"
+    )
 
     # clean memory
     avoid_reuse_container = []

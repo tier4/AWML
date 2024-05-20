@@ -1,20 +1,14 @@
-custom_imports = dict(
-    imports=[
-        "autoware_ml.detection3d.evaluation.t4metric",
-        "autoware_ml.detection3d.datasets.t4dataset",
-    ]
-)
+custom_imports = dict(imports=[
+    "autoware_ml.detection3d.evaluation.t4metric",
+    "autoware_ml.detection3d.datasets.t4dataset",
+])
 
 dataset_version_config_root = "autoware_ml/configs/detection3d/dataset/t4dataset/"
 dataset_version_list = ["database_v3_0"]
 
 camera_types = {
-    "CAM_FRONT",
-    "CAM_FRONT_RIGHT",
-    "CAM_FRONT_LEFT",
-    "CAM_BACK",
-    "CAM_BACK_LEFT",
-    "CAM_BACK_RIGHT"
+    "CAM_FRONT", "CAM_FRONT_RIGHT", "CAM_FRONT_LEFT", "CAM_BACK",
+    "CAM_BACK_LEFT", "CAM_BACK_RIGHT"
 }
 
 name_mapping = {

@@ -16,21 +16,22 @@ from tools.detection3d.t4dataset_converters.update_infos_to_v2 import (
 
 def get_ego2global(pose_record: Dict) -> Dict[str, List]:
     ego2global = convert_quaternion_to_matrix(
-        quaternion=pose_record["rotation"], translation=pose_record["translation"]
-    )
+        quaternion=pose_record["rotation"],
+        translation=pose_record["translation"])
 
-    return dict(
-        ego2global=ego2global,
-    )
+    return dict(ego2global=ego2global, )
+
 
 def parse_lidar_path(lidar_path: str) -> str:
     """leave only {database_version}/{scene_id}/data/{lidar_token}/{frame}.bin from path"""
     return "/".join(lidar_path.split("/")[-5:])
 
-def get_lidar_points_info(lidar_path: str, cs_record: Dict, num_features: int = 5):
+
+def get_lidar_points_info(lidar_path: str,
+                          cs_record: Dict,
+                          num_features: int = 5):
     lidar2ego = convert_quaternion_to_matrix(
-        quaternion=cs_record["rotation"], translation=cs_record["translation"]
-    )
+        quaternion=cs_record["rotation"], translation=cs_record["translation"])
 
     mmengine.check_file_exist(lidar_path)
     lidar_path = parse_lidar_path(lidar_path)
@@ -40,8 +41,7 @@ def get_lidar_points_info(lidar_path: str, cs_record: Dict, num_features: int = 
             num_pts_feats=num_features,
             lidar_path=lidar_path,
             lidar2ego=lidar2ego,
-        ),
-    )
+        ), )
 
 
 def get_lidar_sweeps_info(
@@ -114,7 +114,8 @@ def get_lidar_sweeps_info(
 
 def extract_nuscenes_data(nusc: NuScenes, sample, lidar_token: str):
     sd_record = nusc.get("sample_data", lidar_token)
-    cs_record = nusc.get("calibrated_sensor", sd_record["calibrated_sensor_token"])
+    cs_record = nusc.get("calibrated_sensor",
+                         sd_record["calibrated_sensor_token"])
     pose_record = nusc.get("ego_pose", sd_record["ego_pose_token"])
 
     lidar_path, boxes, _ = nusc.get_sample_data(lidar_token)
@@ -146,24 +147,23 @@ def get_gt_attrs(nusc, annotations, attr_categories_mapper) -> List:
         if len(anno["attribute_tokens"]) == 0:
             gt_attrs.append("none")
         else:
-            attr_names = [nusc.get("attribute", t)["name"] for t in anno["attribute_tokens"]]
+            attr_names = [
+                nusc.get("attribute", t)["name"]
+                for t in anno["attribute_tokens"]
+            ]
             attr_categories = [a.split(".")[0] for a in attr_names]
             if attr_categories_mapper("pedestrian_state") in attr_categories:
-                gt_attrs.append(
-                    attr_names[attr_categories.index(attr_categories_mapper("pedestrian_state"))]
-                )
+                gt_attrs.append(attr_names[attr_categories.index(
+                    attr_categories_mapper("pedestrian_state"))])
             elif attr_categories_mapper("cycle_state") in attr_categories:
-                gt_attrs.append(
-                    attr_names[attr_categories.index(attr_categories_mapper("cycle_state"))]
-                )
+                gt_attrs.append(attr_names[attr_categories.index(
+                    attr_categories_mapper("cycle_state"))])
             elif attr_categories_mapper("vehicle_state") in attr_categories:
-                gt_attrs.append(
-                    attr_names[attr_categories.index(attr_categories_mapper("vehicle_state"))]
-                )
+                gt_attrs.append(attr_names[attr_categories.index(
+                    attr_categories_mapper("vehicle_state"))])
             elif attr_categories_mapper("occlusion_state") in attr_categories:
-                gt_attrs.append(
-                    attr_names[attr_categories.index(attr_categories_mapper("occlusion_state"))]
-                )
+                gt_attrs.append(attr_names[attr_categories.index(
+                    attr_categories_mapper("occlusion_state"))])
             else:
                 raise ValueError(f"invalid attributes: {attr_names}")
     return gt_attrs
@@ -178,8 +178,8 @@ def get_instances(
     annotations,
     valid_flag,
     gt_attrs,
-    filter_attributions = [["vehicle.bicycle", "vehicle_state.parked"], ["vehicle.motorcycle", "vehicle_state.parked"]]
-):
+    filter_attributions=[["vehicle.bicycle", "vehicle_state.parked"],
+                         ["vehicle.motorcycle", "vehicle_state.parked"]]):
     instances = []
     ignore_class_name = set()
     for i, box in enumerate(gt_boxes):
@@ -189,7 +189,8 @@ def get_instances(
             is_filter = False
             if filter_attributions:
                 for filter_attribution in filter_attributions:
-                    if boxes[i].name == filter_attribution[0] and gt_attrs[i] == filter_attribution[1]:
+                    if boxes[i].name == filter_attribution[0] and gt_attrs[
+                            i] == filter_attribution[1]:
                         is_filter = True
             if is_filter is True:
                 empty_instance["bbox_label"] = -1
@@ -199,7 +200,8 @@ def get_instances(
         else:
             ignore_class_name.add(names[i])
             empty_instance["bbox_label"] = -1
-        empty_instance["bbox_label_3d"] = copy.deepcopy(empty_instance["bbox_label"])
+        empty_instance["bbox_label_3d"] = copy.deepcopy(
+            empty_instance["bbox_label"])
 
         empty_instance["velocity"] = velocity.reshape(-1, 2)[i].tolist()
         empty_instance["num_lidar_pts"] = annotations[i]["num_lidar_pts"]
@@ -222,16 +224,19 @@ def get_annotations(
     name_mapping: dict,
     class_names: List[str],
     attr_categories_mapper=lambda x: x,
-    filter_attributions = [["vehicle.bicycle", "vehicle_state.parked"], ["vehicle.motorcycle", "vehicle_state.parked"]]
+    filter_attributions=[["vehicle.bicycle", "vehicle_state.parked"],
+                         ["vehicle.motorcycle", "vehicle_state.parked"]]
 ) -> dict:
     annotations = [nusc.get("sample_annotation", token) for token in anns]
     instance_tokens = [ann["instance_token"] for ann in annotations]
     locs = np.array([b.center for b in boxes]).reshape(-1, 3)
     dims = np.array([b.wlh for b in boxes]).reshape(-1, 3)
-    rots = np.array([b.orientation.yaw_pitch_roll[0] for b in boxes]).reshape(-1, 1)
+    rots = np.array([b.orientation.yaw_pitch_roll[0]
+                     for b in boxes]).reshape(-1, 1)
     velocity = np.array([nusc.box_velocity(token)[:2] for token in anns])
 
-    valid_flag = np.array([anno["num_lidar_pts"] > 0 for anno in annotations], dtype=bool).reshape(-1)
+    valid_flag = np.array([anno["num_lidar_pts"] > 0 for anno in annotations],
+                          dtype=bool).reshape(-1)
 
     # convert velo from global to lidar
     for i in range(len(boxes)):
@@ -243,15 +248,15 @@ def get_annotations(
     # we need to convert rot to SECOND format.
     # Copied from https://github.com/open-mmlab/mmdetection3d/blob/0f9dfa97a35ef87e16b700742d3c358d0ad15452/tools/dataset_converters/nuscenes_converter.py#L258
     gt_boxes = np.concatenate([locs, dims[:, [1, 0, 2]], rots], axis=1)
-    assert len(gt_boxes) == len(annotations), f"{len(gt_boxes)}, {len(annotations)}"
+    assert len(gt_boxes) == len(
+        annotations), f"{len(gt_boxes)}, {len(annotations)}"
 
     gt_attrs = get_gt_attrs(nusc, annotations, attr_categories_mapper)
 
     assert len(names) == len(gt_attrs), f"{len(names)}, {len(gt_attrs)}"
     assert len(gt_boxes) == len(instance_tokens)
 
-    instances = get_instances(
-        gt_boxes, names, class_names, velocity, boxes, annotations, valid_flag, gt_attrs
-    )
+    instances = get_instances(gt_boxes, names, class_names, velocity, boxes,
+                              annotations, valid_flag, gt_attrs)
 
     return dict(instances=instances)

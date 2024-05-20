@@ -2,7 +2,8 @@ _base_ = [
     "../../../../autoware_ml/configs/detection3d/default_runtime.py",
     "../../../../autoware_ml/configs/detection3d/dataset/t4dataset/xx1.py",
 ]
-custom_imports = dict(imports=["projects.TransFusion.transfusion"], allow_failed_imports=False)
+custom_imports = dict(
+    imports=["projects.TransFusion.transfusion"], allow_failed_imports=False)
 custom_imports["imports"] += _base_.custom_imports["imports"]
 
 train_gpu_size = 1
@@ -20,8 +21,11 @@ evaluation = dict(interval=1)
 # no prefix for T4dataset
 data_prefix = dict(pts="", sweeps="")
 input_modality = dict(
-    use_lidar=True, use_camera=False, use_radar=False, use_map=False, use_external=False
-)
+    use_lidar=True,
+    use_camera=False,
+    use_radar=False,
+    use_map=False,
+    use_external=False)
 backend_args = None
 
 model = dict(
@@ -45,7 +49,8 @@ model = dict(
         norm_cfg=dict(type="BN1d", eps=0.001, momentum=0.01),
         point_cloud_range=point_cloud_range,
     ),
-    pts_middle_encoder=dict(type="PointPillarsScatter", in_channels=64, output_shape=(512, 512)),
+    pts_middle_encoder=dict(
+        type="PointPillarsScatter", in_channels=64, output_shape=(512, 512)),
     pts_backbone=dict(
         type="SECOND",
         in_channels=64,
@@ -88,7 +93,8 @@ model = dict(
             norm_cfg=dict(type="LN"),
             pos_encoding_cfg=dict(input_channel=2, num_pos_feats=128),
         ),
-        common_heads=dict(center=(2, 2), height=(1, 2), dim=(3, 2), rot=(2, 2), vel=(2, 2)),
+        common_heads=dict(
+            center=(2, 2), height=(1, 2), dim=(3, 2), rot=(2, 2), vel=(2, 2)),
         bbox_coder=dict(
             type="TransFusionBBoxCoder",
             pc_range=point_cloud_range[0:2],
@@ -106,8 +112,10 @@ model = dict(
             reduction="mean",
             loss_weight=1.0,
         ),
-        loss_bbox=dict(type="mmdet.L1Loss", reduction="mean", loss_weight=0.25),
-        loss_heatmap=dict(type="mmdet.GaussianFocalLoss", reduction="mean", loss_weight=1.0),
+        loss_bbox=dict(
+            type="mmdet.L1Loss", reduction="mean", loss_weight=0.25),
+        loss_heatmap=dict(
+            type="mmdet.GaussianFocalLoss", reduction="mean", loss_weight=1.0),
     ),
     train_cfg=dict(
         pts=dict(
@@ -115,7 +123,11 @@ model = dict(
             assigner=dict(
                 type="HungarianAssigner3D",
                 iou_calculator=dict(type="BboxOverlaps3D", coordinate="lidar"),
-                cls_cost=dict(type="mmdet.FocalLossCost", gamma=2, alpha=0.25, weight=0.15),
+                cls_cost=dict(
+                    type="mmdet.FocalLossCost",
+                    gamma=2,
+                    alpha=0.25,
+                    weight=0.15),
                 reg_cost=dict(type="BBoxBEVL1Cost", weight=0.25),
                 iou_cost=dict(type="IoU3DCost", weight=0.25),
             ),
@@ -127,8 +139,7 @@ model = dict(
             out_size_factor=out_size_factor,
             code_weights=[1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 0.2, 0.2],
             point_cloud_range=point_cloud_range,
-        )
-    ),
+        )),
     test_cfg=dict(
         pts=dict(
             dataset="nuScenes",
@@ -137,8 +148,7 @@ model = dict(
             pc_range=point_cloud_range[0:2],
             voxel_size=voxel_size[:2],
             nms_type=None,
-        )
-    ),
+        )),
 )
 
 train_pipeline = [
@@ -158,7 +168,11 @@ train_pipeline = [
         remove_close=True,
         backend_args=backend_args,
     ),
-    dict(type="LoadAnnotations3D", with_bbox_3d=True, with_label_3d=True, with_attr_label=False),
+    dict(
+        type="LoadAnnotations3D",
+        with_bbox_3d=True,
+        with_label_3d=True,
+        with_attr_label=False),
     # dict(
     #     type='ObjectSample',
     #     db_sampler=dict(
@@ -219,7 +233,10 @@ train_pipeline = [
     dict(type="PointShuffle"),
     dict(
         type="Pack3DDetInputs",
-        keys=["points", "img", "gt_bboxes_3d", "gt_labels_3d", "gt_bboxes", "gt_labels"],
+        keys=[
+            "points", "img", "gt_bboxes_3d", "gt_labels_3d", "gt_bboxes",
+            "gt_labels"
+        ],
         meta_keys=[
             "cam2img",
             "ori_cam2img",
@@ -287,7 +304,7 @@ train_dataloader = dict(
         dataset=dict(
             type=dataset_type,
             data_root=data_root,
-            ann_file= info_directory_path + "t4dataset_xx1_infos_train.pkl",
+            ann_file=info_directory_path + "t4dataset_xx1_infos_train.pkl",
             pipeline=train_pipeline,
             metainfo=_base_.metainfo,
             class_names=_base_.class_names,
@@ -306,7 +323,7 @@ val_dataloader = dict(
     dataset=dict(
         type=dataset_type,
         data_root=data_root,
-        ann_file= info_directory_path + "t4dataset_xx1_infos_val.pkl",
+        ann_file=info_directory_path + "t4dataset_xx1_infos_val.pkl",
         pipeline=test_pipeline,
         metainfo=_base_.metainfo,
         class_names=_base_.class_names,
@@ -319,20 +336,23 @@ val_dataloader = dict(
 )
 test_dataloader = val_dataloader
 
-
 val_evaluator = dict(
     type="T4Metric",
     data_root=data_root,
-    ann_file= data_root + info_directory_path + "t4dataset_xx1_infos_val.pkl",
+    ann_file=data_root + info_directory_path + "t4dataset_xx1_infos_val.pkl",
     metric="bbox",
     backend_args=backend_args,
     class_names=_base_.class_names,
-    data_mapping= _base_.name_mapping,
+    data_mapping=_base_.name_mapping,
 )
 test_evaluator = val_evaluator
 
-vis_backends = [dict(type="LocalVisBackend"), dict(type="TensorboardVisBackend")]
-visualizer = dict(type="Det3DLocalVisualizer", vis_backends=vis_backends, name="visualizer")
+vis_backends = [
+    dict(type="LocalVisBackend"),
+    dict(type="TensorboardVisBackend")
+]
+visualizer = dict(
+    type="Det3DLocalVisualizer", vis_backends=vis_backends, name="visualizer")
 
 # learning rate
 lr = 0.0001
@@ -396,10 +416,11 @@ optim_wrapper = dict(
 #   - `enable` means enable scaling LR automatically
 #       or not by default.
 #   - `base_batch_size` = (1 GPUs) x (4 samples per GPU).
-auto_scale_lr = dict(enable=False, base_batch_size=train_gpu_size * train_batch_size)
+auto_scale_lr = dict(
+    enable=False, base_batch_size=train_gpu_size * train_batch_size)
 log_processor = dict(window_size=50)
 
 default_hooks = dict(
-    logger=dict(type="LoggerHook", interval=50), checkpoint=dict(type="CheckpointHook", interval=1)
-)
+    logger=dict(type="LoggerHook", interval=50),
+    checkpoint=dict(type="CheckpointHook", interval=1))
 custom_hooks = [dict(type="DisableObjectSampleHook", disable_after_epoch=30)]

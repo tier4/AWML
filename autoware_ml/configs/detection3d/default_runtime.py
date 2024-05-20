@@ -1,4 +1,3 @@
-
 default_scope = 'mmdet3d'
 
 default_hooks = dict(

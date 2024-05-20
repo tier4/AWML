@@ -20,7 +20,8 @@ from tools.detection3d.t4dataset_converters.update_infos_to_v2 import (
     get_empty_standard_data_info, get_single_image_sweep)
 
 
-def get_empty_standard_data_info(camera_types=["CAM0", "CAM1", "CAM2", "CAM3", "CAM4"]):
+def get_empty_standard_data_info(
+        camera_types=["CAM0", "CAM1", "CAM2", "CAM3", "CAM4"]):
     data_info = dict(
         # (str): Sample id of the frame.
         sample_idx=None,
@@ -77,17 +78,20 @@ def t4dataset_data_prep(
     metainfo = dict(classes=class_names, version=version)
 
     for dataset_version in dataset_version_list:
-        dataset_list = osp.join(dataset_version_config_root, dataset_version + ".yaml")
+        dataset_list = osp.join(dataset_version_config_root,
+                                dataset_version + ".yaml")
         with open(dataset_list, "r") as f:
             dataset_list_dict: Dict[str, List[str]] = yaml.safe_load(f)
 
         for split in ["train", "val", "test"]:
-            print_log(f"Creating data info for split: {split}", logger="current")
+            print_log(
+                f"Creating data info for split: {split}", logger="current")
             for scene_id in dataset_list_dict.get(split, []):
                 scene_dir = osp.join(root_path, dataset_version, scene_id)
                 if not osp.isdir(scene_dir):
                     raise ValueError(f"{scene_dir} does not exist.")
-                nusc = NuScenes(version="annotation", dataroot=scene_dir, verbose=False)
+                nusc = NuScenes(
+                    version="annotation", dataroot=scene_dir, verbose=False)
 
                 for i, sample in enumerate(nusc.sample):
                     lidar_token = get_lidar_token(sample)
@@ -121,33 +125,32 @@ def t4dataset_data_prep(
                     )
 
                     for new_info in [
-                        basic_info,
-                        get_ego2global(pose_record),
-                        get_lidar_points_info(lidar_path, cs_record),
-                        get_lidar_sweeps_info(
-                            nusc, cs_record, pose_record, sd_record, max_sweeps
-                        ),
-                        get_annotations(
-                            nusc,
-                            sample["anns"],
-                            boxes,
-                            e2g_r_mat,
-                            l2e_r_mat,
-                            name_mapping,
-                            class_names,
-                        ),
+                            basic_info,
+                            get_ego2global(pose_record),
+                            get_lidar_points_info(lidar_path, cs_record),
+                            get_lidar_sweeps_info(nusc, cs_record, pose_record,
+                                                  sd_record, max_sweeps),
+                            get_annotations(
+                                nusc,
+                                sample["anns"],
+                                boxes,
+                                e2g_r_mat,
+                                l2e_r_mat,
+                                name_mapping,
+                                class_names,
+                            ),
                     ]:
                         info.update(new_info)
                     t4_infos[split].append(info)
-    assert sum(len(split) for split in t4_infos.values()) > 0, "dataset isn't available"
-    print(
-        f"train sample: {len(t4_infos['train'])}, "
-        f"val sample: {len(t4_infos['val'])}, "
-        f"test sample: {len(t4_infos['test'])}"
-    )
+    assert sum(len(split)
+               for split in t4_infos.values()) > 0, "dataset isn't available"
+    print(f"train sample: {len(t4_infos['train'])}, "
+          f"val sample: {len(t4_infos['val'])}, "
+          f"test sample: {len(t4_infos['test'])}")
 
     def save(_infos, _split):
-        _info_path = osp.join(out_dir, f"t4dataset_{version}_infos_{_split}.pkl")
+        _info_path = osp.join(out_dir,
+                              f"t4dataset_{version}_infos_{_split}.pkl")
         mmengine.dump(dict(data_list=_infos, metainfo=metainfo), _info_path)
 
     save(t4_infos["train"], "train")
@@ -158,7 +161,8 @@ def t4dataset_data_prep(
 
 
 def parse_args():
-    parser = argparse.ArgumentParser(description="Create data info for T4dataset")
+    parser = argparse.ArgumentParser(
+        description="Create data info for T4dataset")
     parser.add_argument(
         "--config",
         type=str,

@@ -1,9 +1,8 @@
 {
   "[python]": {
-    "editor.defaultFormatter": "ms-python.black-formatter",
-    "editor.formatOnSave": true
-  },
-  "black-formatter.args": [
-    "--line-length=99"
-  ]
+    "editor.formatOnSaveMode": "file",
+    "editor.formatOnSave": true,
+    "editor.defaultFormatter": "eeyore.yapf",
+    "editor.formatOnType": true,
+  }
 }

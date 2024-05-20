@@ -12,7 +12,8 @@ import yaml
 
 def _parse_args():
     parser = argparse.ArgumentParser()
-    parser.add_argument("config", type=str, help="list of t4dataset for train/val/test")
+    parser.add_argument(
+        "config", type=str, help="list of t4dataset for train/val/test")
     parser.add_argument(
         "--project-id",
         type=str,
@@ -42,9 +43,9 @@ def main():
     with open(config_path) as f:
         data_splits = yaml.safe_load(f)
 
-    assert isinstance(data_splits, dict) and all(
-        [isinstance(v, list) for v in data_splits.values()]
-    ), "config file must be a type of `dict[str, list]`"
+    assert isinstance(data_splits, dict) and all([
+        isinstance(v, list) for v in data_splits.values()
+    ]), "config file must be a type of `dict[str, list]`"
 
     t4dataset_ids = sum(data_splits.values(), [])
 

@@ -126,7 +126,8 @@ class T4Dataset(NuScenesDataset):
         if isinstance(eval_class_range, dict):
             return eval_class_range
         else:
-            raise TypeError(f"eval_class_range must be dict: {type(eval_class_range)}")
+            raise TypeError(
+                f"eval_class_range must be dict: {type(eval_class_range)}")
 
     def get_data_info(self, index):
         input_dict = super().get_data_info(index)
@@ -161,13 +162,15 @@ class T4Dataset(NuScenesDataset):
             mask = info["num_lidar_pts"] > 0
 
         if self.ignore_without_rider:
-            mask_without_riders = np.array(["without_rider" not in x for x in info["gt_attrs"]])
+            mask_without_riders = np.array(
+                ["without_rider" not in x for x in info["gt_attrs"]])
             mask *= mask_without_riders
 
         gt_bboxes_3d = info["gt_bboxes_3d"][mask]  # x, y, z, w, l, h, yaw
         gt_names_3d = info["gt_nusc_name"][mask]
         gt_attrs_3d = info["gt_attrs"][mask]
-        gt_scores_3d = info["gt_scores"][mask] if "gt_scores" in info.keys() else None
+        gt_scores_3d = info["gt_scores"][mask] if "gt_scores" in info.keys(
+        ) else None
         instance_tokens = None
         if "instance_tokens" in info:
             instance_tokens = np.array(info["instance_tokens"])[mask]
@@ -201,12 +204,13 @@ class T4Dataset(NuScenesDataset):
 
         if self.with_velocity:
             gt_velocity = info["velocities"][mask]
-            gt_bboxes_3d = np.concatenate([gt_bboxes_3d.numpy(), gt_velocity], axis=-1)
+            gt_bboxes_3d = np.concatenate([gt_bboxes_3d.numpy(), gt_velocity],
+                                          axis=-1)
         else:
             # CenterPoint needs velocity
             gt_bboxes_3d = np.concatenate(
-                [gt_bboxes_3d, np.zeros((gt_bboxes_3d.shape[0], 2))], axis=-1
-            )
+                [gt_bboxes_3d,
+                 np.zeros((gt_bboxes_3d.shape[0], 2))], axis=-1)
 
         # the nuscenes box center is [0.5, 0.5, 0.5], we change it to be
         # the same as KITTI (0.5, 0.5, 0)
@@ -217,7 +221,8 @@ class T4Dataset(NuScenesDataset):
         ).convert_to(self.box_mode_3d)
 
         # 2d annotations
-        gt_bboxes_2d, gt_camera_token, gt_labels_2d, img_filename = ([] for i in range(4))
+        gt_bboxes_2d, gt_camera_token, gt_labels_2d, img_filename = (
+            [] for i in range(4))
         if "annos_2d" in info:
             sweeps = info["sweeps"]
             for i in range(len(sweeps) + 1):
@@ -273,8 +278,8 @@ class T4Dataset(NuScenesDataset):
         # modified from https://github.com/open-mmlab/mmdetection3d/blob/v1.2.0/mmdet3d/datasets/det3d_dataset.py#L279-L296
         if self.modality["use_lidar"]:
             info["lidar_points"]["lidar_path"] = osp.join(
-                self.data_prefix.get("pts", ""), info["lidar_points"]["lidar_path"]
-            )
+                self.data_prefix.get("pts", ""),
+                info["lidar_points"]["lidar_path"])
 
             info["num_pts_feats"] = info["lidar_points"]["num_pts_feats"]
             info["lidar_path"] = info["lidar_points"]["lidar_path"]
@@ -286,12 +291,10 @@ class T4Dataset(NuScenesDataset):
                     # --- end ---
                     if "samples" in sweep["lidar_points"]["lidar_path"]:
                         sweep["lidar_points"]["lidar_path"] = osp.join(
-                            self.data_prefix["pts"], file_suffix
-                        )
+                            self.data_prefix["pts"], file_suffix)
                     else:
                         sweep["lidar_points"]["lidar_path"] = osp.join(
-                            self.data_prefix["sweeps"], file_suffix
-                        )
+                            self.data_prefix["sweeps"], file_suffix)
 
         return info
 
@@ -310,30 +313,43 @@ class T4Dataset(NuScenesDataset):
         }
         return nuscenes_utils.DetectionConfig.deserialize(eval_config_dict)
 
-    def _get_hdl_eval_config(
-        self, class_name="car", hdl_pedestrian_matching=None, **eval_config_kwargs
-    ):
+    def _get_hdl_eval_config(self,
+                             class_name="car",
+                             hdl_pedestrian_matching=None,
+                             **eval_config_kwargs):
         if hdl_pedestrian_matching is None:
             condition = {
-                "criteria": "iou",
-                "threshold": 0.5 if class_name in ["pedestrian", "bicycle"] else 0.7,
+                "criteria":
+                "iou",
+                "threshold":
+                0.5 if class_name in ["pedestrian", "bicycle"] else 0.7,
             }
         else:
             assert hdl_pedestrian_matching > 0 and hdl_pedestrian_matching < 10
-            thresholds = {"pedestrian": hdl_pedestrian_matching, "bicycle": 0.5}
+            thresholds = {
+                "pedestrian": hdl_pedestrian_matching,
+                "bicycle": 0.5
+            }
             condition = {
-                "criteria": "iou" if class_name not in ["pedestrian"] else "distance",
-                "threshold": thresholds[class_name] if class_name in thresholds else 0.7,
+                "criteria":
+                "iou" if class_name not in ["pedestrian"] else "distance",
+                "threshold":
+                thresholds[class_name] if class_name in thresholds else 0.7,
             }
         eval_config_dict = {
-            "es_box_filter": f'detection_name == "{class_name}"' if class_name != "all" else "",
-            "gt_box_filter": f'detection_name == "{class_name}"' if class_name != "all" else "",
-            "overlap_condition": condition,
+            "es_box_filter":
+            f'detection_name == "{class_name}"' if class_name != "all" else "",
+            "gt_box_filter":
+            f'detection_name == "{class_name}"' if class_name != "all" else "",
+            "overlap_condition":
+            condition,
         }
         eval_config_dict.update(eval_config_kwargs)
         return hdl_utils.HDLEvaluationConfig.deserialize(eval_config_dict)
 
-    def _format_gt_to_nusc(self, output_dir: str, pipeline: Optional[List[Dict]] = None):
+    def _format_gt_to_nusc(self,
+                           output_dir: str,
+                           pipeline: Optional[List[Dict]] = None):
         """Convert ground-truth annotations to nuscenes Box format.
 
         Args:
@@ -366,8 +382,7 @@ class T4Dataset(NuScenesDataset):
                     boxes_3d=input_dict["gt_bboxes_3d"],
                     labels_3d=input_dict["gt_labels_3d"],
                     scores_3d=torch.ones(len(input_dict["gt_labels_3d"])),
-                )
-            )
+                ))
 
         gt_path = self._format_bbox(
             gt_dicts,
@@ -378,8 +393,7 @@ class T4Dataset(NuScenesDataset):
         return gt_path
 
     def _compose_scene_dicts_from_flat_dict(
-        self, bboxes_dict: Dict[str, Any]
-    ) -> Dict[str, Dict[str, Any]]:
+            self, bboxes_dict: Dict[str, Any]) -> Dict[str, Dict[str, Any]]:
         """Group bboxes by scenes
 
         Args:
@@ -390,9 +404,13 @@ class T4Dataset(NuScenesDataset):
         """
 
         dict_scene = defaultdict(dict)
-        sample_token_to_scene_token = {d["token"]: d["scene_token"] for d in self.data_infos}
+        sample_token_to_scene_token = {
+            d["token"]: d["scene_token"]
+            for d in self.data_infos
+        }
         for sample_token, scene_token in sample_token_to_scene_token.items():
-            dict_scene[scene_token].update({sample_token: bboxes_dict[sample_token]})
+            dict_scene[scene_token].update(
+                {sample_token: bboxes_dict[sample_token]})
         return dict_scene
 
     def _evaluate_nuscenes_each_scene(
@@ -405,13 +423,18 @@ class T4Dataset(NuScenesDataset):
         result_dict = mmengine.load(result_path)["results"]
         gt_dict = mmengine.load(gt_path)["results"]
 
-        result_dict_scene = self._compose_scene_dicts_from_flat_dict(result_dict)
+        result_dict_scene = self._compose_scene_dicts_from_flat_dict(
+            result_dict)
         gt_dict_scene = self._compose_scene_dicts_from_flat_dict(gt_dict)
-        sample_token_to_scene_token = {d["token"]: d["scene_token"] for d in self.data_infos}
+        sample_token_to_scene_token = {
+            d["token"]: d["scene_token"]
+            for d in self.data_infos
+        }
 
         ap_dicts: List[Dict] = list()
         scene_tokens: List[str] = list(sample_token_to_scene_token.values())
-        scene_tokens: List[str] = sorted(set(scene_tokens), key=scene_tokens.index)
+        scene_tokens: List[str] = sorted(
+            set(scene_tokens), key=scene_tokens.index)
         for scene_token in scene_tokens:
             print_log(f"===== {scene_token} =====", logger=logger)
             nusc_eval = nuscenes_utils.nuScenesDetectionEval(
@@ -427,8 +450,8 @@ class T4Dataset(NuScenesDataset):
             metrics_summary = metrics.serialize()
 
             metrics_str, ap_dict = nuscenes_utils.format_nuscenes_metrics(
-                metrics_summary, sorted(set(self.CLASSES), key=self.CLASSES.index)
-            )
+                metrics_summary,
+                sorted(set(self.CLASSES), key=self.CLASSES.index))
             ap_dicts.append(ap_dict)
 
             print_log(metrics_str, logger=logger)
@@ -461,8 +484,7 @@ class T4Dataset(NuScenesDataset):
         metrics_summary = metrics.serialize()
 
         metrics_str, ap_dict = nuscenes_utils.format_nuscenes_metrics(
-            metrics_summary, sorted(set(self.CLASSES), key=self.CLASSES.index)
-        )
+            metrics_summary, sorted(set(self.CLASSES), key=self.CLASSES.index))
 
         scene_tokens = {d["scene_token"] for d in self.data_infos}
         print_log(f"===== {len(scene_tokens)} scenes ======", logger=logger)
@@ -481,12 +503,17 @@ class T4Dataset(NuScenesDataset):
         result_dict = mmengine.load(result_path)["results"]
         gt_dict = mmengine.load(gt_path)["results"]
 
-        result_dict_scene = self._compose_scene_dicts_from_flat_dict(result_dict)
+        result_dict_scene = self._compose_scene_dicts_from_flat_dict(
+            result_dict)
         gt_dict_scene = self._compose_scene_dicts_from_flat_dict(gt_dict)
-        sample_token_to_scene_token = {d["token"]: d["scene_token"] for d in self.data_infos}
+        sample_token_to_scene_token = {
+            d["token"]: d["scene_token"]
+            for d in self.data_infos
+        }
 
         scene_tokens: List[str] = list(sample_token_to_scene_token.values())
-        scene_tokens: List[str] = sorted(set(scene_tokens), key=scene_tokens.index)
+        scene_tokens: List[str] = sorted(
+            set(scene_tokens), key=scene_tokens.index)
         for scene_token in scene_tokens:
             ap_dict: Dict = {}
             print_log(f"===== {scene_token} =====", logger=logger)
@@ -553,11 +580,14 @@ class T4Dataset(NuScenesDataset):
         gt_dict = mmengine.load(gt_path)["results"]
 
         # Identify scenes
-        result_scene_dict = self._compose_scene_dicts_from_flat_dict(result_dict)
+        result_scene_dict = self._compose_scene_dicts_from_flat_dict(
+            result_dict)
         gt_scene_dict = self._compose_scene_dicts_from_flat_dict(gt_dict)
 
         # Make sure that all scenes matches between the detection result and ground-truth
-        assert len(set(result_scene_dict.keys()).difference(set(gt_scene_dict.keys()))) == 0
+        assert len(
+            set(result_scene_dict.keys()).difference(
+                set(gt_scene_dict.keys()))) == 0
 
         print_log("Start to evaluate with HDLEvaluator...", logger=logger)
         evaluation_scores = {}
@@ -567,15 +597,14 @@ class T4Dataset(NuScenesDataset):
             for class_name in list(self.CLASSES) + ["all"]:
                 for f in result_scene_dict[scene].keys():
                     resp = [
-                        r
-                        for r in result_scene_dict[scene][f]
+                        r for r in result_scene_dict[scene][f]
                         if r["detection_score"] > hdl_decision_threshold
                     ]
                     result_scene_dict[scene][f] = resp
                 evaluator = hdl_utils.HDLEvaluator(
                     config=self._get_hdl_eval_config(
-                        class_name=class_name, hdl_pedestrian_matching=hdl_pedestrian_matching
-                    ),
+                        class_name=class_name,
+                        hdl_pedestrian_matching=hdl_pedestrian_matching),
                     es_boxes=result_scene_dict[scene],
                     gt_boxes=gt_scene_dict[scene],
                 )
@@ -587,8 +616,8 @@ class T4Dataset(NuScenesDataset):
             df.index.name = "class_name"
             print_log(f"===== {scene} =====", logger=logger)
             print_log(
-                "---------------- HDLEvaluator results-----------------\n"
-                + df.to_markdown(mode="str"),
+                "---------------- HDLEvaluator results-----------------\n" +
+                df.to_markdown(mode="str"),
                 logger=logger,
             )
             evaluation_scores[scene] = scene_scores
@@ -596,9 +625,13 @@ class T4Dataset(NuScenesDataset):
         # Summarize the scores
         summary = {}
         for class_name in list(self.CLASSES) + ["all"]:
-            scores = [scene_scores[class_name] for scene_scores in evaluation_scores.values()]
+            scores = [
+                scene_scores[class_name]
+                for scene_scores in evaluation_scores.values()
+            ]
             scores_df = pd.DataFrame.from_records(scores)
-            means = scores_df[hdl_utils.HDLEvaluator.summarizable_criterion].mean().to_dict()
+            means = scores_df[hdl_utils.HDLEvaluator.
+                              summarizable_criterion].mean().to_dict()
             summary.update({f"{class_name}_{k}": v for k, v in means.items()})
 
         # Save the evaluation result
@@ -644,7 +677,10 @@ class T4Dataset(NuScenesDataset):
         evaluation_scores = {}
         for class_name in list(self.CLASSES) + ["all"]:
             for f in result_dict.keys():
-                resp = [r for r in result_dict[f] if r["detection_score"] > hdl_decision_threshold]
+                resp = [
+                    r for r in result_dict[f]
+                    if r["detection_score"] > hdl_decision_threshold
+                ]
                 result_dict[f] = resp
             evaluator = hdl_utils.HDLEvaluator(
                 config=self._get_hdl_eval_config(
@@ -659,9 +695,10 @@ class T4Dataset(NuScenesDataset):
             evaluation_scores[class_name] = scores
 
             # confidence metrics
-            confidences = sum(
-                [boxes.score.cpu().tolist() for boxes in evaluator.es_boxes.values()], []
-            )
+            confidences = sum([
+                boxes.score.cpu().tolist()
+                for boxes in evaluator.es_boxes.values()
+            ], [])
             if len(confidences) > 0:
                 true_positives = evaluator.es_true_positives
                 cc_vis.add_plots(true_positives, confidences, label=class_name)
@@ -669,8 +706,7 @@ class T4Dataset(NuScenesDataset):
             # confusion matrix
             if class_name == "all":
                 confusion_matrix = evaluator.get_confusion_matrix(
-                    labels=sorted(set(self.CLASSES), key=self.CLASSES.index)
-                )
+                    labels=sorted(set(self.CLASSES), key=self.CLASSES.index))
 
         df = pd.DataFrame.from_dict(evaluation_scores, orient="index")
         df.drop(columns=["evaluation_conditions"], inplace=True)
@@ -678,21 +714,23 @@ class T4Dataset(NuScenesDataset):
         if show_markdown:
             print_log(f"===== {num_scenes} scenes =====", logger=logger)
             print_log(
-                "---------------- HDLEvaluator results-----------------\n"
-                + df.to_markdown(mode="str"),
+                "---------------- HDLEvaluator results-----------------\n" +
+                df.to_markdown(mode="str"),
                 logger=logger,
             )
             print_log(
-                "---------------- Confusion matrix-----------------\n"
-                + confusion_matrix.to_markdown(mode="str"),
+                "---------------- Confusion matrix-----------------\n" +
+                confusion_matrix.to_markdown(mode="str"),
                 logger=logger,
             )
 
         # Summarize the scores
         summary = {}
         for class_name in list(self.CLASSES) + ["all"]:
-            scores_df = pd.DataFrame.from_records(evaluation_scores[class_name])
-            scores = scores_df[hdl_utils.HDLEvaluator.summarizable_criterion].mean().to_dict()
+            scores_df = pd.DataFrame.from_records(
+                evaluation_scores[class_name])
+            scores = scores_df[hdl_utils.HDLEvaluator.
+                               summarizable_criterion].mean().to_dict()
             summary.update({f"{class_name}_{k}": v for k, v in scores.items()})
 
         # Save the evaluation result
@@ -735,9 +773,11 @@ class T4Dataset(NuScenesDataset):
 
         ap_dict = dict()
         if "nuscenes-each-scene" in metric:
-            summary = self._evaluate_nuscenes_each_scene(output_dir, result_path, gt_path, logger)
+            summary = self._evaluate_nuscenes_each_scene(
+                output_dir, result_path, gt_path, logger)
         if "nuscenes" in metric:
-            summary = self._evaluate_nuscenes_all_scenes(output_dir, result_path, gt_path, logger)
+            summary = self._evaluate_nuscenes_all_scenes(
+                output_dir, result_path, gt_path, logger)
             ap_dict.update({f"nuScenes_{k}": v for k, v in summary.items()})
         if "hdl-each-scene" in metric:
             summary = self._evaluate_hdl_each_scene(
@@ -760,9 +800,11 @@ class T4Dataset(NuScenesDataset):
             )
             ap_dict.update({f"HDL_{k}": v for k, v in summary.items()})
         if "lyft-each-scene" in metric:
-            summary = self._evaluate_lyft_each_scene(output_dir, result_path, gt_path, logger)
+            summary = self._evaluate_lyft_each_scene(output_dir, result_path,
+                                                     gt_path, logger)
         if "lyft" in metric:
-            summary = self._evaluate_lyft_all_scenes(output_dir, result_path, gt_path, logger)
+            summary = self._evaluate_lyft_all_scenes(output_dir, result_path,
+                                                     gt_path, logger)
             ap_dict.update({f"lyft_{k}": v for k, v in summary.items()})
 
         return ap_dict
@@ -819,7 +861,8 @@ class T4Dataset(NuScenesDataset):
         # naive workaround for the case that the model does not estimate velocity
         # reference: https://github.com/open-mmlab/mmdetection3d/issues/292
         for _result in results:
-            result = _result["pts_bbox"] if "pts_bbox" in _result.keys() else _result
+            result = _result["pts_bbox"] if "pts_bbox" in _result.keys(
+            ) else _result
             if result["boxes_3d"].tensor.shape[1] == 7:
                 result["boxes_3d"].tensor = torch.cat(
                     (
@@ -830,9 +873,11 @@ class T4Dataset(NuScenesDataset):
                 )
 
         try:
-            result_files, tmp_dir = self.format_results(results, jsonfile_prefix)
+            result_files, tmp_dir = self.format_results(
+                results, jsonfile_prefix)
         except AssertionError:
-            warnings.warn("Model outputs contains invalid values. Skipped evaluation.")
+            warnings.warn(
+                "Model outputs contains invalid values. Skipped evaluation.")
             return {}
 
         print_log(
@@ -871,9 +916,11 @@ class T4Dataset(NuScenesDataset):
                 out_dir = tmp_dir.name
 
             if data_class_mapping is not None:
-                warnings.warn("data_class_mapping is not support in hard decision eval.")
+                warnings.warn(
+                    "data_class_mapping is not support in hard decision eval.")
 
-            for thres, beta in itertools.product(hard_decision_thresholds, hard_decision_betas):
+            for thres, beta in itertools.product(hard_decision_thresholds,
+                                                 hard_decision_betas):
                 out_csv_name = os.path.join(
                     out_dir,
                     f"hard_decision_results_thres{str(thres).lower()}_beta{str(beta)}.csv",
@@ -937,7 +984,8 @@ class T4Dataset(NuScenesDataset):
         out_csv_name: Optional[str] = None,
         pipeline_for_gt: Optional[List[Dict]] = None,
     ):
-        default_class_range_dict = self.eval_detection_configs.class_range.copy()
+        default_class_range_dict = self.eval_detection_configs.class_range.copy(
+        )
         result_dict = defaultdict(list)
 
         # range-wise evaluation
@@ -948,11 +996,13 @@ class T4Dataset(NuScenesDataset):
                 if v != 0:
                     class_range_dict[k] = detection_range
             self.eval_detection_configs.class_range.update(class_range_dict)
-            result_path_dict, tmp_dir = self.format_results(results, jsonfile_prefix)
+            result_path_dict, tmp_dir = self.format_results(
+                results, jsonfile_prefix)
             assert "pts_bbox" in result_path_dict
             result_path = result_path_dict["pts_bbox"]
             output_dir = osp.join(*osp.split(result_path)[:-1])
-            gt_path = self._format_gt_to_nusc(output_dir, pipeline=pipeline_for_gt)
+            gt_path = self._format_gt_to_nusc(
+                output_dir, pipeline=pipeline_for_gt)
 
             for overlap_condition in overlap_conditions:
                 summary = self._evaluate_hdl_all_scenes(
@@ -995,12 +1045,10 @@ class T4Dataset(NuScenesDataset):
                 mean_result_dict["overlap_condition"] += [oc]
                 for m in metrics:
                     mean_result_dict[m] += [
-                        df[
-                            (df["detection_range"] == dr)
-                            & (df["overlap_condition"] == oc)
-                            # except "all" class
-                            & df["class"].isin(classes_wo_all_)
-                        ][m].mean()
+                        df[(df["detection_range"] == dr)
+                           & (df["overlap_condition"] == oc)
+                           # except "all" class
+                           & df["class"].isin(classes_wo_all_)][m].mean()
                     ]
 
         # calculate detection range averaged
@@ -1011,11 +1059,10 @@ class T4Dataset(NuScenesDataset):
                 mean_result_dict["detection_range"] += ["avg"]
                 for m in metrics:
                     mean_result_dict[m] += [
-                        df[
-                            (df["class"] == c)
-                            & (df["overlap_condition"] == oc)
-                            & (df["detection_range"].isin(detection_ranges_))
-                        ][m].mean()
+                        df[(df["class"] == c)
+                           & (df["overlap_condition"] == oc)
+                           & (df["detection_range"].isin(detection_ranges_))]
+                        [m].mean()
                     ]
 
         # calculate overlap-condition averaged
@@ -1026,11 +1073,11 @@ class T4Dataset(NuScenesDataset):
                 mean_result_dict["overlap_condition"] += ["avg"]
                 for m in metrics:
                     mean_result_dict[m] += [
-                        df[
-                            (df["detection_range"] == dr)
-                            & (df["class"] == c)
-                            & (df["overlap_condition"].isin(overlap_conditions_))
-                        ][m].mean()
+                        df[(df["detection_range"] == dr)
+                           & (df["class"] == c)
+                           &
+                           (df["overlap_condition"].isin(overlap_conditions_))]
+                        [m].mean()
                     ]
 
         # calculate detection range and overlap condition averaged
@@ -1040,11 +1087,10 @@ class T4Dataset(NuScenesDataset):
             mean_result_dict["detection_range"] += ["avg"]
             for m in metrics:
                 mean_result_dict[m] += [
-                    df[
-                        (df["class"] == c)
-                        & (df["detection_range"].isin(detection_ranges_))
-                        & (df["overlap_condition"].isin(overlap_conditions_))
-                    ][m].mean()
+                    df[(df["class"] == c)
+                       & (df["detection_range"].isin(detection_ranges_))
+                       & (df["overlap_condition"].isin(overlap_conditions_))]
+                    [m].mean()
                 ]
 
         # calculate all averaged
@@ -1053,23 +1099,22 @@ class T4Dataset(NuScenesDataset):
         mean_result_dict["overlap_condition"] += ["avg"]
         for m in metrics:
             mean_result_dict[m] += [
-                df[
-                    (df["detection_range"].isin(detection_ranges_))
-                    & (df["overlap_condition"].isin(overlap_conditions_))
-                    & (df["class"].isin(classes_wo_all_))
-                ][m].mean()
+                df[(df["detection_range"].isin(detection_ranges_))
+                   & (df["overlap_condition"].isin(overlap_conditions_))
+                   & (df["class"].isin(classes_wo_all_))][m].mean()
             ]
         df = pd.concat([df, pd.DataFrame(mean_result_dict)], axis=0)
 
         # print
         df = (
-            df.set_index(["overlap_condition", "class", "detection_range"], drop=True)
-            .sort_index()
-            .sort_index(axis=1, ascending=False)
-            .reindex(overlap_conditions_ + ["avg"], level="overlap_condition")
-            .reindex(classes_ + ["avg (except all)"], level="class")
-            .reindex(detection_ranges_ + ["avg"], level=2)
-        )
+            df.set_index(["overlap_condition", "class", "detection_range"],
+                         drop=True).sort_index().sort_index(
+                             axis=1, ascending=False).reindex(
+                                 overlap_conditions_ + ["avg"],
+                                 level="overlap_condition").reindex(
+                                     classes_ + ["avg (except all)"],
+                                     level="class").reindex(
+                                         detection_ranges_ + ["avg"], level=2))
         print_log(
             f"---------------- HARD DECISION RESULTS (hard_decision_threshold={hard_decision_threshold},f1_value_beta={f1_value_beta})-----------------\n"
             + df.to_markdown(mode="str"),
@@ -1082,7 +1127,8 @@ class T4Dataset(NuScenesDataset):
             df.to_csv(out_csv_name, float_format="%.4f")
 
         # restore to default setting
-        self.eval_detection_configs.class_range.update(default_class_range_dict)
+        self.eval_detection_configs.class_range.update(
+            default_class_range_dict)
 
         return result_dict
 
@@ -1120,13 +1166,13 @@ class T4Dataset(NuScenesDataset):
             )
             for i, box in enumerate(boxes):
                 name = mapped_class_names[box.label]
-                if np.sqrt(box.velocity[0] ** 2 + box.velocity[1] ** 2) > 0.2:
+                if np.sqrt(box.velocity[0]**2 + box.velocity[1]**2) > 0.2:
                     if name in [
-                        "car",
-                        "construction_vehicle",
-                        "bus",
-                        "truck",
-                        "trailer",
+                            "car",
+                            "construction_vehicle",
+                            "bus",
+                            "truck",
+                            "trailer",
                     ]:
                         attr = "vehicle.moving"
                     elif name in ["bicycle", "motorcycle"]:

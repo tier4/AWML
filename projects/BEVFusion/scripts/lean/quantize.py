@@ -41,13 +41,13 @@ warnings.filterwarnings("ignore")
 
 
 class QuantConcat(torch.nn.Module):
+
     def __init__(self, quantization=True):
         super().__init__()
 
         if quantization:
             self._input_quantizer = quant_nn.TensorQuantizer(
-                QuantDescriptor(num_bits=8, calib_method="histogram")
-            )
+                QuantDescriptor(num_bits=8, calib_method="histogram"))
             self._input_quantizer._calibrator._torch_hist = True
             self._fake_quant = True
         self.quantization = quantization
@@ -55,19 +55,19 @@ class QuantConcat(torch.nn.Module):
     def forward(self, x, y):
         if self.quantization:
             return torch.cat(
-                [self._input_quantizer(x), self._input_quantizer(y)], dim=1
-            )
+                [self._input_quantizer(x),
+                 self._input_quantizer(y)], dim=1)
         return torch.cat([x, y], dim=1)
 
 
 class QuantAdd(torch.nn.Module):
+
     def __init__(self, quantization=True):
         super().__init__()
 
         if quantization:
             self._input_quantizer = quant_nn.TensorQuantizer(
-                QuantDescriptor(num_bits=8, calib_method="histogram")
-            )
+                QuantDescriptor(num_bits=8, calib_method="histogram"))
             self._input_quantizer._calibrator._torch_hist = True
             self._fake_quant = True
         self.quantization = quantization
@@ -75,16 +75,16 @@ class QuantAdd(torch.nn.Module):
     def forward(self, input1, input2):
         if self.quantization:
             return torch.add(
-                self._input_quantizer(input1), self._input_quantizer(input2)
-            )
+                self._input_quantizer(input1), self._input_quantizer(input2))
         return torch.add(input1, input2)
 
 
-class SparseConvolutionQunat(spconv.conv.SparseConvolution, quant_nn_utils.QuantMixin):
+class SparseConvolutionQunat(spconv.conv.SparseConvolution,
+                             quant_nn_utils.QuantMixin):
     default_quant_desc_input = tensor_quant.QuantDescriptor(
-        num_bits=8, calib_method="histogram"
-    )
-    default_quant_desc_weight = tensor_quant.QuantDescriptor(num_bits=8, axis=(4))
+        num_bits=8, calib_method="histogram")
+    default_quant_desc_weight = tensor_quant.QuantDescriptor(
+        num_bits=8, axis=(4))
 
     def __init__(
         self,
@@ -145,15 +145,15 @@ def transfer_spconv_to_quantization(nninstance: torch.nn.Module, quantmodule):
                 quant_instance.default_quant_desc_input,
                 quant_instance.default_quant_desc_weight,
             )
-            self.init_quantizer(
-                self.default_quant_desc_input, self.default_quant_desc_weight
-            )
+            self.init_quantizer(self.default_quant_desc_input,
+                                self.default_quant_desc_weight)
 
     __init__(quant_instance)
     return quant_instance
 
 
 def quantize_sparseconv_module(model):
+
     def replace_module(module, prefix=""):
         for name in module._modules:
             submodule = module._modules[name]
@@ -161,11 +161,9 @@ def quantize_sparseconv_module(model):
             replace_module(submodule, submodule_name)
 
             if isinstance(submodule, spconv.SubMConv3d) or isinstance(
-                submodule, spconv.SparseConv3d
-            ):
+                    submodule, spconv.SparseConv3d):
                 module._modules[name] = transfer_spconv_to_quantization(
-                    submodule, SparseConvolutionQunat
-                )
+                    submodule, SparseConvolutionQunat)
 
     replace_module(model)
 
@@ -197,7 +195,6 @@ def quantize_encoders_camera_branch(model_camera_branch):
     quantize_camera_backbone(model_camera_branch.backbone)
     quantize_camera_neck(model_camera_branch.neck)
     quantize_camera_vtransform(model_camera_branch.vtransform)
-
     """
     Make all inputs of each concat have the same scale
     Improved performance when using TensorRT forward
@@ -205,12 +202,14 @@ def quantize_encoders_camera_branch(model_camera_branch):
     major = model_camera_branch.backbone.layer3[0].conv1._input_quantizer
     model_camera_branch.neck.quant_concat1._input_quantizer = major
     model_camera_branch.neck.lateral_convs[0].conv._input_quantizer = major
-    model_camera_branch.backbone.layer3[0].downsample[0]._input_quantizer = major
+    model_camera_branch.backbone.layer3[0].downsample[
+        0]._input_quantizer = major
 
     major = model_camera_branch.backbone.layer4[0].conv1._input_quantizer
     model_camera_branch.neck.quant_concat0._input_quantizer = major
     model_camera_branch.neck.lateral_convs[1].conv._input_quantizer = major
-    model_camera_branch.backbone.layer4[0].downsample[0]._input_quantizer = major
+    model_camera_branch.backbone.layer4[0].downsample[
+        0]._input_quantizer = major
 
 
 def transfer_torch_to_quantization(nninstance: torch.nn.Module, quantmodule):
@@ -220,20 +219,21 @@ def transfer_torch_to_quantization(nninstance: torch.nn.Module, quantmodule):
 
     def __init__(self):
         quant_desc_input, quant_desc_weight = quant_nn_utils.pop_quant_desc_in_kwargs(
-            self.__class__
-        )
+            self.__class__)
         if isinstance(self, quant_nn_utils.QuantInputMixin):
             # quant_desc_input = quant_nn_utils.pop_quant_desc_in_kwargs(self.__class__, input_only=True)
             self.init_quantizer(quant_desc_input)
 
             # Turn on torch_hist to enable higher calibration speeds
-            if isinstance(self._input_quantizer._calibrator, calib.HistogramCalibrator):
+            if isinstance(self._input_quantizer._calibrator,
+                          calib.HistogramCalibrator):
                 self._input_quantizer._calibrator._torch_hist = True
         else:
             self.init_quantizer(quant_desc_input, quant_desc_weight)
 
             # Turn on torch_hist to enable higher calibration speeds
-            if isinstance(self._input_quantizer._calibrator, calib.HistogramCalibrator):
+            if isinstance(self._input_quantizer._calibrator,
+                          calib.HistogramCalibrator):
                 self._input_quantizer._calibrator._torch_hist = True
                 self._weight_quantizer._calibrator._torch_hist = True
 
@@ -256,8 +256,7 @@ def replace_to_quantization_module(model: torch.nn.Module):
             submodule_id = id(type(submodule))
             if submodule_id in module_dict:
                 module._modules[name] = transfer_torch_to_quantization(
-                    submodule, module_dict[submodule_id]
-                )
+                    submodule, module_dict[submodule_id])
 
     recursive_and_replace_module(model)
 
@@ -272,6 +271,7 @@ def quantize_decoder(model_decoder):
 
 
 class hook_generalized_lss_fpn_forward:
+
     def __init__(self, obj):
         self.obj = obj
 
@@ -295,8 +295,7 @@ class hook_generalized_lss_fpn_forward:
             )
             if ic == 0:
                 laterals[i] = self.quant_concat0(
-                    laterals[i], x
-                )  # torch.cat([laterals[i], x], dim=1)
+                    laterals[i], x)  # torch.cat([laterals[i], x], dim=1)
             else:
                 laterals[i] = self.quant_concat1(laterals[i], x)
             ic += 1
@@ -312,10 +311,12 @@ def quantize_camera_neck(model_camera_neck):
     replace_to_quantization_module(model_camera_neck)
     model_camera_neck.quant_concat0 = QuantConcat()
     model_camera_neck.quant_concat1 = QuantConcat()
-    model_camera_neck.forward = hook_generalized_lss_fpn_forward(model_camera_neck)
+    model_camera_neck.forward = hook_generalized_lss_fpn_forward(
+        model_camera_neck)
 
 
 class hook_bottleneck_forward:
+
     def __init__(self, obj):
         self.obj = obj
 
@@ -351,11 +352,9 @@ def quantize_camera_backbone(model_camera_backbone):
             print(f"Add QuantAdd to {name}")
             if bottleneck.downsample is not None:
                 bottleneck.downsample[
-                    0
-                ]._input_quantizer = bottleneck.conv1._input_quantizer
+                    0]._input_quantizer = bottleneck.conv1._input_quantizer
                 bottleneck.residual_quantizer = quant_nn.TensorQuantizer(
-                    quant_nn.QuantConv2d.default_quant_desc_input
-                )
+                    quant_nn.QuantConv2d.default_quant_desc_input)
             else:
                 bottleneck.residual_quantizer = bottleneck.conv1._input_quantizer
             bottleneck.forward = hook_bottleneck_forward(bottleneck)
@@ -368,6 +367,7 @@ def calibrate_model(
     batch_processor_callback: Callable = None,
     num_batch=1,
 ):
+
     def compute_amax(model, **kwargs):
         for name, module in model.named_modules():
             if isinstance(module, quant_nn.TensorQuantizer):
@@ -393,8 +393,8 @@ def calibrate_model(
 
         iter_count = 0
         for data in tqdm(
-            data_loader, total=num_batch, desc="Collect stats for calibrating"
-        ):
+                data_loader, total=num_batch,
+                desc="Collect stats for calibrating"):
             with torch.no_grad():
                 result = model(return_loss=False, rescale=True, **data)
             iter_count += 1
@@ -417,11 +417,8 @@ def calibrate_model(
 def print_quantizer_status(module):
     for name, module in module.named_modules():
         if isinstance(module, quant_nn.TensorQuantizer):
-            print(
-                "TensorQuantizer name:{} disabled staus:{} module:{}".format(
-                    name, module._disabled, module
-                )
-            )
+            print("TensorQuantizer name:{} disabled staus:{} module:{}".format(
+                name, module._disabled, module))
 
 
 def have_quantizer(module):
@@ -439,6 +436,7 @@ def set_quantizer_fast(module):
 
 
 class disable_quantization:
+
     def __init__(self, model):
         self.model = model
 
@@ -455,6 +453,7 @@ class disable_quantization:
 
 
 class enable_quantization:
+
     def __init__(self, model):
         self.model = model
 
@@ -470,17 +469,17 @@ class enable_quantization:
         self.apply(False)
 
 
-def build_sensitivity_profile(
-    model, data_loader_val, dataset_val, eval_model_callback: Callable = None
-):
+def build_sensitivity_profile(model,
+                              data_loader_val,
+                              dataset_val,
+                              eval_model_callback: Callable = None):
     quant_layer_names = []
     for name, module in model.named_modules():
         if name.endswith("_quantizer"):
             print("use quant layer:{}", name)
             module.disable()
-            layer_name = name.replace("._input_quantizer", "").replace(
-                "._weight_quantizer", ""
-            )
+            layer_name = name.replace("._input_quantizer",
+                                      "").replace("._weight_quantizer", "")
             if layer_name not in quant_layer_names:
                 quant_layer_names.append(layer_name)
     for i, quant_layer in enumerate(quant_layer_names):
@@ -502,10 +501,8 @@ def initialize():
     quant_desc_input = QuantDescriptor(calib_method="histogram")
 
     quant_modules._DEFAULT_QUANT_MAP.append(
-        quant_modules._quant_entry(
-            mmcv.cnn.bricks.wrappers, "ConvTranspose2d", quant_nn.QuantConvTranspose2d
-        )
-    )
+        quant_modules._quant_entry(mmcv.cnn.bricks.wrappers, "ConvTranspose2d",
+                                   quant_nn.QuantConvTranspose2d))
 
     for item in quant_modules._DEFAULT_QUANT_MAP:
         item.replace_mod.set_default_quant_desc_input(quant_desc_input)

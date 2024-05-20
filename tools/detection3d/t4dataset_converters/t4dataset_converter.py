@@ -33,10 +33,13 @@ def search_version_if_exists(root_path: str) -> str:
     Returns:
         str: The version directory if it exists, otherwise the root path itself.
     """
-    version_pattern = re.compile(r"^\d+$")  # an integer larger than or equal to 0
+    version_pattern = re.compile(
+        r"^\d+$")  # an integer larger than or equal to 0
     base_dir = os.path.basename(root_path)
     if not version_pattern.match(base_dir):
-        version_dirs = [d for d in os.listdir(root_path) if version_pattern.match(d)]
+        version_dirs = [
+            d for d in os.listdir(root_path) if version_pattern.match(d)
+        ]
         if version_dirs:
             version_id = sorted(version_dirs, key=int)[-1]
             nusc_root_path = os.path.join(root_path, version_id)
@@ -74,7 +77,8 @@ def create_t4dataset_infos_by_split_type(
 
     """
     nusc_root_path = search_version_if_exists(root_path)
-    nusc = NuScenes(version="annotation", dataroot=nusc_root_path, verbose=False)
+    nusc = NuScenes(
+        version="annotation", dataroot=nusc_root_path, verbose=False)
 
     if version in ["t4xx1", "t4xx1_uc2"]:
         name_mapping = t4xx1_dataset.T4XX1Dataset.NameMapping
@@ -112,12 +116,13 @@ def create_t4dataset_infos_by_split_type(
         return [], [], []
 
     if use_2d_annotation:
-        obj_file_path = os.path.join(root_path, "annotation", "object_ann.json")
+        obj_file_path = os.path.join(root_path, "annotation",
+                                     "object_ann.json")
         if not os.path.exists(obj_file_path):
             raise ValueError("file not exist: {}".format(obj_file_path))
         nuim = NuImages(
-            dataroot=root_path, version="annotation", verbose=False
-        )  # for loading 2d annos
+            dataroot=root_path, version="annotation",
+            verbose=False)  # for loading 2d annos
     else:
         nuim = None
 
@@ -243,7 +248,8 @@ def _fill_infos(
         if lidar_token is None:
             continue
         sd_rec = nusc.get("sample_data", lidar_token)
-        cs_record = nusc.get("calibrated_sensor", sd_rec["calibrated_sensor_token"])
+        cs_record = nusc.get("calibrated_sensor",
+                             sd_rec["calibrated_sensor_token"])
         pose_record = nusc.get("ego_pose", sd_rec["ego_pose_token"])
         lidar_path, boxes, _ = nusc.get_sample_data(lidar_token)
         scene_rec = nusc.get("scene", sample["scene_token"])
@@ -300,14 +306,16 @@ def _fill_infos(
                 cam_infos = []
                 while len(cam_infos) <= max_sweeps:
                     # get pose record of the current sample data
-                    cam_pose_record = nusc.get("ego_pose", im_sd_rec["ego_pose_token"])
+                    cam_pose_record = nusc.get("ego_pose",
+                                               im_sd_rec["ego_pose_token"])
                     cam_info = obtain_sensor2top(
                         nusc,
                         im_sd_rec["token"],
                         l2e_t,
                         l2e_r_mat,
                         cam_pose_record["translation"],
-                        Quaternion(cam_pose_record["rotation"]).rotation_matrix,
+                        Quaternion(
+                            cam_pose_record["rotation"]).rotation_matrix,
                         "cam",
                         root_path,
                         overwrite_root_path,
@@ -345,30 +353,38 @@ def _fill_infos(
         info["sweeps"] = sweeps
         # obtain annotation
         if not test:
-            annotations = [nusc.get("sample_annotation", token) for token in sample["anns"]]
+            annotations = [
+                nusc.get("sample_annotation", token)
+                for token in sample["anns"]
+            ]
             instance_tokens = [ann["instance_token"] for ann in annotations]
             locs = np.array([b.center for b in boxes]).reshape(-1, 3)
             dims = np.array([b.wlh for b in boxes]).reshape(-1, 3)
-            rots = np.array([b.orientation.yaw_pitch_roll[0] for b in boxes]).reshape(-1, 1)
-            velocity = np.array([nusc.box_velocity(token)[:2] for token in sample["anns"]])
+            rots = np.array([b.orientation.yaw_pitch_roll[0]
+                             for b in boxes]).reshape(-1, 1)
+            velocity = np.array(
+                [nusc.box_velocity(token)[:2] for token in sample["anns"]])
             if not do_not_check_valid_flag:
                 valid_flag = np.array(
-                    [anno["num_lidar_pts"] > 0 for anno in annotations], dtype=bool
-                ).reshape(-1)
+                    [anno["num_lidar_pts"] > 0 for anno in annotations],
+                    dtype=bool).reshape(-1)
             else:
                 # NOTE(kan-bayashi): UCv2.0 dataset does not contain meaningful num_lidar_pts,
                 #   i.e., all anntations have num_lidar_pts = 0.
-                valid_flag = np.array([True for anno in annotations], dtype=bool).reshape(-1)
+                valid_flag = np.array([True for anno in annotations],
+                                      dtype=bool).reshape(-1)
             # convert velo from global to lidar
             for i in range(len(boxes)):
                 velo = np.array([*velocity[i], 0.0])
-                velo = velo @ np.linalg.inv(e2g_r_mat).T @ np.linalg.inv(l2e_r_mat).T
+                velo = velo @ np.linalg.inv(e2g_r_mat).T @ np.linalg.inv(
+                    l2e_r_mat).T
                 velocity[i] = velo[:2]
 
             names = np.array([name_mapping.get(b.name, b.name) for b in boxes])
             # we need to convert rot to SECOND format.
             gt_boxes = np.concatenate([locs, dims, -rots - np.pi / 2], axis=1)
-            assert len(gt_boxes) == len(annotations), f"{len(gt_boxes)}, {len(annotations)}"
+            assert len(gt_boxes) == len(
+                annotations), f"{len(gt_boxes)}, {len(annotations)}"
 
             gt_attrs = []
             for anno in annotations:
@@ -376,31 +392,27 @@ def _fill_infos(
                     gt_attrs.append("none")
                 else:
                     attr_names = [
-                        nusc.get("attribute", t)["name"] for t in anno["attribute_tokens"]
+                        nusc.get("attribute", t)["name"]
+                        for t in anno["attribute_tokens"]
                     ]
                     attr_categories = [a.split(".")[0] for a in attr_names]
-                    if attr_categories_mapper("pedestrian_state") in attr_categories:
-                        gt_attrs.append(
-                            attr_names[
-                                attr_categories.index(attr_categories_mapper("pedestrian_state"))
-                            ]
-                        )
-                    elif attr_categories_mapper("cycle_state") in attr_categories:
-                        gt_attrs.append(
-                            attr_names[
-                                attr_categories.index(attr_categories_mapper("cycle_state"))
-                            ]
-                        )
-                    elif attr_categories_mapper("vehicle_state") in attr_categories:
-                        gt_attrs.append(
-                            attr_names[
-                                attr_categories.index(attr_categories_mapper("vehicle_state"))
-                            ]
-                        )
+                    if attr_categories_mapper(
+                            "pedestrian_state") in attr_categories:
+                        gt_attrs.append(attr_names[attr_categories.index(
+                            attr_categories_mapper("pedestrian_state"))])
+                    elif attr_categories_mapper(
+                            "cycle_state") in attr_categories:
+                        gt_attrs.append(attr_names[attr_categories.index(
+                            attr_categories_mapper("cycle_state"))])
+                    elif attr_categories_mapper(
+                            "vehicle_state") in attr_categories:
+                        gt_attrs.append(attr_names[attr_categories.index(
+                            attr_categories_mapper("vehicle_state"))])
                     else:
                         raise ValueError(f"invalid attributes: {attr_names}")
 
-            assert len(names) == len(gt_attrs), f"{len(names)}, {len(gt_attrs)}"
+            assert len(names) == len(
+                gt_attrs), f"{len(names)}, {len(gt_attrs)}"
             assert len(gt_boxes) == len(instance_tokens)
 
             info["gt_boxes"] = gt_boxes
@@ -409,21 +421,19 @@ def _fill_infos(
             info["gt_names"] = names
             info["gt_attrs"] = np.array(gt_attrs)
             info["gt_velocity"] = velocity.reshape(-1, 2)
-            info["num_lidar_pts"] = np.array([a["num_lidar_pts"] for a in annotations])
-            info["num_radar_pts"] = np.array([a["num_radar_pts"] for a in annotations])
+            info["num_lidar_pts"] = np.array(
+                [a["num_lidar_pts"] for a in annotations])
+            info["num_radar_pts"] = np.array(
+                [a["num_radar_pts"] for a in annotations])
             info["valid_flag"] = valid_flag
 
             # 2d annotations
             if nuim is not None:
                 # key-frame images
                 key_im_sd_rec = [
-                    o
-                    for o in nuim.sample_data
-                    if (
-                        o["sample_token"] == sample_token
-                        and o["fileformat"] != "pcd.bin"
-                        and o["is_key_frame"] is True
-                    )
+                    o for o in nuim.sample_data
+                    if (o["sample_token"] == sample_token and o["fileformat"]
+                        != "pcd.bin" and o["is_key_frame"] is True)
                 ]  # len=len(camera_type)
                 # obtain sweeps for key-frame images
                 im_sweeps = []
@@ -431,7 +441,8 @@ def _fill_infos(
                     im_sweep = []
                     for im_sd_rec in key_im_sd_rec:
                         if not im_sd_rec["prev"] == "":
-                            im_sweep.append(nuim.get("sample_data", im_sd_rec["prev"]))
+                            im_sweep.append(
+                                nuim.get("sample_data", im_sd_rec["prev"]))
                         else:
                             continue
                     key_im_sd_rec = im_sweep
@@ -441,20 +452,18 @@ def _fill_infos(
                 camera_label_sweeps = []
                 for im_sweep in im_sweeps:
                     camera_annotations = {}
-                    camera_annotations.update(
-                        {
-                            "filename": [],
-                            "sample_token": im_sd_rec["sample_token"],
-                            "name": [],
-                            "bbox": [],
-                            "camera_token": [],
-                        }
-                    )
+                    camera_annotations.update({
+                        "filename": [],
+                        "sample_token":
+                        im_sd_rec["sample_token"],
+                        "name": [],
+                        "bbox": [],
+                        "camera_token": [],
+                    })
                     for im_sd_rec in im_sweep:
                         sample_data_token = im_sd_rec["token"]
                         object_anns = [
-                            o
-                            for o in nuim.object_ann
+                            o for o in nuim.object_ann
                             if o["sample_data_token"] == sample_data_token
                         ]
                         if len(object_anns) == 0:
@@ -473,16 +482,19 @@ def _fill_infos(
                             for i in range(len(bbox))
                         ]
                         nuim_name = [
-                            nuim.get("category", o["category_token"])["name"] for o in object_anns
+                            nuim.get("category", o["category_token"])["name"]
+                            for o in object_anns
                         ]
                         names = [name_mapping[c] for c in nuim_name]
 
-                        camera_annotations["filename"].append(np.delete(filenames, drop_list))
-                        camera_annotations["name"].append(np.delete(names, drop_list))
-                        camera_annotations["bbox"].append(np.delete(bbox, drop_list, 0))
+                        camera_annotations["filename"].append(
+                            np.delete(filenames, drop_list))
+                        camera_annotations["name"].append(
+                            np.delete(names, drop_list))
+                        camera_annotations["bbox"].append(
+                            np.delete(bbox, drop_list, 0))
                         camera_annotations["camera_token"].append(
-                            np.delete(camera_token, drop_list)
-                        )
+                            np.delete(camera_token, drop_list))
 
                     for k, v in camera_annotations.items():
                         if k in ["sample_token"]:
@@ -541,7 +553,8 @@ def obtain_sensor2top(
 
     """
     sd_rec = nusc.get("sample_data", sensor_token)
-    cs_record = nusc.get("calibrated_sensor", sd_rec["calibrated_sensor_token"])
+    cs_record = nusc.get("calibrated_sensor",
+                         sd_rec["calibrated_sensor_token"])
     pose_record = nusc.get("ego_pose", sd_rec["ego_pose_token"])
     data_path = str(nusc.get_sample_data_path(sd_rec["token"]))
     if os.getcwd() in data_path:  # path from lyftdataset is absolute path
@@ -570,14 +583,13 @@ def obtain_sensor2top(
     # sweep->ego->global->ego'->lidar
     l2e_r_s_mat = Quaternion(l2e_r_s).rotation_matrix
     e2g_r_s_mat = Quaternion(e2g_r_s).rotation_matrix
-    R = (l2e_r_s_mat.T @ e2g_r_s_mat.T) @ (np.linalg.inv(e2g_r_mat).T @ np.linalg.inv(l2e_r_mat).T)
+    R = (l2e_r_s_mat.T @ e2g_r_s_mat.T) @ (
+        np.linalg.inv(e2g_r_mat).T @ np.linalg.inv(l2e_r_mat).T)
     T = (l2e_t_s @ e2g_r_s_mat.T + e2g_t_s) @ (
-        np.linalg.inv(e2g_r_mat).T @ np.linalg.inv(l2e_r_mat).T
-    )
+        np.linalg.inv(e2g_r_mat).T @ np.linalg.inv(l2e_r_mat).T)
     T -= (
-        e2g_t @ (np.linalg.inv(e2g_r_mat).T @ np.linalg.inv(l2e_r_mat).T)
-        + l2e_t @ np.linalg.inv(l2e_r_mat).T
-    )
+        e2g_t @ (np.linalg.inv(e2g_r_mat).T @ np.linalg.inv(l2e_r_mat).T) +
+        l2e_t @ np.linalg.inv(l2e_r_mat).T)
     sweep["sensor2lidar_rotation"] = R.T  # points @ R.T + T
     sweep["sensor2lidar_translation"] = T
 
@@ -591,22 +603,28 @@ def obtain_sensor2top(
         #   https://github.com/nutonomy/nuscenes-devkit/blob/da3c9a977112fca05413dab4e944d911769385a9/python-sdk/nuscenes/nuscenes.py#L319-L375
         _, boxes, _ = nusc.get_sample_data(sensor_token)
         ann_tokens = nusc.get("sample", sd_rec["sample_token"])["anns"]
-        anns = [nusc.get("sample_annotation", ann_token) for ann_token in ann_tokens]
+        anns = [
+            nusc.get("sample_annotation", ann_token)
+            for ann_token in ann_tokens
+        ]
         instance_tokens = [ann["instance_token"] for ann in anns]
         locs = np.array([b.center for b in boxes]).reshape(-1, 3)
         dims = np.array([b.wlh for b in boxes]).reshape(-1, 3)
-        rots = np.array([b.orientation.yaw_pitch_roll[0] for b in boxes]).reshape(-1, 1)
-        velocity = np.array(
-            [nusc.box_velocity(ann_token)[:2] for ann_token in ann_tokens]
-        ).reshape(-1, 2)
+        rots = np.array([b.orientation.yaw_pitch_roll[0]
+                         for b in boxes]).reshape(-1, 1)
+        velocity = np.array([
+            nusc.box_velocity(ann_token)[:2] for ann_token in ann_tokens
+        ]).reshape(-1, 2)
         # convert velo from global to lidar
         for i in range(len(boxes)):
             velo = np.array([*velocity[i], 0.0])
-            velo = velo @ np.linalg.inv(e2g_r_mat).T @ np.linalg.inv(l2e_r_mat).T
+            velo = velo @ np.linalg.inv(e2g_r_mat).T @ np.linalg.inv(
+                l2e_r_mat).T
             velocity[i] = velo[:2]
 
         # we need to convert rot to SECOND format.
-        gt_boxes = np.concatenate([locs, dims, -rots - np.pi / 2, velocity], axis=1)
+        gt_boxes = np.concatenate([locs, dims, -rots - np.pi / 2, velocity],
+                                  axis=1)
         sweep["gt_boxes_with_velocity"] = gt_boxes
         sweep["instance_tokens"] = instance_tokens
 

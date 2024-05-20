@@ -72,12 +72,10 @@ def qat_train(
     if fp16_cfg is not None:
         if "cumulative_iters" in cfg.optimizer_config:
             optimizer_config = GradientCumulativeFp16OptimizerHook(
-                **cfg.optimizer_config, **fp16_cfg, distributed=distributed
-            )
+                **cfg.optimizer_config, **fp16_cfg, distributed=distributed)
         else:
             optimizer_config = Fp16OptimizerHook(
-                **cfg.optimizer_config, **fp16_cfg, distributed=distributed
-            )
+                **cfg.optimizer_config, **fp16_cfg, distributed=distributed)
     elif distributed and "type" not in cfg.optimizer_config:
         optimizer_config = OptimizerHook(**cfg.optimizer_config)
     else:
@@ -101,7 +99,8 @@ def qat_train(
         val_samples_per_gpu = cfg.data.val.pop("samples_per_gpu", 1)
         if val_samples_per_gpu > 1:
             # Replace 'ImageToTensor' to 'DefaultFormatBundle'
-            cfg.data.val.pipeline = replace_ImageToTensor(cfg.data.val.pipeline)
+            cfg.data.val.pipeline = replace_ImageToTensor(
+                cfg.data.val.pipeline)
         val_dataset = build_dataset(cfg.data.val, dict(test_mode=True))
         val_dataloader = build_dataloader(
             val_dataset,
@@ -139,8 +138,7 @@ def train_model(
             None,
             dist=distributed,
             seed=cfg.seed,
-        )
-        for ds in dataset
+        ) for ds in dataset
     ]
 
     # put model on gpus
@@ -179,12 +177,10 @@ def train_model(
     if fp16_cfg is not None:
         if "cumulative_iters" in cfg.optimizer_config:
             optimizer_config = GradientCumulativeFp16OptimizerHook(
-                **cfg.optimizer_config, **fp16_cfg, distributed=distributed
-            )
+                **cfg.optimizer_config, **fp16_cfg, distributed=distributed)
         else:
             optimizer_config = Fp16OptimizerHook(
-                **cfg.optimizer_config, **fp16_cfg, distributed=distributed
-            )
+                **cfg.optimizer_config, **fp16_cfg, distributed=distributed)
     elif distributed and "type" not in cfg.optimizer_config:
         optimizer_config = OptimizerHook(**cfg.optimizer_config)
     else:
@@ -207,7 +203,8 @@ def train_model(
         val_samples_per_gpu = cfg.data.val.pop("samples_per_gpu", 1)
         if val_samples_per_gpu > 1:
             # Replace 'ImageToTensor' to 'DefaultFormatBundle'
-            cfg.data.val.pipeline = replace_ImageToTensor(cfg.data.val.pipeline)
+            cfg.data.val.pipeline = replace_ImageToTensor(
+                cfg.data.val.pipeline)
         val_dataset = build_dataset(cfg.data.val, dict(test_mode=True))
         val_dataloader = build_dataloader(
             val_dataset,

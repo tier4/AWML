@@ -12,7 +12,6 @@ info_directory_path = "info/test_name/"
 max_epochs = 1
 evaluation = dict(interval=1)
 
-
 train_dataloader = dict(
     batch_size=train_batch_size,
     num_workers=train_batch_size,
@@ -23,7 +22,7 @@ train_dataloader = dict(
         dataset=dict(
             type=dataset_type,
             data_root=data_root,
-            ann_file= info_directory_path + "t4dataset_xx1_infos_train.pkl",
+            ann_file=info_directory_path + "t4dataset_xx1_infos_train.pkl",
             pipeline=_base_.train_pipeline,
             metainfo=_base_.metainfo,
             class_names=_base_.class_names,
@@ -42,7 +41,7 @@ val_dataloader = dict(
     dataset=dict(
         type=dataset_type,
         data_root=data_root,
-        ann_file= info_directory_path + "t4dataset_xx1_infos_val.pkl",
+        ann_file=info_directory_path + "t4dataset_xx1_infos_val.pkl",
         pipeline=_base_.test_pipeline,
         metainfo=_base_.metainfo,
         class_names=_base_.class_names,
@@ -55,17 +54,17 @@ val_dataloader = dict(
 )
 test_dataloader = val_dataloader
 
-
 val_evaluator = dict(
     type="T4Metric",
     data_root=data_root,
-    ann_file= data_root + info_directory_path + "t4dataset_xx1_infos_val.pkl",
+    ann_file=data_root + info_directory_path + "t4dataset_xx1_infos_val.pkl",
     metric="bbox",
     backend_args=_base_.backend_args,
     class_names=_base_.class_names,
-    data_mapping= _base_.name_mapping,
+    data_mapping=_base_.name_mapping,
 )
 
 test_evaluator = val_evaluator
 train_cfg = dict(by_epoch=True, max_epochs=max_epochs, val_interval=1)
-auto_scale_lr = dict(enable=False, base_batch_size=train_gpu_size * train_batch_size)
+auto_scale_lr = dict(
+    enable=False, base_batch_size=train_gpu_size * train_batch_size)

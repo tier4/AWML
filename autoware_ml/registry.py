@@ -34,19 +34,14 @@ from mmengine.registry import Registry
 
 # manage all kinds of runners like `EpochBasedRunner` and `IterBasedRunner`
 RUNNERS = Registry(
-    'runner',
-    parent=MMENGINE_RUNNERS,
-    locations=['mmdet3d.engine'])
+    'runner', parent=MMENGINE_RUNNERS, locations=['mmdet3d.engine'])
 # manage runner constructors that define how to initialize runners
 RUNNER_CONSTRUCTORS = Registry(
     'runner constructor',
     parent=MMENGINE_RUNNER_CONSTRUCTORS,
     locations=['mmdet3d.engine'])
 # manage all kinds of loops like `EpochBasedTrainLoop`
-LOOPS = Registry(
-    'loop',
-    parent=MMENGINE_LOOPS,
-    locations=['mmdet3d.engine'])
+LOOPS = Registry('loop', parent=MMENGINE_LOOPS, locations=['mmdet3d.engine'])
 # manage all kinds of hooks like `CheckpointHook`
 HOOKS = Registry(
     'hook', parent=MMENGINE_HOOKS, locations=['mmdet3d.engine.hooks'])
@@ -79,9 +74,7 @@ WEIGHT_INITIALIZERS = Registry(
 
 # mangage all kinds of optimizers like `SGD` and `Adam`
 OPTIMIZERS = Registry(
-    'optimizer',
-    parent=MMENGINE_OPTIMIZERS,
-    locations=['mmdet3d.engine'])
+    'optimizer', parent=MMENGINE_OPTIMIZERS, locations=['mmdet3d.engine'])
 # manage optimizer wrapper
 OPTIM_WRAPPERS = Registry(
     'optim wrapper',
