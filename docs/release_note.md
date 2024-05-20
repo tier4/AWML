@@ -2,16 +2,22 @@
 ### Core library
 #### New feature
 
-- Add whole architecture and environement
+- Add whole architecture and environment
   - https://github.com/tier4/autoware-ml/pull/1
   - https://github.com/tier4/autoware-ml/pull/25
   - https://github.com/tier4/autoware-ml/pull/26
+  - https://github.com/tier4/autoware-ml/pull/29
+  - https://github.com/tier4/autoware-ml/pull/33
 - Add T4dataset
   - https://github.com/tier4/autoware-ml/pull/17
   - https://github.com/tier4/autoware-ml/pull/19
   - https://github.com/tier4/autoware-ml/pull/23
+  - https://github.com/tier4/autoware-ml/pull/27
 
 #### Fix
+
+- Update dataset id
+  - https://github.com/tier4/autoware-ml/pull/31
 
 ### Tools
 #### New feature
@@ -52,6 +58,9 @@
   - https://github.com/tier4/autoware-ml/pull/16
   - https://github.com/tier4/autoware-ml/pull/21
   - https://github.com/tier4/autoware-ml/pull/24
+  - https://github.com/tier4/autoware-ml/pull/28
+  - https://github.com/tier4/autoware-ml/pull/30
+  - https://github.com/tier4/autoware-ml/pull/32
 
 ## v0.1.0
 
