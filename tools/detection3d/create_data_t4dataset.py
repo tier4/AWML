@@ -52,6 +52,7 @@ def t4dataset_data_prep(
     root_path: str,
     version: str,
     out_dir: str,
+    dataset_version_config_root: str,
     dataset_version_list: List[str],
     class_names: List[str],
     name_mapping: List[str],
@@ -76,7 +77,6 @@ def t4dataset_data_prep(
     metainfo = dict(classes=class_names, version=version)
 
     for dataset_version in dataset_version_list:
-        dataset_version_config_root = "autoware_ml/configs/detection3d/dataset/t4dataset/"
         dataset_list = osp.join(dataset_version_config_root, dataset_version + ".yaml")
         with open(dataset_list, "r") as f:
             dataset_list_dict: Dict[str, List[str]] = yaml.safe_load(f)
@@ -87,7 +87,6 @@ def t4dataset_data_prep(
                 scene_dir = osp.join(root_path, dataset_version, scene_id)
                 if not osp.isdir(scene_dir):
                     raise ValueError(f"{scene_dir} does not exist.")
-
                 nusc = NuScenes(version="annotation", dataroot=scene_dir, verbose=False)
 
                 for i, sample in enumerate(nusc.sample):
@@ -208,6 +207,7 @@ def main():
         version=args.version,
         out_dir=args.out_dir,
         max_sweeps=args.max_sweeps,
+        dataset_version_config_root=cfg.dataset_version_config_root,
         dataset_version_list=cfg.dataset_version_list,
         name_mapping=cfg.name_mapping,
         class_names=cfg.class_names,
