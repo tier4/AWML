@@ -1,15 +1,14 @@
 _base_ = [
-    "../../../../projects/TransFusion/configs/t4dataset/transfusion_lidar_pillar_second_secfpn_1xb8-cyclic-20e_t4xx1_75m.py",
+    "../../../../projects/TransFusion/configs/t4dataset/transfusion_lidar_pillar_second_secfpn_1xb8-cyclic-20e_t4xx1_75m_precise.py",
 ]
 
 train_gpu_size = 1
 train_batch_size = 1
 val_batch_size = 1
+max_epochs = 1
 
-dataset_type = "T4Dataset"
 data_root = "data/t4dataset/"
 info_directory_path = "info/test_name/"
-max_epochs = 1
 evaluation = dict(interval=1)
 
 train_dataloader = dict(
@@ -20,7 +19,7 @@ train_dataloader = dict(
     dataset=dict(
         type="CBGSDataset",
         dataset=dict(
-            type=dataset_type,
+            type=_base_.dataset_type,
             data_root=data_root,
             ann_file=info_directory_path + "t4dataset_xx1_infos_train.pkl",
             pipeline=_base_.train_pipeline,
@@ -39,7 +38,7 @@ val_dataloader = dict(
     persistent_workers=True,
     sampler=dict(type="DefaultSampler", shuffle=False),
     dataset=dict(
-        type=dataset_type,
+        type=_base_.dataset_type,
         data_root=data_root,
         ann_file=info_directory_path + "t4dataset_xx1_infos_val.pkl",
         pipeline=_base_.test_pipeline,
@@ -62,6 +61,7 @@ val_evaluator = dict(
     backend_args=_base_.backend_args,
     class_names=_base_.class_names,
     data_mapping=_base_.name_mapping,
+    eval_class_range=_base_.eval_class_range,
 )
 
 test_evaluator = val_evaluator

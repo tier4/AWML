@@ -7,22 +7,31 @@ custom_imports = dict(
     imports=["projects.BEVFusion.bevfusion"], allow_failed_imports=False)
 custom_imports["imports"] += _base_.custom_imports["imports"]
 
-voxel_size = [0.18, 0.18, 0.2]
-voxel_size_test = [0.18, 0.18]
+# user setting
+data_root = "data/t4dataset/"
+info_directory_path = "info/user_name/"
+train_gpu_size = 1
+train_batch_size = 8
+val_interval = 5
+max_epochs = 20
+backend_args = None
+
+# range setting
 point_cloud_range = [-129.6, -129.6, -5.0, 129.6, 129.6, 3.0]
+voxel_size = [0.18, 0.18, 0.2]
+eval_class_range = {
+    "car": 75,
+    "truck": 75,
+    "bus": 75,
+    "bicycle": 75,
+    "pedestrian": 75,
+}
+
+# model parameter
+input_modality = dict(use_lidar=True, use_camera=False)
 point_load_dim = 5  # x, y, z, intensity, ring_id
 point_use_dim = 5
 point_intensity_dim = 3
-dataset_type = "T4Dataset"
-data_root = "data/t4dataset/"
-info_directory_path = "info/user_name/"
-max_epochs = 20
-evaluation = dict(interval=1)
-
-# no prefix for T4dataset
-data_prefix = dict(pts="", sweeps="")
-input_modality = dict(use_lidar=True, use_camera=False)
-backend_args = None
 
 model = dict(
     type="BEVFusion",
@@ -117,7 +126,7 @@ model = dict(
             dataset="nuScenes",
             grid_size=[1440, 1440, 41],
             out_size_factor=8,
-            voxel_size=voxel_size_test,
+            voxel_size=voxel_size[0:2],
             pc_range=point_cloud_range[0:2],
             nms_type=None,
         ),
@@ -129,7 +138,7 @@ model = dict(
             post_center_range=point_cloud_range,
             score_threshold=0.0,
             out_size_factor=8,
-            voxel_size=voxel_size_test,
+            voxel_size=voxel_size[0:2],
             code_size=10,
         ),
         loss_cls=dict(
@@ -315,7 +324,7 @@ train_dataloader = dict(
     dataset=dict(
         type="CBGSDataset",
         dataset=dict(
-            type=dataset_type,
+            type=_base_.dataset_type,
             data_root=data_root,
             ann_file=info_directory_path + "t4dataset_xx1_infos_train.pkl",
             pipeline=train_pipeline,
@@ -323,7 +332,7 @@ train_dataloader = dict(
             class_names=_base_.class_names,
             modality=input_modality,
             test_mode=False,
-            data_prefix=data_prefix,
+            data_prefix=_base_.data_prefix,
             box_type_3d="LiDAR",
         ),
     ),
@@ -334,14 +343,14 @@ val_dataloader = dict(
     persistent_workers=True,
     sampler=dict(type="DefaultSampler", shuffle=False),
     dataset=dict(
-        type=dataset_type,
+        type=_base_.dataset_type,
         data_root=data_root,
         ann_file=info_directory_path + "t4dataset_xx1_infos_val.pkl",
         pipeline=test_pipeline,
         metainfo=_base_.metainfo,
         class_names=_base_.class_names,
         modality=input_modality,
-        data_prefix=data_prefix,
+        data_prefix=_base_.data_prefix,
         test_mode=True,
         box_type_3d="LiDAR",
         backend_args=backend_args,
@@ -357,6 +366,7 @@ val_evaluator = dict(
     backend_args=backend_args,
     class_names=_base_.class_names,
     data_mapping=_base_.name_mapping,
+    eval_class_range=eval_class_range,
 )
 
 test_evaluator = val_evaluator

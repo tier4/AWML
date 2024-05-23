@@ -58,7 +58,7 @@ DOCKER_BUILDKIT=1 docker build -t autoware-ml-transfusion-deploy projects/TransF
 - Docker run
 
 ```sh
-docker run -it --rm --gpus all --shm-size=64g --name awml-deploy -v $PWD/:/workspace -v $PWD/data:/workspace/data autoware-ml-transfusion-deploy
+docker run -it --rm --gpus '"device=0"' --shm-size=64g --name awml-deploy -v $PWD/:/workspace -v $PWD/data:/workspace/data autoware-ml-transfusion-deploy
 ```
 
 - Move to workspace

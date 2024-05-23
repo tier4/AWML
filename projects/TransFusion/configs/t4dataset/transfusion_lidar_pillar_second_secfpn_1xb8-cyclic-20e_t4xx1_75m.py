@@ -6,27 +6,35 @@ custom_imports = dict(
     imports=["projects.TransFusion.transfusion"], allow_failed_imports=False)
 custom_imports["imports"] += _base_.custom_imports["imports"]
 
+# user setting
+data_root = "data/t4dataset/"
+info_directory_path = "info/user_name/"
 train_gpu_size = 1
 train_batch_size = 8
+val_interval = 1
+max_epochs = 40
+backend_args = None
 
+# range setting
 point_cloud_range = [-76.8, -76.8, -3.0, 76.8, 76.8, 7.0]
 voxel_size = [0.3, 0.3, 10]
 grid_size = [512, 512, 1]
+eval_class_range = {
+    "car": 75,
+    "truck": 75,
+    "bus": 75,
+    "bicycle": 75,
+    "pedestrian": 75,
+}
+
+# model parameter
 out_size_factor = 4
-dataset_type = "T4Dataset"
-data_root = "data/t4dataset/"
-info_directory_path = "info/user_name/"
-max_epochs = 40
-evaluation = dict(interval=1)
-# no prefix for T4dataset
-data_prefix = dict(pts="", sweeps="")
 input_modality = dict(
     use_lidar=True,
     use_camera=False,
     use_radar=False,
     use_map=False,
     use_external=False)
-backend_args = None
 
 model = dict(
     type="TransFusion",
@@ -44,13 +52,12 @@ model = dict(
         type="PillarFeatureNet",
         in_channels=5,
         feat_channels=[64],
-        with_distance=False,
         voxel_size=voxel_size,
         norm_cfg=dict(type="BN1d", eps=0.001, momentum=0.01),
         point_cloud_range=point_cloud_range,
     ),
     pts_middle_encoder=dict(
-        type="PointPillarsScatter", in_channels=64, output_shape=(512, 512)),
+        type="PointPillarsScatter", in_channels=64, output_shape=grid_size),
     pts_backbone=dict(
         type="SECOND",
         in_channels=64,
@@ -118,6 +125,7 @@ model = dict(
             type="mmdet.GaussianFocalLoss", reduction="mean", loss_weight=1.0),
     ),
     train_cfg=dict(
+        val_interval=val_interval,
         pts=dict(
             dataset="nuScenes",
             assigner=dict(
@@ -161,7 +169,7 @@ train_pipeline = [
     ),
     dict(
         type="LoadPointsFromMultiSweeps",
-        sweeps_num=2,
+        sweeps_num=1,
         load_dim=5,
         use_dim=5,
         pad_empty_sweeps=True,
@@ -173,6 +181,51 @@ train_pipeline = [
         with_bbox_3d=True,
         with_label_3d=True,
         with_attr_label=False),
+    dict(
+        type="GlobalRotScaleTrans",
+        rot_range=[-1.571, 1.571],
+        scale_ratio_range=[0.8, 1.2],
+        translation_std=[1.0, 1.0, 0.2],
+    ),
+    dict(
+        type="RandomFlip3D",
+        sync_2d=False,
+        flip_ratio_bev_horizontal=0.5,
+        flip_ratio_bev_vertical=0.5,
+    ),
+    dict(type="PointsRangeFilter", point_cloud_range=point_cloud_range),
+    dict(type="ObjectRangeFilter", point_cloud_range=point_cloud_range),
+    dict(type="ObjectNameFilter", classes=_base_.class_names),
+    dict(type="PointShuffle"),
+    dict(
+        type="Pack3DDetInputs",
+        keys=[
+            "points", "img", "gt_bboxes_3d", "gt_labels_3d", "gt_bboxes",
+            "gt_labels"
+        ],
+        meta_keys=[
+            "cam2img",
+            "ori_cam2img",
+            "lidar2cam",
+            "lidar2img",
+            "cam2lidar",
+            "ori_lidar2img",
+            "img_aug_matrix",
+            "box_type_3d",
+            "sample_idx",
+            "lidar_path",
+            "img_path",
+            "transformation_3d_flow",
+            "pcd_rotation",
+            "pcd_scale_factor",
+            "pcd_trans",
+            "img_aug_matrix",
+            "lidar_aug_matrix",
+        ],
+    ),
+    # TODO: implement
+    # dict(type='ObjectMinPointsFilter', min_num_points=5),
+    # TODO: implement
     # dict(
     #     type='ObjectSample',
     #     db_sampler=dict(
@@ -215,48 +268,6 @@ train_pipeline = [
     #             backend_args=backend_args),
     #     ),
     # ),
-    dict(
-        type="GlobalRotScaleTrans",
-        rot_range=[-0.3925 * 2, 0.3925 * 2],
-        scale_ratio_range=[0.9, 1.1],
-        translation_std=[0.5, 0.5, 0.5],
-    ),
-    dict(
-        type="RandomFlip3D",
-        sync_2d=False,
-        flip_ratio_bev_horizontal=0.5,
-        flip_ratio_bev_vertical=0.5,
-    ),
-    dict(type="PointsRangeFilter", point_cloud_range=point_cloud_range),
-    dict(type="ObjectRangeFilter", point_cloud_range=point_cloud_range),
-    dict(type="ObjectNameFilter", classes=_base_.class_names),
-    dict(type="PointShuffle"),
-    dict(
-        type="Pack3DDetInputs",
-        keys=[
-            "points", "img", "gt_bboxes_3d", "gt_labels_3d", "gt_bboxes",
-            "gt_labels"
-        ],
-        meta_keys=[
-            "cam2img",
-            "ori_cam2img",
-            "lidar2cam",
-            "lidar2img",
-            "cam2lidar",
-            "ori_lidar2img",
-            "img_aug_matrix",
-            "box_type_3d",
-            "sample_idx",
-            "lidar_path",
-            "img_path",
-            "transformation_3d_flow",
-            "pcd_rotation",
-            "pcd_scale_factor",
-            "pcd_trans",
-            "img_aug_matrix",
-            "lidar_aug_matrix",
-        ],
-    ),
 ]
 
 test_pipeline = [
@@ -269,7 +280,7 @@ test_pipeline = [
     ),
     dict(
         type="LoadPointsFromMultiSweeps",
-        sweeps_num=2,
+        sweeps_num=1,
         load_dim=5,
         use_dim=5,
         pad_empty_sweeps=True,
@@ -302,15 +313,15 @@ train_dataloader = dict(
     dataset=dict(
         type="CBGSDataset",
         dataset=dict(
-            type=dataset_type,
+            type=_base_.dataset_type,
             data_root=data_root,
-            ann_file=info_directory_path + "t4dataset_xx1_infos_train.pkl",
+            ann_file=info_directory_path + _base_.info_train_file_name,
             pipeline=train_pipeline,
             metainfo=_base_.metainfo,
             class_names=_base_.class_names,
             modality=input_modality,
             test_mode=False,
-            data_prefix=data_prefix,
+            data_prefix=_base_.data_prefix,
             box_type_3d="LiDAR",
         ),
     ),
@@ -321,14 +332,14 @@ val_dataloader = dict(
     persistent_workers=True,
     sampler=dict(type="DefaultSampler", shuffle=False),
     dataset=dict(
-        type=dataset_type,
+        type=_base_.dataset_type,
         data_root=data_root,
-        ann_file=info_directory_path + "t4dataset_xx1_infos_val.pkl",
+        ann_file=info_directory_path + _base_.info_val_file_name,
         pipeline=test_pipeline,
         metainfo=_base_.metainfo,
         class_names=_base_.class_names,
         modality=input_modality,
-        data_prefix=data_prefix,
+        data_prefix=_base_.data_prefix,
         test_mode=True,
         box_type_3d="LiDAR",
         backend_args=backend_args,
@@ -339,11 +350,12 @@ test_dataloader = val_dataloader
 val_evaluator = dict(
     type="T4Metric",
     data_root=data_root,
-    ann_file=data_root + info_directory_path + "t4dataset_xx1_infos_val.pkl",
+    ann_file=data_root + info_directory_path + _base_.info_val_file_name,
     metric="bbox",
     backend_args=backend_args,
     class_names=_base_.class_names,
     data_mapping=_base_.name_mapping,
+    eval_class_range=eval_class_range,
 )
 test_evaluator = val_evaluator
 
@@ -419,7 +431,6 @@ optim_wrapper = dict(
 auto_scale_lr = dict(
     enable=False, base_batch_size=train_gpu_size * train_batch_size)
 log_processor = dict(window_size=50)
-
 default_hooks = dict(
     logger=dict(type="LoggerHook", interval=50),
     checkpoint=dict(type="CheckpointHook", interval=1))

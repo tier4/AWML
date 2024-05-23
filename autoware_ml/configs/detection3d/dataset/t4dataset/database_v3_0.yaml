@@ -130,7 +130,8 @@ test:
   - 8cff354a-cca5-47ed-83fa-a3fa7d31588a # DBv2.0_nishi_shinjuku_1-5
   - bba6a63a-55cd-411b-b5be-e5de4834a2f1 # DBv2.0_nishi_shinjuku_2-8
   - ea464363-6ac8-43cb-a3a9-4ac2dd234283 # DBv2.0_4-6-2
-  - 18575387-54dc-4a35-8bba-8cf0d14ea62c # DBv2.0_nishi_shinjuku_5-5
+  # wrong attribute
+  #- 18575387-54dc-4a35-8bba-8cf0d14ea62c # DBv2.0_nishi_shinjuku_5-5
   - e11a7dfc-032d-4cdd-a015-33ec19aada02 # DBv2.0_GLP_atsugi_TC1-static-2
   - e19cf12b-24ed-4227-a51c-1f35eb1f9433 # DBv2.0_GLP_atsugi_TC3-dynamic-1
   - 43e6e09a-93ce-488f-8f40-515187bc2753 # DBv3.0_shiojiri_orignal_return_20230620110510_8

@@ -1,22 +1,4 @@
 import os
-from typing import Dict, List, Optional, Tuple, Union
-
-import mmengine
-from mmdet3d.evaluation.metrics import NuScenesMetric
-# from autoware_ml.registry import METRICS, TRANSFORMS
-from mmdet3d.registry import METRICS, TRANSFORMS
-from mmengine import ConfigDict, load
-from mmengine.logging import MMLogger, print_log
-from nuscenes import NuScenes
-from nuscenes.eval.common.data_classes import EvalBoxes
-
-from autoware_ml.detection3d.evaluation.utils.eval import (
-    BaseNameMapping, T4DetectionConfig, T4DetectionEvaluation,
-    print_metrics_table, t4metric_load_gt, t4metric_load_prediction)
-
-__all__ = ["T4Metric"]
-
-# temp
 import tempfile
 from os import path as osp
 from typing import Dict, List, Optional, Tuple, Union
@@ -24,53 +6,49 @@ from typing import Dict, List, Optional, Tuple, Union
 import mmengine
 import numpy as np
 import pyquaternion
-from mmdet3d.models.layers import box3d_multiclass_nms
+from mmdet3d.evaluation.metrics import NuScenesMetric
 from mmdet3d.registry import METRICS
-from mmdet3d.structures import (CameraInstance3DBoxes, LiDARInstance3DBoxes,
-                                bbox3d2result, xywhr2xyxyr)
-from mmengine import Config, load
-from mmengine.evaluator import BaseMetric
-from mmengine.logging import MMLogger
-from nuscenes.eval.detection.config import config_factory
+from mmdet3d.structures import CameraInstance3DBoxes, LiDARInstance3DBoxes
+from mmengine import load
+from mmengine.logging import MMLogger, print_log
+from nuscenes import NuScenes
+from nuscenes.eval.common.data_classes import EvalBoxes
 from nuscenes.eval.detection.data_classes import DetectionConfig
 from nuscenes.utils.data_classes import Box as NuScenesBox
+
+from autoware_ml.detection3d.evaluation.utils.eval import (
+    T4DetectionConfig, T4DetectionEvaluation, print_metrics_table,
+    t4metric_load_gt, t4metric_load_prediction)
+
+__all__ = ["T4Metric"]
 
 
 @METRICS.register_module()
 class T4Metric(NuScenesMetric):
     """T4 format evaluation metric.
 
-    Args:
-        data_root (str): Path of dataset root.
-        ann_file (str): Path of annotation file.
-        metric (str or List[str]): Metrics to be evaluated. Defaults to 'bbox'.
-        modality (dict): Modality to specify the sensor data used as input.
-            Defaults to dict(use_camera=False, use_lidar=True).
-        prefix (str, optional): The prefix that will be added in the metric
-            names to disambiguate homonymous metrics of different evaluators.
-            If prefix is not provided in the argument, self.default_prefix will
-            be used instead. Defaults to None.
-        format_only (bool): Format the output results without perform
-            evaluation. It is useful when you want to format the result to a
-            specific format and submit it to the test server.
-            Defaults to False.
-        jsonfile_prefix (str, optional): The prefix of json files including the
-            file path and the prefix of filename, e.g., "a/b/prefix".
-            If not specified, a temp file will be created. Defaults to None.
-        eval_version (str): Configuration version of evaluation.
-            Defaults to 'detection_cvpr_2019'.
-        collect_device (str): Device name used for collecting results from
-            different ranks during distributed training. Must be 'cpu' or
-            'gpu'. Defaults to 'cpu'.
-        backend_args (dict, optional): Arguments to instantiate the
-            corresponding backend. Defaults to None.
-        class_names (List[str], optional): The class names. Defaults to [].
-        eval_class_range (Dict[str, int], optional): The range of each class. Defaults to None. If deafulted will be autoinitilized.
-        default_range_value (int, optional): The default range value. Defaults to 75.
-        name_mapping (ConfigDict, optional): The dataset name mapping, must be compatible with the model. Defaults to None.
-        model_mapping (dict, optional): The model class mapping, applied to predictions during evalutation. Defaults to None.
-        data_mapping (dict, optional): The data class mapping, applied to ground truth during evalutation. Defaults to None.
-        version (str, optional): The version of the dataset. Defaults to "".
+    Attributes:
+    data_infos (list[dict]): the loaded pkl file created by create_data_info.
+        Each dist should contains the following keys:
+        - lidar_path (str): the path to the lidar data
+        - scene_token (str): the scene token of t4dataset
+        - token (str): the sample token of t4dataset
+        - sweeps (list[dict]): the list of sweeps data
+        - cams (dict[str, dict]): the camera data
+        - lidar2ego_translation (np.ndarray):
+        - lidar2ego_rotation (np.ndarray):
+        - ego2global_translation (np.ndarray):
+        - timestamp (int): the unix timestamp (μ sec)
+        - gt_boxes (list[dict]): ground-truth boxes
+        - gt_nusc_names (list[str]): class names of t4dataset format
+        - gt_names (list[str]): class names mapped by NameMapping
+        - gt_attrs (list[str]): object attributes
+        - gt_velocity (np.ndarray): velocity of boxes
+        - gt_scores (np.ndarray): (Optional) scores of boxes for pseudo labels.
+        - num_lidar_pts (np.ndarray): number of lidar points in objects
+        - num_radar_pts (np.ndarray): number of radar points in objects
+        - valid_flag (np.ndarray): boolean value that the objects are valid
+        - annotations_2d (dict[str, dict]):
     """
 
     def __init__(
@@ -86,12 +64,43 @@ class T4Metric(NuScenesMetric):
         collect_device: str = "cpu",
         backend_args: Optional[dict] = None,
         class_names: List[str] = [],
-        eval_class_range: Optional[Dict[str, int]] = None,
-        default_range_value: int = 75,
+        eval_class_range: Dict[str, int] = dict(),
         model_mapping: Optional[dict] = None,
         data_mapping: Optional[dict] = None,
         version: str = "",
     ) -> None:
+        """
+        Args:
+            data_root (str): Path of dataset root.
+            ann_file (str): Path of annotation file.
+            metric (str or List[str]): Metrics to be evaluated. Defaults to 'bbox'.
+            modality (dict): Modality to specify the sensor data used as input.
+                Defaults to dict(use_camera=False, use_lidar=True).
+            prefix (str, optional): The prefix that will be added in the metric
+                names to disambiguate homonymous metrics of different evaluators.
+                If prefix is not provided in the argument, self.default_prefix will
+                be used instead. Defaults to None.
+            format_only (bool): Format the output results without perform
+                evaluation. It is useful when you want to format the result to a
+                specific format and submit it to the test server.
+                Defaults to False.
+            jsonfile_prefix (str, optional): The prefix of json files including the
+                file path and the prefix of filename, e.g., "a/b/prefix".
+                If not specified, a temp file will be created. Defaults to None.
+            eval_version (str): Configuration version of evaluation.
+                Defaults to 'detection_cvpr_2019'.
+            collect_device (str): Device name used for collecting results from
+                different ranks during distributed training. Must be 'cpu' or
+                'gpu'. Defaults to 'cpu'.
+            backend_args (dict, optional): Arguments to instantiate the
+                corresponding backend. Defaults to None.
+            class_names (List[str], optional): The class names. Defaults to [].
+            eval_class_range (Dict[str, int]): The range of each class
+            model_mapping (dict, optional): The model class mapping, applied to predictions during evalutation. Defaults to None.
+            data_mapping (dict, optional): The data class mapping, applied to ground truth during evalutation. Defaults to None.
+            version (str, optional): The version of the dataset. Defaults to "".
+        """
+
         super().__init__(
             data_root=data_root,
             ann_file=ann_file,
@@ -104,27 +113,24 @@ class T4Metric(NuScenesMetric):
             collect_device=collect_device,
             backend_args=backend_args,
         )
+
         self.class_names = class_names
-        self.model_mapping = model_mapping  # maps outputs from the model
+        self.model_mapping = model_mapping
+        self.name_mapping = None
+        self.version = version
+
         self.data_mapping = data_mapping  # maps gts
         # this ensures that every class has a range associated with it
         if self.data_mapping is not None:
             self.class_names = [
                 self.data_mapping.get(name, name) for name in self.class_names
             ]
-        #if self.model_mapping is not None:
-        #    validate_model_output_mapping(self.model_mapping, self.class_names)
-        if eval_class_range is None:
-            eval_class_range = {
-                name: default_range_value
-                for name in self.class_names
-            }
-        else:
-            for name in self.class_names:
-                if name not in eval_class_range:
-                    eval_class_range[name] = default_range_value
+
+        for name in self.class_names:
+            if name not in eval_class_range:
+                raise RuntimeError("missing range value")
         self.eval_class_range = eval_class_range
-        self.version = version
+
         # load annotations
         self.data_infos = load(
             self.ann_file, backend_args=self.backend_args)["data_list"]
@@ -132,12 +138,6 @@ class T4Metric(NuScenesMetric):
             self.data_infos)
         self.loaded_scenes = self._load_subsets()
         self.eval_detection_configs = self._get_nusc_eval_config()
-        self.name_mapping = None
-        #if name_mapping:
-        #    # TODO: Add check that config dict contains valid type
-        #    self.name_mapping = TRANSFORMS.build(name_mapping)
-        #else:
-        #    self.name_mapping = None
 
     def _get_nusc_eval_config(self):
         # Note: same as the default values except class_range.

@@ -3,14 +3,23 @@ custom_imports = dict(imports=[
     "autoware_ml.detection3d.evaluation.t4metric",
 ])
 
+# dataset type setting
+dataset_type = "T4Dataset"
+info_train_file_name = "t4dataset_xx1_infos_train.pkl"
+info_val_file_name = "t4dataset_xx1_infos_val.pkl"
+
+# dataset scene setting
 dataset_version_config_root = "autoware_ml/configs/detection3d/dataset/t4dataset/"
 dataset_version_list = ["database_v1_1"]
 
+# dataset format setting
+data_prefix = dict(pts="", sweeps="")
 camera_types = {
     "CAM_FRONT", "CAM_FRONT_RIGHT", "CAM_FRONT_LEFT", "CAM_BACK",
     "CAM_BACK_LEFT", "CAM_BACK_RIGHT"
 }
 
+# class setting
 name_mapping = {
     # DBv1.0
     "vehicle.car": "car",
@@ -49,7 +58,6 @@ name_mapping = {
     "construction_worker": "pedestrian",
     "stroller": "pedestrian",
 }
-
 class_names = [
     "car",
     "truck",

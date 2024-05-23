@@ -7,8 +7,6 @@ from functools import partial
 
 import mmengine
 import torch.multiprocessing as mp
-from torch.multiprocessing import Process, set_start_method
-
 from mmdeploy.apis import (create_calib_input_data, extract_model,
                            get_predefined_partition_cfg, torch2onnx,
                            torch2torchscript, visualize_model)
@@ -18,6 +16,7 @@ from mmdeploy.backend.sdk.export_info import export2SDK
 from mmdeploy.utils import (IR, Backend, get_backend, get_calib_filename,
                             get_ir_config, get_partition_config,
                             get_root_logger, load_config, target_wrapper)
+from torch.multiprocessing import Process, set_start_method
 
 
 def parse_args():
@@ -100,7 +99,7 @@ def torch2ir(ir_type: IR):
         raise KeyError(f'Unexpected IR type {ir_type}')
 
 
-def main():
+if __name__ == '__main__':
     args = parse_args()
     set_start_method('spawn', force=True)
     logger = get_root_logger()
@@ -132,7 +131,6 @@ def main():
             args.work_dir,
             pth=checkpoint_path,
             device=args.device)
-
     ret_value = mp.Value('d', 0, lock=False)
 
     # convert to IR
@@ -155,7 +153,6 @@ def main():
     partition_cfgs = get_partition_config(deploy_cfg)
 
     if partition_cfgs is not None:
-
         if 'partition_cfg' in partition_cfgs:
             partition_cfgs = partition_cfgs.get('partition_cfg', None)
         else:
@@ -171,14 +168,12 @@ def main():
             start = partition_cfg['start']
             end = partition_cfg['end']
             dynamic_axes = partition_cfg.get('dynamic_axes', None)
-
             extract_model(
                 origin_ir_file,
                 start,
                 end,
                 dynamic_axes=dynamic_axes,
                 save_file=save_path)
-
             ir_files.append(save_path)
 
     # calib data
@@ -194,8 +189,8 @@ def main():
             dataset_type='val',
             device=args.device)
 
-    backend_files = ir_files
     # convert backend
+    backend_files = ir_files
     backend = get_backend(deploy_cfg)
 
     # preprocess deploy_cfg
@@ -229,9 +224,8 @@ def main():
     if backend == Backend.VACC:
         # TODO: Add this to task_processor in the future
 
-        from onnx2vacc_quant_dataset import get_quant
-
         from mmdeploy.utils import get_model_inputs
+        from onnx2vacc_quant_dataset import get_quant
 
         deploy_cfg, model_cfg = load_config(deploy_cfg_path, model_cfg_path)
         model_inputs = get_model_inputs(deploy_cfg)
@@ -268,9 +262,8 @@ def main():
 
     # ncnn quantization
     if backend == Backend.NCNN and quant:
-        from onnx2ncnn_quant_table import get_table
-
         from mmdeploy.apis.ncnn import get_quant_model_file, ncnn2int8
+        from onnx2ncnn_quant_table import get_table
         model_param_paths = backend_files[::2]
         model_bin_paths = backend_files[1::2]
         backend_files = []
@@ -289,7 +282,6 @@ def main():
                       quant_table, quant_image_dir, args.device),
                 kwargs=dict(),
                 ret_value=ret_value)
-
             create_process(
                 'ncnn_int8',
                 target=ncnn2int8,
@@ -331,7 +323,3 @@ def main():
             show_result=args.show),
         ret_value=ret_value)
     logger.info('All process success.')
-
-
-if __name__ == '__main__':
-    main()
