@@ -11,7 +11,7 @@ data_root = "data/t4dataset/"
 info_directory_path = "info/user_name/"
 train_gpu_size = 1
 train_batch_size = 8
-val_interval = 1
+val_interval = 5
 max_epochs = 40
 backend_args = None
 
@@ -114,7 +114,7 @@ model = dict(
         loss_cls=dict(
             type="mmdet.FocalLoss",
             use_sigmoid=True,
-            gamma=2,
+            gamma=2.0,
             alpha=0.25,
             reduction="mean",
             loss_weight=1.0,
@@ -223,9 +223,10 @@ train_pipeline = [
             "lidar_aug_matrix",
         ],
     ),
-    # TODO: implement
+    # TODO: support object filter
     # dict(type='ObjectMinPointsFilter', min_num_points=5),
-    # TODO: implement
+
+    # TODO: support object sample
     # dict(
     #     type='ObjectSample',
     #     db_sampler=dict(
@@ -414,7 +415,8 @@ param_scheduler = [
     ),
 ]
 
-train_cfg = dict(by_epoch=True, max_epochs=max_epochs, val_interval=5)
+train_cfg = dict(
+    by_epoch=True, max_epochs=max_epochs, val_interval=val_interval)
 val_cfg = dict()
 test_cfg = dict()
 

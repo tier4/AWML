@@ -11,20 +11,21 @@ custom_imports["imports"] += _base_.custom_imports["imports"]
 data_root = "data/t4dataset/"
 info_directory_path = "info/user_name/"
 train_gpu_size = 1
-train_batch_size = 8
+train_batch_size = 1
 val_interval = 5
 max_epochs = 20
 backend_args = None
 
 # range setting
-point_cloud_range = [-129.6, -129.6, -5.0, 129.6, 129.6, 3.0]
-voxel_size = [0.18, 0.18, 0.2]
+point_cloud_range = [-122.4, -122.4, -3.0, 122.4, 122.4, 5.0]
+voxel_size = [0.17, 0.17, 0.2]
+grid_size = [1440, 1440, 41]
 eval_class_range = {
-    "car": 75,
-    "truck": 75,
-    "bus": 75,
-    "bicycle": 75,
-    "pedestrian": 75,
+    "car": 122,
+    "truck": 122,
+    "bus": 122,
+    "bicycle": 122,
+    "pedestrian": 122,
 }
 
 # model parameter
@@ -50,7 +51,7 @@ model = dict(
     pts_middle_encoder=dict(
         type="BEVFusionSparseEncoder",
         in_channels=5,
-        sparse_shape=[1440, 1440, 41],
+        sparse_shape=grid_size,
         order=("conv", "norm", "act"),
         norm_cfg=dict(type="BN1d", eps=0.001, momentum=0.01),
         encoder_channels=((16, 16, 32), (32, 32, 64), (64, 64, 128), (128,
@@ -103,7 +104,7 @@ model = dict(
         train_cfg=dict(
             dataset="nuScenes",
             point_cloud_range=point_cloud_range,
-            grid_size=[1440, 1440, 41],
+            grid_size=grid_size,
             voxel_size=voxel_size,
             out_size_factor=8,
             gaussian_overlap=0.1,
@@ -124,7 +125,7 @@ model = dict(
         ),
         test_cfg=dict(
             dataset="nuScenes",
-            grid_size=[1440, 1440, 41],
+            grid_size=grid_size,
             out_size_factor=8,
             voxel_size=voxel_size[0:2],
             pc_range=point_cloud_range[0:2],
@@ -135,10 +136,10 @@ model = dict(
         bbox_coder=dict(
             type="TransFusionBBoxCoder",
             pc_range=point_cloud_range[0:2],
-            post_center_range=point_cloud_range,
+            voxel_size=voxel_size[0:2],
+            post_center_range=[-200.0, -200.0, -10.0, 200.0, 200.0, 10.0],
             score_threshold=0.0,
             out_size_factor=8,
-            voxel_size=voxel_size[0:2],
             code_size=10,
         ),
         loss_cls=dict(
@@ -317,8 +318,8 @@ test_pipeline = [
 ]
 
 train_dataloader = dict(
-    batch_size=1,
-    num_workers=1,
+    batch_size=train_batch_size,
+    num_workers=train_batch_size,
     persistent_workers=True,
     sampler=dict(type="DefaultSampler", shuffle=True),
     dataset=dict(
@@ -326,7 +327,7 @@ train_dataloader = dict(
         dataset=dict(
             type=_base_.dataset_type,
             data_root=data_root,
-            ann_file=info_directory_path + "t4dataset_xx1_infos_train.pkl",
+            ann_file=info_directory_path + _base_.info_train_file_name,
             pipeline=train_pipeline,
             metainfo=_base_.metainfo,
             class_names=_base_.class_names,
@@ -345,7 +346,7 @@ val_dataloader = dict(
     dataset=dict(
         type=_base_.dataset_type,
         data_root=data_root,
-        ann_file=info_directory_path + "t4dataset_xx1_infos_val.pkl",
+        ann_file=info_directory_path + _base_.info_val_file_name,
         pipeline=test_pipeline,
         metainfo=_base_.metainfo,
         class_names=_base_.class_names,
@@ -361,7 +362,7 @@ test_dataloader = val_dataloader
 val_evaluator = dict(
     type="T4Metric",
     data_root=data_root,
-    ann_file=data_root + info_directory_path + "t4dataset_xx1_infos_val.pkl",
+    ann_file=data_root + info_directory_path + _base_.info_val_file_name,
     metric="bbox",
     backend_args=backend_args,
     class_names=_base_.class_names,
@@ -371,7 +372,10 @@ val_evaluator = dict(
 
 test_evaluator = val_evaluator
 
-vis_backends = [dict(type="LocalVisBackend")]
+vis_backends = [
+    dict(type="LocalVisBackend"),
+    dict(type="TensorboardVisBackend"),
+]
 visualizer = dict(
     type="Det3DLocalVisualizer", vis_backends=vis_backends, name="visualizer")
 
@@ -384,18 +388,18 @@ param_scheduler = [
     # lr * 1e-4
     dict(
         type="CosineAnnealingLR",
-        T_max=16,
+        T_max=8,
         eta_min=lr * 10,
         begin=0,
-        end=16,
+        end=8,
         by_epoch=True,
         convert_to_iter_based=True,
     ),
     dict(
         type="CosineAnnealingLR",
-        T_max=24,
+        T_max=12,
         eta_min=lr * 1e-4,
-        begin=16,
+        begin=8,
         end=max_epochs,
         by_epoch=True,
         convert_to_iter_based=True,
@@ -405,18 +409,18 @@ param_scheduler = [
     # during the next 12 epochs, momentum increases from 0.85 / 0.95 to 1
     dict(
         type="CosineAnnealingMomentum",
-        T_max=16,
+        T_max=8,
         eta_min=0.85 / 0.95,
         begin=0,
-        end=16,
+        end=8,
         by_epoch=True,
         convert_to_iter_based=True,
     ),
     dict(
         type="CosineAnnealingMomentum",
-        T_max=24,
+        T_max=12,
         eta_min=1,
-        begin=16,
+        begin=8,
         end=max_epochs,
         by_epoch=True,
         convert_to_iter_based=True,
@@ -424,7 +428,8 @@ param_scheduler = [
 ]
 
 # runtime settings
-train_cfg = dict(by_epoch=True, max_epochs=max_epochs, val_interval=5)
+train_cfg = dict(
+    by_epoch=True, max_epochs=max_epochs, val_interval=val_interval)
 val_cfg = dict()
 test_cfg = dict()
 
@@ -439,10 +444,11 @@ optim_wrapper = dict(
 #       or not by default.
 #   - `base_batch_size` = (8 GPUs) x (4 samples per GPU).
 # auto_scale_lr = dict(enable=False, base_batch_size=32)
-auto_scale_lr = dict(enable=False, base_batch_size=1)
+auto_scale_lr = dict(
+    enable=False, base_batch_size=train_gpu_size * train_batch_size)
 log_processor = dict(window_size=50)
 
 default_hooks = dict(
     logger=dict(type="LoggerHook", interval=50),
-    checkpoint=dict(type="CheckpointHook", interval=5))
-custom_hooks = [dict(type="DisableObjectSampleHook", disable_after_epoch=15)]
+    checkpoint=dict(type="CheckpointHook", interval=1))
+custom_hooks = [dict(type="DisableObjectSampleHook", disable_after_epoch=20)]
