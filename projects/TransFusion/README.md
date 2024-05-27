@@ -34,17 +34,17 @@ python projects/TransFusion/setup.py develop
 python tools/detection3d/train.py projects/TransFusion/configs/nuscenes/transfusion_lidar_pillar02_second_secfpn_1xb8-cyclic-20e_nus-3d.py
 ```
 
+- [choice] Train for nuScenes with multi GPU
+  - Rename and change [config file](configs/nuscenes/transfusion_lidar_pillar02_second_secfpn_2xb8-cyclic-20e_nus-3d.py) to use for multi GPU and batch size
+
+```sh
+bash tools/detection3d/dist_train.sh projects/TransFusion/configs/nuscenes/transfusion_lidar_pillar02_second_secfpn_2xb8-cyclic-20e_nus-3d.py 2
+```
+
 - [choice] Train for T4dataset with single GPU
 
 ```sh
 python tools/detection3d/train.py projects/TransFusion/configs/t4dataset/transfusion_lidar_pillar_second_secfpn_1xb8-cyclic-20e_t4xx1_75m.py
-```
-
-- [choice] Train for T4dataset with multi GPU
-  - Rename config file to use for multi GPU and batch size
-
-```sh
-bash tools/dist_train.sh projects/TransFusion/configs/t4dataset/transfusion_lidar_pillar_second_secfpn_2xb8-cyclic-20e_t4xx1_75m.py 2
 ```
 
 ### 3. Deploy
