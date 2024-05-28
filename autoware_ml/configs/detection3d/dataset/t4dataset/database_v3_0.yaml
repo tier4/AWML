@@ -1,4 +1,4 @@
-version: 3.0
+version: 1
 
 train:
   - 36d1f7f5-b3a5-448d-b404-9fa437eae18d # DBv2.0_1-1

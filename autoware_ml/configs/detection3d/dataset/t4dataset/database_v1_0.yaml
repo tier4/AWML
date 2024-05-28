@@ -1,4 +1,4 @@
-version: 1.0
+version: 1
 
 train:
   - 70891309-ca8b-477b-905a-5156ffb3df65 # DBv1.0_nishi_shinjuku_01 with 2D annotation
