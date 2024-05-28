@@ -43,11 +43,13 @@ if __name__ == "__main__":
     with open(config_path) as f:
         data_splits = yaml.safe_load(f)
 
-    assert isinstance(data_splits, dict) and all([
-        isinstance(v, list) for v in data_splits.values()
-    ]), "config file must be a type of `dict[str, list]`"
+    required_keys = ["train", "val", "test"]
+    assert isinstance(data_splits, dict) and all(
+        [isinstance(data_splits[key], list) for key in required_keys]
+    ), "config file must be a type of `dict[str, list]`"
 
-    t4dataset_ids = sum(data_splits.values(), [])
+    t4dataset_ids = sum([data_splits[key] for key in required_keys], [])
+
     command = "webauto data t4dataset pull --project-id {} --t4dataset-id {} --asset-dir {}"
     for t4dataset_id in t4dataset_ids:
         _command = command.format(args.project_id, t4dataset_id, args.out_dir)
