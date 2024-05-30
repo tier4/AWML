@@ -6,7 +6,7 @@ See [README](/README.md)
 
 Prepare the dataset you use.
 
-### 2.1 nuScenes
+### 2.1. nuScenes
 
 - Download dataset from official website
 - Run docker
@@ -22,7 +22,7 @@ docker run -it --rm --gpus '"device=0"' --shm-size=64g --name awml -p 6006:6006 
 python tools/detection3d/create_data.py nuscenes --root-path ./data/nuscenes --out-dir ./data/nuscenes --extra-tag nuscenes
 ```
 
-### 2.2 T4 dataset
+### 2.2. T4 dataset
 
 - Run docker
 
@@ -42,22 +42,19 @@ python tools/detection3d/create_data_t4dataset.py --root_path ./data/t4dataset -
 TBD
 ```
 
-## 3. Train and evaluation
-### 3.1 Change config
+## 3. Train
+### 3.1. Change config
 
 - You can change batchsize by file name.
 - If you use custom pkl file, you need to change pkl file from `nuscenes_infos_train.pkl`.
 
-### 3.2 Training and evaluation
+### 3.2. Train
 
-- Training and evaluation in general by below command.
+- Train in general by below command.
   - See each [projects](projects) for detail command of training and evaluation.
 
 ```sh
-# Trainging
 python tools/detection3d/train.py {config_file}
-# Evaluation
-python tools/detection3d/test.py {config_file} {checkpoint_file}
 ```
 
 - You can use docker command for training as below.
@@ -74,10 +71,26 @@ docker run -it --rm --gpus '"device=0"' --name autoware-ml --shm-size=64g -d -v 
 tensorboard --logdir work_dirs --bind_all
 ```
 
-### 3.4. Visualization
+## 4. Analyze
+### 4.1. Evaluation
+
+- Evaluation
+
+```sh
+python tools/detection3d/test.py {config_file} {checkpoint_file}
+```
+
+- After training, you can test for each epoch checkpoints as below.
+  - `min_epoch` is the epoch you want to start to test. If you set 20, test epoch_20.pth, epoch_21.pth, epoch_22.pth...
+
+```sh
+python tools/detection3d/test_all.py {config_file} {train_results_directory} {min_epoch}
+```
+
+### 4.2. Visualization
 
 TBD
 
-## 4. Deploy
+## 5. Deploy
 
 See each projects
