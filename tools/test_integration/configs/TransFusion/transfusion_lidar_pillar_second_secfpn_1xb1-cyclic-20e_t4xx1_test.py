@@ -1,5 +1,5 @@
 _base_ = [
-    "../../../../projects/TransFusion/configs/t4dataset/transfusion_lidar_pillar_second_secfpn_1xb8-cyclic-20e_t4xx1_75m_precise.py",
+    "../../../../projects/TransFusion/configs/t4dataset/transfusion_lidar_pillar_second_secfpn_1xb8-cyclic-20e_t4xx1_75m_512grid.py",
 ]
 
 train_gpu_size = 1

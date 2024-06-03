@@ -9,26 +9,19 @@ custom_imports["imports"] += _base_.custom_imports["imports"]
 # user setting
 data_root = "data/t4dataset/"
 info_directory_path = "info/user_name/"
-train_gpu_size = 1
-train_batch_size = 8
 val_interval = 5
-max_epochs = 40
+max_epochs = 50
 backend_args = None
 
-# range setting
-point_cloud_range = [-76.8, -76.8, -3.0, 76.8, 76.8, 7.0]
-voxel_size = [0.3, 0.3, 10]
+# range setting (This si tentative parameter, and should be override)
+point_cloud_range = [-12.8, -12.8, -3.0, 12.8, 12.8, 7.0]
+voxel_size = [0.05, 0.05, 10]
 grid_size = [512, 512, 1]
-eval_class_range = {
-    "car": 75,
-    "truck": 75,
-    "bus": 75,
-    "bicycle": 75,
-    "pedestrian": 75,
-}
 
 # model parameter
 out_size_factor = 4
+max_voxels = (1000, 1000)
+pillar_feat_channels = [32]
 input_modality = dict(
     use_lidar=True,
     use_camera=False,
@@ -45,16 +38,17 @@ model = dict(
             max_num_points=20,
             point_cloud_range=point_cloud_range,
             voxel_size=voxel_size,
-            max_voxels=(60000, 60000),
+            max_voxels=max_voxels,
         ),
     ),
     pts_voxel_encoder=dict(
         type="PillarFeatureNet",
         in_channels=5,
-        feat_channels=[64],
+        feat_channels=pillar_feat_channels,
         voxel_size=voxel_size,
         norm_cfg=dict(type="BN1d", eps=0.001, momentum=0.01),
         point_cloud_range=point_cloud_range,
+        with_distance=False,
     ),
     pts_middle_encoder=dict(
         type="PointPillarsScatter", in_channels=64, output_shape=grid_size),
@@ -159,184 +153,36 @@ model = dict(
         )),
 )
 
-train_pipeline = [
-    dict(
-        type="LoadPointsFromFile",
-        coord_type="LIDAR",
-        load_dim=5,
-        use_dim=5,
-        backend_args=backend_args,
-    ),
-    dict(
-        type="LoadPointsFromMultiSweeps",
-        sweeps_num=1,
-        load_dim=5,
-        use_dim=5,
-        pad_empty_sweeps=True,
-        remove_close=True,
-        backend_args=backend_args,
-    ),
-    dict(
-        type="LoadAnnotations3D",
-        with_bbox_3d=True,
-        with_label_3d=True,
-        with_attr_label=False),
-    dict(
-        type="GlobalRotScaleTrans",
-        rot_range=[-1.571, 1.571],
-        scale_ratio_range=[0.8, 1.2],
-        translation_std=[1.0, 1.0, 0.2],
-    ),
-    dict(
-        type="RandomFlip3D",
-        sync_2d=False,
-        flip_ratio_bev_horizontal=0.5,
-        flip_ratio_bev_vertical=0.5,
-    ),
-    dict(type="PointsRangeFilter", point_cloud_range=point_cloud_range),
-    dict(type="ObjectRangeFilter", point_cloud_range=point_cloud_range),
-    dict(type="ObjectNameFilter", classes=_base_.class_names),
-    dict(type="PointShuffle"),
-    dict(
-        type="Pack3DDetInputs",
-        keys=[
-            "points", "img", "gt_bboxes_3d", "gt_labels_3d", "gt_bboxes",
-            "gt_labels"
-        ],
-        meta_keys=[
-            "cam2img",
-            "ori_cam2img",
-            "lidar2cam",
-            "lidar2img",
-            "cam2lidar",
-            "ori_lidar2img",
-            "img_aug_matrix",
-            "box_type_3d",
-            "sample_idx",
-            "lidar_path",
-            "img_path",
-            "transformation_3d_flow",
-            "pcd_rotation",
-            "pcd_scale_factor",
-            "pcd_trans",
-            "img_aug_matrix",
-            "lidar_aug_matrix",
-        ],
-    ),
-    # TODO: support object filter
-    # dict(type='ObjectMinPointsFilter', min_num_points=5),
-
-    # TODO: support object sample
-    # dict(
-    #     type='ObjectSample',
-    #     db_sampler=dict(
-    #         data_root=data_root,
-    #         info_path=data_root + 'nuscenes_dbinfos_train.pkl',
-    #         rate=1.0,
-    #         prepare=dict(
-    #             filter_by_difficulty=[-1],
-    #             filter_by_min_points=dict(
-    #                 car=5,
-    #                 truck=5,
-    #                 bus=5,
-    #                 trailer=5,
-    #                 construction_vehicle=5,
-    #                 traffic_cone=5,
-    #                 barrier=5,
-    #                 motorcycle=5,
-    #                 bicycle=5,
-    #                 pedestrian=5,
-    #             ),
-    #         ),
-    #         classes=class_names,
-    #         sample_groups=dict(
-    #             car=2,
-    #             truck=3,
-    #             construction_vehicle=7,
-    #             bus=4,
-    #             trailer=6,
-    #             barrier=2,
-    #             motorcycle=6,
-    #             bicycle=6,
-    #             pedestrian=2,
-    #             traffic_cone=2,
-    #         ),
-    #         points_loader=dict(
-    #             type='LoadPointsFromFile',
-    #             coord_type='LIDAR',
-    #             load_dim=5,
-    #             use_dim=[0, 1, 2, 3, 4],
-    #             backend_args=backend_args),
-    #     ),
-    # ),
-]
-
-test_pipeline = [
-    dict(
-        type="LoadPointsFromFile",
-        coord_type="LIDAR",
-        load_dim=5,
-        use_dim=5,
-        backend_args=backend_args,
-    ),
-    dict(
-        type="LoadPointsFromMultiSweeps",
-        sweeps_num=1,
-        load_dim=5,
-        use_dim=5,
-        pad_empty_sweeps=True,
-        remove_close=True,
-        backend_args=backend_args,
-    ),
-    dict(
-        type="MultiScaleFlipAug3D",
-        img_scale=(1333, 800),
-        pts_scale_ratio=1,
-        flip=False,
-        transforms=[
-            dict(
-                type="GlobalRotScaleTrans",
-                rot_range=[0, 0],
-                scale_ratio_range=[1.0, 1.0],
-                translation_std=[0, 0, 0],
-            ),
-            dict(type="RandomFlip3D"),
-        ],
-    ),
-    dict(type="Pack3DDetInputs", keys=["points"]),
-]
-
 train_dataloader = dict(
-    batch_size=train_batch_size,
-    num_workers=train_batch_size,
+    batch_size=1,
+    num_workers=1,
     persistent_workers=True,
     sampler=dict(type="DefaultSampler", shuffle=True),
     dataset=dict(
         type="CBGSDataset",
         dataset=dict(
-            type=_base_.dataset_type,
             data_root=data_root,
             ann_file=info_directory_path + _base_.info_train_file_name,
-            pipeline=train_pipeline,
+            modality=input_modality,
+            type=_base_.dataset_type,
             metainfo=_base_.metainfo,
             class_names=_base_.class_names,
-            modality=input_modality,
             test_mode=False,
             data_prefix=_base_.data_prefix,
             box_type_3d="LiDAR",
+            backend_args=backend_args,
         ),
     ),
 )
 val_dataloader = dict(
-    batch_size=4,
-    num_workers=4,
+    batch_size=2,
+    num_workers=2,
     persistent_workers=True,
     sampler=dict(type="DefaultSampler", shuffle=False),
     dataset=dict(
         type=_base_.dataset_type,
         data_root=data_root,
         ann_file=info_directory_path + _base_.info_val_file_name,
-        pipeline=test_pipeline,
         metainfo=_base_.metainfo,
         class_names=_base_.class_names,
         modality=input_modality,
@@ -346,19 +192,42 @@ val_dataloader = dict(
         backend_args=backend_args,
     ),
 )
-test_dataloader = val_dataloader
-
+test_dataloader = dict(
+    batch_size=2,
+    num_workers=2,
+    persistent_workers=True,
+    sampler=dict(type="DefaultSampler", shuffle=False),
+    dataset=dict(
+        type=_base_.dataset_type,
+        data_root=data_root,
+        ann_file=info_directory_path + _base_.info_test_file_name,
+        metainfo=_base_.metainfo,
+        class_names=_base_.class_names,
+        modality=input_modality,
+        data_prefix=_base_.data_prefix,
+        test_mode=True,
+        box_type_3d="LiDAR",
+        backend_args=backend_args,
+    ),
+)
 val_evaluator = dict(
     type="T4Metric",
     data_root=data_root,
     ann_file=data_root + info_directory_path + _base_.info_val_file_name,
-    metric="bbox",
     backend_args=backend_args,
+    metric="bbox",
     class_names=_base_.class_names,
     data_mapping=_base_.name_mapping,
-    eval_class_range=eval_class_range,
 )
-test_evaluator = val_evaluator
+test_evaluator = dict(
+    type="T4Metric",
+    data_root=data_root,
+    ann_file=data_root + info_directory_path + _base_.info_test_file_name,
+    backend_args=backend_args,
+    metric="bbox",
+    class_names=_base_.class_names,
+    data_mapping=_base_.name_mapping,
+)
 
 vis_backends = [
     dict(type="LocalVisBackend"),
@@ -376,18 +245,18 @@ param_scheduler = [
     # lr * 1e-4
     dict(
         type="CosineAnnealingLR",
-        T_max=16,
+        T_max=20,
         eta_min=lr * 10,
         begin=0,
-        end=16,
+        end=20,
         by_epoch=True,
         convert_to_iter_based=True,
     ),
     dict(
         type="CosineAnnealingLR",
-        T_max=24,
+        T_max=30,
         eta_min=lr * 1e-4,
-        begin=16,
+        begin=20,
         end=max_epochs,
         by_epoch=True,
         convert_to_iter_based=True,
@@ -397,18 +266,18 @@ param_scheduler = [
     # during the next 12 epochs, momentum increases from 0.85 / 0.95 to 1
     dict(
         type="CosineAnnealingMomentum",
-        T_max=16,
+        T_max=20,
         eta_min=0.85 / 0.95,
         begin=0,
-        end=16,
+        end=20,
         by_epoch=True,
         convert_to_iter_based=True,
     ),
     dict(
         type="CosineAnnealingMomentum",
-        T_max=24,
+        T_max=30,
         eta_min=1,
-        begin=16,
+        begin=20,
         end=max_epochs,
         by_epoch=True,
         convert_to_iter_based=True,
@@ -427,13 +296,10 @@ optim_wrapper = dict(
 )
 
 # Default setting for scaling LR automatically
-#   - `enable` means enable scaling LR automatically
-#       or not by default.
-#   - `base_batch_size` = (1 GPUs) x (4 samples per GPU).
-auto_scale_lr = dict(
-    enable=False, base_batch_size=train_gpu_size * train_batch_size)
+#   - `enable` means enable scaling LR automatically or not by default.
+auto_scale_lr = dict(enable=False)
 log_processor = dict(window_size=50)
 default_hooks = dict(
     logger=dict(type="LoggerHook", interval=50),
     checkpoint=dict(type="CheckpointHook", interval=1))
-custom_hooks = [dict(type="DisableObjectSampleHook", disable_after_epoch=30)]
+custom_hooks = [dict(type="DisableObjectSampleHook", disable_after_epoch=40)]
