@@ -3,6 +3,13 @@
 This repository is machine learning library for [Autoware](https://github.com/autowarefoundation/autoware) based on [OpenMMLab library](https://github.com/open-mmlab).
 `autoware-ml` support training with [T4dataset format](https://github.com/tier4/tier4_perception_dataset) in addition to open dataset.
 
+## Docs
+
+- [Design docs](/docs/design.md): If you want to know the design of `autoware-ml`, please see this document
+- [Contribution](/docs/contribution.md): If you want to contribute for `autoware-ml`, please see this document
+- [Dataset docs](/docs/dataset.md)
+- [Release note](/docs/release_note.md)
+
 ## Environment
 ### Supported environment
 
@@ -15,6 +22,11 @@ This repository is machine learning library for [Autoware](https://github.com/au
   - [mmdetection3d v1.4.0](https://github.com/open-mmlab/mmdetection3d/tree/v1.4.0)
   - [mmdetection v3.3.0](https://github.com/open-mmlab/mmdetection/tree/v3.3.0)
   - [mmdeploy v1.3.1](https://github.com/open-mmlab/mmdeploy/tree/v1.3.1)
+
+### Setup dataset
+
+If you want to use open dataset like nuScenes dataset, you set dataset as [mmdetection3d documents](https://mmdetection3d.readthedocs.io/en/latest/advanced_guides/index.html) and [mmdetection documents](https://mmdetection.readthedocs.io/en/latest/user_guides/dataset_prepare.html).
+If you want to [T4dataset](https://github.com/tier4/tier4_perception_dataset) and you have data access right of [WebAuto](https://docs.web.auto/en/user-manuals/), you can download T4dataset using [our scripts](/tools/download_t4dataset/).
 
 ### Setup for environment
 
@@ -43,13 +55,6 @@ ln -s {path_to_dataset} data
 ```sh
 DOCKER_BUILDKIT=1 docker build -t autoware-ml .
 ```
-
-## Docs
-
-- [Design docs](/docs/design.md): If you want to know the design of `autoware-ml`, please see this document
-- [Contribution](/docs/contribution.md): If you want to contribute for `autoware-ml`, please see this document
-- [Dataset docs](/docs/dataset.md)
-- [Release note](/docs/release_note.md)
 
 ## Supported tool
 
