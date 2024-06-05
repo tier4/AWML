@@ -7,7 +7,6 @@ This repository is machine learning library for [Autoware](https://github.com/au
 
 - [Design docs](/docs/design.md): If you want to know the design of `autoware-ml`, please see this document
 - [Contribution](/docs/contribution.md): If you want to contribute for `autoware-ml`, please see this document
-- [Dataset docs](/docs/dataset.md)
 - [Release note](/docs/release_note.md)
 
 ## Environment
