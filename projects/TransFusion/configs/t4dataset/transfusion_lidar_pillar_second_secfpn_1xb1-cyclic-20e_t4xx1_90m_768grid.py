@@ -1,5 +1,5 @@
 _base_ = [
-    "./transfusion_lidar_pillar_second_secfpn_1xb8-cyclic-20e_t4xx1_base.py"
+    "./transfusion_lidar_pillar_second_secfpn_1xb1-cyclic-20e_t4xx1_base.py"
 ]
 
 # user setting parameter

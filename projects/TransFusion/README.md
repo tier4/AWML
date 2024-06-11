@@ -84,7 +84,7 @@ python projects/TransFusion/scripts/fix_graph.py end2end.onnx
 ```
 
 ## Results and models
-### NuScenes
+### NuScenes model
 
 |                        | mAP  | Car  | Truck | CV   | Bus  | Tra  | Bar  | Mot  | Bic  | Ped  | Cone |
 | ---------------------- | ---- | ---- | ----- | ---- | ---- | ---- | ---- | ---- | ---- | ---- | ---- |
@@ -94,7 +94,11 @@ python projects/TransFusion/scripts/fix_graph.py end2end.onnx
   - model: TBD
   - logs: TBD
 
-### T4 dataset
+### T4 dataset model for XX1
+
+TBD
+
+### T4 dataset model for X2
 
 TBD
 

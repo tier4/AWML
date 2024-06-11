@@ -46,6 +46,7 @@ TBD
 ### 3.1. Change config
 
 - You can change batchsize by file name.
+  - For example, 1×b1 -> 2×b8
 - If you use custom pkl file, you need to change pkl file from `nuscenes_infos_train.pkl`.
 
 ### 3.2. Train

@@ -1,26 +1,26 @@
 _base_ = [
-    "./transfusion_lidar_pillar_second_secfpn_1xb8-cyclic-20e_t4xx1_base.py"
+    "./transfusion_lidar_pillar_second_secfpn_1xb1-cyclic-20e_t4xx1_base.py"
 ]
 
 # user setting parameter
 train_gpu_size = 1
-train_batch_size = 4
+train_batch_size = 8
 
 # range parameter
-point_cloud_range = [-92.16, -92.16, -3.0, 92.16, 92.16, 7.0]
-voxel_size = [0.24, 0.24, 10]
-grid_size = [768, 768, 1]
+point_cloud_range = [-51.2, -51.2, -3.0, 51.2, 51.2, 7.0]
+voxel_size = [0.2, 0.2, 10]
+grid_size = [512, 512, 1]
 eval_class_range = {
-    "car": 75,
-    "truck": 75,
-    "bus": 75,
-    "bicycle": 75,
-    "pedestrian": 75,
+    "car": 50,
+    "truck": 50,
+    "bus": 50,
+    "bicycle": 50,
+    "pedestrian": 50,
 }
 
 # model parameter
-pillar_feat_channels = [64, 64]
-max_voxels = (30000, 40000)
+pillar_feat_channels = [64]
+max_voxels = (60000, 60000)
 sweeps_num = 1
 
 ###############################
