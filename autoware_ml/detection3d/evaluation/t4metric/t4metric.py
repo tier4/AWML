@@ -16,39 +16,19 @@ from nuscenes.eval.common.data_classes import EvalBoxes
 from nuscenes.eval.detection.data_classes import DetectionConfig
 from nuscenes.utils.data_classes import Box as NuScenesBox
 
-from autoware_ml.detection3d.evaluation.utils.eval import (
-    T4DetectionConfig, T4DetectionEvaluation, print_metrics_table,
+from autoware_ml.detection3d.evaluation.t4metric.evaluation import (
+    T4DetectionConfig, T4DetectionEvaluation)
+from autoware_ml.detection3d.evaluation.t4metric.loading import (
     t4metric_load_gt, t4metric_load_prediction)
 
 __all__ = ["T4Metric"]
 
 
+# [TODO] This class will refactor. We will rewrite T4Metrics
+# using [autoware_perception_evaluation](https://github.com/tier4/autoware_perception_evaluation).
 @METRICS.register_module()
 class T4Metric(NuScenesMetric):
     """T4 format evaluation metric.
-
-    Attributes:
-    data_infos (list[dict]): the loaded pkl file created by create_data_info.
-        Each dist should contains the following keys:
-        - lidar_path (str): the path to the lidar data
-        - scene_token (str): the scene token of t4dataset
-        - token (str): the sample token of t4dataset
-        - sweeps (list[dict]): the list of sweeps data
-        - cams (dict[str, dict]): the camera data
-        - lidar2ego_translation (np.ndarray):
-        - lidar2ego_rotation (np.ndarray):
-        - ego2global_translation (np.ndarray):
-        - timestamp (int): the unix timestamp (μ sec)
-        - gt_boxes (list[dict]): ground-truth boxes
-        - gt_nusc_names (list[str]): class names of t4dataset format
-        - gt_names (list[str]): class names mapped by NameMapping
-        - gt_attrs (list[str]): object attributes
-        - gt_velocity (np.ndarray): velocity of boxes
-        - gt_scores (np.ndarray): (Optional) scores of boxes for pseudo labels.
-        - num_lidar_pts (np.ndarray): number of lidar points in objects
-        - num_radar_pts (np.ndarray): number of radar points in objects
-        - valid_flag (np.ndarray): boolean value that the objects are valid
-        - annotations_2d (dict[str, dict]):
     """
 
     def __init__(
@@ -65,40 +45,52 @@ class T4Metric(NuScenesMetric):
         backend_args: Optional[dict] = None,
         class_names: List[str] = [],
         eval_class_range: Dict[str, int] = dict(),
-        model_mapping: Optional[dict] = None,
-        data_mapping: Optional[dict] = None,
+        name_mapping: Optional[dict] = None,
         version: str = "",
     ) -> None:
         """
         Args:
-            data_root (str): Path of dataset root.
-            ann_file (str): Path of annotation file.
-            metric (str or List[str]): Metrics to be evaluated. Defaults to 'bbox'.
-            modality (dict): Modality to specify the sensor data used as input.
+            data_root (str):
+                Path of dataset root.
+            ann_file (str):
+                Path of annotation file.
+            metric (str or List[str]):
+                Metrics to be evaluated. Defaults to 'bbox'.
+            modality (dict):
+                Modality to specify the sensor data used as input.
                 Defaults to dict(use_camera=False, use_lidar=True).
-            prefix (str, optional): The prefix that will be added in the metric
+            prefix (str, optional):
+                The prefix that will be added in the metric
                 names to disambiguate homonymous metrics of different evaluators.
                 If prefix is not provided in the argument, self.default_prefix will
                 be used instead. Defaults to None.
-            format_only (bool): Format the output results without perform
+            format_only (bool):
+                Format the output results without perform
                 evaluation. It is useful when you want to format the result to a
                 specific format and submit it to the test server.
                 Defaults to False.
-            jsonfile_prefix (str, optional): The prefix of json files including the
+            jsonfile_prefix (str, optional):
+                The prefix of json files including the
                 file path and the prefix of filename, e.g., "a/b/prefix".
                 If not specified, a temp file will be created. Defaults to None.
-            eval_version (str): Configuration version of evaluation.
+            eval_version (str):
+                Configuration version of evaluation.
                 Defaults to 'detection_cvpr_2019'.
-            collect_device (str): Device name used for collecting results from
-                different ranks during distributed training. Must be 'cpu' or
-                'gpu'. Defaults to 'cpu'.
-            backend_args (dict, optional): Arguments to instantiate the
-                corresponding backend. Defaults to None.
-            class_names (List[str], optional): The class names. Defaults to [].
-            eval_class_range (Dict[str, int]): The range of each class
-            model_mapping (dict, optional): The model class mapping, applied to predictions during evalutation. Defaults to None.
-            data_mapping (dict, optional): The data class mapping, applied to ground truth during evalutation. Defaults to None.
-            version (str, optional): The version of the dataset. Defaults to "".
+            collect_device (str):
+                Device name used for collecting results from
+                different ranks during distributed training. Must be 'cpu' or 'gpu'.
+                Defaults to 'cpu'.
+            backend_args (dict, optional):
+                Arguments to instantiate the corresponding backend. Defaults to None.
+            class_names (List[str], optional):
+                The class names. Defaults to [].
+            eval_class_range (Dict[str, int]):
+                The range of each class
+            name_mapping (dict, optional):
+                The data class mapping, applied to ground truth during evaluation.
+                Defaults to None.
+            version (str, optional):
+                The version of the dataset. Defaults to "".
         """
 
         super().__init__(
@@ -115,16 +107,14 @@ class T4Metric(NuScenesMetric):
         )
 
         self.class_names = class_names
-        self.model_mapping = model_mapping
-        self.name_mapping = None
         self.version = version
 
-        self.data_mapping = data_mapping  # maps gts
-        # this ensures that every class has a range associated with it
-        if self.data_mapping is not None:
+        if name_mapping is None:
             self.class_names = [
-                self.data_mapping.get(name, name) for name in self.class_names
+                self.name_mapping.get(name, name) for name in self.class_names
             ]
+        else:
+            self.name_mapping = name_mapping
 
         for name in self.class_names:
             if name not in eval_class_range:
@@ -134,13 +124,14 @@ class T4Metric(NuScenesMetric):
         # load annotations
         self.data_infos = load(
             self.ann_file, backend_args=self.backend_args)["data_list"]
-        self.scene_tokens, self.directory_names = self._get_scene_info(
-            self.data_infos)
-        self.loaded_scenes = self._load_subsets()
-        self.eval_detection_configs = self._get_nusc_eval_config()
+        scene_tokens, directory_names = self._get_scene_info(self.data_infos)
+        self.loaded_scenes, self.scene_tokens, self.directory_names = self._load_scenes(
+            self.data_root,
+            scene_tokens,
+            directory_names,
+        )
 
-    def _get_nusc_eval_config(self):
-        # Note: same as the default values except class_range.
+        # Load eval detection config
         eval_config_dict = {
             "class_names": tuple(self.class_names),
             "class_range": self.eval_class_range,
@@ -152,41 +143,11 @@ class T4Metric(NuScenesMetric):
             "max_boxes_per_sample": 500,
             "mean_ap_weight": 5,
         }
-        return T4DetectionConfig.deserialize(eval_config_dict)
+        self.eval_detection_configs = T4DetectionConfig.deserialize(
+            eval_config_dict)
 
-    def _load_subsets(self) -> Dict[str, NuScenes]:
-        """Load scenes from data infos.
-
-        Returns:
-            Dict[str, NuScenes]: The loaded scenes.
-        """
-
-        loaded_dirs = {}
-        self.existing_dirs = []
-        self.existing_scenes = []
-        for directory, scene_token in zip(self.directory_names,
-                                          self.scene_tokens):
-            scene_directory_path = os.path.join(self.data_root, directory)
-
-            if os.path.exists(scene_directory_path):
-                loaded_dirs[scene_token] = NuScenes(
-                    version="annotation",
-                    dataroot=scene_directory_path,
-                    verbose=False,
-                )
-                self.existing_dirs.append(directory)
-                self.existing_scenes.append(scene_token)
-            else:
-                print(
-                    f"Skipped non-existing {scene_directory_path} in {self.__class__.__name__}"
-                )
-        self.directory_names = self.existing_dirs
-        self.scene_tokens = self.existing_scenes
-
-        return loaded_dirs
-
-    def _get_scene_info(self,
-                        data_infos: List[dict]) -> Tuple[List[str], List[str]]:
+    @staticmethod
+    def _get_scene_info(data_infos: List[dict]) -> Tuple[List[str], List[str]]:
         """Get scene tokens and directory names from data infos.
 
         Args:
@@ -209,7 +170,40 @@ class T4Metric(NuScenesMetric):
                 directories.append(directory)
         return scene_tokens, directories
 
-    def compute_metrics(self, results: List[dict]) -> Dict[str, float]:
+    @staticmethod
+    def _load_scenes(
+        data_root: str,
+        scene_tokens: List[str],
+        directory_names: List[str],
+    ) -> Tuple[Dict[str, NuScenes], List[str], List[str]]:
+        """Load scenes from data infos.
+
+        Returns:
+            Dict[str, NuScenes]: The loaded scenes.
+        """
+
+        loaded_dirs = {}
+        existing_dirs = []
+        existing_scenes = []
+        for directory, scene_token in zip(directory_names, scene_tokens):
+            scene_directory_path = os.path.join(data_root, directory)
+            if os.path.exists(scene_directory_path):
+                loaded_dirs[scene_token] = NuScenes(
+                    version="annotation",
+                    dataroot=scene_directory_path,
+                    verbose=False,
+                )
+                existing_dirs.append(directory)
+                existing_scenes.append(scene_token)
+            else:
+                print(
+                    f"Skipped non-existing {scene_directory_path} in T4Metric")
+        return loaded_dirs, existing_scenes, existing_dirs
+
+    def compute_metrics(
+        self,
+        results: List[dict],
+    ) -> Dict[str, float]:
         """Compute the metrics from processed results.
 
         Args:
@@ -273,12 +267,12 @@ class T4Metric(NuScenesMetric):
             )
             _, metrics_table = evaluator.run_and_save_eval()
 
-            print_log(f"==== {len(self.loaded_scenes)} scenes ====", logger)
             print_metrics_table(
                 metrics_table["header"],
                 metrics_table["data"],
                 metrics_table["total_mAP"],
                 type(self).__name__,
+                len(self.loaded_scenes),
                 logger,
             )
             # record metrics
@@ -336,26 +330,19 @@ class T4Metric(NuScenesMetric):
         """
 
         output_dir = os.path.join(*os.path.split(result_path)[:-1])
-
         nusc = self.loaded_scenes[scene_token]
-        # self.model_mapping = model_mapping  # maps outputs from the model
-        # self.data_mapping = data_mapping  # maps gts
 
         gt_boxes = t4metric_load_gt(
             nusc,
             self.eval_detection_configs,
             scene_token,
-            name_mapping=self.name_mapping,
-            post_mapping_dict=self.data_mapping,
+            post_mapping_dict=self.name_mapping,
         )
         preds, _ = t4metric_load_prediction(
             nusc,
             self.eval_detection_configs,
-            scene_token,
             result_path,
             self.eval_detection_configs.max_boxes_per_sample,
-            name_mapping=self.name_mapping,
-            post_mapping_dict=self.data_mapping,
             verbose=True,
         )
 
@@ -666,3 +653,59 @@ def output_to_nusc_box(
             "to standard NuScenesBoxes.")
 
     return box_list, attrs
+
+
+def print_metrics_table(
+    header: List[str],
+    data: List[List[str]],
+    total_mAP: str = "",
+    metric_name: str = "",
+    scene_length: int = 0,
+    logger: Optional[MMLogger] = None,
+) -> None:
+    """
+    Print a table of metrics.
+    :param header: The header of the table.
+    :param data: The data rows of the table.
+    :param total_mAP: The total mAP to print at the end of the table.
+    :param metric_name: The name of the metric to print at the top of the table.
+    :param logger: The logger to use for printing. If None, print to stdout.
+    """
+
+    print_log(f"==== {scene_length} scenes ====", logger)
+
+    # Combine header and data
+    all_data = [header] + data
+
+    # Calculate maximum width for each column
+    col_widths: List[int] = []
+    for i in range(len(header)):
+        for row in all_data:
+            if len(col_widths) <= i:
+                col_widths.append(len(str(row[i])))
+            else:
+                col_widths[i] = max(col_widths[i], len(str(row[i])))
+
+    # Format header
+    header_str = ("| " + " | ".join(header[i].ljust(col_widths[i])
+                                    for i in range(len(header))) + " |\n")
+    # Format table_middle
+    table_middle_str = "|" + " ---- |" * len(header) + "\n"
+
+    # Format data rows
+    rows = []
+    for row in data:
+        row_str = ("| " +
+                   " | ".join("{{:<{}}}".format(col_widths[i]).format(row[i])
+                              for i in range(len(row))) + " |\n")
+        rows.append(row_str)
+
+    # Print table
+    print_str = f"\n------------- {metric_name} results -------------\n"
+    print_str += header_str
+    print_str += table_middle_str
+    for line in rows:
+        print_str += line
+    if total_mAP != "":
+        print_str += f"\nTotal mAP: {total_mAP}"
+    print_log(print_str, logger)

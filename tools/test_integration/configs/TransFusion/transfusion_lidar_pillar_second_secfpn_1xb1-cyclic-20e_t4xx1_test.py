@@ -1,5 +1,5 @@
 _base_ = [
-    "../../../../projects/TransFusion/configs/t4dataset/transfusion_lidar_pillar_second_secfpn_1xb8-cyclic-20e_t4xx1_75m_512grid.py",
+    "../../../../projects/TransFusion/configs/t4dataset/transfusion_lidar_pillar_second_secfpn_1xb1-cyclic-20e_t4xx1_75m_512grid.py",
 ]
 
 train_gpu_size = 1
@@ -60,7 +60,7 @@ val_evaluator = dict(
     metric="bbox",
     backend_args=_base_.backend_args,
     class_names=_base_.class_names,
-    data_mapping=_base_.name_mapping,
+    name_mapping=_base_.name_mapping,
     eval_class_range=_base_.eval_class_range,
 )
 

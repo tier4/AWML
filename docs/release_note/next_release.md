@@ -1,3 +1,4 @@
+# v0.1.0
 ## Summary
 
 ## Core library
@@ -35,7 +36,7 @@
 - Add dataset converter
   - https://github.com/tier4/autoware-ml/pull/9
   - https://github.com/tier4/autoware-ml/pull/27
-- add test_integration
+- Add test_integration
   - https://github.com/tier4/autoware-ml/pull/35
 
 ### Fix
@@ -53,12 +54,13 @@
   - https://github.com/tier4/autoware-ml/pull/22
   - https://github.com/tier4/autoware-ml/pull/43
   - https://github.com/tier4/autoware-ml/pull/50
+  - https://github.com/tier4/autoware-ml/pull/54
 
 ### Fix
 
 ## Chore
 
-- Update docs
+- Add documents for autoware-ml
   - https://github.com/tier4/autoware-ml/pull/3
   - https://github.com/tier4/autoware-ml/pull/4
   - https://github.com/tier4/autoware-ml/pull/5
@@ -76,3 +78,5 @@
   - https://github.com/tier4/autoware-ml/pull/32
   - https://github.com/tier4/autoware-ml/pull/41
   - https://github.com/tier4/autoware-ml/pull/51
+  - https://github.com/tier4/autoware-ml/pull/52
+  - https://github.com/tier4/autoware-ml/pull/53

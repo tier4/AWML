@@ -59,10 +59,10 @@ train:
   #- 5a7184db-a4b4-4e21-afe0-9af84945a888 # DBv1.0_nishi_shinjuku_6_blk_car
   #- 46d3301f-9030-4005-9e23-75d48873d295 # DBv1.0_nishi_shinjuku_7_1_bike
   #- 3094c4fd-0b70-402f-aebc-821829fea68b # DBv1.0_nishi_shinjuku_7_1_blk_car
-  #- cedf55b1-5836-475a-86be-d51abfc7d023 # DBv1.0_nishi_shinjuku_7_1_bus
+  - cedf55b1-5836-475a-86be-d51abfc7d023 # DBv1.0_nishi_shinjuku_7_1_bus
   #- 4c3c4ec0-7ec3-4990-841e-9d2fe4707c7c # DBv1.0_nishi_shinjuku_7_1_car
   #- 4de708d8-7d04-4cb2-8edb-6f3eb9ec0e7e # DBv1.0_nishi_shinjuku_7_1_truck
-  #- 2e1604d8-eaab-41f7-83ef-75734d0e7cd6 # DBv1.0_nishi_shinjuku_7_2_blk_car
+  - 2e1604d8-eaab-41f7-83ef-75734d0e7cd6 # DBv1.0_nishi_shinjuku_7_2_blk_car
   #- 672d12c6-d887-49b8-84c2-b978975ba750 # DBv1.0_nishi_shinjuku_7_2_car
   #- d661f9af-d363-4416-9fcd-a419324195d0 # DBv1.0_nishi_shinjuku_7_2_m_bike
   #- a71a2aa0-0a94-4de4-b8ac-94d199f083d8 # DBv1.0_odaiba_01
@@ -145,7 +145,7 @@ train:
   #- b2b1e693-df6e-4104-913d-9e6363833e1d # DBv1.0_shiojiri_51
   #- 89bf7123-d1aa-47a4-82ce-941488fac7b7 # DBv1.0_shiojiri_52
   #- 819512a4-6d57-4623-b703-eb2963bef7da # DBv1.0_shiojiri_53
-  - e6d0237c-274c-4872-acc9-dc7ea2b77943 # DBv1.1_odaiba_9-1_0-100
+  #- e6d0237c-274c-4872-acc9-dc7ea2b77943 # DBv1.1_odaiba_9-1_0-100
   #- 80b37b8c-ae9d-4641-a921-0b0c2012eee8 # DBv1.1_odaiba_8-2_100-200
   #- 4d50abff-427f-4fa8-9c04-99dc13a3a836 # DBv1.1_odaiba_8-2_0-100
   #- aa2626e5-3ecb-47a5-9584-6e022e813bfc # DBv1.1_odaiba_8-1_100-200
@@ -231,7 +231,7 @@ val:
   #- b06d085b-8f56-4c18-b732-65280b540241 # DBv1.0_odaiba_11
   #- 2f7a69ee-2799-425c-bd54-c3cc757e4e34 # DBv1.0_shiojiri_01
   #- 1abfa3ec-c01b-416f-8d29-e6645bc83d84 # DBv1.0_shiojiri_03
-  #- daed9d8d-f44e-4ad6-9142-7d903647bfec # DBv1.0_shiojiri_05
+  - daed9d8d-f44e-4ad6-9142-7d903647bfec # DBv1.0_shiojiri_05
   #- 14974b54-921c-4315-a3f1-e4aad4cf2924 # DBv1.0_nishi_shinjuku_6_bike
   #- 3a13032b-6045-4db4-8632-9c52c3dd2fd9 # DBv1.0_nishi_shinjuku_6_bus
   #- 3013c354-2492-447b-88ce-70ec0438f494 # DBv1.1_odaiba_4-1_0-100
@@ -239,7 +239,7 @@ val:
   #- a1f10b82-6f10-47ab-a253-a12a2f131929 # DBv1.1_odaiba_5-1_100-200
   #- 3ebf5eef-940f-4877-a093-a1ec933505e8 # DBv1.1_odaiba_5-3_0-100
   #- 5fa608b9-5321-4cac-8f21-d2b1e215c9aa # DBv1.1_odaiba_5-3_100-200
-  - 198435d1-5648-421c-a284-35b26a52136e # DBv1.1_odaiba_5-4_0-100
+  #- 198435d1-5648-421c-a284-35b26a52136e # DBv1.1_odaiba_5-4_0-100
   #- 96200480-ae59-44cb-9e4e-dd9021e250e8 # DBv1.1_odaiba_5-5_0-100
 
 test:
@@ -250,12 +250,12 @@ test:
   #- 66ec94ff-fee1-455b-9f19-f335af84a1e0 # DBv1.0_shiojiri_04
   #- b1c540c1-1da9-4d04-adbc-c03a0798eedf # DBv1.0_shiojiri_06
   #- 607e3995-e9d9-4497-9e45-1f2dd8adf69c # DBv1.0_nishi_shinjuku_6_car
-  #- 4b352a84-a10b-43e2-8d39-2cfd5d880b7c # DBv1.0_nishi_shinjuku_6_truck
+  - 4b352a84-a10b-43e2-8d39-2cfd5d880b7c # DBv1.0_nishi_shinjuku_6_truck
   #- 13351af0-41cb-4a96-9553-aeb919efb46e # DBv1.1_odaiba_6-11_0-100
   #- 9e973a55-3f70-48e0-8b37-a68b66a99686 # DBv1.1_odaiba_6-11_100-200
   #- 54a6cc24-ec9d-47f5-b2bf-813d0da9bf47 # DBv1.1_odaiba_6-15_0-100
   #- 5f1c6a02-9193-487a-8ba8-74f4d3f4d609 # DBv1.1_odaiba_6-15_100-200
-  - a7ce24a6-a506-47be-8254-884365ca52f3 # DBv1.1_odaiba_3-1_0-100
+  #- a7ce24a6-a506-47be-8254-884365ca52f3 # DBv1.1_odaiba_3-1_0-100
   #- 9cbc58ea-1498-49dd-8fc5-e61c2ec26187 # DBv1.1_odaiba_3-1_100-200
   #- cf835959-ece5-40da-b685-71425747f7af # DBv1.1_odaiba_3-2_0-100
   #- a7d001ce-6591-4597-8ce3-6f28a49dcbe3 # DBv1.1_odaiba_3-2_100-200

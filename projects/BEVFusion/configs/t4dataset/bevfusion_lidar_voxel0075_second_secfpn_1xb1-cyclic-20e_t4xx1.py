@@ -366,7 +366,7 @@ val_evaluator = dict(
     metric="bbox",
     backend_args=backend_args,
     class_names=_base_.class_names,
-    data_mapping=_base_.name_mapping,
+    name_mapping=_base_.name_mapping,
     eval_class_range=eval_class_range,
 )
 

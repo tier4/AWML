@@ -10,7 +10,7 @@ custom_imports["imports"] += _base_.custom_imports["imports"]
 data_root = "data/t4dataset/"
 info_directory_path = "info/user_name/"
 val_interval = 5
-max_epochs = 50
+max_epochs = 70
 backend_args = None
 
 # range setting (This si tentative parameter, and should be override)
@@ -217,7 +217,7 @@ val_evaluator = dict(
     backend_args=backend_args,
     metric="bbox",
     class_names=_base_.class_names,
-    data_mapping=_base_.name_mapping,
+    name_mapping=_base_.name_mapping,
 )
 test_evaluator = dict(
     type="T4Metric",
@@ -226,7 +226,7 @@ test_evaluator = dict(
     backend_args=backend_args,
     metric="bbox",
     class_names=_base_.class_names,
-    data_mapping=_base_.name_mapping,
+    name_mapping=_base_.name_mapping,
 )
 
 vis_backends = [
@@ -245,18 +245,18 @@ param_scheduler = [
     # lr * 1e-4
     dict(
         type="CosineAnnealingLR",
-        T_max=20,
+        T_max=30,
         eta_min=lr * 10,
         begin=0,
-        end=20,
+        end=30,
         by_epoch=True,
         convert_to_iter_based=True,
     ),
     dict(
         type="CosineAnnealingLR",
-        T_max=30,
+        T_max=40,
         eta_min=lr * 1e-4,
-        begin=20,
+        begin=30,
         end=max_epochs,
         by_epoch=True,
         convert_to_iter_based=True,
@@ -266,18 +266,18 @@ param_scheduler = [
     # during the next 12 epochs, momentum increases from 0.85 / 0.95 to 1
     dict(
         type="CosineAnnealingMomentum",
-        T_max=20,
+        T_max=30,
         eta_min=0.85 / 0.95,
         begin=0,
-        end=20,
+        end=30,
         by_epoch=True,
         convert_to_iter_based=True,
     ),
     dict(
         type="CosineAnnealingMomentum",
-        T_max=30,
+        T_max=40,
         eta_min=1,
-        begin=20,
+        begin=30,
         end=max_epochs,
         by_epoch=True,
         convert_to_iter_based=True,

@@ -84,6 +84,9 @@ python projects/TransFusion/scripts/fix_graph.py end2end.onnx
 ```
 
 ## Results and models
+
+- [archive model](docs/archive_model.md)
+
 ### NuScenes model
 
 |                        | mAP  | Car  | Truck | CV   | Bus  | Tra  | Bar  | Mot  | Bic  | Ped  | Cone |
