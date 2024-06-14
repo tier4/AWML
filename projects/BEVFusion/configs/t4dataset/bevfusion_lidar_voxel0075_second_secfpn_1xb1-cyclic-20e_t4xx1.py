@@ -13,7 +13,7 @@ info_directory_path = "info/user_name/"
 train_gpu_size = 1
 train_batch_size = 1
 val_interval = 5
-max_epochs = 20
+max_epochs = 40
 backend_args = None
 
 # range setting
@@ -21,11 +21,11 @@ point_cloud_range = [-122.4, -122.4, -3.0, 122.4, 122.4, 5.0]
 voxel_size = [0.17, 0.17, 0.2]
 grid_size = [1440, 1440, 41]
 eval_class_range = {
-    "car": 122,
-    "truck": 122,
-    "bus": 122,
-    "bicycle": 122,
-    "pedestrian": 122,
+    "car": 120,
+    "truck": 120,
+    "bus": 120,
+    "bicycle": 120,
+    "pedestrian": 120,
 }
 
 # model parameter
@@ -227,9 +227,9 @@ train_pipeline = [
     # dict(type='ObjectSample', db_sampler=db_sampler),
     dict(
         type="GlobalRotScaleTrans",
-        scale_ratio_range=[0.9, 1.1],
-        rot_range=[-0.78539816, 0.78539816],
-        translation_std=0.5,
+        rot_range=[-1.571, 1.571],
+        scale_ratio_range=[0.8, 1.2],
+        translation_std=[1.0, 1.0, 0.2],
     ),
     dict(type="BEVFusionRandomFlip3D"),
     dict(type="PointsRangeFilter", point_cloud_range=point_cloud_range),
@@ -335,12 +335,13 @@ train_dataloader = dict(
             test_mode=False,
             data_prefix=_base_.data_prefix,
             box_type_3d="LiDAR",
+            backend_args=backend_args,
         ),
     ),
 )
 val_dataloader = dict(
-    batch_size=1,
-    num_workers=1,
+    batch_size=2,
+    num_workers=2,
     persistent_workers=True,
     sampler=dict(type="DefaultSampler", shuffle=False),
     dataset=dict(
@@ -357,7 +358,25 @@ val_dataloader = dict(
         backend_args=backend_args,
     ),
 )
-test_dataloader = val_dataloader
+test_dataloader = dict(
+    batch_size=2,
+    num_workers=2,
+    persistent_workers=True,
+    sampler=dict(type="DefaultSampler", shuffle=False),
+    dataset=dict(
+        type=_base_.dataset_type,
+        data_root=data_root,
+        ann_file=info_directory_path + _base_.info_test_file_name,
+        pipeline=test_pipeline,
+        metainfo=_base_.metainfo,
+        class_names=_base_.class_names,
+        modality=input_modality,
+        data_prefix=_base_.data_prefix,
+        test_mode=True,
+        box_type_3d="LiDAR",
+        backend_args=backend_args,
+    ),
+)
 
 val_evaluator = dict(
     type="T4Metric",
@@ -369,8 +388,16 @@ val_evaluator = dict(
     name_mapping=_base_.name_mapping,
     eval_class_range=eval_class_range,
 )
-
-test_evaluator = val_evaluator
+test_evaluator = dict(
+    type="T4Metric",
+    data_root=data_root,
+    ann_file=data_root + info_directory_path + _base_.info_test_file_name,
+    metric="bbox",
+    backend_args=backend_args,
+    class_names=_base_.class_names,
+    name_mapping=_base_.name_mapping,
+    eval_class_range=eval_class_range,
+)
 
 vis_backends = [
     dict(type="LocalVisBackend"),
@@ -383,44 +410,44 @@ visualizer = dict(
 lr = 0.0001
 param_scheduler = [
     # learning rate scheduler
-    # During the first 8 epochs, learning rate increases from 0 to lr * 10
-    # during the next 12 epochs, learning rate decreases from lr * 10 to
+    # During the first (max_epochs * 0.4) epochs, learning rate increases from 0 to lr * 10
+    # during the next epochs, learning rate decreases from lr * 10 to
     # lr * 1e-4
     dict(
         type="CosineAnnealingLR",
-        T_max=8,
+        T_max=int(max_epochs * 0.4),
         eta_min=lr * 10,
         begin=0,
-        end=8,
+        end=int(max_epochs * 0.4),
         by_epoch=True,
         convert_to_iter_based=True,
     ),
     dict(
         type="CosineAnnealingLR",
-        T_max=12,
+        T_max=int(max_epochs * 0.6),
         eta_min=lr * 1e-4,
-        begin=8,
+        begin=int(max_epochs * 0.4),
         end=max_epochs,
         by_epoch=True,
         convert_to_iter_based=True,
     ),
     # momentum scheduler
-    # During the first 8 epochs, momentum increases from 0 to 0.85 / 0.95
-    # during the next 12 epochs, momentum increases from 0.85 / 0.95 to 1
+    # During the first (0.4 * max_epochs) epochs, momentum increases from 0 to 0.85 / 0.95
+    # during the next epochs, momentum increases from 0.85 / 0.95 to 1
     dict(
         type="CosineAnnealingMomentum",
-        T_max=8,
+        T_max=int(max_epochs * 0.4),
         eta_min=0.85 / 0.95,
         begin=0,
-        end=8,
+        end=int(max_epochs * 0.4),
         by_epoch=True,
         convert_to_iter_based=True,
     ),
     dict(
         type="CosineAnnealingMomentum",
-        T_max=12,
+        T_max=int(max_epochs * 0.6),
         eta_min=1,
-        begin=8,
+        begin=int(max_epochs * 0.4),
         end=max_epochs,
         by_epoch=True,
         convert_to_iter_based=True,

@@ -5,6 +5,7 @@ _base_ = [
 # user setting parameter
 train_gpu_size = 1
 train_batch_size = 6
+max_epochs = 50
 
 # range parameter
 point_cloud_range = [-92.16, -92.16, -3.0, 92.16, 92.16, 7.0]
@@ -224,6 +225,53 @@ val_dataloader = dict(dataset=dict(pipeline=test_pipeline))
 test_dataloader = dict(dataset=dict(pipeline=test_pipeline))
 val_evaluator = dict(eval_class_range=eval_class_range)
 test_evaluator = dict(eval_class_range=eval_class_range)
+train_cfg = dict(max_epochs=max_epochs)
+
+param_scheduler = [
+    # learning rate scheduler
+    # During the first (max_epochs * 0.4) epochs, learning rate increases from 0 to lr * 10
+    # during the next epochs, learning rate decreases from lr * 10 to
+    # lr * 1e-4
+    dict(
+        type="CosineAnnealingLR",
+        T_max=int(max_epochs * 0.4),
+        eta_min=_base_.lr * 10,
+        begin=0,
+        end=int(max_epochs * 0.4),
+        by_epoch=True,
+        convert_to_iter_based=True,
+    ),
+    dict(
+        type="CosineAnnealingLR",
+        T_max=int(max_epochs * 0.6),
+        eta_min=_base_.lr * 1e-4,
+        begin=int(max_epochs * 0.4),
+        end=max_epochs,
+        by_epoch=True,
+        convert_to_iter_based=True,
+    ),
+    # momentum scheduler
+    # During the first (0.4 * max_epochs) epochs, momentum increases from 0 to 0.85 / 0.95
+    # during the next epochs, momentum increases from 0.85 / 0.95 to 1
+    dict(
+        type="CosineAnnealingMomentum",
+        T_max=int(max_epochs * 0.4),
+        eta_min=0.85 / 0.95,
+        begin=0,
+        end=int(max_epochs * 0.4),
+        by_epoch=True,
+        convert_to_iter_based=True,
+    ),
+    dict(
+        type="CosineAnnealingMomentum",
+        T_max=int(max_epochs * 0.6),
+        eta_min=1,
+        begin=int(max_epochs * 0.4),
+        end=max_epochs,
+        by_epoch=True,
+        convert_to_iter_based=True,
+    ),
+]
 
 # Default setting for scaling LR automatically
 #   - `base_batch_size` = (1 GPUs) x (4 samples per GPU).
