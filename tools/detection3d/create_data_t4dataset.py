@@ -52,14 +52,16 @@ def get_scene_root_dir_path(
     # an integer larger than or equal to 0
     version_pattern = re.compile(r"^\d+$")
 
-    # ""./data/t4dataset/database_v1_1/e6d0237c-274c-4872-acc9-dc7ea2b77943/0/"
+    # "./data/t4dataset/database_v1_1/e6d0237c-274c-4872-acc9-dc7ea2b77943"
     scene_root_dir_path = osp.join(root_path, dataset_version, scene_id)
+
     version_dirs = [
         d for d in os.listdir(scene_root_dir_path) if version_pattern.match(d)
     ]
 
     if version_dirs:
         version_id = sorted(version_dirs, key=int)[-1]
+        # "./data/t4dataset/database_v1_1/e6d0237c-274c-4872-acc9-dc7ea2b77943/0"
         return os.path.join(scene_root_dir_path, version_id)
     else:
         warnings.simplefilter("always")

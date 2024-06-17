@@ -21,8 +21,8 @@ def get_ego2global(pose_record: Dict) -> Dict[str, List]:
 
 
 def parse_lidar_path(lidar_path: str) -> str:
-    """leave only {database_version}/{scene_id}/data/{lidar_token}/{frame}.bin from path"""
-    return "/".join(lidar_path.split("/")[-5:])
+    """leave only {database_version}/{scene_id}/{dataset_version}/data/{lidar_token}/{frame}.bin from path"""
+    return "/".join(lidar_path.split("/")[-6:])
 
 
 def get_lidar_points_info(
