@@ -4,13 +4,13 @@
 - Download for XX1
 
 ```sh
-python tools/download_t4dataset/download_t4dataset.py autoware_ml/configs/detection3d/dataset/t4dataset/database_v1_1.yaml --asset-dir ./data/t4dataset/ --project-id prd_jt
+python tools/download_t4dataset/download_t4dataset.py autoware_ml/configs/detection3d/dataset/t4dataset/database_v1_1.yaml --out-dir ./data/t4dataset/ --project-id prd_jt
 ```
 
 - Download for X2
 
 ```sh
-python tools/download_t4dataset/download_t4dataset.py autoware_ml/configs/detection3d/dataset/t4dataset/database_v3_0.yaml --asset-dir ./data/t4dataset/ --project-id x2_dev
+python tools/download_t4dataset/download_t4dataset.py autoware_ml/configs/detection3d/dataset/t4dataset/database_v3_0.yaml --out-dir ./data/t4dataset/ --project-id x2_dev
 ```
 
 ## Set directory architecture
@@ -19,7 +19,7 @@ python tools/download_t4dataset/download_t4dataset.py autoware_ml/configs/detect
 
 ```
 - data/t4dataset/
-  - t4_dataset/
+  - annotation_dataset/
     - {t4dataset_id}
     - {t4dataset_id}
     - {t4dataset_id}
@@ -32,9 +32,9 @@ python tools/download_t4dataset/download_t4dataset.py autoware_ml/configs/detect
 cd data/t4dataset
 
 # for XX1
-mv t4_dataset database_v1_1
+mv annotation_dataset database_v1_1
 # for X2
-mv t4_dataset database_v3_0
+mv annotation_dataset database_v3_0
 ```
 
 ```
