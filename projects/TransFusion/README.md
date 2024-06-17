@@ -26,7 +26,16 @@ docker run -it --rm --gpus all --shm-size=64g --name awml -p 6006:6006 -v $PWD/:
 python projects/TransFusion/setup.py develop
 ```
 
-### 2. Train
+### 2. config
+
+- Change train parameters as below.
+
+```py
+train_gpu_size = 1
+train_batch_size = 20
+```
+
+### 3. Train
 
 - [choice] Train for nuScenes with single GPU
 
@@ -47,7 +56,7 @@ bash tools/detection3d/dist_train.sh projects/TransFusion/configs/nuscenes/trans
 python tools/detection3d/train.py projects/TransFusion/configs/t4dataset/transfusion_lidar_pillar_second_secfpn_1xb8-cyclic-20e_t4xx1_75m.py
 ```
 
-### 3. Deploy
+### 4. Deploy
 
 - Docker build for deploy
 
@@ -74,13 +83,19 @@ cd /workspace
 python tools/detection3d/deploy.py projects/TransFusion/configs/deploy/transfusion_lidar_tensorrt_dynamic-20x5.py projects/TransFusion/configs/nuscenes/transfusion_lidar_pillar02_second_secfpn_1xb8-cyclic-20e_nus-3d.py work_dirs/transfusion_lidar_pillar02_second_secfpn_1xb8-cyclic-20e_nus-3d/epoch_20.pth data/nuscenes/samples/LIDAR_TOP/n008-2018-05-21-11-06-59-0400__LIDAR_TOP__1526915243047392.pcd.bin --device cuda:0 --work-dir /workspace
 
 # Deploy for t4xx1 dataset
-python tools/detection3d/deploy.py projects/TransFusion/configs/deploy/transfusion_lidar_tensorrt_dynamic-20x5.py projects/TransFusion/configs/t4dataset/transfusion_lidar_pillar02_second_secfpn_1xb4-cyclic-20e_t4xx1.py work_dirs/transfusion_lidar_pillar02_second_secfpn_1xb4-cyclic-20e_t4xx1/epoch_20.pth data/t4dataset/t4xx1/023b4b43-2b00-444c-bb63-4ee602e30779/data/LIDAR_CONCAT/0.pcd.bin --device cuda:0 --work-dir /workspace
+python tools/detection3d/deploy.py projects/TransFusion/configs/deploy/transfusion_lidar_tensorrt_dynamic-20x5.py work_dirs/20240530_transfusion_lidar_pillar_second_secfpn_1xb8-cyclic-20e_t4xx1_90m_768grid/transfusion_lidar_pillar_second_secfpn_1xb8-cyclic-20e_t4xx1_90m_768grid.py work_dirs/20240530_transfusion_lidar_pillar_second_secfpn_1xb8-cyclic-20e_t4xx1_90m_768grid/epoch_50.pth data/t4dataset/database_v1_1/1abfa3ec-c01b-416f-8d29-e6645bc83d84/0/data/LIDAR_CONCAT/0.pcd.bin --device cuda:0 --work-dir /workspace
 ```
 
 - Fix the graph
 
 ```sh
 python projects/TransFusion/scripts/fix_graph.py end2end.onnx
+```
+
+- Move onnx file for Autoware data directory
+
+```
+mv transfusion.onnx ~/autoware_data/lidar_transfusion
 ```
 
 ## Results and models
