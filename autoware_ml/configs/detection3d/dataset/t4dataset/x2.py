@@ -4,7 +4,7 @@ custom_imports = dict(imports=[
 ])
 
 dataset_version_config_root = "autoware_ml/configs/detection3d/dataset/t4dataset/"
-dataset_version_list = ["database_v3_0"]
+dataset_version_list = ["database_v2_0", "database_v3_0"]
 
 camera_types = {
     "CAM_FRONT", "CAM_FRONT_RIGHT", "CAM_FRONT_LEFT", "CAM_BACK",
