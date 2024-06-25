@@ -3,7 +3,7 @@
 
 - [x] Train LiDAR-only model
 - [x] Train with single GPU
-- [ ] Train with multiple GPU
+- [x] Train with multiple GPU
 - [x] Add script to make .onnx file and deploy to Autoware
 - [ ] Add unit test
 
@@ -28,11 +28,15 @@ python projects/TransFusion/setup.py develop
 
 ### 2. config
 
-- Change train parameters as below.
+- Change parameters for your environment by changing [base config file](configs/t4dataset/transfusion_lidar_pillar_second_secfpn_1xb1-cyclic-20e_t4xx1_base.py).
 
 ```py
-train_gpu_size = 1
-train_batch_size = 20
+info_directory_path = "info/user_name/"
+data_root = "data/t4dataset/"
+val_interval = 5
+max_epochs = 50
+backend_args = None
+lr = 0.0001  # learning rate
 ```
 
 ### 3. Train
@@ -51,9 +55,19 @@ bash tools/detection3d/dist_train.sh projects/TransFusion/configs/nuscenes/trans
 ```
 
 - [choice] Train for T4dataset with single GPU
+  - The parameter of batch size can be set by command
 
 ```sh
-python tools/detection3d/train.py projects/TransFusion/configs/t4dataset/transfusion_lidar_pillar_second_secfpn_1xb8-cyclic-20e_t4xx1_75m.py
+python tools/detection3d/train.py {config file} \
+--cfg-options train_dataloader.batch_size=4 --cfg-options auto_scale_lr.base_batch_size=4
+```
+
+- [choice] Train for T4dataset with multi GPU
+  - auto_scale_lr.base_batch_size = batch size * GPU number
+
+```sh
+bash ./tools/detection3d/dist_train.sh {config file} 2 \
+--cfg-options train_dataloader.batch_size=4 --cfg-options auto_scale_lr.base_batch_size=8
 ```
 
 ### 4. Deploy
@@ -92,7 +106,7 @@ python tools/detection3d/deploy.py projects/TransFusion/configs/deploy/transfusi
 python projects/TransFusion/scripts/fix_graph.py end2end.onnx
 ```
 
-- Move onnx file for Autoware data directory
+- Move onnx file for Autoware data directory and TransFusion can be used in ROS environment by [lidar_transfusion](https://github.com/autowarefoundation/autoware.universe/tree/main/perception/lidar_transfusion).
 
 ```
 mv transfusion.onnx ~/autoware_data/lidar_transfusion
