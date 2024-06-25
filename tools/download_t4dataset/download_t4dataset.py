@@ -50,7 +50,7 @@ if __name__ == "__main__":
 
     t4dataset_ids = sum([data_splits[key] for key in required_keys], [])
 
-    command = "webauto data t4dataset pull --project-id {} --annotation-dataset-id {} --asset-dir {}"
+    command = "webauto data annotation-dataset pull --project-id {} --annotation-dataset-id {} --asset-dir {}"
     for t4dataset_id in t4dataset_ids:
         _command = command.format(args.project_id, t4dataset_id, args.out_dir)
         print(_command)
