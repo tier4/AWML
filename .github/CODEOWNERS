@@ -5,7 +5,8 @@
 /projects/BEVFusion/ satoshi.tanaka@tier4.jp
 /projects/template/ satoshi.tanaka@tier4.jp
 /projects/TransFusion/ satoshi.tanaka@tier4.jp
+/pipeline/deploy_detection3d/ satoshi.tanaka@tier4.jp
+/pipeline/test_integration/ satoshi.tanaka@tier4.jp
 /tools/detection2d/ satoshi.tanaka@tier4.jp
 /tools/detection3d/ satoshi.tanaka@tier4.jp
 /tools/download_t4dataset/ satoshi.tanaka@tier4.jp
-/tools/test_integration/ satoshi.tanaka@tier4.jp

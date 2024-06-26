@@ -57,19 +57,25 @@ DOCKER_BUILDKIT=1 docker build -t autoware-ml .
 
 ## Supported tool
 
-- [Training and evaluation for 3D detection](tools/detection3d)
-- [Training and evaluation for 2D detection](tools/detection2d)
-- [Download T4dataset](tools/download_t4dataset)
+- [Training and evaluation for 3D detection](/tools/detection3d/)
+- [Training and evaluation for 2D detection](/tools/detection2d/)
+- [Download T4dataset](/tools/download_t4dataset/)
+
+## Supported pipeline
+
+- [Deploy 3D detection model](/pipeline/deploy_detection3d/)
+- [Make pseudo label for 3D detection model](/pipeline/pseudo_label_detection3d/)
+- [Integration test](/pipeline/test_integration/)
 
 ## Supported model
 ### 3D detection
 
-- [BEVFusion](projects/BEVFusion)
+- [BEVFusion](projects/BEVFusion/)
   - ROS package: TBD
   - Supported model
     - Camera-LiDAR fusion model (spconv)
     - LiDAR-only model (spconv)
-- [TransFusion](projects/TransFusion)
+- [TransFusion](projects/TransFusion/)
   - ROS package: [lidar_transfusion](https://github.com/autowarefoundation/autoware.universe/tree/main/perception/lidar_transfusion)
   - Supported model
     - LiDAR-only model (pillar)

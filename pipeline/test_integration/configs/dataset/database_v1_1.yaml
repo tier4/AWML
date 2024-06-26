@@ -226,7 +226,6 @@ train:
   #- 8034d7b5-df2f-442e-a7be-da984c6e0c2e # DBv1.1_odaiba_12-4_0-100
   #- dd759377-4ff7-49c5-9d42-5b1c30eba18b # DBv1.1_odaiba_12-4_100-200
 
-# Note(yukke42): val and test split are selected by the datetime not to be a data leak.
 val:
   - 961bbdff-0b35-47a1-a61d-4b4187abae91 # DBv1.0_odaiba_09
   - b06d085b-8f56-4c18-b732-65280b540241 # DBv1.0_odaiba_11
