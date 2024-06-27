@@ -5,8 +5,14 @@ This repository is machine learning library for [Autoware](https://github.com/au
 
 ## Docs
 
-- [Design docs](/docs/design.md): If you want to know the design of `autoware-ml`, please see this document
-- [Contribution](/docs/contribution.md): If you want to contribute for `autoware-ml`, please see this document
+- Design documents
+  - [Docs for software architecture](/docs/design/architecture.md)
+  - [Docs for T4dataset](/docs/design/t4dataset.md)
+  - [Docs for config files](/docs/design/config.md)
+  - [Docs for model deploy pipeline](/docs/design/model_deploy.md)
+- Operation documents
+  - [Docs for contribution](/docs/operation/contribution.md)
+  - [Docs for dataset update](/docs/operation/update_dataset.md)
 - [Release note](/docs/release_note.md)
 
 ## Environment
@@ -27,7 +33,7 @@ This repository is machine learning library for [Autoware](https://github.com/au
 If you want to use open dataset like nuScenes dataset, you set dataset as [mmdetection3d documents](https://mmdetection3d.readthedocs.io/en/latest/advanced_guides/index.html) and [mmdetection documents](https://mmdetection.readthedocs.io/en/latest/user_guides/dataset_prepare.html).
 If you want to [T4dataset](https://github.com/tier4/tier4_perception_dataset) and you have data access right of [WebAuto](https://docs.web.auto/en/user-manuals/), you can download T4dataset using [our scripts](/tools/download_t4dataset/).
 
-### Setup for environment
+### Setup environment
 
 - Set environment
 

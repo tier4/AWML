@@ -1,4 +1,4 @@
-## 1. Set environment
+## 1. Setup environment
 
 See [README](/README.md)
 

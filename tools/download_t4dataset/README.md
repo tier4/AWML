@@ -1,4 +1,8 @@
 # Download for T4dataset
+## Environment
+
+- webauto CLI > v0.33.1
+
 ## Download dataset
 
 - Download for XX1

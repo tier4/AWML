@@ -11,13 +11,24 @@
 
 For now, Camera-LiDAR fusion model is not supported in autoware-ml because of performance.
 
+## Results and models
+
+- [Deployed model](docs/deployed_model.md)
+- [Archived model](docs/archived_model.md)
+
 ## Get started
 ### 1. Setup
+
+- Docker build for TransFusion
+
+```sh
+DOCKER_BUILDKIT=1 docker build -t autoware-ml-transfusion projects/TransFusion/
+```
 
 - Run docker
 
 ```sh
-docker run -it --rm --gpus all --shm-size=64g --name awml -p 6006:6006 -v $PWD/:/workspace -v $PWD/data:/workspace/data autoware-ml
+docker run -it --rm --gpus all --shm-size=64g --name awml -p 6006:6006 -v $PWD/:/workspace -v $PWD/data:/workspace/data autoware-ml-transfusion
 ```
 
 - Build and install dependency (required only at first run).
@@ -55,7 +66,10 @@ bash tools/detection3d/dist_train.sh projects/TransFusion/configs/nuscenes/trans
 ```
 
 - [choice] Train for T4dataset with single GPU
-  - The parameter of batch size can be set by command
+  - batch size
+    - The parameter of batch size can be set by command.
+    - If you use RTX3090 GPU, we recommend to set batch size parameter from 4 to 8.
+    - If you use A100 GPU, we recommend to set batch size parameter from 16 to 32.
 
 ```sh
 python tools/detection3d/train.py {config file} \
@@ -72,24 +86,6 @@ bash ./tools/detection3d/dist_train.sh {config file} 2 \
 
 ### 4. Deploy
 
-- Docker build for deploy
-
-```sh
-DOCKER_BUILDKIT=1 docker build -t autoware-ml-transfusion-deploy projects/TransFusion/
-```
-
-- Docker run
-
-```sh
-docker run -it --rm --gpus '"device=0"' --shm-size=64g --name awml-deploy -v $PWD/:/workspace -v $PWD/data:/workspace/data autoware-ml-transfusion-deploy
-```
-
-- Move to workspace
-
-```sh
-cd /workspace
-```
-
 - Make onnx file for TransFusion
 
 ```sh
@@ -97,42 +93,23 @@ cd /workspace
 python tools/detection3d/deploy.py projects/TransFusion/configs/deploy/transfusion_lidar_tensorrt_dynamic-20x5.py projects/TransFusion/configs/nuscenes/transfusion_lidar_pillar02_second_secfpn_1xb8-cyclic-20e_nus-3d.py work_dirs/transfusion_lidar_pillar02_second_secfpn_1xb8-cyclic-20e_nus-3d/epoch_20.pth data/nuscenes/samples/LIDAR_TOP/n008-2018-05-21-11-06-59-0400__LIDAR_TOP__1526915243047392.pcd.bin --device cuda:0 --work-dir /workspace
 
 # Deploy for t4xx1 dataset
-python tools/detection3d/deploy.py projects/TransFusion/configs/deploy/transfusion_lidar_tensorrt_dynamic-20x5.py work_dirs/20240530_transfusion_lidar_pillar_second_secfpn_1xb8-cyclic-20e_t4xx1_90m_768grid/transfusion_lidar_pillar_second_secfpn_1xb8-cyclic-20e_t4xx1_90m_768grid.py work_dirs/20240530_transfusion_lidar_pillar_second_secfpn_1xb8-cyclic-20e_t4xx1_90m_768grid/epoch_50.pth data/t4dataset/database_v1_1/1abfa3ec-c01b-416f-8d29-e6645bc83d84/0/data/LIDAR_CONCAT/0.pcd.bin --device cuda:0 --work-dir /workspace
+DIR="work_dirs/transfusion_lidar_pillar_second_secfpn_1xb8-cyclic-20e_t4xx1_90m_768grid" && \
+python tools/detection3d/deploy.py projects/TransFusion/configs/deploy/transfusion_lidar_tensorrt_dynamic-20x5.py $DIR/transfusion_lidar_pillar_second_secfpn_1xb8-cyclic-20e_t4xx1_90m_768grid.py $DIR/epoch_50.pth data/t4dataset/database_v1_1/1abfa3ec-c01b-416f-8d29-e6645bc83d84/0/data/LIDAR_CONCAT/0.pcd.bin --device cuda:0 --work-dir /workspace/$DIR/onnx
 ```
 
 - Fix the graph
 
 ```sh
-python projects/TransFusion/scripts/fix_graph.py end2end.onnx
+DIR="work_dirs/transfusion_lidar_pillar_second_secfpn_1xb8-cyclic-20e_t4xx1_90m_768grid" && \
+python projects/TransFusion/scripts/fix_graph.py $DIR/onnx/end2end.onnx
 ```
 
 - Move onnx file for Autoware data directory and TransFusion can be used in ROS environment by [lidar_transfusion](https://github.com/autowarefoundation/autoware.universe/tree/main/perception/lidar_transfusion).
 
+```sh
+DIR="work_dirs/transfusion_lidar_pillar_second_secfpn_1xb8-cyclic-20e_t4xx1_90m_768grid" && \
+mv $DIR/onnx/transfusion.onnx ~/autoware_data/lidar_transfusion
 ```
-mv transfusion.onnx ~/autoware_data/lidar_transfusion
-```
-
-## Results and models
-
-- [archive model](docs/archive_model.md)
-
-### NuScenes model
-
-|                        | mAP  | Car  | Truck | CV   | Bus  | Tra  | Bar  | Mot  | Bic  | Ped  | Cone |
-| ---------------------- | ---- | ---- | ----- | ---- | ---- | ---- | ---- | ---- | ---- | ---- | ---- |
-| TransFusion-L (pillar) | 55.0 | 85.6 | 54.8  | 14.6 | 71.1 | 33.0 | 58.7 | 49.5 | 32.7 | 79.5 | 56.8 |
-
-- LiDAR only model (pillar)
-  - model: TBD
-  - logs: TBD
-
-### T4 dataset model for XX1
-
-TBD
-
-### T4 dataset model for X2
-
-TBD
 
 ## Troubleshooting
 ### Failed to create TensorRT engine

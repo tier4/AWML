@@ -18,6 +18,8 @@
   - https://github.com/tier4/autoware-ml/pull/42
   - https://github.com/tier4/autoware-ml/pull/44
   - https://github.com/tier4/autoware-ml/pull/49
+  - https://github.com/tier4/autoware-ml/pull/57
+  - https://github.com/tier4/autoware-ml/pull/59
 - Add T4dataset
   - https://github.com/tier4/autoware-ml/pull/17
   - https://github.com/tier4/autoware-ml/pull/19
@@ -25,6 +27,7 @@
   - https://github.com/tier4/autoware-ml/pull/27
   - https://github.com/tier4/autoware-ml/pull/34
   - https://github.com/tier4/autoware-ml/pull/38
+  - https://github.com/tier4/autoware-ml/pull/55
 - Update T4dataset list
   - https://github.com/tier4/autoware-ml/pull/31
   - https://github.com/tier4/autoware-ml/pull/45
@@ -36,6 +39,12 @@
 - Add dataset converter
   - https://github.com/tier4/autoware-ml/pull/9
   - https://github.com/tier4/autoware-ml/pull/27
+
+### Fix
+
+## Pipeline
+### New feature
+
 - Add test_integration
   - https://github.com/tier4/autoware-ml/pull/35
 
@@ -80,3 +89,4 @@
   - https://github.com/tier4/autoware-ml/pull/51
   - https://github.com/tier4/autoware-ml/pull/52
   - https://github.com/tier4/autoware-ml/pull/53
+  - https://github.com/tier4/autoware-ml/pull/58
