@@ -27,9 +27,9 @@ The config files in `autoware_ml` is used commonly for each projects.
 
 The directory of `docs/` is documents for autoware-ml.
 
-### pipeline/
+### pipelines/
 
-The directory of `pipeline/` manages the pipelines that consist of `tools`.
+The directory of `pipelines/` manages the pipelines that consist of `tools`.
 
 ### projects/
 

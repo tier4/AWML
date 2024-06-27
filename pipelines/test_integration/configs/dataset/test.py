@@ -3,8 +3,8 @@ custom_imports = dict(imports=[
     "autoware_ml.detection3d.evaluation.t4metric",
 ])
 
-dataset_version_config_root = "tools/test_integration/configs/dataset"
-dataset_version_list = ["database_v1_1"]
+dataset_version_config_root = "pipelines/test_integration/configs/dataset"
+dataset_version_list = ["database_v1_0"]
 
 camera_types = {
     "CAM_FRONT", "CAM_FRONT_RIGHT", "CAM_FRONT_LEFT", "CAM_BACK",
