@@ -1,23 +1,20 @@
 _base_ = [
-    "./transfusion_lidar_pillar_second_secfpn_1xb1-cyclic-20e_t4xx1_base.py"
+    "./transfusion_lidar_pillar_second_secfpn_1xb1_t4xx1.py",
+    "./model/transfusion_lidar_pillar_second_secfpn_1xb1_50m-512grid.py"
 ]
 
-# range parameter
-point_cloud_range = [-92.16, -92.16, -3.0, 92.16, 92.16, 7.0]
-voxel_size = [0.32, 0.32, 10]
-grid_size = [576, 576, 1]
-eval_class_range = {
-    "car": 75,
-    "truck": 75,
-    "bus": 75,
-    "bicycle": 75,
-    "pedestrian": 75,
-}
-
-# model parameter
-pillar_feat_channels = [64, 64]
-max_voxels = (60000, 60000)
+# train parameter
+val_interval = 5
 sweeps_num = 1
+
+# eval parameter
+eval_class_range = {
+    "car": 50,
+    "truck": 50,
+    "bus": 50,
+    "bicycle": 50,
+    "pedestrian": 50,
+}
 
 ###############################
 ##### override parameters #####
@@ -25,44 +22,8 @@ sweeps_num = 1
 
 model = dict(
     type="TransFusion",
-    data_preprocessor=dict(
-        type="Det3DDataPreprocessor",
-        voxel_layer=dict(
-            point_cloud_range=point_cloud_range,
-            voxel_size=voxel_size,
-            max_voxels=max_voxels,
-        ),
-    ),
-    pts_voxel_encoder=dict(
-        type="PillarFeatureNet",
-        feat_channels=pillar_feat_channels,
-        voxel_size=voxel_size,
-        point_cloud_range=point_cloud_range,
-    ),
-    pts_middle_encoder=dict(
-        type="PointPillarsScatter", output_shape=(grid_size[0], grid_size[1])),
-    pts_bbox_head=dict(
-        type="TransFusionHead",
-        bbox_coder=dict(
-            type="TransFusionBBoxCoder",
-            pc_range=point_cloud_range[0:2],
-            voxel_size=voxel_size[:2],
-        ),
-    ),
-    train_cfg=dict(
-        pts=dict(
-            dataset="nuScenes",
-            grid_size=grid_size,
-            voxel_size=voxel_size,
-            point_cloud_range=point_cloud_range,
-        )),
-    test_cfg=dict(
-        pts=dict(
-            dataset="nuScenes",
-            grid_size=grid_size,
-            pc_range=point_cloud_range[0:2],
-            voxel_size=voxel_size[:2],
-        )),
+    pts_bbox_head=dict(num_classes=_base_.num_class),
+    train_cfg=dict(val_interval=val_interval),
 )
 
 train_pipeline = [
@@ -99,8 +60,8 @@ train_pipeline = [
         flip_ratio_bev_horizontal=0.5,
         flip_ratio_bev_vertical=0.5,
     ),
-    dict(type="PointsRangeFilter", point_cloud_range=point_cloud_range),
-    dict(type="ObjectRangeFilter", point_cloud_range=point_cloud_range),
+    dict(type="PointsRangeFilter", point_cloud_range=_base_.point_cloud_range),
+    dict(type="ObjectRangeFilter", point_cloud_range=_base_.point_cloud_range),
     dict(type="ObjectNameFilter", classes=_base_.class_names),
     dict(type="PointShuffle"),
     dict(
@@ -216,3 +177,5 @@ val_dataloader = dict(dataset=dict(pipeline=test_pipeline))
 test_dataloader = dict(dataset=dict(pipeline=test_pipeline))
 val_evaluator = dict(eval_class_range=eval_class_range)
 test_evaluator = dict(eval_class_range=eval_class_range)
+
+train_cfg = dict(val_interval=val_interval)
