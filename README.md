@@ -6,7 +6,8 @@ This repository is machine learning library for [Autoware](https://github.com/au
 ## Docs
 
 - Design documents
-  - [Docs for software architecture](/docs/design/architecture.md)
+  - [Docs for whole architecture with software architecture](/docs/design/architecture.md)
+  - [Docs for autoware-ml design](/docs/design/autoware_ml_design.md)
   - [Docs for T4dataset](/docs/design/t4dataset.md)
   - [Docs for config files](/docs/design/config.md)
   - [Docs for model deploy pipeline](/docs/design/model_deploy.md)
@@ -61,35 +62,36 @@ ln -s {path_to_dataset} data
 DOCKER_BUILDKIT=1 docker build -t autoware-ml .
 ```
 
-## Supported tool
+## Supported tools
 
 - [Training and evaluation for 3D detection](/tools/detection3d/)
 - [Training and evaluation for 2D detection](/tools/detection2d/)
 - [Download T4dataset](/tools/download_t4dataset/)
 
-## Supported pipeline
+## Supported pipelines
 
-- [Deploy 3D detection model](/pipeline/deploy_detection3d/)
-- [Make pseudo label for 3D detection model](/pipeline/pseudo_label_detection3d/)
-- [Integration test](/pipeline/test_integration/)
+- [Deploy 3D detection model](/pipelines/deploy_detection3d/)
+- [Project adaptation for 3D detection model](/pipelines/project_adaptation_detection3d/)
+- [Integration test](/pipelines/test_integration/)
 
 ## Supported model
 ### 3D detection
 
-- [BEVFusion](projects/BEVFusion/)
-  - ROS package: TBD
-  - Supported model
-    - Camera-LiDAR fusion model (spconv)
-    - LiDAR-only model (spconv)
-- [TransFusion](projects/TransFusion/)
-  - ROS package: [lidar_transfusion](https://github.com/autowarefoundation/autoware.universe/tree/main/perception/lidar_transfusion)
-  - Supported model
-    - LiDAR-only model (pillar)
+- Model
+  - [BEVFusion](projects/BEVFusion/)
+  - [TransFusion](projects/TransFusion/)
+- Performance summary
+  - Dataset: T4dataset database_v1_0 + database_v1_1 test dataset
+  - Class mAP for center distance (0.5m, 1.0m, 2.0m, 4.0m)
 
-|             | T4dataset | NuScenes |
-| ----------- | :-------: | :------: |
-| BEVFusion   |           |          |
-| TransFusion |     ✅     |    ✅     |
+| model                      | range  | mAP | car | truck | bus | bicycle | pedestrian |
+| -------------------------- | ------ | --- | --- | ----- | --- | ------- | ---------- |
+| eval range: 50m            |        |     |     |       |     |         |            |
+| TransFusion-L t4xx1_50m_v1 |        |     |     |       |     |         |            |
+|                            |        |     |     |       |     |         |            |
+| eval range: 90m            |        |     |     |       |     |         |            |
+| TransFusion-L t4xx1_90m_v1 | 92.16m |     |     |       |     |         |            |
+| TransFusion-L t4xx1_90m_v2 | 92.16m |     |     |       |     |         |            |
 
 ### 2D detection
 
@@ -99,11 +101,6 @@ DOCKER_BUILDKIT=1 docker build -t autoware-ml .
   - ROS package: Not supported
   - Supported model
     - Mask-RCNN with FPN model: This is used for BEVFusion image backbone
-
-|                 | T4dataset | COCO  | NuImages |
-| --------------- | :-------: | :---: | :------: |
-| YOLOX-opt       |           |       |          |
-| TwinTransformer |           |       |          |
 
 ### 2D segmentation
 
@@ -115,7 +112,3 @@ DOCKER_BUILDKIT=1 docker build -t autoware-ml .
 
 - (TBD) EfficientNet
   - ROS package: [traffic_light_classifier](https://github.com/autowarefoundation/autoware.universe/tree/main/perception/traffic_light_classifier)
-
-|              | T4dataset | COCO  | NuImages |
-| ------------ | :-------: | :---: | :------: |
-| EfficientNet |           |       |          |

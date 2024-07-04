@@ -1,15 +1,17 @@
 # TransFusion
-## Supported feature
+## Summary
 
-- [x] Train LiDAR-only model
-- [x] Train with single GPU
-- [x] Train with multiple GPU
-- [x] Add script to make .onnx file and deploy to Autoware
-- [ ] Add unit test
-
-## Limited feature
-
-For now, Camera-LiDAR fusion model is not supported in autoware-ml because of performance.
+- ROS package: [lidar_transfusion](https://github.com/autowarefoundation/autoware.universe/tree/main/perception/lidar_transfusion)
+- Supported dataset
+  - [x] NuScenes
+  - [x] T4dataset
+- Supported model
+  - [x] LiDAR-only model (pillar)
+- Other supported feature
+  - [x] Add script to make .onnx file and deploy to Autoware
+  - [ ] Add unit test
+- Limited feature
+  - For now, Camera-LiDAR fusion model is not supported in `autoware-ml` because of performance.
 
 ## Results and models
 
@@ -39,12 +41,12 @@ python projects/TransFusion/setup.py develop
 
 ### 2. config
 
-- Change parameters for your environment by changing [base config file](configs/t4dataset/transfusion_lidar_pillar_second_secfpn_1xb1-cyclic-20e_t4xx1_base.py).
+- Change parameters for your environment by changing [base config file](configs/t4dataset/transfusion_lidar_pillar_second_secfpn_1xb1_t4xx1.py).
 
 ```py
+# user setting
 info_directory_path = "info/user_name/"
 data_root = "data/t4dataset/"
-val_interval = 5
 max_epochs = 50
 backend_args = None
 lr = 0.0001  # learning rate
@@ -93,21 +95,21 @@ bash ./tools/detection3d/dist_train.sh {config file} 2 \
 python tools/detection3d/deploy.py projects/TransFusion/configs/deploy/transfusion_lidar_tensorrt_dynamic-20x5.py projects/TransFusion/configs/nuscenes/transfusion_lidar_pillar02_second_secfpn_1xb8-cyclic-20e_nus-3d.py work_dirs/transfusion_lidar_pillar02_second_secfpn_1xb8-cyclic-20e_nus-3d/epoch_20.pth data/nuscenes/samples/LIDAR_TOP/n008-2018-05-21-11-06-59-0400__LIDAR_TOP__1526915243047392.pcd.bin --device cuda:0 --work-dir /workspace
 
 # Deploy for t4xx1 dataset
-DIR="work_dirs/transfusion_lidar_pillar_second_secfpn_1xb8-cyclic-20e_t4xx1_90m_768grid" && \
-python tools/detection3d/deploy.py projects/TransFusion/configs/deploy/transfusion_lidar_tensorrt_dynamic-20x5.py $DIR/transfusion_lidar_pillar_second_secfpn_1xb8-cyclic-20e_t4xx1_90m_768grid.py $DIR/epoch_50.pth data/t4dataset/database_v1_1/1abfa3ec-c01b-416f-8d29-e6645bc83d84/0/data/LIDAR_CONCAT/0.pcd.bin --device cuda:0 --work-dir /workspace/$DIR/onnx
+DIR="work_dirs/transfusion_lidar_pillar_second_secfpn_1xb1_90m_768grid_t4xx1" && \
+python tools/detection3d/deploy.py projects/TransFusion/configs/deploy/transfusion_lidar_tensorrt_dynamic-20x5.py $DIR/transfusion_lidar_pillar_second_secfpn_1xb1_90m_768grid_t4xx1.py $DIR/epoch_50.pth data/t4dataset/database_v1_1/1abfa3ec-c01b-416f-8d29-e6645bc83d84/0/data/LIDAR_CONCAT/0.pcd.bin --device cuda:0 --work-dir /workspace/$DIR/onnx
 ```
 
 - Fix the graph
 
 ```sh
-DIR="work_dirs/transfusion_lidar_pillar_second_secfpn_1xb8-cyclic-20e_t4xx1_90m_768grid" && \
+DIR="work_dirs/transfusion_lidar_pillar_second_secfpn_1xb1_90m_768grid_t4xx1" && \
 python projects/TransFusion/scripts/fix_graph.py $DIR/onnx/end2end.onnx
 ```
 
 - Move onnx file for Autoware data directory and TransFusion can be used in ROS environment by [lidar_transfusion](https://github.com/autowarefoundation/autoware.universe/tree/main/perception/lidar_transfusion).
 
 ```sh
-DIR="work_dirs/transfusion_lidar_pillar_second_secfpn_1xb8-cyclic-20e_t4xx1_90m_768grid" && \
+DIR="work_dirs/transfusion_lidar_pillar_second_secfpn_1xb1_90m_768grid_t4xx1" && \
 mv $DIR/onnx/transfusion.onnx ~/autoware_data/lidar_transfusion
 ```
 

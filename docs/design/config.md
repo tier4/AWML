@@ -1,4 +1,5 @@
-## Tips
+# Docs for configs
+## detection3d
 ### Use for Tensorboard
 
 - Add backend for Tensorboard to config

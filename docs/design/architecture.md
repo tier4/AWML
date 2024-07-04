@@ -1,63 +1,39 @@
-# Software architecture docs
-## Pipeline design
+# Architecture for whole ML pipeline
+## Whole data pipeline for ML model with Autoware
 
-![](/docs/fig/pipeline.drawio.svg)
+TBD
 
-## `autoware-ml` architecture
+## Whole architecture for ML model with Autoware
 
-The architecture of autoware-ml is based on [mmdetection3d v1.4](https://github.com/open-mmlab/mmdetection3d/tree/v1.4.0).
+TBD
 
-### autoware_ml/
+## ML model deployment pipeline
 
-The directory of `autoware_ml` is library for autoware-ml.
-This directory can be used as library from other software.
+We define 4 types model for deploy.
 
-- configs
+Here is example for Camera-LIDAR 3D detection model for deploy pipeline.
 
-The config files in `autoware_ml` is used commonly for each projects.
+![](/docs/fig/model_pipeline.drawio.svg)
 
-```
-- autoware_ml/
-  - configs/
-    - detection3d/
-    - detection2d/
-```
+### 1. Base model
 
-### docs/
+"Base model" can be used for a wide range of projects.
+"Base model" is based on LiDAR-only model for 3D detection to general purpose.
+"Base model" is basically trained by all dataset.
 
-The directory of `docs/` is documents for autoware-ml.
+### 2. Product model
 
-### pipelines/
+"Product model" can be used for a product defined by reference design like XX1 and X2.
+"Product model" can use specific sensor configuration to deploy for sensor fusion model.
+"Product model" is basically trained by all product dataset.
 
-The directory of `pipelines/` manages the pipelines that consist of `tools`.
+### 3. Project model
 
-### projects/
+"Project model" can be used for specific project.
+"Project model" adapt to specific domain, trained by pseudo label using "Offline model".
 
-The directory of `projects/` manages the model for each tasks.
+### 4. Offline model
 
-```
-- projects/
-  - BEVFusion
-  - YOLOX
-  - TransFusion
-```
-
-### tools/
-
-The directory of `tools/` manages tools for each tasks.
-
-- The pipeline of each task for training and evaluation
-
-```
-- tools/
-  - detection3d/
-  - detection2d/
-```
-
-- Tools for dataset making
-
-```
-- tools/
-  - dataset/
-    - scene_evaluation
-```
+"Offline model" can be used to offline process like pseudo label and cannot be used for real-time autonomous driving application.
+"Offline model" is based on LiDAR-only model for 3D detection for generalization performance.
+"Base model" is basically trained by all dataset.

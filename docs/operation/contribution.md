@@ -17,6 +17,28 @@ See [test_intefration](/tools/test_intefration) for internal user.
 
 When you make the PR, you check the list as below "Use case for contribute".
 
+## PR rule
+### title
+
+[Conventional Commits](https://www.conventionalcommits.org/en/v1.0.0/) can generate categorized changelogs, for example using [git-cliff](https://github.com/orhun/git-cliff).
+
+```
+feat(autoware-ml): add loss function
+```
+
+If your change breaks some interfaces, use the ! (breaking changes) mark as follows:
+
+```
+feat(autoware-ml)!: change function name from function_a() to function_b()
+```
+
+You can use the following definition.
+
+- feat
+- fix
+- chore
+- ! (breaking changes)
+
 ## Use case for contribute
 ### Add/Fix functions to `autoware_ml`
 
