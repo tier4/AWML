@@ -1,5 +1,5 @@
 _base_ = [
-    "./transfusion_lidar_pillar_second_secfpn_1xb1_t4xx1_base.py",
+    "./transfusion_lidar_pillar_second_secfpn_1xb1_t4xx1-base.py",
     "./model/transfusion_lidar_pillar_second_secfpn_1xb1_90m-576grid.py"
 ]
 

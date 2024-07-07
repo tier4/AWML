@@ -3,5 +3,5 @@
 - Run integration test on local
 
 ```
-pipeline/test_integration/scripts/test.sh
+./pipelines/test_integration/scripts/test.sh
 ```

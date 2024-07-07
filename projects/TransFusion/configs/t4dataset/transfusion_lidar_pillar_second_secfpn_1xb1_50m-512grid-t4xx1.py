@@ -1,6 +1,6 @@
 _base_ = [
-    "./transfusion_lidar_pillar_second_secfpn_1xb1_t4xx1_base.py",
-    "./model/transfusion_lidar_pillar_second_secfpn_1xb1_120m-768grid.py"
+    "./transfusion_lidar_pillar_second_secfpn_1xb1_t4xx1-base.py",
+    "./model/transfusion_lidar_pillar_second_secfpn_1xb1_50m-512grid.py"
 ]
 
 # train parameter
@@ -9,11 +9,11 @@ sweeps_num = 1
 
 # eval parameter
 eval_class_range = {
-    "car": 120,
-    "truck": 120,
-    "bus": 120,
-    "bicycle": 120,
-    "pedestrian": 120,
+    "car": 50,
+    "truck": 50,
+    "bus": 50,
+    "bicycle": 50,
+    "pedestrian": 50,
 }
 
 ###############################
