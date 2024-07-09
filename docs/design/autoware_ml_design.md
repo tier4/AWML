@@ -4,9 +4,16 @@
 
 ![](/docs/fig/pipeline.drawio.svg)
 
-## base library
+## Using library
 
-The architecture of autoware-ml is based on [mmdetection3d v1.4](https://github.com/open-mmlab/mmdetection3d/tree/v1.4.0).
+- [mmdetection3d v1.4](https://github.com/open-mmlab/mmdetection3d/tree/v1.4.0).
+
+This is machine learning framework for 3D detection.
+`autoware-ml` is strongly based on this framework.
+
+If you want to learn about use of `mmdetection3d`, we recommend to read [user guides](https://mmdetection3d.readthedocs.io/en/latest/user_guides/index.html) at first.
+If you want to learn about config files of `mmdetection3d`, we recommend to read [user guides for configs](https://mmdetection3d.readthedocs.io/en/latest/user_guides/config.html).
+If you want to learn about info files of  `mmdetection3d`, we recommend to read [nuscenes dataset](https://mmdetection3d.readthedocs.io/en/latest/advanced_guides/datasets/nuscenes.html?highlight=info).
 
 ## `autoware-ml` architecture
 

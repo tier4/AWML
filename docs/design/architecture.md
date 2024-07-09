@@ -30,7 +30,8 @@ Here is example for Camera-LIDAR 3D detection model for deploy pipeline.
 ### 3. Project model
 
 "Project model" can be used for specific project.
-"Project model" adapt to specific domain, trained by pseudo label using "Offline model".
+"Project model" adapts to specific domain, trained by pseudo label using "Offline model".
+"Project model" sometimes uses for project-only dataset, which cannot use for other project for some reason.
 
 ### 4. Offline model
 

@@ -1,10 +1,10 @@
-# v0.1.0
-## Summary
 
-## Core library
-### New feature
+## v0.1.0
+### Summary
 
-- Add whole architecture and environment
+### Core library
+
+- feat: add whole architecture and environment
   - https://github.com/tier4/autoware-ml/pull/1
   - https://github.com/tier4/autoware-ml/pull/14
   - https://github.com/tier4/autoware-ml/pull/24
@@ -20,7 +20,9 @@
   - https://github.com/tier4/autoware-ml/pull/49
   - https://github.com/tier4/autoware-ml/pull/57
   - https://github.com/tier4/autoware-ml/pull/59
-- Add T4dataset
+  - https://github.com/tier4/autoware-ml/pull/61
+  - https://github.com/tier4/autoware-ml/pull/62
+- feat: add T4dataset
   - https://github.com/tier4/autoware-ml/pull/17
   - https://github.com/tier4/autoware-ml/pull/19
   - https://github.com/tier4/autoware-ml/pull/23
@@ -28,48 +30,46 @@
   - https://github.com/tier4/autoware-ml/pull/34
   - https://github.com/tier4/autoware-ml/pull/38
   - https://github.com/tier4/autoware-ml/pull/55
-- Update T4dataset list
+  - https://github.com/tier4/autoware-ml/pull/60
+- feat: update T4dataset list
   - https://github.com/tier4/autoware-ml/pull/31
   - https://github.com/tier4/autoware-ml/pull/45
   - https://github.com/tier4/autoware-ml/pull/46
 
-## Tools
-### New feature
+### Tools
 
-- Add dataset converter
+- feat: add dataset converter
   - https://github.com/tier4/autoware-ml/pull/9
   - https://github.com/tier4/autoware-ml/pull/27
 
-### Fix
+### Pipelines
 
-## Pipeline
-### New feature
-
-- Add test_integration
+- feat: add test_integration
   - https://github.com/tier4/autoware-ml/pull/35
+  - https://github.com/tier4/autoware-ml/pull/64
+  - https://github.com/tier4/autoware-ml/pull/67
 
-### Fix
+### Projects
 
-## Projects
-### New feature
-
-- Add BEVFusion model
+- feat: add BEVFusion model
   - https://github.com/tier4/autoware-ml/pull/1
   - https://github.com/tier4/autoware-ml/pull/2
   - https://github.com/tier4/autoware-ml/pull/12
   - https://github.com/tier4/autoware-ml/pull/43
-- Add TransFusion model
+  - https://github.com/tier4/autoware-ml/pull/69
+- feat: add TransFusion model
   - https://github.com/tier4/autoware-ml/pull/20
   - https://github.com/tier4/autoware-ml/pull/22
   - https://github.com/tier4/autoware-ml/pull/43
   - https://github.com/tier4/autoware-ml/pull/50
   - https://github.com/tier4/autoware-ml/pull/54
+  - https://github.com/tier4/autoware-ml/pull/63
+  - https://github.com/tier4/autoware-ml/pull/69
+  - https://github.com/tier4/autoware-ml/pull/75
 
-### Fix
+### Chore
 
-## Chore
-
-- Add documents for autoware-ml
+- chore: add documents for autoware-ml
   - https://github.com/tier4/autoware-ml/pull/3
   - https://github.com/tier4/autoware-ml/pull/4
   - https://github.com/tier4/autoware-ml/pull/5
@@ -90,3 +90,7 @@
   - https://github.com/tier4/autoware-ml/pull/52
   - https://github.com/tier4/autoware-ml/pull/53
   - https://github.com/tier4/autoware-ml/pull/58
+  - https://github.com/tier4/autoware-ml/pull/65
+  - https://github.com/tier4/autoware-ml/pull/66
+  - https://github.com/tier4/autoware-ml/pull/70
+  - https://github.com/tier4/autoware-ml/pull/71

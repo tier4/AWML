@@ -1,19 +1,12 @@
-# v0.0.0
-## Summary
+## v0.1.0
+### Summary
 
-## Core library
-### New feature
+### Core library
 
-### Fix
+### Tools
 
-## Tools
-### New feature
+### Pipelines
 
-### Fix
+### Projects
 
-## Projects
-### New feature
-
-### Fix
-
-## Chore
+### Chore

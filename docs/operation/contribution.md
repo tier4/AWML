@@ -18,7 +18,15 @@ See [test_intefration](/tools/test_intefration) for internal user.
 When you make the PR, you check the list as below "Use case for contribute".
 
 ## PR rule
-### title
+### PR Strategy
+
+Because we have few resource to develop `autoware-ml`, we merge the PR only if the code quality reach enough to be maintained.
+If you make the PR that make new feature but lack of maintainability, we will not merge.
+
+If you make prototype level code but it is useful feature for `autoware-ml`, please make fork repository and let us by issues.
+After considering whether to integration and prioritizing with other developing items, we will integrate to `autoware-ml`.
+
+### Title
 
 [Conventional Commits](https://www.conventionalcommits.org/en/v1.0.0/) can generate categorized changelogs, for example using [git-cliff](https://github.com/orhun/git-cliff).
 
