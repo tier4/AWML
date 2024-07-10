@@ -119,6 +119,8 @@ def extract_nuscenes_data(nusc: NuScenes, sample, lidar_token: str):
     scene_record = nusc.get("scene", sample["scene_token"])
     log_record = nusc.get("log", scene_record["log_token"])
 
+    l2e_t = cs_record["translation"]
+    e2g_t = pose_record["translation"]
     l2e_r = cs_record["rotation"]
     e2g_r = pose_record["rotation"]
     l2e_r_mat = Quaternion(l2e_r).rotation_matrix
@@ -133,6 +135,8 @@ def extract_nuscenes_data(nusc: NuScenes, sample, lidar_token: str):
         lidar_path,
         e2g_r_mat,
         l2e_r_mat,
+        e2g_t,
+        l2e_t,
     )
 
 

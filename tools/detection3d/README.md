@@ -90,7 +90,20 @@ python tools/detection3d/test_all.py {config_file} {train_results_directory} {mi
 
 ### 4.2. Visualization
 
+- Visualization for 3D view
+
 TBD
+
+- Visualization for BEV view
+  - This script is simple debug tools.
+  - This tool don't have image information, so you can use it when you make visualization images for public place like PR.
+  - (Image information often has personal information, so you cannot use it in public place in many case.)
+
+```sh
+python tools/detection3d/visualize_bev.py {config_file} --checkpoint {config_file}
+```
+
+![](docs/13351af0-41cb-4a96-9553-aeb919efb46e_0_data_LIDAR_CONCAT_85.pcd.bin.png)
 
 ## 5. Deploy
 

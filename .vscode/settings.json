@@ -4,5 +4,6 @@
     "editor.formatOnSave": true,
     "editor.defaultFormatter": "eeyore.yapf",
     "editor.formatOnType": true,
-  }
+  },
+  "ros.distro": "humble"
 }

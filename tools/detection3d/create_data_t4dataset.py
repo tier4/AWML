@@ -14,7 +14,7 @@ from nuscenes import NuScenes
 
 from tools.detection3d.t4dataset_converters.t4converter import (
     extract_nuscenes_data, get_annotations, get_ego2global,
-    get_lidar_points_info, get_lidar_sweeps_info)
+    get_lidar_points_info, get_lidar_sweeps_info, obtain_sensor2top)
 from tools.detection3d.t4dataset_converters.update_infos_to_v2 import \
     get_empty_standard_data_info
 
@@ -89,6 +89,8 @@ def get_info(cfg: Any, nusc: Any, sample: Any, i: int, max_sweeps: int):
         lidar_path,
         e2g_r_mat,
         l2e_r_mat,
+        e2g_t,
+        l2e_t,
     ) = extract_nuscenes_data(nusc, sample, lidar_token)
 
     info = get_empty_standard_data_info(cfg.camera_types)
@@ -119,6 +121,19 @@ def get_info(cfg: Any, nusc: Any, sample: Any, i: int, max_sweeps: int):
             ),
     ]:
         info.update(new_info)
+
+    camera_types = cfg.camera_types
+    if (len(camera_types) > 0):
+        for cam in camera_types:
+            #print(lidar_path, sample['data'])
+            if cam in sample['data']:
+                cam_token = sample['data'][cam]
+                cam_path, _, cam_intrinsic = nusc.get_sample_data(cam_token)
+                cam_info = obtain_sensor2top(nusc, cam_token, l2e_t, l2e_r_mat,
+                                             e2g_t, e2g_r_mat, cam)
+                cam_info.update(cam_intrinsic=cam_intrinsic)
+                info.update({cam: cam_info})
+
     return info
 
 
@@ -160,7 +175,7 @@ def parse_args():
     return args
 
 
-if __name__ == "__main__":
+def main():
     args = parse_args()
     # load config
     cfg = Config.fromfile(args.config)
@@ -214,3 +229,7 @@ if __name__ == "__main__":
     save(t4_infos["train"] + t4_infos["val"], "trainval")
     save(t4_infos["test"], "test")
     save(t4_infos["train"] + t4_infos["val"] + t4_infos["test"], "all")
+
+
+if __name__ == "__main__":
+    main()
