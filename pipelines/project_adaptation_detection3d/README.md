@@ -4,10 +4,14 @@
 
 TBD
 
-## 2. Make info file from non-annotated T4dataset
+## 2. Make non-annotated T4dataset from from rosbag
 
 TBD
 
-## 3. train
+## 3. Make pseudo T4dataset from non-annotated T4dataset
+
+TBD
+
+## 4. Fine tune the model
 
 TBD

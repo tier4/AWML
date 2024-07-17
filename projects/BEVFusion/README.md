@@ -15,6 +15,7 @@
 ## Get started
 ### 1. Setup
 
+- [Run setup environment at first](/tools/setting_environment/)
 - Run docker
 
 ```sh
@@ -89,3 +90,7 @@ TBD
 ### T4 dataset
 
 TBD
+
+## Reference
+
+- [BEVFusion of mmdetection3d](https://github.com/open-mmlab/mmdetection3d/tree/v1.4.0/projects/BEVFusion)

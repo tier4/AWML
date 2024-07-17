@@ -1,9 +1,8 @@
 # Model name
 ## Summary
 
-- ROS package: [package_name](https://github.com/autowarefoundation/autoware.universe/tree/main/perception/)
+- ROS package: [traffic_light_classifier](https://github.com/autowarefoundation/autoware.universe/tree/main/perception/traffic_light_classifier)
 - Supported dataset
-  - [ ] NuScenes
   - [ ] T4dataset
 - Supported model
 - Other supported feature

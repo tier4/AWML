@@ -5,20 +5,21 @@ This pipeline can use for deployment of detection3d models.
 ## procedure
 ### 1. Add dataset
 
-- 1.1. Dataset engineer update `autoware-ml/config/dataset` after adding dataset.
+- 1.1. The dataset engineer update `autoware-ml/config/dataset` after adding dataset.
 
 ### 2. Set environment
 
 - 2.1. Set environment
 
-```sh
-git clone https://github.com/tier4/autoware-ml
-ln -s {path_to_dataset} data
-./pipelines/deploy_detection3d/scripts/init_environment.sh
-```
+See [Setting environment for autoware-ml](/tools/setting_environment/) for now.
 
-- 2.2. Download new dataset by using [download_t4dataset](/tools/download_t4dataset/README.md).
-- 2.3. Update info file
+<!-- [TODO] Make scripts
+```sh
+./pipelines/init_environment.sh
+```
+-->
+
+- 2.2. Update info file
 
 ```sh
 # XX1
@@ -32,12 +33,17 @@ docker run -it --rm --gpus 'all' --name autoware-ml --shm-size=64g -v $PWD/:/wor
 - 3.1. Run scripts
   - If you need to change parameters, you need to see for each projects.
 
+For now, please see for each [projects](/projects).
+
+<!-- [TODO] Make scripts
 ```sh
 ./pipelines/train_models.sh
 ```
+-->
 
 - 3.2 Check results by visualization
-  - See [visualization](https://github.com/tier4/autoware-ml/tree/main/tools/detection3d#42-visualization)
+
+See [visualization](https://github.com/tier4/autoware-ml/tree/main/tools/detection3d#42-visualization).
 
 ### 4. Deploy model
 

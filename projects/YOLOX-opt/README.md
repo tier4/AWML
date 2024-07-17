@@ -1,9 +1,9 @@
 # Model name
 ## Summary
 
-- ROS package: [package_name](https://github.com/autowarefoundation/autoware.universe/tree/main/perception/)
+- ROS package: [tensorrt_yolox](https://github.com/autowarefoundation/autoware.universe/tree/main/perception/tensorrt_yolox)
 - Supported dataset
-  - [ ] NuScenes
+  - [ ] COCO dataset
   - [ ] T4dataset
 - Supported model
 - Other supported feature

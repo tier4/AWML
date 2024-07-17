@@ -1,6 +1,16 @@
+# tools/detection3d
+
+Training and evaluation tools for 3D Detection.
+
+- Supported dataset
+  - [x] NuScenes
+  - [x] T4dataset
+- Other supported feature
+  - [ ] Add unit test
+
 ## 1. Setup environment
 
-See [README](/README.md)
+See [setting environemnt](/tools/setting_environment/)
 
 ## 2. Prepare dataset
 
@@ -8,7 +18,6 @@ Prepare the dataset you use.
 
 ### 2.1. nuScenes
 
-- Download dataset from official website
 - Run docker
 
 ```sh
@@ -22,7 +31,7 @@ docker run -it --rm --gpus '"device=0"' --shm-size=64g --name awml -p 6006:6006 
 python tools/detection3d/create_data.py nuscenes --root-path ./data/nuscenes --out-dir ./data/nuscenes --extra-tag nuscenes
 ```
 
-### 2.2. T4 dataset
+### 2.2. T4dataset
 
 - Run docker
 

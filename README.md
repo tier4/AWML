@@ -3,83 +3,42 @@
 This repository is machine learning library for [Autoware](https://github.com/autowarefoundation/autoware) based on [OpenMMLab library](https://github.com/open-mmlab).
 `autoware-ml` support training with [T4dataset format](https://github.com/tier4/tier4_perception_dataset) in addition to open dataset.
 
+- Supported environment
+  - All tools are tested by [Docker environment](Dockerfile) on Ubuntu 22.04LTS
+  - NVIDIA dependency: CUDA 12.1 + cuDNN 8
+    - Need > 530.xx.xx NVIDIA device driver
+
 ## Docs
 
 - Design documents
   - [Docs for whole architecture with software architecture](/docs/design/architecture.md)
   - [Docs for autoware-ml design](/docs/design/autoware_ml_design.md)
-  - [Docs for T4dataset](/docs/design/t4dataset.md)
   - [Docs for config files](/docs/design/config.md)
-  - [Docs for model deploy pipeline](/docs/design/model_deploy.md)
+  - [Docs for T4dataset](/docs/design/t4dataset.md)
 - Operation documents
   - [Docs for contribution](/docs/operation/contribution.md)
-  - [Docs for dataset update](/docs/operation/update_dataset.md)
-- [Release note](/docs/release_note.md)
-
-## Environment
-### Supported environment
-
-- Tested by [Docker environment](Dockerfile) on Ubuntu 22.04LTS and Ubuntu 20.04LTS
-- NVIDIA dependency: CUDA 12.1 + cuDNN 8
-  - Need > 530.xx.xx NVIDIA device driver
-- Library
-  - [pytorch v2.2.0](https://github.com/pytorch/pytorch/tree/v2.2.0)
-  - [mmcv v2.1.0](https://github.com/open-mmlab/mmcv/tree/v2.1.0)
-  - [mmdetection3d v1.4.0](https://github.com/open-mmlab/mmdetection3d/tree/v1.4.0)
-  - [mmdetection v3.3.0](https://github.com/open-mmlab/mmdetection/tree/v3.3.0)
-  - [mmdeploy v1.3.1](https://github.com/open-mmlab/mmdeploy/tree/v1.3.1)
-
-### Setup dataset
-
-If you want to use open dataset like nuScenes dataset, you set dataset as [mmdetection3d documents](https://mmdetection3d.readthedocs.io/en/latest/advanced_guides/index.html) and [mmdetection documents](https://mmdetection.readthedocs.io/en/latest/user_guides/dataset_prepare.html).
-If you want to [T4dataset](https://github.com/tier4/tier4_perception_dataset) and you have data access right of [WebAuto](https://docs.web.auto/en/user-manuals/), you can download T4dataset using [our scripts](/tools/download_t4dataset/).
-
-### Setup environment
-
-- Set environment
-
-```sh
-git clone https://github.com/tier4/autoware-ml
-ln -s {path_to_dataset} data
-```
-
-```sh
-├── data
-│  └── nuscenes
-│  └── t4dataset
-│  └── nuimages
-│  └── coco
-├── Dockerfile
-├── projects
-├── README.md
-└── work_dirs
-```
-
-- Build docker
-  - Note that this process need for long time.
-
-```sh
-DOCKER_BUILDKIT=1 docker build -t autoware-ml .
-```
+  - [Note for next release](/docs/operation/release_note.md)
 
 ## Supported tools
 
+- [Setting environment for autoware-ml](/tools/setting_environment/)
 - [Training and evaluation for 3D detection](/tools/detection3d/)
 - [Training and evaluation for 2D detection](/tools/detection2d/)
-- [Download T4dataset](/tools/download_t4dataset/)
 
 ## Supported pipelines
 
 - [Deploy 3D detection model](/pipelines/deploy_detection3d/)
 - [Project adaptation for 3D detection model](/pipelines/project_adaptation_detection3d/)
 - [Integration test](/pipelines/test_integration/)
+- [Update T4dataset](/pipelines/update_t4dataset/)
 
 ## Supported model
 ### 3D detection
 
-- Model
-  - [BEVFusion](projects/BEVFusion/)
+- Model for Autoware
   - [TransFusion](projects/TransFusion/)
+- Model for ML tools
+  - [BEVFusion](projects/BEVFusion/)
 - Performance summary
   - Dataset: T4dataset database_v1_0 + database_v1_1 test dataset
   - Class mAP for center distance (0.5m, 1.0m, 2.0m, 4.0m)
@@ -89,22 +48,25 @@ DOCKER_BUILDKIT=1 docker build -t autoware-ml .
 | TransFusion-L t4xx1_90m/v1 | 92.16m | 57.8 | 74.0 | 48.0  | 72.0 | 42.7    | 52.1       |
 | TransFusion-L t4xx1_90m/v2 | 92.16m | 68.1 | 80.5 | 58.0  | 80.8 | 58.0    | 63.2       |
 
+### 3D segmentation
+
+TBD
+
 ### 2D detection
 
-- (TBD) YOLOX-opt
-  - ROS package: [tensorrt_yolox](https://github.com/autowarefoundation/autoware.universe/tree/main/perception/tensorrt_yolox)
-- (TBD) SwinTransformer
-  - ROS package: Not supported
-  - Supported model
-    - Mask-RCNN with FPN model: This is used for BEVFusion image backbone
+- Model for Autoware
+  - (TBD) [YOLOX](projects/YOLOX/)
+  - (TBD) [YOLOX-opt](projects/YOLOX-opt/)
+- Model for ML tools
+  - (TBD) [GRIP](projects/GRIP/)
+  - (TBD) [SwinTransformer](projects/SwinTransformer/)
 
 ### 2D segmentation
 
-- (TBD) SegmentAnything
-  - ROS package: Not supported
-  - This model is used for evaluation and labeling tools
+- Model for ML tools
+  - (TBD) [SegmentAnything](projects/SegmentAnything/)
 
 ### 2D classification
 
-- (TBD) EfficientNet
-  - ROS package: [traffic_light_classifier](https://github.com/autowarefoundation/autoware.universe/tree/main/perception/traffic_light_classifier)
+- Model for Autoware
+  - (TBD) [EfficientNet](projects/EfficientNet/)

@@ -1,7 +1,4 @@
 # Deployed model
-## Results and models
-
-
 ## NuScenes model
 
 |                        | mAP  | Car  | Truck | CV   | Bus  | Tra  | Bar  | Mot  | Bic  | Ped  | Cone |

@@ -3,10 +3,6 @@
 
 TBD
 
-## Whole architecture for ML model with Autoware
-
-TBD
-
 ## ML model deployment pipeline
 
 We define 4 types model for deploy.

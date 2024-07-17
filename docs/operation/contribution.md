@@ -47,6 +47,15 @@ You can use the following definition.
 - chore
 - ! (breaking changes)
 
+### Document
+
+If you add some feature, you need to add document like `README.md`.
+The target of document is as below.
+
+- `/docs/*`: Design documents for developers
+- `/tools/*`: Process documents for developers
+- `/pipelines/*`: Process documents for users
+
 ## Use case for contribute
 ### Add/Fix functions to `autoware_ml`
 

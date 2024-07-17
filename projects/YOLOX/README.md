@@ -3,7 +3,7 @@
 
 - ROS package: [package_name](https://github.com/autowarefoundation/autoware.universe/tree/main/perception/)
 - Supported dataset
-  - [ ] NuScenes
+  - [ ] COCO dataset
   - [ ] T4dataset
 - Supported model
 - Other supported feature

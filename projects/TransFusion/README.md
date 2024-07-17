@@ -21,6 +21,7 @@
 ## Get started
 ### 1. Setup
 
+- [Run setup environment at first](/tools/setting_environment/)
 - Docker build for TransFusion
 
 ```sh
@@ -124,3 +125,8 @@ ldd /opt/conda/lib/python3.10/site-packages/mmdeploy/lib/libmmdeploy_tensorrt_op
 ```
 
 Nevertheless, `onnx` file should be created successfully.
+
+## Reference
+
+- Xuyang Bai, Zeyu Hu, Xinge Zhu, Qingqiu Huang, Yilun Chen, Hongbo Fu and Chiew-Lan Tai. "TransFusion: Robust LiDAR-Camera Fusion for 3D Object Detection with Transformers." arXiv preprint arXiv:2203.11496 (2022).
+- https://github.com/open-mmlab/mmdetection3d/pull/2547
