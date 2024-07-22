@@ -14,20 +14,15 @@
 ## Get started
 ### 1. Setup
 
-- [Run setup environment at first](/tools/setting_environment/).
-
-```
-RUN mim install mmdet[multimodal]==3.3.0
-```
-
-- Build docker for GLIP
+- 1.1. [Run setup environment at first](/tools/setting_environment/).
+- 1.2. Build docker for GLIP
 
 ```
 DOCKER_BUILDKIT=1 docker build -t autoware-ml-glip projects/GLIP
 ```
 
-- Download pretrain weight from [GLIP of mmdetection](https://github.com/open-mmlab/mmdetection/tree/main/configs/glip/README.md).
-- Run docker
+- 1.3. Download pretrain weight from [GLIP of mmdetection](https://github.com/open-mmlab/mmdetection/tree/main/configs/glip/README.md).
+- 1.4. Run docker
 
 ```
 docker run -it --rm --gpus all --shm-size=64g --name awml -v $PWD/:/workspace -v $PWD/data:/workspace/data autoware-ml-glip
@@ -39,7 +34,7 @@ Not supported
 
 ### 3. Inference
 
-- You can inference GLIP model using an image.
+- 3.1. You can inference GLIP model using an image.
 
 ```sh
 python tools/detection2d/image_demo.py {image_path} \

@@ -3,10 +3,14 @@
 /autoware_ml/ satoshi.tanaka@tier4.jp
 /docs/ satoshi.tanaka@tier4.jp
 /projects/BEVFusion/ satoshi.tanaka@tier4.jp
+/projects/GLIP/ satoshi.tanaka@tier4.jp
 /projects/template/ satoshi.tanaka@tier4.jp
 /projects/TransFusion/ satoshi.tanaka@tier4.jp
-/pipeline/deploy_detection3d/ satoshi.tanaka@tier4.jp
-/pipeline/test_integration/ satoshi.tanaka@tier4.jp
+/projects/SegmentAnything/ satoshi.tanaka@tier4.jp
+/pipelines/deploy_detection3d/ satoshi.tanaka@tier4.jp
+/pipelines/test_integration/ satoshi.tanaka@tier4.jp
+/pipelines/update_t4dataset/ satoshi.tanaka@tier4.jp
 /tools/detection2d/ satoshi.tanaka@tier4.jp
 /tools/detection3d/ satoshi.tanaka@tier4.jp
-/tools/download_t4dataset/ satoshi.tanaka@tier4.jp
+/tools/setting_environment/ satoshi.tanaka@tier4.jp
+/tools/rosbag/ satoshi.tanaka@tier4.jp
