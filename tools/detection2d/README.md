@@ -32,9 +32,12 @@ docker run -it --rm --gpus '"device=1"' --name autoware-ml --shm-size=64g -d -v 
 
 ## 4. Analyze
 ### 4.1. Evaluation
+
 ### 4.2. Visualization
 
-TBD
+```sh
+python tools/detection2d/image_demo.py {image path} {config_file} --weights {pth_file}
+```
 
 ## 5. Deploy
 

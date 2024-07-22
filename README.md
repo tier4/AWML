@@ -58,7 +58,7 @@ TBD
   - (TBD) [YOLOX](projects/YOLOX/)
   - (TBD) [YOLOX-opt](projects/YOLOX-opt/)
 - Model for ML tools
-  - (TBD) [GRIP](projects/GRIP/)
+  - [GLIP](projects/GLIP/)
   - (TBD) [SwinTransformer](projects/SwinTransformer/)
 
 ### 2D segmentation

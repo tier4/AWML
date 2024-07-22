@@ -2,7 +2,7 @@
 ## Summary
 
 - ROS package: Not supported
-- Supported dataset: Not supported
+- Supported dataset for training: Not supported
 - Supported model
 - Other supported feature
   - [ ] Add unit test
@@ -27,5 +27,4 @@ TBD
 TBD
 
 ## Troubleshooting
-
 ## Reference
