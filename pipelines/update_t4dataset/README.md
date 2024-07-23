@@ -1,4 +1,7 @@
 # Update T4dataset version
+
+- [Support priority](https://github.com/tier4/autoware-ml/blob/main/docs/design/autoware_ml_design.md?#support-priority): Tier S
+
 ## 1. Make new sensor config dataset
 
 - 1.1. [Dataset engineer] Add new yaml file for [dataset config](/autoware_ml/configs/detection3d/dataset/t4dataset) like `database_v1_0_0.yaml` after upload T4dataset.

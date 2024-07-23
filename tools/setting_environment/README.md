@@ -2,6 +2,7 @@
 
 Tools setting environment for `autoware-ml`.
 
+- [Support priority](https://github.com/tier4/autoware-ml/blob/main/docs/design/autoware_ml_design.md?#support-priority): Tier S
 - Environment
   - [x] Ubuntu22.04 LTS
     - This scripts do not need docker environment

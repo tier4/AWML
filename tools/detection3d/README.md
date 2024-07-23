@@ -2,6 +2,7 @@
 
 Training and evaluation tools for 3D Detection.
 
+- [Support priority](https://github.com/tier4/autoware-ml/blob/main/docs/design/autoware_ml_design.md?#support-priority): Tier S
 - Supported dataset
   - [x] NuScenes
   - [x] T4dataset

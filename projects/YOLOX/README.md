@@ -1,6 +1,7 @@
 # Model name
 ## Summary
 
+- [Support priority](https://github.com/tier4/autoware-ml/blob/main/docs/design/autoware_ml_design.md?#support-priority): Tier B
 - ROS package: [package_name](https://github.com/autowarefoundation/autoware.universe/tree/main/perception/)
 - Supported dataset
   - [ ] COCO dataset

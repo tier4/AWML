@@ -17,9 +17,8 @@
   - Note:
     - e:50m eval range 50m
 
-| model                      | range  | mAP  | car  | truck | bus  | bicycle | pedestrian |
+| eval range: 90m            | range  | mAP  | car  | truck | bus  | bicycle | pedestrian |
 | -------------------------- | ------ | ---- | ---- | ----- | ---- | ------- | ---------- |
-| eval range: 90m            |        |      |      |       |      |         |            |
 | TransFusion-L t4xx1_90m/v1 | 92.16m | 57.8 | 74.0 | 48.0  | 72.0 | 42.7    | 52.1       |
 | TransFusion-L t4xx1_90m/v2 | 92.16m | 68.1 | 80.5 | 58.0  | 80.8 | 58.0    | 63.2       |
 

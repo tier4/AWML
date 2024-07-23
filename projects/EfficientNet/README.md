@@ -1,6 +1,7 @@
 # Model name
 ## Summary
 
+- [Support priority](https://github.com/tier4/autoware-ml/blob/main/docs/design/autoware_ml_design.md?#support-priority): Tier B
 - ROS package: [traffic_light_classifier](https://github.com/autowarefoundation/autoware.universe/tree/main/perception/traffic_light_classifier)
 - Supported dataset
   - [ ] T4dataset

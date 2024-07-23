@@ -1,6 +1,7 @@
 # GLIP
 ## Summary
 
+- [Support priority](https://github.com/tier4/autoware-ml/blob/main/docs/design/autoware_ml_design.md?#support-priority): Tier A
 - ROS package: Not supported
 - Supported dataset for training: Not supported
 - Other supported feature
@@ -22,6 +23,7 @@ DOCKER_BUILDKIT=1 docker build -t autoware-ml-glip projects/GLIP
 ```
 
 - 1.3. Download pretrain weight from [GLIP of mmdetection](https://github.com/open-mmlab/mmdetection/tree/main/configs/glip/README.md).
+  - In demonstration, you should put `work_dirs/pretrain/glip/`.
 - 1.4. Run docker
 
 ```
@@ -39,8 +41,8 @@ Not supported
 ```sh
 python tools/detection2d/image_demo.py {image_path} \
 projects/GLIP/configs/glip_atss_swin-l_fpn_dyhead_pretrain_mixeddata.py \
---weights work_dirs/pretrain/glip_l_mmdet-abfe026b.pth --texts 'traffic cone. car'
---out-dir work_dirs/glip
+--weights work_dirs/pretrain/glip/glip_l_mmdet-abfe026b.pth --texts 'traffic cone. car' \
+--out-dir work_dirs/glip/
 ```
 
 ## Troubleshooting
