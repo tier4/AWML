@@ -11,13 +11,15 @@ selector = dict(
 
 task = [
     dict(
-        type="Bicycle",
+        type="OpenVocabularyDetection",
+        text="bicycle",
         confidence=0.5,
         object_num_threshold=1,
         scene_num_threshold=5,
     ),
     dict(
-        type="TrafficCone",
+        type="OpenVocabularyDetection",
+        text="traffic cone",
         confidence=0.3,
         object_num_threshold=2,
         scene_num_threshold=5,
