@@ -1,7 +1,16 @@
 # Architecture for whole ML pipeline
 ## Whole data pipeline for ML model with Autoware
 
-TBD
+![](/docs/fig/data_pipeline.drawio.svg)
+
+- `autoware-ml` with [WebAuto](https://docs.web.auto/en/)
+
+Download T4dataset by using WebAuto system.
+
+- `autoware-ml` with [T4dataset tools](https://github.com/tier4/tier4_perception_dataset)
+
+`autoware-ml` make pseudo label T4dataset from non-annotated T4dataset.
+It lead to make short time to be annotated by using `autoware-ml`.
 
 ## ML model deployment pipeline
 
@@ -10,6 +19,8 @@ We define 4 types model for deploy.
 Here is example for Camera-LIDAR 3D detection model for deploy pipeline.
 
 ![](/docs/fig/model_pipeline.drawio.svg)
+
+For now, we deploy only product model in 3D detection with TransFusion LiDAR-only model as product model and BEVFusion LiDAR-only model as offline model.
 
 ### 1. Base model
 

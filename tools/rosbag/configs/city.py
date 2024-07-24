@@ -1,35 +1,31 @@
 custom_imports = dict(
     imports=["tools.rosbag.rosbag"], allow_failed_imports=False)
 
-preprocess = Preprocess(image_crop=[0.1, 0.1, 0.9, 0.9])
-selector = Selector(
+open_vocabulary_config_path = "projects/GLIP/configs/glip_atss_swin-l_fpn_dyhead_pretrain_mixeddata.py"
+open_vocabulary_model_path = "work_dirs/pretrain/glip/glip_l_mmdet-abfe026b.pth"
+
+selector = dict(
     min_crop_time=5,  #[sec]
+    max_crop_time=10,  #[sec]
 )
 
-open_vocabulary_selector = [
-    OpenVocabulary(
-        task="bicycle",
-        text="bicycle",
+task = [
+    dict(
+        type="Bicycle",
         confidence=0.5,
         object_num_threshold=1,
-        scene_threshold=10),
-    OpenVocabulary(
-        task="traffic cone",
-        text="traffic cone",
+        scene_num_threshold=5,
+    ),
+    dict(
+        type="TrafficCone",
         confidence=0.3,
-        object_num_threshold=1,
-        scene_threshold=10),
+        object_num_threshold=2,
+        scene_num_threshold=5,
+    ),
+    #dict(
+    #    type="TrafficConeOnStreet",
+    #    confidence=0.3,
+    #    object_num_threshold=2,
+    #    scene_num_threshold=3,
+    #),
 ]
-
-#open_vocabulary_segmentation_selector = [
-#  OpenVocabulary2dSeg(
-#    task="pedestrian on road",
-#    open_vocabulary=OpenVocabulary(text="pedestrian", confidence=0.2, object_num_threshold=1, scene_threshold=10),
-#    segmentation=Segmentation(background="road"),
-#  )
-#  OpenVocabulary2dSeg(
-#    task="traffic cone on road",
-#    open_vocabulary=OpenVocabulary(text="traffic cone", confidence=0.2, object_num_threshold=1, scene_threshold=10),
-#    segmentation=Segmentation(background="road"),
-#  )
-#]

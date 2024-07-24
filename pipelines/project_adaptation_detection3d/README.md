@@ -1,6 +1,6 @@
 # Project adaptation for 3D detection model
 
-- [Support priority](https://github.com/tier4/autoware-ml/blob/main/docs/design/autoware_ml_design.md?#support-priority): Tier C
+- [Support priority](https://github.com/tier4/autoware-ml/blob/main/docs/design/autoware_ml_design.md#support-priority): Tier C
 
 ## 1. Check product model
 

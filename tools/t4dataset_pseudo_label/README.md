@@ -1,7 +1,7 @@
 # t4dataset_pseudo_label
 ## 1. Setup environment
 
-- [Support priority](https://github.com/tier4/autoware-ml/blob/main/docs/design/autoware_ml_design.md?#support-priority): Tier A
+- [Support priority](https://github.com/tier4/autoware-ml/blob/main/docs/design/autoware_ml_design.md#support-priority): Tier A
 - See [setting environemnt](/tools/setting_environment/)
 
 ## 2. command

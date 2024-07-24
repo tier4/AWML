@@ -90,20 +90,17 @@ The target of `README.md` is a developer of `autoware-ml`.
 We define "support priority" for each tools and projects. Maintainers handle handle the issues according to the priority as below.
 
 - Tier S:
-  - We always use a tool or a model.
-  - It is core function in ML system and it updates frequently from any requrests.
+  - It is core function in ML system and it updates frequently from any requests.
   - We strive to make it high maintainability with code quality, unit test and CI/CD.
   - We put highest priority on support and maintance to it because it leads to fast cycle development for developers.
 - Tier A:
-  - We always or often use a tool or a model.
   - It is maintance phase on development, so it's updates is not frequently.
   - We make it maintainability with code quality, unit test and CI/CD, if possible.
   - We put a high prority on support to it.
 - Tier B:
-  - We sometimes use a tool or a model.
   - We fix a broken tool when needed.
-  - We put a middle prority on support to it.
+  - We put a middle priority on support to it.
 - Tier C:
   - We rarely use a tool or a model or it is just prototype version.
   - If it is not used for long time, we delete it.
-  - We put a low prority on support to it.
+  - We put a low priority on support to it.
