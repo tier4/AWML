@@ -18,8 +18,8 @@ backend_args = None
 
 # range setting
 point_cloud_range = [-122.4, -122.4, -3.0, 122.4, 122.4, 5.0]
-voxel_size = [0.17, 0.17, 0.2]
-grid_size = [1440, 1440, 41]
+voxel_size = [0.075, 0.075, 0.2]
+grid_size = [3264, 3264, 41]
 eval_class_range = {
     "car": 120,
     "truck": 120,
@@ -309,6 +309,13 @@ test_evaluator = dict(
     name_mapping=_base_.name_mapping,
     eval_class_range=eval_class_range,
 )
+
+vis_backends = [
+    dict(type="LocalVisBackend"),
+    dict(type="TensorboardVisBackend"),
+]
+visualizer = dict(
+    type="Det3DLocalVisualizer", vis_backends=vis_backends, name="visualizer")
 
 # learning rate
 lr = 0.0001
