@@ -9,17 +9,17 @@ selector = dict(
     max_crop_time=10,  #[sec]
 )
 
-task = [
+tasks = [
     dict(
         type="OpenVocabularyDetection",
-        text="bicycle",
+        texts="bicycle",
         confidence=0.5,
         object_num_threshold=1,
         scene_num_threshold=5,
     ),
     dict(
         type="OpenVocabularyDetection",
-        text="traffic cone",
+        texts="traffic cone",
         confidence=0.3,
         object_num_threshold=2,
         scene_num_threshold=5,
