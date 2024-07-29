@@ -70,3 +70,8 @@ TBD
 
 - Model for Autoware
   - (TBD) [EfficientNet](projects/EfficientNet/)
+
+### Vision language
+
+- Model for ML tools
+  - [BLIP-2](projects/BLIP-2/)
