@@ -26,7 +26,7 @@ docker run -it --rm --gpus all --shm-size=64g --name awml -v $PWD/:/workspace -v
 
 ```sh
 # QA task
-python projects/BLIP-2/demo.py "blip2-opt2.7b_3rdparty-zeroshot_vqa" {image_file} "What is this?"
+python projects/BLIP-2/demo.py "blip2-opt2.7b_3rdparty-zeroshot_vqa" {image_file} --texts "What is this?"
 
 # Image caption
 python projects/BLIP-2/demo.py "blip2-opt2.7b_3rdparty-zeroshot_caption" {image_file}

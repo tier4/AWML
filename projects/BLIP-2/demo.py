@@ -5,8 +5,9 @@ from mmpretrain import inference_model
 
 def parse_args():
     parser = ArgumentParser()
+    parser.add_argument('model', type=str, help='Model name')
     parser.add_argument('input', type=str, help='Input image file')
-    parser.add_argument('texts', type=str, help='Input texts')
+    parser.add_argument('--texts', type=str, help='Input texts', default="")
     args = parser.parse_args()
     return args
 
@@ -14,7 +15,7 @@ def parse_args():
 def main():
     args = parse_args()
     result = inference_model(
-        'blip2-opt2.7b_3rdparty-zeroshot_vqa',
+        args.model,
         args.input,
         args.texts,
     )
