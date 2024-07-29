@@ -7,8 +7,8 @@ import argparse
 import os
 import subprocess
 from pathlib import Path
-from typing import Union
 from tempfile import TemporaryDirectory
+from typing import Union
 
 import yaml
 
@@ -45,6 +45,8 @@ def download_t4dataset(
     download_command = "webauto data annotation-dataset pull --project-id {} --annotation-dataset-id {} --asset-dir {}"
 
     with TemporaryDirectory() as temp_dir:
+        print("\n***************** start to download", t4dataset_id)
+
         download_command_ = download_command.format(
             project_id,
             t4dataset_id,
@@ -55,8 +57,13 @@ def download_t4dataset(
 
         # rename directory
         _, _, _, database_name, _ = divide_file_path(config_path)
-        from_directory = os.path.join(temp_dir, "annotation_dataset")
+        from_directory = os.path.join(
+            temp_dir,
+            "annotation_dataset",
+            t4dataset_id,
+        )
         to_directory = os.path.join(output_dir, database_name)
+        os.makedirs(to_directory, exist_ok=True)
 
         mv_command = "mv {} {}".format(from_directory, to_directory)
         print(mv_command)
