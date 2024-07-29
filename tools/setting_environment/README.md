@@ -66,6 +66,3 @@ git clone https://github.com/tier4/autoware-ml
 ```sh
 DOCKER_BUILDKIT=1 docker build -t autoware-ml .
 ```
-
-- We recommend VSCode extensions if you develop `autoware-ml`
-  - [eeyore.yapf](https://marketplace.visualstudio.com/items?itemName=eeyore.yapf)
