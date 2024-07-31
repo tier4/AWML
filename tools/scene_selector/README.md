@@ -4,7 +4,8 @@
 
 ## docs
 
-- [Select for weather](./docs/weather.md)
+- [Select for weather](docs/weather.md)
+- [Select for traffic cones](docs/traffic_cone.md)
 
 ## Get started
 ### 1. setup environment

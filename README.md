@@ -24,6 +24,8 @@ This repository is machine learning library for [Autoware](https://github.com/au
 - [Setting environment for autoware-ml](/tools/setting_environment/)
 - [Training and evaluation for 3D detection](/tools/detection3d/)
 - [Training and evaluation for 2D detection](/tools/detection2d/)
+- (TBD) [Select scene for rosbag](/tools/scene_selector/)
+- (TBD) [Pseudo label for T4dataset](/tools/t4dataset_pseudo_label/)
 
 ## Supported pipelines
 
