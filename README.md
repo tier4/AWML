@@ -50,6 +50,10 @@ This repository is machine learning library for [Autoware](https://github.com/au
 | TransFusion-L t4xx1_90m/v1 | 92.16m | 57.8 | 74.0 | 48.0  | 72.0 | 42.7    | 52.1       |
 | TransFusion-L t4xx1_90m/v2 | 92.16m | 68.1 | 80.5 | 58.0  | 80.8 | 58.0    | 63.2       |
 
+| eval range: 120m            | range   | mAP  | car  | truck | bus  | bicycle | pedestrian |
+| --------------------------- | ------- | ---- | ---- | ----- | ---- | ------- | ---------- |
+| TransFusion-L t4xx1_120m/v1 | 122.88m | 51.8 | 70.9 | 43.8  | 54.7 | 38.7    | 50.9       |
+
 ### 3D segmentation
 
 TBD
