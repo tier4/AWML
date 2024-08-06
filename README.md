@@ -61,7 +61,7 @@ TBD
 ### 2D detection
 
 - Model for Autoware
-  - (TBD) [YOLOX](projects/YOLOX/)
+  - [YOLOX](projects/YOLOX/)
   - (TBD) [YOLOX-opt](projects/YOLOX-opt/)
 - Model for ML tools
   - [GLIP](projects/GLIP/)

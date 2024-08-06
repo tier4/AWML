@@ -12,10 +12,8 @@
 ## T4 dataset model for XX1 (DB1.0 + DB1.1)
 
 - Performance summary
-  - Dataset: database_v1_0 + database_v1_1 (eval range: 75m)
+  - Dataset: database_v1_0 + database_v1_1
   - Class mAP for center distance (0.5m, 1.0m, 2.0m, 4.0m)
-  - Note:
-    - e:50m eval range 50m
 
 | eval range: 50m            | range | mAP  | car  | truck | bus  | bicycle | pedestrian |
 | -------------------------- | ----- | ---- | ---- | ----- | ---- | ------- | ---------- |
@@ -51,26 +49,6 @@
 | bus        | 84.7 | 64.9    | 87.6    | 93.1    | 93.1    |
 | bicycle    | 67.9 | 63.1    | 69.4    | 69.6    | 69.6    |
 | pedestrian | 64.9 | 57.0    | 62.6    | 68.1    | 71.9    |
-
-### TransFusion-L t4xx1_120m/v1 (pillar 0.32m * grid 768 = 122.88m)
-
-- model
-  - Training dataset: database_v1_0 + database_v1_1
-  - Eval dataset: database_v1_0 + database_v1_1
-  - [Config file path](https://github.com/tier4/autoware-ml/blob/3df40a10310dff2d12e4590e26f81017e002a2a0/projects/TransFusion/configs/t4dataset/transfusion_lidar_pillar_second_secfpn_1xb1-cyclic-20e_t4xx1_120m_768grid.py)
-  - [Deployed ROS parameter file](https://awf.ml.dev.web.auto/perception/models/transfusion/t4xx1_120m/v1/transfusion_ml_package.param.yaml)
-  - [Deployed onnx model](https://awf.ml.dev.web.auto/perception/models/transfusion/t4xx1_120m/v1/transfusion.onnx)
-  - [Training results](https://awf.ml.dev.web.auto/perception/models/transfusion/t4xx1_120m/v1/logs.zip)
-  - train time: A100 * 2 * 3.5days
-  - Total mAP to test dataset (eval range = 120m): 0.518
-
-| class_name | mAP  | AP@0.5m | AP@1.0m | AP@2.0m | AP@4.0m |
-| ---------- | ---- | ------- | ------- | ------- | ------- |
-| car        | 70.9 | 45.9    | 71.7    | 81.3    | 84.6    |
-| truck      | 43.8 | 11.5    | 37.6    | 58.7    | 67.3    |
-| bus        | 54.7 | 32.2    | 53.8    | 65.6    | 67.1    |
-| bicycle    | 38.7 | 33.5    | 37.6    | 40.2    | 43.4    |
-| pedestrian | 50.9 | 44.4    | 48.7    | 52.7    | 57.7    |
 
 ### TransFusion-L t4xx1_90m/v1 (pillar 0.32m * grid 576 = 92.16m)
 
@@ -113,6 +91,26 @@
 | bus        | 80.8 | 60.3    | 83.6    | 89.5    | 89.7    |
 | bicycle    | 58.0 | 53.1    | 58.6    | 59.7    | 60.5    |
 | pedestrian | 63.2 | 55.6    | 61.4    | 66.3    | 69.6    |
+
+### TransFusion-L t4xx1_120m/v1 (pillar 0.32m * grid 768 = 122.88m)
+
+- model
+  - Training dataset: database_v1_0 + database_v1_1
+  - Eval dataset: database_v1_0 + database_v1_1
+  - [Config file path](https://github.com/tier4/autoware-ml/blob/3df40a10310dff2d12e4590e26f81017e002a2a0/projects/TransFusion/configs/t4dataset/transfusion_lidar_pillar_second_secfpn_1xb1-cyclic-20e_t4xx1_120m_768grid.py)
+  - [Deployed ROS parameter file](https://awf.ml.dev.web.auto/perception/models/transfusion/t4xx1_120m/v1/transfusion_ml_package.param.yaml)
+  - [Deployed onnx model](https://awf.ml.dev.web.auto/perception/models/transfusion/t4xx1_120m/v1/transfusion.onnx)
+  - [Training results](https://awf.ml.dev.web.auto/perception/models/transfusion/t4xx1_120m/v1/logs.zip)
+  - train time: A100 * 2 * 3.5days
+  - Total mAP to test dataset (eval range = 120m): 0.518
+
+| class_name | mAP  | AP@0.5m | AP@1.0m | AP@2.0m | AP@4.0m |
+| ---------- | ---- | ------- | ------- | ------- | ------- |
+| car        | 70.9 | 45.9    | 71.7    | 81.3    | 84.6    |
+| truck      | 43.8 | 11.5    | 37.6    | 58.7    | 67.3    |
+| bus        | 54.7 | 32.2    | 53.8    | 65.6    | 67.1    |
+| bicycle    | 38.7 | 33.5    | 37.6    | 40.2    | 43.4    |
+| pedestrian | 50.9 | 44.4    | 48.7    | 52.7    | 57.7    |
 
 ## T4 dataset model for X2
 
