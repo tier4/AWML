@@ -1,12 +1,20 @@
-# Swin
+# SwinTransformer
 
-- [Swin Transformer: Hierarchical Vision Transformer using Shifted Windows](https://arxiv.org/abs/2103.14030)
+- [Support priority](https://github.com/tier4/autoware-ml/blob/main/docs/design/autoware_ml_design.md#support-priority): Tier C
+- ROS package: None
+- Supported dataset
+  - [x] NuScenes
+  - [ ] T4dataset
 
 ## Abstract
 
 ## Results and Models
 
-## Citation
+## Troubleshooting
+
+## Reference
+
+- [Swin Transformer: Hierarchical Vision Transformer using Shifted Windows](https://arxiv.org/abs/2103.14030)
 
 ```latex
 @article{liu2021Swin,

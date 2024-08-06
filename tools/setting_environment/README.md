@@ -62,6 +62,7 @@ git clone https://github.com/tier4/autoware-ml
 
 - Build docker
   - Note that this process need for long time.
+  - You may need `sudo` to use `docker` command.
 
 ```sh
 DOCKER_BUILDKIT=1 docker build -t autoware-ml .
