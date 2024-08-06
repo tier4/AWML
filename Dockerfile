@@ -43,7 +43,7 @@ RUN mim install \
     mmdet==${MMDET} \
     mmdet3d==${MMDET3D} \
     mmengine==${MMENGINE} \
-    mmpretrain==${MMPRETRAIN}
+    mmpretrain[multimodal]==${MMPRETRAIN}
 
 WORKDIR /workspace
 
