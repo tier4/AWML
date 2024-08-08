@@ -4,10 +4,9 @@ from typing import Optional
 
 import mmcv
 import numpy as np
-from mmengine.fileio import get
-
 from mmdet3d.datasets.transforms import LoadMultiViewImageFromFiles
 from mmdet3d.registry import TRANSFORMS
+from mmengine.fileio import get
 
 
 @TRANSFORMS.register_module()
@@ -31,6 +30,26 @@ class BEVLoadMultiViewImageFromFiles(LoadMultiViewImageFromFiles):
         set_default_scale (bool): Whether to set default scale.
             Defaults to True.
     """
+
+    def __init__(self,
+                 to_float32: bool = False,
+                 color_type: str = 'unchanged',
+                 backend_args: Optional[dict] = None,
+                 num_views: int = 5,
+                 num_ref_frames: int = -1,
+                 test_mode: bool = False,
+                 set_default_scale: bool = True) -> None:
+        self.to_float32 = to_float32
+        self.color_type = color_type
+        self.backend_args = backend_args
+        self.num_views = num_views
+        # num_ref_frames is used for multi-sweep loading
+        self.num_ref_frames = num_ref_frames
+        # when test_mode=False, we randomly select previous frames
+        # otherwise, select the earliest one
+        self.test_mode = test_mode
+        self.set_default_scale = set_default_scale
+        self.before_camera_info = dict()
 
     def transform(self, results: dict) -> Optional[dict]:
         """Call function to load multi-view image from files.
@@ -131,7 +150,17 @@ class BEVLoadMultiViewImageFromFiles(LoadMultiViewImageFromFiles):
         # Support multi-view images with different shapes
         # TODO: record the origin shape and padded shape
         filename, cam2img, lidar2cam, cam2lidar, lidar2img = [], [], [], [], []
-        for _, cam_item in results['images'].items():
+
+        # to fill None data
+        #for _ , cam_item in results['images'].items():
+        for cam_type, cam_item in results['images'].items():
+
+            if cam_item['img_path'] is None:
+                cam_item = self.before_camera_info[cam_type]
+                print("Warning: fill None data")
+            else:
+                self.before_camera_info[cam_type] = cam_item
+
             filename.append(cam_item['img_path'])
             lidar2cam.append(cam_item['lidar2cam'])
 

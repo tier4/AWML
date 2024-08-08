@@ -1,16 +1,19 @@
 import copy
 import os
-from typing import Dict, List
+from typing import Any, Dict, List, Optional, Union
 
 import mmengine
 import numpy as np
+import numpy.typing as npt
 from mmdet3d.datasets.utils import convert_quaternion_to_matrix
+from nuimages import NuImages
 from nuscenes import NuScenes
 from nuscenes.nuscenes import Box
 from pyquaternion import Quaternion
 
 from tools.detection3d.t4dataset_converters.update_infos_to_v2 import (
-    clear_instance_unused_keys, get_empty_instance, get_single_lidar_sweep)
+    clear_instance_unused_keys, get_empty_instance, get_single_image_sweep,
+    get_single_lidar_sweep)
 
 
 def get_ego2global(pose_record: Dict) -> Dict[str, List]:
@@ -18,6 +21,11 @@ def get_ego2global(pose_record: Dict) -> Dict[str, List]:
         quaternion=pose_record["rotation"],
         translation=pose_record["translation"])
     return dict(ego2global=ego2global, )
+
+
+def parse_camera_path(camera_path: str) -> str:
+    """leave only {database_version}/{scene_id}/{dataset_version}/data/{camera_type}/{frame}.bin from path"""
+    return "/".join(camera_path.split("/")[-6:])
 
 
 def parse_lidar_path(lidar_path: str) -> str:
@@ -368,3 +376,172 @@ def obtain_sensor2top(
         sweep["instance_tokens"] = instance_tokens
 
     return sweep
+
+
+#def get_camera_sweeps_info(
+#    nusc: NuScenes,
+#    nuim: NuImages,
+#    sample: Dict[str, Any],
+#    max_sweeps: int,
+#    camera_types: List[str],
+#    scene_dir: str,
+#    use_2d_annotation: bool,
+#) -> Dict[str, List[Optional[Dict[str, Any]]]]:
+#    sweeps: List[Dict[str, Any]] = []
+#    while len(sweeps) < max_sweeps:
+#        if sample["prev"] == "":
+#            break
+#
+#        image_sweep = get_single_image_sweep(camera_types)
+#        previous_sample = nusc.get("sample", sample["prev"])
+#        sd_rec = nusc.get("sample_data",
+#                          previous_sample["data"]["LIDAR_CONCAT"])
+#        lidar_cs_rec = nusc.get("calibrated_sensor",
+#                                sd_rec["calibrated_sensor_token"])
+#        ego_pose = get_ego_pose(nuim, sd_rec["token"])
+#        image_sweep["ego2global"] = ego_pose
+#        image_sweep["timestamp"] = sd_rec["timestamp"]
+#
+#        for cam_idx, cam_key in enumerate(camera_types):
+#            sd_record = nuim.get("sample_data",
+#                                 previous_sample["data"][cam_key])
+#            cs_record = nuim.get(
+#                "calibrated_sensor",
+#                sd_record["calibrated_sensor_token"],
+#            )
+#            filename = nuim.get("sample_data",
+#                                previous_sample["data"][cam_key])["filename"]
+#            img_path = os.path.join(scene_dir, filename)
+#            image_sweep["images"][cam_key]["img_path"] = img_path
+#            image_sweep["images"][cam_key]["height"] = sd_record["height"]
+#            image_sweep["images"][cam_key]["width"] = sd_record["width"]
+#            image_sweep["images"][cam_key]["cam2img"] = cs_record[
+#                "camera_intrinsic"]
+#            image_sweep["images"][cam_key]["ego2global"] = get_ego_pose(
+#                nuim, sd_rec["token"])
+#            image_sweep["images"][cam_key][
+#                "cam2ego"] = get_transformation_matrix(
+#                    cs_record["rotation"],
+#                    cs_record["translation"],
+#                )
+#
+#        # gather 2d annotations for sweep frame
+#        # if use_2d_annotation:
+#        #     image_sweep["cam_instances"] = get_camera_instances(
+#        #         nuim, previous_sample, camera_types)["cam_instances"]
+#
+#        sweeps.append(image_sweep)
+#        sample = previous_sample
+#
+#    return dict(image_sweeps=sweeps)
+
+#def get_ego_pose(nu: Union[NuScenes, NuImages],
+#                 sample_data_token: str) -> np.ndarray:
+#    """Get the ego pose matrix."""
+#    ego_pose_data = nu.get(
+#        "ego_pose",
+#        nu.get("sample_data", sample_data_token)["ego_pose_token"])
+#    rotation = Quaternion(ego_pose_data["rotation"]).rotation_matrix
+#    translation = ego_pose_data["translation"]
+#    ego_pose = np.eye(4)
+#    ego_pose[:3, :3] = rotation
+#    ego_pose[:3, 3] = translation
+#    return ego_pose
+
+#def get_transformation_matrix(
+#        rotation: List[float],
+#        translation: List[float]) -> npt.NDArray[np.float_]:
+#    rotation_matrix = Quaternion(rotation).rotation_matrix
+#    transformation_matrix = np.eye(4)
+#    transformation_matrix[:3, :3] = rotation_matrix
+#    transformation_matrix[:3, 3] = translation
+#    return transformation_matrix
+
+#def get_camera_instances(
+#        nuim: NuImages, sample: Dict[str, Any],
+#        camera_types: List[str]) -> Dict[str, List[Dict[str, Any]]]:
+#    """
+#    Extracts camera instances for specified camera types within a given sample.
+#
+#    Args:
+#        nuim (NuImages): An instance of the NuImages dataset class.
+#        sample (Dict[str, Any]): A dictionary containing sample information.
+#        camera_types (List[str]): A list of camera types to retrieve instances for.
+#
+#    Returns:
+#        Dict[str, List[Dict[str, Any]]]: A dictionary mapping each camera type to a list of bounding box dictionaries.
+#    """
+#
+#    def get_bbox_details(object_ann: Dict[str, Any],
+#                         filepath: str) -> Dict[str, Any]:
+#        """
+#        Constructs a dictionary with bounding box details for an object annotation.
+#
+#        Args:
+#            object_ann (Dict[str, Any]): An object annotation dictionary.
+#            filepath (str): The file path to the camera image.
+#
+#        Returns:
+#            Dict[str, Any]: A dictionary containing bounding box and additional metadata.
+#        """
+#        name = cast(str,
+#                    nuim.get("category", object_ann["category_token"])["name"])
+#        classes = cast(List[str], T4Dataset.METAINFO["classes"])
+#        label = classes.index(name) if name in classes else -1
+#        return {
+#            "bbox": object_ann["bbox"],
+#            "bbox_label": label,
+#            "name": name,
+#            "sample_token": sample["token"],
+#            "camera_token": camera_type,
+#            "filename": filepath,
+#        }
+#
+#    cam_instances = {}
+#    for camera_type in camera_types:
+#        sample_data_token = sample["data"][camera_type]
+#        object_anns: List[Dict[str, Any]] = [
+#            o for o in nuim.object_ann
+#            if o["sample_data_token"] == sample_data_token
+#        ]
+#
+#        boxes = []
+#        for object_ann in object_anns:
+#            filepath = nuim.get("sample_data",
+#                                object_ann["sample_data_token"])["filename"]
+#            bbox_details = get_bbox_details(object_ann, filepath)
+#            boxes.append(bbox_details)
+#
+#        cam_instances[camera_type] = boxes
+#
+#    return dict(cam_instances=cam_instances)
+
+#def get_camera_images_info(nuim: NuImages, sample: Dict[str, Any],
+#                           camera_types: List[str],
+#                           scene_dir: str) -> Dict[str, Any]:
+#    camera_info = get_single_image_sweep(camera_types)
+#    camera_info["timestamp"] = sample["timestamp"]
+#    lidar_data_token = sample["data"]["LIDAR_CONCAT"]
+#    camera_info["ego2global"] = get_ego_pose(nuim, lidar_data_token)
+#
+#    for camera_type in camera_types:
+#        cam_data = nuim.get("sample_data", sample["data"][camera_type])
+#        cs_record = nuim.get("calibrated_sensor",
+#                             cam_data["calibrated_sensor_token"])
+#
+#        camera_to_ego = get_transformation_matrix(cs_record["rotation"],
+#                                                  cs_record["translation"])
+#        lidar_to_camera = np.linalg.inv(camera_to_ego)
+#
+#        camera_info["images"][camera_type] = {
+#            "cam2ego": camera_to_ego,
+#            "cam2img": cs_record["camera_intrinsic"],
+#            "lidar2cam": lidar_to_camera,
+#            "lidar2img":
+#            lidar_to_camera,  # undocumented, but used in the code det3dvisualizer
+#            "img_path": os.path.join(scene_dir, cam_data["filename"]),
+#            "height": cam_data["height"],
+#            "width": cam_data["width"],
+#        }
+#
+#    return dict(images=camera_info["images"])

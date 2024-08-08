@@ -1,5 +1,6 @@
 from os import path as osp
 
+import numpy as np
 from mmdet3d.datasets import NuScenesDataset
 from mmengine.registry import DATASETS
 
@@ -36,9 +37,13 @@ class T4Dataset(NuScenesDataset):
         """
 
         use_lidar = self.modality["use_lidar"]
+        use_camera = self.modality["use_camera"]
         self.modality["use_lidar"] = False
+        self.modality["use_camera"] = False
+
         info = super().parse_data_info(info)
         self.modality["use_lidar"] = use_lidar
+        self.modality["use_camera"] = use_camera
 
         # modified from https://github.com/open-mmlab/mmdetection3d/blob/v1.2.0/mmdet3d/datasets/det3d_dataset.py#L279-L296
         if self.modality["use_lidar"]:
@@ -58,4 +63,36 @@ class T4Dataset(NuScenesDataset):
                     else:
                         sweep["lidar_points"]["lidar_path"] = osp.join(
                             self.data_prefix["sweeps"], file_suffix)
+
+        if self.modality['use_camera']:
+            for cam_id, img_info in info['images'].items():
+                if 'img_path' in img_info:
+                    if cam_id in self.data_prefix:
+                        cam_prefix = self.data_prefix[cam_id]
+                    else:
+                        cam_prefix = self.data_prefix.get('img', '')
+                    # If an image is invalid, then set img_info['img_path'] = None
+                    if img_info['img_path'] is None:
+                        img_info['img_path'] = None
+                    else:
+                        img_info['img_path'] = osp.join(
+                            cam_prefix,
+                            img_info['img_path'],
+                        )
+
+            if self.default_cam_key is not None:
+                info['img_path'] = info['images'][
+                    self.default_cam_key]['img_path']
+                if 'lidar2cam' in info['images'][self.default_cam_key]:
+                    info['lidar2cam'] = np.array(
+                        info['images'][self.default_cam_key]['lidar2cam'])
+                if 'cam2img' in info['images'][self.default_cam_key]:
+                    info['cam2img'] = np.array(
+                        info['images'][self.default_cam_key]['cam2img'])
+                if 'lidar2img' in info['images'][self.default_cam_key]:
+                    info['lidar2img'] = np.array(
+                        info['images'][self.default_cam_key]['lidar2img'])
+                else:
+                    info['lidar2img'] = info['cam2img'] @ info['lidar2cam']
+
         return info

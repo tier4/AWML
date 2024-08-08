@@ -4,17 +4,22 @@ import os
 import os.path as osp
 import re
 import warnings
+from pathlib import Path
 from typing import Any, Dict, List
 
 import mmengine
+import numpy as np
 import yaml
+from mmdet3d.datasets.utils import convert_quaternion_to_matrix
 from mmengine.config import Config
 from mmengine.logging import print_log
+from nuimages import NuImages
 from nuscenes import NuScenes
 
 from tools.detection3d.t4dataset_converters.t4converter import (
     extract_nuscenes_data, get_annotations, get_ego2global,
-    get_lidar_points_info, get_lidar_sweeps_info, obtain_sensor2top)
+    get_lidar_points_info, get_lidar_sweeps_info, obtain_sensor2top,
+    parse_camera_path)
 from tools.detection3d.t4dataset_converters.update_infos_to_v2 import \
     get_empty_standard_data_info
 
@@ -71,7 +76,13 @@ def get_scene_root_dir_path(
         return scene_root_dir_path
 
 
-def get_info(cfg: Any, nusc: Any, sample: Any, i: int, max_sweeps: int):
+def get_info(
+    cfg: Any,
+    nusc: Any,
+    sample: Any,
+    i: int,
+    max_sweeps: int,
+):
     lidar_token = get_lidar_token(sample)
     if lidar_token is None:
         print_log(
@@ -108,8 +119,13 @@ def get_info(cfg: Any, nusc: Any, sample: Any, i: int, max_sweeps: int):
             basic_info,
             get_ego2global(pose_record),
             get_lidar_points_info(lidar_path, cs_record),
-            get_lidar_sweeps_info(nusc, cs_record, pose_record, sd_record,
-                                  max_sweeps),
+            get_lidar_sweeps_info(
+                nusc,
+                cs_record,
+                pose_record,
+                sd_record,
+                max_sweeps,
+            ),
             get_annotations(
                 nusc,
                 sample["anns"],
@@ -125,15 +141,40 @@ def get_info(cfg: Any, nusc: Any, sample: Any, i: int, max_sweeps: int):
     camera_types = cfg.camera_types
     if (len(camera_types) > 0):
         for cam in camera_types:
-            #print(lidar_path, sample['data'])
             if cam in sample['data']:
                 cam_token = sample['data'][cam]
                 cam_path, _, cam_intrinsic = nusc.get_sample_data(cam_token)
-                cam_info = obtain_sensor2top(nusc, cam_token, l2e_t, l2e_r_mat,
-                                             e2g_t, e2g_r_mat, cam)
+                cam_info = obtain_sensor2top(
+                    nusc,
+                    cam_token,
+                    l2e_t,
+                    l2e_r_mat,
+                    e2g_t,
+                    e2g_r_mat,
+                    cam,
+                )
                 cam_info.update(cam_intrinsic=cam_intrinsic)
-                info.update({cam: cam_info})
 
+                info["images"][cam]['img_path'] = parse_camera_path(
+                    cam_info['data_path'])
+                info["images"][cam]['cam2img'] = cam_info[
+                    'cam_intrinsic'].tolist()
+                info["images"][cam]['sample_data_token'] = cam_info[
+                    'sample_data_token']
+                # bc-breaking: Timestamp has divided 1e6 in pkl infos.
+                info["images"][cam]['timestamp'] = cam_info['timestamp'] / 1e6
+                info["images"][cam]['cam2ego'] = convert_quaternion_to_matrix(
+                    cam_info['sensor2ego_rotation'],
+                    cam_info['sensor2ego_translation'])
+                lidar2sensor = np.eye(4)
+                rot = cam_info['sensor2lidar_rotation']
+                trans = cam_info['sensor2lidar_translation']
+                lidar2sensor[:3, :3] = rot.T
+                lidar2sensor[:3,
+                             3:4] = -1 * np.matmul(rot.T, trans.reshape(3, 1))
+                info["images"][cam]['lidar2cam'] = lidar2sensor.astype(
+                    np.float32).tolist()
+                #info["images"].update({cam: cam_info})
     return info
 
 
@@ -198,6 +239,7 @@ def main():
             print_log(
                 f"Creating data info for split: {split}", logger="current")
             for scene_id in dataset_list_dict.get(split, []):
+                print_log(f"Creating data info for scene: {scene_id}")
                 scene_root_dir_path = get_scene_root_dir_path(
                     args.root_path,
                     dataset_version,
