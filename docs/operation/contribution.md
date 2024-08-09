@@ -77,7 +77,7 @@ It is library used for many projects and need to maintenance, so PR is reviewed 
 For PR review list with code owner for autoware-ml
 - [ ] Performing test for function
 - [ ] Check/Add/Update unit test
-- [ ] Update [release note](/docs/release_note.md)
+- [ ] Update [release note](/docs/operation/release_note.md)
 
 ### Fix code in tools
 
@@ -86,7 +86,7 @@ It is library used for many projects and need to maintenance, so PR is reviewed 
 
 For PR review list with code owner for tools
 - [ ] Performing test for tools
-- [ ] Update [release note](/docs/release_note.md)
+- [ ] Update [release note](/docs/operation/release_note.md)
 
 ### Fix code in projects
 
@@ -94,7 +94,7 @@ You can fix code in a project more casually than fixing codes with `autoware_ml/
 
 For PR review list with code owner for the project
 - [ ] Write the result log for the model
-- [ ] Update [release note](/docs/release_note.md)
+- [ ] Update [release note](/docs/operation/release_note.md)
 
 ### Add a new model
 
@@ -105,7 +105,7 @@ For PR review list with code owner for autoware-ml
 - [ ] Add code for `/projects/{model_name}`
 - [ ] Add `/projects/{model_name}/README.md`
 - [ ] Write the result log for new model
-- [ ] Update [release note](/docs/release_note.md)
+- [ ] Update [release note](/docs/operation/release_note.md)
 
 ### Add/Fix config file in a project
 
@@ -115,4 +115,4 @@ For PR review list with code owner for the project
 - [ ] Performing test with the model
 - [ ] Update `projects/{model_name}/README.md` adding evaluation result for new config.
 - [ ] Delete unused config file
-- [ ] Update [release note](/docs/release_note.md)
+- [ ] Update [release note](/docs/operation/release_note.md)

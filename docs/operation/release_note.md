@@ -14,4 +14,9 @@ We plan for next release v0.1.2 as below.
 
 ### Projects
 
+- Add YOLOX model
+  - <https://github.com/tier4/autoware-ml/pull/107>
+- Add BEVFusion-CL
+  - <https://github.com/tier4/autoware-ml/pull/108>
+
 ### Chore
