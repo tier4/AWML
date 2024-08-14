@@ -26,3 +26,4 @@ We plan for next release v0.1.2 as below.
 - Update document
   - <https://github.com/tier4/autoware-ml/pull/109>
   - <https://github.com/tier4/autoware-ml/pull/111>
+  - <https://github.com/tier4/autoware-ml/pull/112>
