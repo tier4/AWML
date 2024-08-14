@@ -19,9 +19,14 @@ If you want to learn about use of `mmdetection3d`, we recommend to read [user gu
 If you want to learn about config files of `mmdetection3d`, we recommend to read [user guides for configs](https://mmdetection3d.readthedocs.io/en/latest/user_guides/config.html).
 If you want to learn about info files of  `mmdetection3d`, we recommend to read [nuscenes dataset](https://mmdetection3d.readthedocs.io/en/latest/advanced_guides/datasets/nuscenes.html?highlight=info).
 
-- [mmdetection v3.3.0](https://github.com/open-mmlab/mmdetection/tree/v3.3.0)
+- [mmdetection v3.2.0](https://github.com/open-mmlab/mmdetection/tree/v3.2.0)
+
+This is machine learning framework for 2D detection.
+
 - [mmcv v2.1.0](https://github.com/open-mmlab/mmcv/tree/v2.1.0)
 - [mmdeploy v1.3.1](https://github.com/open-mmlab/mmdeploy/tree/v1.3.1)
+
+These are core library for MMLab libraries.
 
 ## `autoware-ml` architecture
 ### autoware_ml/
@@ -92,11 +97,11 @@ We define "support priority" for each tools and projects. Maintainers handle han
 - Tier S:
   - It is core function in ML system and it updates frequently from any requests.
   - We strive to make it high maintainability with code quality, unit test and CI/CD.
-  - We put highest priority on support and maintance to it because it leads to fast cycle development for developers.
+  - We put highest priority on support and maintenance to it because it leads to fast cycle development for developers.
 - Tier A:
-  - It is maintance phase on development, so it's updates is not frequently.
+  - It is maintenance phase on development, so it's updates is not frequently.
   - We make it maintainability with code quality, unit test and CI/CD, if possible.
-  - We put a high prority on support to it.
+  - We put a high priority on support to it.
 - Tier B:
   - We fix a broken tool when needed.
   - We put a middle priority on support to it.

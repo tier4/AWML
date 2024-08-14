@@ -3,6 +3,8 @@
 This repository is machine learning library for [Autoware](https://github.com/autowarefoundation/autoware) based on [OpenMMLab library](https://github.com/open-mmlab).
 `autoware-ml` support training with [T4dataset format](https://github.com/tier4/tier4_perception_dataset) in addition to open dataset.
 
+![](/docs/fig/autoware_ml_pipeline.drawio.svg)
+
 - Supported environment
   - All tools are tested by [Docker environment](Dockerfile) on Ubuntu 22.04LTS
   - NVIDIA dependency: CUDA 12.1 + cuDNN 8
