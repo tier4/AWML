@@ -72,23 +72,32 @@ The target of document is as below.
 ### Add/Fix functions to `autoware_ml`
 
 If you want to add/fix functions to use for many projects, you should commit to `autoware_ml/*`.
-It is library used for many projects and need to maintenance, so PR is reviewed on the point of code quality, doc string, type hint.
+It is the library used for many projects and need to maintenance, so PR is reviewed on the point of code quality, doc string, type hint.
 
 For PR review list with code owner for autoware-ml
 - [ ] Performing test for function
 - [ ] Check/Add/Update unit test
 - [ ] Update [release note](/docs/operation/release_note.md)
 
-### Fix code in tools
+### Fix code in `/tools`
 
 If you want to add/fix tools to use for many projects, you should commit to `tools/*`.
-It is library used for many projects and need to maintenance, so PR is reviewed on the point of code quality, doc string, type hint.
+It is used for many projects and need to maintenance, so PR is reviewed on the point of code quality, doc string, type hint.
 
 For PR review list with code owner for tools
 - [ ] Performing test for tools
 - [ ] Update [release note](/docs/operation/release_note.md)
 
-### Fix code in projects
+### Fix code in `/pipelines`
+
+If you want to add/fix pipelines to use for many projects, you should commit to `pipelines/*`.
+It is used for many deploy projects, so PR is reviewed on the point of code quality, doc string, type hint.
+
+For PR review list with code owner for tools
+- [ ] Performing test for tools
+- [ ] Update [release note](/docs/operation/release_note.md)
+
+### Fix code in `/projects`
 
 You can fix code in a project more casually than fixing codes with `autoware_ml/*` because the area of ​​influence is small.
 
@@ -98,7 +107,10 @@ For PR review list with code owner for the project
 
 ### Add a new model
 
-If you want to add a new model, you should add codes to `/projects/{model_name}/`.
+Note that if you want to your own model, please make PR for [original MMLab libraries](https://github.com/open-mmlab).
+After merged by it (For example, [mmdetection3d](https://github.com/open-mmlab/mmdetection3d) and [mmdetection](https://github.com/open-mmlab/mmdetection)), we update the version of dependency of MMLab libraries and make our configs in `/projects`.
+
+If you want to add a config or script for models of MMLab's model, you should add codes to `/projects/{model_name}/`.
 For PR review list with code owner for autoware-ml
 
 - [ ] Write why you add a new model
