@@ -1,0 +1,76 @@
+name: Update Database Config
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "0 0 * * *"
+
+jobs:
+  update-database-config:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+
+    - name: Setup python3.10
+      uses: actions/setup-python@v2
+      with:
+        python-version: "3.10"
+
+    - name: Setup SSH Keys and known_hosts
+      env:
+        PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
+      run: |
+        mkdir -p ~/.ssh
+        echo "$PRIVATE_KEY" | tr -d '\r' > ~/.ssh/id_rsa
+        chmod 700 ~/.ssh/id_rsa
+        eval $(ssh-agent -s)
+        ssh-add ~/.ssh/id_rsa
+        ssh-keyscan -H github.com >> ~/.ssh/known_hosts
+
+    - name: Install dependencies
+      run: |
+        pip install pyyaml git+https://github.com/tier4/webauto-auth-py.git
+
+    - name: Decode secretes into json
+      env:
+        GOOGLE_KEY: ${{ secrets.JSON_CREDENTIAL }}
+        WEBAUTO_AUTH: ${{ secrets.WEBAUTO_AUTH }}
+      run: |
+        echo -n $GOOGLE_KEY | base64 --decode > google_key.json
+        mkdir $HOME/.webauto
+        echo -n $WEBAUTO_AUTH | base64 --decode > $HOME/.webauto/auth.toml
+
+    - name: Update DBv1.3 w/ Web.Auto API
+      run: |
+        python .github/workflows/update_database_list.py 
+        --keyword DBv1.3 
+        --config_file autoware_ml/configs/detection3d/dataset/t4dataset/database_v1_3.yaml 
+        --project_ids prd_jt x2_dev
+
+    - name: Create PR
+      id: create-pr
+      uses: peter-evans/create-pull-request@v6
+      with:
+        token: ${{ secrets.GITHUB_TOKEN }}
+        commit-message: "feat: update database config list"
+        branch: bot/update-database-config-${{ github.run_id }}
+        title: "feat: update database configuration"
+        body: ""
+        author: github-actions <github-actions@github.com>
+        signoff: true
+        delete-branch: true
+
+    - name: Check outputs
+      run: |
+        echo "Pull Request Number - ${{ steps.create-pr.outputs.pull-request-number }}"
+        echo "Pull Request URL - ${{ steps.create-pr.outputs.pull-request-url }}"
+      shell: bash
+
+    - name: Enable auto-merge
+      if: ${{ inputs.auto-merge-method != '' && steps.create-pr.outputs.pull-request-operation == 'created' }}
+      run: gh pr merge --${{ inputs.auto-merge-method }} --auto "${{ steps.create-pr.outputs.pull-request-number }}"
+      shell: bash
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
