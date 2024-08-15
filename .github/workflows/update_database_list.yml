@@ -9,9 +9,32 @@ jobs:
   update-database-config:
     runs-on: ubuntu-latest
 
+    strategy:
+      matrix:
+        config_pair:
+          - dataset_config_path: "autoware_ml/configs/detection3d/dataset/t4dataset/database_v1_3.yaml"
+            webauto_keyword: "DBv1.3"
+
+          # Followings are stale datasets and thus shall not be updated
+          # - dataset_config_path: "autoware_ml/configs/detection3d/dataset/t4dataset/database_v1_0.yaml"
+          #   webauto_keyword: "DBv1.0"
+          # - dataset_config_path: "autoware_ml/configs/detection3d/dataset/t4dataset/database_v1_1.yaml"
+          #   webauto_keyword: "DBv1.1"
+          # - dataset_config_path: "autoware_ml/configs/detection3d/dataset/t4dataset/database_v2_0.yaml"
+          #   webauto_keyword: "DBv2.0"
+          # - dataset_config_path: "autoware_ml/configs/detection3d/dataset/t4dataset/database_v3_0.yaml"
+          #   webauto_keyword: "DBv3.0"
+
     steps:
     - name: Checkout code
       uses: actions/checkout@v3
+
+    - name: Verify config file exists
+      run: |
+        if [ ! -f ${{ matrix.config_pair.dataset_config_path }} ]; then
+          echo "Configuration file not found: ${{ matrix.config_pair.dataset_config_path }}"
+          exit 1
+        fi
 
     - name: Setup python3.10
       uses: actions/setup-python@v2
@@ -31,22 +54,22 @@ jobs:
 
     - name: Install dependencies
       run: |
-        pip install pyyaml git+https://github.com/tier4/webauto-auth-py.git
+        pip install pyyaml  git+ssh://git@github.com/tier4/webauto-auth-py.git
 
     - name: Decode secretes into json
       env:
-        GOOGLE_KEY: ${{ secrets.JSON_CREDENTIAL }}
+        GOOGLE_KEY: ${{ secrets.GOOGLE_JSON_CREDENTIAL }}
         WEBAUTO_AUTH: ${{ secrets.WEBAUTO_AUTH }}
       run: |
         echo -n $GOOGLE_KEY | base64 --decode > google_key.json
         mkdir $HOME/.webauto
         echo -n $WEBAUTO_AUTH | base64 --decode > $HOME/.webauto/auth.toml
 
-    - name: Update DBv1.3 w/ Web.Auto API
+    - name: Update database config
       run: |
-        python .github/workflows/update_database_list.py 
-        --keyword DBv1.3 
-        --config_file autoware_ml/configs/detection3d/dataset/t4dataset/database_v1_3.yaml 
+        python .github/workflows/update_database_list.py \
+        --keyword ${{ matrix.config_pair.webauto_keyword }} \
+        --config_path ${{ matrix.config_pair.dataset_config_path }} \
         --project_ids prd_jt x2_dev
 
     - name: Create PR
@@ -55,22 +78,17 @@ jobs:
       with:
         token: ${{ secrets.GITHUB_TOKEN }}
         commit-message: "feat: update database config list"
-        branch: bot/update-database-config-${{ github.run_id }}
-        title: "feat: update database configuration"
+        branch: bot/update-database-config-${{ matrix.config_pair.webauto_keyword }}
+        title: "feat: update database configuration for ${{ matrix.config_pair.webauto_keyword }}"
         body: ""
         author: github-actions <github-actions@github.com>
         signoff: true
         delete-branch: true
+        add-paths: |
+          **/database_*.yaml
 
     - name: Check outputs
       run: |
         echo "Pull Request Number - ${{ steps.create-pr.outputs.pull-request-number }}"
         echo "Pull Request URL - ${{ steps.create-pr.outputs.pull-request-url }}"
       shell: bash
-
-    - name: Enable auto-merge
-      if: ${{ inputs.auto-merge-method != '' && steps.create-pr.outputs.pull-request-operation == 'created' }}
-      run: gh pr merge --${{ inputs.auto-merge-method }} --auto "${{ steps.create-pr.outputs.pull-request-number }}"
-      shell: bash
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
