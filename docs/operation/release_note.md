@@ -16,4 +16,5 @@ We plan for next release v0.1.3 as below.
 ### Chore
 
 - Update document
-  - <https://github.com/tier4/autoware-ml/pull/113>
+  - <https://github.com/tier4/autoware-ml/pull/123>
+  - <https://github.com/tier4/autoware-ml/pull/124>
