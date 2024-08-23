@@ -15,7 +15,7 @@ ENV CUDA_HOME="/usr/local/cuda" \
     TORCH_CUDA_ARCH_LIST="6.0 6.1 7.0 7.5 8.0 8.6 8.7 8.9+PTX" \
     TORCH_NVCC_FLAGS="-Xfatbin -compress-all"
 
-# Install apt dependencies
+# Install apt dependencies for base library
 RUN apt update && DEBIAN_FRONTEND=noninteractive apt install -y --no-install-recommends \
     curl \
     ffmpeg \
@@ -28,7 +28,7 @@ RUN apt update && DEBIAN_FRONTEND=noninteractive apt install -y --no-install-rec
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 
-# Install pip dependencies
+# Install pip dependencies for base library
 RUN python3 -m pip --no-cache-dir install \
     aenum \
     nptyping \
@@ -44,6 +44,14 @@ RUN mim install \
     mmdet3d==${MMDET3D} \
     mmengine==${MMENGINE} \
     mmpretrain[multimodal]==${MMPRETRAIN}
+
+# Install rerun
+RUN apt update && DEBIAN_FRONTEND=noninteractive apt install -y --no-install-recommends \
+    libgtk-3-dev \
+    libxkbcommon-x11-0
+RUN python3 -m pip --no-cache-dir install \
+    rerun-sdk==0.17.0
+ENV WGPU_BACKEND=gl
 
 WORKDIR /workspace
 

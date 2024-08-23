@@ -56,3 +56,25 @@ class_names = [
 ]
 num_class = len(class_names)
 metainfo = dict(classes=class_names)
+
+# visualization
+class_colors = {
+    "car": (30, 144, 255),
+    "truck": (140, 0, 255),
+    "construction_vehicle": (255, 255, 0),
+    "bus": (111, 255, 111),
+    "trailer": (0, 255, 255),
+    "barrier": (0, 0, 0),
+    "motorcycle": (100, 0, 30),
+    "bicycle": (255, 0, 30),
+    "pedestrian": (255, 200, 200),
+    "traffic_cone": (120, 120, 120),
+}
+camera_panels = [
+    'data/CAM_FRONT_LEFT',
+    'data/CAM_FRONT',
+    'data/CAM_FRONT_RIGHT',
+    'data/CAM_BACK_LEFT',
+    'data/CAM_BACK',
+    'data/CAM_BACK_RIGHT',
+]

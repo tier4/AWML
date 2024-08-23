@@ -104,7 +104,7 @@ python tools/detection3d/test_all.py {config_file} {train_results_directory} {mi
 
 - Visualization for 3D view
 
-TBD
+See [rerun_visualization](/tools/rerun_visualization/)
 
 - Visualization for BEV view
   - This script is simple debug tools.
