@@ -1,4 +1,5 @@
-/.github/ satoshi.tanaka@tier4.jp koji.minoda@tier4.jp
+/.github/ satoshi.tanaka@tier4.jp
+/.github/workflows koji.minoda@tier4.jp
 /.vscode/ satoshi.tanaka@tier4.jp
 /autoware_ml/ satoshi.tanaka@tier4.jp
 /docs/ satoshi.tanaka@tier4.jp
@@ -18,5 +19,6 @@
 /projects/YOLOX-opt/ satoshi.tanaka@tier4.jp
 /tools/detection2d/ satoshi.tanaka@tier4.jp
 /tools/detection3d/ satoshi.tanaka@tier4.jp
+/tools/rerun_visualization satoshi.tanaka@tier4.jp
 /tools/scene_selector/ satoshi.tanaka@tier4.jp koji.minoda@tier4.jp
 /tools/setting_environment/ satoshi.tanaka@tier4.jp
