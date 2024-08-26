@@ -9,6 +9,36 @@
   - model: TBD
   - logs: TBD
 
+## T4 dataset model for XX1 (DB1.0 + DB1.1 + DBv1.3)
+- model
+  - Training dataset: database_v1_0 + database_v1_1 + database_v1_3
+  - Eval dataset: database_v1_0 + database_v1_1,  database_v1_3
+  - [Config file path](../configs/t4dataset/transfusion_lidar_pillar_second_secfpn_1xb4-cyclic-20e_t4xx1_90m_768grid.py) (Note: eval range is 75m in training time)
+  - [Deployed onnx model](https://awf.ml.dev.web.auto/perception/models/transfusion/t4xx1_90m/v3/transfusion.onnx)
+  - [Deployed ROS parameter file](https://awf.ml.dev.web.auto/perception/models/transfusion/t4xx1_90m/v3/transfusion.param.yaml)
+  - [Deployed ROS param file for remap](https://awf.ml.dev.web.auto/perception/models/transfusion/t4xx1_90m/v3/detection_class_remapper.param.yaml)
+  - [Training results](https://awf.ml.dev.web.auto/perception/models/transfusion/t4xx1_90m/v3/logs.zip)
+  - train time: (A100 * 4) * 2 days
+- Total mAP to test dataset (database_v1_0 + database_v1_1) (eval range = 90m): 0.685
+
+| class_name | mAP  | AP@0.5m | AP@1.0m | AP@2.0m | AP@4.0m |
+| ---- | ---- | ---- | ---- | ---- | ---- |
+| car        | 81.7 | 61.0    | 83.2    | 90.2    | 92.2    |
+| truck      | 62.4 | 30.0    | 60.2    | 76.5    | 82.8    |
+| bus        | 83.5 | 56.5    | 90.1    | 93.7    | 93.7    |
+| bicycle    | 50.9 | 45.0    | 50.8    | 52.8    | 54.9    |
+| pedestrian | 64.1 | 56.9    | 62.1    | 66.9    | 70.4    |
+
+- Total mAP to test dataset (database_v1_3) (eval range = 90m): 0.696
+
+| class_name | mAP  | AP@0.5m | AP@1.0m | AP@2.0m | AP@4.0m |
+| ---- | ---- | ---- | ---- | ---- | ---- |
+| car        | 85.9 | 77.8    | 86.4    | 89.5    | 90.1    |
+| truck      | 49.9 | 38.0    | 48.3    | 52.7    | 60.7    |
+| bus        | 64.2 | 43.7    | 63.2    | 71.7    | 78.2    |
+| bicycle    | 85.2 | 80.6    | 86.7    | 86.7    | 86.7    |
+| pedestrian | 62.8 | 58.2    | 61.1    | 64.2    | 67.8    |
+
 ## T4 dataset model for XX1 (DB1.0 + DB1.1)
 
 - Performance summary

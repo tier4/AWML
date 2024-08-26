@@ -1,0 +1,111 @@
+version: 1
+
+train:
+  - a2e3c321-7b5a-439d-847b-18b54e74aecf # DBv1-3_odaiba_jt9_prd_jt_9_2024-04-22_10-41-21_10-41-41 ['camera', 'lidar']
+  - e2a32890-1e00-496b-a8a3-7bd623e06b30 # DBv1-3_odaiba_jt9_prd_jt_9_2024-04-22_10-41-46_10-42-06 ['camera', 'lidar']
+  - 4df9ffe2-9c10-419f-820b-1848baa06aa7 # DBv1-3_odaiba_jt9_prd_jt_9_2024-04-22_10-56-46_10-57-06 ['camera', 'lidar']
+  - 403ea895-c6ad-4d66-8406-990a552749af # DBv1-3_odaiba_jt9_prd_jt_9_2024-04-22_11-01-30_11-01-50 ['camera', 'lidar']
+  - 3ed66e71-1cbf-4568-a912-35306fae0a6d # DBv1-3_odaiba_jt9_prd_jt_9_2024-04-22_11-12-45_11-13-05 ['camera', 'lidar']
+  - 9072505c-b653-4c7d-9406-19e91ae0a27c # DBv1-3_odaiba_jt9_prd_jt_9_2024-04-22_11-14-25_11-14-45 ['camera', 'lidar']
+  - eaf21802-5aeb-4e47-b5af-f157ee0637f2 # DBv1-3_odaiba_jt9_prd_jt_9_2024-04-22_11-15-15_11-15-35 ['camera', 'lidar']
+  - b85d98ae-8d37-43be-9f85-78787c606c0f # DBv1-3_odaiba_jt9_prd_jt_9_2024-04-22_11-17-45_11-18-05 ['camera', 'lidar']
+  - 976e4b0a-6059-423a-971d-47945ae4d269 # DBv1-3_odaiba_jt9_prd_jt_9_2024-04-22_11-38-43_11-39-03 ['camera', 'lidar']
+  - 2ea987cf-2900-4ea6-a6e5-d71290b13601 # DBv1-3_odaiba_jt9_prd_jt_9_2024-04-22_11-43-12_11-43-32 ['camera', 'lidar']
+  - 6087e29d-eb4b-4ed7-ade0-9d26239afade # DBv1-3_odaiba_jt9_prd_jt_9_2024-04-22_11-46-07_11-46-27 ['camera', 'lidar']
+  - b4c3e252-abf4-4c7b-b5a2-38705d82e158 # DBv1-3_odaiba_jt9_prd_jt_9_2024-04-22_11-49-02_11-49-22 ['camera', 'lidar']
+  - eb361183-ad43-4c5e-bd69-61419547e746 # DBv1-3_odaiba_jt9_prd_jt_9_2024-04-22_11-57-22_11-57-42 ['camera', 'lidar']
+  - 06cbf94d-6d48-4ddb-8887-dd0fc02b6501 # DBv1-3_odaiba_jt9_prd_jt_9_2024-04-22_11-58-12_11-58-32 ['camera', 'lidar']
+  - 13636e32-a9fe-4090-a563-9576befcd954 # DBv1-3_odaiba_jt9_prd_jt_9_2024-04-22_13-09-53_13-10-13 ['camera', 'lidar']
+  - aab31fb3-4e7e-485b-9c21-d946ca8883a1 # DBv1-3_odaiba_jt9_prd_jt_9_2024-04-22_13-16-58_13-17-18 ['camera', 'lidar']
+  - 39dd52ed-9475-4293-bb2f-f2f178f1e480 # DBv1-3_odaiba_jt9_prd_jt_9_2024-04-22_13-21-58_13-22-18 ['camera', 'lidar']
+  - fa9e12b2-7b9c-4aa0-b42d-882b290cec2c # DBv1-3_odaiba_jt9_prd_jt_9_2024-04-22_13-25-30_13-25-50 ['camera', 'lidar']
+  - 42ada73c-dee2-42dc-84cd-936fbb7d39f9 # DBv1-3_odaiba_jt9_prd_jt_9_2024-04-22_13-26-20_13-26-40 ['camera', 'lidar']
+  - 355ce505-7f9f-4c1f-8b7c-b7decd603c88 # DBv1-3_odaiba_jt9_prd_jt_9_2024-04-22_13-43-38_13-43-58 ['camera', 'lidar']
+  - 71415264-fc43-4dbe-8a7c-4aac63b091d6 # DBv1-3_odaiba_jt9_prd_jt_9_2024-04-22_14-06-38_14-06-58 ['camera', 'lidar']
+  - 7731b700-f864-4112-a1fb-083c77a8f2af # DBv1-3_odaiba_jt9_prd_jt_9_2024-04-22_14-11-13_14-11-33 ['camera', 'lidar']
+  - c25599d2-c91f-4be2-8feb-fbab7ea7c8d0 # DBv1-3_odaiba_jt9_prd_jt_9_2024-04-22_14-11-38_14-11-58 ['camera', 'lidar']
+  - 9ebb8c22-6308-4223-9f8a-acd8bb99f6f2 # DBv1-3_odaiba_jt9_prd_jt_9_2024-04-22_14-15-23_14-15-43 ['camera', 'lidar']
+  - a590ccd5-502a-4194-9698-d219b56f1af6 # DBv1-3_odaiba_jt9_prd_jt_9_2024-04-22_14-16-38_14-16-47 ['camera', 'lidar']
+  - 0d01f9f6-c7c3-4cf6-8d7d-f271c52185b7 # DBv1-3_odaiba_jt9_prd_jt_9_2024-04-22_14-17-24_14-17-44 ['camera', 'lidar']
+  - 9d722cf4-ec55-4a59-96c4-a3bffe73cc52 # DBv1-3_odaiba_jt9_prd_jt_9_2024-04-22_14-25-19_14-25-39 ['camera', 'lidar']
+  - 0f13fbd0-472a-4d7a-917b-ac89c98b15e9 # DBv1-3_odaiba_jt9_prd_jt_9_2024-04-22_14-26-59_14-27-19 ['camera', 'lidar']
+  - 5d69d09e-d2ff-4fa7-a714-6e4f8ba74df5 # DBv1-3_odaiba_jt9_prd_jt_9_2024-04-22_14-29-04_14-29-24 ['camera', 'lidar']
+  - d429ce80-50cf-46b3-9ae2-b9b60fae96d6 # DBv1-3_odaiba_jt9_prd_jt_9_2024-04-22_14-32-49_14-33-09 ['camera', 'lidar']
+  - a2d4b999-95d0-4f81-9bbb-6b939be01de8 # DBv1-3_odaiba_jt9_prd_jt_9_2024-04-22_14-43-49_14-44-09 ['camera', 'lidar']
+  - e5275a23-87f7-462d-b065-5a7adc6196dd # DBv1-3_odaiba_jt9_prd_jt_9_2024-04-22_14-50-29_14-50-49 ['camera', 'lidar']
+  - d0eeb0e0-fe9c-445f-a7db-87f7ece3e7af # DBv1-3_odaiba_jt9_prd_jt_9_2024-04-22_14-50-54_14-51-14 ['camera', 'lidar']
+  - e408c485-4bf1-4e66-8f1d-c3d0c9bebe5b # DBv1-3_odaiba_jt9_prd_jt_9_2024-04-22_14-57-33_14-57-53 ['camera', 'lidar']
+  - 0e3fbe70-7de6-4cd6-ac87-502a825889cf # DBv1-3_odaiba_jt9_prd_jt_9_2024-04-22_15-15-28_15-15-48 ['camera', 'lidar']
+  - ff7a88ac-8f20-409c-bdf3-9b308f2d36ff # DBv1.3_odaiba_prd_jt_9_2024-05-13_10-40-05_10-40-25 ['camera', 'lidar']
+  - aa7b22fb-43eb-408b-af0d-a47a79d4cd12 # DBv1.3_odaiba_prd_jt_9_2024-05-13_10-52-35_10-52-55 ['camera', 'lidar']
+  - c13b64c1-0e1d-42e5-b1c6-55fd6f255e3a # DBv1.3_odaiba_prd_jt_9_2024-05-13_10-53-00_10-53-20 ['camera', 'lidar']
+  - 51a524e1-ce92-4a32-bee3-22e0428d9a34 # DBv1.3_odaiba_prd_jt_9_2024-05-13_11-08-29_11-08-49 ['camera', 'lidar']
+  - 1efe57dd-4bf4-47cc-90a8-e0a1c1b91f29 # DBv1.3_odaiba_prd_jt_9_2024-05-13_11-14-35_11-14-55 ['camera', 'lidar']
+  - 3ac0cb8a-2fa3-4a34-8eb4-3db1c5dd8554 # DBv1.3_odaiba_prd_jt_9_2024-05-13_11-18-20_11-18-40 ['camera', 'lidar']
+  - c3c47157-d212-4298-bc1c-12d1347e114d # DBv1.3_odaiba_prd_jt_9_2024-05-13_11-22-55_11-23-15 ['camera', 'lidar']
+  - 6c41c599-089e-4bd8-95f2-4b05c43009a9 # DBv1.3_odaiba_prd_jt_9_2024-05-13_11-25-25_11-25-45 ['camera', 'lidar']
+  - 085b5fae-cb0e-4843-8e48-46b3cde12566 # DBv1.3_odaiba_prd_jt_9_2024-05-13_11-25-50_11-26-10 ['camera', 'lidar']
+  - a5a562d8-a2c2-42c8-915b-975c56b43c8f # DBv1.3_odaiba_prd_jt_9_2024-05-13_11-40-29_11-40-49 ['camera', 'lidar']
+  - 7c91a048-155c-4c1a-85bd-db7eaa50adb9 # DBv1.3_odaiba_prd_jt_9_2024-05-13_11-44-14_11-44-34 ['camera', 'lidar']
+  - 42e24c12-3fbe-4f3f-9849-02d2aa30bda9 # DBv1.3_odaiba_prd_jt_9_2024-05-13_12-10-39_12-10-59 ['camera', 'lidar']
+  - b4d93072-f7fd-41f0-8cda-0680705342ea # DBv1.3_odaiba_prd_jt_9_2024-05-13_12-18-09_12-18-29 ['camera', 'lidar']
+  - d608bcf2-7f16-4667-8920-415f4b916938 # DBv1.3_odaiba_prd_jt_9_2024-05-13_12-18-59_12-19-19 ['camera', 'lidar']
+  - 5827d33f-da84-4379-afc5-e42a6fa1862f # DBv1.3_odaiba_prd_jt_9_2024-05-13_12-35-28_12-35-48 ['camera', 'lidar']
+  - 17726155-2a85-4bde-b44a-f30c5431f84a # DBv1.3_odaiba_prd_jt_9_2024-05-13_12-37-08_12-37-28 ['camera', 'lidar']
+  - 2b278186-9791-4b48-8f76-133a7707a1b0 # DBv1.3_odaiba_prd_jt_9_2024-05-13_12-42-58_12-43-18 ['camera', 'lidar']
+  - 19bc13c5-be78-434d-870e-f56fe020f88c # DBv1.3_odaiba_prd_jt_9_2024-05-13_14-35-37_14-35-57 ['camera', 'lidar']
+  - bed45b71-5403-44c3-9a95-343cc5dd2ecf # DBv1.3_odaiba_prd_jt_9_2024-05-13_14-54-09_14-54-29 ['camera', 'lidar']
+  - c550dd22-6641-4374-813f-5b7690180259 # DBv1.3_odaiba_prd_jt_9_2024-05-13_14-55-24_14-55-44 ['camera', 'lidar']
+  - ca2f8f17-243b-4dc2-9504-3cdd4d091219 # DBv1.3_odaiba_prd_jt_9_2024-05-13_15-00-49_15-01-09 ['camera', 'lidar']
+  - 562ad8a2-d2cc-4a33-bb98-b67aaf0ffb9f # DBv1.3_odaiba_prd_jt_9_2024-05-13_15-08-44_15-09-04 ['camera', 'lidar']
+  - a2ec5a14-472c-4355-8c13-cc9410ffa26a # DBv1.3_odaiba_prd_jt_9_2024-05-13_15-18-30_15-18-50 ['camera', 'lidar']
+  - 022d9033-dcd9-4718-99a5-cee935e893b6 # DBv1.3_odaiba_prd_jt_9_2024-05-13_15-24-20_15-24-40 ['camera', 'lidar']
+  - af57bdab-7d08-4892-8a60-959b15b58ceb # DBv1.3_odaiba_prd_jt_9_2024-05-13_15-26-25_15-26-45 ['camera', 'lidar']
+  - cf956d6e-66ff-43f2-b1fa-5ac0018f5d29 # DBv1.3_odaiba_prd_jt_9_2024-05-13_15-26-50_15-27-10 ['camera', 'lidar']
+  - 43bc62d3-dd51-4cca-b526-ee79c498d62e # DBv1.3_odaiba_prd_jt_9_2024-05-13_15-28-30_15-28-50 ['camera', 'lidar']
+  - a71f5056-8b17-436f-ba96-44a9a9da12ab # DBv1.3_odaiba_prd_jt_9_2024-05-13_15-29-20_15-29-40 ['camera', 'lidar']
+  - ab93349b-0d35-48b9-b36c-8f25294879d5 # DBv1.3_odaiba_prd_jt_9_2024-05-13_15-33-05_15-33-25 ['camera', 'lidar']
+  - 4a5bc517-72be-4850-8ca0-6fce3d42e909 # DBv1.3_odaiba_prd_jt_9_2024-05-13_15-39-20_15-39-40 ['camera', 'lidar']
+  - 427aa46a-1888-4e11-b985-8c353fddcc2b # DBv1.3_odaiba_prd_jt_9_2024-05-13_15-51-20_15-51-40 ['camera', 'lidar']
+  - ca9139d6-c25b-41d1-9f3d-8adde5779c12 # DBv1.3_odaiba_prd_jt_9_2024-05-13_15-55-30_15-55-50 ['camera', 'lidar']
+  - 729b9e51-4869-483f-8994-da69f71478f5 # DBv1.3_odaiba_prd_jt_9_2024-05-13_16-11-38_16-11-58 ['camera', 'lidar']
+  - 0bb42fb1-67e5-4f3c-a9f0-5c52ecb24fae # DBv1.3_odaiba_prd_jt_9_2024-05-13_16-27-23_16-27-43 ['camera', 'lidar']
+  - 6ee41b00-87f5-4bd4-ab38-9f2584ff3fcc # DBv1.3_odaiba_prd_jt_9_2024-05-13_16-38-13_16-38-33 ['camera', 'lidar']
+  - de771e3b-3b77-4d56-9e3e-b9cf453655ed # DBv1.3_odaiba_prd_jt_9_2024-05-13_16-42-23_16-42-43 ['camera', 'lidar']
+  - 27c0f41c-6596-4c54-8160-be748b8c5640 # DBv1.3_odaiba_prd_jt_9_2024-05-13_16-43-13_16-43-33 ['camera', 'lidar']
+  
+val: []
+
+test: 
+  - d7b73bd6-5b73-4511-8c8a-2dfe58ffcc86 # DBv1.3_odaiba_jt9_prd_jt_67357a3d-1cd8-4014-9556-e17dae11b0e3_2024-05-10_11-22-06_11-22-25
+  - 86396c05-c088-4890-a8fa-86b9df3989ce # DBv1.3_odaiba_jt9_prd_jt_67357a3d-1cd8-4014-9556-e17dae11b0e3_2024-05-10_11-59-40_12-00-00
+  - 870bcbcd-7f97-44a9-93ff-ae0eaa3e37a1 # DBv1.3_odaiba_jt9_prd_jt_67357a3d-1cd8-4014-9556-e17dae11b0e3_2024-05-10_10-13-44_10-14-04
+  - 7bf49f54-ed0d-4c94-bf95-de8623b70df1 # DBv1.3_odaiba_jt9_prd_jt_67357a3d-1cd8-4014-9556-e17dae11b0e3_2024-05-10_10-09-37_10-09-57
+  - 9986a863-b39c-4a84-b1ac-acc1f4a06b4e # DBv1.3_odaiba_jt9_prd_jt_67357a3d-1cd8-4014-9556-e17dae11b0e3_2024-05-10_11-59-15_11-59-35
+  - 31df9bb0-2aff-411d-9584-9f139b3dd586 # DBv1.3_odaiba_jt9_prd_jt_67357a3d-1cd8-4014-9556-e17dae11b0e3_2024-05-10_08-51-51_08-52-00
+  - ea0b75d7-ccea-476b-8322-707c2ed9d950 # DBv1.3_odaiba_jt9_prd_jt_67357a3d-1cd8-4014-9556-e17dae11b0e3_2024-05-10_12-01-45_12-02-05
+  - e7b842d0-2617-4882-a188-cca2290642f3 # DBv1.3_odaiba_jt9_prd_jt_67357a3d-1cd8-4014-9556-e17dae11b0e3_2024-05-10_15-08-26_15-08-46
+  - d50e22d8-2706-45cd-b36a-5f122bad301b # DBv1.3_odaiba_jt9_prd_jt_67357a3d-1cd8-4014-9556-e17dae11b0e3_2024-05-10_11-58-50_11-59-10
+  - df3dd6a6-1a3a-41cd-b7f8-f3fc5b44a255 # DBv1.3_odaiba_jt9_prd_jt_67357a3d-1cd8-4014-9556-e17dae11b0e3_2024-05-10_10-30-37_10-30-57
+  - 57011f90-ddfb-4594-a8d0-0c20359ad7e0 # DBv1.3_odaiba_jt9_prd_jt_67357a3d-1cd8-4014-9556-e17dae11b0e3_2024-05-10_10-18-19_10-18-39
+  - 591e1b5d-d577-4959-8a0d-1ddd773bf944 # DBv1.3_odaiba_jt9_prd_jt_67357a3d-1cd8-4014-9556-e17dae11b0e3_2024-05-10_12-00-55_12-01-15
+  - 004d831b-cd2d-4af4-96ea-d971d32601a7 # DBv1.3_odaiba_jt9_prd_jt_67357a3d-1cd8-4014-9556-e17dae11b0e3_2024-05-10_10-12-29_10-12-49
+  - d76cc2c3-4e07-4878-871c-d8e8db68a6b7 # DBv1.3_odaiba_jt9_prd_jt_67357a3d-1cd8-4014-9556-e17dae11b0e3_2024-05-10_10-14-09_10-14-29
+  - 0cb5b66d-2f09-48f1-8bdb-a68221319844 # DBv1.3_odaiba_jt9_prd_jt_67357a3d-1cd8-4014-9556-e17dae11b0e3_2024-05-10_15-04-16_15-04-36
+  - 399bfab5-db5c-4f37-8ecf-7e0c4c4920d0 # DBv1.3_odaiba_jt9_prd_jt_67357a3d-1cd8-4014-9556-e17dae11b0e3_2024-05-10_11-15-26_11-15-46
+  - 7feab373-c798-46dd-bf8d-02506a7ae245 # DBv1.3_odaiba_jt9_prd_jt_67357a3d-1cd8-4014-9556-e17dae11b0e3_2024-05-10_11-29-53_11-30-13
+  - ed3153db-d322-4bf6-af93-d4e55352aa26 # DBv1.3_odaiba_jt9_prd_jt_67357a3d-1cd8-4014-9556-e17dae11b0e3_2024-05-10_08-51-01_08-51-21
+  - 4531dd16-a357-4501-b117-4f735df6a5c3 # DBv1.3_odaiba_jt9_prd_jt_67357a3d-1cd8-4014-9556-e17dae11b0e3_2024-05-10_11-15-51_11-16-11
+  - ee820f77-8ed3-4843-94de-eec0047aa7fb # DBv1.3_odaiba_jt9_prd_jt_67357a3d-1cd8-4014-9556-e17dae11b0e3_2024-05-10_12-01-20_12-01-40
+  - fe430c2d-0823-4d93-9551-18dea6484d6b # DBv1.3_odaiba_jt9_prd_jt_67357a3d-1cd8-4014-9556-e17dae11b0e3_2024-05-10_14-54-01_14-54-21
+  - ffd2406f-ba7a-4da2-ac88-6494cbf1526f # DBv1.3_odaiba_jt9_prd_jt_67357a3d-1cd8-4014-9556-e17dae11b0e3_2024-05-10_10-04-37_10-04-57
+  - 35b91a19-a8bf-419a-a4d6-cd6712ff89e6 # DBv1.3_odaiba_jt9_prd_jt_67357a3d-1cd8-4014-9556-e17dae11b0e3_2024-05-10_15-04-41_15-05-01
+  - b7976107-98c5-4784-8d8c-69695b5f0202 # DBv1.3_odaiba_jt9_prd_jt_67357a3d-1cd8-4014-9556-e17dae11b0e3_2024-05-10_10-17-29_10-17-49
+  - 5b20d4f2-8ac4-4157-af30-d263f089341f # DBv1.3_odaiba_jt9_prd_jt_67357a3d-1cd8-4014-9556-e17dae11b0e3_2024-05-10_11-56-30_11-56-50
+  - 7569627e-7e55-4660-9acd-23b6012cd01b # DBv1.3_odaiba_jt9_prd_jt_67357a3d-1cd8-4014-9556-e17dae11b0e3_2024-05-10_15-02-11_15-02-31
+  - a232e650-3e7b-4165-a993-2665318bbd96 # DBv1.3_odaiba_jt9_prd_jt_67357a3d-1cd8-4014-9556-e17dae11b0e3_2024-05-10_10-33-57_10-34-17
+  - efd43d61-8077-45b8-a5b8-501a2c88c435 # DBv1.3_odaiba_jt9_prd_jt_67357a3d-1cd8-4014-9556-e17dae11b0e3_2024-05-10_10-30-12_10-30-32
+  - 80259a06-8051-4cdf-9cad-e78a8168bf3b # DBv1.3_odaiba_jt9_prd_jt_67357a3d-1cd8-4014-9556-e17dae11b0e3_2024-05-10_12-03-00_12-03-20
+  - cfa158e7-525f-4d60-bada-7f0a6916d9f2 # DBv1.3_odaiba_jt9_prd_jt_67357a3d-1cd8-4014-9556-e17dae11b0e3_2024-05-10_11-55-15_11-55-35
+  - ca9f0576-c3e5-433c-b775-5ecb1f1d7002 # DBv1.3_odaiba_jt9_prd_jt_67357a3d-1cd8-4014-9556-e17dae11b0e3_2024-05-10_12-03-25_12-03-45
+  - 9e123e26-f758-4644-9390-cc1202b50d27 # DBv1.3_odaiba_jt9_prd_jt_67357a3d-1cd8-4014-9556-e17dae11b0e3_2024-05-10_11-26-58_11-27-18

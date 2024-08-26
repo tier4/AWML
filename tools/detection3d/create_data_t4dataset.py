@@ -134,6 +134,8 @@ def get_info(
                 l2e_r_mat,
                 cfg.name_mapping,
                 cfg.class_names,
+                merge_objects=cfg.merge_objects,
+                merge_type=cfg.merge_type
             ),
     ]:
         info.update(new_info)
@@ -228,7 +230,10 @@ def main():
         "test": [],
     }
     metainfo = dict(classes=cfg.class_names, version=args.version)
-
+    
+    if cfg.merge_objects:
+        for target, sub_objects in cfg.merge_objects:
+            assert len(sub_objects)==2, "Only merging two objects in supported at the moment"
     for dataset_version in cfg.dataset_version_list:
         dataset_list = osp.join(cfg.dataset_version_config_root,
                                 dataset_version + ".yaml")
@@ -254,6 +259,7 @@ def main():
                     verbose=False)
                 for i, sample in enumerate(nusc.sample):
                     info = get_info(cfg, nusc, sample, i, args.max_sweeps)
+                    # info["version"] = dataset_version             # used for visualizations during debugging.
                     t4_infos[split].append(info)
     assert sum(len(split)
                for split in t4_infos.values()) > 0, "dataset isn't available"

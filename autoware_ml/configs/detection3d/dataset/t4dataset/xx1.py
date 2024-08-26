@@ -11,7 +11,7 @@ info_test_file_name = "t4dataset_xx1_infos_test.pkl"
 
 # dataset scene setting
 dataset_version_config_root = "autoware_ml/configs/detection3d/dataset/t4dataset/"
-dataset_version_list = ["database_v1_0", "database_v1_1"]
+dataset_version_list = ["database_v1_0", "database_v1_1", "database_v1_3"]
 
 # dataset format setting
 data_prefix = dict(
@@ -36,7 +36,7 @@ name_mapping = {
     "vehicle.construction": "truck",
     "vehicle.emergency (ambulance & police)": "car",
     "vehicle.motorcycle": "bicycle",
-    "vehicle.trailer": "truck",
+    "vehicle.trailer": "trailer",
     "vehicle.truck": "truck",
     "vehicle.bicycle": "bicycle",
     "vehicle.bus (bendy & rigid)": "bus",
@@ -58,7 +58,7 @@ name_mapping = {
     "car": "car",
     "truck": "truck",
     "bus": "bus",
-    "trailer": "truck",
+    "trailer": "trailer",
     "motorcycle": "bicycle",
     "bicycle": "bicycle",
     "police_car": "car",
@@ -67,6 +67,11 @@ name_mapping = {
     "forklift": "car",
     "construction_worker": "pedestrian",
     "stroller": "pedestrian",
+    # DBv1.3
+    "semi_trailer": "trailer",
+    "tractor_unit": "truck",
+    "kart": "car",
+    "unknown": "unknown",
 }
 class_names = [
     "car",
@@ -77,6 +82,12 @@ class_names = [
 ]
 num_class = len(class_names)
 metainfo = dict(classes=class_names)
+
+
+merge_objects = [
+    ("truck", ["truck", "trailer"]),
+]
+merge_type = "extend_longer"   # One of ["extend_longer","union", None]
 
 # visualization
 class_colors = {

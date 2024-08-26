@@ -57,6 +57,9 @@ class_names = [
 num_class = len(class_names)
 metainfo = dict(classes=class_names)
 
+merge_objects = None
+merge_type = None   # One of ["extend_longer","union",None]
+
 # visualization
 class_colors = {
     "car": (30, 144, 255),
