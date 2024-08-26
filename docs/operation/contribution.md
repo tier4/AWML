@@ -69,6 +69,10 @@ The target of document is as below.
 - `/pipelines/*`: Process documents for users
 
 ## Use case for contribute
+
+You choose PR type as below.
+Note that you need to make as small PR as possible.
+
 ### Add/Fix functions to `autoware_ml`
 
 If you want to add/fix functions to use for many projects, you should commit to `autoware_ml/*`.
@@ -107,12 +111,13 @@ For PR review list with code owner for the project
 - [ ] Update [release note](/docs/operation/release_note.md)
 - [ ] Check deploying to onnx file and running at Autoware environment (If the model is used for Autoware and you change model architecture)
 
-### Add a new model
+### Add a new algorithm
 
-Note that if you want to your own model, please make PR for [original MMLab libraries](https://github.com/open-mmlab).
-After merged by it (For example, [mmdetection3d](https://github.com/open-mmlab/mmdetection3d) and [mmdetection](https://github.com/open-mmlab/mmdetection)), we update the version of dependency of MMLab libraries and make our configs in `/projects`.
+Note that if you want to new algorithm, please make PR for [original MMLab libraries](https://github.com/open-mmlab).
+After merged by it for MMLab libraries like [mmdetection3d](https://github.com/open-mmlab/mmdetection3d) and [mmdetection](https://github.com/open-mmlab/mmdetection), we update the version of dependency of MMLab libraries and make our configs in `/projects`.
 
-If you want to add a config or script for models of MMLab's model, you should add codes to `/projects/{model_name}/`.
+If you want to add a config to T4dataset or scripts like onnx deploy for models of MMLab's model, you should add codes to `/projects/{model_name}/`.
+
 For PR review list with code owner for autoware-ml
 
 - [ ] Write why you add a new model
@@ -121,12 +126,48 @@ For PR review list with code owner for autoware-ml
 - [ ] Write the result log for new model
 - [ ] Update [release note](/docs/operation/release_note.md)
 
-### Add/Fix config file in a project
+### Update dataset
 
-If you want to add/fix config file in a project, you should add/fix `projects/{model_name}/configs/{dataset_name}/*.py`.
+If you want to update dataset, you change [dataset config](/autoware_ml/configs/detection3d/dataset/t4dataset/).
 
 For PR review list with code owner for the project
+
+- [ ] Change `/autoware_ml/configs/detection3d/dataset/t4dataset/`
+- [ ] Update [release note](/docs/operation/release_note.md)
+
+### Release new model
+
+If you want to release new model, you need to make two PRs.
+First, you add/fix config files in `projects/{model_name}/configs/{dataset_name}/*.py` for new model like adding new dataset.
+
+For PR review list with code owner for the project configs
 - [ ] Performing test with the model
-- [ ] Update `projects/{model_name}/README.md` adding evaluation result for new config.
 - [ ] Delete unused config file
 - [ ] Update [release note](/docs/operation/release_note.md)
+
+Second, you update docs for release note of models.
+You can refer [TransFusion release note](/projects/TransFusion/docs/deployed_xx1_model.md)
+In addition to docs, you should write results of training and evaluation including analysis for the model in PR.
+
+This is template for release note.
+Note that you should use commit hash for config file path after first PR changing configs is merged.
+
+```
+- model
+  - Training dataset: 
+  - Eval dataset: 
+  - [PR]()
+  - [Config file path]()
+  - [Deployed onnx model]()
+  - [Deployed ROS parameter file]()
+  - [Training results]()
+  - train time: (A100 * 4) * 2 days
+- Total mAP: 
+  - Test dataset: 
+  - Eval range = 90m
+
+Result table
+```
+
+- [ ] Update `projects/{model_name}/docs/deployed_*_model.md` adding evaluation result for new config.
+- [ ] Write results of training and evaluation including analysis for the model in PR.
