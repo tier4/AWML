@@ -17,7 +17,7 @@
   - Training dataset: database_v1_0 + database_v1_1 + database_v1_3
   - Eval dataset: database_v1_0 + database_v1_1 + database_v1_3
   - [PR](https://github.com/tier4/autoware-ml/pull/100)
-  - [Config file path](https://github.com/tier4/autoware-ml/blob/37cf92a2b4b3d7f80b09c8bd5eaff6229ca18f95/projects/TransFusion/configs/t4dataset/transfusion_lidar_pillar_second_secfpn_1xb4-cyclic-20e_t4xx1_90m_768grid.py)
+  - [Config file path](https://github.com/tier4/autoware-ml/blob/37cf92a2b4b3d7f80b09c8bd5eaff6229ca18f95/projects/TransFusion/configs/t4dataset/transfusion_lidar_pillar_second_secfpn_1xb1_90m-768grid-t4xx1.py)
   - [Deployed onnx model](https://awf.ml.dev.web.auto/perception/models/transfusion/t4xx1_90m/v3/transfusion.onnx)
   - [Deployed ROS parameter file](https://awf.ml.dev.web.auto/perception/models/transfusion/t4xx1_90m/v3/transfusion.param.yaml)
   - [Deployed ROS param file for remap](https://awf.ml.dev.web.auto/perception/models/transfusion/t4xx1_90m/v3/detection_class_remapper.param.yaml)
