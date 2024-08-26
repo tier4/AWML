@@ -1,6 +1,6 @@
 import copy
 import os
-from typing import Any, Dict, List, Tuple, Optional, Union
+from typing import Any, Dict, List, Optional, Tuple, Union
 
 import mmengine
 import numpy as np
@@ -10,12 +10,11 @@ from nuimages import NuImages
 from nuscenes import NuScenes
 from nuscenes.nuscenes import Box
 from pyquaternion import Quaternion
-
-from shapely.geometry import box as shapely_box
 from shapely.affinity import rotate as shapely_rotate
 from shapely.affinity import translate as shapely_translate
-from shapely.ops import unary_union
 from shapely.geometry import Polygon
+from shapely.geometry import box as shapely_box
+from shapely.ops import unary_union
 
 from tools.detection3d.t4dataset_converters.update_infos_to_v2 import (
     clear_instance_unused_keys, get_empty_instance, get_single_image_sweep,
@@ -48,11 +47,12 @@ def get_lidar_points_info(
         quaternion=cs_record["rotation"], translation=cs_record["translation"])
     mmengine.check_file_exist(lidar_path)
     lidar_path = parse_lidar_path(lidar_path)
-    return dict(lidar_points=dict(
-        num_pts_feats=num_features,
-        lidar_path=lidar_path,
-        lidar2ego=lidar2ego,
-    ), )
+    return dict(
+        lidar_points=dict(
+            num_pts_feats=num_features,
+            lidar_path=lidar_path,
+            lidar2ego=lidar2ego,
+        ), )
 
 
 def get_lidar_sweeps_info(
@@ -197,22 +197,24 @@ def check_boxes_overlap(box1, box2):
         half_dx = dx / 2
         half_dy = dy / 2
 
-        corners = np.array([[
-            x - half_dx * cos_yaw + half_dy * sin_yaw,
-            y - half_dx * sin_yaw - half_dy * cos_yaw
-        ],
-                            [
-                                x + half_dx * cos_yaw + half_dy * sin_yaw,
-                                y + half_dx * sin_yaw - half_dy * cos_yaw
-                            ],
-                            [
-                                x + half_dx * cos_yaw - half_dy * sin_yaw,
-                                y + half_dx * sin_yaw + half_dy * cos_yaw
-                            ],
-                            [
-                                x - half_dx * cos_yaw - half_dy * sin_yaw,
-                                y - half_dx * sin_yaw + half_dy * cos_yaw
-                            ]])
+        corners = np.array([
+            [
+                x - half_dx * cos_yaw + half_dy * sin_yaw,
+                y - half_dx * sin_yaw - half_dy * cos_yaw
+            ],
+            [
+                x + half_dx * cos_yaw + half_dy * sin_yaw,
+                y + half_dx * sin_yaw - half_dy * cos_yaw
+            ],
+            [
+                x + half_dx * cos_yaw - half_dy * sin_yaw,
+                y + half_dx * sin_yaw + half_dy * cos_yaw
+            ],
+            [
+                x - half_dx * cos_yaw - half_dy * sin_yaw,
+                y - half_dx * sin_yaw + half_dy * cos_yaw
+            ],
+        ], )
 
         return corners
 
@@ -248,8 +250,11 @@ def check_boxes_proximity(box1, box2, distance_threshold=1.0):
     return False
 
 
-def match_objects(gt_bboxes_3d: np.ndarray, gt_names_3d: np.ndarray,
-                  merge_objects: List[Tuple[str, List[str]]]) -> List[tuple]:
+def match_objects(
+    gt_bboxes_3d: np.ndarray,
+    gt_names_3d: np.ndarray,
+    merge_objects: List[Tuple[str, List[str]]],
+) -> List[tuple]:
     """
     Match objects according to merge_objects criteria.
     Args:
@@ -285,14 +290,14 @@ def merge_boxes_union(box1: List[float], box2: List[float]):
     """
     Merges two 3D bounding boxes by calculating the union of their projections on the XY plane.
 
-    The function creates 2D representations of the input 3D boxes using the Shapely library, 
-    then computes their union, represented as the minimum rotated rectangle that contains both boxes. 
+    The function creates 2D representations of the input 3D boxes using the Shapely library,
+    then computes their union, represented as the minimum rotated rectangle that contains both boxes.
     The resulting 3D bounding box has the combined dimensions and orientation of the merged box.
-    Compared to the `merge_boxes_extend_longer method`, this merging method tends to shift the 
+    Compared to the `merge_boxes_extend_longer method`, this merging method tends to shift the
     centroid of trailers+tractors merges more during turns.
-    
+
     Parameters:
-        box1 (List[float]): A list representing the first 3D box with the format 
+        box1 (List[float]): A list representing the first 3D box with the format
                             [x, y, z, dx, dy, dz, yaw], where:
                             - x, y, z: Center coordinates of the box.
                             - dx, dy, dz: Dimensions of the box along the x, y, and z axes.
@@ -310,10 +315,8 @@ def merge_boxes_union(box1: List[float], box2: List[float]):
         # Create a 2D shapely box
         shapely_box_object = shapely_box(-dx / 2, -dy / 2, dx / 2, dy / 2)
         # Rotate and translate the box
-        shapely_box_object = shapely_rotate(shapely_box_object,
-                                            yaw,
-                                            origin=(0, 0),
-                                            use_radians=True)
+        shapely_box_object = shapely_rotate(
+            shapely_box_object, yaw, origin=(0, 0), use_radians=True)
         shapely_box_object = shapely_translate(shapely_box_object, x, y)
         return shapely_box_object, z, dz, yaw
 
@@ -345,11 +348,15 @@ def merge_boxes_union(box1: List[float], box2: List[float]):
 
     # Calculate the new orientation
     if edge1 >= edge2:
-        new_yaw = np.arctan2(coords[1][1] - coords[0][1],
-                             coords[1][0] - coords[0][0])
+        new_yaw = np.arctan2(
+            coords[1][1] - coords[0][1],
+            coords[1][0] - coords[0][0],
+        )
     else:
-        new_yaw = np.arctan2(coords[2][1] - coords[1][1],
-                             coords[2][0] - coords[1][0])
+        new_yaw = np.arctan2(
+            coords[2][1] - coords[1][1],
+            coords[2][0] - coords[1][0],
+        )
 
     return [new_x, new_y, new_z, new_dx, new_dy, new_dz, new_yaw]
 
@@ -358,13 +365,13 @@ def merge_boxes_extend_longer(box1: List[float], box2: List[float]):
     """
     Gives impression of merging two 3D bounding boxes by elongating the larger box.
 
-    The function identifies the larger and smaller box based on their area in the XY plane. 
+    The function identifies the larger and smaller box based on their area in the XY plane.
     The center of the farther end of the smaller box is rotated to meet the length axis of the
     larger box. Then, the larger box is elongated upto that point.
     https://docs.google.com/presentation/d/17802H6gqApU3mHN2Q5XUcqa_qR5y5a_76QMM2F_9WW8/edit#slide=id.g20a727e0846_3_0
-    
+
     Parameters:
-        box1 (List[float]): A list representing the first 3D box with the format 
+        box1 (List[float]): A list representing the first 3D box with the format
                             [x, y, z, dx, dy, dz, yaw], where:
                             - x, y, z: Center coordinates of the box.
                             - dx, dy, dz: Dimensions of the box along the x, y, and z axes.
@@ -453,23 +460,30 @@ def merge_boxes_extend_longer(box1: List[float], box2: List[float]):
     new_yaw = larger_box[6]
 
     return [
-        new_center[0], new_center[1], new_z, new_dx, new_dy, new_dz, new_yaw
+        new_center[0],
+        new_center[1],
+        new_z,
+        new_dx,
+        new_dy,
+        new_dz,
+        new_yaw,
     ]
 
 
 def get_instances(
-        gt_boxes,
-        names,
-        class_names,
-        velocity,
-        boxes,
-        annotations,
-        valid_flag,
-        gt_attrs,
-        filter_attributions=[["vehicle.bicycle", "vehicle_state.parked"],
-                             ["vehicle.motorcycle", "vehicle_state.parked"]],
-        matched_object_idx=None,
-        merge_type="extend_longer"):
+    gt_boxes,
+    names,
+    class_names,
+    velocity,
+    boxes,
+    annotations,
+    valid_flag,
+    gt_attrs,
+    filter_attributions=[["vehicle.bicycle", "vehicle_state.parked"],
+                         ["vehicle.motorcycle", "vehicle_state.parked"]],
+    matched_object_idx=None,
+    merge_type="extend_longer",
+):
 
     if merge_type == "extend_longer":
         merge_function = merge_boxes_extend_longer
@@ -565,16 +579,18 @@ def get_instances(
     return instances
 
 
-def get_annotations(nusc: NuScenes,
-                    anns,
-                    boxes: List[Box],
-                    e2g_r_mat: np.array,
-                    l2e_r_mat: np.array,
-                    name_mapping: dict,
-                    class_names: List[str],
-                    attr_categories_mapper=lambda x: x,
-                    merge_objects: List[Tuple[str, List[str]]] = [],
-                    merge_type: str = None) -> dict:
+def get_annotations(
+    nusc: NuScenes,
+    anns,
+    boxes: List[Box],
+    e2g_r_mat: np.array,
+    l2e_r_mat: np.array,
+    name_mapping: dict,
+    class_names: List[str],
+    attr_categories_mapper=lambda x: x,
+    merge_objects: List[Tuple[str, List[str]]] = [],
+    merge_type: str = None,
+) -> dict:
     annotations = [nusc.get("sample_annotation", token) for token in anns]
     instance_tokens = [ann["instance_token"] for ann in annotations]
     locs = np.array([b.center for b in boxes]).reshape(-1, 3)
@@ -609,16 +625,18 @@ def get_annotations(nusc: NuScenes,
     if merge_objects:
         matched_object_idx = match_objects(gt_boxes, names, merge_objects)
 
-    instances = get_instances(gt_boxes,
-                              names,
-                              class_names,
-                              velocity,
-                              boxes,
-                              annotations,
-                              valid_flag,
-                              gt_attrs,
-                              matched_object_idx=matched_object_idx,
-                              merge_type=merge_type)
+    instances = get_instances(
+        gt_boxes,
+        names,
+        class_names,
+        velocity,
+        boxes,
+        annotations,
+        valid_flag,
+        gt_attrs,
+        matched_object_idx=matched_object_idx,
+        merge_type=merge_type,
+    )
 
     return dict(instances=instances)
 
@@ -688,10 +706,11 @@ def obtain_sensor2top(
     e2g_r_s_mat = Quaternion(e2g_r_s).rotation_matrix
     R = (l2e_r_s_mat.T @ e2g_r_s_mat.T) @ (
         np.linalg.inv(e2g_r_mat).T @ np.linalg.inv(l2e_r_mat).T)
-    T = (l2e_t_s @ e2g_r_s_mat.T +
-         e2g_t_s) @ (np.linalg.inv(e2g_r_mat).T @ np.linalg.inv(l2e_r_mat).T)
-    T -= (e2g_t @ (np.linalg.inv(e2g_r_mat).T @ np.linalg.inv(l2e_r_mat).T) +
-          l2e_t @ np.linalg.inv(l2e_r_mat).T)
+    T = (l2e_t_s @ e2g_r_s_mat.T + e2g_t_s) @ (
+        np.linalg.inv(e2g_r_mat).T @ np.linalg.inv(l2e_r_mat).T)
+    T -= (
+        e2g_t @ (np.linalg.inv(e2g_r_mat).T @ np.linalg.inv(l2e_r_mat).T) +
+        l2e_t @ np.linalg.inv(l2e_r_mat).T)
     sweep["sensor2lidar_rotation"] = R.T  # points @ R.T + T
     sweep["sensor2lidar_translation"] = T
 

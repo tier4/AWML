@@ -135,7 +135,7 @@ def get_info(
                 cfg.name_mapping,
                 cfg.class_names,
                 merge_objects=cfg.merge_objects,
-                merge_type=cfg.merge_type
+                merge_type=cfg.merge_type,
             ),
     ]:
         info.update(new_info)
@@ -230,10 +230,12 @@ def main():
         "test": [],
     }
     metainfo = dict(classes=cfg.class_names, version=args.version)
-    
+
     if cfg.merge_objects:
         for target, sub_objects in cfg.merge_objects:
-            assert len(sub_objects)==2, "Only merging two objects in supported at the moment"
+            assert len(
+                sub_objects
+            ) == 2, "Only merging two objects in supported at the moment"
     for dataset_version in cfg.dataset_version_list:
         dataset_list = osp.join(cfg.dataset_version_config_root,
                                 dataset_version + ".yaml")

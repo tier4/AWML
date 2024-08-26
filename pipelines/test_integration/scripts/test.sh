@@ -3,4 +3,4 @@ python tools/detection3d/create_data_t4dataset.py --root_path ./data/t4dataset -
 # Test training for TransFusion
 python tools/detection3d/train.py pipelines/test_integration/configs/TransFusion/transfusion_lidar_pillar_second_secfpn_1xb1-cyclic-20e_t4xx1_test.py && \
 # Test eval for TransFusion
-python tools/detection3d/test.py pipelines/test_integration/configs/TransFusion/transfusion_lidar_pillar_second_secfpn_1xb1-cyclic-20e_t4xx1_test.py work_dirs/epoch_20.pth
+python tools/detection3d/test.py pipelines/test_integration/configs/TransFusion/transfusion_lidar_pillar_second_secfpn_1xb1-cyclic-20e_t4xx1_test.py work_dirs/pretrain/transfusion/epoch_50.pth

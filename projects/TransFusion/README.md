@@ -16,7 +16,9 @@
 
 ## Results and models
 
-- [Deployed model](docs/deployed_model.md)
+- [Deployed model for base model](docs/deployed_base_model.md)
+- [Deployed model for XX1](docs/deployed_xx1_model.md)
+- [Deployed model for X2](docs/deployed_x2_model.md)
 - [Archived model](docs/archived_model.md)
 
 ## Get started

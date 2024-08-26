@@ -3,6 +3,7 @@ from mmcv.transforms import BaseTransform
 from mmdet3d.registry import TRANSFORMS
 from mmdet3d.structures.ops import box_np_ops
 
+
 @TRANSFORMS.register_module()
 class ObjectMinPointsFilter(BaseTransform):
     """Filter objects by the number of points in them, if it's less than min_num_points.
