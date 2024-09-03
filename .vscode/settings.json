@@ -1,8 +1,16 @@
 {
+  "editor.tabSize": 2,
+  "editor.rulers": [
+      100
+  ],
+  "python.defaultInterpreterPath": "/opt/conda/bin/python3",
   "[python]": {
     "editor.formatOnSaveMode": "file",
     "editor.formatOnSave": true,
     "editor.defaultFormatter": "eeyore.yapf",
     "editor.formatOnType": true,
   },
+  "search.exclude": {
+    "**/work_dirs": true
+  }
 }

@@ -1,0 +1,15 @@
+{
+    // See https://go.microsoft.com/fwlink/?LinkId=733558
+    // for the documentation about the tasks.json forma
+    "version": "2.0.0",
+    "tasks": [
+        // Pre-commit
+        {
+            "label": "Pre-commit: Run",
+            "detail": "Run pre-commit hooks.",
+            "type": "shell",
+            "command": "cd ${workspaceFolder} && pre-commit run -a --config .pre-commit-config.yaml",
+            "problemMatcher": []
+        }
+    ]
+}

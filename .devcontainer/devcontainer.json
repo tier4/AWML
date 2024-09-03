@@ -1,0 +1,64 @@
+{
+  "name": "Autoware-cuda",
+  "build": {
+    "dockerfile": "Dockerfile",
+    "args": {
+      "BASE_IMAGE": "autoware-ml"
+    }
+  },
+  "remoteUser": "autoware",
+  "workspaceMount": "source=${localWorkspaceFolder},target=/workspace,type=bind",
+  "workspaceFolder": "/workspace",
+  "hostRequirements": {
+    "gpu": true
+  },
+  "runArgs": [
+    "-it",
+    "--rm",
+    "--name=autoware-ml",
+    "--env",
+    "DISPLAY=${env:DISPLAY}",
+    "--env",
+    "XAUTHORITY=/run/user/1000/gdm/Xauthority",
+    "--env",
+    "XDG_RUNTIME_DIR=/run/user/1000",
+    "--env",
+    "NVIDIA_DRIVER_CAPABILITIES=all",
+    "--cap-add=SYS_PTRACE",
+    "--security-opt",
+    "seccomp=unconfined",
+    "--net=host",
+    "--volume=/tmp/.X11-unix/:/tmp/.X11-unix",
+    "--volume=/etc/localtime:/etc/localtime:ro",
+    "--volume=/dev/dri:/dev/dri:ro",
+    "--volume=${env:HOME}/autoware_data:/home/autoware/autoware_data",
+    "--gpus",
+    "all",
+    "--shm-size=64gb"
+  ],
+  "customizations": {
+    "vscode": {
+      "settings.json": {
+        "terminal.integrated.profiles.linux": {
+          "bash": {
+            "path": "/bin/bash"
+          }
+        }
+      },
+      "extensions": [
+        // Python,
+        "ms-python.python",
+        "ms-toolsai.jupyter",
+        "eeyore.yapf",
+        // Git",
+        "eamodio.gitlens",
+        "github.vscode-pull-request-github",
+        // Remote Development
+        "ms-azuretools.vscode-docker",
+        // Extra Tools,
+        "redhat.vscode-yaml",
+        "yzhang.markdown-all-in-one"
+      ]
+    }
+  }
+}
