@@ -61,7 +61,8 @@ This repository is machine learning library for [Autoware](https://github.com/au
 
 ### 3D segmentation
 
-TBD
+- Model for Autoware
+  - [FRNet](projects/FRNet/)
 
 ### 2D detection
 
@@ -86,3 +87,4 @@ TBD
 
 - Model for ML tools
   - [BLIP-2](projects/BLIP-2/)
+

@@ -1,0 +1,13 @@
+diff --git a/torch/onnx/utils.py b/torch/onnx/utils.py
+index 422210c608..e4cd66f1dc 100644
+--- a/torch/onnx/utils.py
++++ b/torch/onnx/utils.py
+@@ -859,7 +859,7 @@ def _decide_input_format(model, args):
+             args_list = [args]
+         if isinstance(args_list[-1], dict):
+             args_dict = args_list[-1]
+-            args_list = args_list[:-1]
++            # args_list = args_list[:-1]
+         n_nonkeyword = len(args_list)
+         for optional_arg in ordered_list_keys[n_nonkeyword:]:
+             if optional_arg in args_dict:
