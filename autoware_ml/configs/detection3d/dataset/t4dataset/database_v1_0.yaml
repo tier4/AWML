@@ -42,7 +42,7 @@ train:
   - 62b7b2f4-9247-4a63-884b-3733c0ff247e # DBv1.0_nishi_shinjuku_1_m_bike
   - 5b854e0d-e19e-466c-b31c-25e238106cea # DBv1.0_nishi_shinjuku_1_truck
   - 3f76fc8c-4c43-4179-9ccc-fdf8682cdbcd # DBv1.0_nishi_shinjuku_2_blk_car
-  - d28321b5-233c-427a-a904-2f20b6496671 # DBv1.0_nishi_shinjuku_2_bus
+  - 150cd15a-3b1f-4bc2-8815-426b20b8d873 # DBv1.0_nishi_shinjuku_2_bus
   - 9a7592d3-7b2f-4fe7-a7d5-476634391ae2 # DBv1.0_nishi_shinjuku_2_car
   - 11b36cfc-31da-4108-868a-9576c7540a00 # DBv1.0_nishi_shinjuku_2_m_bike
   - 023b4b43-2b00-444c-bb63-4ee602e30779 # DBv1.0_nishi_shinjuku_2_truck
@@ -53,7 +53,7 @@ train:
   - 4301233e-e338-4ed9-bca8-94a95a38d25b # DBv1.0_nishi_shinjuku_3_m_bike
   - 1de37426-0b49-4ff3-a2d3-612ed9adf077 # DBv1.0_nishi_shinjuku_3_ped
   - edac3391-9fcd-46c8-b015-6146a255d08b # DBv1.0_nishi_shinjuku_3_truck
-  - 12624f29-749b-4e78-a0d6-ca7c14633093 # DBv1.0_nishi_shinjuku_5_bike_ped100
+  - 7ac6c8d3-fe53-426b-9d2a-efd394a8da80 # DBv1.0_nishi_shinjuku_5_bike_ped100
   - 8bf9edb4-2781-49c6-88e0-839aa9a15124 # DBv1.0_nishi_shinjuku_5_ped_bike50
   - 8e5aef61-9378-4d4c-bb4f-fc460288d20d # DBv1.0_nishi_shinjuku_5_ped100
   - 5a7184db-a4b4-4e21-afe0-9af84945a888 # DBv1.0_nishi_shinjuku_6_blk_car
