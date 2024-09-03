@@ -56,6 +56,7 @@ ENV WGPU_BACKEND=gl
 WORKDIR /workspace
 
 COPY autoware_ml autoware_ml
+COPY pipelines pipelines
 COPY projects projects
 COPY tools tools
 COPY setup.py setup.py
