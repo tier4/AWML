@@ -12,7 +12,7 @@ Download T4dataset by using WebAuto system.
 `autoware-ml` make pseudo label T4dataset from non-annotated T4dataset.
 It lead to make short time to be annotated by using `autoware-ml`.
 
-## ML model deployment pipeline
+## ML model type
 
 We define 4 types model for deploy.
 
@@ -45,3 +45,14 @@ For now, we deploy only product model in 3D detection with TransFusion LiDAR-onl
 "Offline model" can be used to offline process like pseudo label and cannot be used for real-time autonomous driving application.
 "Offline model" is based on LiDAR-only model for 3D detection for generalization performance.
 "Base model" is basically trained by all dataset.
+
+## The strategy for ML model release
+
+We follow the strategy for ML model release as below.
+
+![](/docs/fig/model_release.drawio.svg)
+
+When new dataset is added, we release the base model at first.
+After that we release the product model using the base model as pre-trained model.
+If some problem like domain-specific objects, we release the project model by retraining the product model using pseudo label with the offline model.
+Note that we do not retrain the product model and project model from the model of before version because it is difficult to trace the model.
