@@ -109,3 +109,18 @@ We define "support priority" for each tools and projects. Maintainers handle han
   - We rarely use a tool or a model or it is just prototype version.
   - If it is not used for long time, we delete it.
   - We put a low priority on support to it.
+
+## Versioning strategy
+
+We follow basically [semantic versioning](https://semver.org/).
+As our strategy, we follow as below.
+
+- Major version zero (0.y.z) is for initial development.
+  - The public API should not be considered stable.
+- Major version X (X.y.z | X > 0) is incremented if any backward incompatible changes are introduced to the public API.
+- Minor version Y (x.Y.z | x > 0) is incremented if new, backward compatible functionality is introduced to the public API.
+  - It is incremented if any public API functionality is marked as deprecated.
+  - It is incremented if a new project is added.
+- Patch version Z (x.y.Z | x > 0) is incremented if only backward compatible bug fixes are introduced.
+  - A bug fix is defined as an internal change that fixes incorrect behavior.
+  - It is incremented if a new model is released.
