@@ -5,7 +5,8 @@ Training and evaluation tools for 3D Detection.
 - [Support priority](https://github.com/tier4/autoware-ml/blob/main/docs/design/autoware_ml_design.md#support-priority): Tier S
 - Supported dataset
   - [x] NuScenes
-  - [x] T4dataset
+  - [x] T4dataset with 3D detection
+  - [ ] T4dataset with 3D semantic segmentation
 - Other supported feature
   - [ ] Add unit test
 
@@ -51,7 +52,7 @@ python tools/detection3d/create_data_t4dataset.py --root_path ./data/t4dataset -
   - This process takes time.
 
 ```sh
-TBD
+python tools/detection3d/create_data_t4dataset.py --root_path ./data/t4dataset --config autoware_ml/configs/detection3d/dataset/t4dataset/x2.py --version xx1 --max_sweeps 2 --out_dir ./data/t4dataset/info/user_name
 ```
 
 ## 3. Train
@@ -106,10 +107,12 @@ python tools/detection3d/test_all.py {config_file} {train_results_directory} {mi
 
 See [rerun_visualization](/tools/rerun_visualization/)
 
+![](/tools/rerun_visualization/docs/rerun_visualization.png)
+
 - Visualization for BEV view
   - This script is simple debug tools.
   - This tool don't have image information, so you can use it when you make visualization images for public place like PR.
-  - (Image information often has personal information, so you cannot use it in public place in many case.)
+  - Image information often has personal information, so you cannot use it in public place in many case.
 
 ```sh
 python tools/detection3d/visualize_bev.py {config_file} --checkpoint {config_file}

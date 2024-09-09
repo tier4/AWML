@@ -21,7 +21,7 @@
   - Amount: About 2000 frames
   - Sensor: Velodyne LiDAR + BFS Camera
   - Annotation: All the data are collected at 10Hz and annotated at 2Hz.
-- [database_v1_2](/autoware_ml/configs/detection3d/dataset/t4dataset/database_v1_2.yaml)
+- [database_v1_3](/autoware_ml/configs/detection3d/dataset/t4dataset/database_v1_3.yaml)
   - Place: Odaiba and Shinagawa
   - Amount: About 6000 frames
   - Sensor: Velodyne LiDAR + C1 Camera + Radar data

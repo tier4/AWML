@@ -11,17 +11,27 @@ This repository is machine learning library for [Autoware](https://github.com/au
     - Need > 530.xx.xx NVIDIA device driver
 
 ## Docs
+### Design documents
 
-- Design documents
-  - [Docs for whole architecture](/docs/design/architecture.md)
-  - [Docs for autoware-ml design](/docs/design/autoware_ml_design.md)
-  - [Docs for T4dataset](/docs/design/t4dataset.md)
-- Operation documents
-  - [Note for next release](/docs/operation/release_note.md)
-- Tutorials
-  - [Docs for contribution](/docs/tutorial/contribution.md)
-  - [Docs for config files](/docs/tutorial/config.md)
-  - [Docs for remote development](/docs/tutorial/remote_development.md)
+If you want to know about the design of `autoware-ml`, you should read as below pages.
+
+- [Docs for whole architecture](/docs/design/architecture.md)
+- [Docs for autoware-ml design](/docs/design/autoware_ml_design.md)
+- [Docs for T4dataset](/docs/design/t4dataset.md)
+
+### Operation documents
+
+If you want to develop `autoware-ml`, you should read as below pages.
+
+- [Docs for contribution](/docs/operation/contribution.md)
+- [Note for next release](/docs/operation/release_note.md)
+
+### Tips
+
+If you want to use `autoware-ml`, you should read as below pages.
+
+- [Tips for config files](/docs/tips/config.md)
+- [Tips for remote development](/docs/tips/remote_development.md)
 
 ## Supported tools
 
@@ -53,11 +63,12 @@ This repository is machine learning library for [Autoware](https://github.com/au
 | -------------------------- | ------- | ------ | ---- | ---- | ----- | ---- | ------- | ---------- |
 | TransFusion-L t4xx1_90m/v3 | 1.0+1.1 | 92.16m | 68.5 | 81.7 | 62.4  | 83.6 | 50.9    | 64.1       |
 
-| eval range: 120m              | Eval DB | range   | mAP  | car  | truck | bus  | bicycle | pedestrian |
-| ----------------------------- | ------- | ------- | ---- | ---- | ----- | ---- | ------- | ---------- |
-| TransFusion-L t4xx1_120m/v1   | 1.0+1.1 | 122.88m | 51.8 | 70.9 | 43.8  | 54.7 | 38.7    | 50.9       |
-| BEVFusion-L t4xx1_120m_v1     | 1.0+1.1 | 122.4m  | 60.6 | 74.1 | 54.1  | 58.7 | 55.7    | 60.3       |
-| BEVFusion-L t4offline_120m_v1 | 1.0+1.1 | 122.4m  | 65.7 | 76.2 | 56.4  | 65.6 | 65.0    | 65.3       |
+| eval range: 120m                  | Eval DB | range   | mAP  | car  | truck | bus  | bicycle | pedestrian |
+| --------------------------------- | ------- | ------- | ---- | ---- | ----- | ---- | ------- | ---------- |
+| TransFusion-L t4xx1_120m/v1       | 1.0+1.1 | 122.88m | 51.8 | 70.9 | 43.8  | 54.7 | 38.7    | 50.9       |
+| BEVFusion-L t4xx1_120m/v1         | 1.0+1.1 | 122.4m  | 60.6 | 74.1 | 54.1  | 58.7 | 55.7    | 60.3       |
+| BEVFusion-L t4offline_120m/v1     | 1.0+1.1 | 122.4m  | 65.7 | 76.2 | 56.4  | 65.6 | 65.0    | 65.3       |
+| BEVFusion-CL t4xx1_fusion_120m/v1 | 1.0+1.1 | 122.4m  | 63.7 | 72.4 | 56.8  | 71.8 | 62.1    | 55.3       |
 
 ### 3D segmentation
 
