@@ -34,7 +34,12 @@ These are core library for MMLab libraries.
 The directory of `autoware_ml` is library for autoware-ml.
 This directory can be used as library from other software.
 
-- configs
+- `autoware_ml/detection3d`
+
+It provides the core library of 3D detection.
+It contain loader and metrics for T4dataset.
+
+- `autoware_ml/configs`
 
 The config files in `autoware_ml` is used commonly for each projects.
 
@@ -44,9 +49,38 @@ The config files in `autoware_ml` is used commonly for each projects.
     - detection3d/
       - XX1.py
       - X2.py
+      - database_v1_0.yaml
+      - database_v1_1.yaml
+      - database_v1_3.yaml
     - detection2d/
       - XX1.py
       - X2.py
+      - database_v1_0.yaml
+      - database_v1_1.yaml
+      - tlr_v1_0.yaml
+```
+
+- dataset configs: `autoware_ml/configs/*.yaml`
+
+The file like `detection3d/database_v1_0.yaml` defines dataset ids of T4dataset.
+It contains document about T4dataset as belows.
+
+```yaml
+docs: |
+  Product: XX1
+  Place: Odaiba, Nishi-Shinjuku, and Shiojiri
+  Amount: About 12000 frames
+  Sensor: Velodyne LiDAR + BFS Camera
+  Annotation: All the data are collected at 10Hz and most of them are annotated at 2Hz and DBv1.0_nishi_shinjuku_[0-7]_ are annotated at 10Hz
+```
+
+We define T4dataset version as below.
+
+```
+- version: major.minor.build
+  - major: sensor configuration
+  - minor: dataset scenes
+  - build: dataset version
 ```
 
 ### docs/

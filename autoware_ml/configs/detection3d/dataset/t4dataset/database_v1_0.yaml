@@ -1,5 +1,12 @@
 version: 1
 
+docs: |
+  Product: XX1
+  Place: Odaiba, Nishi-Shinjuku, and Shiojiri
+  Amount: About 12000 frames
+  Sensor: Velodyne LiDAR + BFS Camera
+  Annotation: All the data are collected at 10Hz and most of them are annotated at 2Hz and DBv1.0_nishi_shinjuku_[0-7]_ are annotated at 10Hz
+
 train:
   - 70891309-ca8b-477b-905a-5156ffb3df65 # DBv1.0_nishi_shinjuku_01 with 2D annotation
   - 1e64ccb3-48ec-4a27-8bc7-b0448fc058b9 # DBv1.0_nishi_shinjuku_02 with 2D annotation

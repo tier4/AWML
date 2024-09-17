@@ -8,4 +8,10 @@ custom_imports = dict(imports=[
 ])
 
 dataset_version_config_root = "pipelines/test_integration/configs/dataset"
-dataset_version_list = ["database_v1_1"]
+dataset_version_list = [
+    "database_v1_0",
+    "database_v1_1",
+    "database_v1_3",
+    "database_v2_0",
+    "database_v3_0",
+]

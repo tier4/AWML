@@ -1,4 +1,12 @@
 version: 1
+
+docs: |
+  Product: XX1
+  Place: Odaiba
+  Amount: About 6000 frames
+  Sensor: Velodyne LiDAR + C1 Camera + Radar data
+  Annotation: WIP
+
 train:
 - a2e3c321-7b5a-439d-847b-18b54e74aecf
 - e2a32890-1e00-496b-a8a3-7bd623e06b30
@@ -431,7 +439,9 @@ train:
 - 8db9a7fc-dc8f-4d2e-84f9-1ab273b4d866
 - 08176cd0-504e-4838-a34d-9e675a8e8409
 - 92e419a3-2239-4e8f-8ebc-190fbee76c21
+
 val: []
+
 test:
 - d7b73bd6-5b73-4511-8c8a-2dfe58ffcc86
 - 86396c05-c088-4890-a8fa-86b9df3989ce

@@ -1,5 +1,12 @@
 version: 1
 
+docs: |
+  Product: X2
+  Place: Shiojiri
+  Amount: About 5000 frames
+  Sensor: Hesai LiDAR + C1 Camera + Radar data
+  Annotation: All the data are collected at 10Hz and annotated at 2Hz
+
 train:
   - b9614e5f-43a0-4555-951c-09b4c7d0adb1 # DBv3.0_shiojiri_matsumoto-dental_outbound_20230620181125_10
   - d12180f3-63a2-468b-ae2a-85994c387052 # DBv3.0_shiojiri_matsumoto-dental_outbound_20230620181125_11

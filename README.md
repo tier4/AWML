@@ -17,7 +17,6 @@ If you want to know about the design of `autoware-ml`, you should read as below 
 
 - [Docs for whole architecture](/docs/design/architecture.md)
 - [Docs for autoware-ml design](/docs/design/autoware_ml_design.md)
-- [Docs for T4dataset](/docs/design/t4dataset.md)
 
 ### Operation documents
 

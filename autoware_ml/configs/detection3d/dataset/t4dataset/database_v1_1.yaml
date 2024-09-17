@@ -1,5 +1,12 @@
 version: 1
 
+docs: |
+  Product: XX1
+  Place: Odaiba
+  Amount: About 2000 frames
+  Sensor: Velodyne LiDAR + BFS Camera
+  Annotation: All the data are collected at 10Hz and annotated at 2Hz
+
 train:
   - e6d0237c-274c-4872-acc9-dc7ea2b77943 # DBv1.1_odaiba_9-1_0-100
   - 80b37b8c-ae9d-4641-a921-0b0c2012eee8 # DBv1.1_odaiba_8-2_100-200

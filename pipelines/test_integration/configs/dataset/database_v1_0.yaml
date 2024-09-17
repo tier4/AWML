@@ -1,5 +1,12 @@
 version: 1
 
+docs: |
+  Product: XX1
+  Place: Odaiba, Nishi-Shinjuku, and Shiojiri
+  Amount: About 12000 frames
+  Sensor: Velodyne LiDAR + BFS Camera
+  Annotation: All the data are collected at 10Hz and most of them are annotated at 2Hz and DBv1.0_nishi_shinjuku_[0-7]_ are annotated at 10Hz
+
 train:
   #- 70891309-ca8b-477b-905a-5156ffb3df65 # DBv1.0_nishi_shinjuku_01 with 2D annotation
   #- 1e64ccb3-48ec-4a27-8bc7-b0448fc058b9 # DBv1.0_nishi_shinjuku_02 with 2D annotation
@@ -53,18 +60,18 @@ train:
   #- 4301233e-e338-4ed9-bca8-94a95a38d25b # DBv1.0_nishi_shinjuku_3_m_bike
   #- 1de37426-0b49-4ff3-a2d3-612ed9adf077 # DBv1.0_nishi_shinjuku_3_ped
   #- edac3391-9fcd-46c8-b015-6146a255d08b # DBv1.0_nishi_shinjuku_3_truck
-  - 12624f29-749b-4e78-a0d6-ca7c14633093 # DBv1.0_nishi_shinjuku_5_bike_ped100
+  #- 12624f29-749b-4e78-a0d6-ca7c14633093 # DBv1.0_nishi_shinjuku_5_bike_ped100
   #- 8bf9edb4-2781-49c6-88e0-839aa9a15124 # DBv1.0_nishi_shinjuku_5_ped_bike50
   #- 8e5aef61-9378-4d4c-bb4f-fc460288d20d # DBv1.0_nishi_shinjuku_5_ped100
-  - 5a7184db-a4b4-4e21-afe0-9af84945a888 # DBv1.0_nishi_shinjuku_6_blk_car
-  - 46d3301f-9030-4005-9e23-75d48873d295 # DBv1.0_nishi_shinjuku_7_1_bike
-  #- 3094c4fd-0b70-402f-aebc-821829fea68b # DBv1.0_nishi_shinjuku_7_1_blk_car
+  #- 5a7184db-a4b4-4e21-afe0-9af84945a888 # DBv1.0_nishi_shinjuku_6_blk_car
+  #- 46d3301f-9030-4005-9e23-75d48873d295 # DBv1.0_nishi_shinjuku_7_1_bike
+  - 3094c4fd-0b70-402f-aebc-821829fea68b # DBv1.0_nishi_shinjuku_7_1_blk_car
   #- cedf55b1-5836-475a-86be-d51abfc7d023 # DBv1.0_nishi_shinjuku_7_1_bus
   #- 4c3c4ec0-7ec3-4990-841e-9d2fe4707c7c # DBv1.0_nishi_shinjuku_7_1_car
   #- 4de708d8-7d04-4cb2-8edb-6f3eb9ec0e7e # DBv1.0_nishi_shinjuku_7_1_truck
-  - 2e1604d8-eaab-41f7-83ef-75734d0e7cd6 # DBv1.0_nishi_shinjuku_7_2_blk_car
+  #- 2e1604d8-eaab-41f7-83ef-75734d0e7cd6 # DBv1.0_nishi_shinjuku_7_2_blk_car
   #- 672d12c6-d887-49b8-84c2-b978975ba750 # DBv1.0_nishi_shinjuku_7_2_car
-  - d661f9af-d363-4416-9fcd-a419324195d0 # DBv1.0_nishi_shinjuku_7_2_m_bike
+  #- d661f9af-d363-4416-9fcd-a419324195d0 # DBv1.0_nishi_shinjuku_7_2_m_bike
   #- a71a2aa0-0a94-4de4-b8ac-94d199f083d8 # DBv1.0_odaiba_01
   #- 9a6ff563-3119-4c4a-a9a0-cf23bf9f5914 # DBv1.0_odaiba_02
   #- de86a693-d705-4609-bdb3-5e82002651ca # DBv1.0_odaiba_03
@@ -147,20 +154,20 @@ train:
   #- 819512a4-6d57-4623-b703-eb2963bef7da # DBv1.0_shiojiri_53
 
 val:
-  - 961bbdff-0b35-47a1-a61d-4b4187abae91 # DBv1.0_odaiba_09
-  - b06d085b-8f56-4c18-b732-65280b540241 # DBv1.0_odaiba_11
-  - 2f7a69ee-2799-425c-bd54-c3cc757e4e34 # DBv1.0_shiojiri_01
-  - 1abfa3ec-c01b-416f-8d29-e6645bc83d84 # DBv1.0_shiojiri_03
-  - daed9d8d-f44e-4ad6-9142-7d903647bfec # DBv1.0_shiojiri_05
+  #- 961bbdff-0b35-47a1-a61d-4b4187abae91 # DBv1.0_odaiba_09
+  #- b06d085b-8f56-4c18-b732-65280b540241 # DBv1.0_odaiba_11
+  #- 2f7a69ee-2799-425c-bd54-c3cc757e4e34 # DBv1.0_shiojiri_01
+  #- 1abfa3ec-c01b-416f-8d29-e6645bc83d84 # DBv1.0_shiojiri_03
+  #- daed9d8d-f44e-4ad6-9142-7d903647bfec # DBv1.0_shiojiri_05
   - 14974b54-921c-4315-a3f1-e4aad4cf2924 # DBv1.0_nishi_shinjuku_6_bike
-  - 3a13032b-6045-4db4-8632-9c52c3dd2fd9 # DBv1.0_nishi_shinjuku_6_bus
+  #- 3a13032b-6045-4db4-8632-9c52c3dd2fd9 # DBv1.0_nishi_shinjuku_6_bus
 
 test:
-  - 413e3c6a-3df7-40d7-8873-f3e98ac233c0 # DBv1.0_odaiba_10
-  - b2f42f94-f4c9-4173-8df7-d74787f13d1e # DBv1.0_odaiba_12
-  - c4ffa4bf-f8ca-4659-b10b-36c6bd97cc0a # DBv1.0_odaiba_13
-  - 92763c8e-1aa0-4913-9d25-295a12745c4f # DBv1.0_shiojiri_02
-  - 66ec94ff-fee1-455b-9f19-f335af84a1e0 # DBv1.0_shiojiri_04
-  - b1c540c1-1da9-4d04-adbc-c03a0798eedf # DBv1.0_shiojiri_06
-  - 607e3995-e9d9-4497-9e45-1f2dd8adf69c # DBv1.0_nishi_shinjuku_6_car
+  #- 413e3c6a-3df7-40d7-8873-f3e98ac233c0 # DBv1.0_odaiba_10
+  #- b2f42f94-f4c9-4173-8df7-d74787f13d1e # DBv1.0_odaiba_12
+  #- c4ffa4bf-f8ca-4659-b10b-36c6bd97cc0a # DBv1.0_odaiba_13
+  #- 92763c8e-1aa0-4913-9d25-295a12745c4f # DBv1.0_shiojiri_02
+  #- 66ec94ff-fee1-455b-9f19-f335af84a1e0 # DBv1.0_shiojiri_04
+  #- b1c540c1-1da9-4d04-adbc-c03a0798eedf # DBv1.0_shiojiri_06
+  #- 607e3995-e9d9-4497-9e45-1f2dd8adf69c # DBv1.0_nishi_shinjuku_6_car
   - 4b352a84-a10b-43e2-8d39-2cfd5d880b7c # DBv1.0_nishi_shinjuku_6_truck

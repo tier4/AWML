@@ -1,5 +1,12 @@
 version: 1
 
+docs: |
+  Product: XX1
+  Place: Odaiba
+  Amount: About 2000 frames
+  Sensor: Velodyne LiDAR + BFS Camera
+  Annotation: All the data are collected at 10Hz and annotated at 2Hz
+
 train:
   - e6d0237c-274c-4872-acc9-dc7ea2b77943 # DBv1.1_odaiba_9-1_0-100
   #- 80b37b8c-ae9d-4641-a921-0b0c2012eee8 # DBv1.1_odaiba_8-2_100-200
@@ -85,8 +92,8 @@ train:
 # Note(yukke42): val and test split are selected by the datetime not to be a data leak.
 val:
   - 3013c354-2492-447b-88ce-70ec0438f494 # DBv1.1_odaiba_4-1_0-100
-  - c8cf2fe3-9097-4f8d-8984-e99c4ddd0ced # DBv1.1_odaiba_5-1_0-100
-  - a1f10b82-6f10-47ab-a253-a12a2f131929 # DBv1.1_odaiba_5-1_100-200
+  #- c8cf2fe3-9097-4f8d-8984-e99c4ddd0ced # DBv1.1_odaiba_5-1_0-100
+  #- a1f10b82-6f10-47ab-a253-a12a2f131929 # DBv1.1_odaiba_5-1_100-200
   #- 3ebf5eef-940f-4877-a093-a1ec933505e8 # DBv1.1_odaiba_5-3_0-100
   #- 5fa608b9-5321-4cac-8f21-d2b1e215c9aa # DBv1.1_odaiba_5-3_100-200
   #- 198435d1-5648-421c-a284-35b26a52136e # DBv1.1_odaiba_5-4_0-100
@@ -94,7 +101,7 @@ val:
 
 test:
   - 13351af0-41cb-4a96-9553-aeb919efb46e # DBv1.1_odaiba_6-11_0-100
-  - 9e973a55-3f70-48e0-8b37-a68b66a99686 # DBv1.1_odaiba_6-11_100-200
+  #- 9e973a55-3f70-48e0-8b37-a68b66a99686 # DBv1.1_odaiba_6-11_100-200
   #- 54a6cc24-ec9d-47f5-b2bf-813d0da9bf47 # DBv1.1_odaiba_6-15_0-100
   #- 5f1c6a02-9193-487a-8ba8-74f4d3f4d609 # DBv1.1_odaiba_6-15_100-200
   #- a7ce24a6-a506-47be-8254-884365ca52f3 # DBv1.1_odaiba_3-1_0-100

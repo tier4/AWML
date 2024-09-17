@@ -127,8 +127,11 @@ For PR review list with code owner for the project
 
 Note that if you want to new algorithm, basically please make PR for [original MMLab libraries](https://github.com/open-mmlab).
 After merged by it for MMLab libraries like [mmdetection3d](https://github.com/open-mmlab/mmdetection3d) and [mmdetection](https://github.com/open-mmlab/mmdetection), we update the version of dependency of MMLab libraries and make our configs in `/projects` for TIER IV products.
-
 If you want to add a config to T4dataset or scripts like onnx deploy for models of MMLab's model, you should add codes to `/projects/{model_name}/`.
+
+When you make the PR, we recommend to write PR summary as #134.
+We would you like to write summary of the new model considering the case when some engineers want to catch up.
+If someone want to catch up this model, it is best situation that they need to see only github and do not need to search the information in Jira ticket jungle, Confluence ocean, and Slack universe.
 
 For PR review list with code owner
 - [ ] Write why you add a new model

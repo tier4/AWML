@@ -3,7 +3,7 @@ _base_ = [
 ]
 
 train_gpu_size = 1
-train_batch_size = 1
+train_batch_size = 2
 val_batch_size = 1
 max_epochs = 1
 
@@ -33,7 +33,7 @@ train_dataloader = dict(
     ),
 )
 val_dataloader = dict(
-    batch_size=1,
+    batch_size=val_batch_size,
     num_workers=1,
     persistent_workers=True,
     sampler=dict(type="DefaultSampler", shuffle=False),
