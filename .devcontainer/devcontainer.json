@@ -16,6 +16,7 @@
     "-it",
     "--rm",
     "--name=autoware-ml",
+    "--privileged",
     "--env",
     "DISPLAY=${env:DISPLAY}",
     "--env",
