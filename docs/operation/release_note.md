@@ -44,5 +44,8 @@ In detail, see https://github.com/tier4/autoware-ml/pull/143.
   - <https://github.com/tier4/autoware-ml/pull/126>
 - Add BEVFusion-CL model t4xx1_120m/v1
   - <https://github.com/tier4/autoware-ml/pull/141>
+- Add SparseConvolutions operation
+  - <https://github.com/tier4/autoware-ml/pull/152>
+  - When many projects use this operation, we move it to `autoware_ml`.
 
 ### Chore

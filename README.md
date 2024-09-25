@@ -97,3 +97,7 @@ If you want to use `autoware-ml`, you should read as below pages.
 
 - Model for ML tools
   - [BLIP-2](projects/BLIP-2/)
+
+### Additional operation
+
+- [SparseConvolutions](projects/SparseConvolution/)
