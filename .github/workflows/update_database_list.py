@@ -2,28 +2,14 @@
 
 import json
 import argparse
-import yaml
 from collections import OrderedDict
 from typing import Any, Dict, List
 from urllib.parse import urljoin
 
 from webautoauth import requests
 from webautoauth.token import load_config, TokenSource, HttpService
-
-
-# YAML representer and constructor for OrderedDict
-def represent_odict(dumper, instance):
-    return dumper.represent_mapping('tag:yaml.org,2002:map', instance.items())
-
-
-yaml.add_representer(OrderedDict, represent_odict)
-
-
-def construct_odict(loader, node):
-    return OrderedDict(loader.construct_pairs(node))
-
-
-yaml.add_constructor('tag:yaml.org,2002:map', construct_odict)
+from ruamel.yaml import YAML
+from ruamel.yaml.scalarstring import LiteralScalarString
 
 
 class AnnotationDatasetSearchClient:
@@ -113,8 +99,12 @@ def update_database_config(config_file_path, keyword, project_ids):
         f"{len(found_datasets_ids)} found for keyword: {keyword} within projects: {project_ids}"
     )
 
+    yaml = YAML()
+    yaml.preserve_quotes = True
+    yaml.indent(mapping=2, sequence=4, offset=2)
+
     with open(config_file_path, 'r') as f:
-        config_content = yaml.safe_load(f)
+        config_content = yaml.load(f)
 
     updated = False
     for dataset_id in found_datasets_ids:
@@ -127,15 +117,12 @@ def update_database_config(config_file_path, keyword, project_ids):
             updated = True
 
     if updated:
-        ordered_config_content = OrderedDict([
-            ('version', config_content.get('version', 1)),
-            ('train', config_content.get('train', [])),
-            ('val', config_content.get('val', [])),
-            ('test', config_content.get('test', [])),
-        ])
+        # Ensure 'docs' field is treated as a literal block
+        if 'docs' in config_content:
+            config_content['docs'] = LiteralScalarString(config_content['docs'])
 
         with open(config_file_path, 'w') as f:
-            yaml.dump(ordered_config_content, f, default_flow_style=False)
+            yaml.dump(config_content, f)
         print('Config file updated with new datasets.')
     else:
         print('No new datasets found.')
