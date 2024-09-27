@@ -28,11 +28,15 @@ In detail, see https://github.com/tier4/autoware-ml/pull/143.
 ### Core library
 
 - Update dataset
-  - <https://github.com/tier4/autoware-ml/pull/129> Update DB1.3
+  - <https://github.com/tier4/autoware-ml/pull/129>
+  - <https://github.com/tier4/autoware-ml/pull/147>
 - Move dataset documents into yaml files
   - <https://github.com/tier4/autoware-ml/pull/144>
 
 ### Tools
+
+- fix CI of dataset update
+  - <https://github.com/tier4/autoware-ml/pull/153>
 
 ### Pipelines
 
@@ -49,3 +53,6 @@ In detail, see https://github.com/tier4/autoware-ml/pull/143.
   - When many projects use this operation, we move it to `autoware_ml`.
 
 ### Chore
+
+- Update docs
+  - <https://github.com/tier4/autoware-ml/pull/155>
