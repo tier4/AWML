@@ -37,6 +37,8 @@ In detail, see https://github.com/tier4/autoware-ml/pull/143.
 
 - fix CI of dataset update
   - <https://github.com/tier4/autoware-ml/pull/153>
+- Add scene_selector
+  - <https://github.com/tier4/autoware-ml/pull/156>
 
 ### Pipelines
 

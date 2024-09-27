@@ -3,21 +3,25 @@ from argparse import ArgumentParser
 
 import cv2
 from mmengine.config import Config
+from mmengine.registry import Registry
 
-from tools.scene_selector.select_scene import SelectScene
+SELECTOR = Registry('selector')
 
 
 def parse_args():
     parser = ArgumentParser()
+    parser.add_argument('config', type=str, help='Config file')
     parser.add_argument(
-        'scenario_config', type=str, help='Config for scenario file')
-    parser.add_argument(
-        'inputs', type=str, help='Input image file or folder path.')
+        'inputs',
+        type=str,
+        help='Input image file or folder path.',
+    )
     parser.add_argument(
         '--out-dir',
         type=str,
         default='work_dirs',
-        help='Output directory of images or prediction results.')
+        help='Output directory of images or predictiggon results.',
+    )
     args = parser.parse_args()
     return args
 
@@ -25,15 +29,15 @@ def parse_args():
 def main():
     args = parse_args()
 
-    cfg = Config.fromfile(args.scenario_config)
+    cfg = Config.fromfile(args.config)
     files = glob.glob(args.inputs)
 
-    scene_selector = SelectScene(cfg.tasks)
-    scene_selector.init()
+    scene_selector = SELECTOR.build(cfg)
 
     for file in files:
         image = cv2.imread(file)
-        scene_selector.inference(image)
+        result = scene_selector.is_target_scene(image)
+        print("Result: ", result)
 
 
 if __name__ == '__main__':
