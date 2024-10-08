@@ -2,7 +2,7 @@ diff --git a/mmdeploy/codebase/mmdet3d/models/mvx_two_stage.py b/mmdeploy/codeba
 index 17ad7113..1e94e21e 100644
 --- a/mmdeploy/codebase/mmdet3d/models/mvx_two_stage.py
 +++ b/mmdeploy/codebase/mmdet3d/models/mvx_two_stage.py
-@@ -81,12 +81,12 @@ def mvxtwostagedetector__forward(self, voxels: torch.Tensor,
+@@ -81,17 +81,18 @@
      }
  
      _, pts_feats = self.extract_feat(batch_inputs_dict=batch_inputs_dict)
@@ -17,3 +17,10 @@ index 17ad7113..1e94e21e 100644
              bbox_preds.append(task_res[0]['height'])
              bbox_preds.append(task_res[0]['dim'])
              if 'vel' in task_res[0].keys():
+                 bbox_preds.append(task_res[0]['vel'])
+-            scores.append(task_res[0]['heatmap'])
++            cls_score = task_res[0]['query_heatmap_score'] * task_res[0]['heatmap'].sigmoid()
++            scores.append(cls_score)
+             dir_scores.append(task_res[0]['rot'])
+         bbox_preds = torch.cat(bbox_preds, dim=1)
+         scores = torch.cat(scores, dim=1)

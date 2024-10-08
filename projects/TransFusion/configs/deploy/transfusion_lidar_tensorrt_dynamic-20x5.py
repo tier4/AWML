@@ -27,7 +27,7 @@ onnx_config = dict(
     opset_version=11,
     save_file='end2end.onnx',
     input_names=['voxels', 'num_points', 'coors'],
-    output_names=['cls_score0', 'dir_cls_pred0', 'bbox_pred0'],
+    output_names=['cls_score0', 'bbox_pred0', 'dir_cls_pred0'],
     dynamic_axes={
         'voxels': {
             0: 'voxels_num',
