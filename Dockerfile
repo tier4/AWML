@@ -34,7 +34,8 @@ RUN python3 -m pip --no-cache-dir install \
     nptyping \
     numpy==1.23.5 \
     nvidia-pyindex \
-    openmim
+    openmim \
+    nltk==3.8.1
 
 # Install mim components
 RUN mim install \

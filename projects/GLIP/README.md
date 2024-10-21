@@ -16,18 +16,12 @@
 ### 1. Setup
 
 - 1.1. [Run setup environment at first](/tools/setting_environment/).
-- 1.2. Build docker for GLIP
-
-```
-DOCKER_BUILDKIT=1 docker build -t autoware-ml-glip projects/GLIP
-```
-
-- 1.3. Download pretrain weight from [GLIP of mmdetection](https://github.com/open-mmlab/mmdetection/tree/main/configs/glip/README.md).
+- 1.2. Download pretrain weight from [GLIP of mmdetection](https://github.com/open-mmlab/mmdetection/tree/main/configs/glip/README.md).
   - In demonstration, you should put `work_dirs/pretrain/glip/`.
-- 1.4. Run docker
+- 1.3. Run docker
 
 ```
-docker run -it --rm --gpus all --shm-size=64g --name awml -v $PWD/:/workspace -v $PWD/data:/workspace/data autoware-ml-glip
+docker run -it --rm --gpus all --shm-size=64g --name awml -v $PWD/:/workspace -v $PWD/data:/workspace/data autoware-ml
 ```
 
 ### 2. Train

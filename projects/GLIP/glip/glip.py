@@ -2,10 +2,32 @@
 import re
 from typing import Optional, Tuple, Union
 
-from mmdet.models.detectors.glip import (GLIP, clean_label_name,
-                                         remove_punctuation)
+from mmdet.models.detectors.glip import GLIP
 from mmdet.registry import MODELS
 from mmdet.utils import ConfigType
+import nltk
+            
+def remove_punctuation(text: str) -> str:
+    """Remove punctuation from a text.
+    Args:
+        text (str): The input text.
+
+    Returns:
+        str: The text with punctuation removed.
+    """
+    punctuation = [
+        '|', ':', ';', '@', '(', ')', '[', ']', '{', '}', '^', '\'', '\"', '’',
+        '`', '?', '$', '%', '#', '!', '&', '*', '+', ',', '.'
+    ]
+    for p in punctuation:
+        text = text.replace(p, '')
+    return text
+
+def clean_label_name(name: str) -> str:
+    name = re.sub(r'\(.*\)', '', name)
+    name = re.sub(r'_', ' ', name)
+    name = re.sub(r'  ', ' ', name)
+    return name
 
 
 def find_noun_phrases(caption: str) -> list:
@@ -20,17 +42,6 @@ def find_noun_phrases(caption: str) -> list:
         >>> caption = 'There is two cat and a remote in the picture'
         >>> find_noun_phrases(caption) # ['cat', 'a remote', 'the picture']
     """
-    try:
-        import nltk
-
-        ##### fixed #####
-        nltk.download('punkt', download_dir='/usr/share/nltk_data')
-        nltk.download(
-            'averaged_perceptron_tagger', download_dir='/usr/share/nltk_data')
-        ##### fixed #####
-    except ImportError:
-        raise RuntimeError('nltk is not installed, please install it by: '
-                           'pip install nltk.')
 
     caption = caption.lower()
     tokens = nltk.word_tokenize(caption)
@@ -81,6 +92,11 @@ def run_ner(caption: str) -> Tuple[list, list]:
 
 @MODELS.register_module()
 class GLIP_FIXED(GLIP):
+    def __init__(self, *args, **kwargs):
+        nltk.download('punkt', download_dir='/usr/share/nltk_data')
+        nltk.download(
+            'averaged_perceptron_tagger', download_dir='/usr/share/nltk_data')
+        super().__init__(*args, **kwargs)
 
     def get_tokens_and_prompts(
         self,

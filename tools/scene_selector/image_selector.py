@@ -3,9 +3,7 @@ from argparse import ArgumentParser
 
 import cv2
 from mmengine.config import Config
-from mmengine.registry import Registry
-
-SELECTOR = Registry('selector')
+from autoware_ml.registry import DATA_SELECTOR
 
 
 def parse_args():
@@ -14,12 +12,12 @@ def parse_args():
     parser.add_argument(
         'inputs',
         type=str,
-        help='Input image file or folder path.',
+        help='Input image file path or directory path',
     )
     parser.add_argument(
         '--out-dir',
         type=str,
-        default='work_dirs',
+        default='./work_dirs',
         help='Output directory of images or predictiggon results.',
     )
     args = parser.parse_args()
@@ -32,12 +30,10 @@ def main():
     cfg = Config.fromfile(args.config)
     files = glob.glob(args.inputs)
 
-    scene_selector = SELECTOR.build(cfg)
+    scene_selector = DATA_SELECTOR.build(cfg.scene_selector)
 
-    for file in files:
-        image = cv2.imread(file)
-        result = scene_selector.is_target_scene(image)
-        print("Result: ", result)
+    result = scene_selector.is_target_scene(files, results_path=args.out_dir)
+    print("Result: ", result)
 
 
 if __name__ == '__main__':

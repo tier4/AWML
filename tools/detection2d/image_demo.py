@@ -162,7 +162,9 @@ def parse_args():
     if call_args['tokens_positive'] is not None:
         call_args['tokens_positive'] = ast.literal_eval(
             call_args['tokens_positive'])
-
+    else:
+        del call_args['tokens_positive']   # produces error for GLIP, if not deleted.
+        
     init_kws = ['model', 'weights', 'device', 'palette']
     init_args = {}
     for init_kw in init_kws:

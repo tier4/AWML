@@ -142,3 +142,7 @@ INFERENCERS = Registry(
     'inferencer',
     parent=MMENGINE_INFERENCERS,
     locations=['mmdet3d.api.inferencers', 'mmdet.api.inferencers'])
+
+DATA_SELECTOR = Registry(
+    'data selector',
+    locations=['tools.scene_selector.scene_selector'])
