@@ -19,10 +19,23 @@ In detail, see https://github.com/tier4/autoware-ml/pull/141.
 We add base model and X2 model.
 In detail, see https://github.com/tier4/autoware-ml/pull/125 and https://github.com/tier4/autoware-ml/pull/126.
 
+| TransFusion-L 90m | train        | eval | All  | car  | truck | bus  | bicycle | pedestrian |
+| ----------------- | ------------ | ---- | ---- | ---- | ----- | ---- | ------- | ---------- |
+| t4base_90m/v1     | XX1 + X2     | XX1  | 67.4 | 80.7 | 56.0  | 77.6 | 57.4    | 65.5       |
+| t4xx1_90m/v2      | XX1          | XX1  | 68.1 | 80.5 | 58.0  | 80.8 | 58.0    | 63.2       |
+| t4xx1_90m/v3      | XX1 + XX1new | XX1  | 68.5 | 81.7 | 62.4  | 83.5 | 50.9    | 64.1       |
+| t4base_90m/v1     | XX1 + X2     | X2   | 66.0 | 82.3 | 47.5  | 83.6 | 55.1    | 61.6       |
+| t4x2_90m/v1       | X2           | X2   | 58.5 | 80.5 | 28.1  | 82.4 | 48.0    | 53.7       |
+
 - YOLOX_opt
 
 We add YOLOX_opt and deploy pipeline for fine detector model for traffic light recognition in Autoware.
 In detail, see https://github.com/tier4/autoware-ml/pull/143.
+
+- Add scene_selector
+
+As first prototype, we integrate scene_selector to use active learning pipeline.
+In detail, see https://github.com/tier4/autoware-ml/pull/165.
 
 ## Next release
 ### Core library
@@ -30,6 +43,10 @@ In detail, see https://github.com/tier4/autoware-ml/pull/143.
 - Update dataset
   - <https://github.com/tier4/autoware-ml/pull/129>
   - <https://github.com/tier4/autoware-ml/pull/147>
+  - <https://github.com/tier4/autoware-ml/pull/157>
+  - <https://github.com/tier4/autoware-ml/pull/164>
+- Add docker environment with ROS2
+  - <https://github.com/tier4/autoware-ml/pull/160>
 - Move dataset documents into yaml files
   - <https://github.com/tier4/autoware-ml/pull/144>
 
@@ -39,20 +56,29 @@ In detail, see https://github.com/tier4/autoware-ml/pull/143.
   - <https://github.com/tier4/autoware-ml/pull/153>
 - Add scene_selector
   - <https://github.com/tier4/autoware-ml/pull/156>
+  - <https://github.com/tier4/autoware-ml/pull/161>
+  - <https://github.com/tier4/autoware-ml/pull/165>
 
 ### Pipelines
 
 ### Projects
 
-- Add TransFusion-L model t4base_90m/v1
+- TransFusion
+  - <https://github.com/tier4/autoware-ml/pull/163>
+    - Fix sigmoid calculation
   - <https://github.com/tier4/autoware-ml/pull/125>
-- Add TransFusion-L model t4x2_90m/v1
+    - Add TransFusion-L model t4base_90m/v1
   - <https://github.com/tier4/autoware-ml/pull/126>
-- Add BEVFusion-CL model t4xx1_120m/v1
+    - Add TransFusion-L model t4x2_90m/v1
+- BEVFusion
   - <https://github.com/tier4/autoware-ml/pull/141>
-- Add SparseConvolutions operation
-  - <https://github.com/tier4/autoware-ml/pull/152>
-  - When many projects use this operation, we move it to `autoware_ml`.
+    - Add BEVFusion-CL model t4xx1_120m/v1
+- SparseConvolution
+  - <https://github.com/tier4/autoware-ml/pull/163>
+    - Add SparseConvolutions operation
+    - When many projects use this operation, we move it to `autoware_ml`.
+- YOLOX_opt
+  - <https://github.com/tier4/autoware-ml/pull/143>
 
 ### Chore
 

@@ -10,15 +10,18 @@
 /projects/BEVFusion/ satoshi.tanaka@tier4.jp
 /projects/BLIP-2/ satoshi.tanaka@tier4.jp
 /projects/EfficientNet/ satoshi.tanaka@tier4.jp
-/projects/GLIP/ satoshi.tanaka@tier4.jp
+/projects/GLIP/ samrat.thapa@tier4.jp satoshi.tanaka@tier4.jp
 /projects/SegmentAnything/ satoshi.tanaka@tier4.jp
+/projects/SparseConvolution/ kenzo.lobos@tier4.jp
 /projects/SwinTransformer/ satoshi.tanaka@tier4.jp
-/projects/template/ satoshi.tanaka@tier4.jp
-/projects/TransFusion/ satoshi.tanaka@tier4.jp
+/projects/TransFusion/ amadeusz.szymko.2@tier4.jp satoshi.tanaka@tier4.jp
 /projects/YOLOX/ satoshi.tanaka@tier4.jp
-/projects/YOLOX-opt/ satoshi.tanaka@tier4.jp
+/projects/YOLOX_opt/ samrat.thapa@tier4.jp satoshi.tanaka@tier4.jp
+/projects/template/ satoshi.tanaka@tier4.jp
 /tools/detection2d/ satoshi.tanaka@tier4.jp
 /tools/detection3d/ satoshi.tanaka@tier4.jp
 /tools/rerun_visualization satoshi.tanaka@tier4.jp
-/tools/scene_selector/ satoshi.tanaka@tier4.jp koji.minoda@tier4.jp
+/tools/scene_selector/ samrat.thapa@tier4.jp satoshi.tanaka@tier4.jp
+/tools/segmentation2d/ satoshi.tanaka@tier4.jp
 /tools/setting_environment/ satoshi.tanaka@tier4.jp
+/tools/t4dataset_pseudo_label/ satoshi.tanaka@tier4.jp
