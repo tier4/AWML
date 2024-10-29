@@ -27,12 +27,13 @@ This is machine learning framework for 2D detection.
 - [mmdeploy v1.3.1](https://github.com/open-mmlab/mmdeploy/tree/v1.3.1)
 
 These are core library for MMLab libraries.
+If you want to develop `autoware-ml`, we recommend to read the documents of these.
 
 ## `autoware-ml` architecture
 ### autoware_ml/
 
 The directory of `autoware_ml` is library for autoware-ml.
-This directory can be used as library from other software.
+This directory can be used as library from other software and this directory doesn't depend on other directories.
 
 - `autoware_ml/detection3d`
 
@@ -91,6 +92,7 @@ The target of documents is a designer of whole ML pipeline system and developers
 ### pipelines/
 
 The directory of `pipelines/` manages the pipelines that consist of `tools`.
+This directory can depend on `/autoware_ml`, `projects`, `/tools`, and other `/pipelines`.
 
 Each pipeline has `README.md`, a process document to use when you ask someone else to do the work.
 The target of `README.md` is a user of `autoware-ml`.
@@ -98,6 +100,7 @@ The target of `README.md` is a user of `autoware-ml`.
 ### projects/
 
 The directory of `projects/` manages the model for each tasks.
+This directory can depend on `/autoware_ml` and other `projects`.
 
 ```
 - projects/
@@ -113,6 +116,8 @@ The target of `README.md` is a user of `autoware-ml`.
 
 The directory of `tools/` manages the tools for each tasks.
 `tools/` scripts are abstracted. For example, `tools/detection3d` can be used for any 3D detection models such as TransFusion and BEVFusion.
+This directory can depend on `/autoware_ml` and other `/tools`.
+
 
 ```
 - tools/
@@ -144,7 +149,7 @@ We define "support priority" for each tools and projects. Maintainers handle han
   - If it is not used for long time, we delete it.
   - We put a low priority on support to it.
 
-## Versioning strategy
+## Versioning strategy for `autoware-ml`
 
 We follow basically [semantic versioning](https://semver.org/).
 As our strategy, we follow as below.

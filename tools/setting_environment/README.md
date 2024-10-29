@@ -14,33 +14,10 @@ If you want to use open dataset like nuScenes dataset, you set dataset as [mmdet
 
 ### 1.2. T4dataset
 
-If you want to [T4dataset](https://github.com/tier4/tier4_perception_dataset) and you have data access right of [WebAuto(> v0.33.1)](https://docs.web.auto/en/user-manuals/), you can download by `download_t4dataset.py`.
-This script do not need docker environment and is tested by Ubuntu22.04 LTS environment.
-
-- Download for XX1
-
-```sh
-python tools/setting_environment/download_t4dataset.py autoware_ml/configs/detection3d/dataset/t4dataset/database_v1_1.yaml --output ./data/t4dataset/ --project-id prd_jt
-```
-
-- Download for X2
-
-```sh
-python tools/setting_environment/download_t4dataset.py autoware_ml/configs/detection3d/dataset/t4dataset/database_v3_0.yaml --output ./data/t4dataset/ --project-id x2_dev
-```
-
-- After download as above command, the directory architecture consists as below.
-
-```
-- data/t4dataset
-  - /database_v1_1/
-    - {t4dataset_id}
-    - {t4dataset_id}
-    - {t4dataset_id}
-    - {t4dataset_id}
-```
+If you want to [T4dataset](https://github.com/tier4/tier4_perception_dataset) and you have data access right of [WebAuto](https://docs.web.auto/en/user-manuals/), you can T4dataset by [the script](/pipelines/webauto/download_t4dataset/).
 
 ## 2. Setup environment
+### 2.1. Set repository
 
 - Set environment
 
@@ -60,10 +37,18 @@ git clone https://github.com/tier4/autoware-ml
 └── work_dirs
 ```
 
+### 2.2 Build docker
+
 - Build docker
   - Note that this process need for long time.
   - You may need `sudo` to use `docker` command.
 
 ```sh
 DOCKER_BUILDKIT=1 docker build -t autoware-ml .
+```
+
+- [Option] If you want to use `autoware-ml` with `ROS2`, you can use other docker environment
+
+```
+DOCKER_BUILDKIT=1 docker build -t autoware-ml-ros2 ./tools/setting_environment/ros2/
 ```

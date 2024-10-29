@@ -45,9 +45,10 @@ If you want to use `autoware-ml`, you should read as below pages.
 ## Supported pipelines
 
 - [Deploy 3D detection model](/pipelines/deploy_detection3d/)
-- [Project adaptation for 3D detection model](/pipelines/project_adaptation_detection3d/)
 - [Integration test](/pipelines/test_integration/)
 - [Update T4dataset](/pipelines/update_t4dataset/)
+- [Use autoware-ml with WebAuto](/pipelines/webauto/)
+- (TBD) [Project adaptation](/pipelines/project_adaptation/)
 
 ## Supported model
 ### 3D detection

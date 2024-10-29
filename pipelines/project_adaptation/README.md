@@ -1,20 +1,18 @@
-# Project adaptation for ML model in Autoware
+# Project adaptation
 
-- [Support priority](https://github.com/tier4/autoware-ml/blob/main/docs/design/autoware_ml_design.md#support-priority): Tier C
+- [Support priority](https://github.com/tier4/autoware-ml/blob/main/docs/design/autoware_ml_design.md#support-priority): Tier A
 
-## Project adaptation for 3D detection
-### 1. Check product model
+## Get started
+### 1. Prepare non-annotated T4dataset
 
-TBD
+- Prepare non-annotated T4dataset
 
-### 2. Make non-annotated T4dataset from from rosbag
+### 2. Make pseudo label
 
-TBD
+- Use [Pseudo label for T4dataset](/tools/t4dataset_pseudo_label/)
 
-### 3. Make pseudo T4dataset from non-annotated T4dataset
+### 3. Fine tuning
 
-TBD
-
-### 4. Fine tune the model
-
-TBD
+```sh
+# command
+```

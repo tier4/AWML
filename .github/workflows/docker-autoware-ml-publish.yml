@@ -51,7 +51,7 @@ jobs:
     - name: Build and push Docker image with ROS2 support
       uses: docker/build-push-action@v2
       with:
-        file: ./Dockerfile.ros2
+        file: ./tools/setting_environment/ros2/Dockerfile
         push: true
         tags: |
           ghcr.io/tier4/autoware-ml-ros2:${{ env.TAG }}
