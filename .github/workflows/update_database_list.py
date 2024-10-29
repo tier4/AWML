@@ -51,6 +51,7 @@ class AnnotationDatasetSearchClient:
         """
         payload = {
             "approved": approved,
+            "deprecated": False,
             "name_keyword": keyword,
             "project_ids": project_ids,
         }
@@ -90,15 +91,51 @@ class AnnotationDatasetSearchClient:
 
         return all_items
 
+def search_dataset_ids(keyword: str, project_ids: List[str]) -> List[str]:
+    """
+    Search for dataset IDs using the provided keyword and project IDs.
+    
+    This function creates an AnnotationDatasetSearchClient instance and uses it to search
+    for datasets that match the given keyword within the specified projects. It prints
+    the number of datasets found and returns their IDs.
 
-def update_database_config(config_file_path, keyword, project_ids):
+    Args:
+        keyword (str): The search keyword to filter datasets. This will be matched against
+            dataset names in the search.
+        project_ids (List[str]): List of project identifiers to search within. Only datasets
+            belonging to these projects will be returned.
+
+    Returns:
+        List[str]: A list of dataset IDs that match the search criteria. Returns an empty
+            list if no matches are found.
+
+    Example:
+        >>> ids = search_dataset_ids("DBv1.3", ["prd_jt", "x2_dev"])
+        2 found for keyword: DBv1.3 within projects: ['prd_jt', 'x2_dev']
+        >>> print(ids)
+        ['xxx', 'yyy']
+    """
     client = AnnotationDatasetSearchClient()
-    found_datasets_ids = client.search(
+    found_dataset_ids = client.search(
         keyword=keyword, project_ids=project_ids)
     print(
-        f"{len(found_datasets_ids)} found for keyword: {keyword} within projects: {project_ids}"
+        f"{len(found_dataset_ids)} found for keyword: {keyword} within projects: {project_ids}"
     )
+    return found_dataset_ids
 
+def update_database_config(config_file_path: str, found_dataset_ids: List[str]) -> None:
+    """
+    Update the database configuration file with new datasets and remove deprecated ones.
+    
+    This function reads a YAML configuration file, updates it with newly found datasets,
+    and removes any datasets that are no longer found in the search results.
+
+    Args:
+        config_file_path (str): Path to the YAML configuration file that needs to be updated.
+            The file should contain 'train', 'val', and 'test' lists of dataset IDs.
+        found_dataset_ids (List[str]): List of dataset IDs that were found in the current
+            search. Any IDs in the config file that are not in this list will be removed.
+    """
     yaml = YAML()
     yaml.preserve_quotes = True
     yaml.indent(mapping=2, sequence=4, offset=2)
@@ -106,17 +143,29 @@ def update_database_config(config_file_path, keyword, project_ids):
     with open(config_file_path, 'r') as f:
         config_content = yaml.load(f)
 
-    updated = False
-    for dataset_id in found_datasets_ids:
-        if dataset_id not in config_content['train'] + config_content[
+    is_config_content_updated = False
+    
+    # If the found ID does not exist in the config file, add it.
+    for found_dataset_id in found_dataset_ids:
+        if found_dataset_id not in config_content['train'] + config_content[
                 'val'] + config_content['test']:
             print(
-                f"{dataset_id} seems to be a new ID, adding to the config file"
+                f"{found_dataset_id} seems to be a new ID, adding to the config file"
             )
-            config_content['train'].append(dataset_id)
-            updated = True
+            config_content['train'].append(found_dataset_id)
+            is_config_content_updated = True
 
-    if updated:
+    # If the ID from config file is not found, remove it. (probably deprecated)
+    for split_name in ["train", "val", "test"]:
+        dataset_ids = config_content[split_name].copy()
+        for dataset_id_from_config_file in dataset_ids:
+            if dataset_id_from_config_file not in found_dataset_ids:
+                print(f"{dataset_id_from_config_file} not found in search results, removing from {split_name} split")
+                config_content[split_name].remove(dataset_id_from_config_file)
+                is_config_content_updated = True
+
+    # Save the results if the content is updated
+    if is_config_content_updated:
         # Ensure 'docs' field is treated as a literal block
         if 'docs' in config_content:
             config_content['docs'] = LiteralScalarString(config_content['docs'])
@@ -144,8 +193,9 @@ def main():
     args = parser.parse_args()
     assert len(
         args.project_ids) > 0, "You MUST provide at least one project id."
-
-    update_database_config(args.config_path, args.keyword, args.project_ids)
+    
+    found_dataset_ids = search_dataset_ids(args.keyword, args.project_ids)
+    update_database_config(args.config_path, found_dataset_ids)
 
 
 if __name__ == '__main__':
