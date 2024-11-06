@@ -1,8 +1,46 @@
 # `autoware-ml` design
 
 ## Pipeline design
+### Overview diagram
+
+`autoware-ml` is designed for deployment from training and evaluation with Autoware and active learning framework.
+
+![](/docs/fig/autoware_ml_pipeline.drawio.svg)
+
+### The pipeline design of `autoware-ml`
 
 ![](/docs/fig/pipeline.drawio.svg)
+
+- Orange line: the deployment flow for ML model.
+
+The deployment pipeline consists as below.
+
+> 1. create_data_info.py
+
+Make info file with annotated data.
+
+> 2. train.py, 3. test.py, 4. visualize.py
+
+From config file, the ML model is trained and evaluated.
+
+> 5. deploy.py
+
+If the model is used for Autoware, the model is deployed to onnx file.
+
+- Green line: the pipeline for active learning
+
+> 6. pseudo_label.py
+
+Make info file from non-annotated T4dataset for 2D and 3D.
+
+> 7. create_pseudo_t4dataset.py
+
+Make pseudo-label T4dataset from the info file which is based on pseudo label.
+
+> 8. choose_annotation.py
+
+Choose annotation from the info file of labels.
+For example, it is used for `scene_selector` and `pseudo_label` to tune the parameter of the threshold of confidence with offline model.
 
 ## Supported environment
 

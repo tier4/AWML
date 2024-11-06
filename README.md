@@ -39,8 +39,9 @@ If you want to use `autoware-ml`, you should read as below pages.
 - [Training and evaluation for 2D detection](/tools/detection2d/)
 - (TBD) [Training and evaluation for 2D semantic segmentation](/tools/segmentation2d/)
 - [Visualization with rerun](/tools/rerun_visualization)
-- (TBD) [Select scene for rosbag](/tools/scene_selector/)
-- (TBD) [Pseudo label for T4dataset](/tools/t4dataset_pseudo_label/)
+- [Select scene for rosbag](/tools/scene_selector/)
+- (TBD) [Pseudo label for 2D data](/tools/t4dataset_pseudo_label_2d/)
+- (TBD) [Pseudo label for 3D data](/tools/t4dataset_pseudo_label_3d/)
 
 ## Supported pipelines
 
