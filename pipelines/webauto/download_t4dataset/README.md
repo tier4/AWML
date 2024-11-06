@@ -12,15 +12,16 @@ You can download T4dataset by script using WebAuto CLI.
 ## Get started
 
 - (choice) Download for XX1
+  - If you want to use rosbag, delete the flag of `--delete-rosbag`
 
 ```sh
-python tools/setting_environment/download_t4dataset.py autoware_ml/configs/detection3d/dataset/t4dataset/database_v1_1.yaml --output ./data/t4dataset/ --project-id prd_jt
+python pipelines/webauto/download_t4dataset/download_t4dataset.py autoware_ml/configs/detection3d/dataset/t4dataset/database_v1_1.yaml --output ./data/t4dataset/ --project-id prd_jt --delete-rosbag
 ```
 
 - (choice) Download for X2
 
 ```sh
-python tools/setting_environment/download_t4dataset.py autoware_ml/configs/detection3d/dataset/t4dataset/database_v3_0.yaml --output ./data/t4dataset/ --project-id x2_dev
+python pipelines/webauto/download_t4dataset/download_t4dataset.py autoware_ml/configs/detection3d/dataset/t4dataset/database_v3_0.yaml --output ./data/t4dataset/ --project-id x2_dev --delete-rosbag
 ```
 
 - After download as above command, the directory architecture consists as below.

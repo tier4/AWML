@@ -32,6 +32,7 @@ def download_t4dataset(
     t4dataset_id: str,
     output_dir: str,
     config_path: str,
+    delete_rosbag: bool,
 ) -> None:
     """
     Return: None
@@ -55,13 +56,20 @@ def download_t4dataset(
         print(download_command_)
         subprocess.call(download_command_, shell=True)
 
-        # rename directory
         _, _, _, database_name, _ = divide_file_path(config_path)
         from_directory = os.path.join(
             temp_dir,
             "annotation_dataset",
             t4dataset_id,
         )
+
+        if delete_rosbag is True:
+            rosbag_path: str = os.path.join(from_directory, "*/input_bag")
+            rm_command = "rm -r {}".format(rosbag_path)
+            print(rm_command)
+            subprocess.call(rm_command, shell=True)
+
+        # rename directory
         to_directory = os.path.join(output_dir, database_name)
         os.makedirs(to_directory, exist_ok=True)
 
@@ -86,6 +94,11 @@ def parse_args():
         type=str,
         default="./data/t4dataset",
         help="directory path for data to be downloaded",
+    )
+    parser.add_argument(
+        '--delete-rosbag',
+        action='store_true',
+        help="Delete rosbag file from T4dataset",
     )
     args = parser.parse_args()
     return args
@@ -114,6 +127,7 @@ def main():
             t4dataset_id,
             output_dir,
             config_path,
+            args.delete_rosbag,
         )
 
 
