@@ -153,31 +153,12 @@ def extract_nuscenes_data(nusc: NuScenes, sample, lidar_token: str):
     )
 
 
-def get_gt_attrs(nusc, annotations, attr_categories_mapper) -> List:
+def get_gt_attrs(nusc, annotations) -> List[List[str]]:
     gt_attrs = []
     for anno in annotations:
-        if len(anno["attribute_tokens"]) == 0:
-            gt_attrs.append("none")
-        else:
-            attr_names = [
-                nusc.get("attribute", t)["name"]
-                for t in anno["attribute_tokens"]
-            ]
-            attr_categories = [a.split(".")[0] for a in attr_names]
-            if attr_categories_mapper("pedestrian_state") in attr_categories:
-                gt_attrs.append(attr_names[attr_categories.index(
-                    attr_categories_mapper("pedestrian_state"))])
-            elif attr_categories_mapper("cycle_state") in attr_categories:
-                gt_attrs.append(attr_names[attr_categories.index(
-                    attr_categories_mapper("cycle_state"))])
-            elif attr_categories_mapper("vehicle_state") in attr_categories:
-                gt_attrs.append(attr_names[attr_categories.index(
-                    attr_categories_mapper("vehicle_state"))])
-            elif attr_categories_mapper("occlusion_state") in attr_categories:
-                gt_attrs.append(attr_names[attr_categories.index(
-                    attr_categories_mapper("occlusion_state"))])
-            else:
-                raise ValueError(f"invalid attributes: {attr_names}")
+        gt_attrs.append([
+            nusc.get("attribute", t)["name"] for t in anno["attribute_tokens"]
+        ])
     return gt_attrs
 
 
@@ -479,8 +460,7 @@ def get_instances(
     annotations,
     valid_flag,
     gt_attrs,
-    filter_attributions=[["vehicle.bicycle", "vehicle_state.parked"],
-                         ["vehicle.motorcycle", "vehicle_state.parked"]],
+    filter_attributions: Optional[List[Tuple[str, str]]],
     matched_object_idx=None,
     merge_type="extend_longer",
 ):
@@ -553,8 +533,10 @@ def get_instances(
             is_filter = False
             if filter_attributions:
                 for filter_attribution in filter_attributions:
-                    if boxes[i].name == filter_attribution[0] and gt_attrs[
-                            i] == filter_attribution[1]:
+                    # If the ground truth name matches exatcly the filtered label name, and
+                    # the filtered attribute is in one of the available attribute names
+                    if boxes[i].name == filter_attribution[0] and \
+                        filter_attribution[1] in gt_attrs[i]:
                         is_filter = True
             if is_filter is True:
                 empty_instance["bbox_label"] = -1
@@ -587,7 +569,7 @@ def get_annotations(
     l2e_r_mat: np.array,
     name_mapping: dict,
     class_names: List[str],
-    attr_categories_mapper=lambda x: x,
+    filter_attributes: Optional[List[Tuple[str, str]]],
     merge_objects: List[Tuple[str, List[str]]] = [],
     merge_type: str = None,
 ) -> dict:
@@ -615,8 +597,7 @@ def get_annotations(
     assert len(gt_boxes) == len(
         annotations), f"{len(gt_boxes)}, {len(annotations)}"
 
-    gt_attrs = get_gt_attrs(nusc, annotations, attr_categories_mapper)
-
+    gt_attrs = get_gt_attrs(nusc, annotations)
     assert len(names) == len(gt_attrs), f"{len(names)}, {len(gt_attrs)}"
     assert len(gt_boxes) == len(instance_tokens)
     assert velocity.shape == (len(gt_boxes), 2)
@@ -634,6 +615,7 @@ def get_annotations(
         annotations,
         valid_flag,
         gt_attrs,
+        filter_attributions=filter_attributes,
         matched_object_idx=matched_object_idx,
         merge_type=merge_type,
     )

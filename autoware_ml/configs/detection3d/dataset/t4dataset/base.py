@@ -11,7 +11,9 @@ info_test_file_name = "t4dataset_base_infos_test.pkl"
 
 # dataset scene setting
 dataset_version_config_root = "autoware_ml/configs/detection3d/dataset/t4dataset/"
-dataset_version_list = ["database_v1_0", "database_v1_1", "database_v2_0", "database_v3_0"]
+dataset_version_list = [
+    "database_v1_0", "database_v1_1", "database_v2_0", "database_v3_0"
+]
 
 # dataset format setting
 data_prefix = dict(pts="", sweeps="")
@@ -118,4 +120,20 @@ camera_panels = [
     'data/CAM_BACK_LEFT',
     'data/CAM_BACK',
     'data/CAM_BACK_RIGHT',
+]
+
+# Add filter attributes
+filter_attributes = [
+    ('vehicle.bicycle', 'vehicle_state.parked'),
+    ('vehicle.bicycle', 'cycle_state.without_rider'),
+    ('vehicle.bicycle', 'motorcycle_state.without_rider'),
+    ('vehicle.motorcycle', 'vehicle_state.parked'),
+    ('vehicle.motorcycle', 'cycle_state.without_rider'),
+    ('vehicle.motorcycle', 'motorcycle_state.without_rider'),
+    ('bicycle', 'vehicle_state.parked'),
+    ('bicycle', 'cycle_state.without_rider'),
+    ('bicycle', 'motorcycle_state.without_rider'),
+    ('motorcycle', 'vehicle_state.parked'),
+    ('motorcycle', 'cycle_state.without_rider'),
+    ('motorcycle', 'motorcycle_state.without_rider'),
 ]

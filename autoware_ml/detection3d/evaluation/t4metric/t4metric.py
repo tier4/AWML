@@ -35,6 +35,7 @@ class T4Metric(NuScenesMetric):
         self,
         data_root: str,
         ann_file: str,
+        filter_attributes: Optional[List[Tuple[str, str]]] = None,
         metric: Union[str, List[str]] = "bbox",
         modality: dict = dict(use_camera=False, use_lidar=True),
         prefix: Optional[str] = None,
@@ -54,6 +55,9 @@ class T4Metric(NuScenesMetric):
                 Path of dataset root.
             ann_file (str):
                 Path of annotation file.
+            filter_attributes (str)
+                Filter out GTs with certain attributes. For example, [['vehicle.bicycle', 
+                'vehicle_state.parked']]. 
             metric (str or List[str]):
                 Metrics to be evaluated. Defaults to 'bbox'.
             modality (dict):
@@ -120,7 +124,10 @@ class T4Metric(NuScenesMetric):
             if name not in eval_class_range:
                 raise RuntimeError("missing range value")
         self.eval_class_range = eval_class_range
-
+        self.filter_attributes = filter_attributes
+        if self.filter_attributes is None:
+            print_log("No attribute filtering is applied!")
+            
         # load annotations
         self.data_infos = load(
             self.ann_file, backend_args=self.backend_args)["data_list"]
@@ -337,7 +344,7 @@ class T4Metric(NuScenesMetric):
             self.eval_detection_configs,
             scene_token,
             post_mapping_dict=self.name_mapping,
-        )
+            filter_attributions=self.filter_attributes)
         preds, _ = t4metric_load_prediction(
             nusc,
             self.eval_detection_configs,

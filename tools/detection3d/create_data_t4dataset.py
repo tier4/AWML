@@ -134,6 +134,7 @@ def get_info(
                 l2e_r_mat,
                 cfg.name_mapping,
                 cfg.class_names,
+                cfg.filter_attributes,
                 merge_objects=cfg.merge_objects,
                 merge_type=cfg.merge_type,
             ),
@@ -236,6 +237,10 @@ def main():
             assert len(
                 sub_objects
             ) == 2, "Only merging two objects in supported at the moment"
+
+    if cfg.filter_attributes is None:
+        print_log("No attribute filtering is applied!")
+
     for dataset_version in cfg.dataset_version_list:
         dataset_list = osp.join(cfg.dataset_version_config_root,
                                 dataset_version + ".yaml")

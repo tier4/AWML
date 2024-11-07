@@ -1,5 +1,5 @@
 import json
-from typing import Dict, Optional, Tuple
+from typing import Dict, Optional, Tuple, List
 
 import numpy as np
 import tqdm
@@ -42,14 +42,12 @@ class T4Box(DetectionBox):
 # modified version from https://github.com/nutonomy/nuscenes-devkit/blob/9b165b1018a64623b65c17b64f3c9dd746040f36/python-sdk/nuscenes/eval/common/loaders.py#L53
 # adds name mapping capabilities
 def t4metric_load_gt(
-    nusc: NuScenes,
-    config: DetectionConfig,
-    scene: str,
-    verbose: bool = False,
-    post_mapping_dict: Optional[Dict[str, str]] = None,
-    filter_attributions=[["vehicle.bicycle", "vehicle_state.parked"],
-                         ["vehicle.motorcycle", "vehicle_state.parked"]]
-) -> EvalBoxes:
+        nusc: NuScenes,
+        config: DetectionConfig,
+        scene: str,
+        filter_attributions: Optional[Tuple[str, str]],
+        verbose: bool = False,
+        post_mapping_dict: Optional[Dict[str, str]] = None) -> EvalBoxes:
     """
     Loads ground truth boxes from DB.
     :param nusc: A NuScenes instance.
@@ -83,17 +81,16 @@ def t4metric_load_gt(
             detection_name = sample_annotation["category_name"]
 
             # Get attribute_name.
-            try:
-                attribute_name = get_attr_name(nusc, sample_annotation)
-            except ValueError:
-                attribute_name = ""
+            attribute_names = get_attr_name(nusc, sample_annotation)
 
             if filter_attributions:
                 is_filter = False
 
                 for filter_attribution in filter_attributions:
+                    # If the ground truth name matches exactly with the filtered class name, and
+                    # the filtered attribute is in one of the available attributes
                     if detection_name == filter_attribution[
-                            0] and attribute_name == filter_attribution[1]:
+                            0] and filter_attribution[1] in attribute_names:
                         is_filter = True
                 if is_filter is True:
                     continue
@@ -329,23 +326,11 @@ def filter_eval_boxes(
 def get_attr_name(
     nusc: NuScenes,
     anno: dict,
-    attr_categories_mapper=lambda x: x,
-) -> str:
+) -> List[str]:
     if len(anno["attribute_tokens"]) == 0:
-        return "none"
+        return []
     else:
         attr_names = [
             nusc.get("attribute", t)["name"] for t in anno["attribute_tokens"]
         ]
-        attr_categories = [a.split(".")[0] for a in attr_names]
-        if attr_categories_mapper("pedestrian_state") in attr_categories:
-            return attr_names[attr_categories.index(
-                attr_categories_mapper("pedestrian_state"))]
-        elif attr_categories_mapper("cycle_state") in attr_categories:
-            return attr_names[attr_categories.index(
-                attr_categories_mapper("cycle_state"))]
-        elif attr_categories_mapper("vehicle_state") in attr_categories:
-            return attr_names[attr_categories.index(
-                attr_categories_mapper("vehicle_state"))]
-        else:
-            raise ValueError(f"invalid attributes: {attr_names}")
+        return attr_names
