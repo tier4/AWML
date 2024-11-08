@@ -52,7 +52,7 @@ python tools/detection3d/create_data_t4dataset.py --root_path ./data/t4dataset -
   - This process takes time.
 
 ```sh
-python tools/detection3d/create_data_t4dataset.py --root_path ./data/t4dataset --config autoware_ml/configs/detection3d/dataset/t4dataset/x2.py --version xx1 --max_sweeps 2 --out_dir ./data/t4dataset/info/user_name
+python tools/detection3d/create_data_t4dataset.py --root_path ./data/t4dataset --config autoware_ml/configs/detection3d/dataset/t4dataset/x2.py --version x2 --max_sweeps 2 --out_dir ./data/t4dataset/info/user_name
 ```
 
 ## 3. Train
