@@ -22,9 +22,11 @@ class FRHead(Base3DDecodeHead):
                      use_sigmoid=False,
                      class_weight=None,
                      loss_weight=1.0),
+                  deploy: bool = False,
                  **kwargs) -> None:
         super(FRHead, self).__init__(**kwargs)
 
+        self.deploy = deploy
         self.loss_ce = MODELS.build(loss_ce)
 
         self.mlps = nn.ModuleList()
@@ -58,6 +60,8 @@ class FRHead(Base3DDecodeHead):
                 map_point_feats = map_point_feats + point_feats[-i]
         seg_logit = self.cls_seg(map_point_feats)
         voxel_dict['seg_logit'] = seg_logit
+        if self.deploy:
+            return {'seg_logit': seg_logit}
         return voxel_dict
 
     def _stack_batch_gt(self, batch_data_samples: SampleList) -> Tensor:

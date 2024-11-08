@@ -1,18 +1,16 @@
 FROM autoware-ml
 
+ARG TRT_MAJOR=10.4.0
+
 # Install pip dependencies
 RUN python3 -m pip --no-cache-dir install \
-    onnxruntime==1.18.0 \
+    onnxruntime-gpu --extra-index-url https://aiinfra.pkgs.visualstudio.com/PublicPackages/_packaging/onnxruntime-cuda-12/pypi/simple/ \
     onnxscript \
     onnx_graphsurgeon \
-    tensorrt==8.6.1
-
-# Apply patches
-COPY torch_utils.patch /tmp/torch_utils.patch
-RUN cd $(python -c "import site; print(site.getsitepackages()[0])") \
-  && git apply < /tmp/torch_utils.patch \
-  && rm -f /tmp/torch_utils.patch \
-  && cd /
+    polygraphy \
+    pycuda \
+    tensorrt==${TRT_MAJOR} \
+    tensorrt-cu12==${TRT_MAJOR}
 
 WORKDIR /workspace
 RUN pip install --no-cache-dir -e .

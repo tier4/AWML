@@ -363,6 +363,8 @@ test_cfg = dict()
 
 auto_scale_lr = dict(enable=False, base_batch_size=16)
 
+log_processor = dict(type='LogProcessor', window_size=50, by_epoch=False)
+
 default_hooks = dict(
     checkpoint=dict(
         type='CheckpointHook', by_epoch=False, interval=-1, save_best='miou')

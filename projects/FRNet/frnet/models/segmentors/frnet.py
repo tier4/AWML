@@ -6,6 +6,50 @@ from mmdet3d.structures.det3d_data_sample import OptSampleList, SampleList
 from mmdet3d.utils import ConfigType, OptConfigType, OptMultiConfig
 from torch import Tensor
 
+from torch.onnx import errors, symbolic_helper
+import torch
+
+
+@symbolic_helper.parse_args('v', 'i', 'v', 'v', 's', 'b')
+def symbolic_scatter_reduce(
+    g,
+    self: torch._C.Value,
+    dim: int,
+    index: torch._C.Value,
+    src: torch._C.Value,
+    reduce: str,
+    include_self: bool,
+):
+    if reduce == 'mean':
+        raise errors.OnnxExporterError(
+            'ONNX does not support mean reduction for scatter_reduce')
+    if not include_self:
+        raise errors.OnnxExporterError(
+            'ONNX does not support include_self=False for scatter_reduce')
+
+    reduce_mode = {
+        'mean': 'none',
+        'sum': 'add',
+        'prod': 'mul',
+        'amin': 'min',
+        'amax': 'max',
+    }
+    onnx_reduce = reduce_mode[reduce]
+
+    result = g.op(
+        'ScatterElements',
+        self,
+        index,
+        src,
+        axis_i=dim,
+        reduction_s=onnx_reduce)
+
+    return result
+
+
+torch.onnx.register_custom_op_symbolic('aten::scatter_reduce',
+                                       symbolic_scatter_reduce, 16)
+
 
 @MODELS.register_module()
 class FRNet(EncoderDecoder3D):
@@ -59,7 +103,7 @@ class FRNet(EncoderDecoder3D):
 
     def extract_feat(self, batch_inputs_dict: dict) -> dict:
         """Extract features from points."""
-        voxel_dict = batch_inputs_dict['voxels'].copy()
+        voxel_dict = batch_inputs_dict.copy()
         voxel_dict = self.voxel_encoder(voxel_dict)
         voxel_dict = self.backbone(voxel_dict)
         if self.with_neck:

@@ -74,41 +74,37 @@ class FrustumFeatureEncoder(nn.Module):
                 nn.ReLU(inplace=True))
 
     def forward(self, voxel_dict: dict) -> dict:
-        features = voxel_dict['voxels']
-        coors = voxel_dict['coors']
+        features = voxel_dict['points']
+        inverse_map = voxel_dict['inverse_map']
+        voxel_dict['voxel_coors'] = voxel_dict['voxel_coors'][:inverse_map.max(
+        ) + 1]
         features_ls = [features]
-
-        # Sort
-        indices_2 = torch.argsort(coors[:, 2])
-        sorted_coors = coors[indices_2]
-        indices_1 = torch.argsort(sorted_coors[:, 1])
-        sorted_coors = sorted_coors[indices_1]
-        indices = indices_2[indices_1]
-        # Calculate differences between rows
-        min_value_row = torch.full((1, sorted_coors.size(1)), torch.iinfo(sorted_coors.dtype).min, dtype=sorted_coors.dtype, device=sorted_coors.device)
-        sorted_coors_ex = torch.cat([min_value_row, sorted_coors], dim=0)
-        diffs = sorted_coors_ex[1:] - sorted_coors_ex[:-1]
-        # Create a mask for rows that are unique
-        unique_mask = (diffs != 0).any(dim=1)
-        # Extract unique rows
-        voxel_coors = sorted_coors[unique_mask]
-        # Calculate inverse indices
-        inverse_map = torch.cumsum(unique_mask.to(torch.int64), dim=0) - 1
-        inverse_map = inverse_map[torch.argsort(indices)]
 
         if self._with_distance:
             points_dist = torch.norm(features[:, :3], 2, 1, keepdim=True)
             features_ls.append(points_dist)
 
         # Find distance of x, y, and z from frustum center
-        index = inverse_map.unsqueeze(-1).expand(-1, features.size(1))
         if self._with_cluster_center:
-            voxel_sum = torch.zeros(inverse_map.max() + 1, features.size(1), device=features.device, dtype=features.dtype)
-            voxel_count = voxel_sum.clone()
+            voxel_sum = torch.zeros(
+                inverse_map.max() + 1,
+                features.size(1),
+                dtype=features.dtype,
+                device=features.device)
+            voxel_count = torch.zeros(
+                inverse_map.max() + 1,
+                features.size(1),
+                dtype=features.dtype,
+                device=features.device)
             ones_tensor = torch.ones_like(features)
-
-            voxel_sum = voxel_sum.scatter_add_(dim=0, index=index, src=features)
-            voxel_count = voxel_count.scatter_add_(dim=0, index=index, src=ones_tensor)
+            index_sum = torch.clamp(
+                inverse_map.unsqueeze(-1).expand(-1, features.size(1)), 0,
+                voxel_sum.size(0) - 1)
+            index_count = torch.clamp(
+                inverse_map.unsqueeze(-1).expand(-1, ones_tensor.size(1)), 0,
+                voxel_count.size(0) - 1)
+            voxel_sum.scatter_add_(dim=0, index=index_sum, src=features)
+            voxel_count.scatter_add_(dim=0, index=index_count, src=ones_tensor)
             voxel_mean = voxel_sum / voxel_count
 
             points_mean = voxel_mean[inverse_map]
@@ -125,16 +121,21 @@ class FrustumFeatureEncoder(nn.Module):
             features = ffe(features)
             point_feats.append(features)
 
-        # TODO(amadeuszsz): Check metrics for both options
-        # voxel_feats = torch.zeros(inverse_map.max() + 1, features.size(1), device=features.device, dtype=features.dtype)
-        voxel_feats = torch.full((inverse_map.max() + 1, features.size(1)), torch.finfo(features.dtype).min, device=features.device, dtype=features.dtype)
-        voxel_feats.scatter_reduce_(dim=0, index=inverse_map.unsqueeze(-1).expand(-1, features.size(1)), src=features, reduce='amax', include_self=True)
+        voxel_feats = torch.full((inverse_map.max() + 1, features.size(1)),
+                                 torch.finfo(features.dtype).min,
+                                 device=features.device,
+                                 dtype=features.dtype)
+        voxel_feats.scatter_reduce_(
+            dim=0,
+            index=inverse_map.unsqueeze(-1).expand(-1, features.size(1)),
+            src=features,
+            reduce='amax',
+            include_self=True)
 
         if self.compression_layers is not None:
             voxel_feats = self.compression_layers(voxel_feats)
 
         voxel_dict['voxel_feats'] = voxel_feats
-        voxel_dict['voxel_coors'] = voxel_coors
         voxel_dict['point_feats'] = point_feats
 
         return voxel_dict

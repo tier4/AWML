@@ -96,9 +96,11 @@ class FRNetBackbone(BaseModule):
                  norm_cfg: ConfigType = dict(type='BN'),
                  point_norm_cfg: ConfigType = dict(type='BN1d'),
                  act_cfg: ConfigType = dict(type='LeakyReLU'),
-                 init_cfg: OptMultiConfig = None) -> None:
+                 init_cfg: OptMultiConfig = None,
+                 deploy: bool = False) -> None:
         super(FRNetBackbone, self).__init__(init_cfg)
 
+        self.deploy = deploy
         if depth not in self.arch_settings:
             raise KeyError(f'invalid depth {depth} for FRNetBackbone.')
 
@@ -300,6 +302,7 @@ class FRNetBackbone(BaseModule):
         voxel_feats = voxel_dict['voxel_feats']
         voxel_coors = voxel_dict['voxel_coors']
         pts_coors = voxel_dict['coors']
+        inverse_map = voxel_dict['inverse_map']
 
         batch_size = torch.add(pts_coors[-1, 0], 1) 
 
@@ -309,7 +312,7 @@ class FRNetBackbone(BaseModule):
         fusion_point_feats = torch.cat((map_point_feats, point_feats), dim=1)
         point_feats = self.point_stem(fusion_point_feats)
         stride_voxel_coors, frustum_feats = self.point2frustum(
-            point_feats, pts_coors, stride=1)
+            point_feats, voxel_coors, inverse_map, stride=1)
         pixel_feats = self.frustum2pixel(
             frustum_feats, stride_voxel_coors, batch_size, stride=1)
         fusion_pixel_feats = torch.cat((pixel_feats, x), dim=1)
@@ -330,7 +333,7 @@ class FRNetBackbone(BaseModule):
 
             # point-to-frustum fusion
             stride_voxel_coors, frustum_feats = self.point2frustum(
-                point_feats, pts_coors, stride=self.strides[i])
+                point_feats, voxel_coors, inverse_map, stride=self.strides[i])
             pixel_feats = self.frustum2pixel(
                 frustum_feats,
                 stride_voxel_coors,
@@ -373,6 +376,8 @@ class FRNetBackbone(BaseModule):
                       stride: int = 1) -> Tensor:
         nx = self.nx // stride
         ny = self.ny // stride
+        if self.deploy:
+            batch_size = 1
         pixel_features = torch.zeros(
             (batch_size, ny, nx, frustum_features.shape[-1]),
             dtype=frustum_features.dtype,
@@ -393,33 +398,12 @@ class FRNetBackbone(BaseModule):
 
     def point2frustum(self,
                       point_features: Tensor,
-                      pts_coors: Tensor,
+                      voxel_coors: Tensor,
+                      inverse_map: Tensor,
                       stride: int = 1) -> Tuple[Tensor, Tensor]:
-        coors = pts_coors.clone()
-        coors[:, 1] = pts_coors[:, 1] // stride
-        coors[:, 2] = pts_coors[:, 2] // stride
-
-        # Sort
-        indices_2 = torch.argsort(coors[:, 2])
-        sorted_coors = coors[indices_2]
-        indices_1 = torch.argsort(sorted_coors[:, 1])
-        sorted_coors = sorted_coors[indices_1]
-        indices = indices_2[indices_1]
-        # Calculate differences between rows
-        min_value_row = torch.full((1, sorted_coors.size(1)), torch.iinfo(sorted_coors.dtype).min, dtype=sorted_coors.dtype, device=sorted_coors.device)
-        sorted_coors_ex = torch.cat([min_value_row, sorted_coors], dim=0)
-        diffs = sorted_coors_ex[1:] - sorted_coors_ex[:-1]
-        # Create a mask for rows that are unique
-        unique_mask = (diffs != 0).any(dim=1)
-        # Extract unique rows
-        voxel_coors = sorted_coors[unique_mask]
-        # Calculate inverse indices
-        inverse_map = torch.cumsum(unique_mask.to(torch.int64), dim=0) - 1
-        inverse_map = inverse_map[torch.argsort(indices)]
+        voxel_coors_strided = voxel_coors // stride
     
-        # TODO(amadeuszsz): Check metrics for both options
-        # frustum_features = torch.zeros((inverse_map.max() + 1, point_features.size(1)), device=point_features.device, dtype=point_features.dtype)
         frustum_features = torch.full((inverse_map.max() + 1, point_features.size(1)), torch.finfo(point_features.dtype).min, device=point_features.device, dtype=point_features.dtype)
         frustum_features.scatter_reduce_(dim=0, index=inverse_map.unsqueeze(-1).expand_as(point_features), src=point_features, reduce='amax', include_self=True)
     
-        return voxel_coors, frustum_features
+        return voxel_coors_strided, frustum_features

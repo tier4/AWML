@@ -58,15 +58,12 @@ class FrustumRangePreprocessor(BaseDataPreprocessor):
         batch_inputs = dict()
 
         assert 'points' in inputs
-        batch_inputs['points'] = inputs['points']
-
-        voxel_dict = self.frustum_region_group(inputs['points'], data_samples)
-        batch_inputs['voxels'] = voxel_dict
+        batch_inputs = self.frustum_region_group(inputs['points'], data_samples)
 
         return {'inputs': batch_inputs, 'data_samples': data_samples}
 
     @torch.no_grad()
-    def frustum_region_group(self, points: List[Tensor],
+    def frustum_region_group(self, points_batch: List[Tensor],
                              data_samples: SampleList) -> dict:
         """Calculate frustum region of each point.
 
@@ -79,9 +76,9 @@ class FrustumRangePreprocessor(BaseDataPreprocessor):
         voxel_dict = dict()
 
         coors = []
-        voxels = []
+        points = []
 
-        for i, res in enumerate(points):
+        for i, res in enumerate(points_batch):
             depth = torch.linalg.norm(res[:, :3], 2, dim=1)
             yaw = -torch.atan2(res[:, 1], res[:, 0])
             pitch = torch.arcsin(res[:, 2] / depth)
@@ -105,7 +102,7 @@ class FrustumRangePreprocessor(BaseDataPreprocessor):
             res_coors = torch.stack([coors_y, coors_x], dim=1)
             res_coors = F.pad(res_coors, (1, 0), mode='constant', value=i)
             coors.append(res_coors)
-            voxels.append(res)
+            points.append(res)
 
             if 'pts_semantic_mask' in data_samples[i].gt_pts_seg:
                 pts_semantic_mask = data_samples[
@@ -148,9 +145,11 @@ class FrustumRangePreprocessor(BaseDataPreprocessor):
                           res_voxel_coors[:, 2]] = voxel_semantic_mask
                 data_samples[i].gt_pts_seg.semantic_seg = seg_label
 
-        voxels = torch.cat(voxels, dim=0)
+        points = torch.cat(points, dim=0)
         coors = torch.cat(coors, dim=0)
-        voxel_dict['voxels'] = voxels
+        voxel_coors, inverse_map = torch.unique(coors, return_inverse=True, dim=0)
+        voxel_dict['points'] = points
         voxel_dict['coors'] = coors
-
+        voxel_dict['voxel_coors'] = voxel_coors
+        voxel_dict['inverse_map'] = inverse_map
         return voxel_dict
