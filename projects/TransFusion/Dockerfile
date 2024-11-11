@@ -1,4 +1,5 @@
-FROM autoware-ml
+ARG AWML_BASE_IMAGE="ghcr.io/tier4/autoware-ml-base:latest"
+FROM ${AWML_BASE_IMAGE}
 
 # Install pip dependencies (1)
 RUN python3 -m pip --no-cache-dir install \
