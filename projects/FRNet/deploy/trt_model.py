@@ -2,23 +2,23 @@ import os
 import sys
 from typing import List, Tuple
 
-import numpy.typing as npt
 import numpy as np
-import pycuda.driver as cuda
+import numpy.typing as npt
 import pycuda.autoinit
+import pycuda.driver as cuda
 import tensorrt as trt
-
-sys.path.append('/workspace/projects/FRNet')
-from configs.deploy.frnet_tensorrt_dynamic import tensorrt_config
+from mmengine.config import Config
 
 
 class TrtModel:
 
     def __init__(self,
+                 deploy_cfg: Config,
                  onnx_path: str,
                  deploy: bool = True,
                  verbose: bool = False):
 
+        self.deploy_cfg = deploy_cfg
         self.logger = trt.Logger(
             trt.Logger.VERBOSE if verbose else trt.Logger.WARNING)
         trt.init_libnvinfer_plugins(self.logger, '')
@@ -43,7 +43,7 @@ class TrtModel:
 
         # Optimization profile
         profile = builder.create_optimization_profile()
-        for name, shapes in tensorrt_config.items():
+        for name, shapes in self.deploy_cfg.tensorrt_config.items():
             profile.set_shape(name, shapes['min_shape'], shapes['opt_shape'],
                               shapes['max_shape'])
 

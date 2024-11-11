@@ -1,19 +1,24 @@
+import copy
 from time import time
 
-import numpy.typing as npt
 import numpy as np
+import numpy.typing as npt
 import torch
 import torch.nn.functional as F
-
-from utils import load_preprocessing_cfg
+from mmengine.config import Config
 
 
 class Preprocessing:
 
-    def __init__(self, model_path: str):
-        preprocessing_config = load_preprocessing_cfg(model_path)
-        self.interpolation_cfg = preprocessing_config['range_interpolation']
-        self.region_group_cfg = preprocessing_config['frustum_region_group']
+    def __init__(self, config: Config):
+
+        config = copy.deepcopy(config)
+        self.region_group_cfg = config.model['data_preprocessor']
+        self.interpolation_cfg = [
+            x for x in config.test_pipeline
+            if x['type'] == 'RangeInterpolation'
+        ][0]
+        self.region_group_cfg.pop('type')
 
     def _range_interpolation(self, points: npt.ArrayLike, fov_up: float,
                              fov_down: float, H: int, W: int,

@@ -1,16 +1,16 @@
 import argparse
 import os
 
-from mmdet3d.utils import register_all_modules
 import numpy as np
 import numpy.typing as npt
-from nuscenes.nuscenes import NuScenes
 import torch
-
-from preprocessing import Preprocessing
-from postprocessing import Postprocessing
-from torch_model import TorchModel
+from mmdeploy.utils import load_config
+from mmdet3d.utils import register_all_modules
+from nuscenes.nuscenes import NuScenes
 from onnx_model import OnnxModel
+from postprocessing import Postprocessing
+from preprocessing import Preprocessing
+from torch_model import TorchModel
 from trt_model import TrtModel
 from visualizer import Visualizer
 
@@ -33,11 +33,17 @@ def parse_args():
         default=None,
         help='Specify the execution method for provided model.')
     parser.add_argument(
-        '--config',
+        '--model-cfg',
         type=str,
         default=
         '/workspace/projects/FRNet/configs/nuscenes/frnet_1xb4_nus-seg.py',
-        help='Config file path.')
+        help='Model config file path.')
+    parser.add_argument(
+        '--deploy-cfg',
+        type=str,
+        default=
+        '/workspace/projects/FRNet/configs/deploy/frnet_tensorrt_dynamic.py',
+        help='Deploy config file path.')
     parser.add_argument(
         '--dataset-dir',
         type=str,
@@ -80,18 +86,25 @@ def load_input(pcd_path: str) -> npt.ArrayLike:
 def main():
     args = parse_args()
 
+    model_cfg_path = args.model_cfg
+    deploy_cfg_path = args.deploy_cfg
+    model_cfg, deploy_cfg = load_config(model_cfg_path, deploy_cfg_path)
+
+    preprocessing = Preprocessing(config=model_cfg)
+    postprocessing = Postprocessing(score_threshold=args.threshold)
+
     pcd_paths = get_pcd_paths(dataset_dir=args.dataset_dir)
     onnx_path = os.path.join(os.path.dirname(args.checkpoint), 'frnet.onnx')
-
-    preprocessing = Preprocessing(model_path=args.config)
-    postprocessing = Postprocessing(score_threshold=args.threshold)
 
     batch_inputs_dict = preprocessing.preprocess(load_input(pcd_paths[0]))
 
     torch_model = TorchModel(
-        model_path=args.config, checkpoint_path=args.checkpoint)
+        deploy_cfg=deploy_cfg,
+        model_cfg=model_cfg,
+        checkpoint_path=args.checkpoint)
 
     onnx_model = OnnxModel(
+        deploy_cfg=deploy_cfg,
         model=torch_model.model,
         batch_inputs_dict=batch_inputs_dict,
         onnx_path=onnx_path,
@@ -99,7 +112,10 @@ def main():
         verbose=args.verbose)
 
     trt_model = TrtModel(
-        onnx_path=onnx_path, deploy=args.deploy, verbose=args.verbose)
+        deploy_cfg=deploy_cfg,
+        onnx_path=onnx_path,
+        deploy=args.deploy,
+        verbose=args.verbose)
 
     visualizer = Visualizer(class_names=torch_model.class_names)
 

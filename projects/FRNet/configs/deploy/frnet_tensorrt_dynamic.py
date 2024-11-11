@@ -1,3 +1,8 @@
+custom_imports = dict(
+    imports=[
+        'projects.FRNet.frnet.models',
+    ], allow_failed_imports=False)
+
 tensorrt_config = dict(
     points=dict(
         min_shape=[5000, 4], opt_shape=[30000, 4], max_shape=[60000, 4]),

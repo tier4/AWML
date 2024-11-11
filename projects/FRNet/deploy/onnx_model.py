@@ -1,25 +1,23 @@
-import sys
 from time import time
 
-import numpy.typing as npt
 import numpy as np
-import onnxruntime as ort
+import numpy.typing as npt
 import onnx
+import onnxruntime as ort
 import torch
-
-sys.path.append('/workspace/projects/FRNet')
-from frnet.models.segmentors.frnet import FRNet
-from configs.deploy.frnet_tensorrt_dynamic import onnx_config
+from mmengine.config import Config
 
 
 class OnnxModel:
 
     def __init__(self,
-                 model: FRNet,
+                 deploy_cfg: Config,
+                 model: torch.nn.Module,
                  batch_inputs_dict: dict,
                  onnx_path: str,
                  deploy: bool = True,
                  verbose: bool = False):
+        self.deploy_cfg = deploy_cfg
         self.model = model
         self.verbose = verbose
         if deploy:
@@ -30,11 +28,10 @@ class OnnxModel:
 
     def _deploy_model(self, batch_inputs_dict: dict, onnx_path: str) -> None:
         torch.onnx.export(
-            self.model,
-            (batch_inputs_dict, {}),
+            self.model, (batch_inputs_dict, {}),
             onnx_path,
             verbose=self.verbose,
-            **onnx_config)
+            **self.deploy_cfg.onnx_config)
         print(f'ONNX model saved to {onnx_path}.')
 
     def inference(self, batch_inputs_dict: dict) -> npt.ArrayLike:
