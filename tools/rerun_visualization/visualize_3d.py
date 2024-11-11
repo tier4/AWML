@@ -5,6 +5,7 @@ from typing import Any
 import numpy as np
 import rerun as rr
 import rerun.blueprint as rrb
+from matplotlib import colormaps
 from mmdet3d.registry import MODELS
 from mmengine.config import Config
 from mmengine.device import get_device
@@ -340,8 +341,19 @@ def visualize_lidar(data: dict[Any], sensor_name: str):
     lidar = data["inputs"]["points"][0]
     # shape after transposing: (num_points, 3)
     points = lidar[:, :3]
+
+    # color points based on height
+    heights = points[:, 2].numpy()
+    min_height = np.min(heights)
+    max_height = np.max(heights)
+    normalized_heights = (heights - min_height) / (max_height - min_height)
+    colormap = colormaps['viridis']
+    colors = colormap(normalized_heights)
+    colors_rgb = (colors[:, :3] * 255).astype(np.int32)
+
+    # visualize
     rr.log(f"world/ego_vehicle/{sensor_name}",
-           rr.Points3D(points, colors=[170, 170, 170]))
+           rr.Points3D(points, colors=colors_rgb))
 
 
 def visualize_camera(data: dict[Any], data_root: str):
