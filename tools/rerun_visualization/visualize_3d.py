@@ -282,12 +282,13 @@ def convert_pred_objects(
         bboxes = bboxes[indices]
         scores = scores[indices]
         labels = labels[indices]
-    return bboxes, labels
+    return bboxes, labels, scores
 
 
 def visualize_objects(
     bboxes: Tensor,
     labels: Tensor,
+    scores: Tensor,
     fix_rotation: bool,
     object_colors: list[list[int]],
 ):
@@ -297,6 +298,7 @@ def visualize_objects(
     Args:
         bboxes (Tensor): The tensor of bounding boxes.
         labels (Tensor): The tensor of labels.
+        scores (Tensor): The tensor of scores.
         fix_rotation (bool): If true, only using yaw angle.
         object_colors (list[list[int]]): The color setting.
     """
@@ -304,6 +306,7 @@ def visualize_objects(
     sizes = []
     quaternions = []
     colors = []
+    rerun_label_texts = []
     for bbox in bboxes:
         bbox = bbox.to('cpu').detach().numpy().copy()
         size = bbox[3:6]
@@ -317,6 +320,9 @@ def visualize_objects(
 
     for label in labels:
         colors.append(object_colors[label])
+    
+    for score in scores:
+        rerun_label_texts.append("Score: {0:.3f}".format(score))
 
     rr.log(
         "world/ego_vehicle/bbox",
@@ -326,6 +332,7 @@ def visualize_objects(
             rotations=quaternions,
             class_ids=labels,
             colors=colors,
+            labels=rerun_label_texts,
         ),
     )
 
@@ -423,10 +430,11 @@ def main():
         labels = None
         if args.objects == "ground_truth":
             bboxes, labels = convert_gt_objects(data, frame_number)
+            scores = np.ones_like(labels)
         elif args.objects == "prediction":
             with autocast(enabled=True):
                 outputs = model.test_step(data)
-            bboxes, labels = convert_pred_objects(
+            bboxes, labels, scores = convert_pred_objects(
                 outputs,
                 args.bbox_score,
             )
@@ -434,6 +442,7 @@ def main():
             visualize_objects(
                 bboxes,
                 labels,
+                scores,
                 args.fix_rotation,
                 class_color_list,
             )
