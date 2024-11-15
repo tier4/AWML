@@ -64,7 +64,8 @@
   - Eval dataset: database_v1_0 + database_v1_1
   - [PR](https://github.com/tier4/autoware-ml/pull/110)
   - [Config file path](https://github.com/tier4/autoware-ml/blob/249ebfe5cff685c0911c664ea1ef2b855cc6b52f/projects/BEVFusion/configs/t4dataset/bevfusion_lidar_voxel_second_secfpn_1xb1_t4offline.py)
-  - Results are in internal data.
+  - [Checkpoint](https://drive.google.com/drive/folders/16f-IDF0_qXwEbln6RKKkLolQ3cDkZg35)
+  - Results are in internal data
   - 3 batch A100 * 2 * 6 days
   - Total mAP to test dataset (eval range = 120m): 0.657
 
