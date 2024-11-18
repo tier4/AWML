@@ -9,3 +9,6 @@ You check data access right of [WebAuto(> v0.33.1)](https://docs.web.auto/en/use
 ## tools
 
 - [Download T4dataset by WebAuto CLI](./download_t4dataset/)
+
+Download T4dataset by using WebAuto CLI.
+This tool can download T4dataset automatically.

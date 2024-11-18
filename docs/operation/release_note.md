@@ -23,6 +23,9 @@ We evaluate for T4dataset.
   - https://github.com/tier4/autoware-ml/pull/178
   - https://github.com/tier4/autoware-ml/pull/183
   - https://github.com/tier4/autoware-ml/pull/184
+  - https://github.com/tier4/autoware-ml/pull/194
+  - https://github.com/tier4/autoware-ml/pull/199
+  - https://github.com/tier4/autoware-ml/pull/200
 
 ### Tools
 

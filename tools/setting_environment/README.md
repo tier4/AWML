@@ -41,13 +41,24 @@ git clone https://github.com/tier4/autoware-ml
 
 ### 2.2 Prepare docker
 
-- docker pull
+- Docker pull for base environment
+  - See https://github.com/tier4/autoware-ml/pkgs/container/autoware-ml-base
 
 ```
 docker pull ghcr.io/tier4/autoware-ml-base:latest
 ```
 
-- [Option] Build docker
+- Docker pull for `autoware-ml` environment with `ROS2`
+  - See https://github.com/tier4/autoware-ml/pkgs/container/autoware-ml-ros2
+
+```
+docker pull ghcr.io/tier4/autoware-ml-ros2:latest
+```
+
+## Tips
+### Build docker on your own
+
+- Build docker
   - Note that this process need for long time.
   - You may need `sudo` to use `docker` command.
 
@@ -55,7 +66,7 @@ docker pull ghcr.io/tier4/autoware-ml-base:latest
 DOCKER_BUILDKIT=1 docker build -t autoware-ml .
 ```
 
-- [Option] If you want to use `autoware-ml` with `ROS2`, you can use other docker environment
+- If you want to use `autoware-ml` with `ROS2`, you can use other docker environment
 
 ```
 DOCKER_BUILDKIT=1 docker build -t autoware-ml-ros2 ./tools/setting_environment/ros2/
