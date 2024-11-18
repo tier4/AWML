@@ -12,7 +12,7 @@ Training and evaluation tools for 3D Detection.
 
 ## 1. Setup environment
 
-See [setting environemnt](/tools/setting_environment/)
+See [setting environment](/tools/setting_environment/)
 
 ## 2. Prepare dataset
 

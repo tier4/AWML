@@ -55,3 +55,6 @@ projects/YOLOX/configs/yolox_l_8xb8-300e_coco.py \
 ## Troubleshooting
 
 ## Reference
+
+- Ge Zheng et al. "YOLOX: Exceeding YOLO Series in 2021", arXiv 2021
+- [YOLOX of mmdetection](https://github.com/open-mmlab/mmdetection/tree/main/configs/yolox)

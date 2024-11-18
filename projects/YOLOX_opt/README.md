@@ -20,11 +20,11 @@
 ## Get started
 ### 1. Setup
 
-```bash
-python3 tools/detection2d/create_data_t4dataset.py --config autoware_ml/configs/detection2d/dataset/t4dataset/tlr_finedetector.py --root_path ./data/tlr/ --data_name tlr -o ./data/tlr_pedcar
-```
+- [Run setup environment at first](/tools/setting_environment/)
 
-### 3. Train
+### 2. Train
+
+- For traffic light recognition of fine detector
 
 ```bash
 python3 tools/detection2d/train.py /workspace/projects/YOLOX_opt/configs/t4dataset/yolox_s_tlr_416x416_pedcar_t4dataset.py
@@ -32,19 +32,29 @@ python3 tools/detection2d/train.py /workspace/projects/YOLOX_opt/configs/t4datas
 
 ### 3. Evaluate
 
+- For traffic light recognition of fine detector
+
 ```bash
 python3 tools/detection2d/test.py /workspace/work_dirs/yolox_s_tlr_416x416_pedcar_t4dataset/yolox_s_tlr_416x416_pedcar_t4dataset.py /workspace/work_dirs/yolox_s_tlr_416x416_pedcar_t4dataset/epoch_300.pth
 ```
 
 ### 4. Deploy
 
-```bash
-python3 tools/detection2d/deploy_yolox.py /workspace/work_dirs/yolox_s_tlr_416x416_pedcar_t4dataset/epoch_300.pth --input_size 416 416 --model yolox-s --batch_size 1 --output_onnx_file tlr_car_ped_yolox_s_batch_1.onnx 
-python3 tools/detection2d/deploy_yolox.py /workspace/work_dirs/yolox_s_tlr_416x416_pedcar_t4dataset/epoch_300.pth --input_size 416 416 --model yolox-s --batch_size 4 --output_onnx_file tlr_car_ped_yolox_s_batch_4.onnx 
-python3 tools/detection2d/deploy_yolox.py /workspace/work_dirs/yolox_s_tlr_416x416_pedcar_t4dataset/epoch_300.pth --input_size 416 416 --model yolox-s --batch_size 6 --output_onnx_file tlr_car_ped_yolox_s_batch_6.onnx 
+- For traffic light recognition of fine detector
 
+```bash
+# batch size 1
+python3 tools/detection2d/deploy_yolox.py /workspace/work_dirs/yolox_s_tlr_416x416_pedcar_t4dataset/epoch_300.pth --input_size 416 416 --model yolox-s --batch_size 1 --output_onnx_file tlr_car_ped_yolox_s_batch_1.onnx
+
+# batch size 4
+python3 tools/detection2d/deploy_yolox.py /workspace/work_dirs/yolox_s_tlr_416x416_pedcar_t4dataset/epoch_300.pth --input_size 416 416 --model yolox-s --batch_size 4 --output_onnx_file tlr_car_ped_yolox_s_batch_4.onnx
+
+# batch size 6
+python3 tools/detection2d/deploy_yolox.py /workspace/work_dirs/yolox_s_tlr_416x416_pedcar_t4dataset/epoch_300.pth --input_size 416 416 --model yolox-s --batch_size 6 --output_onnx_file tlr_car_ped_yolox_s_batch_6.onnx
 ```
 
 ## Troubleshooting
 
 ## Reference
+
+- Ge Zheng et al. "YOLOX: Exceeding YOLO Series in 2021", arXiv 2021

@@ -18,7 +18,6 @@ If you do not have the access to Web.Auto and still want to use the dataset, ple
 
 If you want to use open dataset like nuScenes dataset, please follow [mmdetection3d documents](https://mmdetection3d.readthedocs.io/en/latest/advanced_guides/index.html) and [mmdetection documents](https://mmdetection.readthedocs.io/en/latest/user_guides/dataset_prepare.html).
 
-
 ## 2. Setup environment
 ### 2.1. Set repository
 
@@ -40,9 +39,15 @@ git clone https://github.com/tier4/autoware-ml
 └── work_dirs
 ```
 
-### 2.2 Build docker
+### 2.2 Prepare docker
 
-- Build docker
+- docker pull
+
+```
+docker pull ghcr.io/tier4/autoware-ml-base:latest
+```
+
+- [Option] Build docker
   - Note that this process need for long time.
   - You may need `sudo` to use `docker` command.
 
