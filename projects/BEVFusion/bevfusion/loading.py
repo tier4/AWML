@@ -122,7 +122,7 @@ class BEVLoadMultiViewImageFromFiles(LoadMultiViewImageFromFiles):
                 if key in results:
                     select_results = []
                     for choice in choices:
-                        select_results += [results[key][choice]]
+                        select_results += [results[key](Choice)]
                     results[key] = select_results
             # Transform lidar2cam to
             # [cur_lidar]2[prev_img] and [cur_lidar]2[prev_cam]

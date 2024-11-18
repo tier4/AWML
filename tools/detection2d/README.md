@@ -20,7 +20,7 @@ TBD
 
 ### 2.2. T4dataset
 
-- [choice] For traffic light recognition of fine detector
+- (Choice) For traffic light recognition of fine detector
 
 ```bash
 python3 tools/detection2d/create_data_t4dataset.py --config autoware_ml/configs/detection2d/dataset/t4dataset/tlr_finedetector.py --root_path ./data/tlr/ --data_name tlr -o ./data/tlr_pedcar

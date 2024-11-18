@@ -41,14 +41,14 @@ python tools/detection3d/create_data.py nuscenes --root-path ./data/nuscenes --o
 docker run -it --rm --gpus '"device=0"' --shm-size=64g --name awml -p 6006:6006 -v $PWD/:/workspace -v $PWD/data:/workspace/data autoware-ml
 ```
 
-- [choice] Make info files for T4dataset XX1
+- (Choice) Make info files for T4dataset XX1
   - This process takes time.
 
 ```sh
 python tools/detection3d/create_data_t4dataset.py --root_path ./data/t4dataset --config autoware_ml/configs/detection3d/dataset/t4dataset/xx1.py --version xx1 --max_sweeps 2 --out_dir ./data/t4dataset/info/user_name
 ```
 
-- [choice] Make info files for T4dataset X2
+- (Choice) Make info files for T4dataset X2
   - This process takes time.
 
 ```sh
