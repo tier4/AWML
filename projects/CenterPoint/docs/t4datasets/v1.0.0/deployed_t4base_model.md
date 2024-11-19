@@ -17,7 +17,7 @@
   - Eval dataset: database_v1_0 + database_v1_1 + database_v_1_3 + database_v_2_0 + database_v_3_0 (total frames: 62)
   - [PR](https://github.com/tier4/autoware-ml/pull/159)
   - [Config file path](https://github.com/tier4/autoware-ml/blob/5f472170f07251184dc009a1ec02be3b4f3bf98c/autoware_ml/configs/detection3d/dataset/t4dataset/base.py)
-  - [Deployed onnx model and ROS parameter files](TBD)
+  - [Deployed onnx model and ROS parameter files](https://evaluation.tier4.jp/evaluation/mlpackages/7156b453-2861-4ae9-b135-e24e48cc9029/releases/72ac056a-66ba-435f-bdc3-6e21c209ef44?project_id=zWhWRzei)
   - [Training results](https://drive.google.com/drive/u/0/folders/1bMarMoNQXdF_3nB-BjFx28S5HMIfgeIJ)
   - train time: NVIDIA A100 80GB * 2 * 50 epochs = 4.5 days
   - Total mAP to test dataset (eval range = 120m): 0.644
