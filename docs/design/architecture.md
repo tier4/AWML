@@ -12,7 +12,7 @@ Download T4dataset by using WebAuto system.
 `autoware-ml` make pseudo label T4dataset from non-annotated T4dataset.
 It lead to make short time to be annotated by using `autoware-ml`.
 
-## T4dataset type
+## T4dataset
 
 The type of T4dataset is following
 
@@ -28,7 +28,7 @@ We manage database dataset in [dataset config](/autoware_ml/configs/detection3d/
 Pseudo T4dataset is created by [t4dataset_pseudo_label_3d](/tools/t4dataset_pseudo_label_3d/).
 Note that `autoware-ml` do not manage pseudo T4dataset which is used for domain adaptation.
 
-## ML model type
+## ML model
 
 We define 4 types model for deploy.
 
@@ -81,3 +81,44 @@ When new dataset is added, we release the base model at first.
 After that we release the product model using the base model as pre-trained model.
 If some problem like domain-specific objects, we release the project model by retraining the product model using pseudo label with the offline model.
 Note that we do not retrain the product model and project model from the model of before version because it is difficult to trace the model.
+
+## S3 storage
+
+We prepare S3 storage for models and intermediate product.
+In `autoware-ml`, we can use URL path instead of local path as MMLab libraries.
+For example, we can run the script as `python tools/detection2d/test.py projects/YOLOX/configs/yolox_l_8xb8-300e_coco.py https://download.openmmlab.com/mmdetection/v2.0/yolox/yolox_l_8x8_300e_coco/yolox_l_8x8_300e_coco_20211126_140236-d3bd2b23.pth`.
+
+- Model: {URL}/autoware-ml/models/{algorithm}/{pretrain/base/product}/{version}/{pth, config, log}
+
+```
+- {URL}/autoware-ml/models/TransFusion/
+  - pretrain/
+    - v1/
+      - epoch_20.pth
+      - config.py
+      - log.log
+  - base/
+    - v1/
+      - epoch_20.pth
+      - config.py
+      - log.log
+      - transfusion.onnx
+```
+
+- Info file: {URL}/autoware-ml/info/{autoware-ml version}/{pretrain/base/product}/{info_train.pkl, info_val.pkl, info_test.pkl}
+
+```
+- {URL}/autoware-ml/info/v0.3.0/product/
+  - info_train.pkl
+  - info_val.pkl
+  - info_test.pkl
+```
+
+- Intermediate product for pseudo label: {URL}/autoware-ml/pseudo_label/{day}_{dataset}/info_all.pkl, dataset_id_list.yaml
+  - This info file is used to reproduce pseudo T4dataset adjusting confidence threshold as it reduce re-calculation GPU cost.
+
+```
+- {URL}/autoware-ml/pseudo_label/20241101_xx1/
+  - info_all.pkl
+  - dataset_id_list.yaml
+```
