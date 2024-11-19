@@ -35,10 +35,13 @@ If you want to use `autoware-ml`, you should read as below pages.
 ## Supported tools
 
 - [Setting environment for autoware-ml](/tools/setting_environment/)
-- [Training and evaluation for 3D detection and 3D semantic segmentation](/tools/detection3d/)
-- [Training and evaluation for 2D detection](/tools/detection2d/)
-- (TBD) [Training and evaluation for 2D semantic segmentation](/tools/segmentation2d/)
-- [Visualization with rerun](/tools/rerun_visualization)
+- Training and evaluation
+  - [Training and evaluation for 3D detection and 3D semantic segmentation](/tools/detection3d/)
+  - [Training and evaluation for 2D detection](/tools/detection2d/)
+  - (TBD) [Training and evaluation for 2D semantic segmentation](/tools/segmentation2d/)
+- Analyze for the dataset and the model
+  - [Analysis for 3d detection](/tools/analysus_3d)
+  - [Visualization with rerun](/tools/rerun_visualization)
 - [Select scene for rosbag](/tools/scene_selector/)
 - (TBD) [Pseudo label for 2D data](/tools/t4dataset_pseudo_label_2d/)
 - (TBD) [Pseudo label for 3D data](/tools/t4dataset_pseudo_label_3d/)
