@@ -1,21 +1,60 @@
-# analysis_3d
+#Analysis_3d 
+It provides a framework to developers in `autoware-ml` to add analyses for 3D annotations in T4dataset easily. 
+With this framework, developers don't need to generate any `info` files or rewrite their data loading for the dataset. 
+They only need to follow `AnalysisCallbackInterface` to add the analyses they are interested in.    
 
-The tools analyzing the dataset and the model
+## Summary
 
 - [Support priority](https://github.com/tier4/autoware-ml/blob/main/docs/design/autoware_ml_design.md#support-priority): Tier B
+- Supported dataset
+  - [x] T4dataset
+  - [] NuScenes
+- Other supported feature
+  - [x] Distribution of categories
+  - [x] Distribution of attributes in each category
+  - [ ] Distribution of sizes/orientation
+  - [ ] Add unit tests
 
-## Dataset analysis
+## Get started
+### 1. Setup
 
-- Analyze T4dataset
+- [Run setup environment](../../tools/setting_environment/README.md)
+- Run docker
 
+```sh
+docker run -it --rm --gpus all --shm-size=64g --name awml -p 6006:6006 -v $PWD/:/workspace -v $PWD/data:/workspace/data autoware-ml
+```
+
+### 2. Dataset analysis
+Make sure the dataset follows the [T4dataset format](https://github.com/tier4/tier4_perception_dataset/blob/main/docs/t4_format_3d_detailed.md), 
+note that it doesn't need any `info` files 
+```sh
+# T4dataset (base)
+python tools/analyses_3d/run.py --config_path autoware_ml/configs/detection3d/dataset/t4dataset/base.py --data_root_path data/t4dataset/ --out_dir data/t4dataset/analyses/
+```
+
+### 2.1. For development
+1. Add a new analysis to inherit `AnalysisCallbackInterface` as a callback, and implement `run()`, for example, `tools/analysis_3d/callbacks/category_attribute.py`
+2. Import the new analysis in `AnalysisRunner`, and add them to the list of `analysis_callbacks`, for example, 
+```python
+self.analysis_callbacks: List[AnalysisCallbackInterface] = [
+    ...
+    CategoryAttributeAnalysisCallback(
+                out_path=self.out_path,
+                category_name='bicycle',
+                analysis_dir='remapping_bicycle_attr',
+                remapping_classes=self.remapping_classes),
+    # This is the new CategoryAttributeAnalysisCallback
+    CategoryAttributeAnalysisCallback(
+      out_path=self.out_path,
+      category_name='vehicle.bus',
+      analysis_dir='vehicle_bus_attr'
+    ),
+]
+```
+
+### 3. Model layer difference analysi
 TBD
 
-## Model layer difference analysis
-
-- Analyze the difference between two trained model
-
+## References
 TBD
-
-```
-python tools/analysis_3d/analyze_model_layer_difference.py --config {config_file} --from {check point file} --to {check point file}
-```

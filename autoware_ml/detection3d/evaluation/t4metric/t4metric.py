@@ -241,6 +241,20 @@ class T4Metric(NuScenesMetric):
             all_preds = concatenate_eval_boxes(all_preds, preds)
             all_gts = concatenate_eval_boxes(all_gts, gts)
 
+        logger.info("==== GT boxes info after filtering in evaluation ====")
+        class_names = {}
+        eval_boxes = all_gts.boxes
+        for boxes in eval_boxes.values():
+            for box in boxes:
+                if box.detection_name not in class_names:
+                    class_names[box.detection_name] = 1
+                else:
+                    class_names[box.detection_name] += 1
+
+        for class_name, value in class_names.items():
+            logger.info(f"class: {class_name}: {value}")
+        logger.info("===== End of GT Boxes info ====")
+
         ap_dict = self.t4_evaluate_all_scenes(result_dict, all_preds, all_gts,
                                               self.class_names, logger)
         for result in ap_dict:
