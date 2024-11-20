@@ -59,21 +59,10 @@ If you want to use `autoware-ml`, you should read as below pages.
 ### 3D detection
 
 - Model for Autoware
+  - [CenterPoint](projects/CenterPoint/)
   - [TransFusion](projects/TransFusion/)
 - Model for ML tools
   - [BEVFusion](projects/BEVFusion/)
-- Performance summary
-
-| eval range: 90m            | Eval DB | range  | mAP  | car  | truck | bus  | bicycle | pedestrian |
-| -------------------------- | ------- | ------ | ---- | ---- | ----- | ---- | ------- | ---------- |
-| TransFusion-L t4xx1_90m/v3 | 1.0+1.1 | 92.16m | 68.5 | 81.7 | 62.4  | 83.6 | 50.9    | 64.1       |
-
-| eval range: 120m                  | Eval DB | range   | mAP  | car  | truck | bus  | bicycle | pedestrian |
-| --------------------------------- | ------- | ------- | ---- | ---- | ----- | ---- | ------- | ---------- |
-| TransFusion-L t4xx1_120m/v1       | 1.0+1.1 | 122.88m | 51.8 | 70.9 | 43.8  | 54.7 | 38.7    | 50.9       |
-| BEVFusion-L t4xx1_120m/v1         | 1.0+1.1 | 122.4m  | 60.6 | 74.1 | 54.1  | 58.7 | 55.7    | 60.3       |
-| BEVFusion-L t4offline_120m/v1     | 1.0+1.1 | 122.4m  | 65.7 | 76.2 | 56.4  | 65.6 | 65.0    | 65.3       |
-| BEVFusion-CL t4xx1_fusion_120m/v1 | 1.0+1.1 | 122.4m  | 63.7 | 72.4 | 56.8  | 71.8 | 62.1    | 55.3       |
 
 ### 3D segmentation
 
@@ -84,7 +73,7 @@ If you want to use `autoware-ml`, you should read as below pages.
 
 - Model for Autoware
   - [YOLOX](projects/YOLOX/)
-  - (TBD) [YOLOX-opt](projects/YOLOX-opt/)
+  - [YOLOX-opt](projects/YOLOX-opt/)
 - Model for ML tools
   - [GLIP](projects/GLIP/)
   - [SwinTransformer](projects/SwinTransformer/)

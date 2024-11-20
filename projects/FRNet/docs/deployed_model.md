@@ -3,9 +3,30 @@
 
 - Performance summary (test set)
 
-| classes | barrier | bicycle | bus  | car  | construction_vehicle | motorcycle | pedestrian | traffic_cone | trailer | truck | driveable_surface | other_flat | sidewalk | terrain | manmade | vegetation | miou | acc  | acc_cls |
-| ------- | ------- | ------- | ---- | ---- | -------------------- | ---------- | ---------- | ------------ | ------- | ----- | ----------------- | ---------- | -------- | ------- | ------- | ---------- | ---- | ---- | ------- |
-| results | 76.9    | 37.7    | 93.5 | 88.2 | 54.4                 | 81.8       | 74.1       | 64.6         | 65.7    | 77.7  | 96.8              | 75.9       | 75.6     | 76.1    | 88.3    | 86.5       | 75.9 | 93.7 | 83.7    |
+| model  | miou | acc  | acc_cls |
+| ------ | ---- | ---- | ------- |
+| v0.1.0 | 75.9 | 93.7 | 83.7    |
+
+- For each class
+
+| class                | v0.1.0 |
+| -------------------- | ------ |
+| barrier              | 76.9   |
+| bicycle              | 37.7   |
+| bus                  | 93.5   |
+| car                  | 88.2   |
+| construction_vehicle | 54.4   |
+| motorcycle           | 81.8   |
+| pedestrian           | 74.1   |
+| traffic_cone         | 64.6   |
+| trailer              | 65.7   |
+| truck                | 77.7   |
+| driveable_surface    | 96.8   |
+| other_flat           | 75.9   |
+| sidewalk             | 75.6   |
+| terrain              | 76.1   |
+| manmade              | 88.3   |
+| vegetation           | 86.5   |
 
 - Model
   - Training dataset: nuScenes
