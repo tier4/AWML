@@ -1,7 +1,36 @@
-# Architecture for whole ML pipeline
-## Whole data pipeline for ML model with Autoware
+# Architecture for ML model
+## ML model
 
 ![](/docs/fig/data_pipeline.drawio.svg)
+
+- `autoware-ml` with [WebAuto](https://docs.web.auto/en/)
+
+Download T4dataset by using WebAuto system.
+
+- `autoware-ml` with [T4dataset tools](https://github.com/tier4/tier4_perception_dataset)
+
+`autoware-ml` make pseudo label T4dataset from non-annotated T4dataset.
+It lead to make short time to be annotated by using `autoware-ml`.
+
+## T4dataset type
+
+The type of T4dataset is following
+
+- Database dataset
+
+It is used for training and evaluation.
+We manage database dataset in [dataset config](/autoware_ml/configs/detection3d/dataset/t4dataset) like `database_v1_0.yaml`.
+
+- Pseudo dataset
+
+It is mainly used to train pre-training model.
+We manage database dataset in [dataset config](/autoware_ml/configs/detection3d/dataset/t4dataset) like `pseudo_v1_0.yaml`.
+Pseudo T4dataset is created by [t4dataset_pseudo_label_3d](/tools/t4dataset_pseudo_label_3d/).
+Note that `autoware-ml` do not manage pseudo T4dataset which is used for domain adaptation.
+
+## ML model type
+
+![](/docs/fig/model_pipeline.drawio.svg)
 
 - `autoware-ml` with [WebAuto](https://docs.web.auto/en/)
 
@@ -30,8 +59,7 @@ Note that `autoware-ml` do not manage pseudo T4dataset which is used for domain 
 
 ## ML model
 
-We define 4 types model for deploy.
-
+We define 4 types model for deployment and 1 type for active learning.
 Here is example for Camera-LIDAR 3D detection model for deploy pipeline.
 
 ![](/docs/fig/model_pipeline.drawio.svg)
@@ -71,7 +99,7 @@ If the performance "product model" is not enough in some reason, "Project model"
 "Offline model" is based on LiDAR-only model for 3D detection for generalization performance.
 "Base model" is basically trained by all dataset.
 
-## The strategy for ML model release
+## The versioning for ML model
 
 We follow the strategy for ML model release as below.
 
@@ -82,7 +110,7 @@ After that we release the product model using the base model as pre-trained mode
 If some problem like domain-specific objects, we release the project model by retraining the product model using pseudo label with the offline model.
 Note that we do not retrain the product model and project model from the model of before version because it is difficult to trace the model.
 
-## S3 storage
+## Model management with S3 storage
 
 We prepare S3 storage for models and intermediate product.
 In `autoware-ml`, we can use URL path instead of local path as MMLab libraries.

@@ -15,7 +15,8 @@ This repository is machine learning library for [Autoware](https://github.com/au
 
 If you want to know about the design of `autoware-ml`, you should read as below pages.
 
-- [Docs for whole architecture](/docs/design/architecture.md)
+- [Docs for architecture of dataset pipeline](/docs/design/architecture_dataset.md)
+- [Docs for architecture of ML model](/docs/design/architecture_model.md)
 - [Docs for autoware-ml design](/docs/design/autoware_ml_design.md)
 
 ### Operation documents
@@ -43,8 +44,9 @@ If you want to use `autoware-ml`, you should read as below pages.
   - [Analysis for 3d detection](/tools/analysus_3d)
   - [Visualization with rerun](/tools/rerun_visualization)
 - [Select scene for rosbag](/tools/scene_selector/)
-- (TBD) [Auto-label for 2D data](/tools/auto_labeling_2d/)
 - (TBD) [Auto-label for 3D data](/tools/auto_labeling_3d/)
+- (TBD) [Auto-label for 2D data](/tools/auto_labeling_2d/)
+
 
 ## Supported pipelines
 
