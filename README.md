@@ -43,9 +43,8 @@ If you want to use `autoware-ml`, you should read as below pages.
   - [Analysis for 3d detection](/tools/analysus_3d)
   - [Visualization with rerun](/tools/rerun_visualization)
 - [Select scene for rosbag](/tools/scene_selector/)
-- (TBD) [Pseudo label for 2D data](/tools/t4dataset_pseudo_label_2d/)
-- (TBD) [Pseudo label for 3D data](/tools/t4dataset_pseudo_label_3d/)
-- [Run analyses for annotations in 3D detection](/tools/analyses_3d/)
+- (TBD) [Auto-label for 2D data](/tools/auto_labeling_2d/)
+- (TBD) [Auto-label for 3D data](/tools/auto_labeling_3d/)
 
 ## Supported pipelines
 
