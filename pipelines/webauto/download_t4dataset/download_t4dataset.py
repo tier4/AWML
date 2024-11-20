@@ -10,6 +10,7 @@ from pathlib import Path
 from tempfile import TemporaryDirectory
 from typing import Union
 
+import json
 import yaml
 
 
@@ -26,6 +27,18 @@ def divide_file_path(full_path: str) -> Union[str, str, str, str, str]:
 
     return dir_name, base_name, subdir_name, basename_without_ext, extension
 
+def check_t4dataset_latest_version(
+    project_id: str,
+    t4dataset_id: str,
+) -> int:
+    """Return the latest version of t4dataset using `webauto data annotation-dataset describe` command.
+    Args:
+        project_id (str): The project id of webauto command.
+        t4dataset_id (str): The t4dataset id of webauto command.
+    """
+    describe_command = "webauto data annotation-dataset describe --project-id {} --annotation-dataset-id {} --output json".format(project_id, t4dataset_id)
+    result = json.loads(subprocess.run(describe_command, shell=True, check=True, capture_output=True, text=True).stdout)
+    return result['version_id']
 
 def download_t4dataset(
     project_id: str,
@@ -34,7 +47,7 @@ def download_t4dataset(
     config_path: str,
     delete_rosbag: bool,
 ) -> None:
-    """
+    """Download t4dataset using webauto CLI. When there are multiple versions in t4dataset, it would automatically 
     Return: None
 
     Args:
@@ -46,7 +59,23 @@ def download_t4dataset(
     download_command = "webauto data annotation-dataset pull --project-id {} --annotation-dataset-id {} --asset-dir {}"
 
     with TemporaryDirectory() as temp_dir:
-        print("\n***************** start to download", t4dataset_id)
+        t4dataset_version_id: int = check_t4dataset_latest_version(project_id, t4dataset_id)
+        print(f"\n***************** start downloading t4dataset id {t4dataset_id} with version id {t4dataset_version_id}")
+
+        _, _, _, database_name, _ = divide_file_path(config_path)
+        from_directory = os.path.join(
+            temp_dir,
+            "annotation_dataset",
+            t4dataset_id,
+            str(t4dataset_version_id),
+        )
+        to_directory = os.path.join(output_dir, database_name, t4dataset_id)
+
+        # skip if the target t4dataset already exists
+        to_directory_with_version_id = os.path.join(to_directory, str(t4dataset_version_id))
+        if os.path.exists(to_directory_with_version_id):
+            print(f"t4dataset already exists at {to_directory_with_version_id}")
+            return
 
         download_command_ = download_command.format(
             project_id,
@@ -56,21 +85,13 @@ def download_t4dataset(
         print(download_command_)
         subprocess.call(download_command_, shell=True)
 
-        _, _, _, database_name, _ = divide_file_path(config_path)
-        from_directory = os.path.join(
-            temp_dir,
-            "annotation_dataset",
-            t4dataset_id,
-        )
-
         if delete_rosbag is True:
-            rosbag_path: str = os.path.join(from_directory, "*/input_bag")
+            rosbag_path: str = os.path.join(from_directory, "input_bag")
             rm_command = "rm -r {}".format(rosbag_path)
             print(rm_command)
             subprocess.call(rm_command, shell=True)
 
         # rename directory
-        to_directory = os.path.join(output_dir, database_name)
         os.makedirs(to_directory, exist_ok=True)
 
         mv_command = "mv {} {}".format(from_directory, to_directory)
