@@ -1,75 +1,24 @@
 # Architecture for ML model
 ## ML model
 
-![](/docs/fig/data_pipeline.drawio.svg)
+At first, we prepare example for Camera-LIDAR 3D detection model and T4dataset for each product.
 
-- `autoware-ml` with [WebAuto](https://docs.web.auto/en/)
+![](/docs/fig/model_pipeline_1.drawio.svg)
 
-Download T4dataset by using WebAuto system.
+In these component, we define 5 types model for deploy.
+As you go downstream, the model becomes tuned model to a specific vehicle and specific environment.
 
-- `autoware-ml` with [T4dataset tools](https://github.com/tier4/tier4_perception_dataset)
+![](/docs/fig/model_pipeline_2.drawio.svg)
 
-`autoware-ml` make pseudo label T4dataset from non-annotated T4dataset.
-It lead to make short time to be annotated by using `autoware-ml`.
+For now, we prepare for RoboTaxi (as we call XX1) and RoboBus (As we call X2) as products and  we use base model directory for other projects.
+In 3D detection, we deploy TransFusion-L (TransFusion LiDAR-only model) and CenterPoint as product model (XX1 model and X2 model), and BEVFusion-L (BEVFusion LiDAR-only model) as offline model.
 
-## T4dataset type
-
-The type of T4dataset is following
-
-- Database dataset
-
-It is used for training and evaluation.
-We manage database dataset in [dataset config](/autoware_ml/configs/detection3d/dataset/t4dataset) like `database_v1_0.yaml`.
-
-- Pseudo dataset
-
-It is mainly used to train pre-training model.
-We manage database dataset in [dataset config](/autoware_ml/configs/detection3d/dataset/t4dataset) like `pseudo_v1_0.yaml`.
-Pseudo T4dataset is created by [t4dataset_pseudo_label_3d](/tools/t4dataset_pseudo_label_3d/).
-Note that `autoware-ml` do not manage pseudo T4dataset which is used for domain adaptation.
-
-## ML model type
-
-![](/docs/fig/model_pipeline.drawio.svg)
-
-- `autoware-ml` with [WebAuto](https://docs.web.auto/en/)
-
-Download T4dataset by using WebAuto system.
-
-- `autoware-ml` with [T4dataset tools](https://github.com/tier4/tier4_perception_dataset)
-
-`autoware-ml` make pseudo label T4dataset from non-annotated T4dataset.
-It lead to make short time to be annotated by using `autoware-ml`.
-
-## T4dataset
-
-The type of T4dataset is following
-
-- Database dataset
-
-It is used for training and evaluation.
-We manage database dataset in [dataset config](/autoware_ml/configs/detection3d/dataset/t4dataset) like `database_v1_0.yaml`.
-
-- Pseudo dataset
-
-It is mainly used to train pre-training model.
-We manage database dataset in [dataset config](/autoware_ml/configs/detection3d/dataset/t4dataset) like `pseudo_v1_0.yaml`.
-Pseudo T4dataset is created by [t4dataset_pseudo_label_3d](/tools/t4dataset_pseudo_label_3d/).
-Note that `autoware-ml` do not manage pseudo T4dataset which is used for domain adaptation.
-
-## ML model
-
-We define 4 types model for deployment and 1 type for active learning.
-Here is example for Camera-LIDAR 3D detection model for deploy pipeline.
-
-![](/docs/fig/model_pipeline.drawio.svg)
-
-For now, we deploy only product model in 3D detection with TransFusion LiDAR-only model as product model and BEVFusion LiDAR-only model as offline model.
+![](/docs/fig/model_pipeline_3.drawio.svg)
 
 ### 1. Pretrain model
 
 "Pretrain model" is used for training base model to increase generalization performance.
-"Base model" is basically trained by public dataset and pseudo label dataset.
+"Pretrain model" is basically trained by public dataset and pseudo label dataset.
 "Pretrain model" is managed by `autoware-ml`.
 
 ### 2. Base model
@@ -81,9 +30,10 @@ For now, we deploy only product model in 3D detection with TransFusion LiDAR-onl
 
 ### 3. Product model
 
-"Product model" can be used for a product defined by reference design like XX1 and X2.
-"Product model" can use specific sensor configuration to deploy for sensor fusion model.
-"Product model" is basically fine-tuned by all of product dataset from "Base model".
+"Product model" can be used for a product defined by reference design like XX1 (RoboTaxi) and X2 (RoboBus).
+"Product model" can use specific sensor configuration to deploy.
+It can be used for sensor fusion model because sensor configuration is fixed.
+"Product model" is basically fine-tuned from "Base model".
 "Product model" is managed by `autoware-ml`.
 
 ### 4. Project model
@@ -91,21 +41,60 @@ For now, we deploy only product model in 3D detection with TransFusion LiDAR-onl
 If the performance "product model" is not enough in some reason, "Project model" can be used for specific project.
 "Project model" adapts to specific domain, trained by pseudo label using "Offline model".
 "Project model" sometimes uses for project-only dataset, which cannot use for other project for some reason.
-`autoware-ml` do not manage "product model".
+"Project model" is not managed by `autoware-ml`  as it is just prepared as interface from `autoware-ml`, so the user should manage "project model".
 
 ### 5. Offline model
 
 "Offline model" can be used to offline process like pseudo label and cannot be used for real-time autonomous driving application.
 "Offline model" is based on LiDAR-only model for 3D detection for generalization performance.
-"Base model" is basically trained by all dataset.
+"Offline model" is basically trained by all dataset.
+"Offline model" is managed by `autoware-ml`.
 
 ## The versioning for ML model
+### ML model versioning
 
-We follow the strategy for ML model release as below.
+We use semantic version to ML model versioning.
+
+We use "algorithm name + product name + version" to manage the ML model.
+For example, we use as following.
+
+- We release the base model of "TransFusion-L-base v0.2.0".
+- We release the product model of "TransFusion-L-XX1 v0.2.0".
+- We release the project model of "CenterPoint-X2 v0.1.3".
+
+We use the model version of X.Y.Z as following.
+
+- Major version (X): The version of parameters related to ROS packages
+  - If we need to change ROS parameters, we update the major version of ML model.
+  - The changing of major version means that the developer of ROS software need to check when to integrate for the system.
+     - Conversely, if the major version is not changed, it can be used for same ROS packages.
+  - For example, the config of the detection range is used in both training parameter and ROS parameters. Then, if it is changed, we need to update both autoware-ml configs and ROS parameters.
+- Minor version (Y): The version of training configuration
+  - If the model is trained and it doesn't need the change of ROS parameters (it means that the ML model can be used for same version of ROS package), we update the minor version.
+  - The condition include
+    - Change the training parameters
+    - Change using dataset
+    - Change using pretrain model
+- Patch version (Z): The version of patch level fine-tuning
+  - If fine tuned by pseudo T4dataset, we update the patch version.
+  - Update of patch version means performance does not change significantly.
+  - Pseudo T4dataset and project model are not managed by autoware-ml.
+
+### Fine tuning strategy
+
+We follow the strategy for fine tuning as below.
 
 ![](/docs/fig/model_release.drawio.svg)
 
-When new dataset is added, we release the base model at first.
+At first we prepare the pretrain model with pseudo T4dataset to increase generalization performance.
+Pseudo T4dataset contains various vehicle type, sensor configuration, and kinds of LiDAR between Velodyne series and Pandar series.
+We are to adapt various sensor configuration by using pretrain model, which is trained by various pseudo T4dataset.
+
+After that, we train base model with all of annotated T4dataset based on pretrain model.
+The reason why We use all of the dataset is based on the strategy of foundation model.
+The base model is fine-tuned to adapt a wide range of sensor configuration and driving area.
+
+When new annotated T4dataset is added, we release new base model at first.
 After that we release the product model using the base model as pre-trained model.
 If some problem like domain-specific objects, we release the project model by retraining the product model using pseudo label with the offline model.
 Note that we do not retrain the product model and project model from the model of before version because it is difficult to trace the model.
@@ -116,17 +105,34 @@ We prepare S3 storage for models and intermediate product.
 In `autoware-ml`, we can use URL path instead of local path as MMLab libraries.
 For example, we can run the script as `python tools/detection2d/test.py projects/YOLOX/configs/yolox_l_8xb8-300e_coco.py https://download.openmmlab.com/mmdetection/v2.0/yolox/yolox_l_8x8_300e_coco/yolox_l_8x8_300e_coco_20211126_140236-d3bd2b23.pth`.
 
-- Model: {URL}/autoware-ml/models/{algorithm}/{pretrain/base/product}/{version}/{pth, config, log}
+- Model: {URL}/autoware-ml/models/{algorithm}/{model-name}/{version}/{pth, config, log}
 
 ```
 - {URL}/autoware-ml/models/TransFusion/
-  - pretrain/
-    - v1/
+  - nuscenes/
+    - v1.0.0/
       - epoch_20.pth
       - config.py
       - log.log
-  - base/
-    - v1/
+  - t4pretrain/
+    - v1.0.0/
+      - epoch_20.pth
+      - config.py
+      - log.log
+  - t4base/
+    - v1.0.0/
+      - epoch_20.pth
+      - config.py
+      - log.log
+      - transfusion.onnx
+  - t4x2/
+    - v1.0.0/
+      - epoch_20.pth
+      - config.py
+      - log.log
+      - transfusion.onnx
+  - t4x2/
+    - v1.0.0/
       - epoch_20.pth
       - config.py
       - log.log

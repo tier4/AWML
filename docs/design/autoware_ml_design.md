@@ -5,7 +5,7 @@
 
 `autoware-ml` is designed for deployment from training and evaluation with Autoware and active learning framework.
 
-![](/docs/fig/autoware_ml_pipeline.drawio.svg)
+![](/docs/fig/autoware-ml.drawio.svg)
 
 ### The pipeline design of `autoware-ml`
 

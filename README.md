@@ -3,7 +3,7 @@
 This repository is machine learning library for [Autoware](https://github.com/autowarefoundation/autoware) based on [OpenMMLab library](https://github.com/open-mmlab).
 `autoware-ml` support training with [T4dataset format](https://github.com/tier4/tier4_perception_dataset) in addition to open dataset.
 
-![](/docs/fig/autoware_ml_pipeline.drawio.svg)
+![](/docs/fig/autoware-ml.drawio.svg)
 
 - Supported environment
   - All tools are tested by [Docker environment](Dockerfile) on Ubuntu 22.04LTS
@@ -46,7 +46,6 @@ If you want to use `autoware-ml`, you should read as below pages.
 - [Select scene for rosbag](/tools/scene_selector/)
 - (TBD) [Auto-label for 3D data](/tools/auto_labeling_3d/)
 - (TBD) [Auto-label for 2D data](/tools/auto_labeling_2d/)
-
 
 ## Supported pipelines
 
