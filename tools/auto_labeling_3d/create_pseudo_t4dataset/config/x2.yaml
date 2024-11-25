@@ -1,0 +1,14 @@
+task: convert_rosbag_to_pseudo-t4
+description:
+  visibility:
+    full: "No occlusion of the object."
+    most: "Object is occluded, but by less than 50%."
+    partial: "The object is occluded by more than 50% (but not completely)."
+    none: "The object is 90-100% occluded and no points/pixels are visible in the label."
+  camera_index:
+    CAM_FRONT: 0
+    CAM_FRONT_RIGHT: 1
+    CAM_BACK_RIGHT: 2
+    CAM_BACK: 3
+    CAM_BACK_LEFT: 4
+    CAM_FRONT_LEFT: 5

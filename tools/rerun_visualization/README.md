@@ -13,7 +13,7 @@ Visualize with T4dataset.
 - Other supported feature
   - [ ] Add unit test
 
-## Install
+## Install and setup
 
 - Install on native environment
 
@@ -21,7 +21,7 @@ Visualize with T4dataset.
 pip install rerun-sdk==0.17.0
 ```
 
-## 3D Visualization
+## 1. 3D Visualization
 
 Visualize 3D detection with T4dataset.
 
@@ -39,27 +39,60 @@ docker run -it --rm --gpus 'all,"capabilities=compute,utility,graphics"' --shm-s
 rerun
 ```
 
+### Visualize of the results from 3D detection trained model
+
 - Run visualization scripts in docker environment
+- Visualize ground truth
 
 ```sh
-python tools/rerun_visualization/visualize_3d.py \
+python tools/rerun_visualization/visualize_3d_model.py \
+{config_file} \
+{product_config} \
+--checkpoint {checkpoint_file} \
+--fix-rotation --split test --bbox-score 0.4 --objects ground_truth --image-num 6
+```
+
+- Visualize prediction result
+
+
+```sh
+python tools/rerun_visualization/visualize_3d_model.py \
 {config_file} \
 {product_config} \
 --checkpoint {checkpoint_file} \
 --fix-rotation --split test --bbox-score 0.4 --objects prediction --image-num 6
 ```
 
-- For XX1 with TransFusion-L
+- (TBD) Visualize prediction result with ground truth
 
 ```sh
-python tools/rerun_visualization/visualize_3d.py \
+python tools/rerun_visualization/visualize_3d_model.py \
+{config_file}\
+{product_config} \
+--checkpoint {checkpoint_file} \
+--fix-rotation --split test --bbox-score 0.4 --objects prediction_with_gt --image-num 6
+```
+
+- For example, visualize XX1 with TransFusion-L
+
+```sh
+python tools/rerun_visualization/visualize_3d_model.py \
 work_dirs/pretrain/transfusion/transfusion_lidar_pillar_second_secfpn_1xb1_90m-768grid-t4xx1.py \
 autoware_ml/configs/detection3d/dataset/t4dataset/xx1.py \
 --checkpoint work_dirs/pretrain/transfusion/epoch_50.pth \
 --fix-rotation --split test --bbox-score 0.1 --objects prediction --image-num 6
 ```
 
-## 3D analysis
+### (TBD) Visualize of the results from info file
+
+- Run visualization scripts in docker environment
+
+```sh
+python tools/rerun_visualization/visualize_3d_pkl.py {pkl_file}
+--fix-rotation --split test --bbox-score 0.4 --objects prediction --image-num 6
+```
+
+## 2. Analysis for 3D detection
 
 - Analysis for dataset
 
@@ -73,7 +106,7 @@ TBD
 TBD
 ```
 
-## 2D visualization
+## 3. 2D visualization
 
 TBD
 
