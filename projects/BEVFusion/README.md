@@ -16,6 +16,7 @@
 ## Results and models
 
 - [Deployed model](docs/deployed_model.md)
+- [T4Offline model](docs/deployed_t4offline_model.md)
 - [Archived model](docs/archived_model.md)
 
 ## Get started
