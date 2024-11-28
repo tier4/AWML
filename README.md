@@ -17,6 +17,7 @@ If you want to know about the design of `autoware-ml`, you should read as below 
 
 - [Docs for architecture of dataset pipeline](/docs/design/architecture_dataset.md)
 - [Docs for architecture of ML model](/docs/design/architecture_model.md)
+- [Docs for architecture of S3 storage](/docs/design/architecture_s3.md)
 - [Docs for autoware-ml design](/docs/design/autoware_ml_design.md)
 
 ### Operation documents

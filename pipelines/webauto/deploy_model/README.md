@@ -6,6 +6,25 @@ You can deploy model by shell script using WebAuto-CLI.
 
 ## Procedure
 
+- Set directory
+
+```
+- work_dirs/20241118_transfusion_lidar_90m-768grid-t4base/
+  - deploy/
+    - transfusion.onnx
+    - transfusion.yaml (ROS parameter)
+    - 20240530_180730.log
+    - epoch_20.pth
+```
+
+- Run the script
+
 ```sh
-pipelines/webauto/deploy_model/deploy_model.sh {path to model}
+pipelines/webauto/deploy_model/deploy_model.sh {path to deploy directory}
+```
+
+- For example, please run the following command
+
+```sh
+pipelines/webauto/deploy_model/deploy_model.sh ./work_dirs/20241118_transfusion_lidar_90m-768grid-t4base/deploy/
 ```
