@@ -33,6 +33,7 @@ If you want to use `autoware-ml`, you should read as below pages.
 
 - [Tips for config files](/docs/tips/config.md)
 - [Tips for remote development](/docs/tips/remote_development.md)
+- [Community support](/docs/tips/community_support.md)
 
 ## Supported tools
 

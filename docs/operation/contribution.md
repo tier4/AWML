@@ -1,5 +1,14 @@
 # Contribution docs
-## Tools for developer
+## Contribute flow
+### 1. Report issue
+
+If you want to add/fix some code, comment and show that you want to fix the issue before implementation.
+
+### 2. Implementation
+
+You should fork from autoware-ml to own repository and make new branch.
+
+### 3. Formatting
 
 - If you develop `autoware-ml`, we recommend some tools as below.
 - [yapf](https://github.com/google/yapf)
@@ -11,26 +20,28 @@ pip install yapf
 - [eeyore.yapf](https://marketplace.visualstudio.com/items?itemName=eeyore.yapf)
   - VSCode extension
 
-## Contribute flow
-### 1. Report issue
-
-If you want to add/fix some code, comment and show that you want to fix the issue before implementation.
-
-### 2. Implementation
-
-You should fork from autoware-ml to own repository and make new branch.
-
-### 3. Test on integration test
+### 4. Test by CI/CD
 
 For now, integration test is done on local environment.
 See [test_integration](/tools/test_integration) for internal user.
 
-### 4. Make PR
+### 5. Make PR
 
+Please make PR and write the contents of it in English.
 When you make the PR, you check the list as below "Use case for contribute".
+
+### 6. Fix from review
+
+When you get comments for PR, you should fix it.
 
 ## PR rule
 ### PR Strategy
+
+- Basically, the code itself becomes technical debt
+
+Basically we do not merge unused code as a library.
+We recommend to manage experimental code in a personal repository.
+So if you make PR, please explain in detail why it has to be in the library.
 
 - Reduce maintenance costs as much as possible
 
@@ -159,7 +170,7 @@ Note that if you want to new algorithm, basically please make PR for [original M
 After merged by it for MMLab libraries like [mmdetection3d](https://github.com/open-mmlab/mmdetection3d) and [mmdetection](https://github.com/open-mmlab/mmdetection), we update the version of dependency of MMLab libraries and make our configs in `/projects` for TIER IV products.
 If you want to add a config to T4dataset or scripts like onnx deploy for models of MMLab's model, you should add codes to `/projects/{model_name}/`.
 
-When you make the PR, we recommend to write PR summary as #134.
+When you make the PR, we recommend to write PR summary as https://github.com/tier4/autoware-ml/pull/134.
 We would you like to write summary of the new model considering the case when some engineers want to catch up.
 If someone want to catch up this model, it is best situation that they need to see only github and do not need to search the information in Jira ticket jungle, Confluence ocean, and Slack universe.
 
