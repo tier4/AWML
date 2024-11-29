@@ -6,7 +6,27 @@ The pipeline of auto labeling for 3D detection.
 
 ## 1. Setup environment
 
-- See [setting environemnt](/tools/setting_environment/)
+- Please pull docker image of `autoware-ml-base` by following [setting environemnt](/tools/setting_environment/)
+- In addition, please follow the below setting up procedure.
+
+### Set up environment for auto_labeling_3d
+
+- Build docker image.
+  - If you [build `autoware-ml` image locally](/tools/setting_environment/README.md#tips), please add `--build-arg BASE_IMAGE=autoware-ml` or `--build-arg BASE_IMAGE=autoware-ml-ros2` to build script.
+
+```sh
+DOCKER_BUILDKIT=1 docker build -t auto_labeling_3d tools/auto_labeling_3d/
+```
+
+- Run docker container.
+
+```sh
+docker run -it --gpus '"device=0"' --name auto_labeling_3d --shm-size=64g -d -v {path to autoware-ml}:/workspace -v {path to data}:/workspace/data auto_labeling_3d bash
+```
+
+- Please follow the setting up procedure in README of the model used for auto labeling.
+  - For example, if you want to use BEVFusion, please follow [setting environemnt for BEVFusion](/projects/BEVFusion/README.md#1-setup).
+
 
 ## (TBD) 2. Create info file from non-annotated T4dataset
 
@@ -22,8 +42,8 @@ The pipeline of auto labeling for 3D detection.
     - ..
 ```
 
-- Make the info file from non-annotated dataset with offline model.
-  - The info file contain the confidence information.
+- Make the info file from non-annotated dataset and the 3d detection model.
+  - The info file contains the confidence information.
 
 ```sh
 python tools/auto_labeling_3d/create_info_data/create_info_data.py --root-path {path to directory of non-annotated T4dataset} --out-dir {path to output} --config {model config file to use auto labeling} --ckpt {checkpoint file}
@@ -32,7 +52,7 @@ python tools/auto_labeling_3d/create_info_data/create_info_data.py --root-path {
 - For example, run the following command
 
 ```sh
-python tools/auto_labeling_3d/create_info_data/create_info_data.py --root-path ./data/t4dataset/pseudo_xx1 --out-dir ./data/info --config projects/BEVFusion/configs/t4dataset/bevfusion_lidar_voxel_second_secfpn_1xb1_t4offline.py --ckpt ./work_dirs/bevfusion_offline/epoch_20.pth
+python tools/auto_labeling_3d/create_info_data/create_info_data.py --root-path ./data/t4dataset/pseudo_xx1 --out-dir ./data/t4dataset/info --config projects/BEVFusion/configs/t4dataset/bevfusion_lidar_voxel_second_secfpn_1xb1_t4offline.py --ckpt ./work_dirs/bevfusion_offline/epoch_20.pth
 ```
 
 - If you want to ensemble for auto labeling, you should create info files for each model.
