@@ -87,11 +87,11 @@
   - info\['pred_instances_3d'\]: It is a list of dict. Each dict contains all 3D inference information of single instance. For the i-th instance:
     - info\['pred_instances_3d'\]\[i\]\['bbox_3d'\]: List of 7 numbers representing the 3D bounding box of the instance, in (x, y, z, l, w, h, yaw) order.
     - info\['pred_instances_3d'\]\[i\]\['bbox_label_3d'\]: A int indicate the label of instance and the -1 indicate ignore.
-    - info\['pred_instances_3d'\]\[i\]\['bbox_scores_3d'\]: A float confidence score of instance.
+    - info\['pred_instances_3d'\]\[i\]\['bbox_score_3d'\]: A float confidence score of instance.
   - info\['pred_instances_2d'\]: It is a list of dict. Each dict contains all 2D inference information of single instance. For the i-th instance:
     - info\['pred_instances_2d'\]\[i\]\['bbox_2d'\]: List of 7 numbers representing the 2D bounding box of the instance, in (x, y, z, l, w, h, yaw) order.
     - info\['pred_instances_2d'\]\[i\]\['bbox_label_2d'\]: A int indicate the label of instance and the -1 indicate ignore.
-    - info\['pred_instances_2d'\]\[i\]\['bbox_scores_2d'\]: A float confidence score of instance.
+    - info\['pred_instances_2d'\]\[i\]\['bbox_score_2d'\]: A float confidence score of instance.
 ```
 
 ## Supported environment
