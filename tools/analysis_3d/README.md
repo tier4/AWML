@@ -1,7 +1,8 @@
-#Analysis_3d 
-It provides a framework to developers in `autoware-ml` to add analyses for 3D annotations in T4dataset easily. 
-With this framework, developers don't need to generate any `info` files or rewrite their data loading for the dataset. 
-They only need to follow `AnalysisCallbackInterface` to add the analyses they are interested in.    
+# analysis_3d
+
+It provides a framework to developers in `autoware-ml` to add analyses for 3D annotations in T4dataset easily.
+With this framework, developers don't need to generate any `info` files or rewrite their data loading for the dataset.
+They only need to follow `AnalysisCallbackInterface` to add the analyses they are interested in.
 
 ## Summary
 
@@ -25,17 +26,21 @@ They only need to follow `AnalysisCallbackInterface` to add the analyses they ar
 docker run -it --rm --gpus all --shm-size=64g --name awml -p 6006:6006 -v $PWD/:/workspace -v $PWD/data:/workspace/data autoware-ml
 ```
 
-### 2. Dataset analysis
-Make sure the dataset follows the [T4dataset format](https://github.com/tier4/tier4_perception_dataset/blob/main/docs/t4_format_3d_detailed.md), 
-note that it doesn't need any `info` files 
+### 2. Analysis
+#### 2.1. Dataset analysis
+
+Make sure the dataset follows the [T4dataset format](https://github.com/tier4/tier4_perception_dataset/blob/main/docs/t4_format_3d_detailed.md), note that it doesn't need any `info` file
+
 ```sh
 # T4dataset (base)
 python tools/analyses_3d/run.py --config_path autoware_ml/configs/detection3d/dataset/t4dataset/base.py --data_root_path data/t4dataset/ --out_dir data/t4dataset/analyses/
 ```
 
-### 2.1. For development
+## For developer
+
 1. Add a new analysis to inherit `AnalysisCallbackInterface` as a callback, and implement `run()`, for example, `tools/analysis_3d/callbacks/category_attribute.py`
-2. Import the new analysis in `AnalysisRunner`, and add them to the list of `analysis_callbacks`, for example, 
+2. Import the new analysis in `AnalysisRunner`, and add them to the list of `analysis_callbacks`, for example,
+
 ```python
 self.analysis_callbacks: List[AnalysisCallbackInterface] = [
     ...
@@ -53,8 +58,4 @@ self.analysis_callbacks: List[AnalysisCallbackInterface] = [
 ]
 ```
 
-### 3. Model layer difference analysi
-TBD
-
 ## References
-TBD

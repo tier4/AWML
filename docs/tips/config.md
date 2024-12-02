@@ -18,7 +18,31 @@ From [the import file](https://github.com/tier4/autoware-ml/tree/e73f827483d49af
 As an example, please confirm like [dataset config](https://github.com/tier4/autoware-ml/tree/e73f827483d49af53fe0aa4f1e7aebccf720971a/autoware_ml/configs/detection3d/dataset/t4dataset/x2.py#L14).
 An [the yaml files](https://github.com/tier4/autoware-ml/tree/e73f827483d49af53fe0aa4f1e7aebccf720971a/autoware_ml/configs/detection3d/dataset/t4dataset/database_v2_0.yaml) are defined and it has the information of dataset.
 
-## detection3d
+### How to manage the config files
+
+The config file of [MMlab](https://github.com/open-mmlab) libraries has high degree of freedom to set parameters.
+However, it is easy to lead technical debt because config files are scattered.
+
+So we recommend following config directory structure.
+
+```
+- autoware_ml/
+  - configs/
+    - detection3d/
+      - component.py
+- projects/
+  - TransFusion/
+    - configs/
+      - t4dataset/
+        - 90m_768grid/
+          - default.py
+          - parameter_1.py
+          - parameter_2.py
+        - 50m_768grid/
+          - default.py
+```
+
+## Detection3d
 ### Use for Tensorboard
 
 - Add backend for Tensorboard to config

@@ -1,4 +1,4 @@
-/.devcontainer/ satoshi.tanaka@tier4.jp
+/.devcontainer/ amadeusz.szymko.2@tier4.jp satoshi.tanaka@tier4.jp
 /.github/ satoshi.tanaka@tier4.jp
 /.github/workflows koji.minoda@tier4.jp
 /.vscode/ satoshi.tanaka@tier4.jp
@@ -9,11 +9,12 @@
 /pipelines/test_integration/ satoshi.tanaka@tier4.jp
 /pipelines/update_t4dataset/ satoshi.tanaka@tier4.jp
 /pipelines/webauto/ satoshi.tanaka@tier4.jp
-/projects/BEVFusion/ satoshi.tanaka@tier4.jp
+/projects/BEVFusion/ kenzo.lobos@tier4.jp
 /projects/BLIP-2/ satoshi.tanaka@tier4.jp
-/projects/EfficientNet/ satoshi.tanaka@tier4.jp
+/projects/CenterPoint/ kokseang.tan@tier4.jp
 /projects/FRNet/ amadeusz.szymko.2@tier4.jp
-/projects/GLIP/ samrat.thapa@tier4.jp satoshi.tanaka@tier4.jp
+/projects/GLIP/ samrat.thapa@tier4.jp
+/projects/MobileNetv2/ samrat.thapa@tier4.jp
 /projects/SegmentAnything/ satoshi.tanaka@tier4.jp
 /projects/SparseConvolution/ kenzo.lobos@tier4.jp
 /projects/SwinTransformer/ satoshi.tanaka@tier4.jp
@@ -21,7 +22,7 @@
 /projects/TransFusion/ amadeusz.szymko.2@tier4.jp satoshi.tanaka@tier4.jp
 /projects/YOLOX/ satoshi.tanaka@tier4.jp
 /projects/YOLOX_opt/ samrat.thapa@tier4.jp satoshi.tanaka@tier4.jp
-/tools/analysis_3d/ satoshi.tanaka@tier4.jp
+/tools/analysis_3d/ kokseang.tan@tier4.jp
 /tools/auto_label_2d/ satoshi.tanaka@tier4.jp
 /tools/auto_label_3d/ satoshi.tanaka@tier4.jp
 /tools/detection2d/ satoshi.tanaka@tier4.jp
@@ -30,4 +31,3 @@
 /tools/scene_selector/ samrat.thapa@tier4.jp satoshi.tanaka@tier4.jp
 /tools/segmentation2d/ satoshi.tanaka@tier4.jp
 /tools/setting_environment/ satoshi.tanaka@tier4.jp
-/tools/t4dataset_pseudo_label/ satoshi.tanaka@tier4.jp

@@ -1,19 +1,28 @@
 # autoware-ml
 
-This repository is machine learning library for [Autoware](https://github.com/autowarefoundation/autoware) based on [OpenMMLab library](https://github.com/open-mmlab).
-`autoware-ml` support training with [T4dataset format](https://github.com/tier4/tier4_perception_dataset) in addition to open dataset.
+This repository is a machine learning library to deploy for [Autoware](https://github.com/autowarefoundation/autoware) to aim for "robotics MLOps".
+`Autoware-ml` supports training with [T4dataset format](https://github.com/tier4/tier4_perception_dataset) in addition to open datasets and deployment for [Autoware](https://github.com/autowarefoundation/autoware).
+In addition to ML model deployment, `autoware-ml` supports active learning framework include auto labeling, semi-auto labeling, and data mining.
 
 ![](/docs/fig/autoware-ml.drawio.svg)
 
-- Supported environment
-  - All tools are tested by [Docker environment](Dockerfile) on Ubuntu 22.04LTS
-  - NVIDIA dependency: CUDA 12.1 + cuDNN 8
-    - Need > 530.xx.xx NVIDIA device driver
+`Autoware-ml` can deploy following task for now.
+
+- 2D detection for dynamic recognition
+- 3D detection for dynamic recognition
+- 2D fine detection for traffic light recognition
+- 2D classification for traffic light recognition
+
+`Autoware-ml` support following environment.
+
+- All tools are tested by [Docker environment](Dockerfile) on Ubuntu 22.04LTS
+- NVIDIA dependency: CUDA 12.1 + cuDNN 8
+  - Need > 530.xx.xx NVIDIA device driver
 
 ## Docs
 ### Design documents
 
-If you want to know about the design of `autoware-ml`, you should read as below pages.
+If you want to know about the design of `autoware-ml`, you should read following pages.
 
 - [Docs for architecture of dataset pipeline](/docs/design/architecture_dataset.md)
 - [Docs for architecture of ML model](/docs/design/architecture_model.md)
@@ -22,14 +31,14 @@ If you want to know about the design of `autoware-ml`, you should read as below 
 
 ### Operation documents
 
-If you want to develop `autoware-ml`, you should read as below pages.
+If you want to develop `autoware-ml`, you should read following pages.
 
 - [Docs for contribution](/docs/operation/contribution.md)
 - [Note for next release](/docs/operation/release_note.md)
 
 ### Tips
 
-If you want to use `autoware-ml`, you should read as below pages.
+If you want to know about `autoware-ml`, you should read following pages.
 
 - [Tips for config files](/docs/tips/config.md)
 - [Tips for remote development](/docs/tips/remote_development.md)
@@ -43,16 +52,17 @@ If you want to use `autoware-ml`, you should read as below pages.
   - [Training and evaluation for 2D detection](/tools/detection2d/)
   - (TBD) [Training and evaluation for 2D semantic segmentation](/tools/segmentation2d/)
 - Analyze for the dataset and the model
-  - [Analysis for 3d detection](/tools/analysus_3d)
+  - [Analysis for 3d detection](/tools/analysis_3d)
+  - [Analysis for 3d detection](/tools/analysis_2d)
   - [Visualization with rerun](/tools/rerun_visualization)
 - [Select scene for rosbag](/tools/scene_selector/)
-- (TBD) [Auto-label for 3D data](/tools/auto_labeling_3d/)
+- [Auto-label for 3D data](/tools/auto_labeling_3d/)
 - (TBD) [Auto-label for 2D data](/tools/auto_labeling_2d/)
 
 ## Supported pipelines
 
 - [Deploy 3D detection model](/pipelines/deploy_detection3d/)
-- [Integration test](/pipelines/test_integration/)
+- [Integration test for training and deployment](/pipelines/test_integration/)
 - [Update T4dataset](/pipelines/update_t4dataset/)
 - [Use autoware-ml with WebAuto](/pipelines/webauto/)
 - (TBD) [Project adaptation](/pipelines/project_adaptation/)
@@ -88,7 +98,7 @@ If you want to use `autoware-ml`, you should read as below pages.
 ### 2D classification
 
 - Model for Autoware
-  - (TBD) [EfficientNet](projects/EfficientNet/)
+  - [MobileNetv2](projects/MobileNetv2/)
 
 ### Vision language
 
