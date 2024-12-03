@@ -50,3 +50,6 @@ Please see [auto_labeling_3d](https://github.com/tier4/autoware-ml/tree/main/too
   - https://github.com/tier4/autoware-ml/pull/240
   - https://github.com/tier4/autoware-ml/pull/241
   - https://github.com/tier4/autoware-ml/pull/242
+  - https://github.com/tier4/autoware-ml/pull/243
+  - https://github.com/tier4/autoware-ml/pull/244
+  - https://github.com/tier4/autoware-ml/pull/245
