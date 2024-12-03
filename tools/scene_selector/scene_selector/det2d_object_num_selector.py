@@ -108,7 +108,7 @@ class Det2dObjectNumSelector(ImageBasedSceneSelector):
 
         is_target = any(label_counts.get(label, 0) >= thres for label, thres in self.target_and_threshold.items())
 
-        return (is_target, label_counts) if return_counts else is_target
+        return (is_target, {"class_counts": label_counts} ) if return_counts else is_target
 
 
     def is_target_scene_multiple(self, multiple_image_arrays: List[Union[List[np.ndarray], List[str]]], return_counts: bool = False, results_path: str = "") -> List[Union[bool, tuple]]:
@@ -144,7 +144,7 @@ class Det2dObjectNumSelector(ImageBasedSceneSelector):
             
             start_idx = end_idx
         if return_counts:
-            return [x[0] for x in output],[x[1] for x in output]
+            return [x[0] for x in output], {"class_counts": [x[1] for x in output]} 
         else:
             return output
 

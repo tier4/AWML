@@ -1,17 +1,25 @@
-from argparse import ArgumentParser
 import json
 import os
-import yaml
-from mmengine.config import Config
-from autoware_ml.registry import DATA_SELECTOR
-import warnings
-from nuscenes import NuScenes
 import re
+import warnings
+from argparse import ArgumentParser
+
 import numpy as np
+import yaml
+from mmdet3d.datasets.utils import convert_quaternion_to_matrix
+from mmengine.config import Config
+from nuscenes import NuScenes
+
+from autoware_ml.registry import DATA_SELECTOR
+from tools.detection3d.create_data_t4dataset import get_lidar_token
+from tools.detection3d.t4dataset_converters.t4converter import (
+    extract_nuscenes_data, obtain_sensor2top)
 
 DEFAULT_T4_CAMERA = ['CAM_FRONT', 'CAM_BACK']
 
+
 class NpEncoder(json.JSONEncoder):
+
     def default(self, obj):
         if isinstance(obj, np.integer):
             return int(obj)
@@ -20,6 +28,101 @@ class NpEncoder(json.JSONEncoder):
         if isinstance(obj, np.ndarray):
             return obj.tolist()
         return super(NpEncoder, self).default(obj)
+
+
+from typing import Any, Dict, List, Optional
+
+import numpy as np
+
+
+def get_input_info(
+    nusc: 'NuScenes',
+    sample: Dict[str, Any],
+    camera_types: List[str],
+) -> Optional[Dict[str, Any]]:
+    """
+    Retrieves image paths and calibration data for specified camera types,
+    along with the point cloud data path from a nuScenes sample.
+
+    Args:
+        nusc (NuScenes): The nuScenes dataset object.
+        sample (Dict[str, Any]): The sample data containing sensor tokens.
+        camera_types (List[str]): List of camera sensor types to include.
+
+    Returns:
+        Optional[Dict[str, Any]]: A dictionary containing image and point cloud paths
+        with calibration data, or None if lidar data is unavailable.
+    """
+    # Obtain the lidar token from the sample
+    lidar_token = get_lidar_token(sample)
+    if lidar_token is None:
+        print(f"Sample {sample['token']} doesn't have lidar data.")
+        return None
+
+    # Extract necessary transformation matrices and translations
+    (
+        _,
+        _,
+        _,
+        _,
+        _,
+        _,
+        _,
+        ego_to_global_rot,
+        lidar_to_ego_rot,
+        ego_to_global_trans,
+        lidar_to_ego_trans,
+    ) = extract_nuscenes_data(nusc, sample, lidar_token)
+
+    # Initialize the information dictionary
+    info: Dict[str, Any] = {}
+
+    # Process each specified camera type
+    for cam in camera_types:
+        if cam in sample['data']:
+            cam_token = sample['data'][cam]
+            # Retrieve camera data
+            image_path, _, cam_intrinsic = nusc.get_sample_data(cam_token)
+
+            # Obtain camera-to-top (global) transformation info
+            cam_info = obtain_sensor2top(
+                nusc,
+                cam_token,
+                lidar_to_ego_trans,
+                lidar_to_ego_rot,
+                ego_to_global_trans,
+                ego_to_global_rot,
+                cam,
+            )
+            cam_info['cam_intrinsic'] = cam_intrinsic
+
+            # Initialize camera info dictionary
+            info[cam] = {}
+            info[cam]['img_path'] = image_path
+            info[cam]['cam2img'] = cam_intrinsic.tolist()
+            info[cam]['sample_data_token'] = cam_info['sample_data_token']
+            # Adjust timestamp to seconds
+            info[cam]['timestamp'] = cam_info['timestamp'] / 1e6
+            # Compute camera-to-ego transformation matrix
+            info[cam]['cam2ego'] = convert_quaternion_to_matrix(
+                cam_info['sensor2ego_rotation'],
+                cam_info['sensor2ego_translation'],
+            )
+
+            # Compute the lidar-to-camera transformation matrix
+            lidar_to_camera = np.eye(4)
+            rotation = cam_info['sensor2lidar_rotation']
+            translation = cam_info['sensor2lidar_translation']
+            lidar_to_camera[:3, :3] = rotation.T
+            lidar_to_camera[:3, 3] = -np.dot(rotation.T, translation)
+            info[cam]['lidar2cam'] = lidar_to_camera.astype(
+                np.float32).tolist()
+
+    # Retrieve the point cloud data path
+    points_path, _, _ = nusc.get_sample_data(lidar_token)
+
+    return {"images": info, "points": points_path}
+
 
 def parse_args():
     parser = ArgumentParser()
@@ -137,24 +240,18 @@ def main():
         exit(0)
 
     # Select scenarios from train data
-    used_sensors = set(cfg.get("t4_dataset_sensor_names", DEFAULT_T4_CAMERA))
     selected_scenarios = []
-    scene_object_counts = {}  # this can be used for analysis later
+    scene_metadata = {}  # this can be used for analysis later
 
     np.random.shuffle(train_list)
     for dataset_path in train_list:
         dataset_id = dataset_path.split("/")[-2]
-        nusc_info = NuScenes(version="annotation",
-                             dataroot=dataset_path,
-                             verbose=False)
-        image_paths = []
+        nusc_info = NuScenes(
+            version="annotation", dataroot=dataset_path, verbose=False)
+        sensor_data = []
         for sample in nusc_info.sample:
-            sensor_data_paths = [
-                nusc_info.get_sample_data_path(v)
-                for k, v in sample.get("data", {}).items() if k in used_sensors
-            ]
-            if sensor_data_paths:
-                image_paths.append(sensor_data_paths)
+            sensor_data.append(
+                get_input_info(nusc_info, sample, cfg.camera_types))
 
         # Handle visualization output path
         if args.show_visualization:
@@ -164,12 +261,12 @@ def main():
         else:
             results_path = ""
 
-        is_target, label_counts = scene_selector.is_target_scene_multiple(
-            image_paths, return_counts=True, results_path=results_path)
+        is_target, metadata = scene_selector.is_target_scene(
+            sensor_data, return_counts=True, results_path=results_path)
         target_scene_ratio = np.mean(is_target)
-        scene_object_counts[dataset_id] = {
+        scene_metadata[dataset_id] = {
             "target_scene_ratio": target_scene_ratio,
-            "class_counts_by_frame": label_counts
+            "metadata": metadata
         }
 
         if target_scene_ratio > args.true_ratio:
@@ -189,11 +286,15 @@ def main():
     }
 
     os.makedirs(args.out_dir, exist_ok=True)
-    with open(os.path.join(args.out_dir, f"{args.experiment_name}.yaml"), 'w') as outfile:
+    with open(os.path.join(args.out_dir, f"{args.experiment_name}.yaml"),
+              'w') as outfile:
         yaml.dump(output_data, outfile)
-    with open(os.path.join(args.out_dir, f"{args.experiment_name}_object_counts.json"), 'w') as outfile:
-        json.dump(scene_object_counts, outfile, indent=4, cls=NpEncoder)
-        
+    with open(
+            os.path.join(args.out_dir,
+                         f"{args.experiment_name}_object_counts.json"),
+            'w') as outfile:
+        json.dump(scene_metadata, outfile, indent=4, cls=NpEncoder)
+
     # Optionally create symbolic links
     if args.create_symbolic_links:
         experiment_dir = os.path.join(args.data_root, args.experiment_name)
@@ -201,9 +302,10 @@ def main():
 
         for dataset_path in selected_scenarios + val_list + test_list:
             src = os.path.abspath(os.path.split(dataset_path)[0])
-            os.symlink(src,
-                       os.path.join(experiment_dir, os.path.basename(src)),
-                       target_is_directory=True)
+            os.symlink(
+                src,
+                os.path.join(experiment_dir, os.path.basename(src)),
+                target_is_directory=True)
 
 
 if __name__ == '__main__':

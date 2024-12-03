@@ -436,9 +436,9 @@ class TransFusionHead(nn.Module):
                                     boxes_for_nms,
                                     top_scores,
                                     thresh=task['radius'],
-                                    pre_maxsize=self.test_cfg['pre_maxsize'],
+                                    pre_max_size=self.test_cfg['pre_max_size'],
                                     post_max_size=self.
-                                    test_cfg['post_maxsize'],
+                                    test_cfg['pre_max_size'],
                                 )
                         else:
                             task_keep_indices = torch.arange(task_mask.sum())

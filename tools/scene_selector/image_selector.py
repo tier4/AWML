@@ -3,6 +3,7 @@ from argparse import ArgumentParser
 
 import cv2
 from mmengine.config import Config
+
 from autoware_ml.registry import DATA_SELECTOR
 
 

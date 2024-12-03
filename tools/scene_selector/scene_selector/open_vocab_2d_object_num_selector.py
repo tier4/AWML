@@ -93,7 +93,7 @@ class OpenVocab2dObjectNumSelector(ImageBasedSceneSelector):
                 class_name: count
                 for count, class_name in zip(label_counts, self.classes)
             }
-            return is_target, class_counts
+            return is_target, {"class_counts": class_counts}
         else:
             return is_target
         
@@ -137,7 +137,7 @@ class OpenVocab2dObjectNumSelector(ImageBasedSceneSelector):
             start_idx = end_idx
         
         if return_counts:
-            return [x[0] for x in output],[x[1] for x in output]
+            return [x[0] for x in output], {"class_counts": [x[1] for x in output]}
         else:
             return output
     def _get_predictions(self, image_array: Union[List[np.ndarray],List[str]], results_path: str = "") -> Dict:

@@ -8,7 +8,8 @@
 
 ## config
 
-- [Object number threshold scene selector with 2D detection](configs/det2d_object_num_selector/)
+- [Object number threshold scene selector with 2D detection](configs/
+/)
 - [Object number threshold scene selector with 2D open vocabulary](configs/open_vocab_2d_object_num_selector/)
 - [(TBD) Select scene with VLM QA](configs/vlm_qa_selector/)
 - [(TBD) rosbag selector](configs/rosbag/)
@@ -24,7 +25,7 @@ DOCKER_BUILDKIT=1 docker build -t autoware-ml-ros2 ./tools/setting_environment/r
 
 Choose from belows.
 
-#### 2.1. Select scene from T4dataset
+#### 2.1. Select scene from images of T4dataset
 
 ```sh
 python3 tools/scene_selector/image_selector_t4_dataset.py {config_file} --out-dir {output_dir} \
@@ -41,7 +42,7 @@ python3 tools/scene_selector/image_selector_t4_dataset.py tools/scene_selector/c
   --true-ratio 0.1 --show-visualization --create-symbolic-links
 ```
 
-#### 2.2. Select scene from images
+#### 2.2. Select scene from raw images
 
 This is a tool to select images from a set of images.
 Note that currently we do not support the evaluation as we do in "t4dataset selector" at this moment.
@@ -57,6 +58,26 @@ python tools/scene_selector/image_selector.py {config_file} {directory or image_
 ```sh
 python3 tools/scene_selector/image_selector.py tools/scene_selector/configs/det2d_object_num_selector/yolox_l_object_number_sum.py \
   "./data/t4dataset/database_v1_1_mini/0338521f-321a-4a9a-9c52-480f1ae1131a/2/data/CAM_FRONT/*.jpg" --out-dir ./work_dirs
+```
+
+#### 2.1. Select scene from multi-modal data (Pointcloud or Pointcloud+Images data) of T4dataset
+
+- Run
+
+```sh
+python3 tools/scene_selector/multimodal_t4_dataset_selector.py {config_file} --out-dir {output_dir} \
+  --dataset-configs {dataset_config} --data-root {data_root} \
+  --experiment-name {experiment_name} --true-ratio {true_ratio} \
+  --show-visualization --create-symbolic-links
+```
+
+- Example
+
+```sh
+python3 tools/scene_selector/multimodal_t4_dataset_selector.py tools/scene_selector/configs/model_rareness_example_mining/bevfusion_cl_transfusion_l.py \
+  --out-dir ./work_dirs/rareness_mining --dataset-configs autoware_ml/configs/detection3d/dataset/t4dataset/database_v1_1_mini.yaml \
+  --data-root ./data/t4dataset/ --experiment-name rareness_mining \
+  --true-ratio 0.1 --show-visualization --create-symbolic-links
 ```
 
 ## Design for new scene selector
@@ -79,9 +100,9 @@ python3 tools/t4dataset_pseudo_label_2d/t4dataset_pseudo_label.py --input {path 
 - Run scene selector script to generate `scene_selector_infos.pkl`. This file contains results for which scene to select.
 
 ```sh
-python3 tools/scene_selector/image_selector_t4_dataset.py {config_file} --out-dir {output_dir} \
-  --info-file {info_file_path} --data-root {data_root} \
-  --experiment-name {experiment_name} \
+python3 tools/scene_selector/image_t4_dataset_selector.py {config_file} --out-dir {output_dir} \
+  --dataset-configs {dataset_config} --data-root {data_root} \
+  --experiment-name {experiment_name} --true-ratio {true_ratio} \
   --show-visualization --create-symbolic-links
 ```
 
