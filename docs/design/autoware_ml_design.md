@@ -89,10 +89,12 @@
     - info\['pred_instances_3d'\]\[i\]\['bbox_label_3d'\]: A int indicate the label of instance and the -1 indicate ignore.
     - info\['pred_instances_3d'\]\[i\]\['bbox_score_3d'\]: A float confidence score of instance.
     - info\['pred_instances_3d'\]\[i\]\['velocity'\]: Velocities of 3D bounding boxes (no vertical measurements due to inaccuracy), a list has shape (2.).
+    - info\['pred_instances_3d'\]\[i\]\['instance_id_3d'\]: Instance id of 3D bounding boxes. It can be used for 3D tracking algorithm.
   - info\['pred_instances_2d'\]: It is a list of dict. Each dict contains all 2D inference information of single instance. For the i-th instance:
     - info\['pred_instances_2d'\]\[i\]\['bbox_2d'\]: List of 7 numbers representing the 2D bounding box of the instance, in (x, y, z, l, w, h, yaw) order.
     - info\['pred_instances_2d'\]\[i\]\['bbox_label_2d'\]: A int indicate the label of instance and the -1 indicate ignore.
     - info\['pred_instances_2d'\]\[i\]\['bbox_score_2d'\]: A float confidence score of instance.
+    - info\['pred_instances_2d'\]\[i\]\['instance_id_2d'\]: Instance id of 2D bounding boxes. It can be used for 2D tracking algorithm.
 ```
 
 ## Supported environment
