@@ -33,7 +33,7 @@ Make sure the dataset follows the [T4dataset format](https://github.com/tier4/ti
 
 ```sh
 # T4dataset (base)
-python tools/analyses_3d/run.py --config_path autoware_ml/configs/detection3d/dataset/t4dataset/base.py --data_root_path data/t4dataset/ --out_dir data/t4dataset/analyses/
+python tools/analysis_3d/run.py --config_path autoware_ml/configs/detection3d/dataset/t4dataset/base.py --data_root_path data/t4dataset/ --out_dir data/t4dataset/analyses/
 ```
 
 ## For developer
