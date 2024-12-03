@@ -52,8 +52,8 @@ If you want to know about `autoware-ml`, you should read following pages.
   - [Training and evaluation for 2D detection](/tools/detection2d/)
   - (TBD) [Training and evaluation for 2D semantic segmentation](/tools/segmentation2d/)
 - Analyze for the dataset and the model
-  - [Analysis for 3d detection](/tools/analysis_3d)
-  - [Analysis for 3d detection](/tools/analysis_2d)
+  - [Analysis for 3D detection](/tools/analysis_3d)
+  - [Analysis for 2D detection](/tools/analysis_2d)
   - [Visualization with rerun](/tools/rerun_visualization)
 - [Select scene for rosbag](/tools/scene_selector/)
 - [Auto-label for 3D data](/tools/auto_labeling_3d/)

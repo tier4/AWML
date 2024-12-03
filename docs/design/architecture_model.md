@@ -61,10 +61,10 @@ We use `"algorithm_name + model_name/version"` to manage the ML model.
 For example, we use as following.
 
 - The base model of "TransFusion-L base/1.2".
-- The base model of "CenterPoint-offline base/2.4".
+- The base model of "BEVFusion-offline base/2.4".
 - The base model of "CenterPoint-nearby base/3.1".
 - The product model of "TransFusion-L japantaxi-gen1/1.2.2".
-- The project model of "TransFusion-L-50m base/1.2".
+- The product model of "CenterPoint x2/1.2.1".
 - The project model of "CenterPoint x2/1.2.3-shiojiri.2".
 
 > algorithm_name
