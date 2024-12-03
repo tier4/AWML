@@ -59,17 +59,17 @@ Model data to manage in S3 are following
 
 - Checkpoint file
   - We use checkpoint file for fine tuning.
-  - Ex. `epoch_20.pth`
+  - e.g. `epoch_20.pth`
 - Config file
   - We use config file for reproduction of training.
-  - Ex.`transfusion_lidar_90m-768grid-t4xx1.py`
+  - e.g. `transfusion_lidar_90m-768grid-t4xx1.py`
 - Log file
   - We use log files for reproduction of training.
-  - Ex.`train_log.log`, `test_log.log`
+  - e.g. `train_log.log`, `test_log.log`
 - Onnx file
-  - Ex.`transfusion.onnx`
+  - e.g. `transfusion.onnx`
 - ROS parameter file
-  - Ex.`transfusion.param.yaml`
+  - e.g. `transfusion.param.yaml`
 
 The directory architecture is like `{base URL}/autoware-ml/models/{algorithm}/{model-name}/{version}/*`. For example, we will construct as below.
 
