@@ -1,6 +1,7 @@
 from pathlib import Path
 import pickle
 from typing import List, Dict, Tuple, Any
+import uuid
 
 from mmdet3d.registry import MODELS
 from mmdet3d.structures import LiDARInstance3DBoxes
@@ -37,6 +38,7 @@ def _results_to_info(non_annotated_dataset_info: Dict[str, Any], inference_resul
             pred_instance_3d: Dict[str, Any] = {}
             
             pred_instance_3d["bbox_3d"]: List[float] = bbox[:7].tolist()
+            pred_instance_3d["instance_id_3d"]: str = str(uuid.uuid4())
             pred_instance_3d["bbox_label_3d"]: int = label.item()
             pred_instance_3d["bbox_score_3d"]: float = score.item()
 
