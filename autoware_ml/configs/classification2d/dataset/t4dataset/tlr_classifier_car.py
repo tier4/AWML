@@ -1,0 +1,40 @@
+dataset_version_list = ["tlr_v0_1", "tlr_v1_0_x2", "tlr_v1_0_xx1", "tlr_v1_2"]
+dataset_version_config_root = "autoware_ml/configs/classification2d/dataset/t4dataset/"
+classes = ("green", "left,red", "left,red,straight", "red", "red,right",
+           "red,straight", "unknown", "yellow", "red,up_left",
+           "red,right,straight", "red,up_right")
+
+class_mappings = {
+    "green": "green",
+    "red": "red",
+    "red_left": "left,red",
+    "left-red": "left,red",
+    "red_leftdiagonal": "red,up_left",
+    "red_right": "red,right",
+    "red-right": "red,right",
+    "red_straight": "red,straight",
+    "red-straight": "red,straight",
+    "red_straight_left": "left,red,straight",
+    "left-red-straight": "left,red,straight",
+    "red_straight_left_right": "unknown",
+    "red_straight_right": "red,right,straight",
+    "red-right-straight": "red,right,straight",
+    "unknown": "unknown",
+    "yellow": "yellow",
+    "yellow_right": "unknown",
+    "yellow_straight": "yellow",
+    #Skip the following classes if present like in AWMLDetection2d.
+    "red-rightdiagonal": "SKIP_CLASS",
+    "right-yellow": "SKIP_CLASS",
+    "leftdiagonal-red": "SKIP_CLASS",
+    "crosswalk_red": "SKIP_CLASS",
+    "crosswalk_green": "SKIP_CLASS",
+    "crosswalk_unknown": "SKIP_CLASS",
+    "green_straight": "SKIP_CLASS",
+    "green_left": "SKIP_CLASS",
+    "green_right": "SKIP_CLASS",
+    "yellow_left": "SKIP_CLASS",
+    "yellow_straight_left": "SKIP_CLASS",
+    "yellow_straight_right": "SKIP_CLASS",
+    "yellow_straight_left_right": "SKIP_CLASS",
+}
