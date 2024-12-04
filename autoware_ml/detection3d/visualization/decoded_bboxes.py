@@ -1,16 +1,11 @@
-import os
 from math import ceil
 from dataclasses import dataclass
-from typing import Optional, Union, List, Tuple
 from pathlib import Path
+from typing import List, Tuple
 from matplotlib import pyplot as plt
 
-import mmengine
-from mmengine.registry import init_default_scope
-from mmengine.runner import autocast
 from mmdet3d.structures import LiDARInstance3DBoxes
 from mmdet3d.visualization.vis_utils import proj_lidar_bbox3d_to_img
-from mmdet3d.structures.det3d_data_sample import Det3DDataSample
 from matplotlib.collections import PatchCollection, PolyCollection
 from matplotlib.patches import PathPatch, Circle
 from matplotlib.path import Path as Plt_Path
@@ -20,18 +15,14 @@ from matplotlib.figure import Figure
 import numpy as np
 import numpy.typing as npt
 import torch
-from torch import nn
-from torch.utils.data import DataLoader
-from tqdm import tqdm
 
-from projects.CenterPoint.runners.base_runner import BaseRunner
 from tools.detection3d.visualize_bev import OBJECT_PALETTE
 
 
 @dataclass(frozen=True)
-class DecodedOutputs:
+class DecodedBboxes:
     """ 
-    Dataclass to save decoded outputs from CenterPoint and their metadata.
+    Dataclass to save decoded bounding boxes from a 3d perception model and their metadata.
     :param lidar_bboxes: Decoded bboxes in lidar.
     :param lidar_pointclouds: Raw lidar pointclouds.
     :param scores: Scores for each bbox.
@@ -91,19 +82,17 @@ class DecodedOutputs:
         :param ylim: Range in y-axis (-min, max).
         :param draw_front: Set True to draw a line to indicate direction of bboxes.
         """
-        ax = fig.add_subplot(grid_spec[-1, :], facecolor="black")
+        ax = fig.add_subplot(grid_spec[-1, :], facecolor="white")
         ax.set_xlim(*xlim)
         ax.set_ylim(*ylim)
-        # ax.set_aspect("auto", adjustable="datalim")
-        ax.axis('auto')
+        ax.set_aspect('auto')
 
-        circle_patches = [
-            Circle((pcd[0], pcd[1]), radius=radius)
-            for pcd in self.lidar_pointclouds
-        ]
-
-        c = PatchCollection(circle_patches, facecolors="white")
-        ax.add_collection(c)
+        ax.scatter(
+            self.lidar_pointclouds[:, 0],
+            self.lidar_pointclouds[:, 1],
+            s=radius,
+            c="steelblue",
+        )
 
         if self.lidar_bboxes is not None and len(self.lidar_bboxes) > 0:
             lines_verts_idx = [0, 3, 7, 4, 0]
@@ -184,12 +173,12 @@ class DecodedOutputs:
         corners_2d = self.project_lidar_bboxex_to_img(lidar2img=lidar2img)
         edge_color_norms = []
         if img_size is not None:
-            # Filter out the bbox where half of stuff is outside the image.
+            # Filter out the bbox where there's no points in the images.
             # This is for the visualization of multi-view image.
             valid_point_idx = (corners_2d[..., 0] >= 0) & \
                         (corners_2d[..., 0] <= img_size[0]) & \
                         (corners_2d[..., 1] >= 0) & (corners_2d[..., 1] <= img_size[1])  # noqa: E501
-            valid_bbox_idx = valid_point_idx.sum(axis=-1) >= 4
+            valid_bbox_idx = valid_point_idx.sum(axis=-1) >= 1
             valid_bbox_labels = self.labels[valid_bbox_idx]
             corners_2d = corners_2d[valid_bbox_idx]
             for label in valid_bbox_labels:
@@ -307,152 +296,21 @@ class DecodedOutputs:
         plt.close()
 
 
-class InferenceRunner(BaseRunner):
-    """ Runner to run inference over a test dataloader, and visualize inferences. """
+@dataclass(frozen=True)
+class BatchDecodedBboxes:
+    """ Dataclass to save a batch of decoded bboxes with their meta information. """
+    scene_name: str
+    lidar_filename: str
+    decoded_bboxes: DecodedBboxes
 
-    def __init__(self,
-                 model_cfg_path: str,
-                 checkpoint_path: str,
-                 work_dir: Path,
-                 data_root: str,
-                 ann_file_path: str,
-                 frame_range: Optional[Tuple[int, int]] = None,
-                 bboxes_score_threshold: float = 0.10,
-                 device: str = 'gpu',
-                 default_scope: str = 'mmengine',
-                 experiment_name: str = "",
-                 log_level: Union[int, str] = 'INFO',
-                 log_file: Optional[str] = None) -> None:
-        """
-        :param model_cfg_path: MMDet3D model config path.
-        :param checkpoint_path: Checkpoint path to load weights.
-        :param work_dir: Working directory to save outputs.
-        :param data_root: Path where to save date, it will overwrite configs in model_cfg_path 
-            if it's set.
-        :param ann_file_path: Path where to save annotation file, it will overwrite configs in
-            model_cfg_path if it's set.
-        :param device: Working devices, only 'gpu' or 'cpu' supported.
-        :param default_scope: Default scope in mmdet3D.
-        :param experiment_name: Experiment name.
-        :param log_level: Logging and display log messages above this level.
-        :param log_file: Logger file.
-        """
-        super(InferenceRunner, self).__init__(
-            model_cfg_path=model_cfg_path,
-            checkpoint_path=checkpoint_path,
-            work_dir=work_dir,
-            device=device,
-            default_scope=default_scope,
-            experiment_name=experiment_name,
-            log_level=log_level,
-            log_file=log_file)
+    def visualize(self, vis_dir: Path, xlim: Tuple[int, int],
+                  ylim: Tuple[int, int]) -> None:
+        """ """
+        scene_path = vis_dir / self.scene_name
+        scene_path.mkdir(exist_ok=True, parents=True)
 
-        # We need init deafault scope to mmdet3d to search registries in the mmdet3d scope
-        init_default_scope("mmdet3d")
+        lidar_fpath = scene_path / self.lidar_filename
 
-        self._data_root = data_root
-        self._ann_file_path = ann_file_path
-        self._bboxes_score_threshold = bboxes_score_threshold
-        self._xlim = [-120, 120]
-        self._ylim = [-120, 120]
-        self._frame_range = frame_range
-
-    def run(self) -> None:
-        """
-        Start running the Runner.
-        """
-        # Update config
-        self._cfg.model.pts_bbox_head.bbox_coder.score_threshold = self._bboxes_score_threshold
-
-        # Build a model
-        model = self.build_model()
-
-        # Load the checkpoint
-        self.load_verify_checkpoint(model=model)
-
-        # Build a test dataloader
-        test_dataloader = self.build_test_dataloader(
-            data_root=self._data_root, ann_file_path=self._ann_file_path)
-
-        self.inference(model=model, dataloader=test_dataloader)
-
-    def _decode_outputs(self, output: Det3DDataSample,
-                        lidar_pointclouds: npt.NDArray[np.float64],
-                        data_sample: Det3DDataSample) -> DecodedOutputs:
-        """
-        Decode outputs from a model and save their metadata into DecodedOutputs.
-        :param outputs: Output from a model in Det3DDataSample. 
-        :param lidar_pointcloud: Lidar pointclouds.
-        :param data_sample: Groundtruth and metadata from input.
-        :return DecodedOutputs. 
-        """
-        bboxes = output.pred_instances_3d["bboxes_3d"].tensor.detach().cpu()
-        scores = output.pred_instances_3d["scores_3d"].detach().cpu()
-        labels = output.pred_instances_3d["labels_3d"].detach().cpu()
-        lidar_bboxes = LiDARInstance3DBoxes(bboxes, box_dim=9)
-        img_paths = data_sample.img_path if all(data_sample.img_path) else []
-        full_img_paths = [
-            os.path.join(self._cfg.test_dataloader.dataset.data_root, img_path)
-            for img_path in img_paths
-        ]
-        lidar2cam = data_sample.lidar2cam if hasattr(data_sample,
-                                                     "lidar2cam") else []
-        cam2img = data_sample.cam2img if hasattr(data_sample,
-                                                 "cam2img") else []
-        return DecodedOutputs(
-            lidar_bboxes=lidar_bboxes,
-            lidar_pointclouds=lidar_pointclouds,
-            labels=labels,
-            scores=scores,
-            class_names=self._cfg.class_names,
-            img_paths=full_img_paths,
-            lidar2cams=lidar2cam,
-            cam2imgs=cam2img)
-
-    def inference(self, model: nn.Module, dataloader: DataLoader) -> None:
-        """
-        Inference outputs from every data samples with the model and dataloader.
-        :param model: Torch NN module.
-        :param dataloader: Torch Iterable Dataloader.
-        """
-        vis_dir = Path(self._work_dir) / "vis"
-        with torch.no_grad():
-            model.eval()
-            for index, data in enumerate(
-                    tqdm(
-                        dataloader,
-                        desc="Running inference and visualizing!")):
-
-                if self._frame_range is not None:
-                    if index < self._frame_range[0]:
-                        continue
-                    if index > self._frame_range[1]:
-                        self._logger.info(
-                            f"Done visualizing the frames: {self._frame_range}"
-                        )
-                        break
-
-                lidar_path = data["data_samples"][0].lidar_path.split("/")
-                scene_token = lidar_path[3]
-                file_name = "_".join(lidar_path[3:8]) + ".png"
-
-                with autocast(enabled=True):
-                    outputs = model.test_step(data)
-
-                decoded_outputs = self._decode_outputs(
-                    output=outputs[0],
-                    lidar_pointclouds=data["inputs"]["points"][0],
-                    data_sample=data["data_samples"][0])
-
-                # Scene frame
-                scene_path = vis_dir / scene_token
-                mmengine.mkdir_or_exist(scene_path)
-                lidar_fpath = scene_path / file_name
-
-                # Visualize bboxes in both cameras and bev
-                decoded_outputs.visualize_bboxes(
-                    fpath=lidar_fpath,
-                    xlim=self._xlim,
-                    ylim=self._ylim,
-                    alpha=0.5)
-            self._logger.info(f"Saved visualization to {vis_dir}!")
+        # Visualize bboxes in both cameras and bev
+        self.decoded_bboxes.visualize_bboxes(
+            fpath=lidar_fpath, xlim=xlim, ylim=ylim, alpha=0.5)

@@ -103,6 +103,7 @@ python tools/detection3d/test_all.py {config_file} {train_results_directory} {mi
 ```
 
 ### 4.2. Visualization
+#### 4.2.1 Rerun
 
 - Visualization for 3D view
 
@@ -120,6 +121,19 @@ python tools/detection3d/visualize_bev.py {config_file} --checkpoint {config_fil
 ```
 
 ![](docs/13351af0-41cb-4a96-9553-aeb919efb46e_0_data_LIDAR_CONCAT_85.pcd.bin.png)
+
+#### 4.2.2 Custom visualization
+- Visualization for both BEV and image view
+    - This tool is a simple visulization tool to visualize outputs from a 3D perception model
+    - It needs to convert non-annotated T4dataset to an info file beforehand
+    - For example, CenterPoint:
+
+```sh
+# Generate predictions for t4dataset
+DIR="work_dirs/centerpoint/t4dataset/second_secfpn_2xb8_121m_base/" &&
+python tools/detection3d/visualize_bboxes.py projects/CenterPoint/configs/t4dataset/second_secfpn_2xb8_121m_base.py $DIR/epoch_50.pth --data-root <new data root> --ann-file-path <info pickle file> --bboxes-score-threshold 0.35 --frame-range 700 1100
+```
+where `ann-file-path` is a path to the info file , and `frame-range` represents the range of frames to visualze
 
 ## 5. Deploy
 

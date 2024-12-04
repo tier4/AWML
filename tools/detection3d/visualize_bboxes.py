@@ -1,5 +1,5 @@
 """
-Script to run inference with CenterPoint to visualize bboxes.
+Script to generate predictions with a 3D perception model to visualize bboxes.
 """
 
 import logging
@@ -7,7 +7,7 @@ import argparse
 import os
 from pathlib import Path
 
-from projects.CenterPoint.runners.inference_runner import InferenceRunner
+from autoware_ml.detection3d.runners.prediction_runner import PredictionRunner
 
 
 def parse_args():
@@ -48,39 +48,45 @@ def parse_args():
         choices=['cpu', 'gpu'],
         default='gpu',
         help="Set running device!")
+    parser.add_argument(
+        '--max_workers',
+        type=int,
+        default=8,
+        help="Maximum cpu workers running in multiprocessing")
     args = parser.parse_args()
     return args
 
 
-def build_inference_runner(args) -> InferenceRunner:
-    """ Build an InferenceRunner. """
+def build_prediction_runner(args) -> PredictionRunner:
+    """ Build a PredictionRunner. """
     model_cfg_path = args.model_cfg_path
     checkpoint_path = args.checkpoint
     experiment_name = Path(model_cfg_path).stem
     work_dir = Path(
         os.getcwd()
-    ) / 'work_dirs' / 'evaluation' / experiment_name if not args.work_dir else Path(
+    ) / 'work_dirs' / 'predictions' / experiment_name if not args.work_dir else Path(
         args.work_dir)
 
-    inference_runner = InferenceRunner(
+    prediction_runner = PredictionRunner(
         experiment_name=experiment_name,
         model_cfg_path=model_cfg_path,
         checkpoint_path=checkpoint_path,
         work_dir=work_dir,
+        max_workers=args.max_workers,
         data_root=args.data_root,
         ann_file_path=args.ann_file_path,
         device=args.device,
         frame_range=args.frame_range,
         bboxes_score_threshold=args.bboxes_score_threshold)
-    return inference_runner
+    return prediction_runner
 
 
 if __name__ == '__main__':
     """ Run an InferenceRunner. """
     args = parse_args()
 
-    # Build DeploymentRunner
-    inference_runner = build_inference_runner(args=args)
+    # Build PredictionRunner
+    prediction_runner = build_prediction_runner(args=args)
 
-    # Start running DeploymentRunner
-    inference_runner.run()
+    # Start running PredictionRunner
+    prediction_runner.run()

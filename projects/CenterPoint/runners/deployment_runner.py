@@ -1,7 +1,7 @@
 from typing import Optional, Union
 from pathlib import Path
 
-from projects.CenterPoint.runners.base_runner import BaseRunner
+from autoware_ml.detection3d.runners.base_runner import BaseRunner
 from mmengine.registry import MODELS
 from mmengine.registry import init_default_scope
 

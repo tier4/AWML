@@ -87,14 +87,14 @@ class BaseRunner:
 
     def build_model(self) -> nn.Module:
         """ Build a model. """
-        self._logger.info("===== Building CenterPoint model ====")
+        self._logger.info("===== Building the model ====")
         model_cfg = self._cfg.get('model')
 
         model = MODELS.build(model_cfg)
         model.to(self._torch_device)
 
         self._logger.info(model)
-        self._logger.info("===== Built CenterPoint model ====")
+        self._logger.info("===== Built the model ====")
         return model
 
     def build_test_dataloader(self,
@@ -115,7 +115,7 @@ class BaseRunner:
             self._cfg.test_dataloader.dataset.data_root = data_root
 
         if ann_file_path:
-            self._logger.info(f"Replace ann_file to {data_root}")
+            self._logger.info(f"Replace ann_file to {ann_file_path}")
             self._cfg.test_dataloader.dataset.ann_file = ann_file_path
 
         # build dataset

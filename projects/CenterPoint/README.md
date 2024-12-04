@@ -69,16 +69,7 @@ DIR="work_dirs/centerpoint/t4dataset/second_secfpn_2xb8_121m_base/" &&
 python tools/detection3d/test.py projects/CenterPoint/configs/t4dataset/second_secfpn_2xb8_121m_base.py $DIR/epoch_50.pth
 ```
 
-### 5. Inference 
-- Run inference and visualize bboxes from a CenterPoint model
-```sh
-# Inference for t4dataset
-DIR="work_dirs/centerpoint/t4dataset/second_secfpn_2xb8_121m_base/" &&
-python projects/CenterPoint/scripts/inference.py projects/CenterPoint/configs/t4dataset/second_secfpn_2xb8_121m_base.py $DIR/epoch_50.pth --ann-file-path <info pickle file> --bboxes-score-threshold 0.35 --frame-range 700 1100
-```
-where `frame-range` represents the range of frames to visualze
-
-### 6. Deploy
+### 5. Deploy
 - Make an onnx file for a CenterPoint model
 ```sh
 # Deploy for t4dataset
