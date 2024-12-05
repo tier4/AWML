@@ -1,8 +1,10 @@
 import logging
 from pathlib import Path
+from pyquaternion import Quaternion
 from typing import Any, Dict, List, Optional, Tuple
 
 from mmdet3d.datasets.utils import convert_quaternion_to_matrix
+import mmengine
 from mmengine import dump as mmengine_dump
 from mmengine.logging import print_log
 from mmengine.config import Config
@@ -12,11 +14,10 @@ from nuscenes.nuscenes import Box
 
 from tools.detection3d.t4dataset_converters.t4converter import (
     extract_nuscenes_data, get_ego2global, get_gt_attrs, get_instances,
-    get_lidar_points_info, get_lidar_sweeps_info, obtain_sensor2top,
-    match_objects, parse_camera_path)
+    obtain_sensor2top, match_objects)
 from tools.detection3d.create_data_t4dataset import get_lidar_token, get_scene_root_dir_path
-from tools.detection3d.t4dataset_converters.update_infos_to_v2 import \
-    get_empty_standard_data_info
+from tools.detection3d.t4dataset_converters.update_infos_to_v2 import (
+    get_empty_standard_data_info, get_single_lidar_sweep)
 
 def _create_non_annotated_info(
     cfg: Config,
@@ -76,6 +77,98 @@ def _create_non_annotated_info(
     mmengine_dump(dict(data_list=t4_infos["pseudo"], metainfo=metainfo), info_path)
 
     return info_path
+
+# NOTE: This function is copied from tools.detection3d.t4dataset_converters.t4converter and modified for non-annotated t4. non-annotated t4 does not have dataset-version.
+def parse_camera_path(camera_path: str) -> str:
+    """leave only {database_version}/{scene_id}/data/{camera_type}/{frame}.jpg from path"""
+    return "/".join(camera_path.split("/")[-5:])
+
+# NOTE: This function is copied from tools.detection3d.t4dataset_converters.t4converter and modified for non-annotated t4. non-annotated t4 does not have dataset-version.
+def parse_lidar_path(lidar_path: str) -> str:
+    """leave only {database_version}/{scene_id}/data/{lidar_token}/{frame}.bin from path"""
+    return "/".join(lidar_path.split("/")[-5:])
+
+# NOTE: This function is copied from tools.detection3d.t4dataset_converters.t4converter
+def get_lidar_points_info(
+    lidar_path: str,
+    cs_record: Dict,
+    num_features: int = 5,
+):
+    lidar2ego = convert_quaternion_to_matrix(
+        quaternion=cs_record["rotation"], translation=cs_record["translation"])
+    mmengine.check_file_exist(lidar_path)
+    lidar_path = parse_lidar_path(lidar_path)
+    return dict(
+        lidar_points=dict(
+            num_pts_feats=num_features,
+            lidar_path=lidar_path,
+            lidar2ego=lidar2ego,
+        ), )
+
+# NOTE: This function is copied from tools.detection3d.t4dataset_converters.t4converter
+def get_lidar_sweeps_info(
+    nusc: NuScenes,
+    cs_record: Dict,
+    pose_record: Dict,
+    sd_rec: Dict,
+    max_sweeps: int,
+    num_features: int = 5,
+):
+    l2e_r = cs_record["rotation"]
+    l2e_t = cs_record["translation"]
+    e2g_r = pose_record["rotation"]
+    e2g_t = pose_record["translation"]
+    l2e_r_mat = Quaternion(l2e_r).rotation_matrix
+    e2g_r_mat = Quaternion(e2g_r).rotation_matrix
+
+    sweeps = []
+    while len(sweeps) < max_sweeps:
+        if not sd_rec["prev"] == "":
+            sweep = get_single_lidar_sweep()
+            v1_sweep = obtain_sensor2top(
+                nusc,
+                sd_rec["prev"],
+                l2e_t,
+                l2e_r_mat,
+                e2g_t,
+                e2g_r_mat,
+                "lidar",
+            )
+
+            sweep["timestamp"] = v1_sweep["timestamp"] / 1e6
+            sweep["sample_data_token"] = v1_sweep["sample_data_token"]
+            sweep["ego2global"] = convert_quaternion_to_matrix(
+                quaternion=v1_sweep["ego2global_rotation"],
+                translation=v1_sweep["ego2global_translation"],
+            )
+
+            rot = v1_sweep["sensor2lidar_rotation"]
+            trans = v1_sweep["sensor2lidar_translation"]
+            lidar2sensor = np.eye(4)
+            lidar2sensor[:3, :3] = rot.T
+            lidar2sensor[:3, 3:4] = -1 * np.matmul(rot.T, trans.reshape(3, 1))
+
+            lidar2ego = np.eye(4)
+            lidar2ego[:3, :3] = rot
+            lidar2ego[:3, 3] = trans
+            lidar_path = v1_sweep["data_path"]
+
+            mmengine.check_file_exist(lidar_path)
+            lidar_path = parse_lidar_path(lidar_path)
+
+            sweep["lidar_points"] = dict(
+                lidar_path=lidar_path,
+                lidar2ego=lidar2ego,
+                num_pts_feats=num_features,
+                lidar2sensor=lidar2sensor.astype(np.float32).tolist(),
+            )
+
+            sweeps.append(sweep)
+            sd_rec = nusc.get("sample_data", sd_rec["prev"])
+        else:
+            break
+
+    return dict(lidar_sweeps=sweeps)
 
 # NOTE: This function is copied from tools.detection3d.t4dataset_converters.t4converter
 def get_annotations(
