@@ -15,9 +15,15 @@
 
 ## Results and models
 
-- [Deployed model](docs/deployed_model.md)
-- [T4Offline model](docs/deployed_t4offline_model.md)
-- [Archived model](docs/archived_model.md)
+- BEVFusion-L
+  - v0
+    - [BEVFusion-L base/0.X](./docs/BEVFusion-L/v0/base.md)
+- BEVFusion-CL
+  - v0
+    - [BEVFusion-CL base/0.X](./docs/BEVFusion-CL/v0/base.md)
+- BEVFusion-L-offline
+  - v0
+    - [BEVFusion-L-offline base/0.X](./docs/BEVFusion-L-offline/v0/base.md)
 
 ## Get started
 ### 1. Setup
