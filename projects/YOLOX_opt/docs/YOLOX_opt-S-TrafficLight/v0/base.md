@@ -1,20 +1,18 @@
-# Deployed model
-## NuScenes model
-
-## T4 dataset model (XX1+x2)
+# Deployed model for YOLOX_opt-S-TrafficLight
+## Summary
 
 - Performance summary
-  - AP for IOUs (50, 60, 70, 80, 90)
-  - mAP
-  - Note
-    - Eval DB: Evaluation dataset
+  - Evaluation dataset: Eval dataset of tlr_v0_1 + tlr_v1_2
+  - mAP, AP for IOUs (50, 60, 70, 80, 90)
 
-| checkpoint_name  | Eval DB  | mAP  | AP50  | AP60  | AP70  | AP80  | AP90  |
-| ------------ | ------------ | ------------ | ------------ | ------------ | ------------ | ------------ | ------------ |
-|  yolox_s_tlr_416x416_pedcar_t4dataset |tlr_v0_1+tlr_v1_2  | 0.3588  | 0.4810  | 0.4760  | 0.4520  | 0.3250  | 0.0600  |
+|          | mAP    | AP50   | AP60   | AP70   | AP80   | AP90   |
+| -------- | ------ | ------ | ------ | ------ | ------ | ------ |
+| base/0.1 | 0.3588 | 0.4810 | 0.4760 | 0.4520 | 0.3250 | 0.0600 |
 
-### yolox_s_tlr_416x416_pedcar_t4dataset
+## Release
+### base/0.1
 
+- model name: yolox_s_tlr_416x416_pedcar_t4dataset
 - model
   - Training dataset: tlr_v0_1 + tlr_v1_0_x2 + tlr_v1_0_xx1 + tlr_v1_2
   - Eval dataset: tlr_v1_2
@@ -24,7 +22,6 @@
   - [Deployed label file](https://evaluation.tier4.jp/evaluation/mlpackages/ac288878-9790-44e3-9fc8-ca246c5cd235/releases/e23071aa-1cf9-4837-b71b-2fbbf990748d?project_id=zWhWRzei&tab=items)
   - [Training results](https://drive.google.com/drive/folders/1MH5yQT_dqVdk14WRxOQ4DE01TiMH-oIF)
   - train time: (A100 * 1) * 1 days
-
 - Total mAP: 0.3588
   - Test dataset: tlr_v0_1+tlr_v1_2
   - Bbox size range: (0,inf)

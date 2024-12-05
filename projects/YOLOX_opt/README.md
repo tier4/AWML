@@ -14,8 +14,9 @@
 
 ## Results and models
 
-- [Deployed model](docs/deployed_model.md)
-- [Archived model](docs/archived_model.md)
+- YOLOX_opt-S-TrafficLight
+  - v0
+    - [YOLOX_opt-S-TrafficLight base/0.X](./docs/YOLOX_opt-S-TrafficLight/v0/base.md)
 
 ## Get started
 ### 1. Setup
