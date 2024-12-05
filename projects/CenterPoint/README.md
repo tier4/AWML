@@ -15,10 +15,12 @@
 
 ## Results and models
 
-- [Comparison](https://tier4.atlassian.net/wiki/spaces/~712020b277b703d991438d8305ae640615ecab/pages/3376841030/Training+in+autoware-ml)
-- Deployed Models
-    - CenterPoint-T4Base v1.0.0
-      - [T4datasets - T4Base](./docs/t4datasets/v1.0.0/deployed_t4base_model.md)
+- CenterPoint
+  - v1 (121m range, grid_size = 760)
+    - [CenterPoint base/1.X](./docs/CenterPoint/v1/base.md)
+    - [CenterPoint x2/1.X](./docs/CenterPoint/v1/x2.md)
+    - [(TBD) CenterPoint x2-gen2/1.X](./docs/CenterPoint/v1/x2-gen2.md)
+    - [(TBD) CenterPoint japantaxi/1.X](./docs/CenterPoint/v1/japantaxi.md)
 
 ## Get started
 ### 1. Setup
@@ -30,21 +32,17 @@
 docker run -it --rm --gpus all --shm-size=64g --name awml -p 6006:6006 -v $PWD/:/workspace -v $PWD/data:/workspace/data autoware-ml
 ```
 
-### 2. Implementation details:
-To maintain the backward compatibility with `AWMLdetection3d`, which is the previous ML library, we 
-modified the original CenterPoint from mmdetection3d v1 such as:
-- Exclude voxel center from z-dimension as part of pillar features
-- Assume that the rotation system in the deployed ONNX file is in clockwise y-axis, and a bounding box is [x, y, z, w, l, h] for the deployed ONNX file
-- Do not use CBGS dataset to align the experiment configuration with the older library
+### 2. Train
+#### 2.1 Environment set up
 
-### 3. Train
-#### 3.1 Environment set up
-Set `CUBLAS_WORKSPACE_CONFIG` for the deterministic behavior, plese check this [nvidia doc](https://docs.nvidia.com/cuda/cublas/index.html#results-reproducibility) 
-for more info
+Set `CUBLAS_WORKSPACE_CONFIG` for the deterministic behavior, plese check this [nvidia doc](https://docs.nvidia.com/cuda/cublas/index.html#results-reproducibility) for more info
+
 ```sh
 export CUBLAS_WORKSPACE_CONFIG=:4096:8
-``` 
-#### 3.2. Train CenterPoint model with T4dataset-base
+```
+
+#### 2.2. Train CenterPoint model with T4dataset-base
+
 - [choice] Train with single GPU
   - Rename config file to use for single GPU and batch size
   - Change `train_batch_size` and `train_gpu_size` accordingly
@@ -61,25 +59,49 @@ python tools/detection3d/train.py projects/CenterPoint/configs/t4dataset/second_
 bash tools/detection3d/dist_train.sh projects/CenterPoint/configs/t4dataset/second_secfpn_2xb8_121m_base.py 2
 ```
 
-### 4. Evaluation
+### 3. Evaluation
+
 - Run evaluation on a test set, please select experiment config accordingly
+
 ```sh
 # Evaluation for t4dataset
-DIR="work_dirs/centerpoint/t4dataset/second_secfpn_2xb8_121m_base/" &&
+DIR="work_dirs/centerpoint/t4dataset/second_secfpn_2xb8_121m_base/" && \
 python tools/detection3d/test.py projects/CenterPoint/configs/t4dataset/second_secfpn_2xb8_121m_base.py $DIR/epoch_50.pth
 ```
 
+### 4. Visualization
+
+- Run inference and visualize bounding boxes from a CenterPoint model
+
+```sh
+# Inference for t4dataset
+DIR="work_dirs/centerpoint/t4dataset/second_secfpn_2xb8_121m_base/" &&
+python projects/CenterPoint/scripts/inference.py projects/CenterPoint/configs/t4dataset/second_secfpn_2xb8_121m_base.py $DIR/epoch_50.pth --ann-file-path <info pickle file> --bboxes-score-threshold 0.35 --frame-range 700 1100
+```
+
+where `frame-range` represents the range of frames to visualize.
+
 ### 5. Deploy
+
 - Make an onnx file for a CenterPoint model
+
 ```sh
 # Deploy for t4dataset
 DIR="work_dirs/centerpoint/t4dataset/second_secfpn_2xb8_121m_base/" &&
 python projects/CenterPoint/scripts/deploy.py projects/CenterPoint/configs/t4dataset/second_secfpn_2xb8_121m_base.py $DIR/epoch_50.pth --replace_onnx_models --device gpu --rot_y_axis_reference
 ```
-where `rot_y_axis_reference` can be removed if we would like to use the original counterckiwise x-axis rotation system 
+
+where `rot_y_axis_reference` can be removed if we would like to use the original counterclockwise x-axis rotation system.
 
 ## Troubleshooting
-- Latest mmdetection3D assumes the lidar coordinate system is in the right-handed x-axis reference, also the dimensionality of a bounding box is [x, y, z, l, w, h], please check [this](https://mmdetection3d.readthedocs.io/en/latest/user_guides/coord_sys_tutorial.html) for more details  
+
+- The difference from original CenterPoint from mmdetection3d v1
+  - To maintain the backward compatibility with the previous ML library, we modified the original CenterPoint from mmdetection3d v1 such as:
+    - Exclude voxel center from z-dimension as part of pillar features
+    - Assume that the rotation system in the deployed ONNX file is in clockwise y-axis, and a bounding box is [x, y, z, w, l, h] for the deployed ONNX file
+    - Do not use CBGS dataset to align the experiment configuration with the older library
+- Latest mmdetection3D assumes the lidar coordinate system is in the right-handed x-axis reference, also the dimensionality of a bounding box is [x, y, z, l, w, h], please check [this](https://mmdetection3d.readthedocs.io/en/latest/user_guides/coord_sys_tutorial.html) for more details
 
 ## Reference
+
 - [CenterPoint of mmdetection3d](https://github.com/open-mmlab/mmdetection3d/tree/main/configs/centerpoint)
