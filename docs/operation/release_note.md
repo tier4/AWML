@@ -11,6 +11,12 @@ Please see [auto_labeling_3d](https://github.com/tier4/autoware-ml/tree/main/too
 
 Please see [PR](https://github.com/tier4/autoware-ml/pull/238) in detail.
 
+- Integrate model management with S3
+
+Please see [document](https://github.com/tier4/autoware-ml/blob/main/docs/design/architecture_s3.md) in detail.
+
+- Integrate fine tuning strategy
+
 ### Core library
 
 ### Tools

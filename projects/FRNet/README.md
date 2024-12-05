@@ -16,8 +16,9 @@
 
 ## Results and models
 
-- [Deployed model](docs/deployed_model.md)
-- [Archived model](docs/archived_model.md)
+- FRNet
+  - v0
+    - [FRNet base/0.X](./docs/FRNet/v0/base.md)
 
 ## Get started
 ### 1. Setup

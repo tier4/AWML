@@ -13,7 +13,7 @@ In addition to ML model deployment, `autoware-ml` supports active learning frame
 - 2D fine detection for traffic light recognition
 - 2D classification for traffic light recognition
 
-`Autoware-ml` support following environment.
+`Autoware-ml` supports following environment.
 
 - All tools are tested by [Docker environment](Dockerfile) on Ubuntu 22.04LTS
 - NVIDIA dependency: CUDA 12.1 + cuDNN 8
@@ -55,9 +55,11 @@ If you want to know about `autoware-ml`, you should read following pages.
   - [Analysis for 3D detection](/tools/analysis_3d)
   - [Analysis for 2D detection](/tools/analysis_2d)
   - [Visualization with rerun](/tools/rerun_visualization)
-- [Select scene for rosbag](/tools/scene_selector/)
-- [Auto-label for 3D data](/tools/auto_labeling_3d/)
-- (TBD) [Auto-label for 2D data](/tools/auto_labeling_2d/)
+- Auto labeling
+  - [Auto-label for 3D data](/tools/auto_labeling_3d/)
+  - (TBD) [Auto-label for 2D data](/tools/auto_labeling_2d/)
+- Data mining
+  - [Select scene for rosbag](/tools/scene_selector/)
 
 ## Supported pipelines
 
@@ -71,40 +73,40 @@ If you want to know about `autoware-ml`, you should read following pages.
 ### 3D detection
 
 - Model for Autoware
-  - [CenterPoint](projects/CenterPoint/)
-  - [TransFusion](projects/TransFusion/)
+  - [CenterPoint](/projects/CenterPoint/)
+  - [TransFusion](/projects/TransFusion/)
 - Model for ML tools
-  - [BEVFusion](projects/BEVFusion/)
+  - [BEVFusion](/projects/BEVFusion/)
 
 ### 3D segmentation
 
 - Model for Autoware
-  - [FRNet](projects/FRNet/)
+  - [FRNet](/projects/FRNet/)
 
 ### 2D detection
 
 - Model for Autoware
-  - [YOLOX](projects/YOLOX/)
-  - [YOLOX-opt](projects/YOLOX-opt/)
+  - [YOLOX](/projects/YOLOX/)
+  - [YOLOX-opt](/projects/YOLOX-opt/)
 - Model for ML tools
-  - [GLIP](projects/GLIP/)
-  - [SwinTransformer](projects/SwinTransformer/)
+  - [GLIP](/projects/GLIP/)
+  - [SwinTransformer](/projects/SwinTransformer/)
 
 ### 2D segmentation
 
 - Model for ML tools
-  - (TBD) [SegmentAnything](projects/SegmentAnything/)
+  - (TBD) [SegmentAnything](/projects/SegmentAnything/)
 
 ### 2D classification
 
 - Model for Autoware
-  - [MobileNetv2](projects/MobileNetv2/)
+  - [MobileNetv2](/projects/MobileNetv2/)
 
 ### Vision language
 
 - Model for ML tools
-  - [BLIP-2](projects/BLIP-2/)
+  - [BLIP-2](/projects/BLIP-2/)
 
 ### Additional operation
 
-- [SparseConvolutions](projects/SparseConvolution/)
+- [SparseConvolutions](/projects/SparseConvolution/)

@@ -1,5 +1,10 @@
-# Deployed model
-## NuScenes model
+# Deployed model for FRNet
+## Summary
+
+## Release
+### base/0.1
+
+We use NuScenes dataset.
 
 - Performance summary (test set)
 
