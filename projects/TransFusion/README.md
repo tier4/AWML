@@ -16,10 +16,17 @@
 
 ## Results and models
 
-- [Deployed model for base model](docs/deployed_base_model.md)
-- [Deployed model for XX1](docs/deployed_xx1_model.md)
-- [Deployed model for X2](docs/deployed_x2_model.md)
-- [Archived model](docs/archived_model.md)
+- TransFusion-L
+  - v1
+    - [TransFusion-L base/1.X](./docs/TransFusion-L/v0/base.md)
+  - v0 (90m range, grid size = 768)
+    - [TransFusion-L base/0.X](./docs/TransFusion-L/v0/base.md)
+- TransFusion-L-offline
+  - v0
+    - [TransFusion-L-offline base/0.X](./docs/TransFusion-L-offline/v0/base.md)
+- TransFusion-L-nearby
+  - v0
+    - [TransFusion-L-nearby base/0.X](./docs/TransFusion-L-nearby/v0/base.md)
 
 ## Get started
 ### 1. Setup
