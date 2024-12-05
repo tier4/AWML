@@ -36,10 +36,15 @@ docker run -it --gpus '"device=0"' --name auto_labeling_3d --shm-size=64g -d -v 
 - data/t4dataset/
   - pseudo_xx1/
     - scene_0/
-      - annotation/
-        - ..
+      - 0/
+        - annotation/
+          - ..
+        - data/
+          - ..
+        - ...
     - scene_1/
-    - ..
+      - 0/
+        - ..
 ```
 
 - Make the info file from non-annotated dataset and the 3d detection model.
@@ -62,10 +67,14 @@ python tools/auto_labeling_3d/create_info_data/create_info_data.py --root-path .
 - data/t4dataset/
   - pseudo_xx1/
     - scene_0/
-      - annotation/
-        - ..
+      - 0/
+        - annotation/
+          - ..
+        - data/
+        - ...
     - scene_1/
-    - ..
+      - 0/
+        - ..
   - info/
     - pseudo_infos_raw_centerpoint.pkl
     - pseudo_infos_raw_bevfusion.pkl
@@ -116,10 +125,14 @@ python tools/auto_labeling_3d/filter_objects/filter_objects.py --config {config_
 - data/t4dataset/
   - pseudo_xx1/
     - scene_0/
-      - annotation/
-        - ..
+      - 0/
+        - annotation/
+          - ..
+        - data/
+        - ...
     - scene_1/
-    - ..
+      - 0/
+        - ..
   - info/
     - pseudo_infos_raw_centerpoint.pkl
     - pseudo_infos_raw_bevfusion.pkl
@@ -147,10 +160,14 @@ python tools/auto_labeling_3d/attach_tracking_id/attach_tracking_id.py --input {
 - data/t4dataset/
   - pseudo_xx1/
     - scene_0/
-      - annotation/
-        - ..
+      - 0/
+        - annotation/
+          - ..
+        - data/
+        - ...
     - scene_1/
-    - ..
+      - 0/
+        - ..
   - info/
     - pseudo_infos_raw_centerpoint.pkl
     - pseudo_infos_raw_bevfusion.pkl
@@ -172,9 +189,12 @@ python tools/auto_labeling_3d/create_pseudo_t4dataset.py {yaml config file about
 - data/t4dataset/
   - pseudo_xx1/
     - scene_0/
-      - annotation/
-        - sample.json
-        - ..
+      - 0/
+        - annotation/
+          - sample.json
+          - ..
     - scene_1/
+      - 0/
+        - ..
     - ..
 ```
