@@ -4,13 +4,13 @@ Setup a tool and configuration following <https://github.com/tier4/WebAutoCLI>.
 """
 
 import argparse
+import json
 import os
 import subprocess
 from pathlib import Path
 from tempfile import TemporaryDirectory
 from typing import Union
 
-import json
 import yaml
 
 
@@ -27,6 +27,7 @@ def divide_file_path(full_path: str) -> Union[str, str, str, str, str]:
 
     return dir_name, base_name, subdir_name, basename_without_ext, extension
 
+
 def check_t4dataset_latest_version(
     project_id: str,
     t4dataset_id: str,
@@ -36,9 +37,22 @@ def check_t4dataset_latest_version(
         project_id (str): The project id of webauto command.
         t4dataset_id (str): The t4dataset id of webauto command.
     """
-    describe_command = "webauto data annotation-dataset describe --project-id {} --annotation-dataset-id {} --output json".format(project_id, t4dataset_id)
-    result = json.loads(subprocess.run(describe_command, shell=True, check=True, capture_output=True, text=True).stdout)
-    return result['version_id']
+    describe_command = (
+        "webauto data annotation-dataset describe --project-id {} --annotation-dataset-id {} --output json".format(
+            project_id, t4dataset_id
+        )
+    )
+    result = json.loads(
+        subprocess.run(
+            describe_command,
+            shell=True,
+            check=True,
+            capture_output=True,
+            text=True,
+        ).stdout
+    )
+    return result["version_id"]
+
 
 def download_t4dataset(
     project_id: str,
@@ -47,7 +61,8 @@ def download_t4dataset(
     config_path: str,
     delete_rosbag: bool,
 ) -> None:
-    """Download t4dataset using webauto CLI. When there are multiple versions in t4dataset, it would automatically 
+    """Download t4dataset using webauto CLI.
+    When there are multiple versions in t4dataset, it would automatically
     Return: None
 
     Args:
@@ -60,7 +75,9 @@ def download_t4dataset(
 
     with TemporaryDirectory() as temp_dir:
         t4dataset_version_id: int = check_t4dataset_latest_version(project_id, t4dataset_id)
-        print(f"\n***************** start downloading t4dataset id {t4dataset_id} with version id {t4dataset_version_id}")
+        print(
+            f"\n***************** start downloading t4dataset id {t4dataset_id} with version id {t4dataset_version_id}"
+        )
 
         _, _, _, database_name, _ = divide_file_path(config_path)
         from_directory = os.path.join(
@@ -102,7 +119,10 @@ def download_t4dataset(
 def parse_args():
     parser = argparse.ArgumentParser()
     parser.add_argument(
-        "config", type=str, help="list of t4dataset for train/val/test")
+        "config",
+        type=str,
+        help="list of t4dataset for train/val/test",
+    )
     parser.add_argument(
         "--project-id",
         type=str,
@@ -117,8 +137,8 @@ def parse_args():
         help="directory path for data to be downloaded",
     )
     parser.add_argument(
-        '--delete-rosbag',
-        action='store_true',
+        "--delete-rosbag",
+        action="store_true",
         help="Delete rosbag file from T4dataset",
     )
     args = parser.parse_args()
@@ -137,9 +157,9 @@ def main():
     with open(config_path) as f:
         data_splits = yaml.safe_load(f)
     required_keys = ["train", "val", "test"]
-    assert isinstance(data_splits, dict) and all([
-        isinstance(data_splits[key], list) for key in required_keys
-    ]), "config file must be a type of `dict[str, list]`"
+    assert isinstance(data_splits, dict) and all(
+        [isinstance(data_splits[key], list) for key in required_keys]
+    ), "config file must be a type of `dict[str, list]`"
     t4dataset_ids = sum([data_splits[key] for key in required_keys], [])
 
     for t4dataset_id in t4dataset_ids:

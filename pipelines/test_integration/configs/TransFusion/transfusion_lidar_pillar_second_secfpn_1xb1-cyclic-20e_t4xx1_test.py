@@ -66,5 +66,4 @@ val_evaluator = dict(
 
 test_evaluator = val_evaluator
 train_cfg = dict(by_epoch=True, max_epochs=max_epochs, val_interval=1)
-auto_scale_lr = dict(
-    enable=False, base_batch_size=train_gpu_size * train_batch_size)
+auto_scale_lr = dict(enable=False, base_batch_size=train_gpu_size * train_batch_size)
