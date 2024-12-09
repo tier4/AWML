@@ -1,5 +1,5 @@
-from mmpretrain.registry import METRICS
 from mmpretrain.evaluation.metrics import MultiLabelMetric
+from mmpretrain.registry import METRICS
 
 
 @METRICS.register_module()
@@ -25,21 +25,16 @@ class TLRClassificationMetric(MultiLabelMetric):
 
         # Rows
         for i, class_name in enumerate(self.class_names):
-            precision = results['precision_top1_classwise'][i]
-            recall = results['recall_top1_classwise'][i]
-            f1_score = results['f1-score_top1_classwise'][i]
-            support = results['support_top1_classwise'][i]
-            print(
-                f"| {class_name:<20} | {precision:<10.2f} | {recall:<10.2f} | {f1_score:<10.2f} | {support:<10} |"
-            )
+            precision = results["precision_top1_classwise"][i]
+            recall = results["recall_top1_classwise"][i]
+            f1_score = results["f1-score_top1_classwise"][i]
+            support = results["support_top1_classwise"][i]
+            print(f"| {class_name:<20} | {precision:<10.2f} | {recall:<10.2f} | {f1_score:<10.2f} | {support:<10} |")
 
         print(separator)
 
         self.average = "macro"
-        results_macro = [
-            f"{k}: {v:<10.2f}"
-            for k, v in super().compute_metrics(*args, **kwargs).items()
-        ]
+        results_macro = [f"{k}: {v:<10.2f}" for k, v in super().compute_metrics(*args, **kwargs).items()]
 
         print(f"Overall results: ", ", ".join(results_macro))
         return results

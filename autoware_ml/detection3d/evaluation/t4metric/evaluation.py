@@ -22,8 +22,7 @@ class T4DetectionConfig(DetectionConfig):
         max_boxes_per_sample: int,
         mean_ap_weight: int,
     ):
-        assert class_range.keys() == set(
-            class_names), "class_range must have keys for all classes."
+        assert class_range.keys() == set(class_names), "class_range must have keys for all classes."
         assert dist_th_tp in dist_ths, "dist_th_tp must be in set of dist_ths."
 
         self.class_range = class_range
@@ -83,8 +82,7 @@ class T4DetectionEvaluation(DetectionEval):
         self.pred_boxes = prediction_boxes
 
         # Check result file exists.
-        assert os.path.exists(
-            result_path), "Error: The result file does not exist!"
+        assert os.path.exists(result_path), "Error: The result file does not exist!"
 
         # Make dirs.
         self.plot_dir = os.path.join(self.output_dir, "plots")
@@ -116,11 +114,9 @@ class T4DetectionEvaluation(DetectionEval):
         print("Saving metrics to: %s" % self.output_dir)
         metrics_summary = metrics.serialize()
         # metrics_summary["meta"] = self.meta.copy()
-        with open(os.path.join(self.output_dir, "metrics_summary.json"),
-                  "w") as f:
+        with open(os.path.join(self.output_dir, "metrics_summary.json"), "w") as f:
             json.dump(metrics_summary, f, indent=2)
-        with open(os.path.join(self.output_dir, "metrics_details.json"),
-                  "w") as f:
+        with open(os.path.join(self.output_dir, "metrics_details.json"), "w") as f:
             json.dump(metric_data_list.serialize(), f, indent=2)
 
         mean_AP = "{:.3g}".format(metrics_summary["mean_ap"])
@@ -131,30 +127,32 @@ class T4DetectionEvaluation(DetectionEval):
             "AP@1.0m",
             "AP@2.0m",
             "AP@4.0m",
-            #"error@trans_err",
-            #"error@scale_err",
-            #"error@orient_err",
-            #"error@vel_err",
-            #"error@attr_err",
+            # "error@trans_err",
+            # "error@scale_err",
+            # "error@orient_err",
+            # "error@vel_err",
+            # "error@attr_err",
         ]
         data = []
         class_aps = metrics_summary["mean_dist_aps"]
         class_tps = metrics_summary["label_tp_errors"]
         label_aps = metrics_summary["label_aps"]
         for class_name in class_aps.keys():
-            data.append([
-                class_name,
-                "{:.1f}".format(class_aps[class_name] * 100.0),
-                "{:.1f}".format(label_aps[class_name][0.5] * 100.0),
-                "{:.1f}".format(label_aps[class_name][1.0] * 100.0),
-                "{:.1f}".format(label_aps[class_name][2.0] * 100.0),
-                "{:.1f}".format(label_aps[class_name][4.0] * 100.0),
-                #"{:.3g}".format(class_tps[class_name]["trans_err"]),
-                #"{:.3g}".format(class_tps[class_name]["scale_err"]),
-                #"{:.3g}".format(class_tps[class_name]["orient_err"]),
-                #"{:.3g}".format(class_tps[class_name]["vel_err"]),
-                #"{:.3g}".format(class_tps[class_name]["attr_err"]),
-            ])
+            data.append(
+                [
+                    class_name,
+                    "{:.1f}".format(class_aps[class_name] * 100.0),
+                    "{:.1f}".format(label_aps[class_name][0.5] * 100.0),
+                    "{:.1f}".format(label_aps[class_name][1.0] * 100.0),
+                    "{:.1f}".format(label_aps[class_name][2.0] * 100.0),
+                    "{:.1f}".format(label_aps[class_name][4.0] * 100.0),
+                    # "{:.3g}".format(class_tps[class_name]["trans_err"]),
+                    # "{:.3g}".format(class_tps[class_name]["scale_err"]),
+                    # "{:.3g}".format(class_tps[class_name]["orient_err"]),
+                    # "{:.3g}".format(class_tps[class_name]["vel_err"]),
+                    # "{:.3g}".format(class_tps[class_name]["attr_err"]),
+                ]
+            )
         metrics_table = {
             "header": header,
             "data": data,

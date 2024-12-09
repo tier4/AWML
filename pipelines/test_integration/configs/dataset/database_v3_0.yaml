@@ -8,7 +8,7 @@ docs: |
   Annotation: All the data are collected at 10Hz and annotated at 2Hz
 
 train:
-  - b9614e5f-43a0-4555-951c-09b4c7d0adb1 # DBv3.0_shiojiri_matsumoto-dental_outbound_20230620181125_10
+  #- b9614e5f-43a0-4555-951c-09b4c7d0adb1 # DBv3.0_shiojiri_matsumoto-dental_outbound_20230620181125_10
   #- d12180f3-63a2-468b-ae2a-85994c387052 # DBv3.0_shiojiri_matsumoto-dental_outbound_20230620181125_11
   #- 293ef3bc-6027-49e8-8911-f69bba6e281f # DBv3.0_shiojiri_matsumoto-dental_outbound_20230620181125_12
   #- e7df24b0-ff73-4f89-aabf-d5908a32adc6 # DBv3.0_shiojiri_matsumoto-dental_outbound_20230620181125_14
@@ -55,7 +55,7 @@ train:
   #- 7a2af9a2-2807-457c-a7e7-d9f8adcede88 # DBv3.0_shiojiri_route3_outbound_20230619163426_1
   #- 9c563140-b231-4072-9f96-467156ee792b # DBv3.0_shiojiri_route3_outbound_20230619163426_10
   #- 85e305f7-09a9-4a51-8a89-f6b953e9b5ed # DBv3.0_shiojiri_route3_outbound_20230619163426_11
-  #- 3a80e3c2-5d1c-46bc-9ba3-f59de8e702ea # DBv3.0_shiojiri_route3_outbound_20230619163426_12
+  - 3a80e3c2-5d1c-46bc-9ba3-f59de8e702ea # DBv3.0_shiojiri_route3_outbound_20230619163426_12
   #- 77e022c5-8b11-4a76-b205-eff4700aa392 # DBv3.0_shiojiri_route3_outbound_20230619163426_13
   #- 90464b76-8b0c-4123-b4b6-a7a89d49e2f3 # DBv3.0_shiojiri_route3_outbound_20230619163426_14
   #- 63495d7d-bb66-4c31-aceb-df6a0968e8cc # DBv3.0_shiojiri_route3_outbound_20230619163426_2

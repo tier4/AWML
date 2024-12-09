@@ -1,8 +1,18 @@
 dataset_version_list = ["tlr_v0_1", "tlr_v1_0_x2", "tlr_v1_0_xx1", "tlr_v1_2"]
 dataset_version_config_root = "autoware_ml/configs/classification2d/dataset/t4dataset/"
-classes = ("green", "left,red", "left,red,straight", "red", "red,right",
-           "red,straight", "unknown", "yellow", "red,up_left",
-           "red,right,straight", "red,up_right")
+classes = (
+    "green",
+    "left,red",
+    "left,red,straight",
+    "red",
+    "red,right",
+    "red,straight",
+    "unknown",
+    "yellow",
+    "red,up_left",
+    "red,right,straight",
+    "red,up_right",
+)
 
 class_mappings = {
     "green": "green",
@@ -23,7 +33,7 @@ class_mappings = {
     "yellow": "yellow",
     "yellow_right": "unknown",
     "yellow_straight": "yellow",
-    #Skip the following classes if present like in AWMLDetection2d.
+    # Skip the following classes if present like in AWMLDetection2d.
     "red-rightdiagonal": "SKIP_CLASS",
     "right-yellow": "SKIP_CLASS",
     "leftdiagonal-red": "SKIP_CLASS",

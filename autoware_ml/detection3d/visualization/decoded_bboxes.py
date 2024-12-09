@@ -1,27 +1,26 @@
-from math import ceil
 from dataclasses import dataclass
+from math import ceil
 from pathlib import Path
 from typing import List, Tuple
-from matplotlib import pyplot as plt
-
-from mmdet3d.structures import LiDARInstance3DBoxes
-from mmdet3d.visualization.vis_utils import proj_lidar_bbox3d_to_img
-from matplotlib.collections import PatchCollection, PolyCollection
-from matplotlib.patches import PathPatch, Circle
-from matplotlib.path import Path as Plt_Path
-from matplotlib.gridspec import GridSpec
-from matplotlib.figure import Figure
 
 import numpy as np
 import numpy.typing as npt
 import torch
+from matplotlib import pyplot as plt
+from matplotlib.collections import PatchCollection, PolyCollection
+from matplotlib.figure import Figure
+from matplotlib.gridspec import GridSpec
+from matplotlib.patches import Circle, PathPatch
+from matplotlib.path import Path as Plt_Path
+from mmdet3d.structures import LiDARInstance3DBoxes
+from mmdet3d.visualization.vis_utils import proj_lidar_bbox3d_to_img
 
 from tools.detection3d.visualize_bev import OBJECT_PALETTE
 
 
 @dataclass(frozen=True)
 class DecodedBboxes:
-    """ 
+    """
     Dataclass to save decoded bounding boxes from a 3d perception model and their metadata.
     :param lidar_bboxes: Decoded bboxes in lidar.
     :param lidar_pointclouds: Raw lidar pointclouds.
@@ -30,8 +29,9 @@ class DecodedBboxes:
     :param class_name: Available class names for the outputs.
     :param img_paths: Available image paths for the outputs.
     :param lidar2cams [<4, 4>]: Intrinsic and extrinsic from lidar to cameras.
-    :param cam2imgs [<3, 3>]: Intrinsic and extrinsic from cameras to images. 
+    :param cam2imgs [<3, 3>]: Intrinsic and extrinsic from cameras to images.
     """
+
     lidar_bboxes: LiDARInstance3DBoxes
     lidar_pointclouds: npt.NDArray[np.float64]
     scores: torch.tensor
@@ -41,16 +41,17 @@ class DecodedBboxes:
     lidar2cams: List[npt.NDArray[np.float64]]
     cam2imgs: List[npt.NDArray[np.float64]]
 
-    def project_lidar_bboxex_to_img(
-            self, lidar2img: np.ndarray) -> npt.NDArray[np.float64]:
+    def project_lidar_bboxex_to_img(self, lidar2img: np.ndarray) -> npt.NDArray[np.float64]:
         """
         Project Bboxes in lidar view to an image view.
         :param lidar2img <4, 4>: intrinsic and extrinsic from lidar to an image.
-        :return <N, 8, 2> (Number of bboxes, 8 corners, x and y coordinates). 
-        Projected bboxes in an image. 
+        :return <N, 8, 2> (Number of bboxes, 8 corners, x and y coordinates).
+        Projected bboxes in an image.
         """
         return proj_lidar_bbox3d_to_img(
-            self.lidar_bboxes, input_meta={'lidar2img': lidar2img})
+            self.lidar_bboxes,
+            input_meta={"lidar2img": lidar2img},
+        )
 
     def compute_lidar_to_imgs(self) -> List[npt.NDArray[np.float64]]:
         """
@@ -65,15 +66,17 @@ class DecodedBboxes:
             lidar2imgs.append(cam2img_array @ lidar2cam_array)
         return lidar2imgs
 
-    def visualize_bboxes_to_lidar(self,
-                                  fig: Figure,
-                                  grid_spec: GridSpec,
-                                  xlim: Tuple[int, int],
-                                  ylim: Tuple[int, int],
-                                  radius: float = 0.1,
-                                  thickness: int = 1,
-                                  line_styles: str = '-',
-                                  draw_front=True) -> None:
+    def visualize_bboxes_to_lidar(
+        self,
+        fig: Figure,
+        grid_spec: GridSpec,
+        xlim: Tuple[int, int],
+        ylim: Tuple[int, int],
+        radius: float = 0.1,
+        thickness: int = 1,
+        line_styles: str = "-",
+        draw_front=True,
+    ) -> None:
         """
         Visualize bboxes in LiDAR.
         :param ax: Axes to visualize bboxes in lidar.
@@ -85,7 +88,7 @@ class DecodedBboxes:
         ax = fig.add_subplot(grid_spec[-1, :], facecolor="white")
         ax.set_xlim(*xlim)
         ax.set_ylim(*ylim)
-        ax.set_aspect('auto')
+        ax.set_aspect("auto")
 
         ax.scatter(
             self.lidar_pointclouds[:, 0],
@@ -113,44 +116,54 @@ class DecodedBboxes:
                 if draw_front:
                     # Draw line indicating the front
                     center_bottom_forward = torch.mean(
-                        coords[index, 2:4, :2], axis=0, keepdim=True)
+                        coords[index, 2:4, :2],
+                        axis=0,
+                        keepdim=True,
+                    )
                     center_bottom = torch.mean(
-                        coords[index, [0, 1, 2, 3], :2], axis=0, keepdim=True)
+                        coords[index, [0, 1, 2, 3], :2],
+                        axis=0,
+                        keepdim=True,
+                    )
                     center_bottom_pth = Plt_Path(
-                        torch.concat([center_bottom, center_bottom_forward],
-                                     axis=0),
-                        codes=codes[0:2])
+                        torch.concat([center_bottom, center_bottom_forward], axis=0),
+                        codes=codes[0:2],
+                    )
                     center_bottom_patches.append(PathPatch(center_bottom_pth))
 
             p = PatchCollection(
                 pathpatches,
-                facecolors='none',
+                facecolors="none",
                 edgecolors=edge_color_norms,
                 linewidths=thickness,
-                linestyles=line_styles)
+                linestyles=line_styles,
+            )
             ax.add_collection(p)
 
             if len(center_bottom_patches):
                 line_collections = PatchCollection(
                     center_bottom_patches,
-                    facecolors='none',
+                    facecolors="none",
                     edgecolors=edge_color_norms,
                     linewidths=thickness,
-                    linestyles=line_styles)
+                    linestyles=line_styles,
+                )
                 ax.add_collection(line_collections)
 
         ax.set_title("LiDAR")
 
-    def visualize_bboxes_to_image(self,
-                                  ax: plt.axes,
-                                  img_path: str,
-                                  lidar2img: npt.NDArray[np.float64],
-                                  img_title_index: int = -1,
-                                  alpha: float = 0.8,
-                                  line_widths: int = 2,
-                                  line_styles: str = '-') -> None:
+    def visualize_bboxes_to_image(
+        self,
+        ax: plt.axes,
+        img_path: str,
+        lidar2img: npt.NDArray[np.float64],
+        img_title_index: int = -1,
+        alpha: float = 0.8,
+        line_widths: int = 2,
+        line_styles: str = "-",
+    ) -> None:
         """
-        Visualize bboxes from LiDAR to an image. 
+        Visualize bboxes from LiDAR to an image.
         This function is modified from mmdet3d.visualization.local_visualizer.draw_proj_bboxes_3d.
         :param ax: Matplotlib axis.
         :param img_path: Full image path.
@@ -159,7 +172,7 @@ class DecodedBboxes:
         :param alpha: Transparency of polygons.
         :param line_width: Thickness of bboxes' edges.
         :param line_styles: Style of bboxes's edges.
-        :return np.float64 <N, 8, 2> (Number of bboxes, 8 corners, x and y coordinates). 
+        :return np.float64 <N, 8, 2> (Number of bboxes, 8 corners, x and y coordinates).
         """
         # Draw the image to axis
         img = plt.imread(img_path)
@@ -175,9 +188,12 @@ class DecodedBboxes:
         if img_size is not None:
             # Filter out the bbox where there's no points in the images.
             # This is for the visualization of multi-view image.
-            valid_point_idx = (corners_2d[..., 0] >= 0) & \
-                        (corners_2d[..., 0] <= img_size[0]) & \
-                        (corners_2d[..., 1] >= 0) & (corners_2d[..., 1] <= img_size[1])  # noqa: E501
+            valid_point_idx = (
+                (corners_2d[..., 0] >= 0)
+                & (corners_2d[..., 0] <= img_size[0])
+                & (corners_2d[..., 1] >= 0)
+                & (corners_2d[..., 1] <= img_size[1])
+            )  # noqa: E501
             valid_bbox_idx = valid_point_idx.sum(axis=-1) >= 1
             valid_bbox_labels = self.labels[valid_bbox_idx]
             corners_2d = corners_2d[valid_bbox_idx]
@@ -198,10 +214,11 @@ class DecodedBboxes:
 
         p = PatchCollection(
             pathpatches,
-            facecolors='none',
+            facecolors="none",
             edgecolors=edge_color_norms,
             linewidths=line_widths,
-            linestyles=line_styles)
+            linestyles=line_styles,
+        )
         ax.add_collection(p)
 
         # Draw a mask on the front of project bboxes
@@ -213,18 +230,21 @@ class DecodedBboxes:
             facecolor=face_colors,
             linestyles=line_styles,
             edgecolors=edge_color_norms,
-            linewidths=line_widths)
+            linewidths=line_widths,
+        )
         ax.add_collection(polygon_collection)
 
         # Setting the axis
         ax.set_title(ax_title)
         ax.set_axis_off()
 
-    def visualize_bboxes_to_images(self,
-                                   fig: Figure,
-                                   grid_spec: GridSpec,
-                                   spec_cols: int = 3,
-                                   alpha: float = 0.8) -> None:
+    def visualize_bboxes_to_images(
+        self,
+        fig: Figure,
+        grid_spec: GridSpec,
+        spec_cols: int = 3,
+        alpha: float = 0.8,
+    ) -> None:
         """
         Visualize bboxes from lidar to ever image.
         :param fpath: Path to save the visualization.
@@ -235,8 +255,12 @@ class DecodedBboxes:
         lidar2imgs = self.compute_lidar_to_imgs()
         assert len(self.img_paths) == len(lidar2imgs)
         selected_row = 0
-        for index, (img_path,
-                    lidar2img) in enumerate(zip(self.img_paths, lidar2imgs)):
+        for index, (img_path, lidar2img) in enumerate(
+            zip(
+                self.img_paths,
+                lidar2imgs,
+            )
+        ):
             selected_col = index % spec_cols
             selected_row = index // spec_cols
             ax = fig.add_subplot(grid_spec[selected_row, selected_col])
@@ -246,7 +270,8 @@ class DecodedBboxes:
                     img_path=img_path,
                     lidar2img=np.asarray(lidar2img),
                     alpha=alpha,
-                    img_title_index=-2)
+                    img_title_index=-2,
+                )
 
     def visualize_bboxes(
         self,
@@ -255,7 +280,8 @@ class DecodedBboxes:
         ylim: Tuple[float, float],
         spec_cols: int = 3,
         alpha: float = 0.8,
-        fig_size: Tuple[int, int] = (15, 15)) -> None:
+        fig_size: Tuple[int, int] = (15, 15),
+    ) -> None:
         """
         Visualize bboxes to both imgs and lidar in BEV.
         :param fpath: Path to save the visualization.
@@ -276,7 +302,11 @@ class DecodedBboxes:
         # Add subplots for images
         if len(self.img_paths):
             self.visualize_bboxes_to_images(
-                fig=fig, grid_spec=grid_spec, spec_cols=spec_cols, alpha=alpha)
+                fig=fig,
+                grid_spec=grid_spec,
+                spec_cols=spec_cols,
+                alpha=alpha,
+            )
 
         # Add subplot for lidar
         self.visualize_bboxes_to_lidar(
@@ -284,7 +314,8 @@ class DecodedBboxes:
             grid_spec=grid_spec,
             xlim=xlim,
             ylim=ylim,
-            draw_front=True)
+            draw_front=True,
+        )
 
         plt.tight_layout()
         plt.savefig(
@@ -298,13 +329,18 @@ class DecodedBboxes:
 
 @dataclass(frozen=True)
 class BatchDecodedBboxes:
-    """ Dataclass to save a batch of decoded bboxes with their meta information. """
+    """Dataclass to save a batch of decoded bboxes with their meta information."""
+
     scene_name: str
     lidar_filename: str
     decoded_bboxes: DecodedBboxes
 
-    def visualize(self, vis_dir: Path, xlim: Tuple[int, int],
-                  ylim: Tuple[int, int]) -> None:
+    def visualize(
+        self,
+        vis_dir: Path,
+        xlim: Tuple[int, int],
+        ylim: Tuple[int, int],
+    ) -> None:
         """ """
         scene_path = vis_dir / self.scene_name
         scene_path.mkdir(exist_ok=True, parents=True)
@@ -313,4 +349,8 @@ class BatchDecodedBboxes:
 
         # Visualize bboxes in both cameras and bev
         self.decoded_bboxes.visualize_bboxes(
-            fpath=lidar_fpath, xlim=xlim, ylim=ylim, alpha=0.5)
+            fpath=lidar_fpath,
+            xlim=xlim,
+            ylim=ylim,
+            alpha=0.5,
+        )

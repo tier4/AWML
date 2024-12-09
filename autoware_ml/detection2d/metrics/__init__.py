@@ -1,5 +1,3 @@
 from .tlr_metrics import TLRFineDetectorEvaluator
 
-__all__ = [
-    'TLRFineDetectorEvaluator'
-]
+__all__ = ["TLRFineDetectorEvaluator"]

@@ -1,5 +1,5 @@
 import json
-from typing import Dict, Optional, Tuple, List
+from typing import Dict, List, Optional, Tuple
 
 import numpy as np
 import tqdm
@@ -32,8 +32,16 @@ class T4Box(DetectionBox):
         attribute_name: str = "",
     ):
         # Call the grandparents' __init__ method to avoid unnecessary checks in DetectionBox
-        EvalBox.__init__(self, sample_token, translation, size, rotation,
-                         velocity, ego_translation, num_pts)
+        EvalBox.__init__(
+            self,
+            sample_token,
+            translation,
+            size,
+            rotation,
+            velocity,
+            ego_translation,
+            num_pts,
+        )
         self.detection_name = detection_name
         self.detection_score = detection_score
         self.attribute_name = attribute_name
@@ -42,12 +50,13 @@ class T4Box(DetectionBox):
 # modified version from https://github.com/nutonomy/nuscenes-devkit/blob/9b165b1018a64623b65c17b64f3c9dd746040f36/python-sdk/nuscenes/eval/common/loaders.py#L53
 # adds name mapping capabilities
 def t4metric_load_gt(
-        nusc: NuScenes,
-        config: DetectionConfig,
-        scene: str,
-        filter_attributions: Optional[Tuple[str, str]],
-        verbose: bool = False,
-        post_mapping_dict: Optional[Dict[str, str]] = None) -> EvalBoxes:
+    nusc: NuScenes,
+    config: DetectionConfig,
+    scene: str,
+    filter_attributions: Optional[Tuple[str, str]],
+    verbose: bool = False,
+    post_mapping_dict: Optional[Dict[str, str]] = None,
+) -> EvalBoxes:
     """
     Loads ground truth boxes from DB.
     :param nusc: A NuScenes instance.
@@ -58,8 +67,7 @@ def t4metric_load_gt(
     :return: The GT boxes.
     """
     if verbose:
-        print("Loading annotations for {} split from nuScenes version: {}".
-              format(scene, nusc.version))
+        print("Loading annotations for {} split from nuScenes version: {}".format(scene, nusc.version))
     # Read out all sample_tokens in DB.
     sample_tokens_all = [s["token"] for s in nusc.sample]
     assert len(sample_tokens_all) > 0, "Error: Database has no samples!"
@@ -76,8 +84,7 @@ def t4metric_load_gt(
 
         sample_boxes = []
         for sample_annotation_token in sample_annotation_tokens:
-            sample_annotation = nusc.get("sample_annotation",
-                                         sample_annotation_token)
+            sample_annotation = nusc.get("sample_annotation", sample_annotation_token)
             detection_name = sample_annotation["category_name"]
 
             # Get attribute_name.
@@ -89,15 +96,13 @@ def t4metric_load_gt(
                 for filter_attribution in filter_attributions:
                     # If the ground truth name matches exactly with the filtered class name, and
                     # the filtered attribute is in one of the available attributes
-                    if detection_name == filter_attribution[
-                            0] and filter_attribution[1] in attribute_names:
+                    if detection_name == filter_attribution[0] and filter_attribution[1] in attribute_names:
                         is_filter = True
                 if is_filter is True:
                     continue
 
             if post_mapping_dict:
-                detection_name = post_mapping_dict.get(detection_name,
-                                                       detection_name)
+                detection_name = post_mapping_dict.get(detection_name, detection_name)
 
             if detection_name not in config.class_names:
                 continue
@@ -109,24 +114,22 @@ def t4metric_load_gt(
                     size=sample_annotation["size"],
                     rotation=sample_annotation["rotation"],
                     velocity=nusc.box_velocity(sample_annotation["token"])[:2],
-                    num_pts=sample_annotation["num_lidar_pts"] +
-                    sample_annotation["num_radar_pts"],
+                    num_pts=sample_annotation["num_lidar_pts"] + sample_annotation["num_radar_pts"],
                     detection_name=detection_name,
                     detection_score=-1.0,  # GT samples do not have a score.
-                ))
+                )
+            )
         all_annotations.add_boxes(sample_token, sample_boxes)
 
     if verbose:
-        print("Loaded ground truth annotations for {} samples.".format(
-            len(all_annotations.sample_tokens)))
+        print("Loaded ground truth annotations for {} samples.".format(len(all_annotations.sample_tokens)))
 
     # Add center distances.
     all_annotations = add_center_dist(nusc, all_annotations)
 
     if verbose:
         print("Filtering ground truth annotations")
-    all_annotations = filter_eval_boxes(
-        nusc, all_annotations, config.class_range, verbose=verbose)
+    all_annotations = filter_eval_boxes(nusc, all_annotations, config.class_range, verbose=verbose)
     return all_annotations
 
 
@@ -155,7 +158,8 @@ def t4metric_load_prediction(
         data = json.load(f)
     assert "results" in data, (
         "Error: No field `results` in result file. Please note that the result format changed."
-        "See https://www.nuscenes.org/object-detection for more information.")
+        "See https://www.nuscenes.org/object-detection for more information."
+    )
 
     # Deserialize results and get meta data.
     all_results = EvalBoxes.deserialize(data["results"], T4Box)
@@ -163,21 +167,22 @@ def t4metric_load_prediction(
     if verbose:
         print(
             "Loaded results from {}. Found detections for {} samples.".format(
-                result_path, len(all_results.sample_tokens)))
+                result_path, len(all_results.sample_tokens)
+            )
+        )
 
     all_results = filter_by_known_tokens(nusc, all_results)
 
     # Check that each sample has no more than x predicted boxes.
     for sample_token in all_results.sample_tokens:
         assert len(all_results.boxes[sample_token]) <= max_boxes_per_sample, (
-            "Error: Only <= %d boxes per sample allowed!" %
-            max_boxes_per_sample)
+            "Error: Only <= %d boxes per sample allowed!" % max_boxes_per_sample
+        )
 
     all_results = add_center_dist(nusc, all_results)
 
     # Filter boxes (distance, points per box, etc.).
-    all_results = filter_eval_boxes(
-        nusc, all_results, config.class_range, verbose=verbose)
+    all_results = filter_eval_boxes(nusc, all_results, config.class_range, verbose=verbose)
 
     return all_results, meta
 
@@ -223,9 +228,7 @@ def add_center_dist(nusc: NuScenes, eval_boxes: EvalBoxes):
                 sample_rec["data"]["LIDAR_CONCAT"],
             )
         else:
-            raise Exception(
-                "Error: LIDAR data not available for sample! Expected either LIDAR_TOP or LIDAR_CONCAT."
-            )
+            raise Exception("Error: LIDAR data not available for sample! Expected either LIDAR_TOP or LIDAR_CONCAT.")
         pose_record = nusc.get("ego_pose", sd_record["ego_pose_token"])
 
         for box in eval_boxes[sample_token]:
@@ -267,33 +270,25 @@ def filter_eval_boxes(
         # Filter on distance first.
         total += len(eval_boxes[sample_token])
         eval_boxes.boxes[sample_token] = [
-            box for box in eval_boxes[sample_token]
-            if box.ego_dist < max_dist[box.__getattribute__("detection_name")]
+            box for box in eval_boxes[sample_token] if box.ego_dist < max_dist[box.__getattribute__("detection_name")]
         ]
         dist_filter += len(eval_boxes[sample_token])
 
         # Then remove boxes with zero points in them. Eval boxes have -1 points by default.
-        eval_boxes.boxes[sample_token] = [
-            box for box in eval_boxes[sample_token] if not box.num_pts == 0
-        ]
+        eval_boxes.boxes[sample_token] = [box for box in eval_boxes[sample_token] if not box.num_pts == 0]
         point_filter += len(eval_boxes[sample_token])
 
         # Perform bike-rack filtering.
         sample_anns = nusc.get("sample", sample_token)["anns"]
         bikerack_recs = [
-            nusc.get("sample_annotation", ann) for ann in sample_anns
-            if nusc.get("sample_annotation", ann)["category_name"] ==
-            "static_object.bicycle_rack"
+            nusc.get("sample_annotation", ann)
+            for ann in sample_anns
+            if nusc.get("sample_annotation", ann)["category_name"] == "static_object.bicycle_rack"
         ]
-        bikerack_boxes = [
-            Box(rec["translation"], rec["size"], Quaternion(rec["rotation"]))
-            for rec in bikerack_recs
-        ]
+        bikerack_boxes = [Box(rec["translation"], rec["size"], Quaternion(rec["rotation"])) for rec in bikerack_recs]
         filtered_boxes = []
         for box in eval_boxes[sample_token]:
-            if box.__getattribute__("detection_name") in [
-                    "bicycle", "motorcycle"
-            ]:
+            if box.__getattribute__("detection_name") in ["bicycle", "motorcycle"]:
                 in_a_bikerack = False
                 for bikerack_box in bikerack_boxes:
                     points_in_box_ = points_in_box(
@@ -303,7 +298,7 @@ def filter_eval_boxes(
                             axis=1,
                         ),
                     )
-                    if (np.sum(points_in_box_) > 0):
+                    if np.sum(points_in_box_) > 0:
                         in_a_bikerack = True
                 if not in_a_bikerack:
                     filtered_boxes.append(box)
@@ -316,8 +311,7 @@ def filter_eval_boxes(
     if verbose:
         print("=> Original number of boxes: %d" % total)
         print("=> After distance based filtering: %d" % dist_filter)
-        print("=> After LIDAR and RADAR points based filtering: %d" %
-              point_filter)
+        print("=> After LIDAR and RADAR points based filtering: %d" % point_filter)
         print("=> After bike rack filtering: %d" % bike_rack_filter)
 
     return eval_boxes
@@ -330,7 +324,5 @@ def get_attr_name(
     if len(anno["attribute_tokens"]) == 0:
         return []
     else:
-        attr_names = [
-            nusc.get("attribute", t)["name"] for t in anno["attribute_tokens"]
-        ]
+        attr_names = [nusc.get("attribute", t)["name"] for t in anno["attribute_tokens"]]
         return attr_names

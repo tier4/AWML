@@ -1,6 +1,10 @@
 dataset_version_list = ["tlr_v0_1", "tlr_v1_0_x2", "tlr_v1_0_xx1", "tlr_v1_2"]
 dataset_version_config_root = "autoware_ml/configs/detection2d/dataset/t4dataset/"
-classes = ('BACKGROUND', 'traffic_light', 'pedestrian_traffic_light')
+classes = (
+    "BACKGROUND",
+    "traffic_light",
+    "pedestrian_traffic_light",
+)
 class_mappings = {
     "green": "traffic_light",
     "left-red": "traffic_light",

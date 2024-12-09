@@ -2,8 +2,8 @@ from os import path as osp
 
 import numpy as np
 from mmdet3d.datasets import NuScenesDataset
-from mmengine.registry import DATASETS
 from mmengine.logging import print_log
+from mmengine.registry import DATASETS
 
 
 @DATASETS.register_module()
@@ -20,15 +20,10 @@ class T4Dataset(NuScenesDataset):
         **kwargs,
     ):
         T4Dataset.METAINFO = metainfo
-        self.valid_class_name_ins = {
-            class_name: 0
-            for class_name in class_names
-        }
+        self.valid_class_name_ins = {class_name: 0 for class_name in class_names}
         self.class_names = class_names
         super().__init__(use_valid_flag=use_valid_flag, **kwargs)
-        print_log(
-            f"Valid dataset instances: {self.valid_class_name_ins}",
-            logger='current')
+        print_log(f"Valid dataset instances: {self.valid_class_name_ins}", logger="current")
 
     def _filter_with_mask(self, ann_info: dict) -> dict:
         """Remove annotations that do not need to be cared.
@@ -41,18 +36,17 @@ class T4Dataset(NuScenesDataset):
         """
         filtered_annotations = {}
         if self.use_valid_flag:
-            filter_mask = ann_info['bbox_3d_isvalid']
+            filter_mask = ann_info["bbox_3d_isvalid"]
         else:
             # For safety reason, we should check if there's > -1 to take all valid ground truths
             # only
             # There's _remove_dontcare() in the implementation of both KittiDataset and
             # WaymoDataset, but no in NuScenesDataset
-            filter_mask = (ann_info['num_lidar_pts'] > 0) & (
-                ann_info['gt_labels_3d'] > -1)
+            filter_mask = (ann_info["num_lidar_pts"] > 0) & (ann_info["gt_labels_3d"] > -1)
 
         for key in ann_info.keys():
-            if key != 'instances':
-                filtered_annotations[key] = (ann_info[key][filter_mask])
+            if key != "instances":
+                filtered_annotations[key] = ann_info[key][filter_mask]
             else:
                 filtered_annotations[key] = ann_info[key]
         return filtered_annotations
@@ -71,7 +65,7 @@ class T4Dataset(NuScenesDataset):
                 - gt_labels_3d (np.ndarray): Labels of ground truths.
         """
         ann_info = super().parse_ann_info(info=info)
-        for label in ann_info['gt_labels_3d']:
+        for label in ann_info["gt_labels_3d"]:
             self.valid_class_name_ins[self.class_names[label]] += 1
         return ann_info
 
@@ -102,8 +96,8 @@ class T4Dataset(NuScenesDataset):
         # modified from https://github.com/open-mmlab/mmdetection3d/blob/v1.2.0/mmdet3d/datasets/det3d_dataset.py#L279-L296
         if self.modality["use_lidar"]:
             info["lidar_points"]["lidar_path"] = osp.join(
-                self.data_prefix.get("pts", ""),
-                info["lidar_points"]["lidar_path"])
+                self.data_prefix.get("pts", ""), info["lidar_points"]["lidar_path"]
+            )
             info["num_pts_feats"] = info["lidar_points"]["num_pts_feats"]
             info["lidar_path"] = info["lidar_points"]["lidar_path"]
             if "lidar_sweeps" in info:
@@ -112,41 +106,35 @@ class T4Dataset(NuScenesDataset):
                     file_suffix = sweep["lidar_points"]["lidar_path"]
                     # -----------------------------------------------
                     if "samples" in sweep["lidar_points"]["lidar_path"]:
-                        sweep["lidar_points"]["lidar_path"] = osp.join(
-                            self.data_prefix["pts"], file_suffix)
+                        sweep["lidar_points"]["lidar_path"] = osp.join(self.data_prefix["pts"], file_suffix)
                     else:
-                        sweep["lidar_points"]["lidar_path"] = osp.join(
-                            self.data_prefix["sweeps"], file_suffix)
+                        sweep["lidar_points"]["lidar_path"] = osp.join(self.data_prefix["sweeps"], file_suffix)
 
-        if self.modality['use_camera']:
-            for cam_id, img_info in info['images'].items():
-                if 'img_path' in img_info:
+        if self.modality["use_camera"]:
+            for cam_id, img_info in info["images"].items():
+                if "img_path" in img_info:
                     if cam_id in self.data_prefix:
                         cam_prefix = self.data_prefix[cam_id]
                     else:
-                        cam_prefix = self.data_prefix.get('img', '')
+                        cam_prefix = self.data_prefix.get("img", "")
                     # If an image is invalid, then set img_info['img_path'] = None
-                    if img_info['img_path'] is None:
-                        img_info['img_path'] = None
+                    if img_info["img_path"] is None:
+                        img_info["img_path"] = None
                     else:
-                        img_info['img_path'] = osp.join(
+                        img_info["img_path"] = osp.join(
                             cam_prefix,
-                            img_info['img_path'],
+                            img_info["img_path"],
                         )
 
             if self.default_cam_key is not None:
-                info['img_path'] = info['images'][
-                    self.default_cam_key]['img_path']
-                if 'lidar2cam' in info['images'][self.default_cam_key]:
-                    info['lidar2cam'] = np.array(
-                        info['images'][self.default_cam_key]['lidar2cam'])
-                if 'cam2img' in info['images'][self.default_cam_key]:
-                    info['cam2img'] = np.array(
-                        info['images'][self.default_cam_key]['cam2img'])
-                if 'lidar2img' in info['images'][self.default_cam_key]:
-                    info['lidar2img'] = np.array(
-                        info['images'][self.default_cam_key]['lidar2img'])
+                info["img_path"] = info["images"][self.default_cam_key]["img_path"]
+                if "lidar2cam" in info["images"][self.default_cam_key]:
+                    info["lidar2cam"] = np.array(info["images"][self.default_cam_key]["lidar2cam"])
+                if "cam2img" in info["images"][self.default_cam_key]:
+                    info["cam2img"] = np.array(info["images"][self.default_cam_key]["cam2img"])
+                if "lidar2img" in info["images"][self.default_cam_key]:
+                    info["lidar2img"] = np.array(info["images"][self.default_cam_key]["lidar2img"])
                 else:
-                    info['lidar2img'] = info['cam2img'] @ info['lidar2cam']
+                    info["lidar2img"] = info["cam2img"] @ info["lidar2cam"]
 
         return info

@@ -16,133 +16,152 @@ from mmengine.registry import LOOPS as MMENGINE_LOOPS
 from mmengine.registry import METRICS as MMENGINE_METRICS
 from mmengine.registry import MODEL_WRAPPERS as MMENGINE_MODEL_WRAPPERS
 from mmengine.registry import MODELS as MMENGINE_MODELS
-from mmengine.registry import \
-    OPTIM_WRAPPER_CONSTRUCTORS as MMENGINE_OPTIM_WRAPPER_CONSTRUCTORS
+from mmengine.registry import OPTIM_WRAPPER_CONSTRUCTORS as MMENGINE_OPTIM_WRAPPER_CONSTRUCTORS
 from mmengine.registry import OPTIM_WRAPPERS as MMENGINE_OPTIM_WRAPPERS
 from mmengine.registry import OPTIMIZERS as MMENGINE_OPTIMIZERS
 from mmengine.registry import PARAM_SCHEDULERS as MMENGINE_PARAM_SCHEDULERS
-from mmengine.registry import \
-    RUNNER_CONSTRUCTORS as MMENGINE_RUNNER_CONSTRUCTORS
+from mmengine.registry import RUNNER_CONSTRUCTORS as MMENGINE_RUNNER_CONSTRUCTORS
 from mmengine.registry import RUNNERS as MMENGINE_RUNNERS
 from mmengine.registry import TASK_UTILS as MMENGINE_TASK_UTILS
 from mmengine.registry import TRANSFORMS as MMENGINE_TRANSFORMS
 from mmengine.registry import VISBACKENDS as MMENGINE_VISBACKENDS
 from mmengine.registry import VISUALIZERS as MMENGINE_VISUALIZERS
-from mmengine.registry import \
-    WEIGHT_INITIALIZERS as MMENGINE_WEIGHT_INITIALIZERS
+from mmengine.registry import WEIGHT_INITIALIZERS as MMENGINE_WEIGHT_INITIALIZERS
 from mmengine.registry import Registry
 
 # manage all kinds of runners like `EpochBasedRunner` and `IterBasedRunner`
 RUNNERS = Registry(
-    'runner',
+    "runner",
     parent=MMENGINE_RUNNERS,
-    locations=['mmdet3d.engine', 'mmdet.engine'])
+    locations=["mmdet3d.engine", "mmdet.engine"],
+)
 # manage runner constructors that define how to initialize runners
 RUNNER_CONSTRUCTORS = Registry(
-    'runner constructor',
+    "runner constructor",
     parent=MMENGINE_RUNNER_CONSTRUCTORS,
-    locations=['mmdet3d.engine'])
+    locations=["mmdet3d.engine"],
+)
 # manage all kinds of loops like `EpochBasedTrainLoop`
 LOOPS = Registry(
-    'loop',
+    "loop",
     parent=MMENGINE_LOOPS,
-    locations=['mmdet3d.engine', 'mmdet.engine'])
+    locations=["mmdet3d.engine", "mmdet.engine"],
+)
 # manage all kinds of hooks like `CheckpointHook`
 HOOKS = Registry(
-    'hook',
+    "hook",
     parent=MMENGINE_HOOKS,
-    locations=['mmdet3d.engine.hooks', 'mmdet.engine.hooks'])
+    locations=["mmdet3d.engine.hooks", "mmdet.engine.hooks"],
+)
 
 # manage data-related modules
 DATASETS = Registry(
-    'dataset',
+    "dataset",
     parent=MMENGINE_DATASETS,
-    locations=['mmdet3d.datasets', 'mmdet.datasets'])
+    locations=["mmdet3d.datasets", "mmdet.datasets"],
+)
 DATA_SAMPLERS = Registry(
-    'data sampler',
+    "data sampler",
     parent=MMENGINE_DATA_SAMPLERS,
-    locations=['mmdet3d.datasets', 'mmdet.datasets'])
+    locations=["mmdet3d.datasets", "mmdet.datasets"],
+)
 TRANSFORMS = Registry(
-    'transform',
+    "transform",
     parent=MMENGINE_TRANSFORMS,
-    locations=['mmdet3d.datasets.transforms', 'mmdet.datasets.transforms'])
+    locations=["mmdet3d.datasets.transforms", "mmdet.datasets.transforms"],
+)
 
 # mangage all kinds of modules inheriting `nn.Module`
 MODELS = Registry(
-    'model',
+    "model",
     parent=MMENGINE_MODELS,
-    locations=['mmdet3d.models', 'mmdet.models'])
+    locations=["mmdet3d.models", "mmdet.models"],
+)
 # mangage all kinds of model wrappers like 'MMDistributedDataParallel'
 MODEL_WRAPPERS = Registry(
-    'model_wrapper',
+    "model_wrapper",
     parent=MMENGINE_MODEL_WRAPPERS,
-    locations=['mmdet3d.models', 'mmdet.models'])
+    locations=["mmdet3d.models", "mmdet.models"],
+)
 # mangage all kinds of weight initialization modules like `Uniform`
 WEIGHT_INITIALIZERS = Registry(
-    'weight initializer',
+    "weight initializer",
     parent=MMENGINE_WEIGHT_INITIALIZERS,
-    locations=['mmdet3d.models', 'mmdet.models'])
+    locations=["mmdet3d.models", "mmdet.models"],
+)
 
 # mangage all kinds of optimizers like `SGD` and `Adam`
 OPTIMIZERS = Registry(
-    'optimizer',
+    "optimizer",
     parent=MMENGINE_OPTIMIZERS,
-    locations=['mmdet3d.engine', 'mmdet.engine'])
+    locations=["mmdet3d.engine", "mmdet.engine"],
+)
 # manage optimizer wrapper
 OPTIM_WRAPPERS = Registry(
-    'optim wrapper',
+    "optim wrapper",
     parent=MMENGINE_OPTIM_WRAPPERS,
-    locations=['mmdet3d.engine', 'mmdet.engine'])
+    locations=["mmdet3d.engine", "mmdet.engine"],
+)
 # manage constructors that customize the optimization hyperparameters.
 OPTIM_WRAPPER_CONSTRUCTORS = Registry(
-    'optimizer wrapper constructor',
+    "optimizer wrapper constructor",
     parent=MMENGINE_OPTIM_WRAPPER_CONSTRUCTORS,
-    locations=['mmdet3d.engine', 'mmdet.engine'])
+    locations=["mmdet3d.engine", "mmdet.engine"],
+)
 # mangage all kinds of parameter schedulers like `MultiStepLR`
 PARAM_SCHEDULERS = Registry(
-    'parameter scheduler',
+    "parameter scheduler",
     parent=MMENGINE_PARAM_SCHEDULERS,
-    locations=['mmdet3d.engine', 'mmdet.engine'])
+    locations=["mmdet3d.engine", "mmdet.engine"],
+)
 # manage all kinds of metrics
 METRICS = Registry(
-    'metric',
+    "metric",
     parent=MMENGINE_METRICS,
-    locations=['mmdet3d.evaluation', 'mmdet.evaluation'])
+    locations=["mmdet3d.evaluation", "mmdet.evaluation"],
+)
 # manage evaluator
 EVALUATOR = Registry(
-    'evaluator',
+    "evaluator",
     parent=MMENGINE_EVALUATOR,
-    locations=['mmdet3d.evaluation', 'mmdet.evaluation'])
+    locations=["mmdet3d.evaluation", "mmdet.evaluation"],
+)
 
 # manage task-specific modules like anchor generators and box coders
 TASK_UTILS = Registry(
-    'task util',
+    "task util",
     parent=MMENGINE_TASK_UTILS,
-    locations=['mmdet3d.models', 'mmdet.models'])
+    locations=["mmdet3d.models", "mmdet.models"],
+)
 
 # manage visualizer
 VISUALIZERS = Registry(
-    'visualizer',
+    "visualizer",
     parent=MMENGINE_VISUALIZERS,
-    locations=['mmdet3d.visualization', 'mmdet.visualization'])
+    locations=["mmdet3d.visualization", "mmdet.visualization"],
+)
 # manage visualizer backend
 VISBACKENDS = Registry(
-    'vis_backend',
+    "vis_backend",
     parent=MMENGINE_VISBACKENDS,
-    locations=['mmdet3d.visualization', 'mmdet.visualization'])
+    locations=["mmdet3d.visualization", "mmdet.visualization"],
+)
 
 # manage logprocessor
 LOG_PROCESSORS = Registry(
-    'log_processor',
+    "log_processor",
     parent=MMENGINE_LOG_PROCESSORS,
-    locations=['mmdet3d.engine', 'mmdet.engine'])
+    locations=["mmdet3d.engine", "mmdet.engine"],
+)
 
 # manage inferencer
 INFERENCERS = Registry(
-    'inferencer',
+    "inferencer",
     parent=MMENGINE_INFERENCERS,
-    locations=['mmdet3d.api.inferencers', 'mmdet.api.inferencers'])
+    locations=["mmdet3d.api.inferencers", "mmdet.api.inferencers"],
+)
 
 DATA_SELECTOR = Registry(
-    'data selector',
-    locations=['tools.scene_selector.scene_selector'])
+    "data selector",
+    locations=["tools.scene_selector.scene_selector"],
+)

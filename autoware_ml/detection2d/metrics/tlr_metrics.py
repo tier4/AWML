@@ -1,25 +1,28 @@
+from collections import OrderedDict
+from typing import Dict, Sequence
+
+import numpy as np
+from mmdet.evaluation.functional import eval_map, eval_recalls
 from mmdet.registry import METRICS
 from mmengine.evaluator import BaseMetric
 from mmengine.logging import print_log
-import numpy as np
-from typing import Dict, Sequence
-from collections import OrderedDict
-from mmdet.evaluation.functional import eval_map, eval_recalls
 
 
 @METRICS.register_module()
 class TLRFineDetectorEvaluator(BaseMetric):
 
-    def __init__(self,
-                 classes,
-                 bbox_width_thres=33,
-                 proposal_nums=(100, 300, 1000),
-                 iou_thrs=[0.5, 0.6, 0.7, 0.8, 0.9],
-                 metric="mAP",
-                 scale_ranges=None,
-                 logger=None,
-                 *args,
-                 **kwargs):
+    def __init__(
+        self,
+        classes,
+        bbox_width_thres=33,
+        proposal_nums=(100, 300, 1000),
+        iou_thrs=[0.5, 0.6, 0.7, 0.8, 0.9],
+        metric="mAP",
+        scale_ranges=None,
+        logger=None,
+        *args,
+        **kwargs,
+    ):
         self.classes = classes
         self.bbox_width_thres = bbox_width_thres
         self.scale_ranges = scale_ranges
@@ -32,25 +35,23 @@ class TLRFineDetectorEvaluator(BaseMetric):
     def process(self, data_batch: dict, data_samples: Sequence[dict]):
         for data_sample in data_samples:
             result = dict()
-            pred = data_sample['pred_instances']
-            result['img_id'] = data_sample['img_id']
-            result['bboxes'] = (pred['bboxes'] * pred['bboxes'].new_tensor(
-                data_sample['scale_factor']).repeat(1, 2)).cpu().numpy()
-            result['scores'] = pred['scores'].cpu().numpy()
-            result['labels'] = pred['labels'].cpu().numpy()
-            result["arranged_bboxes"] = [
-                result['bboxes'][result['labels'] == i]
-                for i in range(len(self.classes))
-            ]
+            pred = data_sample["pred_instances"]
+            result["img_id"] = data_sample["img_id"]
+            result["bboxes"] = (
+                (pred["bboxes"] * pred["bboxes"].new_tensor(data_sample["scale_factor"]).repeat(1, 2)).cpu().numpy()
+            )
+            result["scores"] = pred["scores"].cpu().numpy()
+            result["labels"] = pred["labels"].cpu().numpy()
+            result["arranged_bboxes"] = [result["bboxes"][result["labels"] == i] for i in range(len(self.classes))]
 
             # parse gt
             gt = dict()
-            gt['width'] = data_sample['ori_shape'][1]
-            gt['height'] = data_sample['ori_shape'][0]
-            gt['img_id'] = data_sample['img_id']
+            gt["width"] = data_sample["ori_shape"][1]
+            gt["height"] = data_sample["ori_shape"][0]
+            gt["img_id"] = data_sample["img_id"]
 
-            gt_instance = data_sample['gt_instances']
-            gt['anns'] = gt_instance
+            gt_instance = data_sample["gt_instances"]
+            gt["anns"] = gt_instance
             self.results.append((gt, result))
 
     def compute_metrics(self, results_info: list) -> Dict[str, float]:
@@ -80,17 +81,16 @@ class TLRFineDetectorEvaluator(BaseMetric):
             for gt, preds in results_info:
                 gt_bboxes = gt["anns"]["bboxes"]
                 bbox_widths = gt_bboxes[:, 2] - gt_bboxes[:, 0]
-                valid_indices = (bbox_widths >= bbox_range[0]) * (
-                    bbox_widths < bbox_range[1])
+                valid_indices = (bbox_widths >= bbox_range[0]) * (bbox_widths < bbox_range[1])
                 annotations.append(
                     dict(
                         bboxes=gt["anns"]["bboxes"][valid_indices],
                         labels=gt["anns"]["labels"][valid_indices],
-                    ))
-                results.append(preds['arranged_bboxes'])
+                    )
+                )
+                results.append(preds["arranged_bboxes"])
             eval_results = OrderedDict()
-            self.iou_thrs = [self.iou_thrs] if isinstance(
-                self.iou_thrs, float) else self.iou_thrs
+            self.iou_thrs = [self.iou_thrs] if isinstance(self.iou_thrs, float) else self.iou_thrs
             if self.metric == "mAP":
                 assert isinstance(self.iou_thrs, list)
                 mean_aps = []
@@ -105,8 +105,7 @@ class TLRFineDetectorEvaluator(BaseMetric):
                         logger=self.logger,
                     )
                     mean_aps.append(mean_ap)
-                    eval_results[f"AP{int(iou_thr * 100):02d}"] = round(
-                        mean_ap, 3)
+                    eval_results[f"AP{int(iou_thr * 100):02d}"] = round(mean_ap, 3)
                 eval_results["mAP"] = sum(mean_aps) / len(mean_aps)
             elif self.metric == "recall":
                 gt_bboxes = [ann["bboxes"] for ann in annotations]
@@ -115,7 +114,8 @@ class TLRFineDetectorEvaluator(BaseMetric):
                     results,
                     self.proposal_nums,
                     self.iou_thrs,
-                    logger=self.logger)
+                    logger=self.logger,
+                )
                 for i, num in enumerate(self.proposal_nums):
                     for j, iou in enumerate(self.iou_thrs):
                         eval_results[f"recall@{num}@{iou}"] = recalls[i, j]

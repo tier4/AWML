@@ -1,7 +1,9 @@
-custom_imports = dict(imports=[
-    "autoware_ml.detection3d.datasets.t4dataset",
-    "autoware_ml.detection3d.evaluation.t4metric.t4metric",
-])
+custom_imports = dict(
+    imports=[
+        "autoware_ml.detection3d.datasets.t4dataset",
+        "autoware_ml.detection3d.evaluation.t4metric.t4metric",
+    ]
+)
 
 # dataset type setting
 dataset_type = "T4Dataset"
@@ -25,8 +27,12 @@ data_prefix = dict(
     CAM_BACK_LEFT="",
 )
 camera_types = {
-    "CAM_FRONT", "CAM_FRONT_RIGHT", "CAM_FRONT_LEFT", "CAM_BACK",
-    "CAM_BACK_LEFT", "CAM_BACK_RIGHT"
+    "CAM_FRONT",
+    "CAM_FRONT_RIGHT",
+    "CAM_FRONT_LEFT",
+    "CAM_BACK",
+    "CAM_BACK_LEFT",
+    "CAM_BACK_RIGHT",
 }
 
 # class setting
@@ -102,26 +108,26 @@ class_colors = {
     "traffic_cone": (120, 120, 120),
 }
 camera_panels = [
-    'data/CAM_FRONT_LEFT',
-    'data/CAM_FRONT',
-    'data/CAM_FRONT_RIGHT',
-    'data/CAM_BACK_LEFT',
-    'data/CAM_BACK',
-    'data/CAM_BACK_RIGHT',
+    "data/CAM_FRONT_LEFT",
+    "data/CAM_FRONT",
+    "data/CAM_FRONT_RIGHT",
+    "data/CAM_BACK_LEFT",
+    "data/CAM_BACK",
+    "data/CAM_BACK_RIGHT",
 ]
 
 # Add filter attributes
 filter_attributes = [
-    ('vehicle.bicycle', 'vehicle_state.parked'),
-    ('vehicle.bicycle', 'cycle_state.without_rider'),
-    ('vehicle.bicycle', 'motorcycle_state.without_rider'),
-    ('vehicle.motorcycle', 'vehicle_state.parked'),
-    ('vehicle.motorcycle', 'cycle_state.without_rider'),
-    ('vehicle.motorcycle', 'motorcycle_state.without_rider'),
-    ('bicycle', 'vehicle_state.parked'),
-    ('bicycle', 'cycle_state.without_rider'),
-    ('bicycle', 'motorcycle_state.without_rider'),
-    ('motorcycle', 'vehicle_state.parked'),
-    ('motorcycle', 'cycle_state.without_rider'),
-    ('motorcycle', 'motorcycle_state.without_rider'),
+    ("vehicle.bicycle", "vehicle_state.parked"),
+    ("vehicle.bicycle", "cycle_state.without_rider"),
+    ("vehicle.bicycle", "motorcycle_state.without_rider"),
+    ("vehicle.motorcycle", "vehicle_state.parked"),
+    ("vehicle.motorcycle", "cycle_state.without_rider"),
+    ("vehicle.motorcycle", "motorcycle_state.without_rider"),
+    ("bicycle", "vehicle_state.parked"),
+    ("bicycle", "cycle_state.without_rider"),
+    ("bicycle", "motorcycle_state.without_rider"),
+    ("motorcycle", "vehicle_state.parked"),
+    ("motorcycle", "cycle_state.without_rider"),
+    ("motorcycle", "motorcycle_state.without_rider"),
 ]
