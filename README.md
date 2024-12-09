@@ -29,12 +29,16 @@ If you want to know about the design of `autoware-ml`, you should read following
 - [Docs for architecture of S3 storage](/docs/design/architecture_s3.md)
 - [Docs for autoware-ml design](/docs/design/autoware_ml_design.md)
 
-### Operation documents
+### Contribution
 
 If you want to develop `autoware-ml`, you should read following pages.
 
-- [Docs for contribution](/docs/operation/contribution.md)
-- [Note for next release](/docs/operation/release_note.md)
+- [Docs for contribution flow](/docs/operation/contribution_flow.md)
+- [Use case for contribution](/docs/operation/contribution_use_case.md)
+
+If you want to search the OSS tools with `autoware-ml`, you should read following pages.
+
+- [Community support](/docs/tips/community_support.md)
 
 ### Tips
 
@@ -42,7 +46,7 @@ If you want to know about `autoware-ml`, you should read following pages.
 
 - [Tips for config files](/docs/tips/config.md)
 - [Tips for remote development](/docs/tips/remote_development.md)
-- [Community support](/docs/tips/community_support.md)
+- [Note for next release](/docs/operation/release_note.md)
 
 ## Supported tools
 
