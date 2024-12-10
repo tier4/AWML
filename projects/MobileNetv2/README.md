@@ -2,7 +2,7 @@
 ## Summary
 
 - [Support priority](https://github.com/tier4/autoware-ml/blob/main/docs/design/autoware_ml_design.md#support-priority): Tier A
-- ROS package: [tensorrt_yolox](https://github.com/autowarefoundation/autoware.universe/tree/main/perception/autoware_traffic_light_classifier)
+- ROS package: [autoware_traffic_light_classifier](https://github.com/autowarefoundation/autoware.universe/tree/main/perception/autoware_traffic_light_classifier)
 - Supported dataset
   - [ ] COCO dataset
   - [x] T4dataset
@@ -10,7 +10,6 @@
 - Other supported feature
   - [x] Add script to make .onnx file and deploy to Autoware
   - [ ] Add unit test
-- Limited feature
 
 ## Results and models
 
@@ -70,3 +69,6 @@ python3 tools/classification2d/deploy.py /workspace/projects/MobileNetv2/configs
 ## Troubleshooting
 
 ## Reference
+
+- Mark Sandler et al. "MobileNetV2: Inverted Residuals and Linear Bottlenecks", CVPR 2018
+- [MobileNet v2 of mmpretrain](https://github.com/open-mmlab/mmpretrain/tree/main/configs/mobilenet_v2)

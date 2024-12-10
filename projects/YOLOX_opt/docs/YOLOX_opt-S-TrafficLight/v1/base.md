@@ -1,4 +1,4 @@
-# Deployed model for YOLOX_opt-S-TrafficLight
+# Deployed model for YOLOX_opt-S-TrafficLight base/1.X
 ## Summary
 
 - Performance summary
@@ -7,10 +7,16 @@
 
 |          | mAP    | AP50   | AP60   | AP70   | AP80   | AP90   |
 | -------- | ------ | ------ | ------ | ------ | ------ | ------ |
-| base/0.1 | 0.3588 | 0.4810 | 0.4760 | 0.4520 | 0.3250 | 0.0600 |
+| base/1.0 | 0.3588 | 0.4810 | 0.4760 | 0.4520 | 0.3250 | 0.0600 |
 
 ## Release
-### base/0.1
+### base/1.0
+
+- The first ML model trained with autoware-ml, carefully evaluated against the older version, demonstrating comparable performance. This is a major step towards lifelong MLOps for traffic light recognition models.
+- Introduced the TLRv1.2 dataset, featuring vertical traffic lights in Japan.
+
+<details>
+<summary> The link of data and evaluation result </summary>
 
 - model name: yolox_s_tlr_416x416_pedcar_t4dataset
 - model
@@ -215,3 +221,5 @@ AP50: 0.5920  AP60: 0.5820  AP70: 0.5460  AP80: 0.4020  AP90: 0.0720  mAP: 0.438
 
 AP50: 0.4710  AP60: 0.4580  AP70: 0.4330  AP80: 0.3320  AP90: 0.0670  mAP: 0.3524
 ```
+
+</details>

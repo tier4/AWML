@@ -2,7 +2,9 @@
 ## Summary
 
 - [Support priority](https://github.com/tier4/autoware-ml/blob/main/docs/design/autoware_ml_design.md#support-priority): Tier A
-- ROS package: [tensorrt_yolox](https://github.com/autowarefoundation/autoware.universe/tree/main/perception/tensorrt_yolox)
+- ROS package
+  - [tensorrt_yolox](https://github.com/autowarefoundation/autoware.universe/tree/main/perception/tensorrt_yolox)
+  - [traffic_light_fine_detector](https://github.com/autowarefoundation/autoware.universe/tree/main/perception/autoware_traffic_light_fine_detector)
 - Supported dataset
   - [ ] COCO dataset
   - [x] T4dataset

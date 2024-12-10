@@ -1,4 +1,4 @@
-# Deployed model for MobileNetv2-CarTrafficLight
+# Deployed model for MobileNetv2-CarTrafficLight base/1.X
 ## Summary
 
 - Performance summary
@@ -8,10 +8,16 @@
 
 |          | Eval DB           | precision_top1 | recall_top1 | f1-score_top1 | counts |
 | -------- | ----------------- | -------------- | ----------- | ------------- | ------ |
-| base/0.1 | tlr_v0_1+tlr_v1_2 | 69.10          | 68.24       | 68.68         | 9642   |
+| base/1.0 | tlr_v0_1+tlr_v1_2 | 69.10          | 68.24       | 68.68         | 9642   |
 
 ## Release
-### base/0.1
+### base/1.0
+
+- The first ML model trained with autoware-ml, carefully evaluated against the older version, demonstrating comparable performance. This is a major step towards lifelong MLOps for traffic light recognition models.
+- Introduced the TLRv1.2 dataset, featuring vertical traffic lights in Japan.
+
+<details>
+<summary> The link of data and evaluation result </summary>
 
 - model
   - Training dataset: tlr_v0_1 + tlr_v1_0_x2 + tlr_v1_0_xx1 + tlr_v1_2
@@ -45,3 +51,5 @@ Class-wise Metrics:
 Overall results:  precision_top1: 69.19     , recall_top1: 68.24     , f1-score_top1: 68.68     , support_top1: 9642.00
 
 ```
+
+</details>
