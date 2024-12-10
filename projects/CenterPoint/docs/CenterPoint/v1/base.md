@@ -16,8 +16,9 @@
 ## Release
 ### CenterPoint base/1.0
 
-- We integrated CenterPoint to `autoware-ml` from old internal library.
-- We release first CenterPoint model by `autoware-ml`.
+- The first CenterPoint model trained with autoware-ml using TIER IV's in-house dataset. It has been carefully evaluated against the older version, demonstrating comparable performance. This marks a significant step towards lifelong MLOps for object recognition models.
+- Trained with data from Robotaxi and Robobus, enhancing robustness across variations in vehicle and sensor configurations.
+- Evaluation data for Robobus highlights notable improvements, with mean Average Precision (mAP) increasing by approximately 5% for buses and 20% for trucks, showcasing enhanced performance for large-sized objects.
 
 <details>
 <summary> The link of data and evaluation result </summary>
