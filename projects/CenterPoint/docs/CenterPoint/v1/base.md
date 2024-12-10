@@ -16,6 +16,12 @@
 ## Release
 ### CenterPoint base/1.0
 
+- We integrated CenterPoint to `autoware-ml` from old internal library.
+- We release first CenterPoint model by `autoware-ml`.
+
+<details>
+<summary> The link of data and evaluation result </summary>
+
 - Model
   - Training dataset: database_v1_0 + database_v1_1 + database_v_1_3 + database_v_2_0 + database_v_3_0 (total frames: 34,137)
   - [PR](https://github.com/tier4/autoware-ml/pull/159)
@@ -55,3 +61,5 @@
 | bus        | 1,818  | 86.6 | 81.8    | 87.8    | 87.9    | 88.9    |
 | bicycle    | 2,567  | 51.2 | 51.2    | 51.2    | 51.2    | 51.3    |
 | pedestrian | 14,010 | 63.9 | 63.0    | 63.2    | 63.7    | 65.7    |
+
+</details>
