@@ -1,9 +1,9 @@
-from typing import Optional, List, Dict
-import numpy as np
-from torch import Tensor
+from typing import Dict, List, Optional
 
+import numpy as np
 from mmdet3d.models.task_modules.coders.centerpoint_bbox_coders import CenterPointBBoxCoder as _CenterPointBBoxCoder
 from mmdet3d.registry import TASK_UTILS
+from torch import Tensor
 
 
 @TASK_UTILS.register_module(force=True)
@@ -27,15 +27,17 @@ class CenterPointBBoxCoder(_CenterPointBBoxCoder):
         self.y_axis_reference = y_axis_reference
         super(CenterPointBBoxCoder, self).__init__(**kwargs)
 
-    def decode(self,
-               heat: Tensor,
-               rot_sine: Tensor,
-               rot_cosine: Tensor,
-               hei: Tensor,
-               dim: Tensor,
-               vel: Tensor,
-               reg: Optional[Tensor] = None,
-               task_id: int = -1) -> List[Dict[str, Tensor]]:
+    def decode(
+        self,
+        heat: Tensor,
+        rot_sine: Tensor,
+        rot_cosine: Tensor,
+        hei: Tensor,
+        dim: Tensor,
+        vel: Tensor,
+        reg: Optional[Tensor] = None,
+        task_id: int = -1,
+    ) -> List[Dict[str, Tensor]]:
         """Decode bboxes.
 
         Args:
@@ -64,7 +66,8 @@ class CenterPointBBoxCoder(_CenterPointBBoxCoder):
             dim=dim,
             vel=vel,
             reg=reg,
-            task_id=task_id)
+            task_id=task_id,
+        )
 
         if not self.y_axis_reference:
             return predictions_dicts
@@ -72,11 +75,9 @@ class CenterPointBBoxCoder(_CenterPointBBoxCoder):
         for predictions_dict in predictions_dicts:
             if self.y_axis_reference:
                 # Switch width and length
-                predictions_dict['bboxes'][:, [3, 4]] = predictions_dict[
-                    'bboxes'][:, [4, 3]]
+                predictions_dict["bboxes"][:, [3, 4]] = predictions_dict["bboxes"][:, [4, 3]]
 
                 # Change the rotation to clockwise y-axis
-                predictions_dict['bboxes'][:, 6] = -predictions_dict[
-                    'bboxes'][:, 6] - np.pi / 2
+                predictions_dict["bboxes"][:, 6] = -predictions_dict["bboxes"][:, 6] - np.pi / 2
 
         return predictions_dicts

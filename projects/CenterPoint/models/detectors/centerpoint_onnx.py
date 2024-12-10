@@ -1,18 +1,17 @@
 import os
-from typing import Dict, List, Tuple, Callable
+from typing import Callable, Dict, List, Tuple
 
 import torch
-from torch import nn
-from mmdet3d.registry import MODELS
 from mmdet3d.models.detectors.centerpoint import CenterPoint
+from mmdet3d.registry import MODELS
 from mmengine.logging import MMLogger, print_log
+from torch import nn
 
 
 class CenterPointHeadONNX(nn.Module):
     """Head module for centerpoint with BACKBONE, NECK and BBOX_HEAD"""
 
-    def __init__(self, backbone: nn.Module, neck: nn.Module,
-                 bbox_head: nn.Module):
+    def __init__(self, backbone: nn.Module, neck: nn.Module, bbox_head: nn.Module):
         super(CenterPointHeadONNX, self).__init__()
         self.backbone: nn.Module = backbone
         self.neck: nn.Module = neck
@@ -43,12 +42,11 @@ class CenterPointHeadONNX(nn.Module):
 class CenterPointONNX(CenterPoint):
     """onnx support impl of mmdet3d.models.detectors.CenterPoint"""
 
-    def __init__(self, point_channels: int = 5, device: str = 'cpu', **kwargs):
+    def __init__(self, point_channels: int = 5, device: str = "cpu", **kwargs):
         super().__init__(**kwargs)
         self._point_channels = point_channels
         self._device = device
-        self._torch_device = torch.device(
-            'cuda:0') if self._device == 'gpu' else torch.device('cpu')
+        self._torch_device = torch.device("cuda:0") if self._device == "gpu" else torch.device("cpu")
         self._logger = MMLogger.get_current_instance()
         self._logger.info("Running CenterPointONNX!")
 
@@ -62,21 +60,18 @@ class CenterPointONNX(CenterPoint):
             # torch.rand(1000, self._point_channels).to(self._torch_device),
         ]
         # We only need lidar pointclouds for CenterPoint.
-        return {'points': points, 'data_samples': None}
+        return {"points": points, "data_samples": None}
 
     def _extract_random_features(self):
-        assert self.data_preprocessor is not None and hasattr(
-            self.data_preprocessor, 'voxelize')
+        assert self.data_preprocessor is not None and hasattr(self.data_preprocessor, "voxelize")
 
         # Get inputs
         inputs = self._get_random_inputs()
-        voxel_dict = self.data_preprocessor.voxelize(
-            points=inputs['points'], data_samples=inputs['data_samples'])
-        assert self.pts_voxel_encoder is not None and hasattr(
-            self.pts_voxel_encoder, 'get_input_features')
+        voxel_dict = self.data_preprocessor.voxelize(points=inputs["points"], data_samples=inputs["data_samples"])
+        assert self.pts_voxel_encoder is not None and hasattr(self.pts_voxel_encoder, "get_input_features")
         input_features = self.pts_voxel_encoder.get_input_features(
-            voxel_dict['voxels'], voxel_dict['num_points'],
-            voxel_dict['coors'])
+            voxel_dict["voxels"], voxel_dict["num_points"], voxel_dict["coors"]
+        )
         return input_features, voxel_dict
 
     def save_onnx(
@@ -99,18 +94,13 @@ class CenterPointONNX(CenterPoint):
         pth_onnx_pve = os.path.join(save_dir, "pts_voxel_encoder.onnx")
         torch.onnx.export(
             self.pts_voxel_encoder,
-            (input_features, ),
+            (input_features,),
             f=pth_onnx_pve,
-            input_names=("input_features", ),
-            output_names=("pillar_features", ),
+            input_names=("input_features",),
+            output_names=("pillar_features",),
             dynamic_axes={
-                "input_features": {
-                    0: "num_voxels",
-                    1: "num_max_points"
-                },
-                "pillar_features": {
-                    0: "num_voxels"
-                },
+                "input_features": {0: "num_voxels", 1: "num_max_points"},
+                "pillar_features": {0: "num_voxels"},
             },
             verbose=verbose,
             opset_version=onnx_opset_version,
@@ -120,41 +110,34 @@ class CenterPointONNX(CenterPoint):
         voxel_features = voxel_features.squeeze(1)
 
         # Note: pts_middle_encoder isn't exported
-        coors = voxel_dict['coors']
+        coors = voxel_dict["coors"]
         batch_size = coors[-1, 0] + 1
         x = self.pts_middle_encoder(voxel_features, coors, batch_size)
         # x (torch.tensor): (batch_size, num_pillar_features, W, H)
 
         # === pts_backbone ===
-        assert self.pts_bbox_head is not None and hasattr(
-            self.pts_bbox_head, 'output_names')
+        assert self.pts_bbox_head is not None and hasattr(self.pts_bbox_head, "output_names")
         pts_backbone_neck_head = CenterPointHeadONNX(
             self.pts_backbone,
             self.pts_neck,
             self.pts_bbox_head,
         )
         # pts_backbone_neck_head = torch.jit.script(pts_backbone_neck_head)
-        pth_onnx_backbone_neck_head = os.path.join(
-            save_dir, "pts_backbone_neck_head.onnx")
+        pth_onnx_backbone_neck_head = os.path.join(save_dir, "pts_backbone_neck_head.onnx")
         torch.onnx.export(
-            pts_backbone_neck_head, (x, ),
+            pts_backbone_neck_head,
+            (x,),
             f=pth_onnx_backbone_neck_head,
-            input_names=("spatial_features", ),
+            input_names=("spatial_features",),
             output_names=tuple(self.pts_bbox_head.output_names),
             dynamic_axes={
-                name: {
-                    0: "batch_size",
-                    2: "H",
-                    3: "W"
-                }
-                for name in ["spatial_features"] +
-                self.pts_bbox_head.output_names
+                name: {0: "batch_size", 2: "H", 3: "W"}
+                for name in ["spatial_features"] + self.pts_bbox_head.output_names
             },
             verbose=verbose,
-            opset_version=onnx_opset_version)
-        print_log(
-            f"Saved pts_backbone_neck_head onnx model: {pth_onnx_backbone_neck_head}"
+            opset_version=onnx_opset_version,
         )
+        print_log(f"Saved pts_backbone_neck_head onnx model: {pth_onnx_backbone_neck_head}")
 
     def save_torchscript(
         self,
@@ -171,15 +154,14 @@ class CenterPointONNX(CenterPoint):
         input_features, voxel_dict = self._extract_random_features()
 
         pth_pt_pve = os.path.join(save_dir, "pts_voxel_encoder.pt")
-        traced_pts_voxel_encoder = torch.jit.trace(self.pts_voxel_encoder,
-                                                   (input_features, ))
+        traced_pts_voxel_encoder = torch.jit.trace(self.pts_voxel_encoder, (input_features,))
         traced_pts_voxel_encoder.save(pth_pt_pve)
 
         voxel_features = traced_pts_voxel_encoder(input_features)
         voxel_features = voxel_features.squeeze()
 
         # Note: pts_middle_encoder isn't exported
-        coors = voxel_dict['coors']
+        coors = voxel_dict["coors"]
         batch_size = coors[-1, 0] + 1
         x = self.pts_middle_encoder(voxel_features, coors, batch_size)
 
@@ -189,6 +171,5 @@ class CenterPointONNX(CenterPoint):
             self.pts_bbox_head,
         )
         pth_pt_head = os.path.join(save_dir, "pts_backbone_neck_head.pt")
-        traced_pts_backbone_neck_head = torch.jit.trace(
-            pts_backbone_neck_head, (x))
+        traced_pts_backbone_neck_head = torch.jit.trace(pts_backbone_neck_head, (x))
         traced_pts_backbone_neck_head.save(pth_pt_head)

@@ -6,12 +6,10 @@ out_size_factor = 1
 model = dict(
     type="CenterPoint",
     data_preprocessor=dict(
-        type='Det3DDataPreprocessor',
+        type="Det3DDataPreprocessor",
         voxel=True,
-        voxel_layer=dict(
-            max_num_points=20,
-            voxel_size=[0.2, 0.2, 8],
-            max_voxels=(32000, 60000))),
+        voxel_layer=dict(max_num_points=20, voxel_size=[0.2, 0.2, 8], max_voxels=(32000, 60000)),
+    ),
     pts_voxel_encoder=dict(
         type="PillarFeatureNet",
         in_channels=4,
@@ -23,7 +21,10 @@ model = dict(
         legacy=False,
     ),
     pts_middle_encoder=dict(
-        type="PointPillarsScatter", in_channels=64, output_shape=(512, 512)),
+        type="PointPillarsScatter",
+        in_channels=64,
+        output_shape=(512, 512),
+    ),
     pts_backbone=dict(
         type="SECOND",
         in_channels=64,
@@ -47,7 +48,12 @@ model = dict(
         in_channels=sum([128, 128, 128]),
         # (output_channel_size, num_conv_layers)
         common_heads=dict(
-            reg=(2, 2), height=(1, 2), dim=(3, 2), rot=(2, 2), vel=(2, 2)),
+            reg=(2, 2),
+            height=(1, 2),
+            dim=(3, 2),
+            rot=(2, 2),
+            vel=(2, 2),
+        ),
         bbox_coder=dict(
             type="CenterPointBBoxCoder",
             max_num=500,
@@ -56,12 +62,9 @@ model = dict(
             code_size=9,
         ),
         share_conv_channel=64,
-        separate_head=dict(
-            type="SeparateHead", init_bias=-2.19, final_kernel=1),
-        loss_cls=dict(
-            type="mmdet.GaussianFocalLoss", reduction="mean", loss_weight=1.0),
-        loss_bbox=dict(
-            type="mmdet.L1Loss", reduction="mean", loss_weight=0.25),
+        separate_head=dict(type="SeparateHead", init_bias=-2.19, final_kernel=1),
+        loss_cls=dict(type="mmdet.GaussianFocalLoss", reduction="mean", loss_weight=1.0),
+        loss_bbox=dict(type="mmdet.L1Loss", reduction="mean", loss_weight=0.25),
         norm_bbox=True,
     ),
     # model training and testing settings
@@ -74,7 +77,8 @@ model = dict(
             min_radius=2,
             # (Reg x 2, height x 1, dim 3, rot x 2, vel x 2)
             code_weights=[1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 0.2, 0.2],
-        )),
+        )
+    ),
     test_cfg=dict(
         pts=dict(
             nms_type="circle",
@@ -86,5 +90,6 @@ model = dict(
             # nms_thr=0.2,
             # pre_max_size=1000,
             # post_max_size=100,
-        )),
+        )
+    ),
 )

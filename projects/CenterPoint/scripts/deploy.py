@@ -2,8 +2,8 @@
 Script to export CenterPoint to onnx/torchscript
 """
 
-import logging
 import argparse
+import logging
 import os
 from pathlib import Path
 
@@ -12,45 +12,55 @@ from projects.CenterPoint.runners.deployment_runner import DeploymentRunner
 
 def parse_args():
     parser = argparse.ArgumentParser(
-        description='Export CenterPoint model to backends.')
-    parser.add_argument('model_cfg_path', help='model config path')
-    parser.add_argument('checkpoint', help='model checkpoint path')
-    parser.add_argument(
-        '--work-dir', default='', help='the dir to save logs and models')
-    parser.add_argument(
-        '--log-level',
-        help='set log level',
-        default='INFO',
-        choices=list(logging._nameToLevel.keys()))
-    parser.add_argument(
-        '--device',
-        choices=['cpu', 'gpu'],
-        default='gpu',
-        help="Set running device!")
-    parser.add_argument(
-        '--replace_onnx_models',
-        action="store_true",
-        help=
-        "Set False to disable replacement of model by ONNX model, for example, CenterHead -> CenterHeadONNX"
+        description="Export CenterPoint model to backends.",
     )
     parser.add_argument(
-        '--rot_y_axis_reference',
+        "model_cfg_path",
+        help="model config path",
+    )
+    parser.add_argument(
+        "checkpoint",
+        help="model checkpoint path",
+    )
+    parser.add_argument(
+        "--work-dir",
+        default="",
+        help="the dir to save logs and models",
+    )
+    parser.add_argument(
+        "--log-level",
+        help="set log level",
+        default="INFO",
+        choices=list(logging._nameToLevel.keys()),
+    )
+    parser.add_argument(
+        "--device",
+        choices=["cpu", "gpu"],
+        default="gpu",
+        help="Set running device!",
+    )
+    parser.add_argument(
+        "--replace_onnx_models",
         action="store_true",
-        help="Set True to output rotation in y-axis clockwise in CenterHeadONNX"
+        help="Set False to disable replacement of model by ONNX model, for example, CenterHead -> CenterHeadONNX",
+    )
+    parser.add_argument(
+        "--rot_y_axis_reference",
+        action="store_true",
+        help="Set True to output rotation in y-axis clockwise in CenterHeadONNX",
     )
     args = parser.parse_args()
     return args
 
 
 def build_deploy_runner(args) -> DeploymentRunner:
-    """ Build a DeployRunner. """
+    """Build a DeployRunner."""
     model_cfg_path = args.model_cfg_path
     checkpoint_path = args.checkpoint
     experiment_name = Path(model_cfg_path).stem
-    work_dir = Path(
-        os.getcwd()
-    ) / 'work_dirs' / 'deployment' / experiment_name if not args.work_dir else Path(
-        args.work_dir)
+    work_dir = (
+        Path(os.getcwd()) / "work_dirs" / "deployment" / experiment_name if not args.work_dir else Path(args.work_dir)
+    )
 
     deployment_runner = DeploymentRunner(
         experiment_name=experiment_name,
@@ -59,12 +69,13 @@ def build_deploy_runner(args) -> DeploymentRunner:
         work_dir=work_dir,
         replace_onnx_models=args.replace_onnx_models,
         device=args.device,
-        rot_y_axis_reference=args.rot_y_axis_reference)
+        rot_y_axis_reference=args.rot_y_axis_reference,
+    )
     return deployment_runner
 
 
-if __name__ == '__main__':
-    """ Launch a DeployRunner. """
+if __name__ == "__main__":
+    """Launch a DeployRunner."""
     args = parse_args()
 
     # Build DeploymentRunner

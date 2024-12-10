@@ -1,18 +1,17 @@
 from typing import Optional, Tuple
 
 import torch
-from torch import Tensor, nn
-
-from mmdet3d.registry import MODELS
 from mmdet3d.models.voxel_encoders.utils import PFNLayer, get_paddings_indicator
+from mmdet3d.registry import MODELS
+from torch import Tensor, nn
 
 
 @MODELS.register_module()
 class BackwardPillarFeatureNet(nn.Module):
     """Pillar Feature Net.
-    
+
     The backward-compatible network prepares the pillar features and performs forward pass
-    through PFNLayers without features from Z-distance. Use this to load models trained 
+    through PFNLayers without features from Z-distance. Use this to load models trained
     from older mmdet versions.
 
     Args:
@@ -36,19 +35,19 @@ class BackwardPillarFeatureNet(nn.Module):
             the original behavior. Defaults to True.
     """
 
-    def __init__(self,
-                 in_channels: Optional[int] = 4,
-                 feat_channels: Optional[tuple] = (64, ),
-                 with_distance: Optional[bool] = False,
-                 with_cluster_center: Optional[bool] = True,
-                 with_voxel_center: Optional[bool] = True,
-                 voxel_size: Optional[Tuple[float]] = (0.2, 0.2, 4),
-                 point_cloud_range: Optional[Tuple[float]] = (0, -40, -3, 70.4,
-                                                              40, 1),
-                 norm_cfg: Optional[dict] = dict(
-                     type='BN1d', eps=1e-3, momentum=0.01),
-                 mode: Optional[str] = 'max',
-                 legacy: Optional[bool] = True):
+    def __init__(
+        self,
+        in_channels: Optional[int] = 4,
+        feat_channels: Optional[tuple] = (64,),
+        with_distance: Optional[bool] = False,
+        with_cluster_center: Optional[bool] = True,
+        with_voxel_center: Optional[bool] = True,
+        voxel_size: Optional[Tuple[float]] = (0.2, 0.2, 4),
+        point_cloud_range: Optional[Tuple[float]] = (0, -40, -3, 70.4, 40, 1),
+        norm_cfg: Optional[dict] = dict(type="BN1d", eps=1e-3, momentum=0.01),
+        mode: Optional[str] = "max",
+        legacy: Optional[bool] = True,
+    ):
         super(BackwardPillarFeatureNet, self).__init__()
         assert len(feat_channels) > 0
         self.legacy = legacy
@@ -72,13 +71,7 @@ class BackwardPillarFeatureNet(nn.Module):
                 last_layer = False
             else:
                 last_layer = True
-            pfn_layers.append(
-                PFNLayer(
-                    in_filters,
-                    out_filters,
-                    norm_cfg=norm_cfg,
-                    last_layer=last_layer,
-                    mode=mode))
+            pfn_layers.append(PFNLayer(in_filters, out_filters, norm_cfg=norm_cfg, last_layer=last_layer, mode=mode))
         self.pfn_layers = nn.ModuleList(pfn_layers)
 
         # Need pillar (voxel) size and x/y offset in order to calculate offset
@@ -88,8 +81,7 @@ class BackwardPillarFeatureNet(nn.Module):
         self.y_offset = self.vy / 2 + point_cloud_range[1]
         self.point_cloud_range = point_cloud_range
 
-    def forward(self, features: Tensor, num_points: Tensor, coors: Tensor,
-                *args, **kwargs) -> Tensor:
+    def forward(self, features: Tensor, num_points: Tensor, coors: Tensor, *args, **kwargs) -> Tensor:
         """Forward function.
 
         Args:
@@ -104,31 +96,25 @@ class BackwardPillarFeatureNet(nn.Module):
         features_ls = [features]
         # Find distance of x, y, and z from cluster center
         if self._with_cluster_center:
-            points_mean = features[:, :, :3].sum(
-                dim=1, keepdim=True) / num_points.type_as(features).view(
-                    -1, 1, 1)
+            points_mean = features[:, :, :3].sum(dim=1, keepdim=True) / num_points.type_as(features).view(-1, 1, 1)
             f_cluster = features[:, :, :3] - points_mean
             features_ls.append(f_cluster)
-        
+
         # Find distance of x, y, and z from pillar center
         dtype = features.dtype
         if self._with_voxel_center:
             if not self.legacy:
                 f_center = torch.zeros_like(features[:, :, :2])
-                f_center[:, :, 0] = features[:, :, 0] - (
-                    coors[:, 3].to(dtype).unsqueeze(1) * self.vx +
-                    self.x_offset)
-                f_center[:, :, 1] = features[:, :, 1] - (
-                    coors[:, 2].to(dtype).unsqueeze(1) * self.vy +
-                    self.y_offset)
+                f_center[:, :, 0] = features[:, :, 0] - (coors[:, 3].to(dtype).unsqueeze(1) * self.vx + self.x_offset)
+                f_center[:, :, 1] = features[:, :, 1] - (coors[:, 2].to(dtype).unsqueeze(1) * self.vy + self.y_offset)
             else:
                 f_center = features[:, :, :2]
                 f_center[:, :, 0] = f_center[:, :, 0] - (
-                    coors[:, 3].type_as(features).unsqueeze(1) * self.vx +
-                    self.x_offset)
+                    coors[:, 3].type_as(features).unsqueeze(1) * self.vx + self.x_offset
+                )
                 f_center[:, :, 1] = f_center[:, :, 1] - (
-                    coors[:, 2].type_as(features).unsqueeze(1) * self.vy +
-                    self.y_offset)
+                    coors[:, 2].type_as(features).unsqueeze(1) * self.vy + self.y_offset
+                )
             features_ls.append(f_center)
 
         if self._with_distance:
@@ -149,4 +135,3 @@ class BackwardPillarFeatureNet(nn.Module):
             features = pfn(features, num_points)
 
         return features.squeeze(1)
-    

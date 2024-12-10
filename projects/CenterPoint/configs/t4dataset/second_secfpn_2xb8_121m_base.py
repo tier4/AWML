@@ -3,8 +3,7 @@ _base_ = [
     "../../../../autoware_ml/configs/detection3d/dataset/t4dataset/base.py",
     "../models/centerpoint_second_secfpn_base.py",
 ]
-custom_imports = dict(
-    imports=["projects.CenterPoint.models"], allow_failed_imports=False)
+custom_imports = dict(imports=["projects.CenterPoint.models"], allow_failed_imports=False)
 custom_imports["imports"] += _base_.custom_imports["imports"]
 custom_imports["imports"] += ["autoware_ml.detection3d.datasets.transforms"]
 
@@ -84,9 +83,7 @@ train_pipeline = [
     dict(type="ObjectNameFilter", classes={{_base_.class_names}}),
     dict(type="ObjectMinPointsFilter", min_num_points=5),
     dict(type="PointShuffle"),
-    dict(
-        type='Pack3DDetInputs',
-        keys=['points', 'gt_bboxes_3d', 'gt_labels_3d'])
+    dict(type="Pack3DDetInputs", keys=["points", "gt_bboxes_3d", "gt_labels_3d"]),
 ]
 
 test_pipeline = [
@@ -107,9 +104,7 @@ test_pipeline = [
         backend_args=backend_args,
     ),
     dict(type="PointsRangeFilter", point_cloud_range=point_cloud_range),
-    dict(
-        type='Pack3DDetInputs',
-        keys=['points', 'gt_bboxes_3d', 'gt_labels_3d'])
+    dict(type="Pack3DDetInputs", keys=["points", "gt_bboxes_3d", "gt_labels_3d"]),
 ]
 
 # construct a pipeline for data and gt loading in show function
@@ -132,9 +127,7 @@ eval_pipeline = [
         backend_args=backend_args,
     ),
     dict(type="PointsRangeFilter", point_cloud_range=point_cloud_range),
-    dict(
-        type='Pack3DDetInputs',
-        keys=['points', 'gt_bboxes_3d', 'gt_labels_3d'])
+    dict(type="Pack3DDetInputs", keys=["points", "gt_bboxes_3d", "gt_labels_3d"]),
 ]
 
 train_dataloader = dict(
@@ -204,7 +197,8 @@ val_evaluator = dict(
     class_names={{_base_.class_names}},
     name_mapping={{_base_.name_mapping}},
     eval_class_range=eval_class_range,
-    filter_attributes=_base_.filter_attributes)
+    filter_attributes=_base_.filter_attributes,
+)
 
 test_evaluator = dict(
     type="T4Metric",
@@ -215,18 +209,21 @@ test_evaluator = dict(
     class_names={{_base_.class_names}},
     name_mapping={{_base_.name_mapping}},
     eval_class_range=eval_class_range,
-    filter_attributes=_base_.filter_attributes)
+    filter_attributes=_base_.filter_attributes,
+)
 
 model = dict(
     data_preprocessor=dict(
-        type='Det3DDataPreprocessor',
+        type="Det3DDataPreprocessor",
         voxel=True,
         voxel_layer=dict(
             max_num_points=20,
             voxel_size=voxel_size,
             point_cloud_range=point_cloud_range,
             max_voxels=(32000, 60000),
-            deterministic=True)),
+            deterministic=True,
+        ),
+    ),
     # Use BackwardPillarFeatureNet without computing voxel center for z-dimensionality
     pts_voxel_encoder=dict(
         type="BackwardPillarFeatureNet",
@@ -238,11 +235,9 @@ model = dict(
         point_cloud_range=point_cloud_range,
         voxel_size=voxel_size,
         norm_cfg=dict(type="BN1d", eps=1e-3, momentum=0.01),
-        legacy=False),
-    pts_middle_encoder=dict(
-        type="PointPillarsScatter",
-        in_channels=32,
-        output_shape=(grid_size[0], grid_size[1])),
+        legacy=False,
+    ),
+    pts_middle_encoder=dict(type="PointPillarsScatter", in_channels=32, output_shape=(grid_size[0], grid_size[1])),
     pts_backbone=dict(
         type="SECOND",
         in_channels=32,
@@ -265,20 +260,17 @@ model = dict(
         type="CenterHead",
         in_channels=sum([128, 128, 128]),
         tasks=[
-            dict(
-                num_class=5,
-                class_names=['car', 'truck', 'bus', 'bicycle', 'pedestrian']),
+            dict(num_class=5, class_names=["car", "truck", "bus", "bicycle", "pedestrian"]),
         ],
         bbox_coder=dict(
             voxel_size=voxel_size,
             pc_range=point_cloud_range,
             # No filter by range
             post_center_range=[-200.0, -200.0, -10.0, 200.0, 200.0, 10.0],
-            out_size_factor=out_size_factor),
-        loss_cls=dict(
-            type="mmdet.GaussianFocalLoss", reduction='none', loss_weight=1.0),
-        loss_bbox=dict(
-            type="mmdet.L1Loss", reduction="mean", loss_weight=0.25),
+            out_size_factor=out_size_factor,
+        ),
+        loss_cls=dict(type="mmdet.GaussianFocalLoss", reduction="none", loss_weight=1.0),
+        loss_bbox=dict(type="mmdet.L1Loss", reduction="mean", loss_weight=0.25),
         norm_bbox=True,
     ),
     train_cfg=dict(
@@ -286,7 +278,9 @@ model = dict(
             grid_size=grid_size,
             voxel_size=voxel_size,
             point_cloud_range=point_cloud_range,
-            out_size_factor=out_size_factor), ),
+            out_size_factor=out_size_factor,
+        ),
+    ),
     test_cfg=dict(
         pts=dict(
             grid_size=grid_size,
@@ -294,10 +288,9 @@ model = dict(
             pc_range=point_cloud_range,
             voxel_size=voxel_size,
             # No filter by range
-            post_center_limit_range=[
-                -200.0, -200.0, -10.0, 200.0, 200.0, 10.0
-            ],
-        ), ),
+            post_center_limit_range=[-200.0, -200.0, -10.0, 200.0, 200.0, 10.0],
+        ),
+    ),
 )
 
 randomness = dict(seed=0, diff_rank_seed=False, deterministic=True)
@@ -352,8 +345,7 @@ param_scheduler = [
 ]
 
 # runtime settings
-train_cfg = dict(
-    by_epoch=True, max_epochs=max_epochs, val_interval=val_interval)
+train_cfg = dict(by_epoch=True, max_epochs=max_epochs, val_interval=val_interval)
 val_cfg = dict()
 test_cfg = dict()
 
@@ -368,23 +360,21 @@ optim_wrapper = dict(
 #       or not by default.
 #   - `base_batch_size` = (2 GPUs) x (8 samples per GPU).
 # auto_scale_lr = dict(enable=False, base_batch_size=32)
-auto_scale_lr = dict(
-    enable=False, base_batch_size=train_gpu_size * train_batch_size)
+auto_scale_lr = dict(enable=False, base_batch_size=train_gpu_size * train_batch_size)
 
 # Only set if the number of train_gpu_size more than 1
 if train_gpu_size > 1:
-    sync_bn = 'torch'
+    sync_bn = "torch"
 
 vis_backends = [
     dict(type="LocalVisBackend"),
     dict(type="TensorboardVisBackend"),
 ]
-visualizer = dict(
-    type="Det3DLocalVisualizer", vis_backends=vis_backends, name="visualizer")
+visualizer = dict(type="Det3DLocalVisualizer", vis_backends=vis_backends, name="visualizer")
 
 default_hooks = dict(
     logger=dict(type="LoggerHook", interval=50),
     checkpoint=dict(type="CheckpointHook", interval=1),
 )
 
-custom_hooks = [dict(type='ExtraRuntimeInfoHook')]
+custom_hooks = [dict(type="ExtraRuntimeInfoHook")]

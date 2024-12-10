@@ -1,11 +1,11 @@
 from typing import Optional
 
-from torch import Tensor
-from mmdet3d.registry import MODELS
+import torch
 from mmdet3d.models.voxel_encoders.pillar_encoder import PillarFeatureNet
 from mmdet3d.models.voxel_encoders.utils import get_paddings_indicator
+from mmdet3d.registry import MODELS
 from mmengine.logging import MMLogger
-import torch
+from torch import Tensor
 
 from .pillar_encoder import BackwardPillarFeatureNet
 
@@ -19,8 +19,14 @@ class PillarFeatureNetONNX(PillarFeatureNet):
         self._logger = MMLogger.get_current_instance()
         self._logger.info("Running PillarFeatureNetONNX!")
 
-    def get_input_features(self, features: Tensor, num_points: Tensor,
-                           coors: Tensor, *args, **kwargs) -> Tensor:
+    def get_input_features(
+        self,
+        features: Tensor,
+        num_points: Tensor,
+        coors: Tensor,
+        *args,
+        **kwargs,
+    ) -> Tensor:
         """Forward function.
 
         Args:
@@ -35,9 +41,7 @@ class PillarFeatureNetONNX(PillarFeatureNet):
         features_ls = [features]
         # Find distance of x, y, and z from cluster center
         if self._with_cluster_center:
-            points_mean = features[:, :, :3].sum(
-                dim=1, keepdim=True) / num_points.type_as(features).view(
-                    -1, 1, 1)
+            points_mean = features[:, :, :3].sum(dim=1, keepdim=True) / num_points.type_as(features).view(-1, 1, 1)
             f_cluster = features[:, :, :3] - points_mean
             features_ls.append(f_cluster)
 
@@ -46,26 +50,20 @@ class PillarFeatureNetONNX(PillarFeatureNet):
         if self._with_voxel_center:
             if not self.legacy:
                 f_center = torch.zeros_like(features[:, :, :3])
-                f_center[:, :, 0] = features[:, :, 0] - (
-                    coors[:, 3].to(dtype).unsqueeze(1) * self.vx +
-                    self.x_offset)
-                f_center[:, :, 1] = features[:, :, 1] - (
-                    coors[:, 2].to(dtype).unsqueeze(1) * self.vy +
-                    self.y_offset)
-                f_center[:, :, 2] = features[:, :, 2] - (
-                    coors[:, 1].to(dtype).unsqueeze(1) * self.vz +
-                    self.z_offset)
+                f_center[:, :, 0] = features[:, :, 0] - (coors[:, 3].to(dtype).unsqueeze(1) * self.vx + self.x_offset)
+                f_center[:, :, 1] = features[:, :, 1] - (coors[:, 2].to(dtype).unsqueeze(1) * self.vy + self.y_offset)
+                f_center[:, :, 2] = features[:, :, 2] - (coors[:, 1].to(dtype).unsqueeze(1) * self.vz + self.z_offset)
             else:
                 f_center = features[:, :, :3]
                 f_center[:, :, 0] = f_center[:, :, 0] - (
-                    coors[:, 3].type_as(features).unsqueeze(1) * self.vx +
-                    self.x_offset)
+                    coors[:, 3].type_as(features).unsqueeze(1) * self.vx + self.x_offset
+                )
                 f_center[:, :, 1] = f_center[:, :, 1] - (
-                    coors[:, 2].type_as(features).unsqueeze(1) * self.vy +
-                    self.y_offset)
+                    coors[:, 2].type_as(features).unsqueeze(1) * self.vy + self.y_offset
+                )
                 f_center[:, :, 2] = f_center[:, :, 2] - (
-                    coors[:, 1].type_as(features).unsqueeze(1) * self.vz +
-                    self.z_offset)
+                    coors[:, 1].type_as(features).unsqueeze(1) * self.vz + self.z_offset
+                )
             features_ls.append(f_center)
 
         if self._with_distance:
@@ -105,9 +103,9 @@ class PillarFeatureNetONNX(PillarFeatureNet):
 @MODELS.register_module()
 class BackwardPillarFeatureNetONNX(BackwardPillarFeatureNet):
     """Pillar Feature Net.
-    
+
     The backward-compatible network prepares the pillar features and performs forward pass
-    through PFNLayers without features from Z-distance. Use this to load models trained 
+    through PFNLayers without features from Z-distance. Use this to load models trained
     from older mmdet versions.
 
     Args:
@@ -134,8 +132,7 @@ class BackwardPillarFeatureNetONNX(BackwardPillarFeatureNet):
     def __init__(self, **kwargs):
         super(BackwardPillarFeatureNetONNX, self).__init__(**kwargs)
 
-    def get_input_features(self, features: Tensor, num_points: Tensor,
-                           coors: Tensor, *args, **kwargs) -> Tensor:
+    def get_input_features(self, features: Tensor, num_points: Tensor, coors: Tensor, *args, **kwargs) -> Tensor:
         """Forward function.
 
         Args:
@@ -150,9 +147,7 @@ class BackwardPillarFeatureNetONNX(BackwardPillarFeatureNet):
         features_ls = [features]
         # Find distance of x, y, and z from cluster center
         if self._with_cluster_center:
-            points_mean = features[:, :, :3].sum(
-                dim=1, keepdim=True) / num_points.type_as(features).view(
-                    -1, 1, 1)
+            points_mean = features[:, :, :3].sum(dim=1, keepdim=True) / num_points.type_as(features).view(-1, 1, 1)
             f_cluster = features[:, :, :3] - points_mean
             features_ls.append(f_cluster)
 
@@ -161,20 +156,16 @@ class BackwardPillarFeatureNetONNX(BackwardPillarFeatureNet):
         if self._with_voxel_center:
             if not self.legacy:
                 f_center = torch.zeros_like(features[:, :, :2])
-                f_center[:, :, 0] = features[:, :, 0] - (
-                    coors[:, 3].to(dtype).unsqueeze(1) * self.vx +
-                    self.x_offset)
-                f_center[:, :, 1] = features[:, :, 1] - (
-                    coors[:, 2].to(dtype).unsqueeze(1) * self.vy +
-                    self.y_offset)
+                f_center[:, :, 0] = features[:, :, 0] - (coors[:, 3].to(dtype).unsqueeze(1) * self.vx + self.x_offset)
+                f_center[:, :, 1] = features[:, :, 1] - (coors[:, 2].to(dtype).unsqueeze(1) * self.vy + self.y_offset)
             else:
                 f_center = features[:, :, :2]
                 f_center[:, :, 0] = f_center[:, :, 0] - (
-                    coors[:, 3].type_as(features).unsqueeze(1) * self.vx +
-                    self.x_offset)
+                    coors[:, 3].type_as(features).unsqueeze(1) * self.vx + self.x_offset
+                )
                 f_center[:, :, 1] = f_center[:, :, 1] - (
-                    coors[:, 2].type_as(features).unsqueeze(1) * self.vy +
-                    self.y_offset)
+                    coors[:, 2].type_as(features).unsqueeze(1) * self.vy + self.y_offset
+                )
             features_ls.append(f_center)
 
         if self._with_distance:
