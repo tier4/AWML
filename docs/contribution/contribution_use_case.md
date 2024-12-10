@@ -73,12 +73,17 @@ Please feel free to add a figure, graph, table to explain why you change.
 Note that you should use commit hash for config file path after first PR changing configs is merged.
 
 ```md
+### base/0.4
+
+- We added DB1.3 for training.
+- mAP of (DB1.0 + 1.1 test dataset, eval range 90m) is as same as the model of base/0.3.
+
+|          | mAP  | car  | truck | bus  | bicycle | pedestrian |
+| -------- | ---- | ---- | ----- | ---- | ------- | ---------- |
+| base/0.4 | 68.5 | 81.7 | 62.4  | 83.5 | 50.9    | 64.1       |
+| base/0.3 | 68.1 | 80.5 | 58.0  | 80.8 | 58.0    | 63.2       |
 
 <details>
-
-- Update the model according to add of T4dataset-JapanTaxi dataset.
-- To increase detection performance for pedestrian, change the resolution of `grid_size` from `[0.32, 0.32, 8]` to `[0.20, 0.20, 8]`.
-
 <summary> The link of data and evaluation result </summary>
 
 - model
@@ -86,17 +91,23 @@ Note that you should use commit hash for config file path after first PR changin
   - Eval dataset:
   - [PR]()
   - [Config file path]()
+  - [Checkpoint]()
+  - [Training log]()
   - [Deployed onnx model]()
   - [Deployed ROS parameter file]()
-  - [Training results]()
-  - train time: (A100 * 4) * 2 days
-- Total mAP:
-  - Test dataset:
+  - train time: (A100 * 4) * 3 days
+- Total mAP: 0.685
+  - Dataset: DB1.0 + DB1.1 + DB2.0 L + DB3.0 test dataset
   - Eval range = 90m
 
-| model | range | mAP | car | truck | bus | bicycle | pedestrian |
-| ----- | ----- | --- | --- | ----- | --- | ------- | ---------- |
-|       |       |     |     |       |     |         |            |
+| class_name | Count | mAP | AP@0.5m | AP@1.0m | AP@2.0m | AP@4.0m |
+| ---------- | ----- | --- | ------- | ------- | ------- | ------- |
+| car        |       |     |         |         |         |         |
+| truck      |       |     |         |         |         |         |
+| bus        |       |     |         |         |         |         |
+| bicycle    |       |     |         |         |         |         |
+| pedestrian |       |     |         |         |         |         |
+
 </details>
 
 ```
