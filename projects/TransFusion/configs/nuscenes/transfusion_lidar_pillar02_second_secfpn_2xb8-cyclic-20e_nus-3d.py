@@ -1,8 +1,8 @@
-_base_ = [
-    "./transfusion_lidar_pillar02_second_secfpn_1xb8-cyclic-20e_nus-3d.py"
-]
+_base_ = ["./transfusion_lidar_pillar02_second_secfpn_1xb8-cyclic-20e_nus-3d.py"]
 custom_imports = dict(
-    imports=["projects.TransFusion.transfusion"], allow_failed_imports=False)
+    imports=["projects.TransFusion.transfusion"],
+    allow_failed_imports=False,
+)
 
 train_dataloader = dict(
     batch_size=12,

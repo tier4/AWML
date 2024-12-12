@@ -1,6 +1,6 @@
 _base_ = [
     "./transfusion_lidar_pillar_second_secfpn_1xb1_t4xx1-base.py",
-    "./model/transfusion_lidar_pillar_second_secfpn_1xb1_120m-768grid.py"
+    "./model/transfusion_lidar_pillar_second_secfpn_1xb1_120m-768grid.py",
 ]
 
 # train parameter
@@ -47,7 +47,8 @@ train_pipeline = [
         type="LoadAnnotations3D",
         with_bbox_3d=True,
         with_label_3d=True,
-        with_attr_label=False),
+        with_attr_label=False,
+    ),
     dict(
         type="GlobalRotScaleTrans",
         rot_range=[-1.571, 1.571],
@@ -67,8 +68,12 @@ train_pipeline = [
     dict(
         type="Pack3DDetInputs",
         keys=[
-            "points", "img", "gt_bboxes_3d", "gt_labels_3d", "gt_bboxes",
-            "gt_labels"
+            "points",
+            "img",
+            "gt_bboxes_3d",
+            "gt_labels_3d",
+            "gt_bboxes",
+            "gt_labels",
         ],
         meta_keys=[
             "cam2img",

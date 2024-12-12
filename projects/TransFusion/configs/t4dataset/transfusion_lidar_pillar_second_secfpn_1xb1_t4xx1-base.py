@@ -3,7 +3,9 @@ _base_ = [
     "../../../../autoware_ml/configs/detection3d/dataset/t4dataset/xx1.py",
 ]
 custom_imports = dict(
-    imports=["projects.TransFusion.transfusion"], allow_failed_imports=False)
+    imports=["projects.TransFusion.transfusion"],
+    allow_failed_imports=False,
+)
 custom_imports["imports"] += _base_.custom_imports["imports"]
 
 # user setting
@@ -19,7 +21,8 @@ input_modality = dict(
     use_camera=False,
     use_radar=False,
     use_map=False,
-    use_external=False)
+    use_external=False,
+)
 
 # dataset
 train_dataloader = dict(
@@ -100,10 +103,13 @@ test_evaluator = dict(
 
 vis_backends = [
     dict(type="LocalVisBackend"),
-    dict(type="TensorboardVisBackend")
+    dict(type="TensorboardVisBackend"),
 ]
 visualizer = dict(
-    type="Det3DLocalVisualizer", vis_backends=vis_backends, name="visualizer")
+    type="Det3DLocalVisualizer",
+    vis_backends=vis_backends,
+    name="visualizer",
+)
 
 train_cfg = dict(by_epoch=True, max_epochs=max_epochs)
 val_cfg = dict()
@@ -121,7 +127,8 @@ auto_scale_lr = dict(enable=False)
 log_processor = dict(window_size=50)
 default_hooks = dict(
     logger=dict(type="LoggerHook", interval=50),
-    checkpoint=dict(type="CheckpointHook", interval=1))
+    checkpoint=dict(type="CheckpointHook", interval=1),
+)
 custom_hooks = [dict(type="DisableObjectSampleHook", disable_after_epoch=40)]
 
 param_scheduler = [

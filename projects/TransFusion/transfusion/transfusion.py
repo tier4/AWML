@@ -1,10 +1,9 @@
 from typing import Dict, List, Optional
 
-from torch import Tensor
-
 from mmdet3d.models.detectors.mvx_two_stage import MVXTwoStageDetector
 from mmdet3d.registry import MODELS
 from mmdet3d.structures import Det3DDataSample
+from torch import Tensor
 
 
 @MODELS.register_module()
@@ -14,7 +13,7 @@ class TransFusion(MVXTwoStageDetector):
     def __init__(self, **kwargs):
         super(TransFusion, self).__init__(**kwargs)
 
-        self.freeze_img = kwargs.get('freeze_img', True)
+        self.freeze_img = kwargs.get("freeze_img", True)
         self.init_weights()
 
     def init_weights(self):
@@ -29,9 +28,12 @@ class TransFusion(MVXTwoStageDetector):
                 for param in self.img_neck.parameters():
                     param.requires_grad = False
 
-    def predict(self, batch_inputs_dict: Dict[str, Optional[Tensor]],
-                batch_data_samples: List[Det3DDataSample],
-                **kwargs) -> List[Det3DDataSample]:
+    def predict(
+        self,
+        batch_inputs_dict: Dict[str, Optional[Tensor]],
+        batch_data_samples: List[Det3DDataSample],
+        **kwargs,
+    ) -> List[Det3DDataSample]:
         """Forward of testing.
 
         Args:
@@ -57,8 +59,10 @@ class TransFusion(MVXTwoStageDetector):
                 contains a tensor with shape (num_instances, 7).
         """
         batch_input_metas = [item.metainfo for item in batch_data_samples]
-        img_feats, pts_feats = self.extract_feat(batch_inputs_dict,
-                                                 batch_input_metas)
+        img_feats, pts_feats = self.extract_feat(
+            batch_inputs_dict,
+            batch_input_metas,
+        )
 
         if pts_feats and self.with_pts_bbox:
             outputs = self.pts_bbox_head.predict(pts_feats, batch_input_metas)
