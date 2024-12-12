@@ -1,10 +1,9 @@
-from pathlib import Path
 import pickle
-from typing import List, Dict, Tuple, Any
 import uuid
+from pathlib import Path
+from typing import Any, Dict, List, Tuple
 
 import numpy as np
-
 from mmdet3d.registry import MODELS
 from mmdet3d.structures import LiDARInstance3DBoxes
 from mmengine.config import Config
@@ -12,6 +11,7 @@ from mmengine.device import get_device
 from mmengine.runner import Runner, autocast, load_checkpoint
 from mmengine.utils import ProgressBar
 from numpy.typing import NDArray
+
 
 def _predict_one_frame(model: Any, data: Dict[str, Any]) -> Tuple[NDArray, NDArray, NDArray]:
     """
@@ -31,25 +31,36 @@ def _predict_one_frame(model: Any, data: Dict[str, Any]) -> Tuple[NDArray, NDArr
     box_yaws: NDArray = bboxes.yaw.numpy().astype(np.float64)
     box_velocities: NDArray = bboxes.tensor.numpy().astype(np.float64)[:, 7:9]
 
-    bboxes = np.concatenate([
-        box_gravity_centers, # (N, 3) [x, y, z]
-        box_dims,            # (N, 3) [x_size(length), y_size(width), z_size(height)]
-        box_yaws[:, None],   # (N, 1) [yaw]
-        box_velocities,      # (N, 2) [vx, vy]
-    ], axis=1)
+    bboxes = np.concatenate(
+        [
+            # (N, 3) [x, y, z]
+            box_gravity_centers,
+            # (N, 3) [x_size(length), y_size(width), z_size(height)]
+            box_dims,
+            # (N, 1) [yaw]
+            box_yaws[:, None],
+            # (N, 2) [vx, vy]
+            box_velocities,
+        ],
+        axis=1,
+    )
 
     return bboxes, scores, labels
 
-def _results_to_info(non_annotated_dataset_info: Dict[str, Any], inference_results: List[Tuple[NDArray, NDArray, NDArray]]) -> Dict[str, Any]:
+
+def _results_to_info(
+    non_annotated_dataset_info: Dict[str, Any],
+    inference_results: List[Tuple[NDArray, NDArray, NDArray]],
+) -> Dict[str, Any]:
     """
     Convert non annotated dataset info and inference results to pseudo labeled info.
     """
     # add pseudo label to non_annoated info
     for frame_index, (bboxes, scores, labels) in enumerate(inference_results):
-        pred_instances_3d: List[Dict[str, Any]]  = []
+        pred_instances_3d: List[Dict[str, Any]] = []
         for instance_index, (bbox, score, label) in enumerate(zip(bboxes, scores, labels)):
             pred_instance_3d: Dict[str, Any] = {}
-            
+
             # [x, y, z, x_size(length), y_size(width), z_size(height), yaw]
             pred_instance_3d["bbox_3d"]: List[float] = bbox[:7].tolist()
             # [vx, vy]
@@ -64,13 +75,14 @@ def _results_to_info(non_annotated_dataset_info: Dict[str, Any], inference_resul
     pseudo_labeled_dataset_info = non_annotated_dataset_info
     return pseudo_labeled_dataset_info
 
+
 def inference(
     model_config: Config,
     model_checkpoint_path: str,
     non_annotated_info_file_name: str,
     batch_size: int = 1,
     device: str = "cuda:0",
-    ) -> Dict[str, Any]:
+) -> Dict[str, Any]:
     """
     Args:
         model_config (Config): Config file for the model used for auto labeling.
@@ -82,7 +94,9 @@ def inference(
         Dict[str, Any]: inference results. This should be info file format.
     """
     # build dataloader
-    model_config.test_dataloader.dataset.ann_file: str = model_config.info_directory_path + non_annotated_info_file_name
+    model_config.test_dataloader.dataset.ann_file: str = (
+        model_config.info_directory_path + non_annotated_info_file_name
+    )
     model_config.test_dataloader.batch_size: int = batch_size
     dataset = Runner.build_dataloader(model_config.test_dataloader)
 
@@ -98,11 +112,13 @@ def inference(
     for frame_index, data in enumerate(dataset):
         inference_results.append(_predict_one_frame(model, data))
         progress_bar.update()
-    
+
     # convert pseudo label to info file
-    non_annotated_info_file_path: str = model_config.test_dataloader.dataset.data_root + model_config.test_dataloader.dataset.ann_file
-    with open(non_annotated_info_file_path, 'rb') as f:
-        non_annotated_dataset_info: Dict[str, Any] = pickle.load(f) 
+    non_annotated_info_file_path: str = (
+        model_config.test_dataloader.dataset.data_root + model_config.test_dataloader.dataset.ann_file
+    )
+    with open(non_annotated_info_file_path, "rb") as f:
+        non_annotated_dataset_info: Dict[str, Any] = pickle.load(f)
     pseudo_labeled_dataset_info: Dict[str, Any] = _results_to_info(non_annotated_dataset_info, inference_results)
 
     return pseudo_labeled_dataset_info

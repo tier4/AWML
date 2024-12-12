@@ -5,6 +5,7 @@ from pathlib import Path
 
 from mmdeploy.utils import get_root_logger
 
+
 def setup_logger(args: argparse.Namespace, name: str) -> logging.Logger:
     """Set up a logger with file and stream handlers.
 
@@ -30,19 +31,17 @@ def setup_logger(args: argparse.Namespace, name: str) -> logging.Logger:
         log_dir = Path(args.work_dir)
     else:
         # use config filename as default work_dir if args.work_dir is None
-        log_dir = Path('work_dirs') / "auto_labeling_3d" / name
+        log_dir = Path("work_dirs") / "auto_labeling_3d" / name
     log_dir.mkdir(parents=True, exist_ok=True)
-    
+
     # set logger
     logger = get_root_logger()
     log_level = logging.getLevelName(args.log_level)
     for handler in logger.handlers:
         if isinstance(handler, logging.StreamHandler) and not isinstance(handler, logging.FileHandler):
             handler.setLevel(log_level)
-    
-    file_handler = logging.FileHandler(
-        log_dir / f"{name}_{datetime.datetime.now().strftime('%Y%m%d_%H%M%S')}.log"
-      )
+
+    file_handler = logging.FileHandler(log_dir / f"{name}_{datetime.datetime.now().strftime('%Y%m%d_%H%M%S')}.log")
     file_handler.setLevel(logging.DEBUG)
     logger.addHandler(file_handler)
 

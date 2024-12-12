@@ -1,25 +1,32 @@
 import logging
 from pathlib import Path
-from pyquaternion import Quaternion
 from typing import Any, Dict, List, Optional, Tuple
 
-from mmdet3d.datasets.utils import convert_quaternion_to_matrix
 import mmengine
-from mmengine import dump as mmengine_dump
-from mmengine.logging import print_log
-from mmengine.config import Config
 import numpy as np
+from mmdet3d.datasets.utils import convert_quaternion_to_matrix
+from mmengine import dump as mmengine_dump
+from mmengine.config import Config
+from mmengine.logging import print_log
+from pyquaternion import Quaternion
 from t4_devkit import Tier4
-from t4_devkit.dataclass import Box3D
-from t4_devkit.schema import Sample, SampleAnnotation, CalibratedSensor, SampleData, EgoPose
 from t4_devkit.common.timestamp import us2sec
+from t4_devkit.dataclass import Box3D
+from t4_devkit.schema import CalibratedSensor, EgoPose, Sample, SampleAnnotation, SampleData
 
-from tools.detection3d.t4dataset_converters.t4converter import (
-    extract_tier4_data, get_ego2global, get_gt_attrs, get_instances,
-    obtain_sensor2top, match_objects)
 from tools.detection3d.create_data_t4dataset import get_lidar_token, get_scene_root_dir_path
+from tools.detection3d.t4dataset_converters.t4converter import (
+    extract_tier4_data,
+    get_ego2global,
+    get_gt_attrs,
+    get_instances,
+    match_objects,
+    obtain_sensor2top,
+)
 from tools.detection3d.t4dataset_converters.update_infos_to_v2 import (
-    get_empty_standard_data_info, get_single_lidar_sweep)
+    get_empty_standard_data_info,
+    get_single_lidar_sweep,
+)
 
 
 def _create_non_annotated_info(
@@ -57,8 +64,7 @@ def _create_non_annotated_info(
 
     # Get all child directories, excluding hidden directories (starting with '.')
     scene_ids: List[str] = [
-        d.name for d in (Path(cfg.data_root) / dataset_version).iterdir()
-        if d.is_dir() and not d.name.startswith('.')
+        d.name for d in (Path(cfg.data_root) / dataset_version).iterdir() if d.is_dir() and not d.name.startswith(".")
     ]
 
     for scene_id in scene_ids:
@@ -71,7 +77,10 @@ def _create_non_annotated_info(
         if not Path(scene_root_dir_path).is_dir():
             raise ValueError(f"{scene_root_dir_path} does not exist.")
         t4 = Tier4(
-            version="annotation", data_root=scene_root_dir_path, verbose=False)
+            version="annotation",
+            data_root=scene_root_dir_path,
+            verbose=False,
+        )
         for i, sample in enumerate(t4.sample):
             info = get_info(cfg, t4, sample, i, max_sweeps)
             t4_infos["pseudo"].append(info)
@@ -82,19 +91,24 @@ def _create_non_annotated_info(
     _info_name: str = f"t4dataset_{dataset_version}_infos_pseudo.pkl"
     info_path: Path = ann_file_out_dir / f"t4dataset_{dataset_version}_infos_pseudo.pkl"
     mmengine_dump(
-        dict(data_list=t4_infos["pseudo"], metainfo=metainfo), info_path)
+        dict(data_list=t4_infos["pseudo"], metainfo=metainfo),
+        info_path,
+    )
 
     return info_path
+
 
 # NOTE: This function is copied from tools.detection3d.t4dataset_converters.t4converter and modified for non-annotated t4. non-annotated t4 does not have dataset-version.
 def parse_camera_path(camera_path: str) -> str:
     """leave only {database_version}/{scene_id}/data/{camera_type}/{frame}.jpg from path"""
     return "/".join(camera_path.split("/")[-5:])
 
+
 # NOTE: This function is copied from tools.detection3d.t4dataset_converters.t4converter and modified for non-annotated t4. non-annotated t4 does not have dataset-version.
 def parse_lidar_path(lidar_path: str) -> str:
     """leave only {database_version}/{scene_id}/data/{lidar_token}/{frame}.bin from path"""
     return "/".join(lidar_path.split("/")[-5:])
+
 
 # NOTE: This function is copied from tools.detection3d.t4dataset_converters.t4converter
 def get_lidar_points_info(
@@ -102,8 +116,7 @@ def get_lidar_points_info(
     cs_record: CalibratedSensor,
     num_features: int = 5,
 ):
-    lidar2ego = convert_quaternion_to_matrix(
-        quaternion=cs_record.rotation, translation=cs_record.translation)
+    lidar2ego = convert_quaternion_to_matrix(quaternion=cs_record.rotation, translation=cs_record.translation)
     mmengine.check_file_exist(lidar_path)
     lidar_path = parse_lidar_path(lidar_path)
     return dict(
@@ -111,7 +124,9 @@ def get_lidar_points_info(
             num_pts_feats=num_features,
             lidar_path=lidar_path,
             lidar2ego=lidar2ego,
-        ), )
+        ),
+    )
+
 
 # NOTE: This function is copied from tools.detection3d.t4dataset_converters.t4converter
 def get_lidar_sweeps_info(
@@ -178,6 +193,7 @@ def get_lidar_sweeps_info(
 
     return dict(lidar_sweeps=sweeps)
 
+
 # NOTE: This function is copied from tools.detection3d.t4dataset_converters.t4converter
 def get_annotations(
     t4: Tier4,
@@ -191,18 +207,14 @@ def get_annotations(
     merge_objects: List[Tuple[str, List[str]]] = [],
     merge_type: str = None,
 ) -> dict:
-    annotations: list[SampleAnnotation] = [
-        t4.get("sample_annotation", token) for token in anns
-    ]
+    annotations: list[SampleAnnotation] = [t4.get("sample_annotation", token) for token in anns]
     instance_tokens = [ann.instance_token for ann in annotations]
     locs = np.array([b.position for b in boxes]).reshape(-1, 3)
     dims = np.array([b.size for b in boxes]).reshape(-1, 3)
-    rots = np.array([b.rotation.yaw_pitch_roll[0]
-                     for b in boxes]).reshape(-1, 1)
+    rots = np.array([b.rotation.yaw_pitch_roll[0] for b in boxes]).reshape(-1, 1)
     velocity = np.array([t4.box_velocity(token)[:2] for token in anns])
 
-    valid_flag = np.array([ann.num_lidar_pts > 0 for ann in annotations],
-                          dtype=bool).reshape(-1)
+    valid_flag = np.array([ann.num_lidar_pts > 0 for ann in annotations], dtype=bool).reshape(-1)
 
     # convert velo from global to lidar
     for i in range(len(boxes)):
@@ -210,15 +222,11 @@ def get_annotations(
         velo = velo @ np.linalg.inv(e2g_r_mat).T @ np.linalg.inv(l2e_r_mat).T
         velocity[i] = velo[:2]
 
-    names = np.array([
-        name_mapping.get(b.semantic_label.name, b.semantic_label.name)
-        for b in boxes
-    ])
+    names = np.array([name_mapping.get(b.semantic_label.name, b.semantic_label.name) for b in boxes])
     # we need to convert rot to SECOND format.
     # Copied from https://github.com/open-mmlab/mmdetection3d/blob/0f9dfa97a35ef87e16b700742d3c358d0ad15452/tools/dataset_converters/nuscenes_converter.py#L258
     gt_boxes = np.concatenate([locs, dims[:, [1, 0, 2]], rots], axis=1)
-    assert len(gt_boxes) == len(
-        annotations), f"{len(gt_boxes)}, {len(annotations)}"
+    assert len(gt_boxes) == len(annotations), f"{len(gt_boxes)}, {len(annotations)}"
 
     gt_attrs = get_gt_attrs(t4, annotations)
     assert len(names) == len(gt_attrs), f"{len(names)}, {len(gt_attrs)}"
@@ -287,33 +295,33 @@ def get_info(
     )
 
     for new_info in [
-            basic_info,
-            get_ego2global(pose_record),
-            get_lidar_points_info(lidar_path, cs_record),
-            get_lidar_sweeps_info(
-                t4,
-                cs_record,
-                pose_record,
-                sd_record,
-                max_sweeps,
-            ),
-            get_annotations(
-                t4,
-                sample.ann_3ds,
-                boxes,
-                e2g_r_mat,
-                l2e_r_mat,
-                cfg.name_mapping,
-                cfg.class_names,
-                cfg.filter_attributes,
-                merge_objects=cfg.merge_objects,
-                merge_type=cfg.merge_type,
-            ),
+        basic_info,
+        get_ego2global(pose_record),
+        get_lidar_points_info(lidar_path, cs_record),
+        get_lidar_sweeps_info(
+            t4,
+            cs_record,
+            pose_record,
+            sd_record,
+            max_sweeps,
+        ),
+        get_annotations(
+            t4,
+            sample.ann_3ds,
+            boxes,
+            e2g_r_mat,
+            l2e_r_mat,
+            cfg.name_mapping,
+            cfg.class_names,
+            cfg.filter_attributes,
+            merge_objects=cfg.merge_objects,
+            merge_type=cfg.merge_type,
+        ),
     ]:
         info.update(new_info)
 
     camera_types = cfg.camera_types
-    if (len(camera_types) > 0):
+    if len(camera_types) > 0:
         for cam in camera_types:
             if cam in sample.data:
                 cam_token = sample.data[cam]
@@ -329,24 +337,19 @@ def get_info(
                 )
                 cam_info.update(cam_intrinsic=cam_intrinsic)
 
-                info["images"][cam]['img_path'] = parse_camera_path(
-                    cam_info['data_path'])
-                info["images"][cam]['cam2img'] = cam_info[
-                    'cam_intrinsic'].tolist()
-                info["images"][cam]['sample_data_token'] = cam_info[
-                    'sample_data_token']
+                info["images"][cam]["img_path"] = parse_camera_path(cam_info["data_path"])
+                info["images"][cam]["cam2img"] = cam_info["cam_intrinsic"].tolist()
+                info["images"][cam]["sample_data_token"] = cam_info["sample_data_token"]
                 # bc-breaking: Timestamp has divided 1e6 in pkl infos.
-                info["images"][cam]['timestamp'] = cam_info['timestamp'] / 1e6
-                info["images"][cam]['cam2ego'] = convert_quaternion_to_matrix(
-                    cam_info['sensor2ego_rotation'],
-                    cam_info['sensor2ego_translation'])
+                info["images"][cam]["timestamp"] = cam_info["timestamp"] / 1e6
+                info["images"][cam]["cam2ego"] = convert_quaternion_to_matrix(
+                    cam_info["sensor2ego_rotation"], cam_info["sensor2ego_translation"]
+                )
                 lidar2sensor = np.eye(4)
-                rot = cam_info['sensor2lidar_rotation']
-                trans = cam_info['sensor2lidar_translation']
+                rot = cam_info["sensor2lidar_rotation"]
+                trans = cam_info["sensor2lidar_translation"]
                 lidar2sensor[:3, :3] = rot.T
-                lidar2sensor[:3,
-                             3:4] = -1 * np.matmul(rot.T, trans.reshape(3, 1))
-                info["images"][cam]['lidar2cam'] = lidar2sensor.astype(
-                    np.float32).tolist()
-                #info["images"].update({cam: cam_info})
+                lidar2sensor[:3, 3:4] = -1 * np.matmul(rot.T, trans.reshape(3, 1))
+                info["images"][cam]["lidar2cam"] = lidar2sensor.astype(np.float32).tolist()
+                # info["images"].update({cam: cam_info})
     return info

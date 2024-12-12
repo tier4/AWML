@@ -1,21 +1,28 @@
 import argparse
 import logging
-import numpy as np
-from pathlib import Path
 import pickle
+from pathlib import Path
+from typing import Any, Dict, List, Tuple
+
+import numpy as np
 import yaml
-from typing import List, Dict, Tuple, Any
-from numpy.typing import NDArray
-
-from mmengine.utils import ProgressBar
 from mmengine.registry import init_default_scope
-
+from mmengine.utils import ProgressBar
+from numpy.typing import NDArray
 from pyquaternion import Quaternion
 from t4_devkit.common.box import Box3D as T4Box3D
+
 from tools.auto_labeling_3d.create_pseudo_t4dataset.pseudo_label_generator_3d import PseudoLabelGenerator3D
 from tools.auto_labeling_3d.utils.logger import setup_logger
 
-def _transform_pred_instance_to_global_t4box(bbox3d: List[float], velocity: List[float], score: float, label: int, ego2global: NDArray) -> T4Box3D:
+
+def _transform_pred_instance_to_global_t4box(
+    bbox3d: List[float],
+    velocity: List[float],
+    score: float,
+    label: int,
+    ego2global: NDArray,
+) -> T4Box3D:
     """Convert a detection instance to T4Box3D format and transform to global coordinates.
 
     Args:
@@ -39,14 +46,14 @@ def _transform_pred_instance_to_global_t4box(bbox3d: List[float], velocity: List
     Example:
         >>> # bbox parameters in ego coordinates [x, y, z, l, w, h, yaw]
         >>> bbox3d = [-7.587669372558594, 5.918113708496094, 0.3056640625, 11.3125, 2.66796875, 3.30078125, -0.07647705078125]
-        >>> 
+        >>>
         >>> # velocity vector [vx, vy]
         >>> velocity = [3.708984375, -0.304443359375]
-        >>> 
+        >>>
         >>> # detection score and class label
         >>> score = 0.5257580280303955
         >>> label = 2
-        >>> 
+        >>>
         >>> # transformation matrix from ego to global coordinates
         >>> ego2global = np.array([
         ...     [-7.52366364e-01,  6.58483088e-01, -1.85688175e-02,  2.67971660e+04],
@@ -54,7 +61,7 @@ def _transform_pred_instance_to_global_t4box(bbox3d: List[float], velocity: List
         ...     [-2.83205271e-04,  2.78648492e-02,  9.99611676e-01,  4.27038288e+00],
         ...     [ 0.00000000e+00,  0.00000000e+00,  0.00000000e+00,  1.00000000e+00]
         ... ])
-        >>> 
+        >>>
         >>> # convert to T4Box3D and transform to global coordinates
         >>> box = instance_to_t4_box3d(bbox3d, velocity, score, label, ego2global)
 
@@ -90,40 +97,42 @@ def _transform_pred_instance_to_global_t4box(bbox3d: List[float], velocity: List
 
     return box
 
+
 def _get_scene_and_frame_id(lidar_path: str) -> Tuple[str, int]:
-   """Extract scene_id and frame_id from lidar path.
+    """Extract scene_id and frame_id from lidar path.
 
-   The function expects a dataset structure without a dataset_version directory:
-   ```
-   data/t4dataset/
-   └── dataset_name/
-       └── scene_id/             # Extracted as scene_id
-           ├── annotation/
-           └── data/
-               └── LIDAR_CONCAT/
-                   └── 00000.pcd.bin   # Extracted as frame_id
-   ```
+    The function expects a dataset structure without a dataset_version directory:
+    ```
+    data/t4dataset/
+    └── dataset_name/
+        └── scene_id/             # Extracted as scene_id
+            ├── annotation/
+            └── data/
+                └── LIDAR_CONCAT/
+                    └── 00000.pcd.bin   # Extracted as frame_id
+    ```
 
-   Args:
-       lidar_path (str): Path to the lidar file (e.g., "data/t4dataset/dataset_name/scene_id/data/LIDAR_CONCAT/00000.pcd.bin")
+    Args:
+        lidar_path (str): Path to the lidar file (e.g., "data/t4dataset/dataset_name/scene_id/data/LIDAR_CONCAT/00000.pcd.bin")
 
-   Returns:
-       Tuple[str, int]: A tuple containing:
-            scene_id (str): Name of the scene. e.g, "scene_0"
-            frame_id (int): Frame id. e.g, 10
+    Returns:
+        Tuple[str, int]: A tuple containing:
+             scene_id (str): Name of the scene. e.g, "scene_0"
+             frame_id (int): Frame id. e.g, 10
 
-   Example:
-       >>> lidar_path = "data/t4dataset/my_dataset/scene_0/data/LIDAR_CONCAT/00010.pcd.bin"
-       >>> scene_id, frame_id = _get_scene_and_frame_id(lidar_path)
-       >>> print(scene_id, frame_id)
-       "scene_0" 10
-   """
-   scene_id: str = lidar_path.split("/")[-4]
+    Example:
+        >>> lidar_path = "data/t4dataset/my_dataset/scene_0/data/LIDAR_CONCAT/00010.pcd.bin"
+        >>> scene_id, frame_id = _get_scene_and_frame_id(lidar_path)
+        >>> print(scene_id, frame_id)
+        "scene_0" 10
+    """
+    scene_id: str = lidar_path.split("/")[-4]
 
-   # get frame_id from lidar_path. e.g, '00010.pcd.bin' -> 10
-   frame_id = int(lidar_path.split("/")[-1].split(".")[0])
+    # get frame_id from lidar_path. e.g, '00010.pcd.bin' -> 10
+    frame_id = int(lidar_path.split("/")[-1].split(".")[0])
 
-   return scene_id, frame_id
+    return scene_id, frame_id
+
 
 def create_pseudo_t4dataset(
     pseudo_labeled_info_path: Path,
@@ -145,12 +154,16 @@ def create_pseudo_t4dataset(
         None: Results are saved to "annotation" directory of each scene included in non_annotated_dataset_path.
     """
     # load pseudo labeled info
-    with open(pseudo_labeled_info_path, 'rb') as f:
+    with open(pseudo_labeled_info_path, "rb") as f:
         pseudo_labeled_dataset_info = pickle.load(f)
-    
+
     # get scene_ids
-    assert non_annotated_dataset_path.name == pseudo_labeled_dataset_info["metainfo"]["version"], f"Please check consistency between non_annotated dataset: {non_annotated_dataset_path} and info file: {pseudo_labeled_info_path}"
-    scene_ids: List[str] = [d.name for d in non_annotated_dataset_path.iterdir() if d.is_dir() and not d.name.startswith('.')]
+    assert (
+        non_annotated_dataset_path.name == pseudo_labeled_dataset_info["metainfo"]["version"]
+    ), f"Please check consistency between non_annotated dataset: {non_annotated_dataset_path} and info file: {pseudo_labeled_info_path}"
+    scene_ids: List[str] = [
+        d.name for d in non_annotated_dataset_path.iterdir() if d.is_dir() and not d.name.startswith(".")
+    ]
 
     pseudo_label_generator = PseudoLabelGenerator3D(
         non_annotated_dataset_path=non_annotated_dataset_path,
@@ -163,55 +176,64 @@ def create_pseudo_t4dataset(
     frame_length: Dict[str, int] = {scene_id: 0 for scene_id in scene_ids}
 
     progress_bar = ProgressBar(len(pseudo_labeled_dataset_info["data_list"]))
-    for frame_info in pseudo_labeled_dataset_info["data_list"]:      
-      # get scene_id and frame_id from lidar_path
-      scene_id, frame_id = _get_scene_and_frame_id(lidar_path=frame_info["lidar_points"]["lidar_path"])
+    for frame_info in pseudo_labeled_dataset_info["data_list"]:
+        # get scene_id and frame_id from lidar_path
+        scene_id, frame_id = _get_scene_and_frame_id(lidar_path=frame_info["lidar_points"]["lidar_path"])
 
-      # check consistency between non_annotated dataset and info file.
-      frame_length[scene_id] += 1
-      assert (scene_id in scene_ids) and (frame_id + 1 == frame_length[scene_id]), f"Please check the directory structure of your t4dataset and consistency between non_annotated dataset: {non_annotated_dataset_path} and info file: {pseudo_labeled_info_path}."
+        # check consistency between non_annotated dataset and info file.
+        frame_length[scene_id] += 1
+        assert (scene_id in scene_ids) and (
+            frame_id + 1 == frame_length[scene_id]
+        ), f"Please check the directory structure of your t4dataset and consistency between non_annotated dataset: {non_annotated_dataset_path} and info file: {pseudo_labeled_info_path}."
 
-      # get ego2global for this frame
-      ego2global = np.array(frame_info["ego2global"])
+        # get ego2global for this frame
+        ego2global = np.array(frame_info["ego2global"])
 
-      # add pseudo label
-      for pred_instance_3d in frame_info["pred_instances_3d"]:
-        bbox: T4Box3D = _transform_pred_instance_to_global_t4box(pred_instance_3d["bbox_3d"], pred_instance_3d["velocity"], pred_instance_3d["bbox_score_3d"], pred_instance_3d["bbox_label_3d"], ego2global)
-        category: str = pseudo_labeled_dataset_info["metainfo"]["classes"][pred_instance_3d["bbox_label_3d"]]
-        instance_id: str = pred_instance_3d["instance_id_3d"]
+        # add pseudo label
+        for pred_instance_3d in frame_info["pred_instances_3d"]:
+            bbox: T4Box3D = _transform_pred_instance_to_global_t4box(
+                pred_instance_3d["bbox_3d"],
+                pred_instance_3d["velocity"],
+                pred_instance_3d["bbox_score_3d"],
+                pred_instance_3d["bbox_label_3d"],
+                ego2global,
+            )
+            category: str = pseudo_labeled_dataset_info["metainfo"]["classes"][pred_instance_3d["bbox_label_3d"]]
+            instance_id: str = pred_instance_3d["instance_id_3d"]
 
-        pseudo_label_generator.add_3d_annotation_object(
-            scene_id=scene_id,
-            frame_id=frame_id,
-            instance_id=instance_id,
-            category_name=category,
-            t4box3d=bbox,
-        )
-      
-      progress_bar.update()
+            pseudo_label_generator.add_3d_annotation_object(
+                scene_id=scene_id,
+                frame_id=frame_id,
+                instance_id=instance_id,
+                category_name=category,
+                t4box3d=bbox,
+            )
+
+        progress_bar.update()
 
     # validate and save pseudo labeled t4dataset
     pseudo_label_generator.dump(overwrite=overwrite)
     logger.info("All process success.")
 
+
 def parse_args() -> argparse.Namespace:
-    parser = argparse.ArgumentParser(description='Create pseudo labeled t4dataset from pseudo labeled info file')
+    parser = argparse.ArgumentParser(description="Create pseudo labeled t4dataset from pseudo labeled info file")
     parser.add_argument(
-        't4dataset_config',
+        "t4dataset_config",
         type=str,
-        help='Path to yaml config file about T4dataset e.g. ./config/x2.yaml'
+        help="Path to yaml config file about T4dataset e.g. ./config/x2.yaml",
     )
     parser.add_argument(
-        '--root-path',
+        "--root-path",
         type=str,
         required=True,
-        help='Path to non-annotated dataset directory. e.g, "./data/t4dataset/pseudo_xx1/"'
-    )    
+        help='Path to non-annotated dataset directory. e.g, "./data/t4dataset/pseudo_xx1/"',
+    )
     parser.add_argument(
-        '--input',
+        "--input",
         type=str,
         required=True,
-        help='Path to pseudo labeled pkl file. e.g. ./data/t4dataset/info/pseudo_infos_raw_bevfusion.pkl'
+        help="Path to pseudo labeled pkl file. e.g. ./data/t4dataset/info/pseudo_infos_raw_bevfusion.pkl",
     )
     parser.add_argument(
         "--overwrite",
@@ -225,8 +247,9 @@ def parse_args() -> argparse.Namespace:
         choices=list(logging._nameToLevel.keys()),
     )
     parser.add_argument(
-        '--work-dir',
-        help='the directory to save the file containing evaluation metrics')
+        "--work-dir",
+        help="the directory to save the file containing evaluation metrics",
+    )
     return parser.parse_args()
 
 
@@ -247,7 +270,7 @@ def main():
         raise FileNotFoundError(f"Root path to non annotated dataset not found: {args.root_path}")
 
     # load t4dataset config
-    with open(args.t4dataset_config, 'r') as file:
+    with open(args.t4dataset_config, "r") as file:
         t4dataset_config: Dict[str, Any] = yaml.safe_load(file)
 
     logger: logging.Logger = setup_logger(args, name="create_pseudo_t4dataset")
@@ -260,5 +283,6 @@ def main():
         logger=logger,
     )
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     main()
