@@ -11,7 +11,7 @@ You should fork from autoware-ml to own repository and make new branch.
 
 ### 3. Formatting
 
-- If you develop `autoware-ml`, we recommend some tools as below.
+- We recommend some tools as below.
 - Install [black](https://github.com/psf/black)
 
 ```sh
@@ -30,7 +30,7 @@ pip install isort
 pip install pre-commit
 ```
 
-- Formatting
+- Formatting by manual command
 
 ```sh
 # To use:
@@ -40,6 +40,8 @@ pre-commit run -a
 pre-commit install  # ()
 ```
 
+- If you use VSCode, you can use [tasks of VSCode](https://github.com/tier4/autoware-ml/blob/main/.vscode/tasks.json).
+  - "Ctrl+shift+P" -> Select "Tasks: Run Task" -> Select "Pre-commit: Run"
 - In addition to it, we recommend VSCode extension
   - [black-formatter](https://marketplace.visualstudio.com/items?itemName=ms-python.black-formatter)
   - [isort](https://marketplace.visualstudio.com/items?itemName=ms-python.isort)
