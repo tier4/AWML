@@ -6,14 +6,14 @@ The main topic is following.
 - Replace from nuscenes_devkit to t4_devkit
 
 We replaced from nuscenes_devkit into t4_devkit in data conversion.
-This change do not affect the pipeline because the info file (.pkl) will not change, but if there is any issue, please report for us.
+From the issue of https://github.com/tier4/autoware-ml/issues/278, if you face error with DB2.0, please update dataset.
 Please see [PR](https://github.com/tier4/autoware-ml/pull/238) in detail.
 
-- Add new format to release model
+- Add new format for document of release model
 
 In addition to model versioning, We introduced the format of release note.
 We ask the developers to write not only evaluation result but also what you change and why you update the model like release note.
-We wrote [the document](https://github.com/tier4/autoware-ml/blob/main/docs/contribution/contribution_use_case.md#release-new-model) and [the example in TransFusion-L/v0/base](https://github.com/tier4/autoware-ml/blob/main/projects/TransFusion/docs/TransFusion-L/v0/base.md), please confirm these.
+We wrote [the document](https://github.com/tier4/autoware-ml/blob/main/docs/contribution/contribution_use_case.md#release-new-model) and [the example in CenterPoint base/v1.0](https://github.com/tier4/autoware-ml/blob/0b60f1a344c5b5ea9c0fdf0c29c6ac227491e15b/projects/CenterPoint/docs/CenterPoint/v1/base.md#centerpoint-base10), please confirm these.
 
 - Change formatter
 
@@ -79,3 +79,4 @@ If you don't install these tools, please follow [the document](https://github.co
   - https://github.com/tier4/autoware-ml/pull/305
   - https://github.com/tier4/autoware-ml/pull/306
   - https://github.com/tier4/autoware-ml/pull/321
+  - https://github.com/tier4/autoware-ml/pull/322
