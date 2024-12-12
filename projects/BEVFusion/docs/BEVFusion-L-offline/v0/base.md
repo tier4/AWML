@@ -13,6 +13,11 @@
 ## Release
 ### BEVFusion-L-offline base/0.2
 
+- We use all dataset to make BEVFusion-L-offline model.
+
+<details>
+<summary> The link of data and evaluation result </summary>
+
 - model
   - Training dataset: database_v1_0 + database_v1_1 + database_v_1_3 + database_v_2_0 + database_v_3_0 (total frames: 34,137)
   - Eval dataset: database_v1_0 + database_v1_1 + database_v_1_3 + database_v_2_0 + database_v_3_0 (total frames: 62)
@@ -32,7 +37,14 @@
 | bicycle    | 3,635  | 73.0 | 70.0    | 73.5    | 73.8    | 74.9    |
 | pedestrian | 25,981 | 73.9 | 69.8    | 72.2    | 75.3    | 78.2    |
 
+</details>
+
 ### BEVFusion-L-offline base/0.1
+
+- We released first BEVFusion-L-offline model to use for auto labeling.
+
+<details>
+<summary> The link of data and evaluation result </summary>
 
 - model
   - Training dataset: database_v1_0 + database_v1_1
@@ -51,3 +63,5 @@
 | bus        | 65.6 | 39.0    | 67.1    | 77.8    | 78.6    |
 | bicycle    | 65.0 | 61.1    | 65.4    | 66.4    | 67.0    |
 | pedestrian | 65.3 | 59.8    | 64.2    | 67.5    | 69.8    |
+
+</details>

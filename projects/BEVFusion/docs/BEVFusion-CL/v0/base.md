@@ -5,6 +5,17 @@
 ## Release
 ### BEVFusion-CL base/0.1
 
+- We released first Camera-LiDAR fusion model
+- The mAP of (DB1.0 + DB1.1 test dataset, eval 120m) increase 5%.
+
+|                       | mAP  | car  | truck | bus  | bicycle | pedestrian |
+| --------------------- | ---- | ---- | ----- | ---- | ------- | ---------- |
+| BEVFusion-CL base/0.1 | 63.7 | 72.4 | 56.8  | 71.8 | 62.1    | 55.3       |
+| BEVFusion-L base/0.2  | 60.6 | 74.1 | 54.1  | 58.7 | 55.7    | 60.3       |
+
+<details>
+<summary> The link of data and evaluation result </summary>
+
 - model
   - Training dataset: database_v1_0 + database_v1_1
   - Eval dataset: database_v1_0 + database_v1_1
@@ -21,3 +32,5 @@
 | bus        | 71.8 | 39.4    | 76.1    | 85.1    | 86.5    |
 | bicycle    | 62.1 | 53.8    | 62.9    | 65.3    | 66.3    |
 | pedestrian | 55.3 | 45.6    | 54.8    | 58.9    | 62.0    |
+
+</details>
