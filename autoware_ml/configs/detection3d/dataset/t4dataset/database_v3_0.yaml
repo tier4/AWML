@@ -1,4 +1,6 @@
 version: 1
+dataset_version: db-3.0.0
+#dataset_version: db-j6-1.0
 
 docs: |
   Product: X2
