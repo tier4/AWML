@@ -9,17 +9,17 @@ from autoware_ml.registry import DATA_SELECTOR
 
 def parse_args():
     parser = ArgumentParser()
-    parser.add_argument('config', type=str, help='Config file')
+    parser.add_argument("config", type=str, help="Config file")
     parser.add_argument(
-        'inputs',
+        "inputs",
         type=str,
-        help='Input image file path or directory path',
+        help="Input image file path or directory path",
     )
     parser.add_argument(
-        '--out-dir',
+        "--out-dir",
         type=str,
-        default='./work_dirs',
-        help='Output directory of images or predictiggon results.',
+        default="./work_dirs",
+        help="Output directory of images or predictiggon results.",
     )
     args = parser.parse_args()
     return args
@@ -37,5 +37,5 @@ def main():
     print("Result: ", result)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

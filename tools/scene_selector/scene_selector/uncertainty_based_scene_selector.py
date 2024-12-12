@@ -1,17 +1,19 @@
-from tools.scene_selector.scene_selector.uncertainty_methods.mrem_uncertainty_estimator import ModelRareExampleMining
-from tools.scene_selector.scene_selector.base.multi_model_scene_selector import ImagePointcloudSceneSelector
-from typing import List, Dict, Union, Tuple, Optional
-import numpy as np
-import os
 import json
+import os
+from typing import Dict, List, Optional, Tuple, Union
+
+import numpy as np
+
 from autoware_ml.registry import DATA_SELECTOR
+from tools.scene_selector.scene_selector.base.multi_model_scene_selector import ImagePointcloudSceneSelector
+from tools.scene_selector.scene_selector.uncertainty_methods.mrem_uncertainty_estimator import ModelRareExampleMining
 
 
 @DATA_SELECTOR.register_module()
 class MREMUncertaintyBasedSceneSelector(ImagePointcloudSceneSelector):
     """
-    This class is responsible for selecting target scenes based on uncertainty estimation using the 
-    ModelRareExampleMining method. It identifies scenes with rare objects based on the predictions 
+    This class is responsible for selecting target scenes based on uncertainty estimation using the
+    ModelRareExampleMining method. It identifies scenes with rare objects based on the predictions
     from multiple models, and applies uncertainty-based filtering.
 
     Parameters:
@@ -46,15 +48,17 @@ class MREMUncertaintyBasedSceneSelector(ImagePointcloudSceneSelector):
         Determines whether the current scene contains rare objects and should be considered a target scene.
     """
 
-    def __init__(self,
-                 models: Dict,
-                 iou_threshold: float = 0.5,
-                 min_score: float = 0.15,
-                 p_thresh: int = 20,
-                 d_thresh: int = 75,
-                 min_rare_objects: int = 2,
-                 rareness_threshold: float = 0.025,
-                 batch_size = 8) -> None:
+    def __init__(
+        self,
+        models: Dict,
+        iou_threshold: float = 0.5,
+        min_score: float = 0.15,
+        p_thresh: int = 20,
+        d_thresh: int = 75,
+        min_rare_objects: int = 2,
+        rareness_threshold: float = 0.025,
+        batch_size=8,
+    ) -> None:
         """
         Initializes the MREMUncertaintyBasedSceneSelector with the given model configurations and thresholds.
 
@@ -76,13 +80,12 @@ class MREMUncertaintyBasedSceneSelector(ImagePointcloudSceneSelector):
             The threshold for rareness score to define rare objects (default: 0.025).
         """
         self.uncertainty_estimator = ModelRareExampleMining(
-            models, iou_threshold, min_score, p_thresh, d_thresh, batch_size)
+            models, iou_threshold, min_score, p_thresh, d_thresh, batch_size
+        )
 
         self.min_rare_objects = min_rare_objects
         self.rareness_threshold = rareness_threshold
-        print(
-            "MREMUncertaintyBasedSceneSelector initialized with the following parameters:"
-        )
+        print("MREMUncertaintyBasedSceneSelector initialized with the following parameters:")
         print(f"Models used: {models}")
         print(f"iou_threshold: {iou_threshold}")
         print(f"min_score: {min_score}")
@@ -91,17 +94,19 @@ class MREMUncertaintyBasedSceneSelector(ImagePointcloudSceneSelector):
         print(f"min_rare_objects: {min_rare_objects}")
         print(f"rareness_threshold: {rareness_threshold}")
 
-    def is_target_scene(self,
-                        sensor_info: Union[Dict, List[Dict]],
-                        return_counts: bool = False,
-                        results_path: str = "") -> List[Union[bool, tuple]]:
+    def is_target_scene(
+        self,
+        sensor_info: Union[Dict, List[Dict]],
+        return_counts: bool = False,
+        results_path: str = "",
+    ) -> List[Union[bool, tuple]]:
         """
         Determines whether the current scene is a target scene based on the uncertainty scores.
 
         Parameters:
         -----------
         sensor_info : Union[Dict, List[Dict]]
-            The sensor information containing LiDAR point cloud file paths and related data. 
+            The sensor information containing LiDAR point cloud file paths and related data.
             Can be a single dictionary or a list of dictionaries.
         return_values : bool, optional
             Whether to return detailed results (unique bounding boxes, data, variances, h_i, r_i) (default: False).
@@ -123,14 +128,12 @@ class MREMUncertaintyBasedSceneSelector(ImagePointcloudSceneSelector):
         if isinstance(sensor_info, dict):
             sensor_info = [sensor_info]
         # Calculate the uncertainty-based scores using ModelRareExampleMining
-        unique_bboxes, data, variances, h_i, r_i = self.uncertainty_estimator(
-            sensor_info, results_path)
+        unique_bboxes, data, variances, h_i, r_i = self.uncertainty_estimator(sensor_info, results_path)
 
         pick_as_target: List[bool] = []
         for i, uncertainty_scores in enumerate(r_i):
             # Count the number of objects with an uncertainty score above the rareness threshold
-            rare_objects_count = np.sum(
-                uncertainty_scores > self.rareness_threshold)
+            rare_objects_count = np.sum(uncertainty_scores > self.rareness_threshold)
             # If the number of rare objects exceeds the threshold, mark the scene as a target
             pick_as_target.append(rare_objects_count > self.min_rare_objects)
 
@@ -141,7 +144,7 @@ class MREMUncertaintyBasedSceneSelector(ImagePointcloudSceneSelector):
                 "data": data,
                 "variances": variances,
                 "h_i": h_i,
-                "r_i": r_i
+                "r_i": r_i,
             }
         else:
             return pick_as_target

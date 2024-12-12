@@ -1,10 +1,13 @@
-from typing import List, Dict, Union, Set
-import numpy as np
 import os
+from typing import Dict, List, Set, Union
+
+import numpy as np
 import torch
 from mmdet.apis import DetInferencer
-from tools.scene_selector.scene_selector.base.image_based_scene_selector import ImageBasedSceneSelector
+
 from autoware_ml.registry import DATA_SELECTOR
+from tools.scene_selector.scene_selector.base.image_based_scene_selector import ImageBasedSceneSelector
+
 
 @DATA_SELECTOR.register_module()
 class Det2dObjectNumSelector(ImageBasedSceneSelector):
@@ -30,12 +33,8 @@ class Det2dObjectNumSelector(ImageBasedSceneSelector):
         model_checkpoint_path: str,
         classes: List[str],
         confidence_threshold: float = 0.3,
-        target_and_threshold: Dict[str, int] = {
-            "traffic cone": 1,
-            "people": 20,
-            "bicycle": 1
-        },
-        batch_size: int = 6
+        target_and_threshold: Dict[str, int] = {"traffic cone": 1, "people": 20, "bicycle": 1},
+        batch_size: int = 6,
     ) -> None:
         """
         Initialize the Det2dObjectNumSelector.
@@ -53,14 +52,14 @@ class Det2dObjectNumSelector(ImageBasedSceneSelector):
         self.batch_size = batch_size
         self.classes = classes
         self.target_and_threshold = target_and_threshold
-        
-        device = 'cuda' if torch.cuda.is_available() else 'cpu'
+
+        device = "cuda" if torch.cuda.is_available() else "cpu"
         self.inferencer = DetInferencer(
             model=model_config_path,
             weights=model_checkpoint_path,
-            device=device
+            device=device,
         )
-        
+
         print("Det2dObjectNumSelector initialized with the following parameters:")
         print(f"Model Config Path: {model_config_path}")
         print(f"Model Checkpoint Path: {model_checkpoint_path}")
@@ -68,7 +67,7 @@ class Det2dObjectNumSelector(ImageBasedSceneSelector):
         print(f"Confidence Threshold: {confidence_threshold}")
         print(f"Target and Threshold: {target_and_threshold}")
         print(f"Batch Size: {batch_size}")
-        
+
     def _get_valid_labels(self, classes: List[str], target_and_threshold: Dict[str, int]) -> Set[int]:
         """
         Get the set of valid label indices based on the target classes.
@@ -89,7 +88,12 @@ class Det2dObjectNumSelector(ImageBasedSceneSelector):
             valid_labels.add(classes.index(target_class))
         return valid_labels
 
-    def is_target_scene(self, image_array: Union[List[np.ndarray],List[str]], return_counts: bool = False, results_path: str = "") -> Union[bool, tuple]:
+    def is_target_scene(
+        self,
+        image_array: Union[List[np.ndarray], List[str]],
+        return_counts: bool = False,
+        results_path: str = "",
+    ) -> Union[bool, tuple]:
         """
         Determine if the given images contain the target scene based on object counts.
 
@@ -97,7 +101,7 @@ class Det2dObjectNumSelector(ImageBasedSceneSelector):
             image_array (Union[List[np.ndarray],List[str]]): List of images as numpy arrays.
             return_counts (bool): Whether to return the counts of the classes detected.
             results_path (str): The visualization results will be stored here, if you provide this path
-            
+
 
         Returns:
             Union[bool, tuple]: True if the scene meets the criteria, False otherwise.
@@ -108,10 +112,14 @@ class Det2dObjectNumSelector(ImageBasedSceneSelector):
 
         is_target = any(label_counts.get(label, 0) >= thres for label, thres in self.target_and_threshold.items())
 
-        return (is_target, {"class_counts": label_counts} ) if return_counts else is_target
+        return (is_target, {"class_counts": label_counts}) if return_counts else is_target
 
-
-    def is_target_scene_multiple(self, multiple_image_arrays: List[Union[List[np.ndarray], List[str]]], return_counts: bool = False, results_path: str = "") -> List[Union[bool, tuple]]:
+    def is_target_scene_multiple(
+        self,
+        multiple_image_arrays: List[Union[List[np.ndarray], List[str]]],
+        return_counts: bool = False,
+        results_path: str = "",
+    ) -> List[Union[bool, tuple]]:
         """
         Determine if the given images in multiple sets contain the target scene based on object counts.
 
@@ -126,36 +134,36 @@ class Det2dObjectNumSelector(ImageBasedSceneSelector):
         """
         flattened_images = [img for image_list in multiple_image_arrays for img in image_list]
         results = self._get_predictions(flattened_images, results_path)
-        
+
         output = []
         start_idx = 0
-        
+
         for image_list in multiple_image_arrays:
             end_idx = start_idx + len(image_list)
             set_results = {"predictions": results["predictions"][start_idx:end_idx]}
-            
+
             label_counts = self._count_labels(set_results)
             is_target = any(label_counts.get(label, 0) >= thres for label, thres in self.target_and_threshold.items())
-            
+
             if return_counts:
                 output.append((is_target, label_counts))
             else:
                 output.append(is_target)
-            
+
             start_idx = end_idx
         if return_counts:
-            return [x[0] for x in output], {"class_counts": [x[1] for x in output]} 
+            return [x[0] for x in output], {"class_counts": [x[1] for x in output]}
         else:
             return output
 
-    def _get_predictions(self, image_array: Union[List[np.ndarray],List[str]], results_path: str = "") -> Dict:
+    def _get_predictions(self, image_array: Union[List[np.ndarray], List[str]], results_path: str = "") -> Dict:
         """
         Get predictions from the object detection model.
 
         Args:
             image_array (Union[List[np.ndarray],List[str]]): List of images as numpy arrays.
             results_path (str): The visualization results will be stored here, if you provide this path
-            
+
         Returns:
             Dict: Dictionary containing the model's predictions.
         """
@@ -186,7 +194,8 @@ class Det2dObjectNumSelector(ImageBasedSceneSelector):
         found_labels = []
         for image_result in results.get("predictions", []):
             valid_labels = [
-                label for label, score in zip(image_result["labels"], image_result["scores"])
+                label
+                for label, score in zip(image_result["labels"], image_result["scores"])
                 if score > self.confidence_threshold and label in self.valid_labels
             ]
             found_labels.extend(valid_labels)
