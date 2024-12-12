@@ -5,6 +5,7 @@ force-exclude = '''
 \.git
 | \.venv
 | build
+| work_dirs
 | projects/BEVFusion
 | projects/SparseConvolution
 )/
@@ -18,4 +19,4 @@ force_grid_wrap = 0
 use_parentheses = true
 ensure_newline_before_comments = true
 line_length = 119
-skip = ["projects/BEVFusion", "projects/SparseConvolution"]
+skip = ["work_dirs", "projects/BEVFusion", "projects/SparseConvolution"]

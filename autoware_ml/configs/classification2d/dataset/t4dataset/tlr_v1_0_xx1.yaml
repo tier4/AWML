@@ -1,7 +1,7 @@
 version: 1
 
 docs: |
-  Product: XX1 
+  Product: XX1
   Place: odaiba, shinagawa, rainbow bridge
   Amount: 3706 annotated images
   Sensor: C1, C2 Camera

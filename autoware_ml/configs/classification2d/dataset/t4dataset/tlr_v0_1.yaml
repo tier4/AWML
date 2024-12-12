@@ -26,6 +26,6 @@ train:
 
 val: []
 
-test: 
+test:
   - 470daad9-94f7-47e7-9cb8-4aa1d37e1bb0 # TLRv0.1_JapanTaxi4_odaiba_20230330_LI
   - 0450be6b-9770-4bd1-8c59-649f8e4d9168 # TLRv0.1_JapanTaxi5_odaiba_20220909-20220912

@@ -2,7 +2,6 @@ repos:
   - repo: https://github.com/pre-commit/pre-commit-hooks
     rev: v5.0.0
     hooks:
-      - id: check-json
       - id: check-merge-conflict
       - id: check-toml
       - id: check-yaml
@@ -24,3 +23,8 @@ repos:
     hooks:
       - id: isort
         name: isort (python)
+        exclude: |
+          (?x)(
+          projects/BEVFusion|
+          projects/SparseConvolution
+          )

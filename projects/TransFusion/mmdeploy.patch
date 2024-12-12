@@ -4,11 +4,11 @@ index 17ad7113..1e94e21e 100644
 +++ b/mmdeploy/codebase/mmdet3d/models/mvx_two_stage.py
 @@ -81,17 +81,18 @@
      }
- 
+
      _, pts_feats = self.extract_feat(batch_inputs_dict=batch_inputs_dict)
 -    outs = self.pts_bbox_head(pts_feats)
 +    outs = self.pts_bbox_head(pts_feats, None)
- 
+
      if type(outs[0][0]) is dict:
          bbox_preds, scores, dir_scores = [], [], []
          for task_res in outs:

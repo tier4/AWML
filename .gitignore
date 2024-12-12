@@ -5,7 +5,6 @@ tests/samplefiles/data
 *.bin
 *.onnx
 *.engine
-.devcontainer/
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

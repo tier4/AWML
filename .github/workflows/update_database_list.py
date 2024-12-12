@@ -1,16 +1,17 @@
 #! /usr/bin/env python
 
-import json
 import argparse
+import json
 from collections import OrderedDict
 from typing import Any, Dict, List
 from urllib.parse import urljoin
-from attrs import define
 
-from webautoauth import requests
-from webautoauth.token import load_config, TokenSource, HttpService
+from attrs import define
 from ruamel.yaml import YAML
 from ruamel.yaml.scalarstring import LiteralScalarString
+from webautoauth import requests
+from webautoauth.token import HttpService, TokenSource, load_config
+
 
 @define
 class DatasetMetadata:
@@ -20,15 +21,17 @@ class DatasetMetadata:
         id (str): id in Web.Auto for each dataset. e.g, be882f53-0e90-438a-8da3-caed58d4348e
         name (str): name in Web.Auto for each dataset. e.g, DBv0.0_tokyo_prd-example_bc143e44-08d4-4f65-a95e-12fc7de85ea3_2024-08-30_09-43-48_09-44-08
     """
+
     id: str
     name: str
+
 
 class AnnotationDatasetSearchClient:
     """
     A client for searching annotation datasets using the Web.Auto API.
 
-    This client handles authentication and pagination automatically, 
-    allowing you to search for annotation datasets based on keywords 
+    This client handles authentication and pagination automatically,
+    allowing you to search for annotation datasets based on keywords
     and project IDs.
     """
 
@@ -41,15 +44,15 @@ class AnnotationDatasetSearchClient:
         self._session = requests.make_session(token_source)
 
         self._page_size = 100
-        self._base_url = urljoin("https://api.data-search.tier4.jp",
-                                 "/v1/projects/annotation_datasets/search")
-        self._headers = {'content-type': 'application/json'}
+        self._base_url = urljoin("https://api.data-search.tier4.jp", "/v1/projects/annotation_datasets/search")
+        self._headers = {"content-type": "application/json"}
 
-    def search(self,
-               keyword: str,
-               project_ids: List[str] = ["prd_jt", "x2_dev"],
-               approved: bool = True,
-        ) -> List[DatasetMetadata]:
+    def search(
+        self,
+        keyword: str,
+        project_ids: List[str] = ["prd_jt", "x2_dev"],
+        approved: bool = True,
+    ) -> List[DatasetMetadata]:
         """
         Searches for annotation datasets based on the provided keyword and project IDs.
 
@@ -69,7 +72,7 @@ class AnnotationDatasetSearchClient:
             "project_ids": project_ids,
         }
         results = self._fetch_all_annotation_datasets(payload)
-        return [DatasetMetadata(id=data["id"], name=data["name"])  for data in results]
+        return [DatasetMetadata(id=data["id"], name=data["name"]) for data in results]
 
     def _fetch_all_annotation_datasets(self, payload: Dict[str, Any]):
         """
@@ -90,24 +93,23 @@ class AnnotationDatasetSearchClient:
                 params["page_token"] = next_page_token
 
             response = self._session.post(
-                url=self._base_url,
-                headers=self._headers,
-                params=params,
-                data=json.dumps(payload))
+                url=self._base_url, headers=self._headers, params=params, data=json.dumps(payload)
+            )
             data = response.json()
 
-            all_items.extend(data['items'])
-            next_page_token = data.get('next_page_token')
+            all_items.extend(data["items"])
+            next_page_token = data.get("next_page_token")
 
             if not next_page_token:
                 break
 
         return all_items
 
+
 def search_dataset_metadata(keyword: str, project_ids: List[str]) -> List[DatasetMetadata]:
     """
     Search for dataset metadata informations using the provided keyword and project IDs.
-    
+
     This function creates an AnnotationDatasetSearchClient instance and uses it to search
     for datasets that match the given keyword within the specified projects. It prints
     the number of datasets found and returns both their IDs and names.
@@ -131,17 +133,15 @@ def search_dataset_metadata(keyword: str, project_ids: List[str]) -> List[Datase
         'DBv0.0_tokyo_car1_1970-01-01'
     """
     client = AnnotationDatasetSearchClient()
-    found_dataset_metadata = client.search(
-        keyword=keyword, project_ids=project_ids)
-    print(
-        f"{len(found_dataset_metadata)} found for keyword: {keyword} within projects: {project_ids}"
-    )
+    found_dataset_metadata = client.search(keyword=keyword, project_ids=project_ids)
+    print(f"{len(found_dataset_metadata)} found for keyword: {keyword} within projects: {project_ids}")
     return found_dataset_metadata
+
 
 def update_database_config(config_file_path: str, found_dataset_metadata: List[DatasetMetadata]) -> None:
     """
     Update the database configuration file with new datasets and remove deprecated ones.
-    
+
     This function reads a YAML configuration file, updates it with newly found datasets,
     and removes any datasets that are no longer found in the search results.
 
@@ -162,20 +162,17 @@ def update_database_config(config_file_path: str, found_dataset_metadata: List[D
     yaml.preserve_quotes = True
     yaml.indent(mapping=2, sequence=4, offset=2)
 
-    with open(config_file_path, 'r') as f:
+    with open(config_file_path, "r") as f:
         config_content = yaml.load(f)
 
     is_config_content_updated = False
-    
+
     # If the found ID does not exist in the config file, add it.
     for found_dataset_id, found_dataset_name in ((d.id, d.name) for d in found_dataset_metadata):
-        if found_dataset_id not in config_content['train'] + config_content[
-                'val'] + config_content['test']:
-            print(
-                f"{found_dataset_id} seems to be a new ID, adding to the config file"
-            )
-            config_content['train'].append(found_dataset_id)
-            config_content['train'].yaml_add_eol_comment(found_dataset_name, len(config_content['train'])-1)
+        if found_dataset_id not in config_content["train"] + config_content["val"] + config_content["test"]:
+            print(f"{found_dataset_id} seems to be a new ID, adding to the config file")
+            config_content["train"].append(found_dataset_id)
+            config_content["train"].yaml_add_eol_comment(found_dataset_name, len(config_content["train"]) - 1)
             is_config_content_updated = True
 
     # If the ID from config file is not found, remove it. (probably deprecated)
@@ -191,36 +188,33 @@ def update_database_config(config_file_path: str, found_dataset_metadata: List[D
     # Save the results if the content is updated
     if is_config_content_updated:
         # Ensure 'docs' field is treated as a literal block
-        if 'docs' in config_content:
-            config_content['docs'] = LiteralScalarString(config_content['docs'])
+        if "docs" in config_content:
+            config_content["docs"] = LiteralScalarString(config_content["docs"])
 
-        with open(config_file_path, 'w') as f:
+        with open(config_file_path, "w") as f:
             yaml.dump(config_content, f)
-        print('Config file updated with new datasets.')
+        print("Config file updated with new datasets.")
     else:
-        print('No new datasets found.')
+        print("No new datasets found.")
 
 
 def main():
-    parser = argparse.ArgumentParser(
-        description="Search for Annotation Datasets")
-    parser.add_argument(
-        "--config_path", type=str, required=True, help="Config path to update")
-    parser.add_argument(
-        "--keyword", type=str, required=True, help="The keyword to search for")
+    parser = argparse.ArgumentParser(description="Search for Annotation Datasets")
+    parser.add_argument("--config_path", type=str, required=True, help="Config path to update")
+    parser.add_argument("--keyword", type=str, required=True, help="The keyword to search for")
     parser.add_argument(
         "--project_ids",
         type=str,
         nargs="*",
         default=["prd_jt", "x2_dev"],
-        help="List of project IDs to filter by (optional)")
+        help="List of project IDs to filter by (optional)",
+    )
     args = parser.parse_args()
-    assert len(
-        args.project_ids) > 0, "You MUST provide at least one project id."
-    
+    assert len(args.project_ids) > 0, "You MUST provide at least one project id."
+
     found_dataset_metadata = search_dataset_metadata(args.keyword, args.project_ids)
     update_database_config(args.config_path, found_dataset_metadata)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()
