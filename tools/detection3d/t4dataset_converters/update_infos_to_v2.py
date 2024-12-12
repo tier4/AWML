@@ -6,7 +6,8 @@ https://github.com/open-mmlab/mmdetection3d/blob/v1.2.0/tools/dataset_converters
 
 
 def get_empty_standard_data_info(
-    camera_types=["CAM0", "CAM1", "CAM2", "CAM3", "CAM4"], ):
+    camera_types=["CAM0", "CAM1", "CAM2", "CAM3", "CAM4"],
+):
     data_info = dict(
         # (str): Sample id of the frame.
         sample_idx=None,

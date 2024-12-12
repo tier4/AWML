@@ -95,18 +95,16 @@ def parse_args():
     parser = argparse.ArgumentParser()
     parser.add_argument("config", metavar="FILE")
     parser.add_argument("--checkpoint", type=str, default=None)
-    parser.add_argument(
-        "--split", type=str, default="val", choices=["train", "val"])
+    parser.add_argument("--split", type=str, default="val", choices=["train", "val"])
     parser.add_argument("--bbox-score", type=float, default=0.1)
-    parser.add_argument(
-        "--out-dir", type=str, default="work_dirs/visualization")
+    parser.add_argument("--out-dir", type=str, default="work_dirs/visualization")
     args = parser.parse_args()
     return args
 
 
 def main():
     args = parse_args()
-    init_default_scope('mmdet3d')
+    init_default_scope("mmdet3d")
 
     # create config
     cfg = Config.fromfile(args.config)
@@ -118,7 +116,7 @@ def main():
 
     # build model and load checkpoint
     model = MODELS.build(cfg.model)
-    load_checkpoint(model, args.checkpoint, map_location='cpu')
+    load_checkpoint(model, args.checkpoint, map_location="cpu")
     model.to(get_device())
     model.eval()
 
@@ -128,8 +126,7 @@ def main():
 
         with autocast(enabled=True):
             outputs = model.test_step(data)
-        bboxes = outputs[0].pred_instances_3d["bboxes_3d"].tensor.detach().cpu(
-        )
+        bboxes = outputs[0].pred_instances_3d["bboxes_3d"].tensor.detach().cpu()
         scores = outputs[0].pred_instances_3d["scores_3d"].detach().cpu()
         labels = outputs[0].pred_instances_3d["labels_3d"].detach().cpu()
         if args.bbox_score is not None:
@@ -153,5 +150,5 @@ def main():
         )
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

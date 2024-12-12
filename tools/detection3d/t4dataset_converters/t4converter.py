@@ -4,8 +4,8 @@ from typing import Any, Dict, List, Optional, Tuple, Union
 
 import mmengine
 import numpy as np
-from numpy.typing import NDArray
 from mmdet3d.datasets.utils import convert_quaternion_to_matrix
+from numpy.typing import NDArray
 from pyquaternion import Quaternion
 from shapely.affinity import rotate as shapely_rotate
 from shapely.affinity import translate as shapely_translate
@@ -13,18 +13,22 @@ from shapely.geometry import Polygon
 from shapely.geometry import box as shapely_box
 from shapely.ops import unary_union
 from t4_devkit import Tier4
-from t4_devkit.schema import CalibratedSensor, EgoPose, SampleData, SampleAnnotation, Scene, Log, Sample
 from t4_devkit.dataclass import Box3D
+from t4_devkit.schema import CalibratedSensor, EgoPose, Log, Sample, SampleAnnotation, SampleData, Scene
 
 from tools.detection3d.t4dataset_converters.update_infos_to_v2 import (
-    clear_instance_unused_keys, get_empty_instance, get_single_image_sweep,
-    get_single_lidar_sweep)
+    clear_instance_unused_keys,
+    get_empty_instance,
+    get_single_image_sweep,
+    get_single_lidar_sweep,
+)
 
 
 def get_ego2global(pose_record: EgoPose) -> Dict[str, List]:
-    ego2global = convert_quaternion_to_matrix(
-        quaternion=pose_record.rotation, translation=pose_record.translation)
-    return dict(ego2global=ego2global, )
+    ego2global = convert_quaternion_to_matrix(quaternion=pose_record.rotation, translation=pose_record.translation)
+    return dict(
+        ego2global=ego2global,
+    )
 
 
 def parse_camera_path(camera_path: str) -> str:
@@ -42,8 +46,7 @@ def get_lidar_points_info(
     cs_record: CalibratedSensor,
     num_features: int = 5,
 ):
-    lidar2ego = convert_quaternion_to_matrix(
-        quaternion=cs_record.rotation, translation=cs_record.translation)
+    lidar2ego = convert_quaternion_to_matrix(quaternion=cs_record.rotation, translation=cs_record.translation)
     mmengine.check_file_exist(lidar_path)
     lidar_path = parse_lidar_path(lidar_path)
     return dict(
@@ -51,7 +54,8 @@ def get_lidar_points_info(
             num_pts_feats=num_features,
             lidar_path=lidar_path,
             lidar2ego=lidar2ego,
-        ), )
+        ),
+    )
 
 
 def get_lidar_sweeps_info(
@@ -121,11 +125,9 @@ def get_lidar_sweeps_info(
 
 def extract_tier4_data(
     t4: Tier4, sample: Sample, lidar_token: str
-) -> tuple[EgoPose, CalibratedSensor, SampleData, Scene, Log, list[Box3D], str,
-           NDArray, NDArray, NDArray, NDArray]:
+) -> tuple[EgoPose, CalibratedSensor, SampleData, Scene, Log, list[Box3D], str, NDArray, NDArray, NDArray, NDArray]:
     sd_record: SampleData = t4.get("sample_data", lidar_token)
-    cs_record: CalibratedSensor = t4.get("calibrated_sensor",
-                                         sd_record.calibrated_sensor_token)
+    cs_record: CalibratedSensor = t4.get("calibrated_sensor", sd_record.calibrated_sensor_token)
     pose_record: EgoPose = t4.get("ego_pose", sd_record.ego_pose_token)
 
     lidar_path, boxes, _ = t4.get_sample_data(lidar_token)
@@ -155,12 +157,10 @@ def extract_tier4_data(
     )
 
 
-def get_gt_attrs(t4: Tier4,
-                 annotations: list[SampleAnnotation]) -> List[List[str]]:
+def get_gt_attrs(t4: Tier4, annotations: list[SampleAnnotation]) -> List[List[str]]:
     gt_attrs = []
     for anno in annotations:
-        gt_attrs.append(
-            [t4.get("attribute", t).name for t in anno.attribute_tokens])
+        gt_attrs.append([t4.get("attribute", t).name for t in anno.attribute_tokens])
     return gt_attrs
 
 
@@ -180,24 +180,14 @@ def check_boxes_overlap(box1, box2):
         half_dx = dx / 2
         half_dy = dy / 2
 
-        corners = np.array([
+        corners = np.array(
             [
-                x - half_dx * cos_yaw + half_dy * sin_yaw,
-                y - half_dx * sin_yaw - half_dy * cos_yaw
+                [x - half_dx * cos_yaw + half_dy * sin_yaw, y - half_dx * sin_yaw - half_dy * cos_yaw],
+                [x + half_dx * cos_yaw + half_dy * sin_yaw, y + half_dx * sin_yaw - half_dy * cos_yaw],
+                [x + half_dx * cos_yaw - half_dy * sin_yaw, y + half_dx * sin_yaw + half_dy * cos_yaw],
+                [x - half_dx * cos_yaw - half_dy * sin_yaw, y - half_dx * sin_yaw + half_dy * cos_yaw],
             ],
-            [
-                x + half_dx * cos_yaw + half_dy * sin_yaw,
-                y + half_dx * sin_yaw - half_dy * cos_yaw
-            ],
-            [
-                x + half_dx * cos_yaw - half_dy * sin_yaw,
-                y + half_dx * sin_yaw + half_dy * cos_yaw
-            ],
-            [
-                x - half_dx * cos_yaw - half_dy * sin_yaw,
-                y - half_dx * sin_yaw + half_dy * cos_yaw
-            ],
-        ], )
+        )
 
         return corners
 
@@ -214,20 +204,16 @@ def check_boxes_proximity(box1, box2, distance_threshold=1.0):
 
     def get_face_centers(box):
         x, y, z, dx, dy, dz, yaw = box
-        front_center = np.array(
-            [x + dx / 2 * np.cos(yaw), y + dx / 2 * np.sin(yaw), z])
-        back_center = np.array(
-            [x - dx / 2 * np.cos(yaw), y - dx / 2 * np.sin(yaw), z])
+        front_center = np.array([x + dx / 2 * np.cos(yaw), y + dx / 2 * np.sin(yaw), z])
+        back_center = np.array([x - dx / 2 * np.cos(yaw), y - dx / 2 * np.sin(yaw), z])
         return front_center, back_center
 
     front1, back1 = get_face_centers(box1)
     front2, back2 = get_face_centers(box2)
 
-    if np.linalg.norm(front1 - front2) <= distance_threshold or np.linalg.norm(
-            front1 - back2) <= distance_threshold:
+    if np.linalg.norm(front1 - front2) <= distance_threshold or np.linalg.norm(front1 - back2) <= distance_threshold:
         return True
-    if np.linalg.norm(back1 - front2) <= distance_threshold or np.linalg.norm(
-            back1 - back2) <= distance_threshold:
+    if np.linalg.norm(back1 - front2) <= distance_threshold or np.linalg.norm(back1 - back2) <= distance_threshold:
         return True
 
     return False
@@ -260,8 +246,7 @@ def match_objects(
 
         for idx1, box1 in zip(sub_object1_indices, sub_object1_bboxes):
             for idx2, box2 in zip(sub_object2_indices, sub_object2_bboxes):
-                if check_boxes_overlap(box1, box2) or check_boxes_proximity(
-                        box1, box2, distance_threshold):
+                if check_boxes_overlap(box1, box2) or check_boxes_proximity(box1, box2, distance_threshold):
                     pairs.append((idx1, idx2))
         # if len(pairs) != len(sub_object2_indices):
         #     print(f"WARNING: Did not find matching pairs for all {sub_objects}. {sub_objects[0]}: {len(sub_object1_indices)},{sub_objects[1]}: {len(sub_object2_indices)}, found {len(pairs)} pairs")
@@ -298,8 +283,7 @@ def merge_boxes_union(box1: List[float], box2: List[float]):
         # Create a 2D shapely box
         shapely_box_object = shapely_box(-dx / 2, -dy / 2, dx / 2, dy / 2)
         # Rotate and translate the box
-        shapely_box_object = shapely_rotate(
-            shapely_box_object, yaw, origin=(0, 0), use_radians=True)
+        shapely_box_object = shapely_rotate(shapely_box_object, yaw, origin=(0, 0), use_radians=True)
         shapely_box_object = shapely_translate(shapely_box_object, x, y)
         return shapely_box_object, z, dz, yaw
 
@@ -307,21 +291,17 @@ def merge_boxes_union(box1: List[float], box2: List[float]):
     box2_shapely, z2, dz2, yaw2 = get_shapely_box(box2)
 
     # Merge the two shapely boxes
-    merged_box = unary_union([box1_shapely,
-                              box2_shapely]).minimum_rotated_rectangle
+    merged_box = unary_union([box1_shapely, box2_shapely]).minimum_rotated_rectangle
 
     # Get the coordinates of the rectangle
-    coords = list(merged_box.exterior.coords
-                  )[:-1]  # Exclude the repeated first/last point
+    coords = list(merged_box.exterior.coords)[:-1]  # Exclude the repeated first/last point
 
     # Calculate the new dimensions and center
     new_x = sum([point[0] for point in coords]) / 4
     new_y = sum([point[1] for point in coords]) / 4
 
-    edge1 = ((coords[0][0] - coords[1][0])**2 +
-             (coords[0][1] - coords[1][1])**2)**0.5
-    edge2 = ((coords[1][0] - coords[2][0])**2 +
-             (coords[1][1] - coords[2][1])**2)**0.5
+    edge1 = ((coords[0][0] - coords[1][0]) ** 2 + (coords[0][1] - coords[1][1]) ** 2) ** 0.5
+    edge2 = ((coords[1][0] - coords[2][0]) ** 2 + (coords[1][1] - coords[2][1]) ** 2) ** 0.5
 
     new_dx = max(edge1, edge2)
     new_dy = min(edge1, edge2)
@@ -371,19 +351,11 @@ def merge_boxes_extend_longer(box1: List[float], box2: List[float]):
         x, y, z, dx, dy, dz, yaw = box
         center = np.array([x, y])
         if dx >= dy:
-            face1_center = np.array(
-                [x + (dx / 2) * np.cos(yaw), y + (dx / 2) * np.sin(yaw)])
-            face2_center = np.array(
-                [x - (dx / 2) * np.cos(yaw), y - (dx / 2) * np.sin(yaw)])
+            face1_center = np.array([x + (dx / 2) * np.cos(yaw), y + (dx / 2) * np.sin(yaw)])
+            face2_center = np.array([x - (dx / 2) * np.cos(yaw), y - (dx / 2) * np.sin(yaw)])
         else:
-            face1_center = np.array([
-                x + (dy / 2) * np.cos(yaw + np.pi / 2),
-                y + (dy / 2) * np.sin(yaw + np.pi / 2)
-            ])
-            face2_center = np.array([
-                x - (dy / 2) * np.cos(yaw + np.pi / 2),
-                y - (dy / 2) * np.sin(yaw + np.pi / 2)
-            ])
+            face1_center = np.array([x + (dy / 2) * np.cos(yaw + np.pi / 2), y + (dy / 2) * np.sin(yaw + np.pi / 2)])
+            face2_center = np.array([x - (dy / 2) * np.cos(yaw + np.pi / 2), y - (dy / 2) * np.sin(yaw + np.pi / 2)])
         return center, face1_center, face2_center, dx, dy
 
     # Identify the centers and faces of both boxes
@@ -392,27 +364,49 @@ def merge_boxes_extend_longer(box1: List[float], box2: List[float]):
 
     # Determine which box is larger
     if dx1 * dy1 >= dx2 * dy2:
-        larger_box_center, larger_box_face1, larger_box_face2, larger_dx, larger_dy, larger_box = box1_center, box1_face1, box1_face2, dx1, dy1, box1
-        smaller_box_center, smaller_box_face1, smaller_box_face2, smaller_dx, smaller_dy = box2_center, box2_face1, box2_face2, dx2, dy2
+        larger_box_center, larger_box_face1, larger_box_face2, larger_dx, larger_dy, larger_box = (
+            box1_center,
+            box1_face1,
+            box1_face2,
+            dx1,
+            dy1,
+            box1,
+        )
+        smaller_box_center, smaller_box_face1, smaller_box_face2, smaller_dx, smaller_dy = (
+            box2_center,
+            box2_face1,
+            box2_face2,
+            dx2,
+            dy2,
+        )
     else:
-        larger_box_center, larger_box_face1, larger_box_face2, larger_dx, larger_dy, larger_box = box2_center, box2_face1, box2_face2, dx2, dy2, box2
-        smaller_box_center, smaller_box_face1, smaller_box_face2, smaller_dx, smaller_dy = box1_center, box1_face1, box1_face2, dx1, dy1
+        larger_box_center, larger_box_face1, larger_box_face2, larger_dx, larger_dy, larger_box = (
+            box2_center,
+            box2_face1,
+            box2_face2,
+            dx2,
+            dy2,
+            box2,
+        )
+        smaller_box_center, smaller_box_face1, smaller_box_face2, smaller_dx, smaller_dy = (
+            box1_center,
+            box1_face1,
+            box1_face2,
+            dx1,
+            dy1,
+        )
 
     # Choose the farther face of the smaller box
-    dist_to_smaller_face1 = np.linalg.norm(smaller_box_face1 -
-                                           larger_box_center)
-    dist_to_smaller_face2 = np.linalg.norm(smaller_box_face2 -
-                                           larger_box_center)
+    dist_to_smaller_face1 = np.linalg.norm(smaller_box_face1 - larger_box_center)
+    dist_to_smaller_face2 = np.linalg.norm(smaller_box_face2 - larger_box_center)
     if dist_to_smaller_face1 > dist_to_smaller_face2:
         selected_smaller_face = smaller_box_face1
     else:
         selected_smaller_face = smaller_box_face2
 
     # Choose the nearer face of the larger box
-    dist_to_larger_face1 = np.linalg.norm(larger_box_face1 -
-                                          smaller_box_center)
-    dist_to_larger_face2 = np.linalg.norm(larger_box_face2 -
-                                          smaller_box_center)
+    dist_to_larger_face1 = np.linalg.norm(larger_box_face1 - smaller_box_center)
+    dist_to_larger_face2 = np.linalg.norm(larger_box_face2 - smaller_box_center)
     if dist_to_larger_face1 < dist_to_larger_face2:
         selected_larger_face = larger_box_face1
     else:
@@ -472,7 +466,7 @@ def get_instances(
     elif merge_type == "union":
         merge_function = merge_boxes_union
     else:
-        #matching will be skipped in this case
+        # matching will be skipped in this case
         matched_object_idx = None
 
     instances = []
@@ -486,10 +480,8 @@ def get_instances(
                 # Merge the bounding boxes
                 new_bbox_3d = merge_function(gt_boxes[idx1], gt_boxes[idx2])
                 new_velocity = (velocity[idx1] + velocity[idx2]) / 2
-                new_num_lidar_pts = annotations[
-                    idx1].num_lidar_pts + annotations[idx2].num_lidar_pts
-                new_num_radar_pts = annotations[
-                    idx1].num_radar_pts + annotations[idx2].num_radar_pts
+                new_num_lidar_pts = annotations[idx1].num_lidar_pts + annotations[idx2].num_lidar_pts
+                new_num_radar_pts = annotations[idx1].num_radar_pts + annotations[idx2].num_radar_pts
                 new_attrs = list(set(gt_attrs[idx1] + gt_attrs[idx2]))
                 empty_instance = get_empty_instance()
 
@@ -497,26 +489,22 @@ def get_instances(
                     is_filter = False
                     if filter_attributions:
                         for filter_attribution in filter_attributions:
-                            if target_object == filter_attribution[
-                                    0] and filter_attribution[1] in new_attrs:
+                            if target_object == filter_attribution[0] and filter_attribution[1] in new_attrs:
                                 is_filter = True
                     if is_filter is True:
                         empty_instance["bbox_label"] = -1
                     else:
-                        empty_instance["bbox_label"] = class_names.index(
-                            target_object)
+                        empty_instance["bbox_label"] = class_names.index(target_object)
 
                 else:
                     ignore_class_name.add(target_object)
                     empty_instance["bbox_label"] = -1
-                empty_instance["bbox_label_3d"] = copy.deepcopy(
-                    empty_instance["bbox_label"])
+                empty_instance["bbox_label_3d"] = copy.deepcopy(empty_instance["bbox_label"])
                 empty_instance["bbox_3d"] = new_bbox_3d
                 empty_instance["velocity"] = new_velocity.tolist()
                 empty_instance["num_lidar_pts"] = new_num_lidar_pts
                 empty_instance["num_radar_pts"] = new_num_radar_pts
-                empty_instance[
-                    "bbox_3d_isvalid"] = valid_flag[idx1] and valid_flag[idx2]
+                empty_instance["bbox_3d_isvalid"] = valid_flag[idx1] and valid_flag[idx2]
                 empty_instance["gt_nusc_name"] = target_object
                 empty_instance["gt_attrs"] = new_attrs
                 # empty_instance["merged_from"] = [gt_boxes[idx1], gt_boxes[idx2]]   # used for debugging, keep commented out otherwise
@@ -537,8 +525,7 @@ def get_instances(
                 for filter_attribution in filter_attributions:
                     # If the ground truth name matches exatcly the filtered label name, and
                     # the filtered attribute is in one of the available attribute names
-                    if boxes[i].semantic_label.name == filter_attribution[0] and \
-                        filter_attribution[1] in gt_attrs[i]:
+                    if boxes[i].semantic_label.name == filter_attribution[0] and filter_attribution[1] in gt_attrs[i]:
                         is_filter = True
             if is_filter is True:
                 empty_instance["bbox_label"] = -1
@@ -548,8 +535,7 @@ def get_instances(
         else:
             ignore_class_name.add(names[i])
             empty_instance["bbox_label"] = -1
-        empty_instance["bbox_label_3d"] = copy.deepcopy(
-            empty_instance["bbox_label"])
+        empty_instance["bbox_label_3d"] = copy.deepcopy(empty_instance["bbox_label"])
 
         empty_instance["velocity"] = velocity[i].tolist()
         empty_instance["num_lidar_pts"] = annotations[i].num_lidar_pts
@@ -575,18 +561,14 @@ def get_annotations(
     merge_objects: List[Tuple[str, List[str]]] = [],
     merge_type: str = None,
 ) -> dict:
-    annotations: list[SampleAnnotation] = [
-        t4.get("sample_annotation", token) for token in anns
-    ]
+    annotations: list[SampleAnnotation] = [t4.get("sample_annotation", token) for token in anns]
     instance_tokens = [ann.instance_token for ann in annotations]
     locs = np.array([b.position for b in boxes]).reshape(-1, 3)
     dims = np.array([b.size for b in boxes]).reshape(-1, 3)
-    rots = np.array([b.rotation.yaw_pitch_roll[0]
-                     for b in boxes]).reshape(-1, 1)
+    rots = np.array([b.rotation.yaw_pitch_roll[0] for b in boxes]).reshape(-1, 1)
     velocity = np.array([t4.box_velocity(token)[:2] for token in anns])
 
-    valid_flag = np.array([anno.num_lidar_pts > 0 for anno in annotations],
-                          dtype=bool).reshape(-1)
+    valid_flag = np.array([anno.num_lidar_pts > 0 for anno in annotations], dtype=bool).reshape(-1)
 
     # convert velo from global to lidar
     for i in range(len(boxes)):
@@ -594,15 +576,11 @@ def get_annotations(
         velo = velo @ np.linalg.inv(e2g_r_mat).T @ np.linalg.inv(l2e_r_mat).T
         velocity[i] = velo[:2]
 
-    names = np.array([
-        name_mapping.get(b.semantic_label.name, b.semantic_label.name)
-        for b in boxes
-    ])
+    names = np.array([name_mapping.get(b.semantic_label.name, b.semantic_label.name) for b in boxes])
     # we need to convert rot to SECOND format.
     # Copied from https://github.com/open-mmlab/mmdetection3d/blob/0f9dfa97a35ef87e16b700742d3c358d0ad15452/tools/dataset_converters/nuscenes_converter.py#L258
     gt_boxes = np.concatenate([locs, dims[:, [1, 0, 2]], rots], axis=1)
-    assert len(gt_boxes) == len(
-        annotations), f"{len(gt_boxes)}, {len(annotations)}"
+    assert len(gt_boxes) == len(annotations), f"{len(gt_boxes)}, {len(annotations)}"
 
     gt_attrs = get_gt_attrs(t4, annotations)
     assert len(names) == len(gt_attrs), f"{len(names)}, {len(gt_attrs)}"
@@ -663,8 +641,7 @@ def obtain_sensor2top(
 
     """
     sd_rec: SampleData = t4.get("sample_data", sensor_token)
-    cs_record: CalibratedSensor = t4.get("calibrated_sensor",
-                                         sd_rec.calibrated_sensor_token)
+    cs_record: CalibratedSensor = t4.get("calibrated_sensor", sd_rec.calibrated_sensor_token)
     pose_record: EgoPose = t4.get("ego_pose", sd_rec.ego_pose_token)
     data_path = t4.get_sample_data_path(sd_rec.token)
     if os.getcwd() in data_path:  # path from lyftdataset is absolute path
@@ -693,13 +670,9 @@ def obtain_sensor2top(
     # sweep->ego->global->ego'->lidar
     l2e_r_s_mat = Quaternion(l2e_r_s).rotation_matrix
     e2g_r_s_mat = Quaternion(e2g_r_s).rotation_matrix
-    R = (l2e_r_s_mat.T @ e2g_r_s_mat.T) @ (
-        np.linalg.inv(e2g_r_mat).T @ np.linalg.inv(l2e_r_mat).T)
-    T = (l2e_t_s @ e2g_r_s_mat.T + e2g_t_s) @ (
-        np.linalg.inv(e2g_r_mat).T @ np.linalg.inv(l2e_r_mat).T)
-    T -= (
-        e2g_t @ (np.linalg.inv(e2g_r_mat).T @ np.linalg.inv(l2e_r_mat).T) +
-        l2e_t @ np.linalg.inv(l2e_r_mat).T)
+    R = (l2e_r_s_mat.T @ e2g_r_s_mat.T) @ (np.linalg.inv(e2g_r_mat).T @ np.linalg.inv(l2e_r_mat).T)
+    T = (l2e_t_s @ e2g_r_s_mat.T + e2g_t_s) @ (np.linalg.inv(e2g_r_mat).T @ np.linalg.inv(l2e_r_mat).T)
+    T -= e2g_t @ (np.linalg.inv(e2g_r_mat).T @ np.linalg.inv(l2e_r_mat).T) + l2e_t @ np.linalg.inv(l2e_r_mat).T
     sweep["sensor2lidar_rotation"] = R.T  # points @ R.T + T
     sweep["sensor2lidar_translation"] = T
 
@@ -714,27 +687,20 @@ def obtain_sensor2top(
         _, boxes, _ = t4.get_sample_data(sensor_token)
         boxes: list[Box3D]
         ann_tokens = t4.get("sample", sd_rec.sample_token).ann_3ds
-        anns: list[SampleAnnotation] = [
-            t4.get("sample_annotation", ann_token) for ann_token in ann_tokens
-        ]
+        anns: list[SampleAnnotation] = [t4.get("sample_annotation", ann_token) for ann_token in ann_tokens]
         instance_tokens = [ann.instance_token for ann in anns]
         locs = np.array([b.position for b in boxes]).reshape(-1, 3)
         dims = np.array([b.size for b in boxes]).reshape(-1, 3)
-        rots = np.array([b.rotation.yaw_pitch_roll[0]
-                         for b in boxes]).reshape(-1, 1)
-        velocity = np.array([
-            t4.box_velocity(ann_token)[:2] for ann_token in ann_tokens
-        ]).reshape(-1, 2)
+        rots = np.array([b.rotation.yaw_pitch_roll[0] for b in boxes]).reshape(-1, 1)
+        velocity = np.array([t4.box_velocity(ann_token)[:2] for ann_token in ann_tokens]).reshape(-1, 2)
         # convert velo from global to lidar
         for i in range(len(boxes)):
             velo = np.array([*velocity[i], 0.0])
-            velo = velo @ np.linalg.inv(e2g_r_mat).T @ np.linalg.inv(
-                l2e_r_mat).T
+            velo = velo @ np.linalg.inv(e2g_r_mat).T @ np.linalg.inv(l2e_r_mat).T
             velocity[i] = velo[:2]
 
         # we need to convert rot to SECOND format.
-        gt_boxes = np.concatenate([locs, dims, -rots - np.pi / 2, velocity],
-                                  axis=1)
+        gt_boxes = np.concatenate([locs, dims, -rots - np.pi / 2, velocity], axis=1)
         sweep["gt_boxes_with_velocity"] = gt_boxes
         sweep["instance_tokens"] = instance_tokens
 
