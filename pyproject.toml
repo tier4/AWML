@@ -1,5 +1,13 @@
 [tool.black]
 line-length = 119
+force-exclude = '''
+/(
+\.git
+| \.venv
+| build
+| projects/BEVFusion
+)/
+'''
 
 [tool.isort]
 profile = "black"
