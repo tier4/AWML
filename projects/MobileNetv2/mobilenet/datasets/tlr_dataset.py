@@ -1,9 +1,10 @@
-from typing import Dict, Optional, Sequence, Tuple, List
-from mmpretrain.registry import DATASETS
-from mmpretrain.datasets import BaseDataset
 import json
 import random
 from collections import Counter
+from typing import Dict, List, Optional, Sequence, Tuple
+
+from mmpretrain.datasets import BaseDataset
+from mmpretrain.registry import DATASETS
 
 
 def read_json_file(file_path):
@@ -21,7 +22,7 @@ def read_json_file(file_path):
     json.JSONDecodeError: If the file is not valid JSON.
     """
     try:
-        with open(file_path, 'r') as file:
+        with open(file_path, "r") as file:
             data = json.load(file)
         return data
     except FileNotFoundError:
@@ -35,12 +36,14 @@ def read_json_file(file_path):
 @DATASETS.register_module()
 class TLRClassificationDataset(BaseDataset):
 
-    def __init__(self,
-                 *args,
-                 false_instances: int = 0,
-                 false_label: int = -1,
-                 min_size=0,
-                 **kwargs) -> None:
+    def __init__(
+        self,
+        *args,
+        false_instances: int = 0,
+        false_label: int = -1,
+        min_size=0,
+        **kwargs,
+    ) -> None:
         self.false_instances = false_instances
         self.false_label = false_label
         self.min_size = min_size
@@ -48,20 +51,24 @@ class TLRClassificationDataset(BaseDataset):
             assert self.false_label >= 0, "false_label must be non-negative when false_instances > 0"
         super().__init__(*args, **kwargs)
 
-    def _check_bbox_overlap(self, bbox1: List[float],
-                            bbox2: List[float]) -> bool:
+    def _check_bbox_overlap(
+        self,
+        bbox1: List[float],
+        bbox2: List[float],
+    ) -> bool:
         """Check if two bboxes overlap."""
         x1_min, y1_min, x1_max, y1_max = bbox1[0], bbox1[1], bbox1[2], bbox1[3]
         x2_min, y2_min, x2_max, y2_max = bbox2[0], bbox2[1], bbox2[2], bbox2[3]
 
-        return not (x1_max < x2_min or x2_max < x1_min or y1_max < y2_min
-                    or y2_max < y1_min)
+        return not (x1_max < x2_min or x2_max < x1_min or y1_max < y2_min or y2_max < y1_min)
 
-    def _generate_random_bbox(self,
-                              img_width: int,
-                              img_height: int,
-                              existing_bboxes: List[List[float]],
-                              max_attempts: int = 100) -> List[float]:
+    def _generate_random_bbox(
+        self,
+        img_width: int,
+        img_height: int,
+        existing_bboxes: List[List[float]],
+        max_attempts: int = 100,
+    ) -> List[float]:
         """Generate a random bbox that doesn't overlap with existing ones."""
         # Assume reasonable bbox size range (e.g., 5-20% of image dimension)
         min_size = min(img_width, img_height) * 0.05
@@ -88,8 +95,7 @@ class TLRClassificationDataset(BaseDataset):
             if not overlap:
                 return new_bbox
 
-        raise RuntimeError(
-            "Could not generate non-overlapping bbox after maximum attempts")
+        raise RuntimeError("Could not generate non-overlapping bbox after maximum attempts")
 
     def load_data_list(self) -> List[dict]:
         data_list = super().load_data_list()
@@ -97,7 +103,7 @@ class TLRClassificationDataset(BaseDataset):
         img_id = 0
 
         for data_info in data_list:
-            instances = data_info.get('instances', [])
+            instances = data_info.get("instances", [])
             existing_bboxes = [instance["bbox"] for instance in instances]
 
             # Add original instances
@@ -112,13 +118,12 @@ class TLRClassificationDataset(BaseDataset):
                 # add false examples to training set, not used by default.
 
                 num_false = max(len(instances), 1) * self.false_instances
-                img_width = data_info.get('width')
-                img_height = data_info.get('height')
+                img_width = data_info.get("width")
+                img_height = data_info.get("height")
 
                 for _ in range(num_false):
                     try:
-                        false_bbox = self._generate_random_bbox(
-                            img_width, img_height, existing_bboxes)
+                        false_bbox = self._generate_random_bbox(img_width, img_height, existing_bboxes)
 
                         false_instance_info = data_info.copy()
                         false_instance_info["img_id"] = img_id
@@ -129,13 +134,11 @@ class TLRClassificationDataset(BaseDataset):
                         # Add this false bbox to existing_bboxes to prevent overlap with future false instances
                         existing_bboxes.append(false_bbox)
                     except RuntimeError as e:
-                        print(
-                            f"Warning: {e} for image {img_id}. Skipping remaining false instances."
-                        )
+                        print(f"Warning: {e} for image {img_id}. Skipping remaining false instances.")
                         break
 
             img_id += 1
-        class_infos = [x['gt_label'] for x in separated_data_list]
+        class_infos = [x["gt_label"] for x in separated_data_list]
         label_counts = Counter(class_infos)
         print("\nClass Distribution:")
         print("-" * 30)
