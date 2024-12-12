@@ -4,7 +4,19 @@
 ## Release
 ### base/0.1
 
-We use NuScenes dataset.
+- We released first model of FRNet.
+- We used NuScenes dataset.
+
+<details>
+<summary> The link of data and evaluation result </summary>
+
+- Model
+  - Training dataset: nuScenes
+  - Eval dataset: nuScenes
+  - [PR](https://github.com/tier4/autoware-ml/pull/150)
+  - [Config file path](https://github.com/tier4/autoware-ml/blob/2f06bc2a243b6fd44860fed7c77f8fd1e521e89e/projects/FRNet/configs/nuscenes/frnet_1xb4_nus-seg.py)
+  - [Deployed onnx](https://drive.google.com/file/d/1tJ2qje4sF1_EaHLvMut1JXV-euJx-JJw/view?usp=drive_link)
+  - [Training results](https://drive.google.com/file/d/1GBxHcYd9U6mTNaDyTrTh2FGW1WaJHUcR/view?usp=drive_link)
 
 - Performance summary (test set)
 
@@ -33,10 +45,4 @@ We use NuScenes dataset.
 | manmade              | 88.3   |
 | vegetation           | 86.5   |
 
-- Model
-  - Training dataset: nuScenes
-  - Eval dataset: nuScenes
-  - [PR](https://github.com/tier4/autoware-ml/pull/150)
-  - [Config file path](https://github.com/tier4/autoware-ml/blob/2f06bc2a243b6fd44860fed7c77f8fd1e521e89e/projects/FRNet/configs/nuscenes/frnet_1xb4_nus-seg.py)
-  - [Deployed onnx](https://drive.google.com/file/d/1tJ2qje4sF1_EaHLvMut1JXV-euJx-JJw/view?usp=drive_link)
-  - [Training results](https://drive.google.com/file/d/1GBxHcYd9U6mTNaDyTrTh2FGW1WaJHUcR/view?usp=drive_link)
+</details>
