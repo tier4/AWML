@@ -13,16 +13,19 @@ class Preprocessing:
     def __init__(self, config: Config):
 
         config = copy.deepcopy(config)
-        self.region_group_cfg = config.model['data_preprocessor']
-        self.interpolation_cfg = [
-            x for x in config.test_pipeline
-            if x['type'] == 'RangeInterpolation'
-        ][0]
-        self.region_group_cfg.pop('type')
+        self.region_group_cfg = config.model["data_preprocessor"]
+        self.interpolation_cfg = [x for x in config.test_pipeline if x["type"] == "RangeInterpolation"][0]
+        self.region_group_cfg.pop("type")
 
-    def _range_interpolation(self, points: npt.ArrayLike, fov_up: float,
-                             fov_down: float, H: int, W: int,
-                             **kwargs) -> npt.ArrayLike:
+    def _range_interpolation(
+        self,
+        points: npt.ArrayLike,
+        fov_up: float,
+        fov_down: float,
+        H: int,
+        W: int,
+        **kwargs,
+    ) -> npt.ArrayLike:
         fov_up = fov_up / 180 * np.pi
         fov_down = fov_down / 180 * np.pi
         fov = abs(fov_down) + abs(fov_up)
@@ -75,8 +78,7 @@ class Preprocessing:
                     # the interpolated points will be calculated
                     if proj_mask[y, x - 1] and proj_mask[y, x + 1]:
                         # calculated the potential points
-                        mean_points = (proj_image[y, x - 1] +
-                                       proj_image[y, x + 1]) / 2
+                        mean_points = (proj_image[y, x - 1] + proj_image[y, x + 1]) / 2
                         # change the current pixel to be valid
                         proj_mask[y, x] = 1
                         proj_image[y, x] = mean_points
@@ -84,15 +86,20 @@ class Preprocessing:
 
         # concatenate all the interpolated points and labels
         if len(interpolated_points) > 0:
-            interpolated_points = np.array(
-                interpolated_points, dtype=np.float32)
+            interpolated_points = np.array(interpolated_points, dtype=np.float32)
             points = np.concatenate((points, interpolated_points), axis=0)
 
         return points
 
-    def _frustum_region_group(self, points: torch.Tensor, fov_up: float,
-                              fov_down: float, H: int, W: int,
-                              **kwargs) -> dict:
+    def _frustum_region_group(
+        self,
+        points: torch.Tensor,
+        fov_up: float,
+        fov_down: float,
+        H: int,
+        W: int,
+        **kwargs,
+    ) -> dict:
         fov_up = fov_up / 180 * np.pi
         fov_down = fov_down / 180 * np.pi
         fov = abs(fov_down) + abs(fov_up)
@@ -118,27 +125,24 @@ class Preprocessing:
         coors_y = torch.clamp(coors_y, min=0, max=H - 1).type(torch.int64)
 
         coors = torch.stack([coors_y, coors_x], dim=1)
-        coors = F.pad(coors, (1, 0), mode='constant', value=0)
+        coors = F.pad(coors, (1, 0), mode="constant", value=0)
 
-        voxel_coors, inverse_map = torch.unique(
-            coors, return_inverse=True, dim=0)
+        voxel_coors, inverse_map = torch.unique(coors, return_inverse=True, dim=0)
 
         batch_inputs_dict = {}
-        batch_inputs_dict['points'] = points
-        batch_inputs_dict['coors'] = coors
-        batch_inputs_dict['voxel_coors'] = voxel_coors
-        batch_inputs_dict['inverse_map'] = inverse_map
+        batch_inputs_dict["points"] = points
+        batch_inputs_dict["coors"] = coors
+        batch_inputs_dict["voxel_coors"] = voxel_coors
+        batch_inputs_dict["inverse_map"] = inverse_map
         return batch_inputs_dict
 
     def preprocess(self, points: npt.ArrayLike) -> dict:
         num_points = points.shape[0]
         t_start = time()
-        interpolated_points = self._range_interpolation(
-            points, **self.interpolation_cfg)
-        batch_inputs_dict = self._frustum_region_group(
-            torch.from_numpy(interpolated_points), **self.region_group_cfg)
+        interpolated_points = self._range_interpolation(points, **self.interpolation_cfg)
+        batch_inputs_dict = self._frustum_region_group(torch.from_numpy(interpolated_points), **self.region_group_cfg)
         t_end = time()
         latency = np.round((t_end - t_start) * 1e3, 2)
-        print(f'Preprocessing latency: {latency} ms')
-        batch_inputs_dict['num_points'] = num_points
+        print(f"Preprocessing latency: {latency} ms")
+        batch_inputs_dict["num_points"] = num_points
         return batch_inputs_dict

@@ -1,16 +1,15 @@
 from typing import Dict
 
+import torch
 from mmdet3d.models import EncoderDecoder3D
 from mmdet3d.registry import MODELS
 from mmdet3d.structures.det3d_data_sample import OptSampleList, SampleList
 from mmdet3d.utils import ConfigType, OptConfigType, OptMultiConfig
 from torch import Tensor
-
 from torch.onnx import errors, symbolic_helper
-import torch
 
 
-@symbolic_helper.parse_args('v', 'i', 'v', 'v', 's', 'b')
+@symbolic_helper.parse_args("v", "i", "v", "v", "s", "b")
 def symbolic_scatter_reduce(
     g,
     self: torch._C.Value,
@@ -20,35 +19,26 @@ def symbolic_scatter_reduce(
     reduce: str,
     include_self: bool,
 ):
-    if reduce == 'mean':
-        raise errors.OnnxExporterError(
-            'ONNX does not support mean reduction for scatter_reduce')
+    if reduce == "mean":
+        raise errors.OnnxExporterError("ONNX does not support mean reduction for scatter_reduce")
     if not include_self:
-        raise errors.OnnxExporterError(
-            'ONNX does not support include_self=False for scatter_reduce')
+        raise errors.OnnxExporterError("ONNX does not support include_self=False for scatter_reduce")
 
     reduce_mode = {
-        'mean': 'none',
-        'sum': 'add',
-        'prod': 'mul',
-        'amin': 'min',
-        'amax': 'max',
+        "mean": "none",
+        "sum": "add",
+        "prod": "mul",
+        "amin": "min",
+        "amax": "max",
     }
     onnx_reduce = reduce_mode[reduce]
 
-    result = g.op(
-        'ScatterElements',
-        self,
-        index,
-        src,
-        axis_i=dim,
-        reduction_s=onnx_reduce)
+    result = g.op("ScatterElements", self, index, src, axis_i=dim, reduction_s=onnx_reduce)
 
     return result
 
 
-torch.onnx.register_custom_op_symbolic('aten::scatter_reduce',
-                                       symbolic_scatter_reduce, 16)
+torch.onnx.register_custom_op_symbolic("aten::scatter_reduce", symbolic_scatter_reduce, 16)
 
 
 @MODELS.register_module()
@@ -79,16 +69,18 @@ class FRNet(EncoderDecoder3D):
             Defaults to None.
     """
 
-    def __init__(self,
-                 voxel_encoder: ConfigType,
-                 backbone: ConfigType,
-                 decode_head: ConfigType,
-                 neck: OptConfigType = None,
-                 auxiliary_head: OptMultiConfig = None,
-                 train_cfg: OptConfigType = None,
-                 test_cfg: OptConfigType = None,
-                 data_preprocessor: OptConfigType = None,
-                 init_cfg: OptMultiConfig = None) -> None:
+    def __init__(
+        self,
+        voxel_encoder: ConfigType,
+        backbone: ConfigType,
+        decode_head: ConfigType,
+        neck: OptConfigType = None,
+        auxiliary_head: OptMultiConfig = None,
+        train_cfg: OptConfigType = None,
+        test_cfg: OptConfigType = None,
+        data_preprocessor: OptConfigType = None,
+        init_cfg: OptMultiConfig = None,
+    ) -> None:
         super(FRNet, self).__init__(
             backbone=backbone,
             decode_head=decode_head,
@@ -97,7 +89,8 @@ class FRNet(EncoderDecoder3D):
             train_cfg=train_cfg,
             test_cfg=test_cfg,
             data_preprocessor=data_preprocessor,
-            init_cfg=init_cfg)
+            init_cfg=init_cfg,
+        )
 
         self.voxel_encoder = MODELS.build(voxel_encoder)
 
@@ -110,8 +103,11 @@ class FRNet(EncoderDecoder3D):
             voxel_dict = self.neck(voxel_dict)
         return voxel_dict
 
-    def loss(self, batch_inputs_dict: dict,
-             batch_data_samples: SampleList) -> Dict[str, Tensor]:
+    def loss(
+        self,
+        batch_inputs_dict: dict,
+        batch_data_samples: SampleList,
+    ) -> Dict[str, Tensor]:
         """Calculate losses from a batch of inputs and data samples.
 
         Args:
@@ -128,20 +124,20 @@ class FRNet(EncoderDecoder3D):
         # extract features using backbone
         voxel_dict = self.extract_feat(batch_inputs_dict)
         losses = dict()
-        loss_decode = self._decode_head_forward_train(voxel_dict,
-                                                      batch_data_samples)
+        loss_decode = self._decode_head_forward_train(voxel_dict, batch_data_samples)
         losses.update(loss_decode)
 
         if self.with_auxiliary_head:
-            loss_aux = self._auxiliary_head_forward_train(
-                voxel_dict, batch_data_samples)
+            loss_aux = self._auxiliary_head_forward_train(voxel_dict, batch_data_samples)
             losses.update(loss_aux)
         return losses
 
-    def predict(self,
-                batch_inputs_dict: dict,
-                batch_data_samples: SampleList,
-                rescale: bool = True) -> SampleList:
+    def predict(
+        self,
+        batch_inputs_dict: dict,
+        batch_data_samples: SampleList,
+        rescale: bool = True,
+    ) -> SampleList:
         """Simple test with single scene.
 
         Args:
@@ -168,17 +164,17 @@ class FRNet(EncoderDecoder3D):
             batch_input_metas.append(data_sample.metainfo)
 
         voxel_dict = self.extract_feat(batch_inputs_dict)
-        seg_logits_list = self.decode_head.predict(voxel_dict,
-                                                   batch_input_metas,
-                                                   self.test_cfg)
+        seg_logits_list = self.decode_head.predict(voxel_dict, batch_input_metas, self.test_cfg)
         for i in range(len(seg_logits_list)):
             seg_logits_list[i] = seg_logits_list[i].transpose(0, 1)
 
         return self.postprocess_result(seg_logits_list, batch_data_samples)
 
-    def _forward(self,
-                 batch_inputs_dict: dict,
-                 batch_data_samples: OptSampleList = None) -> dict:
+    def _forward(
+        self,
+        batch_inputs_dict: dict,
+        batch_data_samples: OptSampleList = None,
+    ) -> dict:
         """Network forward process.
 
         Args:

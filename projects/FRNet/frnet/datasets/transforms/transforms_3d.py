@@ -10,14 +10,16 @@ from mmengine.utils import is_list_of
 @TRANSFORMS.register_module()
 class FrustumMix(BaseTransform):
 
-    def __init__(self,
-                 H: int,
-                 W: int,
-                 fov_up: float,
-                 fov_down: float,
-                 num_areas: List[int],
-                 pre_transform: Optional[Sequence[dict]] = None,
-                 prob: float = 1.0) -> None:
+    def __init__(
+        self,
+        H: int,
+        W: int,
+        fov_up: float,
+        fov_down: float,
+        num_areas: List[int],
+        pre_transform: Optional[Sequence[dict]] = None,
+        prob: float = 1.0,
+    ) -> None:
         assert is_list_of(num_areas, int)
         self.num_areas = num_areas
 
@@ -33,13 +35,16 @@ class FrustumMix(BaseTransform):
         else:
             self.pre_transform = Compose(pre_transform)
 
-    def frustum_vertical_mix_transform(self, input_dict: dict,
-                                       mix_results: dict) -> dict:
-        points = input_dict['points']
-        pts_semantic_mask = input_dict['pts_semantic_mask']
+    def frustum_vertical_mix_transform(
+        self,
+        input_dict: dict,
+        mix_results: dict,
+    ) -> dict:
+        points = input_dict["points"]
+        pts_semantic_mask = input_dict["pts_semantic_mask"]
 
-        mix_points = mix_results['points']
-        mix_pts_semantic_mask = mix_results['pts_semantic_mask']
+        mix_points = mix_results["points"]
+        mix_pts_semantic_mask = mix_results["pts_semantic_mask"]
 
         depth = torch.linalg.norm(points.coord[:, :3], 2, dim=1)
         pitch = torch.arcsin(points.coord[:, 2] / depth)
@@ -53,8 +58,7 @@ class FrustumMix(BaseTransform):
         mix_coors = 1.0 - (mix_pitch + abs(self.fov_down)) / self.fov
         mix_coors *= self.H
         mix_coors = torch.floor(mix_coors)
-        mix_coors = torch.clamp(
-            mix_coors, min=0, max=self.H - 1).type(torch.int64)
+        mix_coors = torch.clamp(mix_coors, min=0, max=self.H - 1).type(torch.int64)
 
         num_areas = np.random.choice(self.num_areas, size=1)[0]
         row_list = np.linspace(0, self.H, num_areas + 1, dtype=np.int64)
@@ -70,21 +74,23 @@ class FrustumMix(BaseTransform):
             else:
                 idx = (mix_coors >= start_row) & (mix_coors < end_row)
                 out_points.append(mix_points[idx])
-                out_pts_semantic_mask.append(
-                    mix_pts_semantic_mask[idx.numpy()])
+                out_pts_semantic_mask.append(mix_pts_semantic_mask[idx.numpy()])
         out_points = points.cat(out_points)
         out_pts_semantic_mask = np.concatenate(out_pts_semantic_mask, axis=0)
-        input_dict['points'] = out_points
-        input_dict['pts_semantic_mask'] = out_pts_semantic_mask
+        input_dict["points"] = out_points
+        input_dict["pts_semantic_mask"] = out_pts_semantic_mask
         return input_dict
 
-    def frustum_horizontal_mix_transform(self, input_dict: dict,
-                                         mix_results: dict) -> dict:
-        points = input_dict['points']
-        pts_semantic_mask = input_dict['pts_semantic_mask']
+    def frustum_horizontal_mix_transform(
+        self,
+        input_dict: dict,
+        mix_results: dict,
+    ) -> dict:
+        points = input_dict["points"]
+        pts_semantic_mask = input_dict["pts_semantic_mask"]
 
-        mix_points = mix_results['points']
-        mix_pts_semantic_mask = mix_results['pts_semantic_mask']
+        mix_points = mix_results["points"]
+        mix_pts_semantic_mask = mix_results["pts_semantic_mask"]
 
         yaw = -torch.atan2(points.coord[:, 1], points.coord[:, 0])
         coors = 0.5 * (yaw / np.pi + 1.0)
@@ -96,8 +102,7 @@ class FrustumMix(BaseTransform):
         mix_coors = 0.5 * (mix_yaw / np.pi + 1.0)
         mix_coors *= self.W
         mix_coors = torch.floor(mix_coors)
-        mix_coors = torch.clamp(
-            mix_coors, min=0, max=self.W - 1).type(torch.int64)
+        mix_coors = torch.clamp(mix_coors, min=0, max=self.W - 1).type(torch.int64)
 
         start_col = np.random.randint(0, self.W // 2)
         end_col = start_col + self.W // 2
@@ -107,20 +112,18 @@ class FrustumMix(BaseTransform):
 
         out_points = points.cat([points[idx], mix_points[mix_idx]])
         out_pts_semantic_mask = np.concatenate(
-            (pts_semantic_mask[idx.numpy()],
-             mix_pts_semantic_mask[mix_idx.numpy()]),
-            axis=0)
-        input_dict['points'] = out_points
-        input_dict['pts_semantic_mask'] = out_pts_semantic_mask
+            (pts_semantic_mask[idx.numpy()], mix_pts_semantic_mask[mix_idx.numpy()]), axis=0
+        )
+        input_dict["points"] = out_points
+        input_dict["pts_semantic_mask"] = out_pts_semantic_mask
         return input_dict
 
     def transform(self, input_dict: dict) -> dict:
         if np.random.rand() > self.prob:
             return input_dict
 
-        assert 'dataset' in input_dict, \
-            '`dataset` is needed to pass through FrustumMix, while not found.'
-        dataset = input_dict['dataset']
+        assert "dataset" in input_dict, "`dataset` is needed to pass through FrustumMix, while not found."
+        dataset = input_dict["dataset"]
 
         # get index of other point cloud
         index = np.random.randint(0, len(dataset))
@@ -129,43 +132,43 @@ class FrustumMix(BaseTransform):
 
         if self.pre_transform is not None:
             # pre_transform may also require dataset
-            mix_results.update({'dataset': dataset})
+            mix_results.update({"dataset": dataset})
             # before frustummix need to go through the necessary pre_transform
             mix_results = self.pre_transform(mix_results)
-            mix_results.pop('dataset')
+            mix_results.pop("dataset")
 
         if np.random.rand() > 0.5:
             # frustummix along vertical direction
-            input_dict = self.frustum_vertical_mix_transform(
-                input_dict, mix_results)
+            input_dict = self.frustum_vertical_mix_transform(input_dict, mix_results)
         else:
             # frustummix along horizontal direction
-            input_dict = self.frustum_horizontal_mix_transform(
-                input_dict, mix_results)
+            input_dict = self.frustum_horizontal_mix_transform(input_dict, mix_results)
         return input_dict
 
     def __repr__(self) -> str:
         """str: Return a string that describes the module."""
         repr_str = self.__class__.__name__
-        repr_str += f'(H={self.H}, '
-        repr_str += f'W={self.W}, '
-        repr_str += f'fov_up={self.fov_up}, '
-        repr_str += f'fov_down={self.fov_down}, '
-        repr_str += f'num_areas={self.num_areas}, '
-        repr_str += f'pre_transform={self.pre_transform}, '
-        repr_str += f'prob={self.prob})'
+        repr_str += f"(H={self.H}, "
+        repr_str += f"W={self.W}, "
+        repr_str += f"fov_up={self.fov_up}, "
+        repr_str += f"fov_down={self.fov_down}, "
+        repr_str += f"num_areas={self.num_areas}, "
+        repr_str += f"pre_transform={self.pre_transform}, "
+        repr_str += f"prob={self.prob})"
         return repr_str
 
 
 @TRANSFORMS.register_module()
 class RangeInterpolation(BaseTransform):
 
-    def __init__(self,
-                 H: int = 64,
-                 W: int = 2048,
-                 fov_up: float = 3.0,
-                 fov_down: float = -25.0,
-                 ignore_index: int = 19) -> None:
+    def __init__(
+        self,
+        H: int = 64,
+        W: int = 2048,
+        fov_up: float = 3.0,
+        fov_down: float = -25.0,
+        ignore_index: int = 19,
+    ) -> None:
         self.H = H
         self.W = W
         self.fov_up = fov_up / 180.0 * np.pi
@@ -174,8 +177,8 @@ class RangeInterpolation(BaseTransform):
         self.ignore_index = ignore_index
 
     def transform(self, input_dict: dict) -> dict:
-        points_numpy = input_dict['points'].numpy()
-        input_dict['num_points'] = points_numpy.shape[0]
+        points_numpy = input_dict["points"].numpy()
+        input_dict["num_points"] = points_numpy.shape[0]
 
         proj_image = np.full((self.H, self.W, 4), -1, dtype=np.float32)
         proj_idx = np.full((self.H, self.W), -1, dtype=np.int64)
@@ -211,13 +214,10 @@ class RangeInterpolation(BaseTransform):
         proj_image[proj_y[order], proj_x[order]] = points_numpy[order]
         proj_mask = (proj_idx > 0).astype(np.int32)
 
-        if 'pts_semantic_mask' in input_dict:
-            pts_semantic_mask = input_dict['pts_semantic_mask']
-            proj_sem_label = np.full((self.H, self.W),
-                                     self.ignore_index,
-                                     dtype=np.int64)
-            proj_sem_label[proj_y[order],
-                           proj_x[order]] = pts_semantic_mask[order]
+        if "pts_semantic_mask" in input_dict:
+            pts_semantic_mask = input_dict["pts_semantic_mask"]
+            proj_sem_label = np.full((self.H, self.W), self.ignore_index, dtype=np.int64)
+            proj_sem_label[proj_y[order], proj_x[order]] = pts_semantic_mask[order]
 
         interpolated_points = []
         interpolated_labels = []
@@ -235,17 +235,14 @@ class RangeInterpolation(BaseTransform):
                     # the interpolated points will be calculated
                     if proj_mask[y, x - 1] and proj_mask[y, x + 1]:
                         # calculated the potential points
-                        mean_points = (proj_image[y, x - 1] +
-                                       proj_image[y, x + 1]) / 2
+                        mean_points = (proj_image[y, x - 1] + proj_image[y, x + 1]) / 2
                         # change the current pixel to be valid
                         proj_mask[y, x] = 1
                         proj_image[y, x] = mean_points
                         interpolated_points.append(mean_points)
 
-                        if 'pts_semantic_mask' in input_dict:
-                            if proj_sem_label[y,
-                                              x - 1] == proj_sem_label[y,
-                                                                       x + 1]:
+                        if "pts_semantic_mask" in input_dict:
+                            if proj_sem_label[y, x - 1] == proj_sem_label[y, x + 1]:
                                 # if both pixels share the same semantic label,
                                 # then just copy the semantic label
                                 cur_label = proj_sem_label[y, x - 1]
@@ -258,40 +255,37 @@ class RangeInterpolation(BaseTransform):
 
         # concatenate all the interpolated points and labels
         if len(interpolated_points) > 0:
-            interpolated_points = np.array(
-                interpolated_points, dtype=np.float32)
-            points_numpy = np.concatenate((points_numpy, interpolated_points),
-                                          axis=0)
-            input_dict['points'] = input_dict['points'].new_point(points_numpy)
+            interpolated_points = np.array(interpolated_points, dtype=np.float32)
+            points_numpy = np.concatenate((points_numpy, interpolated_points), axis=0)
+            input_dict["points"] = input_dict["points"].new_point(points_numpy)
 
-            if 'pts_semantic_mask' in input_dict:
-                interpolated_labels = np.array(
-                    interpolated_labels, dtype=np.int64)
-                pts_semantic_mask = np.concatenate(
-                    (pts_semantic_mask, interpolated_labels), axis=0)
-                input_dict['pts_semantic_mask'] = pts_semantic_mask
+            if "pts_semantic_mask" in input_dict:
+                interpolated_labels = np.array(interpolated_labels, dtype=np.int64)
+                pts_semantic_mask = np.concatenate((pts_semantic_mask, interpolated_labels), axis=0)
+                input_dict["pts_semantic_mask"] = pts_semantic_mask
         return input_dict
 
     def __repr__(self) -> str:
         """str: Return a string that describes the module."""
         repr_str = self.__class__.__name__
-        repr_str += f'(H={self.H}, '
-        repr_str += f'W={self.W}, '
-        repr_str += f'fov_up={self.fov_up}, '
-        repr_str += f'fov_down={self.fov_down}, '
-        repr_str += f'ignore_index={self.ignore_index})'
+        repr_str += f"(H={self.H}, "
+        repr_str += f"W={self.W}, "
+        repr_str += f"fov_up={self.fov_up}, "
+        repr_str += f"fov_down={self.fov_down}, "
+        repr_str += f"ignore_index={self.ignore_index})"
         return repr_str
 
 
 @TRANSFORMS.register_module()
 class InstanceCopy(BaseTransform):
 
-    def __init__(self,
-                 instance_classes: List[int],
-                 pre_transform: Optional[Sequence[dict]] = None,
-                 prob: float = 1.0) -> None:
-        assert is_list_of(instance_classes, int), \
-            'instance_classes should be a list of int'
+    def __init__(
+        self,
+        instance_classes: List[int],
+        pre_transform: Optional[Sequence[dict]] = None,
+        prob: float = 1.0,
+    ) -> None:
+        assert is_list_of(instance_classes, int), "instance_classes should be a list of int"
         self.instance_classes = instance_classes
         self.prob = prob
         if pre_transform is None:
@@ -300,11 +294,11 @@ class InstanceCopy(BaseTransform):
             self.pre_transform = Compose(pre_transform)
 
     def copy_instance(self, input_dict: dict, mix_results: dict) -> dict:
-        points = input_dict['points']
-        pts_semantic_mask = input_dict['pts_semantic_mask']
+        points = input_dict["points"]
+        pts_semantic_mask = input_dict["pts_semantic_mask"]
 
-        mix_points = mix_results['points']
-        mix_pts_semantic_mask = mix_results['pts_semantic_mask']
+        mix_points = mix_results["points"]
+        mix_pts_semantic_mask = mix_results["pts_semantic_mask"]
 
         concat_points = [points]
         concat_pts_semantic_mask = [pts_semantic_mask]
@@ -315,16 +309,16 @@ class InstanceCopy(BaseTransform):
         points = points.cat(concat_points)
         pts_semantic_mask = np.concatenate(concat_pts_semantic_mask, axis=0)
 
-        input_dict['points'] = points
-        input_dict['pts_semantic_mask'] = pts_semantic_mask
+        input_dict["points"] = points
+        input_dict["pts_semantic_mask"] = pts_semantic_mask
         return input_dict
 
     def transform(self, input_dict: dict) -> dict:
         if np.random.rand() > self.prob:
             return input_dict
 
-        assert 'dataset' in input_dict
-        dataset = input_dict['dataset']
+        assert "dataset" in input_dict
+        dataset = input_dict["dataset"]
 
         # get index of other point cloud
         index = np.random.randint(0, len(dataset))
@@ -333,11 +327,11 @@ class InstanceCopy(BaseTransform):
 
         if self.pre_transform is not None:
             # pre_transform may also require dataset
-            mix_results.update({'dataset': dataset})
+            mix_results.update({"dataset": dataset})
             # before instancecopy need to go through
             # the necessary pre_transform
             mix_results = self.pre_transform(mix_results)
-            mix_results.pop('dataset')
+            mix_results.pop("dataset")
 
         input_dict = self.copy_instance(input_dict, mix_results)
         return input_dict
@@ -345,7 +339,7 @@ class InstanceCopy(BaseTransform):
     def __repr__(self) -> str:
         """str: Return a string that describes the module."""
         repr_str = self.__class__.__name__
-        repr_str += f'(instance_classes={self.instance_classes}, '
-        repr_str += f'pre_transform={self.pre_transform}, '
-        repr_str += f'prob={self.prob})'
+        repr_str += f"(instance_classes={self.instance_classes}, "
+        repr_str += f"pre_transform={self.pre_transform}, "
+        repr_str += f"prob={self.prob})"
         return repr_str

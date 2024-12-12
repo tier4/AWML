@@ -6,13 +6,14 @@ from mmdet3d.registry import MODELS
 from torch import Tensor
 
 
-def one_hot(label: Tensor,
-            n_classes: int,
-            requires_grad: bool = True) -> Tensor:
+def one_hot(
+    label: Tensor,
+    n_classes: int,
+    requires_grad: bool = True,
+) -> Tensor:
     """Return One Hot Label."""
     device = label.device
-    one_hot_label = torch.eye(
-        n_classes, device=device, requires_grad=requires_grad)[label]
+    one_hot_label = torch.eye(n_classes, device=device, requires_grad=requires_grad)[label]
     one_hot_label = one_hot_label.transpose(1, 3).transpose(2, 3)
 
     return one_hot_label
@@ -22,7 +23,12 @@ def one_hot(label: Tensor,
 class BoundaryLoss(nn.Module):
     """Boundary loss."""
 
-    def __init__(self, theta0=3, theta=5, loss_weight: float = 1.0) -> None:
+    def __init__(
+        self,
+        theta0=3,
+        theta=5,
+        loss_weight: float = 1.0,
+    ) -> None:
         super(BoundaryLoss, self).__init__()
         self.theta0 = theta0
         self.theta = theta
@@ -45,18 +51,10 @@ class BoundaryLoss(nn.Module):
         one_hot_gt = one_hot(gt, c)
 
         # boundary map
-        gt_b = F.max_pool2d(
-            1 - one_hot_gt,
-            kernel_size=self.theta0,
-            stride=1,
-            padding=(self.theta0 - 1) // 2)
+        gt_b = F.max_pool2d(1 - one_hot_gt, kernel_size=self.theta0, stride=1, padding=(self.theta0 - 1) // 2)
         gt_b -= 1 - one_hot_gt
 
-        pred_b = F.max_pool2d(
-            1 - pred,
-            kernel_size=self.theta0,
-            stride=1,
-            padding=(self.theta0 - 1) // 2)
+        pred_b = F.max_pool2d(1 - pred, kernel_size=self.theta0, stride=1, padding=(self.theta0 - 1) // 2)
         pred_b -= 1 - pred
 
         gt_b = gt_b.view(n, c, -1)
