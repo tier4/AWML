@@ -1,5 +1,6 @@
 import argparse
 import os
+import re
 from collections import OrderedDict
 from subprocess import call
 from urllib import request
@@ -8,8 +9,6 @@ import numpy as np
 import onnx
 import onnx_graphsurgeon as gs
 import torch
-
-import re
 
 
 def yolox_to_mmdet_key(key):
@@ -71,21 +70,16 @@ def create_yolox_checkpoint(autoware_ml_ckpt: str, model: str, work_dir: str):
 
     # download official yolox checkpoint
     model2url = {
-        "yolox-s":
-        "https://github.com/Megvii-BaseDetection/YOLOX/releases/download/0.1.1rc0/yolox_s.pth",
-        "yolox-m":
-        "https://github.com/Megvii-BaseDetection/YOLOX/releases/download/0.1.1rc0/yolox_m.pth",
-        "yolox-l":
-        "https://github.com/Megvii-BaseDetection/YOLOX/releases/download/0.1.1rc0/yolox_l.pth",
-        "yolox-x":
-        "https://github.com/Megvii-BaseDetection/YOLOX/releases/download/0.1.1rc0/yolox_x.pth",
+        "yolox-s": "https://github.com/Megvii-BaseDetection/YOLOX/releases/download/0.1.1rc0/yolox_s.pth",
+        "yolox-m": "https://github.com/Megvii-BaseDetection/YOLOX/releases/download/0.1.1rc0/yolox_m.pth",
+        "yolox-l": "https://github.com/Megvii-BaseDetection/YOLOX/releases/download/0.1.1rc0/yolox_l.pth",
+        "yolox-x": "https://github.com/Megvii-BaseDetection/YOLOX/releases/download/0.1.1rc0/yolox_x.pth",
     }
     url = model2url[model]
     tmp_dir = os.path.join(work_dir, "tmp")
     os.makedirs(tmp_dir, exist_ok=True)
     official_ckpt_save_path = os.path.join(tmp_dir, model + ".pth")
-    modified_official_ckpt_path = os.path.join(tmp_dir,
-                                               model + "_modified.pth")
+    modified_official_ckpt_path = os.path.join(tmp_dir, model + "_modified.pth")
     modified_official_ckpt_path = os.path.abspath(modified_official_ckpt_path)
     if not os.path.isfile(official_ckpt_save_path):
         request.urlretrieve(url, official_ckpt_save_path)
@@ -128,9 +122,8 @@ def install_official_yolox(work_dir: str) -> str:
 
         commit_id = "9f385b74a9f42151d5f44021ebbc0f2c733091cf"
         call(
-            f"pip3 install git+https://github.com/wep21/yolox_onnx_modifier.git@{commit_id}",
-            cwd=yolox_dir,
-            shell=True)
+            f"pip3 install git+https://github.com/wep21/yolox_onnx_modifier.git@{commit_id}", cwd=yolox_dir, shell=True
+        )
     else:
         print("yolox official package exists. skip clone and install")
     return yolox_dir
@@ -189,9 +182,9 @@ def export_onnx(
     )
 
 
-def add_efficientnms_trt(input_onnx_file: str, output_onnx_file: str,
-                         max_output_boxes: int, iou_threshold: float,
-                         score_threshold: float):
+def add_efficientnms_trt(
+    input_onnx_file: str, output_onnx_file: str, max_output_boxes: int, iou_threshold: float, score_threshold: float
+):
     """
     Add EfficientNMS_TRT plugin to the head of the network.
     Source modified from:
@@ -218,50 +211,33 @@ def add_efficientnms_trt(input_onnx_file: str, output_onnx_file: str,
                 s1 = node.inputs[0].shape
                 s2 = node.inputs[1].shape
                 s3 = node.inputs[2].shape
-                node.outputs[0].shape = [
-                    batch_size, s1[1], s1[2] + s2[2] + s3[2]
-                ]
+                node.outputs[0].shape = [batch_size, s1[1], s1[2] + s2[2] + s3[2]]
             elif node.name == "/head/Transpose":
                 s1 = node.inputs[0].shape
                 node.outputs[0].shape = [s1[0], s1[2], s1[1]]
-            elif node.name in [
-                    "/head/Slice_3", "/head/Slice_4", "/head/Slice_5"
-            ]:
-                start, stop, axis, interval = [
-                    int(inp.values[0]) for inp in node.inputs[1:5]
-                ]
+            elif node.name in ["/head/Slice_3", "/head/Slice_4", "/head/Slice_5"]:
+                start, stop, axis, interval = [int(inp.values[0]) for inp in node.inputs[1:5]]
                 stop = min(stop, node.inputs[0].shape[axis])
-                node.outputs[0].shape = [
-                    node.inputs[0].shape[0], node.inputs[0].shape[1],
-                    (stop - start) // interval
-                ]
-            elif node.name in [
-                    "/head/Add", "/head/Exp", "/head/Mul", "/head/Mul_1"
-            ]:
+                node.outputs[0].shape = [node.inputs[0].shape[0], node.inputs[0].shape[1], (stop - start) // interval]
+            elif node.name in ["/head/Add", "/head/Exp", "/head/Mul", "/head/Mul_1"]:
                 node.outputs[0].shape = node.inputs[0].shape
             else:
                 for inp in node.inputs:
                     if isinstance(inp.shape[0], str) and "unk" in inp.shape[0]:
                         inp.shape[0] = batch_size
                 for outp in node.outputs:
-                    if isinstance(outp.shape[0],
-                                  str) and "unk" in outp.shape[0]:
+                    if isinstance(outp.shape[0], str) and "unk" in outp.shape[0]:
                         outp.shape[0] = batch_size
 
     scatter_node = graph.outputs[0].inputs[0]
-    box_slice_starts = gs.Constant(
-        name="box_slice_starts", values=np.array([0], dtype=np.int64))
-    box_slice_ends = gs.Constant(
-        name="box_slice_ends", values=np.array([4], dtype=np.int64))
-    box_slice_axes = gs.Constant(
-        name="box_slice_axes", values=np.array([2], dtype=np.int64))
-    box_slice_steps = gs.Constant(
-        name="box_slice_steps", values=np.array([1], dtype=np.int64))
+    box_slice_starts = gs.Constant(name="box_slice_starts", values=np.array([0], dtype=np.int64))
+    box_slice_ends = gs.Constant(name="box_slice_ends", values=np.array([4], dtype=np.int64))
+    box_slice_axes = gs.Constant(name="box_slice_axes", values=np.array([2], dtype=np.int64))
+    box_slice_steps = gs.Constant(name="box_slice_steps", values=np.array([1], dtype=np.int64))
     boxes = gs.Variable(
         name="boxes",
         dtype=np.float32,
-        shape=(scatter_node.outputs[0].shape[0],
-               scatter_node.outputs[0].shape[1], 4),
+        shape=(scatter_node.outputs[0].shape[0], scatter_node.outputs[0].shape[1], 4),
     )
     box_slice_node = gs.Node(
         "Slice",
@@ -275,15 +251,12 @@ def add_efficientnms_trt(input_onnx_file: str, output_onnx_file: str,
         outputs=[boxes],
     )
     graph.nodes.append(box_slice_node)
-    class_slice_starts = gs.Constant(
-        name="class_slice_starts", values=np.array([5], dtype=np.int64))
+    class_slice_starts = gs.Constant(name="class_slice_starts", values=np.array([5], dtype=np.int64))
     class_slice_ends = gs.Constant(
-        name="class_slice_ends",
-        values=np.array([scatter_node.outputs[0].shape[2]], dtype=np.int64))
-    class_slice_axes = gs.Constant(
-        name="class_slice_axes", values=np.array([2], dtype=np.int64))
-    class_slice_steps = gs.Constant(
-        name="class_slice_steps", values=np.array([1], dtype=np.int64))
+        name="class_slice_ends", values=np.array([scatter_node.outputs[0].shape[2]], dtype=np.int64)
+    )
+    class_slice_axes = gs.Constant(name="class_slice_axes", values=np.array([2], dtype=np.int64))
+    class_slice_steps = gs.Constant(name="class_slice_steps", values=np.array([1], dtype=np.int64))
     classes = gs.Variable(
         name="classes",
         dtype=np.float32,
@@ -305,13 +278,11 @@ def add_efficientnms_trt(input_onnx_file: str, output_onnx_file: str,
         outputs=[classes],
     )
     graph.nodes.append(class_slice_node)
-    gather_indices = gs.Constant(
-        name="gather_indices", values=np.array(4, dtype=np.int64))
+    gather_indices = gs.Constant(name="gather_indices", values=np.array(4, dtype=np.int64))
     gather_output = gs.Variable(
         name="gather_output",
         dtype=np.float32,
-        shape=(scatter_node.outputs[0].shape[0],
-               scatter_node.outputs[0].shape[1]),
+        shape=(scatter_node.outputs[0].shape[0], scatter_node.outputs[0].shape[1]),
     )
     gather_node = gs.Node(
         "Gather",
@@ -325,8 +296,7 @@ def add_efficientnms_trt(input_onnx_file: str, output_onnx_file: str,
     unsqueeze_output = gs.Variable(
         name="unsqueeze_output",
         dtype=np.float32,
-        shape=(scatter_node.outputs[0].shape[0],
-               scatter_node.outputs[0].shape[1], 1),
+        shape=(scatter_node.outputs[0].shape[0], scatter_node.outputs[0].shape[1], 1),
     )
     unsqueeze_node = gs.Node(
         "Unsqueeze",
@@ -355,10 +325,7 @@ def add_efficientnms_trt(input_onnx_file: str, output_onnx_file: str,
         outputs=[scores],
     )
     graph.nodes.append(mul_node)
-    num_detections = gs.Variable(
-        name="num_detections",
-        dtype=np.int32,
-        shape=(scatter_node.outputs[0].shape[0], 1))
+    num_detections = gs.Variable(name="num_detections", dtype=np.int32, shape=(scatter_node.outputs[0].shape[0], 1))
     detection_boxes = gs.Variable(
         name="detection_boxes",
         dtype=np.float32,
@@ -410,17 +377,14 @@ def add_efficientnms_trt(input_onnx_file: str, output_onnx_file: str,
 
 def convert_yolox_checkpoint(args):
     print("*" * 20 + "downloading official yolox checkpoint" + "*" * 20)
-    modified_official_ckpt_path, class_num = create_yolox_checkpoint(
-        args.autoware_ml_ckpt, args.model, args.work_dir)
-    print("*" * 20 + f"install official yolox package to {args.work_dir}" +
-          "*" * 20)
+    modified_official_ckpt_path, class_num = create_yolox_checkpoint(args.autoware_ml_ckpt, args.model, args.work_dir)
+    print("*" * 20 + f"install official yolox package to {args.work_dir}" + "*" * 20)
     yolox_dir = install_official_yolox(args.work_dir)
     print("*" * 20 + "converting to onnx" + "*" * 20)
     output_onnx_file = args.output_onnx_file
     if output_onnx_file is None:
         output_onnx_file = f"{args.model}.onnx"
-    output_onnx_file = os.path.abspath(
-        os.path.join(args.work_dir, output_onnx_file))
+    output_onnx_file = os.path.abspath(os.path.join(args.work_dir, output_onnx_file))
     export_onnx(
         yolox_dir,
         modified_official_ckpt_path,
@@ -434,24 +398,19 @@ def convert_yolox_checkpoint(args):
     )
     print("*" * 20 + "add EfficientNMS_TRT" + "*" * 20)
     if args.nms:
-        add_efficientnms_trt(output_onnx_file, output_onnx_file,
-                             args.max_output_boxes, args.iou_threshold,
-                             args.score_threshold)
+        add_efficientnms_trt(
+            output_onnx_file, output_onnx_file, args.max_output_boxes, args.iou_threshold, args.score_threshold
+        )
 
 
 def parse_args():
-    parser = argparse.ArgumentParser(
-        description="Convert YOLOX checkpoint to ONNX")
+    parser = argparse.ArgumentParser(description="Convert YOLOX checkpoint to ONNX")
 
     parser.add_argument(
         "autoware_ml_ckpt",
         help="Model checkpoint",
     )
-    parser.add_argument(
-        "--input_size",
-        type=int,
-        nargs="+",
-        help="input image size of the model")
+    parser.add_argument("--input_size", type=int, nargs="+", help="input image size of the model")
     parser.add_argument(
         "--model",
         type=str,
@@ -463,33 +422,45 @@ def parse_args():
         "--batch_size",
         type=int,
         default=1,
-        help="static inference batch size")
+        help="static inference batch size",
+    )
     parser.add_argument(
         "--dynamic",
         action="store_true",
-        help="whether the input shape should be dynamic or not")
+        help="whether the input shape should be dynamic or not",
+    )
     parser.add_argument(
         "--max_output_boxes",
         type=int,
         default=100,
-        help="max number of output boxes")
+        help="max number of output boxes",
+    )
     parser.add_argument(
-        "--iou_threshold", type=float, default=0.65, help="NMS iou threshold")
+        "--iou_threshold",
+        type=float,
+        default=0.65,
+        help="NMS iou threshold",
+    )
     parser.add_argument(
-        "--score-threshold", type=float, default=0.3, help="score threshold")
+        "--score-threshold",
+        type=float,
+        default=0.3,
+        help="score threshold",
+    )
     parser.add_argument(
         "--output_onnx_file",
         type=str,
         default=None,
-        help="output onnx file name")
+        help="output onnx file name",
+    )
     parser.add_argument(
         "--work-dir",
         default="work_dirs",
-        help="the directory to save the converted checkpoint")
+        help="the directory to save the converted checkpoint",
+    )
     parser.add_argument(
-        "--nms",
-        action="store_true",
-        help="whether add a efficientNMS plugin to the head of the model")
+        "--nms", action="store_true", help="whether add a efficientNMS plugin to the head of the model"
+    )
 
     args = parser.parse_args()
 
