@@ -1,12 +1,12 @@
-from typing import Dict, Optional, Sequence, Tuple, List
-
+import json
 import os
+from typing import Dict, List, Optional, Sequence, Tuple
+
 import numpy as np
+from mmdet.datasets import BaseDetDataset, CocoDataset
 from mmdet.registry import DATASETS
 
-from mmdet.datasets import BaseDetDataset, CocoDataset
 from .pipelines.transforms import RandomCropWithROI
-import json
 
 
 def read_json_file(file_path):
@@ -24,7 +24,7 @@ def read_json_file(file_path):
     json.JSONDecodeError: If the file is not valid JSON.
     """
     try:
-        with open(file_path, 'r') as file:
+        with open(file_path, "r") as file:
             data = json.load(file)
         return data
     except FileNotFoundError:
@@ -43,12 +43,14 @@ def get_instance_key(path: str, bbox: List[float]):
 @DATASETS.register_module()
 class TLRDetectionDataset(BaseDetDataset):
 
-    def __init__(self,
-                 crop_size: Tuple[float, float] = (1.0, 20.0),
-                 hw_ratio: Tuple[float, float] = (0.5, 1.0),
-                 test_mode=False,
-                 *args,
-                 **kwargs) -> None:
+    def __init__(
+        self,
+        crop_size: Tuple[float, float] = (1.0, 20.0),
+        hw_ratio: Tuple[float, float] = (0.5, 1.0),
+        test_mode=False,
+        *args,
+        **kwargs,
+    ) -> None:
 
         self.test_mode = test_mode
         self.crop_size = crop_size
@@ -56,9 +58,10 @@ class TLRDetectionDataset(BaseDetDataset):
         super().__init__(test_mode=test_mode, *args, **kwargs)
 
     def _precompute_crops(
-            self,
-            data_info: dict,
-            instance: Optional[dict] = None) -> Tuple[int, int, int, int]:
+        self,
+        data_info: dict,
+        instance: Optional[dict] = None,
+    ) -> Tuple[int, int, int, int]:
         """
         Precompute the crop area for an image in the dataset for test mode.
 
@@ -69,19 +72,17 @@ class TLRDetectionDataset(BaseDetDataset):
         Returns:
             Tuple[int, int, int, int]: The computed crop coordinates (y1, x1, y2, x2).
         """
-        img_h, img_w = data_info['height'], data_info['width']
+        img_h, img_w = data_info["height"], data_info["width"]
         img_path = data_info.get("img_path")
 
-        key = get_instance_key(img_path,
-                               instance['bbox'] if instance else [0] * 4)
+        key = get_instance_key(img_path, instance["bbox"] if instance else [0] * 4)
 
         if key in self.cached_crops:
             return tuple(self.cached_crops[key])
 
         if instance:
-            bbox = np.array(instance['bbox'])
-            crop_coords = RandomCropWithROI.calculate_roi_crop(
-                bbox, img_h, img_w, self.crop_size, self.hw_ratio)
+            bbox = np.array(instance["bbox"])
+            crop_coords = RandomCropWithROI.calculate_roi_crop(bbox, img_h, img_w, self.crop_size, self.hw_ratio)
         else:
             crop_coords = RandomCropWithROI.calculate_random_crop(img_h, img_w)
 
@@ -104,14 +105,12 @@ class TLRDetectionDataset(BaseDetDataset):
         separated_data_list = []
         img_id = 0
         for data_info in data_list:
-            instances = data_info.get('instances', [])
+            instances = data_info.get("instances", [])
             if len(instances) > 0:
                 for instance in instances:
                     single_instance_info = data_info.copy()
                     single_instance_info["img_id"] = img_id
-                    single_instance_info[
-                        "crop_coords"] = self._precompute_crops(
-                            single_instance_info, instance)
+                    single_instance_info["crop_coords"] = self._precompute_crops(single_instance_info, instance)
                     img_id += 1
                     separated_data_list.append(single_instance_info)
             else:
@@ -121,7 +120,7 @@ class TLRDetectionDataset(BaseDetDataset):
                 img_id += 1
                 separated_data_list.append(data_info)
         if not os.path.exists(precomputed_coords_path):
-            with open(precomputed_coords_path, 'w') as json_file:
+            with open(precomputed_coords_path, "w") as json_file:
                 json.dump(self.cached_crops, json_file, indent=4)
             print(f"TLRDetectionDataset: Saved cropping cache to {precomputed_coords_path}")
         return separated_data_list
