@@ -8,7 +8,7 @@ docs: |
   Annotation: All the data are collected at 10Hz and annotated at 2Hz
 
 train:
-  - e6d0237c-274c-4872-acc9-dc7ea2b77943 # DBv1.1_odaiba_9-1_0-100
+  #- e6d0237c-274c-4872-acc9-dc7ea2b77943 # DBv1.1_odaiba_9-1_0-100
   #- 80b37b8c-ae9d-4641-a921-0b0c2012eee8 # DBv1.1_odaiba_8-2_100-200
   #- 4d50abff-427f-4fa8-9c04-99dc13a3a836 # DBv1.1_odaiba_8-2_0-100
   #- aa2626e5-3ecb-47a5-9584-6e022e813bfc # DBv1.1_odaiba_8-1_100-200
@@ -30,7 +30,7 @@ train:
   #- 2986a406-0f06-4c58-be03-f1421bd68e07 # DBv1.1_odaiba_10-1_0-100
   #- c57c04d7-8984-4e3b-97af-0edfaf2e9e35 # DBv1.1_odaiba_6-9_100-200
   #- e6b5f181-4529-45f6-81b0-26e6c069155f # DBv1.1_odaiba_6-9_0-100
-  #- 1c95e157-f097-4c6a-a6c9-71de3b3ca917 # DBv1.1_odaiba_6-8_100-200
+  - 1c95e157-f097-4c6a-a6c9-71de3b3ca917 # DBv1.1_odaiba_6-8_100-200
   #- 68b2c916-a0ee-4545-927b-fcedeac303df # DBv1.1_odaiba_6-8_0-100
   #- 68af08a6-4584-4a82-8063-3e08221d1f84 # DBv1.1_odaiba_6-7_100-200
   #- 1f286039-2772-4d05-86cf-a19db254832a # DBv1.1_odaiba_6-7_0-100
@@ -89,14 +89,13 @@ train:
   #- 8034d7b5-df2f-442e-a7be-da984c6e0c2e # DBv1.1_odaiba_12-4_0-100
   #- dd759377-4ff7-49c5-9d42-5b1c30eba18b # DBv1.1_odaiba_12-4_100-200
 
-# Note(yukke42): val and test split are selected by the datetime not to be a data leak.
 val:
-  - 3013c354-2492-447b-88ce-70ec0438f494 # DBv1.1_odaiba_4-1_0-100
+  #- 3013c354-2492-447b-88ce-70ec0438f494 # DBv1.1_odaiba_4-1_0-100
   #- c8cf2fe3-9097-4f8d-8984-e99c4ddd0ced # DBv1.1_odaiba_5-1_0-100
   #- a1f10b82-6f10-47ab-a253-a12a2f131929 # DBv1.1_odaiba_5-1_100-200
   #- 3ebf5eef-940f-4877-a093-a1ec933505e8 # DBv1.1_odaiba_5-3_0-100
   #- 5fa608b9-5321-4cac-8f21-d2b1e215c9aa # DBv1.1_odaiba_5-3_100-200
-  #- 198435d1-5648-421c-a284-35b26a52136e # DBv1.1_odaiba_5-4_0-100
+  - 198435d1-5648-421c-a284-35b26a52136e # DBv1.1_odaiba_5-4_0-100
   #- 96200480-ae59-44cb-9e4e-dd9021e250e8 # DBv1.1_odaiba_5-5_0-100
 
 test:
