@@ -17,6 +17,11 @@ TransFusion-L-nearby v0 has many breaking changes.
 
 ### base/0.1
 
+- We released first model for TransFusion-L-nearby model.
+
+<details>
+<summary> The link of data and evaluation result </summary>
+
 - Main parameter
   - range = 51.2m
   - voxel_size = [0.2, 0.2, 10]
@@ -38,3 +43,5 @@ TransFusion-L-nearby v0 has many breaking changes.
 | bus        | 84.7 | 64.9    | 87.6    | 93.1    | 93.1    |
 | bicycle    | 67.9 | 63.1    | 69.4    | 69.6    | 69.6    |
 | pedestrian | 64.9 | 57.0    | 62.6    | 68.1    | 71.9    |
+
+</details>

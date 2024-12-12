@@ -16,6 +16,12 @@ TransFusion-L-offline v0 has many breaking changes.
 
 ### base/0.2
 
+- We add the dataset for offline model.
+- This model is trained by DB1.0 + DB1.1 + DB2.0 + DB3.0.
+
+<details>
+<summary> The link of data and evaluation result </summary>
+
 - Main parameter
   - range = 122.88m
   - voxel_size = [0.32, 0.32, 10]
@@ -59,7 +65,15 @@ TransFusion-L-offline v0 has many breaking changes.
 | bicycle    | 47.3 | 46.4    | 47.3    | 47.6    | 48.1    |
 | pedestrian | 51.2 | 45.8    | 49.1    | 53.1    | 56.7    |
 
+</details>
+
 ### base/0.1
+
+- We released first model for TransFusion-L-offline model.
+- This model is trained by only DB1.0 + DB1.1.
+
+<details>
+<summary> The link of data and evaluation result </summary>
 
 - Main parameter
   - range = 122.88m
@@ -82,3 +96,5 @@ TransFusion-L-offline v0 has many breaking changes.
 | bus        | 54.7 | 32.2    | 53.8    | 65.6    | 67.1    |
 | bicycle    | 38.7 | 33.5    | 37.6    | 40.2    | 43.4    |
 | pedestrian | 50.9 | 44.4    | 48.7    | 52.7    | 57.7    |
+
+</details>

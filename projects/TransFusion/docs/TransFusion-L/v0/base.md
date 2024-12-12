@@ -7,13 +7,25 @@
 
 | TransFusion-L | mAP  | car  | truck | bus  | bicycle | pedestrian |
 | ------------- | ---- | ---- | ----- | ---- | ------- | ---------- |
-| base/0.3      | 65.3 | 81.7 | 46.7  | 81.7 | 54.8    | 61.7       |
+| base/0.6      | 65.3 | 81.7 | 46.7  | 81.7 | 54.8    | 61.7       |
 
 ## Release
 
 TransFusion-L v0 has many breaking changes.
 
 ### TransFusion-L base/0.6
+
+- We trained by dataset of all product.
+- Note that this model is trained by DB1.0 + DB1.1 + DB2.0 + DB3.0.
+- The evaluation in X2 product increased 12% (from 58.5 to 66.0).
+
+| Method                             | mAP-japantaxi | mAP-X2 |
+| ---------------------------------- | ------------- | ------ |
+| Train model-japantaxi and model-X2 | 68.1          | 58.5   |
+| Train base model with All dataset  | 67.4          | 66.0   |
+
+<details>
+<summary> The link of data and evaluation result </summary>
 
 - Main parameter
   - range = 92.16m
@@ -57,7 +69,15 @@ TransFusion-L v0 has many breaking changes.
 | bicycle    | 55.1 | 54.1    | 55.0    | 55.3    | 55.8    |
 | pedestrian | 61.6 | 56.1    | 59.7    | 63.8    | 66.9    |
 
+</details>
+
 ### TransFusion-L base/0.5
+
+- This model is released for X2 product at first.
+- Note that this model is trained by DB2.0 + DB3.0.
+
+<details>
+<summary> The link of data and evaluation result </summary>
 
 - Parameter
   - pillar 0.24m * grid 768 = 92.16m
@@ -79,7 +99,20 @@ TransFusion-L v0 has many breaking changes.
 | bicycle    | 48.0 | 46.4    | 47.4    | 48.5    | 49.6    |
 | pedestrian | 53.7 | 49.2    | 51.9    | 55.3    | 58.4    |
 
+</details>
+
 ### TransFusion-L base/0.4
+
+- We added DB1.3 for training.
+- mAP of (DB1.0 + 1.1 test dataset, eval range 90m) is as same as the model of base/0.3.
+
+|          | mAP  | car  | truck | bus  | bicycle | pedestrian |
+| -------- | ---- | ---- | ----- | ---- | ------- | ---------- |
+| base/0.4 | 68.5 | 81.7 | 62.4  | 83.5 | 50.9    | 64.1       |
+| base/0.3 | 68.1 | 80.5 | 58.0  | 80.8 | 58.0    | 63.2       |
+
+<details>
+<summary> The link of data and evaluation result </summary>
 
 - Parameter
   - pillar 0.24m * grid 768 = 92.16m
@@ -117,7 +150,21 @@ TransFusion-L v0 has many breaking changes.
 | bicycle    | 85.2 | 80.6    | 86.7    | 86.7    | 86.7    |
 | pedestrian | 62.8 | 58.2    | 61.1    | 64.2    | 67.8    |
 
+</details>
+
 ### TransFusion-L base/0.3
+
+- We used the high resolution to improve the detection performance.
+- Note that this model is trained by DB1.0 + DB1.1.
+- mAP of (DB1.0 + 1.1 test dataset, eval range 90m) increased 18% (from 0.578 to 0.681).
+
+|          | mAP  | car  | truck | bus  | bicycle | pedestrian |
+| -------- | ---- | ---- | ----- | ---- | ------- | ---------- |
+| base/0.3 | 68.1 | 80.5 | 58.0  | 80.8 | 58.0    | 63.2       |
+| base/0.2 | 57.8 | 74.0 | 48.0  | 72.0 | 42.7    | 52.1       |
+
+<details>
+<summary> The link of data and evaluation result </summary>
 
 - Parameter
   - pillar 0.24m * grid 768 = 92.16m
@@ -140,7 +187,15 @@ TransFusion-L v0 has many breaking changes.
 | bicycle    | 58.0 | 53.1    | 58.6    | 59.7    | 60.5    |
 | pedestrian | 63.2 | 55.6    | 61.4    | 66.3    | 69.6    |
 
+</details>
+
 ### TransFusion-L base/0.2
+
+- We fixed the bug of `autoware-ml` and improve the performance.
+- Note that this model is trained by DB1.0 + DB1.1.
+
+<details>
+<summary> The link of data and evaluation result </summary>
 
 - Parameter
   - pillar 0.32m * grid 576 = 92.16m
@@ -163,11 +218,18 @@ TransFusion-L v0 has many breaking changes.
 | bicycle    | 42.7 | 37.6    | 42.0    | 44.7    | 46.6    |
 | pedestrian | 52.1 | 44.3    | 49.8    | 54.4    | 59.8    |
 
+</details>
+
 ### TransFusion-L base/0.1
+
+- We released first model of TransFusion-L
+- Note that this model is low performance because of `autoware-ml` bug.
+
+<details>
+<summary> The link of data and evaluation result </summary>
 
 - Parameter
   - pillar 0.3m * grid 512 = 76.8m
-- Note that this model is low performance because of autoware-ml bug.
 - model
   - Training dataset: database_v1_0
   - Eval dataset: database_v1_1 (Bug fix and [new dataset config is applied](https://github.com/tier4/autoware-ml/pull/31))
@@ -183,3 +245,5 @@ TransFusion-L v0 has many breaking changes.
 | bus        | 47.6 | 30.3    | 46.3    | 55.1    | 58.8    |
 | bicycle    | 33.4 | 30.6    | 33.3    | 34.0    | 35.6    |
 | pedestrian | 52.0 | 46.6    | 50.6    | 53.3    | 57.6    |
+
+</details>
