@@ -1,20 +1,21 @@
-from data_classes import dataclass
-from typing import Dict, List, Any, Optional
+from typing import Any, Dict, List, Optional
 
 import numpy as np
 import numpy.typing as npt
+from data_classes import dataclass
 from mmengine.logging import print_log
 from t4_devkit import Tier4
 from t4_devkit.dataclass import Box3D
-from t4_devkit.schema import Sample, EgoPose, CalibratedSensor, SampleData, Scene, Log
+from t4_devkit.schema import CalibratedSensor, EgoPose, Log, Sample, SampleData, Scene
 
-from tools.detection3d.t4dataset_converters.t4converter import extract_tier4_data
 from tools.detection3d.create_data_t4dataset import get_lidar_token
+from tools.detection3d.t4dataset_converters.t4converter import extract_tier4_data
 
 
 @dataclass(frozen=True)
 class Tier4SampleData:
-    """ Data class to save a sample in the Nuscene format. """
+    """Data class to save a sample in the Nuscene format."""
+
     pose_record: EgoPose
     cs_record: CalibratedSensor
     sd_record: SampleData
@@ -28,8 +29,7 @@ class Tier4SampleData:
     l2e_t: npt.NDArray[np.float64]
 
 
-def extract_tier4_sample_data(t4: Tier4,
-                              sample: Sample) -> Optional[Tier4SampleData]:
+def extract_tier4_sample_data(t4: Tier4, sample: Sample) -> Optional[Tier4SampleData]:
     """
     Extract scenario data based on the Tier4 format given a sample record.
     :param t4: Tier4 interface.
@@ -38,7 +38,9 @@ def extract_tier4_sample_data(t4: Tier4,
     """
     lidar_token = get_lidar_token(sample)
     if lidar_token is None:
-        print_log(f"sample {sample.token} doesn't have lidar", )
+        print_log(
+            f"sample {sample.token} doesn't have lidar",
+        )
         return
 
     (
@@ -66,4 +68,5 @@ def extract_tier4_sample_data(t4: Tier4,
         e2g_r_mat=e2g_r_mat,
         l2e_r_mat=l2e_r_mat,
         e2g_t=e2g_t,
-        l2e_t=l2e_t)
+        l2e_t=l2e_t,
+    )
