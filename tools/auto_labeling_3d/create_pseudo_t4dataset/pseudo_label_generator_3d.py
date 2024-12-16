@@ -7,7 +7,7 @@ from attr import asdict
 from attrs import define, field
 from perception_dataset.t4_dataset.annotation_files_generator import AnnotationFilesGenerator
 from t4_devkit import Tier4
-from t4_devkit.common.box import Box3D as T4Box3D
+from t4_devkit.dataclass import Box3D as T4Box3D
 from typing_extensions import Self
 
 from tools.detection3d.create_data_t4dataset import get_scene_root_dir_path
@@ -44,11 +44,11 @@ class BBox3D:
         Note:
             Acceleration is initialized as zero for all components
         """
-        translation: Dict[str, float] = dict(zip(["x", "y", "z"], t4box3d.center))
+        translation: Dict[str, float] = dict(zip(["x", "y", "z"], t4box3d.position))
         velocity: Dict[str, float] = dict(zip(["x", "y", "z"], t4box3d.velocity))
         acceleration: Dict[str, float] = dict(zip(["x", "y", "z"], [0.0, 0.0, 0.0]))
-        size: Dict[str, float] = dict(zip(["width", "length", "height"], t4box3d.wlh))
-        rotation: Dict[str, float] = dict(zip(["w", "x", "y", "z"], t4box3d.orientation.q.tolist()))
+        size: Dict[str, float] = dict(zip(["width", "length", "height"], t4box3d.size))
+        rotation: Dict[str, float] = dict(zip(["w", "x", "y", "z"], t4box3d.rotation.q.tolist()))
 
         return cls(
             translation=translation,
@@ -110,7 +110,7 @@ class SceneAnnotations:
 
     Attributes:
         scene_id (str): Name of the scene
-        scene_annotations_dict (Dict[int, SceneAnnotations]): Dictionary mapping frame ID to their annotations. key: frame_id
+        scene_annotations_dict (Dict[int, SceneAnnotations]): Dictionary mapping frame ID to their annotations. key: frame_num
     """
 
     scene_id: str = field()
@@ -120,8 +120,8 @@ class SceneAnnotations:
         """Convert to scene_anno_dict"""
         raw_dict = asdict(self, dict_factory=dict)
         return {
-            frame_id: scene_annotations["objects"]
-            for frame_id, scene_annotations in raw_dict["scene_annotations_dict"].items()
+            frame_num: scene_annotations["objects"]
+            for frame_num, scene_annotations in raw_dict["scene_annotations_dict"].items()
         }
 
 
@@ -206,36 +206,32 @@ class PseudoLabelGenerator3D:
     def add_3d_annotation_object(
         self,
         scene_id: str,
-        frame_id: int,
-        instance_id: str,
-        category_name: str,
+        frame_num: int,
         t4box3d: T4Box3D,
     ) -> None:
         """Adds a 3D object annotation to the dataset.
 
         Args:
             scene_id (str): Name of the scene. e.g, "scene_0"
-            frame_id (int): Frame id. e.g, 0
-            instance_id (str): Instance ID of the object. e.g, "fade3eb7-77b4-420f-8248-b532800388a3"
-            category_name (str): Category name of the object. e.g, "truck"
+            frame_num (int): Frame number in each scene. e.g, 0
             t4box3d (T4Box3D): 3D bounding box information
         """
 
         object_annotation = ObjectAnnotation3D(
-            category_name=category_name,
-            instance_id=instance_id,
+            category_name=t4box3d.semantic_label.name,
+            instance_id=t4box3d.uuid,
             attribute_names=[],
             three_d_bbox=BBox3D.from_t4box3d(t4box3d),
             num_lidar_pts=0,  # num_lidar_pts will be filled later by AnnotationFilesGenerator.
             num_radar_pts=0,
         )
 
-        if frame_id not in self.dataset_annotations[scene_id].scene_annotations_dict:
-            self.dataset_annotations[scene_id].scene_annotations_dict[frame_id] = FrameAnnotations(
+        if frame_num not in self.dataset_annotations[scene_id].scene_annotations_dict:
+            self.dataset_annotations[scene_id].scene_annotations_dict[frame_num] = FrameAnnotations(
                 objects=[object_annotation]
             )
         else:
-            self.dataset_annotations[scene_id].scene_annotations_dict[frame_id].objects.append(object_annotation)
+            self.dataset_annotations[scene_id].scene_annotations_dict[frame_num].objects.append(object_annotation)
 
     def dump(self, overwrite: bool) -> None:
         """Save the generated annotations as a T4 dataset format.

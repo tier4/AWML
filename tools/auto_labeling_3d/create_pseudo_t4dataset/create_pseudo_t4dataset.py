@@ -10,7 +10,8 @@ from mmengine.registry import init_default_scope
 from mmengine.utils import ProgressBar
 from numpy.typing import NDArray
 from pyquaternion import Quaternion
-from t4_devkit.common.box import Box3D as T4Box3D
+from t4_devkit.dataclass import Box3D as T4Box3D
+from t4_devkit.dataclass import SemanticLabel, Shape, ShapeType
 
 from tools.auto_labeling_3d.create_pseudo_t4dataset.pseudo_label_generator_3d import PseudoLabelGenerator3D
 from tools.auto_labeling_3d.utils.logger import setup_logger
@@ -19,9 +20,11 @@ from tools.auto_labeling_3d.utils.logger import setup_logger
 def _transform_pred_instance_to_global_t4box(
     bbox3d: List[float],
     velocity: List[float],
-    score: float,
-    label: int,
+    confidence: float,
+    label: str,
+    instance_id: str,
     ego2global: NDArray,
+    timestamp: float,
 ) -> T4Box3D:
     """Convert a detection instance to T4Box3D format and transform to global coordinates.
 
@@ -33,12 +36,14 @@ def _transform_pred_instance_to_global_t4box(
             - h (height): Size along z-axis in object coordinates
             - yaw: Rotation angle around z-axis in radians
         velocity (List[float]): Object velocity vector [vx, vy] in ego coordinates
-        score (float): Detection confidence score [0-1]
-        label (int): Object class label ID
+        confidence (float): Detection confidence confidence [0-1]
+        label (str): Object class label. e.g, "bus"
+        instance_id (str): Instance ID of the object. e.g, "fade3eb7-77b4-420f-8248-b532800388a3"
         ego2global (NDArray): 4x4 transformation matrix from ego to global coordinates
             - 3x3 rotation matrix in top-left
             - Translation vector in fourth column
             - Last row is [0, 0, 0, 1]
+        timestamp (float): unix timestamp. e.g, 1711672980.049259
 
     Returns:
         T4Box3D: 3D bounding box in T4Box3D format, transformed to global coordinates
@@ -50,9 +55,13 @@ def _transform_pred_instance_to_global_t4box(
         >>> # velocity vector [vx, vy]
         >>> velocity = [3.708984375, -0.304443359375]
         >>>
-        >>> # detection score and class label
-        >>> score = 0.5257580280303955
-        >>> label = 2
+        >>> # detection confidence and class label
+        >>> confidence = 0.5257580280303955
+        >>> label = "bus"
+        >>>
+        >>> # detection confidence and class label
+        >>> instance_id = "fade3eb7-77b4-420f-8248-b532800388a3"
+        >>> timestamp = 1711672980.049259
         >>>
         >>> # transformation matrix from ego to global coordinates
         >>> ego2global = np.array([
@@ -63,7 +72,7 @@ def _transform_pred_instance_to_global_t4box(
         ... ])
         >>>
         >>> # convert to T4Box3D and transform to global coordinates
-        >>> box = instance_to_t4_box3d(bbox3d, velocity, score, label, ego2global)
+        >>> box = _transform_pred_instance_to_global_t4box(bbox3d, velocity, confidence, label, instance_id, ego2global, timestamp)
 
     Note:
         - Input box must be in ego vehicle coordinates
@@ -72,34 +81,39 @@ def _transform_pred_instance_to_global_t4box(
             * Width (w): Size along object's y-axis
             * Height (h): Size along object's z-axis
         - Vertical velocity (vz) is automatically set to 0.0
-        - Box is transformed to global coordinates using ego2global matrix
+        - T4Box3D is transformed to global coordinates using ego2global matrix
     """
     # [x, y, z]
-    center: List[float] = bbox3d[:3]
+    position: List[float] = bbox3d[:3]
+    # quaternion
+    rotation = Quaternion(axis=[0, 0, 1], radians=bbox3d[6])
     # [w, l, h]
-    size: List[float] = [bbox3d[4], bbox3d[3], bbox3d[5]]
+    shape = Shape(shape_type=ShapeType.BOUNDING_BOX, size=(bbox3d[4], bbox3d[3], bbox3d[5]))
     # [vx, vy, vz]
     velocity: Tuple[float] = (*velocity, np.float64(0.0))
-    # quaternion
-    orientation = Quaternion(axis=[0, 0, 1], radians=bbox3d[6])
 
     box = T4Box3D(
-        center=center,
-        size=size,
-        orientation=orientation,
-        label=label,
-        score=score,
+        unix_time=timestamp,
+        frame_id="base_link",
+        semantic_label=SemanticLabel(label),
+        position=position,
+        rotation=rotation,
+        shape=shape,
         velocity=velocity,
+        confidence=confidence,
+        uuid=instance_id,
     )
+
     # Transform box to global coord system
     box.rotate(Quaternion(matrix=ego2global, rtol=1e-05, atol=1e-07))
     box.translate(ego2global[:3, 3])
+    box.frame_id = "map"
 
     return box
 
 
-def _get_scene_and_frame_id(lidar_path: str) -> Tuple[str, int]:
-    """Extract scene_id and frame_id from lidar path.
+def _get_scene_and_frame_num(lidar_path: str) -> Tuple[str, int]:
+    """Extract scene_id and frame_num from lidar path.
 
     The function expects a dataset structure without a dataset_version directory:
     ```
@@ -109,7 +123,7 @@ def _get_scene_and_frame_id(lidar_path: str) -> Tuple[str, int]:
             ├── annotation/
             └── data/
                 └── LIDAR_CONCAT/
-                    └── 00000.pcd.bin   # Extracted as frame_id
+                    └── 00000.pcd.bin   # Extracted as frame_num
     ```
 
     Args:
@@ -118,20 +132,20 @@ def _get_scene_and_frame_id(lidar_path: str) -> Tuple[str, int]:
     Returns:
         Tuple[str, int]: A tuple containing:
              scene_id (str): Name of the scene. e.g, "scene_0"
-             frame_id (int): Frame id. e.g, 10
+             frame_num (int): Frame id. e.g, 10
 
     Example:
         >>> lidar_path = "data/t4dataset/my_dataset/scene_0/data/LIDAR_CONCAT/00010.pcd.bin"
-        >>> scene_id, frame_id = _get_scene_and_frame_id(lidar_path)
-        >>> print(scene_id, frame_id)
+        >>> scene_id, frame_num = _get_scene_and_frame_num(lidar_path)
+        >>> print(scene_id, frame_num)
         "scene_0" 10
     """
     scene_id: str = lidar_path.split("/")[-4]
 
-    # get frame_id from lidar_path. e.g, '00010.pcd.bin' -> 10
-    frame_id = int(lidar_path.split("/")[-1].split(".")[0])
+    # get frame_num from lidar_path. e.g, '00010.pcd.bin' -> 10
+    frame_num = int(lidar_path.split("/")[-1].split(".")[0])
 
-    return scene_id, frame_id
+    return scene_id, frame_num
 
 
 def create_pseudo_t4dataset(
@@ -177,13 +191,13 @@ def create_pseudo_t4dataset(
 
     progress_bar = ProgressBar(len(pseudo_labeled_dataset_info["data_list"]))
     for frame_info in pseudo_labeled_dataset_info["data_list"]:
-        # get scene_id and frame_id from lidar_path
-        scene_id, frame_id = _get_scene_and_frame_id(lidar_path=frame_info["lidar_points"]["lidar_path"])
+        # get scene_id and frame_num from lidar_path
+        scene_id, frame_num = _get_scene_and_frame_num(lidar_path=frame_info["lidar_points"]["lidar_path"])
 
         # check consistency between non_annotated dataset and info file.
         frame_length[scene_id] += 1
         assert (scene_id in scene_ids) and (
-            frame_id + 1 == frame_length[scene_id]
+            frame_num + 1 == frame_length[scene_id]
         ), f"Please check the directory structure of your t4dataset and consistency between non_annotated dataset: {non_annotated_dataset_path} and info file: {pseudo_labeled_info_path}."
 
         # get ego2global for this frame
@@ -195,17 +209,15 @@ def create_pseudo_t4dataset(
                 pred_instance_3d["bbox_3d"],
                 pred_instance_3d["velocity"],
                 pred_instance_3d["bbox_score_3d"],
-                pred_instance_3d["bbox_label_3d"],
+                pseudo_labeled_dataset_info["metainfo"]["classes"][pred_instance_3d["bbox_label_3d"]],
+                pred_instance_3d["instance_id_3d"],
                 ego2global,
+                frame_info["timestamp"],
             )
-            category: str = pseudo_labeled_dataset_info["metainfo"]["classes"][pred_instance_3d["bbox_label_3d"]]
-            instance_id: str = pred_instance_3d["instance_id_3d"]
 
             pseudo_label_generator.add_3d_annotation_object(
                 scene_id=scene_id,
-                frame_id=frame_id,
-                instance_id=instance_id,
-                category_name=category,
+                frame_num=frame_num,
                 t4box3d=bbox,
             )
 
