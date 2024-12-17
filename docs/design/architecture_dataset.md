@@ -1,4 +1,32 @@
 # Architecture for dataset pipeline
+## The type of T4dataset
+
+We divide the four types for T4dataset as following.
+
+- Database T4dataset
+
+Database T4dataset is mainly used for training a model.
+We call database T4dataset as "Database {vehicle name}-vX.Y", "DB {vehicle name}-vX" in short.
+We manage database T4dataset in [dataset config](/autoware_ml/configs/detection3d/dataset/t4dataset) like `db_jpntaxi_v1.yaml` (file name use only the version of X).
+
+- Use case T4dataset
+
+Use case T4dataset is mainly used for evaluation with ROS environment.
+We call Use case T4dataset as "Use case {vehicle name}-vX.Y", "UC {vehicle name}-vX" in short.
+
+- Non-annotated T4dataset
+
+Non-annotated T4dataset is the dataset which is not annotated.
+After we annotate for it, it change to database T4dataset or use case T4dataset.
+
+- Pseudo T4dataset
+
+Pseudo T4dataset is annotated to non-annotated T4dataset by auto-labeling like [t4dataset_pseudo_label_3d](/tools/t4dataset_pseudo_label_3d/).
+Pseudo T4dataset is mainly used to train pre-training model.
+We call pseudo T4dataset as "Pseudo vX.Y.Z".
+We manage pseudo T4dataset in [dataset config](/autoware_ml/configs/detection3d/dataset/t4dataset) like `pseudo_jpntaxi_v1.yaml` (file name use only the version of X).
+Note that `autoware-ml` do not manage Pseudo T4dataset which is used for domain adaptation.
+
 ## T4dataset
 
 We define T4dataset, which is based on nuScenes format.
@@ -6,7 +34,7 @@ The directory architecture is following.
 
 ```
 - dataset_directory/
-  - {Database version}
+  - {The type of T4dataset + dataset version}
     - {T4 dataset ID}/
       - {T4dataset WebAuto version}
         - annotation/
@@ -18,24 +46,27 @@ The directory architecture is following.
 
 ### Versioning strategy for database T4dataset
 
-> [!WARNING]
-> This is temporary document.
+We manage the version of T4dataset as "the type of T4dataset" + "vehicle name" + "X.Y".
+For example, we use like "DB jpntaxi-v2.2", "DB gsm8-v1.1", "Pseudo j6gen2-v1.0".
 
-We manage the version of database T4dataset as "DB" + "X.Y.Z" and pseudo T4dataset as "Pseudo" + "X.Y.Z".
+#### "the type of T4dataset"
 
-- X: Type of vehicle
+As the type of T4dataset, we use "DB" for database T4dataset, "UC" for use case T4dataset, and "Pseudo" for pseudo T4dataset.
 
-For now, we define
-version 1 = japantaxi
-version 2 = minibus v0 (X2 GSM8)
-version 3 = minibus v1 (X2 J6)
-version 4 = minibus v2 (X2 J6-Gen2)
+- "vehicle name".
 
-- Y: Management classification for dataset
+For now, we define as following.
+
+- jpntaxi: XX1 JPN TAXI
+- gsm8: X2 Minibus (GSM8)
+- j6: X2 Minibus 1.0 (J6)
+- j6gen2: X2 Minibus 2.0 (J6)
+
+- X: Management classification for dataset
 
 It is recommended to change the number depending on the location and data set creation time.
 
-- Z: The version of DB X.Y
+- Y: The version of (dataset version X)
 
 Upgrade the version every time a change may have a negative impact on performance for training.
 For example, if we change of the way to annotation, we update the dataset and this version.
@@ -57,32 +88,6 @@ When we make a T4dataset, we start from version 0.
 We define T4format, which defines detail schema for T4dataset.
 We manage the version of T4format.
 If you want to know about detailed schema and the version of T4format, please see [document of T4format](https://github.com/tier4/tier4_perception_dataset/blob/main/docs/t4_format_3d_detailed.md).
-
-## The type of T4dataset
-
-- Database T4dataset
-
-Database T4dataset is mainly used for training a model.
-We call database T4dataset as "Database vX.Y.Z", "DB vX.Y" in short.
-We manage database T4dataset in [dataset config](/autoware_ml/configs/detection3d/dataset/t4dataset) like `database_v1_0.yaml` (file name use only the version of X.Y).
-
-- Use case T4dataset
-
-Use case T4dataset is mainly used for evaluation with ROS environment.
-We call Use case T4dataset as "Use case vX.Y.Z", "UC vX.Y" in short.
-
-- Non-annotated T4dataset
-
-Non-annotated T4dataset is the dataset which is not annotated.
-After we annotate for it, it change to database T4dataset or use case T4dataset.
-
-- Pseudo T4dataset
-
-Pseudo T4dataset is annotated to non-annotated T4dataset by auto-labeling like [t4dataset_pseudo_label_3d](/tools/t4dataset_pseudo_label_3d/).
-Pseudo T4dataset is mainly used to train pre-training model.
-We call pseudo T4dataset as "Pseudo vX.Y.Z".
-We manage pseudo T4dataset in [dataset config](/autoware_ml/configs/detection3d/dataset/t4dataset) like `Pseudo_v1_0.yaml` (file name use only the version of X.Y).
-Note that `autoware-ml` do not manage Pseudo T4dataset which is used for domain adaptation.
 
 ## Whole data pipeline for ML model with Autoware
 
@@ -111,29 +116,34 @@ We upload to [WebAuto](https://web.auto/) system and manage T4dataset.
 
 ### Use case for update of database T4dataset
 
-> [!WARNING]
-> This is temporary document.
+- We add new vehicle
 
-- We add dataset for the version X.Y.Z.
+We add database T4dataset for {new vehicle name}-v1.0.
 
-We update version X.Y.Z to version X.Y.(Z+1).
+- We add scenes (like different experiment area) for existing vehicle
 
-- In version X.Y.Z, we changed the trailer annotation method and requested the vendor to modify the annotations inside.
+We add database T4dataset from {vehicle name}-vX.Y to {vehicle name}-v(X+1).0.
+
+- We add database T4dataset for the version {vehicle name}-vX.Y.
+
+We update version {vehicle name}-vX.Y to version {vehicle name}-vX.(Y+1).
+
+- In version {vehicle name}-vX.Y, we changed the trailer annotation method and requested the vendor to modify the annotations inside.
 
 We create T4dataset entirely new since this case lead to destructive change for T4 format.
-According to change of `T4 dataset ID`, we update from version X.Y.Z to version X.Y.(Z+1).
+According to change of `T4 dataset ID`, we update from version {vehicle name}-vX.Y to version {vehicle name}-vX.(Y+1).
 
 - 2D annotation did not exist in version X.Y.Z, so we add it.
 
 We create T4dataset entirely new since this case lead to destructive change for T4 format.
-According to change of `T4 dataset ID`, we update from version X.Y.Z to version X.Y.(Z+1)
+According to change of `T4 dataset ID`, we update from version {vehicle name}-vX.Y to version {vehicle name}-vX.(Y+1).
 
 - In version X.Y.Z, we found one vehicle that was not annotated, so we added and modified it by annotating it.
 
 We update only `T4dataset WebAuto version` since this case is a non-destructive change for T4 format.
-According to change of `T4dataset WebAuto version`, we update from version X.Y.Z to version X.Y.(Z+1).
+According to change of `T4dataset WebAuto version`, we update from version {vehicle name}-vX.Y to version {vehicle name}-vX.(Y+1).
 
 - For pointcloud topic stored in rosbag of T4dataset, the data arrangement method was changed from XYZI to XYZIRC, and the contents of rosbag were also updated.
 
 We update T4format and `T4dataset WebAuto version`.
-According to update of these, we update from version X.Y.Z to version X.Y.(Z+1).
+According to update of these, we update from version {vehicle name}-vX.Y to version {vehicle name}-vX.Y.

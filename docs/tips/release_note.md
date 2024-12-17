@@ -35,6 +35,10 @@ Please see [experiment result](https://github.com/tier4/autoware-ml/issues/148) 
 
 ### Pipelines
 
+- fix config in test_integration
+  - https://github.com/tier4/autoware-ml/pull/306
+
 ### Projects
 
 ### Chore
+
