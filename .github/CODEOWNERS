@@ -7,7 +7,6 @@
 /pipelines/deploy_detection3d/ satoshi.tanaka@tier4.jp
 /pipelines/project_adaptation/ satoshi.tanaka@tier4.jp
 /pipelines/test_integration/ satoshi.tanaka@tier4.jp
-/pipelines/update_t4dataset/ satoshi.tanaka@tier4.jp
 /pipelines/webauto/ satoshi.tanaka@tier4.jp
 /projects/BEVFusion/ kenzo.lobos@tier4.jp
 /projects/BLIP-2/ satoshi.tanaka@tier4.jp

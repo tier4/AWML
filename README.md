@@ -71,7 +71,6 @@ If you want to know about `autoware-ml`, you should read following pages.
 
 - [Deploy 3D detection model](/pipelines/deploy_detection3d/)
 - [Integration test for training and deployment](/pipelines/test_integration/)
-- [Update T4dataset](/pipelines/update_t4dataset/)
 - [Use autoware-ml with WebAuto](/pipelines/webauto/)
 - (TBD) [Project adaptation](/pipelines/project_adaptation/)
 
