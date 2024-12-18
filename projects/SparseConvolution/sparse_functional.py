@@ -1,186 +1,38 @@
-# Copyright 2019 Yan Yan
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#     http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
-from typing import Any
+from typing import Any, List, Optional
 
-from mmcv.utils import ext_loader
-import sparse_ops as ops
+import numpy as np
 import torch
+from cumm import tensorview as tv
+from spconv import constants
+from spconv.algo import CONV_CPP
+from spconv.constants import SPCONV_DO_SORT, SPCONV_USE_DIRECT_TABLE, AllocKeys
+from spconv.core import ConvAlgo
+from spconv.core_cc.csrc.sparse.all import SpconvOps
+from spconv.core_cc.csrc.sparse.convops.spops import ConvGemmOps
+from spconv.pytorch.core import ThrustSortAllocator
+from spconv.pytorch.cppcore import (_TORCH_DTYPE_TO_TV, TorchAllocator,
+                                    get_arch, get_current_stream,
+                                    torch_tensor_to_tv)
+from spconv.tools import CUDAKernelTimer
 from torch.autograd import Function
-
-ext_module = ext_loader.load_ext(
-    "_ext",
-    [
-        "get_indice_pairs_2d_forward",
-        "get_indice_pairs_3d_forward",
-        "get_indice_pairs_4d_forward",
-        "get_indice_pairs_2d_backward",
-        "get_indice_pairs_3d_backward",
-    ],
-)
-
-from torch.onnx.symbolic_helper import _get_tensor_dim_size
 from torch.onnx.symbolic_helper import _get_tensor_sizes
 
 
-def get_conv_output_size(input_size, kernel_size, stride, padding, dilation):
-
-    ndim = len(input_size)
-    output_size = []
-    for i in range(ndim):
-        size = (input_size[i] + 2 * padding[i] - dilation[i] * (kernel_size[i] - 1) - 1) // stride[
-            i
-        ] + 1
-        if kernel_size[i] == -1:
-            output_size.append(1)
-        else:
-            output_size.append(size)
-    return output_size
-
-
-def get_deconv_output_size(input_size, kernel_size, stride, padding, dilation, output_padding):
-    ndim = len(input_size)
-    output_size = []
-    for i in range(ndim):
-        if kernel_size[i] == -1:
-            raise ValueError("deconv don't support kernel_size < 0")
-        size = (input_size[i] - 1) * stride[i] - 2 * padding[i] + kernel_size[i] + output_padding[i]
-        output_size.append(size)
-    return output_size
-
-
-def get_indice_pairs(
-    indices,
-    batch_size,
-    spatial_shape,
-    ksize=3,
-    stride=1,
-    padding=0,
-    dilation=1,
-    out_padding=0,
-    subm=False,
-    transpose=False,
-    grid=None,
-):
-    ndim = indices.shape[1] - 1
-    if not isinstance(ksize, (list, tuple)):
-        ksize = [ksize] * ndim
-    if not isinstance(stride, (list, tuple)):
-        stride = [stride] * ndim
-    if not isinstance(padding, (list, tuple)):
-        padding = [padding] * ndim
-    if not isinstance(dilation, (list, tuple)):
-        dilation = [dilation] * ndim
-    if not isinstance(out_padding, (list, tuple)):
-        out_padding = [out_padding] * ndim
-
-    for d, s in zip(dilation, stride):
-        assert any([s == 1, d == 1]), "don't support this."
-
-    if not subm:
-        if transpose:
-            out_shape = get_deconv_output_size(
-                spatial_shape, ksize, stride, padding, dilation, out_padding
-            )
-        else:
-            out_shape = get_conv_output_size(spatial_shape, ksize, stride, padding, dilation)
-
-    else:
-        out_shape = spatial_shape
-
-    if grid is None:
-        if ndim == 2:
-            get_indice_pairs_func = get_indice_pairs_2d_forward
-        elif ndim == 3:
-            get_indice_pairs_func = get_indice_pairs_3d_forward
-        elif ndim == 4:
-            get_indice_pairs_func = get_indice_pairs_4d_forward
-        else:
-            raise NotImplementedError
-
-        outids, indice_pairs, indice_pair_num, num_activate_out = get_indice_pairs_func(
-            indices,
-            batch_size,
-            out_shape,
-            spatial_shape,
-            ksize,
-            stride,
-            padding,
-            dilation,
-            out_padding,
-            int(subm),
-            int(transpose),
-        )
-
-        return (
-            outids,
-            indice_pairs,
-            indice_pair_num,
-            num_activate_out,
-        )  # Note(kenzo): seems to be needed by the tracer
-    else:
-        if ndim == 2:
-            get_indice_pairs_func = get_indice_pairs_2d_backward
-        elif ndim == 3:
-            get_indice_pairs_func = get_indice_pairs_3d_backward
-        else:
-            raise NotImplementedError
-        outids, indice_pairs, indice_pair_num, num_activate_out = get_indice_pairs_func(
-            indices,
-            grid,
-            batch_size,
-            out_shape,
-            spatial_shape,
-            ksize,
-            stride,
-            padding,
-            dilation,
-            out_padding,
-            int(subm),
-            int(transpose),
-        )
-
-        return (
-            outids,
-            indice_pairs,
-            indice_pair_num,
-            num_activate_out,
-        )  # Note(kenzo): seems to be needed by the tracer
-
-
-class GetIndicePairs2dForward(Function):
+class GetIndicePairsImplicitGemm(Function):
 
     @staticmethod
-    def symbolic(
-        g,
-        indices,
-        batch_size,
-        out_shape,
-        spatial_shape,
-        ksize,
-        stride,
-        padding,
-        dilation,
-        out_padding,
-        subm,
-        transpose,
-    ):
+    def symbolic(g, indices: torch.Tensor, batch_size: int,
+                 spatial_shape: List[int], algo: ConvAlgo, ksize: List[int],
+                 stride: List[int], padding: List[int], dilation: List[int],
+                 out_padding: List[int], subm: bool, transpose: bool,
+                 is_train: bool, alloc: Optional[ThrustSortAllocator],
+                 timer: CUDAKernelTimer):
         outputs = g.op(
-            "mydomain::GetIndicePairs2dForward",
+            'autoware::GetIndicePairsImplicitGemm',
             indices,
             batch_size_i=batch_size,
-            out_shape_i=out_shape,
             spatial_shape_i=spatial_shape,
+            algo_i=algo.value,
             ksize_i=ksize,
             stride_i=stride,
             padding_i=padding,
@@ -188,45 +40,68 @@ class GetIndicePairs2dForward(Function):
             out_padding_i=out_padding,
             subm_i=subm,
             transpose_i=transpose,
-            outputs=4,
+            is_train_i=is_train,
+            outputs=5,
         )
-
         indices_shape = _get_tensor_sizes(indices)
-        if indices_shape is not None and hasattr(indices.type(), "with_sizes"):
-            output_type_1 = indices.type().with_sizes([None, 3])
-
-            output_type_2 = indices.type().with_sizes([None, 2, None])
-
-            output_type_3 = indices.type().with_sizes([None])
-
-            output_type_4 = indices.type().with_sizes([1])
+        if (indices_shape is not None
+                and hasattr(indices.type(), 'with_sizes')):
+            output_type_1 = indices.type().with_sizes([None, indices_shape[1]])
+            output_type_2 = indices.type().with_sizes([np.prod(ksize), None])
+            output_type_3 = indices.type().with_sizes([None, 1])
+            output_type_4 = indices.type().with_sizes([None])
+            output_type_5 = indices.type().with_sizes([])
 
             outputs[0].setType(output_type_1)
             outputs[1].setType(output_type_2)
             outputs[2].setType(output_type_3)
             outputs[3].setType(output_type_4)
+            outputs[4].setType(output_type_5)
         return outputs
 
     @staticmethod
-    def forward(
-        ctx,
-        indices,
-        batch_size,
-        out_shape,
-        spatial_shape,
-        ksize,
-        stride,
-        padding,
-        dilation,
-        out_padding,
-        subm,
-        transpose,
-    ) -> torch.Tensor:
-        ctx.save_for_backward(
-            indices,
+    def forward(ctx, indices: torch.Tensor, batch_size: int,
+                spatial_shape: List[int], algo: ConvAlgo, ksize: List[int],
+                stride: List[int], padding: List[int], dilation: List[int],
+                out_padding: List[int], subm: bool, transpose: bool,
+                is_train: bool, alloc: Optional[ThrustSortAllocator],
+                timer: CUDAKernelTimer) -> torch.Tensor:
+        """Why return tuple?
+
+        because pytorch seems don't support custom object in autograd.
+        return: (
+            out_inds,
+            num_inds_per_loc,
+            pair_fwd,
+            pair_bwd, # torch.Tensor() if subm or inference mode
+            pair_mask_fwd_splits,
+            pair_mask_bwd_splits, # torch.Tensor() if subm or inference mode
+            mask_argsort_fwd_splits,
+            mask_argsort_bwd_splits, # torch.Tensor() if subm or inference mode
+            masks,
+        )
+        direct_table: a hash-based regular conv pair gen algo
+        to avoid unique operation.
+        runs faster than pytorch unique with num_voxel < 1000k.
+        """
+
+        num_out_act_bound: int = -1
+        direct_table: bool = SPCONV_USE_DIRECT_TABLE
+        do_sort = SPCONV_DO_SORT
+
+        stream = get_current_stream()
+
+        thalloc = TorchAllocator(indices.device)
+        timer_cpp = tv.CUDAKernelTimer(False)
+        if timer._timer is not None:
+            timer_cpp = timer._timer
+
+        mask_tensor, num_act_out = SpconvOps.get_indice_pairs_implicit_gemm(
+            thalloc,
+            torch_tensor_to_tv(indices),
             batch_size,
-            out_shape,
             spatial_shape,
+            algo.value,
             ksize,
             stride,
             padding,
@@ -234,466 +109,188 @@ class GetIndicePairs2dForward(Function):
             out_padding,
             subm,
             transpose,
-        )
+            is_train,
+            stream,
+            num_out_act_bound,
+            timer=timer_cpp,
+            direct_table=direct_table,
+            do_sort=do_sort)
 
-        out_shape = out_shape.tolist() if isinstance(out_shape, torch.Tensor) else out_shape
-        spatial_shape = (
-            spatial_shape.tolist() if isinstance(spatial_shape, torch.Tensor) else spatial_shape
-        )
-        outids, indice_pairs, indice_pair_num = ext_module.get_indice_pairs_2d_forward(
-            indices,
-            batch_size,
-            out_shape,
-            spatial_shape,
-            ksize,
-            stride,
-            padding,
-            dilation,
-            out_padding,
-            subm,
-            transpose,
-        )
-        num_activate_out = outids.size(0)
+        mask_split_count = mask_tensor.dim(0)
+        # NOTE(knzo25): we support only the simplest case
+        assert mask_split_count == 1
+        if subm:
+            out_inds = indices
+        else:
+            out_inds = thalloc.allocated[AllocKeys.OutIndices]
 
-        return outids, indice_pairs, indice_pair_num, num_activate_out
+        if subm:
+            pair = thalloc.allocated[AllocKeys.PairFwd]
+            pair_mask = thalloc.allocated[AllocKeys.PairMask]
+            mask_argsort = thalloc.allocated[AllocKeys.MaskArgSort]
+            pair_mask_in_splits = pair_mask[0]
+            mask_argsort_in_splits = mask_argsort[0]
+            pair_fwd = pair[0]
+            return (out_inds, pair[0], pair_mask_in_splits,
+                    mask_argsort_in_splits, num_act_out)
+        else:
+            pair_fwd = thalloc.allocated[AllocKeys.PairFwd]
+            pair_mask_fwd = thalloc.allocated[AllocKeys.PairMask]
+            mask_argsort_fwd = thalloc.allocated[AllocKeys.MaskArgSort]
+            pair_mask_fwd_splits = pair_mask_fwd[0]
+            mask_argsort_fwd_splits = mask_argsort_fwd[0]
+
+            return (out_inds, pair_fwd, pair_mask_fwd_splits,
+                    mask_argsort_fwd_splits, num_act_out)
 
     @staticmethod
     def backward(ctx: Any, grad_output: torch.Tensor) -> tuple:
         return None, None, None, None, None, None, None, None, None, None
 
 
-class GetIndicePairs3dForward(Function):
+class ImplicitGemm(Function):
 
     @staticmethod
-    def symbolic(
-        g,
-        indices,
-        out_shape,
-        batch_size,
-        spatial_shape,
-        ksize,
-        stride,
-        padding,
-        dilation,
-        out_padding,
-        subm,
-        transpose,
-    ):
-        outputs = g.op(
-            "mydomain::GetIndicePairs3dForward",
-            indices,
-            batch_size_i=batch_size,
-            out_shape_i=out_shape,
-            spatial_shape_i=spatial_shape,
-            ksize_i=ksize,
-            stride_i=stride,
-            padding_i=padding,
-            dilation_i=dilation,
-            out_padding_i=out_padding,
-            subm_i=subm,
-            transpose_i=transpose,
-            outputs=4,
-        )
+    def symbolic(g, features: torch.Tensor, filters: torch.Tensor,
+                 pair_fwd: torch.Tensor, pair_mask_fwd_splits: torch.Tensor,
+                 mask_argsort_fwd_splits: torch.Tensor, num_activate_out: int,
+                 masks: List[np.ndarray], is_train: bool, is_subm: bool,
+                 timer: CUDAKernelTimer, fp32_accum: Optional[bool],
+                 bias: Optional[torch.Tensor], act_alpha: float,
+                 act_beta: float, act_type: tv.gemm.Activation,
+                 output_scale: float, scale: Optional[torch.Tensor],
+                 output_add: Optional[torch.Tensor], output_add_scale: float,
+                 output_dtype: Optional[torch.dtype]):
 
-        indices_shape = _get_tensor_sizes(indices)
-        if indices_shape is not None and hasattr(indices.type(), "with_sizes"):
-            output_type_1 = indices.type().with_sizes([None, 4])
-
-            output_type_2 = indices.type().with_sizes([None, 2, None])
-
-            output_type_3 = indices.type().with_sizes([None])
-
-            output_type_4 = indices.type().with_sizes([1])
-
-            outputs[0].setType(output_type_1)
-            outputs[1].setType(output_type_2)
-            outputs[2].setType(output_type_3)
-            outputs[3].setType(output_type_4)
-        return outputs
-
-    @staticmethod
-    def forward(
-        ctx,
-        indices,
-        batch_size,
-        out_shape,
-        spatial_shape,
-        ksize,
-        stride,
-        padding,
-        dilation,
-        out_padding,
-        subm,
-        transpose,
-    ) -> torch.Tensor:
-
-        ctx.save_for_backward(
-            indices,
-            batch_size,
-            out_shape,
-            spatial_shape,
-            ksize,
-            stride,
-            padding,
-            dilation,
-            out_padding,
-            subm,
-            transpose,
-        )
-
-        out_shape = out_shape.tolist() if isinstance(out_shape, torch.Tensor) else out_shape
-        spatial_shape = (
-            spatial_shape.tolist() if isinstance(spatial_shape, torch.Tensor) else spatial_shape
-        )
-        outids, indice_pairs, indice_pair_num = ext_module.get_indice_pairs_3d_forward(
-            indices,
-            batch_size,
-            out_shape,
-            spatial_shape,
-            ksize,
-            stride,
-            padding,
-            dilation,
-            out_padding,
-            subm,
-            transpose,
-        )
-        num_activate_out = outids.size(0)
-
-        return outids, indice_pairs, indice_pair_num, num_activate_out
-
-    @staticmethod
-    def backward(ctx: Any, grad_output: torch.Tensor) -> tuple:
-        return None, None, None, None, None, None, None, None, None, None
-
-
-class GetIndicePairs4dForward(Function):
-
-    @staticmethod
-    def symbolic(
-        g,
-        indices,
-        out_shape,
-        batch_size,
-        spatial_shape,
-        ksize,
-        stride,
-        padding,
-        dilation,
-        out_padding,
-        subm,
-        transpose,
-    ):
-        outputs = g.op(
-            "mydomain::GetIndicePairs4dForward",
-            indices,
-            batch_size_i=batch_size,
-            out_shape_i=out_shape,
-            spatial_shape_i=spatial_shape,
-            ksize_i=ksize,
-            stride_i=stride,
-            padding_i=padding,
-            dilation_i=dilation,
-            out_padding_i=out_padding,
-            subm_i=subm,
-            transpose_i=transpose,
-            outputs=4,
-        )
-
-        indices_shape = _get_tensor_sizes(indices)
-        if indices_shape is not None and hasattr(indices.type(), "with_sizes"):
-            output_type_1 = indices.type().with_sizes([None, 5])
-
-            output_type_2 = indices.type().with_sizes([None, 2, None])
-
-            output_type_3 = indices.type().with_sizes([None])
-
-            output_type_4 = indices.type().with_sizes([1])
-
-            outputs[0].setType(output_type_1)
-            outputs[1].setType(output_type_2)
-            outputs[2].setType(output_type_3)
-            outputs[3].setType(output_type_4)
-        return outputs
-
-    @staticmethod
-    def forward(
-        ctx,
-        indices,
-        batch_size,
-        out_shape,
-        spatial_shape,
-        ksize,
-        stride,
-        padding,
-        dilation,
-        out_padding,
-        subm,
-        transpose,
-    ) -> torch.Tensor:
-
-        ctx.save_for_backward(
-            indices,
-            batch_size,
-            out_shape,
-            spatial_shape,
-            ksize,
-            stride,
-            padding,
-            dilation,
-            out_padding,
-            subm,
-            transpose,
-        )
-
-        out_shape = out_shape.tolist() if isinstance(out_shape, torch.Tensor) else out_shape
-        spatial_shape = (
-            spatial_shape.tolist() if isinstance(spatial_shape, torch.Tensor) else spatial_shape
-        )
-        outids, indice_pairs, indice_pair_num = ext_module.get_indice_pairs_3d_forward(
-            indices,
-            batch_size,
-            out_shape,
-            spatial_shape,
-            ksize,
-            stride,
-            padding,
-            dilation,
-            out_padding,
-            subm,
-            transpose,
-        )
-        num_activate_out = outids.size(0)
-
-        return outids, indice_pairs, indice_pair_num, num_activate_out
-
-    @staticmethod
-    def backward(ctx: Any, grad_output: torch.Tensor) -> tuple:
-        return None, None, None, None, None, None, None, None, None, None
-
-
-class SparseConvFunction(Function):
-    """Sparse Convolution.
-
-    Please refer to `SECOND <https://www.mdpi.com/1424-8220/18/10/3337>`_ for
-    more details.
-    """
-
-    @staticmethod
-    def symbolic(g, features, filters, indice_pairs, indice_pairs_num, num_activate_out):
         output = g.op(
-            "mydomain::SparseConv",
+            'autoware::ImplicitGemm',
             features,
             filters,
-            indice_pairs,
-            indice_pairs_num,
-            num_activate_out,
+            pair_fwd,
+            pair_mask_fwd_splits,
+            mask_argsort_fwd_splits,
+            is_train_i=is_train,
+            is_subm_i=is_subm,
+            fp32_accum_i=fp32_accum,
+            act_alpha_f=act_alpha,
+            act_beta_f=act_beta,
+            output_scale_f=output_scale,
+            output_add_scale_f=output_add_scale,
             outputs=1,
         )
-
-        # do shape inference and set it via setType
         features_shape = _get_tensor_sizes(features)
-        if features_shape is not None and hasattr(features.type(), "with_sizes"):
+        filters_shape = _get_tensor_sizes(filters)
+        if (features_shape is not None
+                and hasattr(features.type(), 'with_sizes')):
             output_type = features.type().with_sizes(
-                features_shape[0:1] + [_get_tensor_dim_size(filters, -1)]
-            )
-
+                [features_shape[0], filters_shape[0]])
             output.setType(output_type)
+
         return output
 
     @staticmethod
-    def forward(
-        ctx: Any,
-        features: torch.Tensor,
-        filters: torch.nn.Parameter,
-        indice_pairs: torch.Tensor,
-        indice_pair_num: torch.Tensor,
-        out_ids: torch.Tensor,
-    ) -> torch.Tensor:
-        """
-        Args:
-            features (torch.Tensor): Features that needs to convolute.
-            filters (torch.nn.parameter.Parameter): Convolution filters.
-            indice_pairs (torch.Tensor): Indice pairs between inputs locations
-                and outputs locations.
-            indice_pair_num (torch.Tensor): Indice pairs num.
-            num_activate_out (torch.Tensor): Output channels num.
+    def forward(ctx,
+                features: torch.Tensor,
+                filters: torch.Tensor,
+                pair_fwd: torch.Tensor,
+                pair_mask_fwd_splits: torch.Tensor,
+                mask_argsort_fwd_splits: torch.Tensor,
+                num_activate_out: int,
+                masks: List[np.ndarray],
+                is_train: bool,
+                is_subm: bool,
+                timer: CUDAKernelTimer = CUDAKernelTimer(False),
+                fp32_accum: Optional[bool] = None,
+                bias: Optional[torch.Tensor] = None,
+                act_alpha: float = 0.0,
+                act_beta: float = 0.0,
+                act_type: tv.gemm.Activation = tv.gemm.Activation.None_,
+                output_scale: float = 1.0,
+                scale: Optional[torch.Tensor] = None,
+                output_add: Optional[torch.Tensor] = None,
+                output_add_scale: float = 0.0,
+                output_dtype: Optional[torch.dtype] = None):
 
-        Returns:
-            torch.Tensor: Output features from gather-gemm-scatter.
-        """
-        num_activate_out = out_ids.shape[0]
-        ctx.save_for_backward(indice_pairs, indice_pair_num, features, filters)
-        out_features = ops.indice_conv(
-            features, filters, indice_pairs, indice_pair_num, num_activate_out, False
-        )
+        # NOTE(knzo25): start of custom changes needed for deployment
+        pair_mask_fwd_splits = [pair_mask_fwd_splits]
+        mask_argsort_fwd_splits = [mask_argsort_fwd_splits]
+
+        assert fp32_accum is None, 'fp32_accum is not supported'
+        assert bias is None, 'bias is not supported'
+        assert scale is None
+        assert output_add is None
+        assert output_dtype is torch.float32
+
+        # NOTE(knzo25): end of custom changes needed for deployment
+
+        stream = get_current_stream()
+        bias_tv = tv.Tensor()
+        scale_tv = tv.Tensor()
+        output_add_tv = tv.Tensor()
+
+        if not features.is_contiguous():
+            features = features.contiguous()
+        assert features.is_contiguous()
+        assert filters.is_contiguous()
+        if output_dtype is None:
+            output_dtype = features.dtype
+
+        alloc = TorchAllocator(features.device, features.dtype == torch.qint8)
+        features_tv = torch_tensor_to_tv(features)
+        pair_fwd_tv = torch_tensor_to_tv(pair_fwd)
+        pair_mask_fwd_splits_tv = [
+            torch_tensor_to_tv(t, tv.uint32) for t in pair_mask_fwd_splits
+        ]
+        mask_argsort_fwd_splits_tv = [
+            torch_tensor_to_tv(t) for t in mask_argsort_fwd_splits
+        ]
+
+        filters_tv = torch_tensor_to_tv(filters)
+        mask = np.array([np.iinfo(np.uint32).max], dtype=np.uint32)
+        mask_tv = tv.from_numpy(mask).clone()
+        timer_cpp = tv.CUDAKernelTimer(False)
+        if timer._timer is not None:
+            timer_cpp = timer._timer
+        auto_fp32_accum = fp32_accum is None
+        if fp32_accum is None:
+            fp32_accum = False
+        arch = get_arch()
+        output_dtype_tv = _TORCH_DTYPE_TO_TV[output_dtype]
+
+        _, _ = ConvGemmOps.implicit_gemm(
+            alloc,
+            CONV_CPP,
+            features_tv,
+            filters_tv,
+            pair_fwd_tv,
+            pair_mask_fwd_splits_tv,
+            mask_argsort_fwd_splits_tv,
+            num_activate_out,
+            mask_tv,
+            arch,
+            is_train,
+            is_subm,
+            stream,
+            timer_cpp,
+            auto_fp32_accum,
+            fp32_accum,
+            bias_tv,
+            act_alpha,
+            act_beta,
+            act_type,
+            use_tf32=constants.SPCONV_ALLOW_TF32,
+            output_scale=output_scale,
+            scale=scale_tv,
+            output_add=output_add_tv,
+            output_add_scale=output_add_scale,
+            output_dtype=output_dtype_tv)
+        out_features = alloc.allocated[AllocKeys.OutFeatures]
+        mask_output_fwd = alloc.allocated.get(AllocKeys.MaskOutputFwd, None)
+        if is_train:
+            assert mask_output_fwd is not None
+
         return out_features
 
-    @staticmethod
-    def backward(ctx: Any, grad_output: torch.Tensor) -> tuple:
-        indice_pairs, indice_pair_num, features, filters = ctx.saved_tensors
-        input_bp, filters_bp = ops.indice_conv_backward(
-            features, filters, grad_output, indice_pairs, indice_pair_num, False
-        )
 
-        return input_bp, filters_bp, None, None, None
-
-
-class SparseInverseConvFunction(Function):
-
-    @staticmethod
-    def symbolic(g, features, filters, indice_pairs, indice_pairs_num, num_activate_out):
-        return g.op(
-            "mydomain::SparseInverseConv",
-            features,
-            filters,
-            indice_pairs,
-            indice_pairs,
-            indice_pairs_num,
-            num_activate_out,
-            outputs=1,
-        )
-
-    @staticmethod
-    def forward(
-        ctx: Any,
-        features: torch.Tensor,
-        filters: torch.nn.Parameter,
-        indice_pairs: torch.Tensor,
-        indice_pair_num: torch.Tensor,
-        num_activate_out: torch.Tensor,
-    ) -> torch.Tensor:
-        """
-        Args:
-            features (torch.Tensor): Features that needs to convolute.
-            filters (torch.nn.parameter.Parameter): Convolution filters.
-            indice_pairs (torch.Tensor): Indice pairs between inputs locations
-                and outputs locations.
-            indice_pair_num (torch.Tensor): Indice pairs num.
-            num_activate_out (torch.Tensor): Output channels num.
-
-        Returns:
-            torch.Tensor: Output features from gather-gemm-scatter.
-        """
-        ctx.save_for_backward(indice_pairs, indice_pair_num, features, filters)
-        return ops.indice_conv(
-            features, filters, indice_pairs, indice_pair_num, num_activate_out, True, False
-        )
-
-    @staticmethod
-    def backward(ctx: Any, grad_output: torch.Tensor) -> tuple:
-        indice_pairs, indice_pair_num, features, filters = ctx.saved_tensors
-        input_bp, filters_bp = ops.indice_conv_backward(
-            features, filters, grad_output, indice_pairs, indice_pair_num, True, False
-        )
-
-        return input_bp, filters_bp, None, None, None
-
-
-class SubMConvFunction(Function):
-
-    @staticmethod
-    def symbolic(g, features, filters, indice_pairs, indice_pairs_num, num_activate_out):
-        return g.op(
-            "mydomain::SubMConv",
-            features,
-            filters,
-            indice_pairs,
-            indice_pairs,
-            indice_pairs_num,
-            num_activate_out,
-            outputs=1,
-        )
-
-    @staticmethod
-    def forward(
-        ctx: Any,
-        features: torch.Tensor,
-        filters: torch.nn.Parameter,
-        indice_pairs: torch.Tensor,
-        indice_pair_num: torch.Tensor,
-        num_activate_out: torch.Tensor,
-    ) -> torch.Tensor:
-        """
-        Args:
-            features (torch.Tensor): Features that needs to convolute.
-            filters (torch.nn.parameter.Parameter): Convolution filters.
-            indice_pairs (torch.Tensor): Indice pairs between inputs locations
-                and outputs locations.
-            indice_pair_num (torch.Tensor): Indice pairs num.
-            num_activate_out (torch.Tensor): Output channels num.
-
-        Returns:
-            torch.Tensor: Output features from gather-gemm-scatter.
-        """
-        ctx.save_for_backward(indice_pairs, indice_pair_num, features, filters)
-        return ops.indice_conv(
-            features, filters, indice_pairs, indice_pair_num, num_activate_out, False, True
-        )
-
-    @staticmethod
-    def backward(ctx: Any, grad_output: torch.Tensor) -> tuple:
-        indice_pairs, indice_pair_num, features, filters = ctx.saved_tensors
-        input_bp, filters_bp = ops.indice_conv_backward(
-            features, filters, grad_output, indice_pairs, indice_pair_num, False, True
-        )
-
-        return input_bp, filters_bp, None, None, None
-
-
-class SparseMaxPoolFunction(Function):
-
-    @staticmethod
-    def symbolic(g, features, indice_pairs, indice_pairs_num, num_activate_out):
-        return g.op(
-            "mydomain::SparseMaxPool",
-            features,
-            indice_pairs,
-            indice_pairs_num,
-            num_activate_out,
-            outputs=1,
-        )
-
-    @staticmethod
-    def forward(
-        ctx,
-        features: torch.Tensor,
-        indice_pairs: torch.Tensor,
-        indice_pair_num: torch.Tensor,
-        num_activate_out: torch.Tensor,
-    ) -> torch.Tensor:
-        """
-        Args:
-            features (torch.Tensor): Features that needs to convolute.
-            indice_pairs (torch.Tensor): Indice pairs between inputs locations
-                and outputs locations.
-            indice_pair_num (torch.Tensor): Indice pairs num.
-            num_activate_out (torch.Tensor): Output channels num.
-
-        Returns:
-            torch.Tensor: Output features from sparse maxpooling.
-        """
-        out = ops.indice_maxpool(features, indice_pairs, indice_pair_num, num_activate_out)
-        ctx.save_for_backward(indice_pairs, indice_pair_num, features, out)
-        return out
-
-    @staticmethod
-    def backward(ctx: Any, grad_output: torch.Tensor) -> tuple:
-        indice_pairs, indice_pair_num, features, out = ctx.saved_tensors
-        input_bp = ops.indice_maxpool_backward(
-            features, out, grad_output, indice_pairs, indice_pair_num
-        )
-        return input_bp, None, None, None
-
-
-get_indice_pairs_2d_forward = GetIndicePairs2dForward.apply
-get_indice_pairs_3d_forward = GetIndicePairs3dForward.apply
-get_indice_pairs_4d_forward = GetIndicePairs4dForward.apply
-
-get_indice_pairs_2d_backward = ext_module.get_indice_pairs_2d_backward
-get_indice_pairs_3d_backward = ext_module.get_indice_pairs_3d_backward
-
-indice_conv = SparseConvFunction.apply
-indice_inverse_conv = SparseInverseConvFunction.apply
-indice_subm_conv = SubMConvFunction.apply
-indice_maxpool = SparseMaxPoolFunction.apply
+get_indice_pairs_implicit_gemm = GetIndicePairsImplicitGemm.apply
+implicit_gemm = ImplicitGemm.apply

@@ -1,22 +1,25 @@
 # SparseConvolutions
-## Summary
 
-This is essentially a copy of MMCV's sparse convolution implementation.
-It is known not to be the fastest, but sufficies to use it at runtime for model export
+This is an auxiliar project that enables ONNX export of sparse convolutions.
+Currently, we only support traveller59's backend
 
-## Get started
-### Export as ONNX
+# ONNX Export
 
-We provide a simple example of ONXX export in `example_export_onnx.py`.
-To use it simply run `python example_export_onnx.py`
+To enable onnx export for sparse convolutions, this project must be imported in the target model.
+for example `import projects.SparseConvolutions` will overwrite the sparse convolution symbols for some that are suited for exporting.
 
-### TensorRT inference
+The recommended way to do this is using mmcv's way using custom imports:
 
-Only 2D sparse convolutions have been tested as a separate module.
-More complex architectures like the ones in PTv3 and BEVFusion are cooming soon
+```python
+custom_imports = dict(
+    imports=[
+        'projects.SparseConvolution',
+    ],
+    allow_failed_imports=False)
+```
 
-## Troubleshooting
+An example is presented in [BEVFusion](../BEVFusion/README.md)
 
-## Reference
+# TensorRT inference
 
-- [mmcv/mmcv/ops](https://github.com/open-mmlab/mmcv/tree/main/mmcv/ops)
+An example of sparse convolution inference in TensorRT is presented in our BEVFusion [implementation](https://github.com/knzo25/bevfusion_ros2).

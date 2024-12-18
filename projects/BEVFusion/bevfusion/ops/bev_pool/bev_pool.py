@@ -1,4 +1,5 @@
 import torch
+from torch.onnx.symbolic_helper import _get_tensor_dim_size, _get_tensor_sizes
 
 from . import bev_pool_ext
 
@@ -33,7 +34,7 @@ class QuickCumsum(torch.autograd.Function):
         return val, None, None
 
 
-class QuickCumsumCuda(torch.autograd.Function):
+class QuickCumsumTrainingCuda(torch.autograd.Function):
 
     @staticmethod
     def forward(ctx, x, geom_feats, ranks, B, D, H, W):
@@ -80,15 +81,85 @@ class QuickCumsumCuda(torch.autograd.Function):
         return x_grad, None, None, None, None, None, None
 
 
-def bev_pool(feats, coords, B, D, H, W):
+class QuickCumsumCuda(torch.autograd.Function):
+
+    @staticmethod
+    def symbolic(
+        g,
+        x,
+        geom_feats,
+        interval_lengths,
+        interval_starts,
+        B,
+        D,
+        H,
+        W,
+    ):
+        output = g.op(
+            'autoware::QuickCumsumCuda',
+            x,
+            geom_feats,
+            interval_lengths,
+            interval_starts,
+            batch_size_i=B,
+            dimension_i=D,
+            height_i=H,
+            width_i=W,
+            outputs=1,
+        )
+
+        features_shape = _get_tensor_sizes(x)
+        if features_shape is not None and hasattr(x.type(), 'with_sizes'):
+            output_type = x.type().with_sizes(
+                [B, D, H, W, _get_tensor_dim_size(x, -1)])
+            output.setType(output_type)
+
+        return output
+
+    @staticmethod
+    def forward(ctx, x, geom_feats, interval_lengths, interval_starts, B, D, H,
+                W):
+        out = bev_pool_ext.bev_pool_forward(
+            x,
+            geom_feats,
+            interval_lengths,
+            interval_starts,
+            B,
+            D,
+            H,
+            W,
+        )
+        return out
+
+    @staticmethod
+    def backward(ctx, out_grad):
+        raise NotImplementedError
+
+
+def bev_pool(feats, coords, ranks, B, D, H, W, is_training):
     assert feats.shape[0] == coords.shape[0]
 
-    ranks = (
-        coords[:, 0] * (W * D * B) + coords[:, 1] * (D * B) +
-        coords[:, 2] * B + coords[:, 3])
-    indices = ranks.argsort()
-    feats, coords, ranks = feats[indices], coords[indices], ranks[indices]
+    # NOTE(knzo25): we want to put all the operations we can in the graph
+    if is_training:
+        x = QuickCumsumTrainingCuda.apply(feats, coords, ranks, B, D, H, W)
 
-    x = QuickCumsumCuda.apply(feats, coords, ranks, B, D, H, W)
+    else:
+
+        kept = torch.ones(
+            feats.shape[0], device=feats.device, dtype=torch.bool)
+        kept[1:] = ranks[1:] != ranks[:-1]
+        interval_starts = torch.where(kept)[0].int()
+        interval_lengths = torch.zeros_like(interval_starts)
+        interval_lengths[:-1] = interval_starts[1:] - interval_starts[:-1]
+        interval_lengths[-1] = feats.shape[0] - interval_starts[-1]
+
+        if coords.dtype != torch.int32:
+            coords = coords.int()
+
+        x = QuickCumsumCuda.apply(feats, coords, interval_lengths,
+                                  interval_starts, int(B), D.item(), H.item(),
+                                  W.item())
+
     x = x.permute(0, 4, 1, 2, 3).contiguous()
+
     return x
