@@ -37,7 +37,7 @@ python3 tools/scene_selector/image_selector_t4_dataset.py {config_file} --out-di
 Example
 ```sh
 python3 tools/scene_selector/image_selector_t4_dataset.py tools/scene_selector/configs/det2d_object_num_selector/yolox_l_object_number_sum.py \
-  --out-dir ./work_dirs/closed_vocab --dataset-configs autoware_ml/configs/detection3d/dataset/t4dataset/database_v1_1_mini.yaml \
+  --out-dir ./work_dirs/closed_vocab --dataset-configs autoware_ml/configs/detection3d/dataset/t4dataset/db_jpntaxi_v2_mini.yaml \
   --data-root ./data/t4dataset/ --experiment-name closed_vocab_exp \
   --true-ratio 0.1 --show-visualization --create-symbolic-links
 ```
@@ -57,7 +57,7 @@ python tools/scene_selector/image_selector.py {config_file} {directory or image_
 
 ```sh
 python3 tools/scene_selector/image_selector.py tools/scene_selector/configs/det2d_object_num_selector/yolox_l_object_number_sum.py \
-  "./data/t4dataset/database_v1_1_mini/0338521f-321a-4a9a-9c52-480f1ae1131a/2/data/CAM_FRONT/*.jpg" --out-dir ./work_dirs
+  "./data/t4dataset/db_jpntaxi_v2_mini/0338521f-321a-4a9a-9c52-480f1ae1131a/2/data/CAM_FRONT/*.jpg" --out-dir ./work_dirs
 ```
 
 #### 2.1. Select scene from multi-modal data (Pointcloud or Pointcloud+Images data) of T4dataset
@@ -75,7 +75,7 @@ python3 tools/scene_selector/multimodal_t4_dataset_selector.py {config_file} --o
 
 ```sh
 python3 tools/scene_selector/multimodal_t4_dataset_selector.py tools/scene_selector/configs/model_rareness_example_mining/bevfusion_cl_transfusion_l.py \
-  --out-dir ./work_dirs/rareness_mining --dataset-configs autoware_ml/configs/detection3d/dataset/t4dataset/database_v1_1_mini.yaml \
+  --out-dir ./work_dirs/rareness_mining --dataset-configs autoware_ml/configs/detection3d/dataset/t4dataset/db_jpntaxi_v2_mini.yaml \
   --data-root ./data/t4dataset/ --experiment-name rareness_mining \
   --true-ratio 0.1 --show-visualization --create-symbolic-links
 ```

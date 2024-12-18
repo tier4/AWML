@@ -3,7 +3,7 @@
 
 This model can be used for detector of near objects with high precision.
 
-- Performance summary with test-dataset of database_v1_0 + database_v1_1 + database_v2_0 + database_v3_0
+- Performance summary with test-dataset of DB JPNTAXI v1.0 + DB JPNTAXI v2.0 + DB GSM8 v1.0 + DB J6 v1.0
   - Class mAP for center distance (0.5m, 1.0m, 2.0m, 4.0m)
   - Eval range: 90m
 
@@ -27,8 +27,8 @@ TransFusion-L-nearby v0 has many breaking changes.
   - voxel_size = [0.2, 0.2, 10]
   - grid_size = [512, 512, 1]
 - model
-  - Training dataset: database_v1_0 + database_v1_1
-  - Eval dataset: database_v1_0 + database_v1_1
+  - Training dataset: DB JPNTAXI v1.0 + DB JPNTAXI v2.0
+  - Eval dataset: DB JPNTAXI v1.0 + DB JPNTAXI v2.0
   - [Config file path](https://github.com/tier4/autoware-ml/blob/3df40a10310dff2d12e4590e26f81017e002a2a0/projects/TransFusion/configs/t4dataset/transfusion_lidar_pillar_second_secfpn_1xb1-cyclic-20e_t4xx1_50m_512grid.py)
   - [Deployed ROS parameter file](https://awf.ml.dev.web.auto/perception/models/transfusion/t4xx1_50m/v1/transfusion_ml_package.param.yaml)
   - [Deployed onnx model](https://awf.ml.dev.web.auto/perception/models/transfusion/t4xx1_50m/v1/transfusion.onnx)

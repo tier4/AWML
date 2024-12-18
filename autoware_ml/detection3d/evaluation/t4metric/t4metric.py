@@ -161,9 +161,9 @@ class T4Metric(NuScenesMetric):
         directories = []
         for info in data_infos:
             scene_token = info["scene_token"]
-            # ['database_v1_0', '3a13032b-6045-4db4-8632-9c52c3dd2fd9', '0', 'data', 'LIDAR_CONCAT', '98.pcd.bin']
+            # ['db_jpntaxi_v1', '3a13032b-6045-4db4-8632-9c52c3dd2fd9', '0', 'data', 'LIDAR_CONCAT', '98.pcd.bin']
             directory_list = info["lidar_points"]["lidar_path"].split("/")
-            # 'database_v1_0/3a13032b-6045-4db4-8632-9c52c3dd2fd9/0'
+            # 'db_jpntaxi_v1/3a13032b-6045-4db4-8632-9c52c3dd2fd9/0'
             directory = osp.join(*directory_list[0:3])
             if directory not in directories:
                 scene_tokens.append(scene_token)

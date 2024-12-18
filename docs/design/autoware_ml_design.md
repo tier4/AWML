@@ -143,20 +143,20 @@ The config files in `autoware_ml` is used commonly for each projects.
     - detection3d/
       - XX1.py
       - X2.py
-      - database_v1_0.yaml
-      - database_v1_1.yaml
-      - database_v1_3.yaml
+      - db_jpntaxi_v1.yaml
+      - db_jpntaxi_v2.yaml
+      - db_jpntaxi_v3.yaml
     - detection2d/
       - XX1.py
       - X2.py
-      - database_v1_0.yaml
-      - database_v1_1.yaml
+      - db_jpntaxi_v1.yaml
+      - db_jpntaxi_v2.yaml
       - tlr_v1_0.yaml
 ```
 
 - dataset configs: `autoware_ml/configs/*.yaml`
 
-The file like `detection3d/database_v1_0.yaml` defines dataset ids of T4dataset.
+The file like `detection3d/db_jpntaxi_v1.yaml` defines dataset ids of T4dataset.
 It contains document about T4dataset as belows.
 
 ```yaml

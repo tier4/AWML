@@ -5,7 +5,7 @@
   - range =
   - voxel_size =
   - grid_size =
-- Performance summary with test-dataset of database_v1_0 + database_v1_1 + database_v2_0 + database_v3_0
+- Performance summary with test-dataset of DB JPNTAXI v1.0 + DB JPNTAXI v2.0 + DB GSM8 v1.0 + DB J6 v1.0
   - Class mAP for center distance (0.5m, 1.0m, 2.0m, 4.0m)
   - Eval range: 90m
 

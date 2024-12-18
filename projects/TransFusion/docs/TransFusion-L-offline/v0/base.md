@@ -2,7 +2,7 @@
 ## Summary
 
 - Performance summary
-  - Dataset: database_v1_0 + database_v1_1 + database_v2_0 + database_v3_0
+  - Dataset: DB JPNTAXI v1.0 + DB JPNTAXI v2.0 + DB GSM8 v1.0 + DB J6 v1.0
   - Class mAP for center distance (0.5m, 1.0m, 2.0m, 4.0m)
   - Eval range: 120m
 
@@ -27,13 +27,13 @@ TransFusion-L-offline v0 has many breaking changes.
   - voxel_size = [0.32, 0.32, 10]
   - grid_size = [768, 768, 1]
 - model
-  - Training dataset: database_v1_0 + database_v1_1 + database_v2_0 + database_v3_0
+  - Training dataset: DB JPNTAXI v1.0 + DB JPNTAXI v2.0 + DB GSM8 v1.0 + DB J6 v1.0
   - [PR](https://github.com/tier4/autoware-ml/pull/146)
   - [Config file path](https://github.com/tier4/autoware-ml/blob/304ba041e85adc2a47d16229ac1768aea156a2a9/projects/TransFusion/configs/t4dataset/transfusion_lidar_pillar_second_secfpn_1xb1_120m-768grid-t4base.py)
   - [Deployed onnx model and ROS parameter files](https://evaluation.tier4.jp/evaluation/mlpackages/1800c7f8-a80e-4162-8574-4ee84432e89d/releases/6d18aacb-c1d8-468e-a9fc-5ef616b3b55a?project_id=zWhWRzei)
   - [Training results](https://drive.google.com/drive/folders/1v4QN696n4iMIlk0j5O_Pxho7zgoBsJa5)
   - train time: NVIDIA RTX 6000 Ada Generation * 2 * 5 days
-- Evaluation result with test-dataset of database_v1_0 + database_v1_1 + database_v2_0 + database_v3_0
+- Evaluation result with test-dataset of DB JPNTAXI v1.0 + DB JPNTAXI v2.0 + DB GSM8 v1.0 + DB J6 v1.0
   - eval range = 120m
   - Total mAP to test dataset : 0.573
 
@@ -45,7 +45,7 @@ TransFusion-L-offline v0 has many breaking changes.
 | bicycle    | 45.2 | 43.3    | 45.2    | 45.9    | 46.4    |
 | pedestrian | 53.0 | 46.7    | 51.0    | 55.3    | 58.9    |
 
-- Evaluation result with eval-dataset of database_v1_0 + database_v1_1
+- Evaluation result with eval-dataset of DB JPNTAXI v1.0 + DB JPNTAXI v2.0
 
 | class_name | mAP  | AP@0.5m | AP@1.0m | AP@2.0m | AP@4.0m |
 | ---------- | ---- | ------- | ------- | ------- | ------- |
@@ -55,7 +55,7 @@ TransFusion-L-offline v0 has many breaking changes.
 | bicycle    | 44.2 | 39.3    | 44.6    | 46.0    | 46.8    |
 | pedestrian | 56.0 | 47.9    | 54.3    | 59.1    | 62.8    |
 
-- Evaluation result with eval-dataset of database_v2_0 + database_v3_0
+- Evaluation result with eval-dataset of DB GSM8 v1.0 + DB J6 v1.0
 
 | class_name | mAP  | AP@0.5m | AP@1.0m | AP@2.0m | AP@4.0m |
 | ---------- | ---- | ------- | ------- | ------- | ------- |
@@ -80,8 +80,8 @@ TransFusion-L-offline v0 has many breaking changes.
   - voxel_size = [0.32, 0.32, 10]
   - grid_size = [768, 768, 1]
 - model
-  - Training dataset: database_v1_0 + database_v1_1
-  - Eval dataset: database_v1_0 + database_v1_1
+  - Training dataset: DB JPNTAXI v1.0 + DB JPNTAXI v2.0
+  - Eval dataset: DB JPNTAXI v1.0 + DB JPNTAXI v2.0
   - [Config file path](https://github.com/tier4/autoware-ml/blob/3df40a10310dff2d12e4590e26f81017e002a2a0/projects/TransFusion/configs/t4dataset/transfusion_lidar_pillar_second_secfpn_1xb1-cyclic-20e_t4xx1_120m_768grid.py)
   - [Deployed ROS parameter file](https://awf.ml.dev.web.auto/perception/models/transfusion/t4xx1_120m/v1/transfusion_ml_package.param.yaml)
   - [Deployed onnx model](https://awf.ml.dev.web.auto/perception/models/transfusion/t4xx1_120m/v1/transfusion.onnx)

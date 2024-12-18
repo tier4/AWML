@@ -1,8 +1,8 @@
 version: 1
-dataset_version: db-1.0.0
-#dataset_version: db-jpntaxi-1.0
+dataset_version: db-jpntaxi-v1.0
+
 docs: |
-  Product: XX1
+  Product: JPNTAXI
   Place: Odaiba, Nishi-Shinjuku, and Shiojiri
   Amount: About 12000 frames
   Sensor: Velodyne LiDAR + BFS Camera
@@ -154,7 +154,6 @@ train:
   - 89bf7123-d1aa-47a4-82ce-941488fac7b7 # DBv1.0_shiojiri_52
   - 819512a4-6d57-4623-b703-eb2963bef7da # DBv1.0_shiojiri_53
 
-# Note(yukke42): val and test split are selected by the datetime not to be a data leak.
 val:
   - 961bbdff-0b35-47a1-a61d-4b4187abae91 # DBv1.0_odaiba_09
   - b06d085b-8f56-4c18-b732-65280b540241 # DBv1.0_odaiba_11

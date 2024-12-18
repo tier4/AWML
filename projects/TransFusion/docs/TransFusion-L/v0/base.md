@@ -1,7 +1,7 @@
 # Deployed model for TransFusion-L base/0.X
 ## Summary
 
-- Performance summary with test-dataset of database_v1_0 + database_v1_1 + database_v2_0 + database_v3_0
+- Performance summary with test-dataset of DB JPNTAXI v1.0 + DB JPNTAXI v2.0 + DB GSM8 v1.0 + DB J6 v1.0
   - Class mAP for center distance (0.5m, 1.0m, 2.0m, 4.0m)
   - Eval range: 90m
 
@@ -16,7 +16,7 @@ TransFusion-L v0 has many breaking changes.
 ### TransFusion-L base/0.6
 
 - We trained by dataset of all product.
-- Note that this model is trained by DB1.0 + DB1.1 + DB2.0 + DB3.0.
+- Note that this model is trained by DB JPNTAXI v1.0 + DB JPNTAXI v2.0 + DB GSM8 v1.0 + DB J6 v1.0.
 - The evaluation in X2 product increased 12% (from 58.5 to 66.0).
 
 | Method                             | mAP-japantaxi | mAP-X2 |
@@ -32,13 +32,13 @@ TransFusion-L v0 has many breaking changes.
   - voxel_size = [0.24, 0.24, 10]
   - grid_size = [768, 768, 1]
 - model
-  - Training dataset: database_v1_0 + database_v1_1 + database_v2_0 + database_v3_0
+  - Training dataset: DB JPNTAXI v1.0 + DB JPNTAXI v2.0 + DB GSM8 v1.0 + DB J6 v1.0
   - [PR](https://github.com/tier4/autoware-ml/pull/125)
   - [Config file path](https://github.com/tier4/autoware-ml/blob/5f472170f07251184dc009a1ec02be3b4f3bf98c/autoware_ml/configs/detection3d/dataset/t4dataset/base.py)
   - [Deployed onnx model and ROS parameter files](https://evaluation.tier4.jp/evaluation/mlpackages/1800c7f8-a80e-4162-8574-4ee84432e89d/releases/008b128a-873a-4e4a-afa6-d2583f7fc224?project_id=zWhWRzei&tab=reports)
   - [Training results](https://drive.google.com/drive/folders/1uyUE-ReYARmykG1GsFG2vYsysWwJv3sW)
   - train time: NVIDIA RTX 6000 Ada Generation * 2 * 5 days
-- Evaluation result with test-dataset of database_v1_0 + database_v1_1 + database_v2_0 + database_v3_0
+- Evaluation result with test-dataset of DB JPNTAXI v1.0 + DB JPNTAXI v2.0 + DB GSM8 v1.0 + DB J6 v1.0
   - Total mAP to test dataset (eval range = 90m): 0.653
 
 | class_name | mAP  | AP@0.5m | AP@1.0m | AP@2.0m | AP@4.0m |
@@ -49,7 +49,7 @@ TransFusion-L v0 has many breaking changes.
 | bicycle    | 54.9 | 53.4    | 54.8    | 55.4    | 55.9    |
 | pedestrian | 63.0 | 56.9    | 61.3    | 65.4    | 68.4    |
 
-- Evaluation result with eval-dataset of database_v1_0 + database_v1_1
+- Evaluation result with eval-dataset of DB JPNTAXI v1.0 + DB JPNTAXI v2.0
 
 | class_name | mAP  | AP@0.5m | AP@1.0m | AP@2.0m | AP@4.0m |
 | ---------- | ---- | ------- | ------- | ------- | ------- |
@@ -59,7 +59,7 @@ TransFusion-L v0 has many breaking changes.
 | bicycle    | 57.4 | 54.4    | 57.5    | 58.4    | 59.1    |
 | pedestrian | 65.5 | 57.9    | 64.1    | 68.7    | 71.1    |
 
-- Evaluation result with eval-dataset of database_v2_0 + database_v3_0
+- Evaluation result with eval-dataset of DB GSM8 v1.0 + DB J6 v1.0
 
 | class_name | mAP  | AP@0.5m | AP@1.0m | AP@2.0m | AP@4.0m |
 | ---------- | ---- | ------- | ------- | ------- | ------- |
@@ -74,7 +74,7 @@ TransFusion-L v0 has many breaking changes.
 ### TransFusion-L base/0.5
 
 - This model is released for X2 product at first.
-- Note that this model is trained by DB2.0 + DB3.0.
+- Note that this model is trained by DB GSM8 v1.0 + DB J6 v1.0.
 
 <details>
 <summary> The link of data and evaluation result </summary>
@@ -82,8 +82,8 @@ TransFusion-L v0 has many breaking changes.
 - Parameter
   - pillar 0.24m * grid 768 = 92.16m
 - model
-  - Training dataset: database_v2_0 + database_v3_0
-  - Eval dataset: database_v2_0 + database_v3_0
+  - Training dataset: DB GSM8 v1.0 + DB J6 v1.0
+  - Eval dataset: DB GSM8 v1.0 + DB J6 v1.0
   - [PR](https://github.com/tier4/autoware-ml/pull/126)
   - [Config file path](https://github.com/tier4/autoware-ml/blob/e8701f9953be3034776b0de71ecbd03146c03c5f/projects/TransFusion/configs/t4dataset/transfusion_lidar_pillar_second_secfpn_1xb1_90m-768grid-t4x2.py)
   - [Deployed onnx and ROS parameter files](https://evaluation.tier4.jp/evaluation/mlpackages/1800c7f8-a80e-4162-8574-4ee84432e89d/releases/acdd07c5-4a8f-4983-88e7-a8823f7dc672?project_id=zWhWRzei)
@@ -103,8 +103,8 @@ TransFusion-L v0 has many breaking changes.
 
 ### TransFusion-L base/0.4
 
-- We added DB1.3 for training.
-- mAP of (DB1.0 + 1.1 test dataset, eval range 90m) is as same as the model of base/0.3.
+- We added DB JPNTAXI v3.0 for training.
+- mAP of "DB JPNTAXI v1.0 + DB JPNTAXI v2.0 test dataset, eval range 90m" is as same as the model of base/0.3.
 
 |          | mAP  | car  | truck | bus  | bicycle | pedestrian |
 | -------- | ---- | ---- | ----- | ---- | ------- | ---------- |
@@ -117,8 +117,8 @@ TransFusion-L v0 has many breaking changes.
 - Parameter
   - pillar 0.24m * grid 768 = 92.16m
 - model
-  - Training dataset: database_v1_0 + database_v1_1 + database_v1_3
-  - Eval dataset: database_v1_0 + database_v1_1 + database_v1_3
+  - Training dataset: DB JPNTAXI v1.0 + DB JPNTAXI v2.0 + DB JPNTAXI v3.0
+  - Eval dataset: DB JPNTAXI v1.0 + DB JPNTAXI v2.0 + DB JPNTAXI v3.0
   - [PR](https://github.com/tier4/autoware-ml/pull/100)
   - [Config file path](https://github.com/tier4/autoware-ml/blob/37cf92a2b4b3d7f80b09c8bd5eaff6229ca18f95/projects/TransFusion/configs/t4dataset/transfusion_lidar_pillar_second_secfpn_1xb1_90m-768grid-t4xx1.py)
   - [Deployed onnx model](https://awf.ml.dev.web.auto/perception/models/transfusion/t4xx1_90m/v3/transfusion.onnx)
@@ -127,7 +127,7 @@ TransFusion-L v0 has many breaking changes.
   - [Training results](https://awf.ml.dev.web.auto/perception/models/transfusion/t4xx1_90m/v3/logs.zip)
   - train time: (A100 * 4) * 2 days
 - Total mAP: 0.685
-  - Test dataset: database_v1_0 + database_v1_1
+  - Test dataset: DB JPNTAXI v1.0 + DB JPNTAXI v2.0
   - Eval range = 90m
 
 | class_name | mAP  | AP@0.5m | AP@1.0m | AP@2.0m | AP@4.0m |
@@ -139,7 +139,7 @@ TransFusion-L v0 has many breaking changes.
 | pedestrian | 64.1 | 56.9    | 62.1    | 66.9    | 70.4    |
 
 - Total mAP: 0.696
-  - Test dataset: database_v1_3
+  - Test dataset: DB JPNTAXI v3.0
   - Eval range = 90m
 
 | class_name | mAP  | AP@0.5m | AP@1.0m | AP@2.0m | AP@4.0m |
@@ -155,8 +155,8 @@ TransFusion-L v0 has many breaking changes.
 ### TransFusion-L base/0.3
 
 - We used the high resolution to improve the detection performance.
-- Note that this model is trained by DB1.0 + DB1.1.
-- mAP of (DB1.0 + 1.1 test dataset, eval range 90m) increased 18% (from 0.578 to 0.681).
+- Note that this model is trained by DB JPNTAXI v1.0 + DB JPNTAXI v2.0.
+- mAP of "DB JPNTAXI v1.0 + DB JPNTAXI v2.0 test dataset, eval range 90m" increased 18% (from 0.578 to 0.681).
 
 |          | mAP  | car  | truck | bus  | bicycle | pedestrian |
 | -------- | ---- | ---- | ----- | ---- | ------- | ---------- |
@@ -169,8 +169,8 @@ TransFusion-L v0 has many breaking changes.
 - Parameter
   - pillar 0.24m * grid 768 = 92.16m
 - model
-  - Training dataset: database_v1_0 + database_v1_1
-  - Eval dataset: database_v1_0 + database_v1_1
+  - Training dataset: DB JPNTAXI v1.0 + DB JPNTAXI v2.0
+  - Eval dataset: DB JPNTAXI v1.0 + DB JPNTAXI v2.0
   - [Config file path](https://github.com/tier4/autoware-ml/blob/fe28c0a7de0579c68406e40c5abfe9afcaed41f6/projects/TransFusion/configs/t4dataset/transfusion_lidar_pillar_second_secfpn_1xb4-cyclic-20e_t4xx1_90m_768grid.py) (Note: eval range is 75m in training time)
   - [Deployed onnx model](https://awf.ml.dev.web.auto/perception/models/transfusion/t4xx1_90m/v2/transfusion.onnx)
   - [Deployed ROS parameter file](https://awf.ml.dev.web.auto/perception/models/transfusion/t4xx1_90m/v2/transfusion.param.yaml)
@@ -192,7 +192,7 @@ TransFusion-L v0 has many breaking changes.
 ### TransFusion-L base/0.2
 
 - We fixed the bug of `autoware-ml` and improve the performance.
-- Note that this model is trained by DB1.0 + DB1.1.
+- Note that this model is trained by DB JPNTAXI v1.0 + DB JPNTAXI v2.0.
 
 <details>
 <summary> The link of data and evaluation result </summary>
@@ -200,8 +200,8 @@ TransFusion-L v0 has many breaking changes.
 - Parameter
   - pillar 0.32m * grid 576 = 92.16m
 - model
-  - Training dataset: database_v1_0 + database_v1_1
-  - Eval dataset: database_v1_0 + database_v1_1
+  - Training dataset: DB JPNTAXI v1.0 + DB JPNTAXI v2.0
+  - Eval dataset: DB JPNTAXI v1.0 + DB JPNTAXI v2.0
   - [Config file path](https://github.com/tier4/autoware-ml/blob/fe28c0a7de0579c68406e40c5abfe9afcaed41f6/projects/TransFusion/configs/t4dataset/transfusion_lidar_pillar_second_secfpn_1xb6-cyclic-20e_t4xx1_90m_576grid.py) (Note: eval range is 75m in training time)
   - [Deployed onnx model](https://awf.ml.dev.web.auto/perception/models/transfusion/t4xx1_90m/v1/transfusion.onnx)
   - [Deployed ROS parameter file](https://awf.ml.dev.web.auto/perception/models/transfusion/t4xx1_90m/v1/transfusion.param.yaml)
@@ -231,8 +231,8 @@ TransFusion-L v0 has many breaking changes.
 - Parameter
   - pillar 0.3m * grid 512 = 76.8m
 - model
-  - Training dataset: database_v1_0
-  - Eval dataset: database_v1_1 (Bug fix and [new dataset config is applied](https://github.com/tier4/autoware-ml/pull/31))
+  - Training dataset: DB JPNTAXI v1.0
+  - Eval dataset: DB JPNTAXI v2.0 (Bug fix and [new dataset config is applied](https://github.com/tier4/autoware-ml/pull/31))
   - [Config file](https://github.com/tier4/autoware-ml/blob/17e8944ac2154f1f1042a507a4001ccf057ffe78/projects/TransFusion/configs/t4dataset/transfusion_lidar_pillar02_second_secfpn_1xb4-cyclic-20e_t4xx1.py)
   - [Deployed onnx model](https://awf.ml.dev.web.auto/perception/models/transfusion/v1/transfusion.onnx)
 - val

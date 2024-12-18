@@ -6,7 +6,7 @@ The main topic is following.
 - Start to dataset versioning
 
 We start dataset versioning.
-We changed from `DB v1.0` to `DB JpnTaxi v1.0` and changed config files in autoware-ml according to it.
+We changed from `DB v1.0` to `DB JPNTAXI v1.0` and changed config files in autoware-ml according to it.
 Please see [document](https://github.com/tier4/autoware-ml/blob/main/docs/design/architecture_dataset.md) in detail.
 
 - Integrated auto/semi-auto label pipeline and started to use pseudo T4dataset
@@ -32,7 +32,7 @@ Please see [experiment result](https://github.com/tier4/autoware-ml/issues/148) 
 
 ### Core library
 
-- Update DB JpnTaxi v3.0
+- Update DB JPNTAXI v3.0
   - https://github.com/tier4/autoware-ml/pull/303
 
 ### Tools

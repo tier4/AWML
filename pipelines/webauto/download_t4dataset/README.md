@@ -16,13 +16,13 @@ You can download T4dataset by script using WebAuto CLI.
   - If you want to use rosbag, delete the flag of `--delete-rosbag`
 
 ```sh
-python pipelines/webauto/download_t4dataset/download_t4dataset.py autoware_ml/configs/detection3d/dataset/t4dataset/database_v1_1.yaml --output ./data/t4dataset/ --project-id prd_jt --delete-rosbag
+python pipelines/webauto/download_t4dataset/download_t4dataset.py autoware_ml/configs/detection3d/dataset/t4dataset/db_jpntaxi_v2.yaml --output ./data/t4dataset/ --project-id prd_jt --delete-rosbag
 ```
 
 - (Choice) Download for X2
 
 ```sh
-python pipelines/webauto/download_t4dataset/download_t4dataset.py autoware_ml/configs/detection3d/dataset/t4dataset/database_v3_0.yaml --output ./data/t4dataset/ --project-id x2_dev --delete-rosbag
+python pipelines/webauto/download_t4dataset/download_t4dataset.py autoware_ml/configs/detection3d/dataset/t4dataset/db_j6_v1.yaml --output ./data/t4dataset/ --project-id x2_dev --delete-rosbag
 ```
 
 - (Choice) Download for traffic light recognition
@@ -35,7 +35,7 @@ python pipelines/webauto/download_t4dataset/download_t4dataset.py autoware_ml/co
 
 ```
 - data/t4dataset
-  - /database_v1_1/
+  - /db_jpntaxi_v2/
     - {t4dataset_id}
     - {t4dataset_id}
     - {t4dataset_id}

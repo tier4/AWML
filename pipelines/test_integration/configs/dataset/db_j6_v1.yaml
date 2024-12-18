@@ -1,7 +1,8 @@
 version: 1
+dataset_version: db-j6-1.0
 
 docs: |
-  Product: X2
+  Product: J6
   Place: Shiojiri
   Amount: About 5000 frames
   Sensor: Hesai LiDAR + C1 Camera + Radar data

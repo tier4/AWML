@@ -12,17 +12,17 @@ jobs:
     strategy:
       matrix:
         config_pair:
-          - dataset_config_path: "autoware_ml/configs/detection3d/dataset/t4dataset/database_v1_3.yaml"
+          - dataset_config_path: "autoware_ml/configs/detection3d/dataset/t4dataset/db_jpntaxi_v3.yaml"
             webauto_keyword: "DBv1.3"
 
           # Followings are stale datasets and thus shall not be updated
-          # - dataset_config_path: "autoware_ml/configs/detection3d/dataset/t4dataset/database_v1_0.yaml"
+          # - dataset_config_path: "autoware_ml/configs/detection3d/dataset/t4dataset/db_jpntaxi_v1.yaml"
           #   webauto_keyword: "DBv1.0"
-          # - dataset_config_path: "autoware_ml/configs/detection3d/dataset/t4dataset/database_v1_1.yaml"
+          # - dataset_config_path: "autoware_ml/configs/detection3d/dataset/t4dataset/db_jpntaxi_v2.yaml"
           #   webauto_keyword: "DBv1.1"
-          # - dataset_config_path: "autoware_ml/configs/detection3d/dataset/t4dataset/database_v2_0.yaml"
+          # - dataset_config_path: "autoware_ml/configs/detection3d/dataset/t4dataset/db_gsm8_v1.yaml"
           #   webauto_keyword: "DBv2.0"
-          # - dataset_config_path: "autoware_ml/configs/detection3d/dataset/t4dataset/database_v3_0.yaml"
+          # - dataset_config_path: "autoware_ml/configs/detection3d/dataset/t4dataset/db_j6_v1.yaml"
           #   webauto_keyword: "DBv3.0"
 
     steps:

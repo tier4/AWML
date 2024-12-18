@@ -1,9 +1,8 @@
 version: 1
-dataset_version: db-2.0.0
-#dataset_version: db-gsm8-1.0
+dataset_version: db-gsm8-v1.0
 
 docs: |
-  Product: X2
+  Product: GSM8
   Place: Nishi-Shinjuku and GLP-Atsugi
   Amount: About 8000 frames
   Sensor: Hesai LiDAR + BFS Camera

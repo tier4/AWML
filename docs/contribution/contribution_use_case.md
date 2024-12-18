@@ -75,8 +75,8 @@ Note that you should use commit hash for config file path after first PR changin
 ```md
 ### base/0.4
 
-- We added DB1.3 for training.
-- mAP of (DB1.0 + 1.1 test dataset, eval range 90m) is as same as the model of base/0.3.
+- We added DB JPNTAXI v3.0 for training.
+- mAP of (DB JPNTAXI v1.0 + DB JPNTAXI v2.0 test dataset, eval range 90m) is as same as the model of base/0.3.
 
 |          | mAP  | car  | truck | bus  | bicycle | pedestrian |
 | -------- | ---- | ---- | ----- | ---- | ------- | ---------- |
@@ -87,8 +87,7 @@ Note that you should use commit hash for config file path after first PR changin
 <summary> The link of data and evaluation result </summary>
 
 - model
-  - Training dataset:
-  - Eval dataset:
+  - Training dataset: DB JPNTAXI v1.0 + DB JPNTAXI v2.0 + DB JPNTAXI v3.0 + DB GSM8 v1.0 + DB J6 v1.0 (total frames: 34,137)
   - [PR]()
   - [Config file path]()
   - [Checkpoint]()
@@ -96,8 +95,20 @@ Note that you should use commit hash for config file path after first PR changin
   - [Deployed onnx model]()
   - [Deployed ROS parameter file]()
   - train time: (A100 * 4) * 3 days
-- Total mAP: 0.685
-  - Dataset: DB1.0 + DB1.1 + DB2.0 L + DB3.0 test dataset
+- Total mAP: 0.685 for all dataset
+  - Test dataset of DB JPNTAXI v1.0 + DB JPNTAXI v2.0 + DB JPNTAXI v3.0 + DB GSM8 v1.0 + DB J6 v1.0 (total frames: 62)
+  - Eval range = 90m
+
+| class_name | Count | mAP | AP@0.5m | AP@1.0m | AP@2.0m | AP@4.0m |
+| ---------- | ----- | --- | ------- | ------- | ------- | ------- |
+| car        |       |     |         |         |         |         |
+| truck      |       |     |         |         |         |         |
+| bus        |       |     |         |         |         |         |
+| bicycle    |       |     |         |         |         |         |
+| pedestrian |       |     |         |         |         |         |
+
+- Total mAP: 0.685 for X2 dataset
+  - Test dataset of DB GSM8 v1.0 + DB J6 v1.0 (total frames: 62)
   - Eval range = 90m
 
 | class_name | Count | mAP | AP@0.5m | AP@1.0m | AP@2.0m | AP@4.0m |

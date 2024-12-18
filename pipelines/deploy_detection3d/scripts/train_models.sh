@@ -14,7 +14,7 @@ GPU_N=2
 
 # onnx deploy
 # DIR="work_dirs/transfusion_lidar_pillar_second_secfpn_1xb1_90m-768grid-t4xx1" && \
-# python tools/detection3d/deploy.py projects/TransFusion/configs/deploy/transfusion_lidar_tensorrt_dynamic-20x5.py $DIR/transfusion_lidar_pillar_second_secfpn_1xb1_90m-768grid-t4xx1.py $DIR/epoch_50.pth data/t4dataset/database_v1_1/0171a378-bf91-420e-9206-d047f6d1139a/0/data/LIDAR_CONCAT/0.pcd.bin --device cuda:0 --work-dir /workspace/$DIR/onnx
+# python tools/detection3d/deploy.py projects/TransFusion/configs/deploy/transfusion_lidar_tensorrt_dynamic-20x5.py $DIR/transfusion_lidar_pillar_second_secfpn_1xb1_90m-768grid-t4xx1.py $DIR/epoch_50.pth data/t4dataset/db_jpntaxi_v2/0171a378-bf91-420e-9206-d047f6d1139a/0/data/LIDAR_CONCAT/0.pcd.bin --device cuda:0 --work-dir /workspace/$DIR/onnx
 # DIR="work_dirs/transfusion_lidar_pillar_second_secfpn_1xb1_90m-768grid-t4xx1" && \
 # python projects/TransFusion/scripts/fix_graph.py $DIR/onnx/end2end.onnx
 

@@ -1,7 +1,8 @@
 version: 1
+dataset_version: db-jpntaxi-2.0
 
 docs: |
-  Product: XX1
+  Product: JPNTAXI
   Place: Odaiba
   Amount: About 2000 frames
   Sensor: Velodyne LiDAR + BFS Camera
@@ -90,22 +91,22 @@ train:
   #- dd759377-4ff7-49c5-9d42-5b1c30eba18b # DBv1.1_odaiba_12-4_100-200
 
 val:
-  #- 3013c354-2492-447b-88ce-70ec0438f494 # DBv1.1_odaiba_4-1_0-100
-  #- c8cf2fe3-9097-4f8d-8984-e99c4ddd0ced # DBv1.1_odaiba_5-1_0-100
-  #- a1f10b82-6f10-47ab-a253-a12a2f131929 # DBv1.1_odaiba_5-1_100-200
-  #- 3ebf5eef-940f-4877-a093-a1ec933505e8 # DBv1.1_odaiba_5-3_0-100
-  #- 5fa608b9-5321-4cac-8f21-d2b1e215c9aa # DBv1.1_odaiba_5-3_100-200
+  # - 3013c354-2492-447b-88ce-70ec0438f494 # DBv1.1_odaiba_4-1_0-100
+  # - c8cf2fe3-9097-4f8d-8984-e99c4ddd0ced # DBv1.1_odaiba_5-1_0-100
+  # - a1f10b82-6f10-47ab-a253-a12a2f131929 # DBv1.1_odaiba_5-1_100-200
+  # - 3ebf5eef-940f-4877-a093-a1ec933505e8 # DBv1.1_odaiba_5-3_0-100
+  # - 5fa608b9-5321-4cac-8f21-d2b1e215c9aa # DBv1.1_odaiba_5-3_100-200
   - 198435d1-5648-421c-a284-35b26a52136e # DBv1.1_odaiba_5-4_0-100
-  #- 96200480-ae59-44cb-9e4e-dd9021e250e8 # DBv1.1_odaiba_5-5_0-100
+  # - 96200480-ae59-44cb-9e4e-dd9021e250e8 # DBv1.1_odaiba_5-5_0-100
 
 test:
   - 13351af0-41cb-4a96-9553-aeb919efb46e # DBv1.1_odaiba_6-11_0-100
-  #- 9e973a55-3f70-48e0-8b37-a68b66a99686 # DBv1.1_odaiba_6-11_100-200
-  #- 54a6cc24-ec9d-47f5-b2bf-813d0da9bf47 # DBv1.1_odaiba_6-15_0-100
-  #- 5f1c6a02-9193-487a-8ba8-74f4d3f4d609 # DBv1.1_odaiba_6-15_100-200
-  #- a7ce24a6-a506-47be-8254-884365ca52f3 # DBv1.1_odaiba_3-1_0-100
-  #- 9cbc58ea-1498-49dd-8fc5-e61c2ec26187 # DBv1.1_odaiba_3-1_100-200
-  #- cf835959-ece5-40da-b685-71425747f7af # DBv1.1_odaiba_3-2_0-100
-  #- a7d001ce-6591-4597-8ce3-6f28a49dcbe3 # DBv1.1_odaiba_3-2_100-200
-  #- 92403ff0-81ad-49cc-94c5-f1cc4581ab93 # DBv1.1_odaiba_3-3_0-100
-  #- 0338521f-321a-4a9a-9c52-480f1ae1131a # DBv1.1_odaiba_3-3_100-200
+  # - 9e973a55-3f70-48e0-8b37-a68b66a99686 # DBv1.1_odaiba_6-11_100-200
+  # - 54a6cc24-ec9d-47f5-b2bf-813d0da9bf47 # DBv1.1_odaiba_6-15_0-100
+  # - 5f1c6a02-9193-487a-8ba8-74f4d3f4d609 # DBv1.1_odaiba_6-15_100-200
+  # - a7ce24a6-a506-47be-8254-884365ca52f3 # DBv1.1_odaiba_3-1_0-100
+  # - 9cbc58ea-1498-49dd-8fc5-e61c2ec26187 # DBv1.1_odaiba_3-1_100-200
+  # - cf835959-ece5-40da-b685-71425747f7af # DBv1.1_odaiba_3-2_0-100
+  # - a7d001ce-6591-4597-8ce3-6f28a49dcbe3 # DBv1.1_odaiba_3-2_100-200
+  # - 92403ff0-81ad-49cc-94c5-f1cc4581ab93 # DBv1.1_odaiba_3-3_0-100
+  # - 0338521f-321a-4a9a-9c52-480f1ae1131a # DBv1.1_odaiba_3-3_100-200

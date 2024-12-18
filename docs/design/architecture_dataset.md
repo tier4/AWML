@@ -7,7 +7,7 @@ We divide the four types for T4dataset as following.
 
 Database T4dataset is mainly used for training a model.
 We call database T4dataset as "Database {vehicle name} vX.Y", "DB {vehicle name} vX.Y" in short.
-For example, we use like "Database JPNTaxi v1.1", "DB JPNTaxi v1.1" in short.
+For example, we use like "Database JPNTAXI v1.1", "DB JPNTAXI v1.1" in short.
 We manage database T4dataset in [dataset config](/autoware_ml/configs/detection3d/dataset/t4dataset) like `db_jpntaxi_v1.yaml` (file name use only the version of X).
 
 - Use case T4dataset
@@ -25,7 +25,7 @@ After we annotate for it, it change to database T4dataset or use case T4dataset.
 Pseudo T4dataset is annotated to non-annotated T4dataset by auto-labeling like [t4dataset_pseudo_label_3d](/tools/t4dataset_pseudo_label_3d/).
 Pseudo T4dataset is mainly used to train pre-training model.
 We call pseudo T4dataset as "Pseudo {vehicle name} vX.Y".
-For example, we use like "Pseudo JPNTaxi v1.0".
+For example, we use like "Pseudo JPNTAXI v1.0".
 We manage pseudo T4dataset in [dataset config](/autoware_ml/configs/detection3d/dataset/t4dataset) like `pseudo_jpntaxi_v1.yaml` (file name use only the version of X).
 Note that `autoware-ml` do not manage Pseudo T4dataset which is used for domain adaptation.
 
@@ -49,7 +49,7 @@ The directory architecture is following.
 ### Versioning strategy for Database T4dataset
 
 We manage the version of T4dataset as "the type of T4dataset" + "vehicle name" + "vX.Y".
-For example, we use like "DB JpnTaxi v2.2", "DB GSM8 v1.1", "Pseudo J6Gen2 v1.0".
+For example, we use like "DB JPNTAXI v2.2", "DB GSM8 v1.1", "Pseudo J6Gen2 v1.0".
 
 #### "the type of T4dataset"
 
@@ -57,12 +57,38 @@ As the type of T4dataset, we use "DB" for database T4dataset, "UC" for use case 
 
 #### "vehicle name".
 
-For now, we define as following.
+We define as following.
 
-- JpnTaxi: XX1 JPN TAXI
-- Gsm8: X2 Minibus (GSM8)
-- J6: X2 Minibus 1.0 (J6)
-- J6Gen2: X2 Minibus 2.0 (J6)
+- "JPNTAXI"
+
+"JPNTAXI" is the taxi based on "JPN TAXI".
+It is categorized in Robo-Taxi, what we call "XX1".
+The sensor configuration basically consists of 1 * VLS-128 as top LiDAR, 3 * VLP-16 as side LiDARs, 6 * TIER IV C1 cameras (85deg) as cameras for object recognition, 1 * TIER IV C1 camera (85deg) as camera for traffic light recognition, 1 * TIER IV C2 camera (62deg) as camera for traffic light recognition, and 6 * continental ARS408-21 as radars.
+The sensors depends on when the data was taken.
+
+- "GSM8"
+
+"GSM8" is the EV mini-bus version 0 based on the vehicle of "GSM8"
+It is categorized in shuttle bus, what we call "X2".
+The sensor configuration consists of 4 * Hesai Pandar40P as main LiDARs, 4 * Hesai PandarQT64 as LiDARs for surround objects, 6 * TIER IV C1 cameras (85deg) as cameras for object recognition, 2 * TIER IV C1 camera (85deg) as camera for traffic light recognition.
+
+- "J6"
+
+"J6" is the EV mini-bus version 1 based on the vehicle of "J6"
+It is categorized in shuttle bus, what we call "X2".
+The sensor configuration is basically same as "GSM8".
+The sensor configuration consists of 4 * Hesai Pandar40P as main LiDARs, 4 * Hesai PandarQT64 as LiDARs for surround objects, 6 * TIER IV C1 cameras (85deg) as cameras for object recognition, 2 * TIER IV C1 camera (85deg) as camera for traffic light recognition, and 6 * continental ARS408 as radars.
+
+- "J6Gen2"
+
+"J6Gen2" is the EV mini-bus version 2 based on the vehicle of "J6" and update the sensor configuration from "J6".
+It is categorized in gen2 of shuttle bus, what we call "X2Gen2".
+The sensor configuration basically consists of 4 * Hesai OT128 as main LiDARs, 4 * Hesai QT128 as LiDARs for surround objects, 9 * TIER IV C1 cameras (85deg) as cameras for object recognition, 1 * TIER IV C2 camera (62deg) as camera for traffic light recognition, 1 * TIER IV C2 camera (30deg) as camera for traffic light recognition, and 6 * continental ARS540 as radars.
+
+- "TLR"
+
+In addition to T4dataset with each vehicle, we construct T4dataset for traffic light recognition (TLR).
+It don't depends on the type of vehicles, so we call the dataset as "TLR".
 
 #### X: Management classification for dataset
 
@@ -132,7 +158,7 @@ We add T4dataset for "DB/UC/Pseudo {new vehicle name} v1.0".
 version: 1
 dataset_version: db-j6gen2-v1.0
 docs: |
-  Product: X2-gen2
+  Product: J6Gen2
   Place: Odaiba
   Amount: About 5000 frames
   Sensor: Hesai LiDAR + C1 Camera + Radar data
@@ -176,7 +202,7 @@ If we add new scenes like different experiment area for existing vehicle, we add
 version: 1
 dataset_version: db-j6gen2-v2.0
 docs: |
-  Product: X2-gen2
+  Product: J6Gen2
   Place: Odaiba
   Amount: About 5000 frames
   Sensor: Hesai LiDAR + C1 Camera + Radar data
@@ -232,7 +258,7 @@ version: 1
 dataset_version: db-j6gen2-v2.1
 
 docs: |
-  Product: X2-gen2
+  Product: J6Gen2
   Place: Odaiba
   Amount: About 5000 frames
   Sensor: Hesai LiDAR + C1 Camera + Radar data

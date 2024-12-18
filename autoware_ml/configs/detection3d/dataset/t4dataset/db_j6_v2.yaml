@@ -1,7 +1,8 @@
 version: 1
+dataset_version: db-j6-v2.0
 
 docs: |
-  Product: X2
+  Product: J6
   Place: Tokoname and Yokoshiba. Odaiba will be added,too.
   Amount: 1,475 frames
   Sensor: Hesai LiDAR + C1 Camera + Radar data

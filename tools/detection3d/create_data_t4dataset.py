@@ -53,7 +53,7 @@ def get_scene_root_dir_path(
 
     Args:
         root_path (str): The root path of the T4 Dataset.
-        dataset_version (str): The dataset version like 'database_v1_1'
+        dataset_version (str): The dataset version like 'db_jpntaxi_v2'
         scene_id: The scene id token.
     Returns:
         str: The updated path containing the version directory if it exists,
@@ -62,14 +62,14 @@ def get_scene_root_dir_path(
     # an integer larger than or equal to 0
     version_pattern = re.compile(r"^\d+$")
 
-    # "./data/t4dataset/database_v1_1/e6d0237c-274c-4872-acc9-dc7ea2b77943"
+    # "./data/t4dataset/db_jpntaxi_v2/e6d0237c-274c-4872-acc9-dc7ea2b77943"
     scene_root_dir_path = osp.join(root_path, dataset_version, scene_id)
 
     version_dirs = [d for d in os.listdir(scene_root_dir_path) if version_pattern.match(d)]
 
     if version_dirs:
         version_id = sorted(version_dirs, key=int)[-1]
-        # "./data/t4dataset/database_v1_1/e6d0237c-274c-4872-acc9-dc7ea2b77943/0"
+        # "./data/t4dataset/db_jpntaxi_v2/e6d0237c-274c-4872-acc9-dc7ea2b77943/0"
         return os.path.join(scene_root_dir_path, version_id)
     else:
         warnings.simplefilter("always")

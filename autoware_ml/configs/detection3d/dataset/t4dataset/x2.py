@@ -13,7 +13,10 @@ info_test_file_name = "t4dataset_x2_infos_test.pkl"
 
 # dataset scene setting
 dataset_version_config_root = "autoware_ml/configs/detection3d/dataset/t4dataset/"
-dataset_version_list = ["database_v2_0", "database_v3_0"]
+dataset_version_list = [
+    "db_gsm8_v1",
+    "db_j6_v1",
+]
 
 # dataset format setting
 data_prefix = dict(pts="", sweeps="")

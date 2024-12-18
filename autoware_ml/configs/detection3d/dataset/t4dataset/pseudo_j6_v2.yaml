@@ -2,7 +2,7 @@ version: 1
 dataset_version: pseudo-j6-v2.0
 
 docs: |
-  Product: X2
+  Product: J6
   Place: Komatsu
   Amount: 6,589 frames
   Sensor: Hesai LiDAR + C1 Camera + Radar data

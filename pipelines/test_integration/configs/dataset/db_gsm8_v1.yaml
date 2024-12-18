@@ -1,7 +1,8 @@
 version: 1
+dataset_version: db-gsm8-1.0
 
 docs: |
-  Product: X2
+  Product: GSM8
   Place: Nishi-Shinjuku and GLP-Atsugi
   Amount: About 8000 frames
   Sensor: Hesai LiDAR + BFS Camera
@@ -50,7 +51,7 @@ test:
   - 8cff354a-cca5-47ed-83fa-a3fa7d31588a # DBv2.0.1_nishi_shinjuku_1-5_with_turn_signal
   #- bba6a63a-55cd-411b-b5be-e5de4834a2f1 # DBv2.0.1_nishi_shinjuku_2-8_with_turn_signal
   #- ea464363-6ac8-43cb-a3a9-4ac2dd234283 # DBv2.0.1_nishi_shinjuku_4-6-2
-  # wrong attribute
-  #- 18575387-54dc-4a35-8bba-8cf0d14ea62c # DBv2.0.1_nishi_shinjuku_5-5
+  ## wrong attribute
+  ##- 18575387-54dc-4a35-8bba-8cf0d14ea62c # DBv2.0.1_nishi_shinjuku_5-5
   #- e11a7dfc-032d-4cdd-a015-33ec19aada02 # DBv2.0_GLP_atsugi_TC1-static-2
   #- e19cf12b-24ed-4227-a51c-1f35eb1f9433 # DBv2.0_GLP_atsugi_TC3-dynamic-1

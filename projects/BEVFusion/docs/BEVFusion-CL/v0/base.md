@@ -6,7 +6,7 @@
 ### BEVFusion-CL base/0.1
 
 - We released first Camera-LiDAR fusion model
-- The mAP of (DB1.0 + DB1.1 test dataset, eval 120m) increase 5%.
+- The mAP of "DB JPNTAXI v1.0 + DB JPNTAXI v2.0 test dataset, eval 120m" increase 5%.
 
 |                       | mAP  | car  | truck | bus  | bicycle | pedestrian |
 | --------------------- | ---- | ---- | ----- | ---- | ------- | ---------- |
@@ -17,8 +17,8 @@
 <summary> The link of data and evaluation result </summary>
 
 - model
-  - Training dataset: database_v1_0 + database_v1_1
-  - Eval dataset: database_v1_0 + database_v1_1
+  - Training dataset: DB JPNTAXI v1.0 + DB JPNTAXI v2.0
+  - Eval dataset: DB JPNTAXI v1.0 + DB JPNTAXI v2.0
   - [PR](https://github.com/tier4/autoware-ml/pull/140)
   - [Config file path](https://github.com/tier4/autoware-ml/blob/05302ecc9e832f3c988019f5d30fdfc105455027/projects/BEVFusion/configs/t4dataset/bevfusion_camera_lidar_voxel_second_secfpn_1xb1_t4xx1.py)
   - Results are in internal data.

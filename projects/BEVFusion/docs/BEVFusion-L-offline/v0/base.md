@@ -2,7 +2,7 @@
 ## Summary
 
 - Performance summary
-  - Dataset: database_v1_0 + database_v1_1 + database_v_1_3 + database_v_2_0 + database_v_3_0 (total frames: 34,137)
+  - Dataset: DB JPNTAXI v1.0 + DB JPNTAXI v2.0 + DB JPNTAXI v3.0 + DB GSM8 v1.0 + DB J6 v1.0 (total frames: 34,137)
   - Class mAP for center distance (0.5m, 1.0m, 2.0m, 4.0m)
   - eval range: 120m
 
@@ -19,8 +19,8 @@
 <summary> The link of data and evaluation result </summary>
 
 - model
-  - Training dataset: database_v1_0 + database_v1_1 + database_v_1_3 + database_v_2_0 + database_v_3_0 (total frames: 34,137)
-  - Eval dataset: database_v1_0 + database_v1_1 + database_v_1_3 + database_v_2_0 + database_v_3_0 (total frames: 62)
+  - Training dataset: DB JPNTAXI v1.0 + DB JPNTAXI v2.0 + DB JPNTAXI v3.0 + DB GSM8 v1.0 + DB J6 v1.0 (total frames: 34,137)
+  - Eval dataset: DB JPNTAXI v1.0 + DB JPNTAXI v2.0 + DB JPNTAXI v3.0 + DB GSM8 v1.0 + DB J6 v1.0 (total frames: 62)
   - *No intensity*
   - [PR](https://github.com/tier4/autoware-ml/pull/215)
   - [Config file path](https://github.com/tier4/autoware-ml/blob/5b71e0d4b51c5024e3dbcc64506365bbe68f8f0b/projects/BEVFusion/configs/t4dataset/bevfusion_lidar_voxel_second_secfpn_2xb2_t4offline_no_intensity.py)
@@ -47,8 +47,8 @@
 <summary> The link of data and evaluation result </summary>
 
 - model
-  - Training dataset: database_v1_0 + database_v1_1
-  - Eval dataset: database_v1_0 + database_v1_1
+  - Training dataset: DB JPNTAXI v1.0 + DB JPNTAXI v2.0
+  - Eval dataset: DB JPNTAXI v1.0 + DB JPNTAXI v2.0
   - [PR](https://github.com/tier4/autoware-ml/pull/110)
   - [Config file path](https://github.com/tier4/autoware-ml/blob/249ebfe5cff685c0911c664ea1ef2b855cc6b52f/projects/BEVFusion/configs/t4dataset/bevfusion_lidar_voxel_second_secfpn_1xb1_t4offline.py)
   - [Checkpoint](https://drive.google.com/drive/folders/16f-IDF0_qXwEbln6RKKkLolQ3cDkZg35)

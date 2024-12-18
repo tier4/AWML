@@ -5,14 +5,14 @@
 ### BEVFusion-L base/0.2
 
 - We released BEVFusion-L using T4dataset.
-- Note that this model is trained by DB1.0 and DB1.1
+- Note that this model is trained by DB JPNTAXI v1.0 + DB JPNTAXI v2.0.
 
 <details>
 <summary> The link of data and evaluation result </summary>
 
 - model
-  - Training dataset: database_v1_0 + database_v1_1
-  - Eval dataset: database_v1_0 + database_v1_1
+  - Training dataset: DB JPNTAXI v1.0 + DB JPNTAXI v2.0
+  - Eval dataset: DB JPNTAXI v1.0 + DB JPNTAXI v2.0
   - [PR](https://github.com/tier4/autoware-ml/pull/110)
   - [Config file path](https://github.com/tier4/autoware-ml/blob/249ebfe5cff685c0911c664ea1ef2b855cc6b52f/projects/BEVFusion/configs/t4dataset/bevfusion_lidar_voxel_second_secfpn_1xb1_t4xx1.py)
   - Results are in internal data.
