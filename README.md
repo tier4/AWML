@@ -65,7 +65,7 @@ If you want to know about `autoware-ml`, you should read following pages.
 - Data mining
   - [Select scene for rosbag](/tools/scene_selector/)
 - ROS2
-  - [ROS2 wrapper for autoware-ml](/tools/autoware_ml_ros2/)
+  - (TBD) [ROS2 wrapper for autoware-ml](/tools/autoware_ml_ros2/)
 
 ## Supported pipelines
 
