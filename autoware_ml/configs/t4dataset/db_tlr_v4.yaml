@@ -1,8 +1,9 @@
 version: 1
+dataset_version: db-tlr-v4.0
 
 docs: |
-  Product: XX1
-  Place: toyama
+  Product: JPNTAXI
+  Place: Toyama
   Amount: 961 annotated images
   Sensor: C1, C2 Camera
   Annotation: 1 Hz for all except 10 Hz for TLR_v1.2_2024-02-02-10-03-* data in test set.

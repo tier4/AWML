@@ -1,28 +1,28 @@
 # Use case for contribution
 
-You choose PR type as below.
+Choose the PR type from the list below.
 Note that you need to make as small PR as possible.
 
 ## Add/Fix functions to `autoware_ml`
 
 If you want to add/fix functions to use for many projects, you should commit to `autoware_ml/*`.
-It is the library used for many projects and need to maintenance, so PR is reviewed on the point of code quality, doc string, type hint.
+It is the library used for many projects and needs maintenance, so PR is reviewed on the point of code quality, doc string, type hint.
 
 For PR review list with code owner
 
 - [ ] Write the log of test for training
-- [ ] Update docs
+- [ ] Update documentation
 - [ ] Check/Add/Update unit test
 
 ## Fix code in `/tools`
 
 If you want to add/fix tools to use for many projects, you should commit to `tools/*`.
-It is used for many projects and need to maintenance, so PR is reviewed on the point of code quality, doc string, type hint.
+It is used for many projects and needs maintenance, so PR is reviewed on the point of code quality, doc string, type hint.
 
 For PR review list with code owner
 
 - [ ] Write the log of test for tools
-- [ ] Update docs
+- [ ] Update documentation
 
 ## Fix code in `/pipelines`
 
@@ -32,7 +32,7 @@ It is used for many deploy projects, so PR is reviewed on the point of code qual
 For PR review list with code owner
 
 - [ ] Write the log of test for pipeline
-- [ ] Update docs
+- [ ] Update documentation
 
 ## Fix code in `/projects`
 
@@ -43,21 +43,196 @@ For PR review list with code owner for the project
 
 - [ ] Write the log of result for the trained model
 - [ ] Upload the model and logs
-- [ ] Update docs for the model
+- [ ] Update documentation for the model
 - [ ] Check deploying to onnx file and running at Autoware environment (If the model is used for Autoware and you change model architecture)
 
 ## Update dataset
 
-If you want to update dataset, you change [dataset config](/autoware_ml/configs/detection3d/dataset/t4dataset/).
+If you want to update dataset, please modify [the dataset config files](/autoware_ml/configs/t4dataset/).
 
 For PR review list with code owner
-- [ ] Change `/autoware_ml/configs/detection3d/dataset/t4dataset/`
-- [ ] Update docs of dataset
+
+- [ ] Modify the dataset config files
+- [ ] Update documentation of dataset
+
+### 1. Create a new vehicle dataset
+
+When you add a new dataset for a certain vehicle, it should begin with "v1.0". Specifically, please name it as "DB/UC/Pseudo {new vehicle name} v(X+1).0".
+
+- 1.1. [Dataset engineer] Create dataset and upload to WebAuto system.
+- 1.2. [Dataset engineer] Create a PR to add a new config file
+  - Add a new yaml file for [T4Dataset config](/autoware_ml/configs/t4dataset) like `db_j6gen2_v1.yaml` after uploading T4dataset.
+    - Add a document for the dataset
+  - Add a new sensor config for [detection3d config](/autoware_ml/configs/detection3d/dataset/t4dataset) like `x2_gen2.py`.
+
+```yaml
+# db_j6gen2_v1.yaml
+
+version: 1
+dataset_version: db-j6gen2-v1.0
+docs: |
+  Product: J6Gen2
+  Place: Odaiba
+  Amount: About 5000 frames
+  Sensor: Hesai LiDAR + C1 Camera + Radar data
+  Annotation: All the data are collected at 10Hz and annotated at 2Hz
+
+train:
+  - e6d0237c-274c-4872-acc9-dc7ea2b77943 #DB-J6Gen2-v2-odaiba_0
+val:
+  - 3013c354-2492-447b-88ce-70ec0438f494 #DB-J6Gen2-v2-odaiba_1
+test:
+  - 13351af0-41cb-4a96-9553-aeb919efb46e #DB-J6Gen2-v2-odaiba_2
+```
+
+```py
+# x2_gen2.py
+dataset_version_list = ["db_j6gen2_v1"]
+```
+
+- 1.3. [User] Download the new dataset by [download_t4dataset](/pipelines/webauto/download_t4dataset/).
+
+```yaml
+- t4dataset/
+  - db_j6gen2_v1/
+    - e6d0237c-274c-4872-acc9-dc7ea2b77943/
+      - 0/
+    - 3013c354-2492-447b-88ce-70ec0438f494/
+      - 0/
+    - 13351af0-41cb-4a96-9553-aeb919efb46e/
+      - 0/
+```
+
+### 2. Add a new dataset (a set of T4dataset) for a vehicle with an existing dataset
+
+If you want to add a new dataset for an existing vehicle (e.g. from a different operating area), please increment "X" from the existing dataset. Specifically, please name it as "DB/UC/Pseudo {new vehicle name} v(X+1).0" if the dataset vX.Y already exists.
+
+- 2.1. [Dataset engineer] Create dataset and upload to WebAuto system.
+- 2.2. [Dataset engineer] Create a PR to add a new config file
+  - Add a new yaml file for [T4Dataset config](/autoware_ml/configs/t4dataset) like `db_j6gen2_v2.yaml` after uploading T4dataset.
+    - Add a document for the dataset
+  - Fix a sensor config for [detection3d config](/autoware_ml/configs/detection3d/dataset/t4dataset) like `x2_gen2.py`.
+
+```yaml
+# db_j6gen2_v2.yaml
+
+version: 1
+dataset_version: db-j6gen2-v2.0
+docs: |
+  Product: J6Gen2
+  Place: Shiojiri
+  Amount: About 5000 frames
+  Sensor: Hesai LiDAR + C1 Camera + Radar data
+  Annotation: All the data are collected at 10Hz and annotated at 2Hz
+
+train:
+  - 80b37b8c-ae9d-4641-a921-0b0c2012eee8 #DB-J6Gen2-v2-odaiba_0
+val:
+  - c8cf2fe3-9097-4f8d-8984-e99c4ddd0ced #DB-J6Gen2-v2-odaiba_1
+test:
+  - 9e973a55-3f70-48e0-8b37-a68b66a99686 #DB-J6Gen2-v2-odaiba_2
+```
+
+```py
+# x2_gen2.py
+dataset_version_list = ["db_j6gen2_v1", "db_j6gen2_v2"]
+```
+
+- 2.3. [User] Download new dataset by [download_t4dataset](/pipelines/webauto/download_t4dataset/).
+
+```yaml
+- t4dataset/
+  - db_j6gen2_v1/
+    - e6d0237c-274c-4872-acc9-dc7ea2b77943/
+      - 0/
+    - 3013c354-2492-447b-88ce-70ec0438f494/
+      - 0/
+    - 13351af0-41cb-4a96-9553-aeb919efb46e/
+      - 0/
+  - db_j6gen2_v2/
+    - 80b37b8c-ae9d-4641-a921-0b0c2012eee8/
+      - 0/
+    - c8cf2fe3-9097-4f8d-8984-e99c4ddd0ced/
+      - 0/
+    - 9e973a55-3f70-48e0-8b37-a68b66a99686/
+      - 0/
+```
+
+### 3. Add some new T4datasets for an existing dataset
+
+If you want to add a new T4dataset to an existing dataset config file, please update the version from "DB/UC/Pseudo {new vehicle name} vX.Y" to "DB/UC/Pseudo {new vehicle name} vX.(Y+1)".
+
+- The use cases are following.
+  - [Example usecase 1] You want to change the trailer annotation method and modify some of the annotations for "DB/UC/Pseudo {new vehicle name} vX.Y".
+    - In this case, please create a new T4dataset with a new T4dataset ID for the T4dataset you modified, since this case leads to a destructive change for T4dataset format. After updating all the T4dataset IDs you have changed, please update the dataset version from "vX.Y" to "vX.(Y+1)".
+  - [Example usecase 2] 2D annotation did not exist in version X.Y, so we add it.
+    - Same as above. Please update the dataset version from "vX.Y" to "vX.(Y+1)".
+  - [Example usecase 3] In version X.Y, we found one vehicle that was not annotated, so we added and modified it by annotating it.
+    - Please update `T4dataset WebAuto version`, modify the config file accordingly, and update  "vX.Y" to "vX.(Y+1)". Note that you do not need to create a new T4dataset with different T4dataset ID since this is not a destructive change.
+  - [Example usecase 4] For pointcloud topic stored in rosbag of T4dataset, the data arrangement method was changed from XYZI to XYZIRC, and the contents of rosbag were also updated.
+    - Please update both T4format and `T4dataset WebAuto version`, and update the dataset version from "vX.Y" to "vX.(Y+1)".
+- 3.1. [Dataset engineer] Create dataset and upload to WebAuto system.
+- 3.2. [Dataset engineer] Update `T4dataset WebAuto version` if you want to modify dataset.
+- 3.3. [github CI] Add a T4dataset ID to yaml file of [T4dataset config](/autoware_ml/configs/t4dataset).
+  - Update `dataset_version` from X.Y to X.(Y+1)
+
+```yaml
+# db_j6gen2_v2.yaml
+
+version: 1
+dataset_version: db-j6gen2-v2.0
+docs: |
+  Product: J6Gen2
+  Place: Shiojiri
+  Amount: About 5000 frames
+  Sensor: Hesai LiDAR + C1 Camera + Radar data
+  Annotation: All the data are collected at 10Hz and annotated at 2Hz
+
+train:
+  - 80b37b8c-ae9d-4641-a921-0b0c2012eee8 #DB-J6Gen2-v2-odaiba_0
+  - 4d50abff-427f-4fa8-9c04-99dc13a3a836 #DB-J6Gen2-v2-odaiba_3
+val:
+  - c8cf2fe3-9097-4f8d-8984-e99c4ddd0ced #DB-J6Gen2-v2-odaiba_1
+  - a1f10b82-6f10-47ab-a253-a12a2f131929 #DB-J6Gen2-v2-odaiba_4
+test:
+  - 9e973a55-3f70-48e0-8b37-a68b66a99686 #DB-J6Gen2-v2-odaiba_2
+  - 54a6cc24-ec9d-47f5-b2bf-813d0da9bf47 #DB-J6Gen2-v2-odaiba_5
+```
+
+- 3.4. [User] Download new dataset by [download_t4dataset script](/pipelines/webauto/download_t4dataset/).
+  - If `T4dataset WebAuto version` is updated, the script download new version of T4dataset.
+
+```yaml
+- t4dataset/
+  - db_j6gen2_v1/
+    - e6d0237c-274c-4872-acc9-dc7ea2b77943/
+      - 0/
+    - 3013c354-2492-447b-88ce-70ec0438f494/
+      - 0/
+    - 13351af0-41cb-4a96-9553-aeb919efb46e/
+      - 0/
+  - db_j6gen2_v2/
+    - 80b37b8c-ae9d-4641-a921-0b0c2012eee8/
+      - 0/
+      - 1/
+    - 4d50abff-427f-4fa8-9c04-99dc13a3a836/
+      - 0/
+      - 1/
+    - c8cf2fe3-9097-4f8d-8984-e99c4ddd0ced/
+      - 0/
+      - 1/
+    - a1f10b82-6f10-47ab-a253-a12a2f131929/
+      - 0/
+    - 9e973a55-3f70-48e0-8b37-a68b66a99686/
+      - 0/
+    - 54a6cc24-ec9d-47f5-b2bf-813d0da9bf47/
+      - 0/
+```
 
 ## Release new model
 
 If you want to release new model, you may add/fix config files in `projects/{model_name}/configs/*.py`.
-After making the model, you update docs for release note of models in addition to the PR.
+After creating the model, update the documentation for release note of models in addition to the PR.
 You can refer [the release note of CenterPoint base/1.X](projects/CenterPoint/docs/CenterPoint/v1/base.md).
 The release note include
 
@@ -127,7 +302,7 @@ For PR review list with code owner
 
 - [ ] Write the log of result for the trained model
 - [ ] Upload the model and logs
-- [ ] Update docs for the model
+- [ ] Update documentation for the model
 - [ ] Check deploying to onnx file and running at Autoware environment (If the model is used for Autoware and you change model architecture)
 - [ ] Write results of training and evaluation including analysis for the model in PR.
 
@@ -145,7 +320,7 @@ For PR review list with code owner
 - [ ] Add `/projects/{model_name}/README.md`
 - [ ] Write the result log for new model
 
-When you make the PR, we recommend to write PR summary as https://github.com/tier4/autoware-ml/pull/134.
+When creating the PR, we recommend writing a PR summary as https://github.com/tier4/autoware-ml/pull/134.
 We would you like to write summary of the new model considering the case when some engineers want to catch up.
 If someone want to catch up this model, it is best situation that they need to see only github and do not need to search the information in Jira ticket jungle, Confluence ocean, and Slack universe.
 
@@ -155,7 +330,7 @@ As another way, which we recommend for especially researcher, you can make a new
 The repository [mm-project-template](https://github.com/scepter914/mm-project-template) is one example of template repository.
 You can start from this template and you can add code of `/tools/*` and `/projects/*` from `autoware-ml` to use for your a new algorithm or a new tool.
 We are glad if you want to contribute to `autoware-ml` and the PR to add for the document of [community_support](/docs/tips/community_support.md).
-We hope it leads to promote the community around robotics ML researcher and ML engineer.
+We hope it promotes the community of robotics ML researchers and engineers.
 
 For PR review list with code owner
 

@@ -1,7 +1,8 @@
 version: 1
+dataset_version: db-tlr-v3.0
 
 docs: |
-  Product: X2
+  Product: GSM8
   Place: Shiojiri
   Amount: 1684 annotated images
   Sensor: C1, C2 Camera

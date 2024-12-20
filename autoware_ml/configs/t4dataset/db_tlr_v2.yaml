@@ -1,8 +1,9 @@
 version: 1
+dataset_version: db-tlr-v2.0
 
 docs: |
-  Product: XX1
-  Place: odaiba, shinagawa, rainbow bridge
+  Product: JPNTAXI
+  Place: Odaiba, Shinagawa, Rainbow bridge
   Amount: 3706 annotated images
   Sensor: C1, C2 Camera
   Annotation: No information available regarding annotation frequency
