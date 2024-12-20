@@ -23,8 +23,3 @@ repos:
     hooks:
       - id: isort
         name: isort (python)
-        exclude: |
-          (?x)(
-          projects/BEVFusion|
-          projects/SparseConvolution
-          )
