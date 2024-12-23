@@ -13,12 +13,11 @@ import yaml
 from mmdet3d.datasets.utils import convert_quaternion_to_matrix
 from mmengine.config import Config
 from mmengine.logging import print_log
-from t4_devkit import Tier4
-from t4_devkit.common.timestamp import us2sec
-from t4_devkit.schema import Sample
+from nuimages import NuImages
+from nuscenes import NuScenes
 
 from tools.detection3d.t4dataset_converters.t4converter import (
-    extract_tier4_data,
+    extract_nuscenes_data,
     get_annotations,
     get_ego2global,
     get_lidar_points_info,
@@ -29,8 +28,8 @@ from tools.detection3d.t4dataset_converters.t4converter import (
 from tools.detection3d.t4dataset_converters.update_infos_to_v2 import get_empty_standard_data_info
 
 
-def get_lidar_token(sample_rec: Sample) -> str:
-    data_dict = sample_rec.data
+def get_lidar_token(sample_rec: Dict[str, Dict[str, str]]) -> str:
+    data_dict = sample_rec["data"]
     if "LIDAR_TOP" in data_dict:
         return data_dict["LIDAR_TOP"]
     elif "LIDAR_CONCAT" in data_dict:
@@ -82,8 +81,8 @@ def get_scene_root_dir_path(
 
 def get_info(
     cfg: Any,
-    t4: Tier4,
-    sample: Sample,
+    nusc: Any,
+    sample: Any,
     i: int,
     max_sweeps: int,
 ):
@@ -106,17 +105,17 @@ def get_info(
         l2e_r_mat,
         e2g_t,
         l2e_t,
-    ) = extract_tier4_data(t4, sample, lidar_token)
+    ) = extract_nuscenes_data(nusc, sample, lidar_token)
 
     info = get_empty_standard_data_info(cfg.camera_types)
 
     basic_info = dict(
         sample_idx=i,
-        token=sample.token,
-        timestamp=us2sec(sample.timestamp),
-        scene_token=sample.scene_token,
-        location=log_record.location,
-        scene_name=scene_record.name,
+        token=sample["token"],
+        timestamp=sample["timestamp"] / 1e6,
+        scene_token=sample["scene_token"],
+        location=log_record["location"],
+        scene_name=scene_record["name"],
     )
 
     for new_info in [
@@ -124,15 +123,15 @@ def get_info(
         get_ego2global(pose_record),
         get_lidar_points_info(lidar_path, cs_record),
         get_lidar_sweeps_info(
-            t4,
+            nusc,
             cs_record,
             pose_record,
             sd_record,
             max_sweeps,
         ),
         get_annotations(
-            t4,
-            sample.ann_3ds,
+            nusc,
+            sample["anns"],
             boxes,
             e2g_r_mat,
             l2e_r_mat,
@@ -148,11 +147,11 @@ def get_info(
     camera_types = cfg.camera_types
     if len(camera_types) > 0:
         for cam in camera_types:
-            if cam in sample.data:
-                cam_token = sample.data[cam]
-                _, _, cam_intrinsic = t4.get_sample_data(cam_token)
+            if cam in sample["data"]:
+                cam_token = sample["data"][cam]
+                cam_path, _, cam_intrinsic = nusc.get_sample_data(cam_token)
                 cam_info = obtain_sensor2top(
-                    t4,
+                    nusc,
                     cam_token,
                     l2e_t,
                     l2e_r_mat,
@@ -254,9 +253,9 @@ def main():
 
                 if not osp.isdir(scene_root_dir_path):
                     raise ValueError(f"{scene_root_dir_path} does not exist.")
-                t4 = Tier4(version="annotation", data_root=scene_root_dir_path, verbose=False)
-                for i, sample in enumerate(t4.sample):
-                    info = get_info(cfg, t4, sample, i, args.max_sweeps)
+                nusc = NuScenes(version="annotation", dataroot=scene_root_dir_path, verbose=False)
+                for i, sample in enumerate(nusc.sample):
+                    info = get_info(cfg, nusc, sample, i, args.max_sweeps)
                     # info["version"] = dataset_version             # used for visualizations during debugging.
                     t4_infos[split].append(info)
     assert sum(len(split) for split in t4_infos.values()) > 0, "dataset isn't available"

@@ -5,7 +5,7 @@ from dataclasses import dataclass, field
 from typing import Dict, List, NamedTuple, Optional
 
 from mmengine.logging import print_log
-from t4_devkit.dataclass import Box3D
+from nuscenes.utils.data_classes import Box
 
 
 class DatasetSplitName(NamedTuple):
@@ -19,7 +19,7 @@ class DatasetSplitName(NamedTuple):
 class Detection3DBox:
     """3D boxes from detection."""
 
-    box: Box3D
+    box: Box
     attrs: List[str]
 
 
@@ -44,7 +44,7 @@ class SampleData:
         """
         category_attr_counts: Dict[str, int] = defaultdict(int)
         for detection_3d_box in self.detection_3d_boxes:
-            box_category_name = detection_3d_box.box.semantic_label.name
+            box_category_name = detection_3d_box.box.name
             if remapping_classes is not None:
                 # If no category found from the remapping, then it uses the original category name
                 box_category_name = remapping_classes.get(box_category_name, box_category_name)
@@ -67,7 +67,7 @@ class SampleData:
         """
         category_counts: Dict[str, int] = defaultdict(int)
         for detection_3d_box in self.detection_3d_boxes:
-            box_category_name = detection_3d_box.box.semantic_label.name
+            box_category_name = detection_3d_box.box.name
             if remapping_classes is not None:
                 # If no category found from the remapping, then it uses the original category name
                 box_category_name = remapping_classes.get(box_category_name, box_category_name)
@@ -75,17 +75,17 @@ class SampleData:
         return category_counts
 
     @classmethod
-    def create_sample_data(
-        cls,
-        sample_token: str,
-        boxes: List[Box3D],
-    ) -> SampleData:
+    def create_sample_data(cls, sample_token: str, boxes: List[Box], box_attrs: Dict[str, List[str]]) -> SampleData:
         """
         Create a SampleData given the params.
         :param sample_token: Sample token to represent a sample (lidar frame).
         :param detection_3d_boxes: List of 3D bounding boxes for the given sample token.
         """
-        detection_3d_boxes = [Detection3DBox(box=box, attrs=box.semantic_label.attributes) for box in boxes]
+        detection_3d_boxes = []
+        assert len(box_attrs) == len(boxes), "Length of boxes and box_attrs must be the same!"
+
+        for box in boxes:
+            detection_3d_boxes.append(Detection3DBox(box=box, attrs=box_attrs[box.token]))
 
         return SampleData(sample_token=sample_token, detection_3d_boxes=detection_3d_boxes)
 

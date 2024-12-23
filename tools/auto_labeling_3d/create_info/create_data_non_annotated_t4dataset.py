@@ -4,18 +4,12 @@ from typing import Any, Dict, List, Optional, Tuple
 
 import mmengine
 import numpy as np
-from mmdet3d.datasets.utils import convert_quaternion_to_matrix
-from mmengine import dump as mmengine_dump
-from mmengine.config import Config
-from mmengine.logging import print_log
-from pyquaternion import Quaternion
-from t4_devkit import Tier4
-from t4_devkit.common.timestamp import us2sec
-from t4_devkit.dataclass import Box3D
-from t4_devkit.schema import CalibratedSensor, EgoPose, Sample, SampleAnnotation, SampleData
+from nuscenes import NuScenes
+from nuscenes.nuscenes import Box
 
 from tools.detection3d.create_data_t4dataset import get_lidar_token, get_scene_root_dir_path
 from tools.detection3d.t4dataset_converters.t4converter import (
+    extract_nuscenes_data,
     extract_tier4_data,
     get_ego2global,
     get_gt_attrs,
@@ -76,13 +70,9 @@ def _create_non_annotated_info(
 
         if not Path(scene_root_dir_path).is_dir():
             raise ValueError(f"{scene_root_dir_path} does not exist.")
-        t4 = Tier4(
-            version="annotation",
-            data_root=scene_root_dir_path,
-            verbose=False,
-        )
-        for i, sample in enumerate(t4.sample):
-            info = get_info(cfg, t4, sample, i, max_sweeps)
+        nusc = NuScenes(version="annotation", dataroot=scene_root_dir_path, verbose=False)
+        for i, sample in enumerate(nusc.sample):
+            info = get_info(cfg, nusc, sample, i, max_sweeps)
             t4_infos["pseudo"].append(info)
 
     assert len(t4_infos["pseudo"]) > 0, "dataset isn't available"
@@ -90,10 +80,7 @@ def _create_non_annotated_info(
 
     _info_name: str = f"t4dataset_{dataset_version}_infos_pseudo.pkl"
     info_path: Path = ann_file_out_dir / f"t4dataset_{dataset_version}_infos_pseudo.pkl"
-    mmengine_dump(
-        dict(data_list=t4_infos["pseudo"], metainfo=metainfo),
-        info_path,
-    )
+    mmengine_dump(dict(data_list=t4_infos["pseudo"], metainfo=metainfo), info_path)
 
     return info_path
 
@@ -113,10 +100,10 @@ def parse_lidar_path(lidar_path: str) -> str:
 # NOTE: This function is copied from tools.detection3d.t4dataset_converters.t4converter
 def get_lidar_points_info(
     lidar_path: str,
-    cs_record: CalibratedSensor,
+    cs_record: Dict,
     num_features: int = 5,
 ):
-    lidar2ego = convert_quaternion_to_matrix(quaternion=cs_record.rotation, translation=cs_record.translation)
+    lidar2ego = convert_quaternion_to_matrix(quaternion=cs_record["rotation"], translation=cs_record["translation"])
     mmengine.check_file_exist(lidar_path)
     lidar_path = parse_lidar_path(lidar_path)
     return dict(
@@ -130,27 +117,27 @@ def get_lidar_points_info(
 
 # NOTE: This function is copied from tools.detection3d.t4dataset_converters.t4converter
 def get_lidar_sweeps_info(
-    t4: Tier4,
-    cs_record: CalibratedSensor,
-    pose_record: EgoPose,
-    sd_rec: SampleData,
+    nusc: NuScenes,
+    cs_record: Dict,
+    pose_record: Dict,
+    sd_rec: Dict,
     max_sweeps: int,
     num_features: int = 5,
 ):
-    l2e_r = cs_record.rotation
-    l2e_t = cs_record.translation
-    e2g_r = pose_record.rotation
-    e2g_t = pose_record.translation
-    l2e_r_mat = l2e_r.rotation_matrix
-    e2g_r_mat = e2g_r.rotation_matrix
+    l2e_r = cs_record["rotation"]
+    l2e_t = cs_record["translation"]
+    e2g_r = pose_record["rotation"]
+    e2g_t = pose_record["translation"]
+    l2e_r_mat = Quaternion(l2e_r).rotation_matrix
+    e2g_r_mat = Quaternion(e2g_r).rotation_matrix
 
     sweeps = []
     while len(sweeps) < max_sweeps:
-        if not sd_rec.prev == "":
+        if not sd_rec["prev"] == "":
             sweep = get_single_lidar_sweep()
             v1_sweep = obtain_sensor2top(
-                t4,
-                sd_rec.prev,
+                nusc,
+                sd_rec["prev"],
                 l2e_t,
                 l2e_r_mat,
                 e2g_t,
@@ -187,7 +174,7 @@ def get_lidar_sweeps_info(
             )
 
             sweeps.append(sweep)
-            sd_rec = t4.get("sample_data", sd_rec.prev)
+            sd_rec = nusc.get("sample_data", sd_rec["prev"])
         else:
             break
 
@@ -196,9 +183,9 @@ def get_lidar_sweeps_info(
 
 # NOTE: This function is copied from tools.detection3d.t4dataset_converters.t4converter
 def get_annotations(
-    t4: Tier4,
-    anns: list[str],
-    boxes: List[Box3D],
+    nusc: NuScenes,
+    anns,
+    boxes: List[Box],
     e2g_r_mat: np.array,
     l2e_r_mat: np.array,
     name_mapping: dict,
@@ -207,14 +194,14 @@ def get_annotations(
     merge_objects: List[Tuple[str, List[str]]] = [],
     merge_type: str = None,
 ) -> dict:
-    annotations: list[SampleAnnotation] = [t4.get("sample_annotation", token) for token in anns]
-    instance_tokens = [ann.instance_token for ann in annotations]
-    locs = np.array([b.position for b in boxes]).reshape(-1, 3)
-    dims = np.array([b.size for b in boxes]).reshape(-1, 3)
-    rots = np.array([b.rotation.yaw_pitch_roll[0] for b in boxes]).reshape(-1, 1)
-    velocity = np.array([t4.box_velocity(token)[:2] for token in anns])
+    annotations = [nusc.get("sample_annotation", token) for token in anns]
+    instance_tokens = [ann["instance_token"] for ann in annotations]
+    locs = np.array([b.center for b in boxes]).reshape(-1, 3)
+    dims = np.array([b.wlh for b in boxes]).reshape(-1, 3)
+    rots = np.array([b.orientation.yaw_pitch_roll[0] for b in boxes]).reshape(-1, 1)
+    velocity = np.array([nusc.box_velocity(token)[:2] for token in anns])
 
-    valid_flag = np.array([ann.num_lidar_pts > 0 for ann in annotations], dtype=bool).reshape(-1)
+    valid_flag = np.array([anno["num_lidar_pts"] > 0 for anno in annotations], dtype=bool).reshape(-1)
 
     # convert velo from global to lidar
     for i in range(len(boxes)):
@@ -222,13 +209,13 @@ def get_annotations(
         velo = velo @ np.linalg.inv(e2g_r_mat).T @ np.linalg.inv(l2e_r_mat).T
         velocity[i] = velo[:2]
 
-    names = np.array([name_mapping.get(b.semantic_label.name, b.semantic_label.name) for b in boxes])
+    names = np.array([name_mapping.get(b.name, b.name) for b in boxes])
     # we need to convert rot to SECOND format.
     # Copied from https://github.com/open-mmlab/mmdetection3d/blob/0f9dfa97a35ef87e16b700742d3c358d0ad15452/tools/dataset_converters/nuscenes_converter.py#L258
     gt_boxes = np.concatenate([locs, dims[:, [1, 0, 2]], rots], axis=1)
     assert len(gt_boxes) == len(annotations), f"{len(gt_boxes)}, {len(annotations)}"
 
-    gt_attrs = get_gt_attrs(t4, annotations)
+    gt_attrs = get_gt_attrs(nusc, annotations)
     assert len(names) == len(gt_attrs), f"{len(names)}, {len(gt_attrs)}"
     assert len(gt_boxes) == len(instance_tokens)
     # assert velocity.shape == (len(gt_boxes), 2)
@@ -257,15 +244,15 @@ def get_annotations(
 # NOTE: This function is copied from tools.detection3d.create_data_t4dataset
 def get_info(
     cfg: Any,
-    t4: Tier4,
-    sample: Sample,
+    nusc: Any,
+    sample: Any,
     i: int,
     max_sweeps: int,
 ):
     lidar_token = get_lidar_token(sample)
     if lidar_token is None:
         print_log(
-            f"sample {sample.token} doesn't have lidar",
+            f"sample {sample['token']} doesn't have lidar",
             level=logging.WARNING,
         )
         return
@@ -281,17 +268,17 @@ def get_info(
         l2e_r_mat,
         e2g_t,
         l2e_t,
-    ) = extract_tier4_data(t4, sample, lidar_token)
+    ) = extract_nuscenes_data(nusc, sample, lidar_token)
 
     info = get_empty_standard_data_info(cfg.camera_types)
 
     basic_info = dict(
         sample_idx=i,
-        token=sample.token,
-        timestamp=us2sec(sample.timestamp),
-        scene_token=sample.scene_token,
-        location=log_record.location,
-        scene_name=scene_record.name,
+        token=sample["token"],
+        timestamp=sample["timestamp"] / 1e6,
+        scene_token=sample["scene_token"],
+        location=log_record["location"],
+        scene_name=scene_record["name"],
     )
 
     for new_info in [
@@ -299,15 +286,15 @@ def get_info(
         get_ego2global(pose_record),
         get_lidar_points_info(lidar_path, cs_record),
         get_lidar_sweeps_info(
-            t4,
+            nusc,
             cs_record,
             pose_record,
             sd_record,
             max_sweeps,
         ),
         get_annotations(
-            t4,
-            sample.ann_3ds,
+            nusc,
+            sample["anns"],
             boxes,
             e2g_r_mat,
             l2e_r_mat,
@@ -323,11 +310,11 @@ def get_info(
     camera_types = cfg.camera_types
     if len(camera_types) > 0:
         for cam in camera_types:
-            if cam in sample.data:
-                cam_token = sample.data[cam]
-                _, _, cam_intrinsic = t4.get_sample_data(cam_token)
+            if cam in sample["data"]:
+                cam_token = sample["data"][cam]
+                cam_path, _, cam_intrinsic = nusc.get_sample_data(cam_token)
                 cam_info = obtain_sensor2top(
-                    t4,
+                    nusc,
                     cam_token,
                     l2e_t,
                     l2e_r_mat,
