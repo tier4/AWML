@@ -1,0 +1,24 @@
+version: 1
+dataset_version: db-tlr-v5.0
+
+docs: |
+  Product: J6
+  Place: Odaiba
+  Amount: 2033 annotated images
+  Sensor: C2 Camera
+  Annotation: 10 Hz
+
+train:
+  # Sunset scene
+  - e2f9895c-dffa-421b-9cd9-caac40d01c8d # TLRv1.3_odaiba_rinkai_x2_dev_cfa23601-97c4-4d47-a37e-edfc7e080d8c_2024-12-09_16-20-00_16-20-49
+  # Traffic light located far away
+  - 8d66ec30-8060-4e56-8da4-751e7d8ba6b5 # TLRv1.3_odaiba_rinkai_x2_dev_cfa23601-97c4-4d47-a37e-edfc7e080d8c_2024-12-09_16-25-40_16-26-32
+  - ba5aa800-adee-4d65-a601-7fb943ef6954 # TLRv1.3_odaiba_rinkai_x2_dev_cfa23601-97c4-4d47-a37e-edfc7e080d8c_2024-12-09_14-50-20_14-51-03
+  - bc62ff5b-71a1-4547-9482-b03ffc69c890 # TLRv1.3_odaiba_rinkai_x2_dev_cfa23601-97c4-4d47-a37e-edfc7e080d8c_2024-12-09_16-29-20_16-30-02
+  - 1c62f5ae-8515-43e4-b8fd-a68200668ef7 # TLRv1.3_odaiba_rinkai_x2_dev_cfa23601-97c4-4d47-a37e-edfc7e080d8c_2024-12-09_16-20-00_16-20-49
+
+val: []
+
+test:
+  # I chose this dataset as test set because the chattering issue happened in this scene.
+  - 2821adc7-c0cb-499b-a9bc-3b6585b7d7a0  # TLRv1.3_odaiba_rinkai_x2_dev_cfa23601-97c4-4d47-a37e-edfc7e080d8c_2024-12-02_16-33-22_16-34-22
