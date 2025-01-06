@@ -1,5 +1,6 @@
 # Copyright (c) OpenMMLab. All rights reserved.
 import copy
+import os
 from typing import Optional
 
 import mmcv
@@ -32,6 +33,7 @@ class BEVLoadMultiViewImageFromFiles(LoadMultiViewImageFromFiles):
     """
 
     def __init__(self,
+                 data_root: str,
                  to_float32: bool = False,
                  color_type: str = 'unchanged',
                  backend_args: Optional[dict] = None,
@@ -39,6 +41,7 @@ class BEVLoadMultiViewImageFromFiles(LoadMultiViewImageFromFiles):
                  num_ref_frames: int = -1,
                  test_mode: bool = False,
                  set_default_scale: bool = True) -> None:
+        self.data_root = data_root
         self.to_float32 = to_float32
         self.color_type = color_type
         self.backend_args = backend_args
@@ -122,7 +125,7 @@ class BEVLoadMultiViewImageFromFiles(LoadMultiViewImageFromFiles):
                 if key in results:
                     select_results = []
                     for choice in choices:
-                        select_results += [results[key](Choice)]
+                        select_results += [results[key](choice)]
                     results[key] = select_results
             # Transform lidar2cam to
             # [cur_lidar]2[prev_img] and [cur_lidar]2[prev_cam]
@@ -154,7 +157,8 @@ class BEVLoadMultiViewImageFromFiles(LoadMultiViewImageFromFiles):
         # to fill None data
         #for _ , cam_item in results['images'].items():
         for cam_type, cam_item in results['images'].items():
-
+            # TODO (KokSeang): This sometime causes an error when we set num_workers > 1 during training, 
+            # it's likely due to multiprocessing in CPU. We should probably process this part when creating info files
             if cam_item['img_path'] is None:
                 cam_item = self.before_camera_info[cam_type]
                 print("Warning: fill None data")
@@ -191,7 +195,8 @@ class BEVLoadMultiViewImageFromFiles(LoadMultiViewImageFromFiles):
         # img is of shape (h, w, c, num_views)
         # h and w can be different for different views
         img_bytes = [
-            get(name, backend_args=self.backend_args) for name in filename
+            get(os.path.join(self.data_root, name),
+                backend_args=self.backend_args) for name in filename
         ]
         imgs = [
             mmcv.imfrombytes(

@@ -1,6 +1,6 @@
 _base_ = [
     "./bevfusion_lidar_voxel_second_secfpn_1xb1_t4base.py",
-    "../../../../autoware_ml/configs/detection3d/dataset/t4dataset/xx1.py"
+    "../../../../autoware_ml/configs/detection3d/dataset/t4dataset/base.py"
 ]
 
 custom_imports = dict(
@@ -10,22 +10,22 @@ custom_imports["imports"] += _base_.custom_imports["imports"]
 # user setting
 data_root = "data/t4dataset/"
 info_directory_path = "info/user_name/"
-train_gpu_size = 1
-train_batch_size = 1
+train_gpu_size = 2
+train_batch_size = 2
 val_interval = 5
 max_epochs = 30
 backend_args = None
 
 # range setting
 point_cloud_range = [-122.4, -122.4, -3.0, 122.4, 122.4, 5.0]
-voxel_size = [0.17, 0.17, 0.2]
-grid_size = [1440, 1440, 41]
+voxel_size = [0.075, 0.075, 0.2]
+grid_size = [3264, 3264, 41]
 eval_class_range = {
-    "car": 120,
-    "truck": 120,
-    "bus": 120,
-    "bicycle": 120,
-    "pedestrian": 120,
+    "car": 121,
+    "truck": 121,
+    "bus": 121,
+    "bicycle": 121,
+    "pedestrian": 121,
 }
 
 # model parameter
@@ -37,6 +37,9 @@ max_num_points = 10
 max_voxels = [120000, 160000]
 num_proposals = 500
 image_size = [256, 704]
+lidar_sweep_dims = [0, 1, 2, 4]
+num_workers = 1
+sweeps_num = 1
 
 model = dict(
     type='BEVFusion',
@@ -52,7 +55,8 @@ model = dict(
         std=[58.395, 57.12, 57.375],
         bgr_to_rgb=False,
     ),
-    pts_middle_encoder=dict(sparse_shape=grid_size),
+    pts_voxel_encoder=dict(type="HardSimpleVFE", num_features=4),
+    pts_middle_encoder=dict(in_channels=4, sparse_shape=grid_size),
     img_backbone=dict(
         type='mmdet.SwinTransformer',
         embed_dims=96,
@@ -91,8 +95,10 @@ model = dict(
         feature_size=[32, 88],
         #xbound=[-54.0, 54.0, 0.3],
         #ybound=[-54.0, 54.0, 0.3],
-        xbound=[-122.4, 122.4, 0.68],
-        ybound=[-122.4, 122.4, 0.68],
+        # xbound=[-122.4, 122.4, 0.68],
+        # ybound=[-122.4, 122.4, 0.68],
+        xbound=[-122.4, 122.4, 0.3],
+        ybound=[-122.4, 122.4, 0.3],
         zbound=[-10.0, 10.0, 20.0],
         #dbound=[1.0, 60.0, 0.5],
         dbound=[1.0, 166.2, 1.4],
@@ -180,9 +186,9 @@ train_pipeline = [
     # ),
     dict(
         type="LoadPointsFromMultiSweeps",
-        sweeps_num=9,
+        sweeps_num=sweeps_num,
         load_dim=5,
-        use_dim=5,
+        use_dim=lidar_sweep_dims,
         pad_empty_sweeps=True,
         remove_close=True,
         backend_args=backend_args,
@@ -261,7 +267,7 @@ test_pipeline = [
         data_root=data_root,
         to_float32=True,
         color_type='color',
-        backend_args=backend_args),
+        backend_args=backend_args, test_mode=True),
     dict(
         type="LoadPointsFromFile",
         coord_type="LIDAR",
@@ -271,13 +277,13 @@ test_pipeline = [
     ),
     dict(
         type="LoadPointsFromMultiSweeps",
-        sweeps_num=1,
+        sweeps_num=sweeps_num,
         load_dim=5,
-        use_dim=5,
+        use_dim=lidar_sweep_dims,
         pad_empty_sweeps=True,
         remove_close=True,
         backend_args=backend_args,
-    ),
+        test_mode=True),
     dict(
         type='ImageAug3D',
         final_dim=image_size,
@@ -310,29 +316,26 @@ test_pipeline = [
 
 train_dataloader = dict(
     batch_size=train_batch_size,
-    num_workers=train_batch_size,
+    num_workers=num_workers,
     persistent_workers=True,
     sampler=dict(type="DefaultSampler", shuffle=True),
     dataset=dict(
-        type="CBGSDataset",
-        dataset=dict(
-            type=_base_.dataset_type,
-            data_root=data_root,
-            ann_file=info_directory_path + _base_.info_train_file_name,
-            pipeline=train_pipeline,
-            metainfo=_base_.metainfo,
-            class_names=_base_.class_names,
-            modality=input_modality,
-            test_mode=False,
-            data_prefix=_base_.data_prefix,
-            box_type_3d="LiDAR",
-            backend_args=backend_args,
-        ),
+        type=_base_.dataset_type,
+        data_root=data_root,
+        ann_file=info_directory_path + _base_.info_train_file_name,
+        pipeline=train_pipeline,
+        metainfo=_base_.metainfo,
+        class_names=_base_.class_names,
+        modality=input_modality,
+        data_prefix=_base_.data_prefix,
+        test_mode=False,
+        box_type_3d="LiDAR",
+        backend_args=backend_args,
     ),
 )
 val_dataloader = dict(
     batch_size=2,
-    num_workers=2,
+    num_workers=num_workers,
     persistent_workers=True,
     sampler=dict(type="DefaultSampler", shuffle=False),
     dataset=dict(
@@ -351,7 +354,7 @@ val_dataloader = dict(
 )
 test_dataloader = dict(
     batch_size=2,
-    num_workers=2,
+    num_workers=num_workers,
     persistent_workers=True,
     sampler=dict(type="DefaultSampler", shuffle=False),
     dataset=dict(
@@ -378,7 +381,7 @@ val_evaluator = dict(
     class_names=_base_.class_names,
     name_mapping=_base_.name_mapping,
     eval_class_range=eval_class_range,
-)
+    filter_attributes=_base_.filter_attributes)
 test_evaluator = dict(
     type="T4Metric",
     data_root=data_root,
@@ -388,7 +391,7 @@ test_evaluator = dict(
     class_names=_base_.class_names,
     name_mapping=_base_.name_mapping,
     eval_class_range=eval_class_range,
-)
+    filter_attributes=_base_.filter_attributes)
 
 # learning rate
 lr = 0.0001
@@ -457,3 +460,8 @@ optim_wrapper = dict(
 # auto_scale_lr = dict(enable=False, base_batch_size=32)
 auto_scale_lr = dict(
     enable=False, base_batch_size=train_gpu_size * train_batch_size)
+
+if train_gpu_size > 1:
+    sync_bn = 'torch'
+
+randomness = dict(seed=0, diff_rank_seed=False, deterministic=True)

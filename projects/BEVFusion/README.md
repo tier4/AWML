@@ -26,6 +26,10 @@
 - BEVFusion-L-offline
   - v0
     - [BEVFusion-L-offline base/0.X](./docs/BEVFusion-L-offline/v0/base.md)
+- BEVFusion-CL-offline
+  - v0
+    - [BEVFusion-CL-offline base/0.X](./docs/BEVFusion-CL-offline/v0/base.md)
+
 
 ## Get started
 ### 1. Setup
