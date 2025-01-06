@@ -4,7 +4,6 @@ from typing import Dict, List
 import yaml
 from mmengine.config import Config
 from mmengine.logging import print_log
-from nuscenes import NuScenes
 from t4_devkit import Tier4
 
 from tools.analysis_3d.callbacks.callback_interface import AnalysisCallbackInterface
@@ -12,7 +11,7 @@ from tools.analysis_3d.callbacks.category import CategoryAnalysisCallback
 from tools.analysis_3d.callbacks.category_attribute import CategoryAttributeAnalysisCallback
 from tools.analysis_3d.data_classes import AnalysisData, DatasetSplitName, SampleData, ScenarioData
 from tools.analysis_3d.split_options import SplitOptions
-from tools.analysis_3d.utils import extract_nuscene_sample_data, get_box_attrs
+from tools.analysis_3d.utils import extract_tier4_sample_data
 from tools.detection3d.create_data_t4dataset import get_scene_root_dir_path
 
 
@@ -72,23 +71,20 @@ class AnalysisRunner:
             dataset_list_dict: Dict[str, List[str]] = yaml.safe_load(f)
             return dataset_list_dict
 
-    def _extract_sample_data(self, nusc: NuScenes) -> Dict[str, SampleData]:
+    def _extract_sample_data(self, t4: Tier4) -> Dict[str, SampleData]:
         """
         Extract data for every sample.
-        :param nusc: Nuscene interface.
+        :param t4: Tier4 interface.
         :return: A dict of {sample token: SampleData}.
         """
         sample_data = {}
-        for sample in nusc.sample:
+        for sample in t4.sample:
             # Extract sample data
-            nuscene_sample_data = extract_nuscene_sample_data(sample=sample, nusc=nusc)
-
-            # Get box attrs
-            box_attrs = get_box_attrs(boxes=nuscene_sample_data.boxes, nusc=nusc)
+            tier4_sample_data = extract_tier4_sample_data(sample=sample, t4=t4)
 
             # Convert to SampleData
-            sample_data[sample["token"]] = SampleData.create_sample_data(
-                sample_token=sample["token"], boxes=nuscene_sample_data.boxes, box_attrs=box_attrs
+            sample_data[sample.token] = SampleData.create_sample_data(
+                sample_token=sample.token, boxes=tier4_sample_data.boxes
             )
         return sample_data
 
@@ -115,8 +111,8 @@ class AnalysisRunner:
             if not scene_root_dir_path.is_dir():
                 raise ValueError(f"{scene_root_dir_path} does not exist.")
 
-            nusc = NuScenes(version="annotation", dataroot=str(scene_root_dir_path), verbose=False)
-            sample_data = self._extract_sample_data(nusc=nusc)
+            t4 = Tier4(version="annotation", data_root=str(scene_root_dir_path), verbose=False)
+            sample_data = self._extract_sample_data(t4=t4)
             scenario_data[scene_token] = ScenarioData(scene_token=scene_token, sample_data=sample_data)
         return scenario_data
 

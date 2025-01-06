@@ -11,7 +11,8 @@ import numpy as np
 import yaml
 from mmengine.config import Config
 from mmengine.logging import print_log
-from nuimages import NuImages
+from t4_devkit import Tier4
+from t4_devkit.schema import ObjectAnn
 
 
 @dataclass
@@ -38,26 +39,27 @@ class DetectionData:
 
 def update_detection_data_annotations(
     data_list: Dict[str, DataEntry],
-    object_ann: List[Dict[str, Any]],
+    object_ann: List[ObjectAnn],
     attributes: Dict[str, str],
     categories: Dict[str, str],
     class_mappings: Dict[str, str],
     allowed_classes: List[str],
 ) -> None:
-    for annot_dict in object_ann:
-        category = categories[annot_dict["category_token"]]
+    for ann in object_ann:
+        category = categories[ann.category_token]
         class_name = class_mappings[category]
         if class_name not in allowed_classes:
             print(f"WARNING {class_name} not found for {category}!")
             continue
         bbox_label = allowed_classes.index(class_name)
         instance = Instance(
-            bbox=annot_dict["bbox"],
+            bbox=ann.bbox,
             bbox_label=bbox_label,
-            mask=[[int(x), int(y)] for x, y in annot_dict.get("segmentation", [])],
-            extra_anns=[attributes[x] for x in annot_dict["attribute_tokens"]],
+            # TODO(someone): Please check this operation is correct!!!
+            mask=[[int(x), int(y)] for y, x in zip(*np.where(ann.mask.decode() == 1))],
+            extra_anns=[attributes[x] for x in ann.attribute_tokens],
         )
-        data_list[annot_dict["sample_data_token"]].instances.append(instance)
+        data_list[ann.sample_data_token].instances.append(instance)
 
 
 def get_scene_root_dir_path(root_path: str, dataset_version: str, scene_id: str) -> str:
@@ -156,22 +158,22 @@ def main() -> None:
 
                 if not osp.isdir(scene_root_dir_path):
                     raise ValueError(f"{scene_root_dir_path} does not exist.")
-                nusc = NuImages(version="annotation", dataroot=scene_root_dir_path, verbose=False)
+                t4 = Tier4(version="annotation", data_root=scene_root_dir_path, verbose=False)
 
                 data_list: Dict[str, DataEntry] = {}
-                for tmp in nusc.sample_data:
+                for tmp in t4.sample_data:
                     data_entry = DataEntry(
-                        img_path=os.path.abspath(os.path.join(nusc.dataroot, tmp["filename"])),
-                        width=tmp["width"],
-                        height=tmp["height"],
+                        img_path=os.path.abspath(os.path.join(t4.data_root, tmp.filename)),
+                        width=tmp.width,
+                        height=tmp.height,
                     )
-                    data_list[tmp["token"]] = data_entry
+                    data_list[tmp.token] = data_entry
 
-                attributes = {tmp["token"]: tmp["name"] for tmp in nusc.attribute}
-                categories = {tmp["token"]: tmp["name"] for tmp in nusc.category}
+                attributes = {tmp.token: tmp.name for tmp in t4.attribute}
+                categories = {tmp.token: tmp.name for tmp in t4.category}
 
                 update_detection_data_annotations(
-                    data_list, nusc.object_ann, attributes, categories, cfg.class_mappings, cfg.classes
+                    data_list, t4.object_ann, attributes, categories, cfg.class_mappings, cfg.classes
                 )
                 data_infos[split].extend(data_list.values())
 

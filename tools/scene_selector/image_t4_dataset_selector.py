@@ -7,7 +7,7 @@ from argparse import ArgumentParser
 import numpy as np
 import yaml
 from mmengine.config import Config
-from nuscenes import NuScenes
+from t4_devkit import Tier4
 
 from autoware_ml.registry import DATA_SELECTOR
 
@@ -141,12 +141,10 @@ def main():
     np.random.shuffle(train_list)
     for dataset_path in train_list:
         dataset_id = dataset_path.split("/")[-2]
-        nusc_info = NuScenes(version="annotation", dataroot=dataset_path, verbose=False)
+        t4_info = Tier4(version="annotation", data_root=dataset_path, verbose=False)
         image_paths = []
-        for sample in nusc_info.sample:
-            sensor_data_paths = [
-                nusc_info.get_sample_data_path(v) for k, v in sample.get("data", {}).items() if k in used_sensors
-            ]
+        for sample in t4_info.sample:
+            sensor_data_paths = [t4_info.get_sample_data_path(v) for k, v in sample.data.items() if k in used_sensors]
             if sensor_data_paths:
                 image_paths.append(sensor_data_paths)
 

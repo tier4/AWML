@@ -8,11 +8,12 @@ import numpy as np
 import yaml
 from mmdet3d.datasets.utils import convert_quaternion_to_matrix
 from mmengine.config import Config
-from nuscenes import NuScenes
+from t4_devkit import Tier4
+from t4_devkit.schema import Sample
 
 from autoware_ml.registry import DATA_SELECTOR
 from tools.detection3d.create_data_t4dataset import get_lidar_token
-from tools.detection3d.t4dataset_converters.t4converter import extract_nuscenes_data, obtain_sensor2top
+from tools.detection3d.t4dataset_converters.t4converter import extract_tier4_data, obtain_sensor2top
 
 DEFAULT_T4_CAMERA = ["CAM_FRONT", "CAM_BACK"]
 
@@ -35,16 +36,16 @@ import numpy as np
 
 
 def get_input_info(
-    nusc: "NuScenes",
-    sample: Dict[str, Any],
+    t4: Tier4,
+    sample: Sample,
     camera_types: List[str],
 ) -> Optional[Dict[str, Any]]:
     """
     Retrieves image paths and calibration data for specified camera types,
-    along with the point cloud data path from a nuScenes sample.
+    along with the point cloud data path from a T4 sample.
 
     Args:
-        nusc (NuScenes): The nuScenes dataset object.
+        t4 (Sample): The T4 dataset object.
         sample (Dict[str, Any]): The sample data containing sensor tokens.
         camera_types (List[str]): List of camera sensor types to include.
 
@@ -55,7 +56,7 @@ def get_input_info(
     # Obtain the lidar token from the sample
     lidar_token = get_lidar_token(sample)
     if lidar_token is None:
-        print(f"Sample {sample['token']} doesn't have lidar data.")
+        print(f"Sample {sample.token} doesn't have lidar data.")
         return None
 
     # Extract necessary transformation matrices and translations
@@ -71,21 +72,21 @@ def get_input_info(
         lidar_to_ego_rot,
         ego_to_global_trans,
         lidar_to_ego_trans,
-    ) = extract_nuscenes_data(nusc, sample, lidar_token)
+    ) = extract_tier4_data(t4, sample, lidar_token)
 
     # Initialize the information dictionary
     info: Dict[str, Any] = {}
 
     # Process each specified camera type
     for cam in camera_types:
-        if cam in sample["data"]:
-            cam_token = sample["data"][cam]
+        if cam in sample.data:
+            cam_token = sample.data[cam]
             # Retrieve camera data
-            image_path, _, cam_intrinsic = nusc.get_sample_data(cam_token)
+            image_path, _, cam_intrinsic = t4.get_sample_data(cam_token)
 
             # Obtain camera-to-top (global) transformation info
             cam_info = obtain_sensor2top(
-                nusc,
+                t4,
                 cam_token,
                 lidar_to_ego_trans,
                 lidar_to_ego_rot,
@@ -117,7 +118,7 @@ def get_input_info(
             info[cam]["lidar2cam"] = lidar_to_camera.astype(np.float32).tolist()
 
     # Retrieve the point cloud data path
-    points_path, _, _ = nusc.get_sample_data(lidar_token)
+    points_path, _, _ = t4.get_sample_data(lidar_token)
 
     return {"images": info, "points": points_path}
 
@@ -236,10 +237,10 @@ def main():
     np.random.shuffle(train_list)
     for dataset_path in train_list:
         dataset_id = dataset_path.split("/")[-2]
-        nusc_info = NuScenes(version="annotation", dataroot=dataset_path, verbose=False)
+        t4_info = Tier4(version="annotation", data_root=dataset_path, verbose=False)
         sensor_data = []
-        for sample in nusc_info.sample:
-            sensor_data.append(get_input_info(nusc_info, sample, cfg.camera_types))
+        for sample in t4_info.sample:
+            sensor_data.append(get_input_info(t4_info, sample, cfg.camera_types))
 
         # Handle visualization output path
         if args.show_visualization:

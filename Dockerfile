@@ -52,6 +52,10 @@ RUN apt update && DEBIAN_FRONTEND=noninteractive apt install -y --no-install-rec
     libxkbcommon-x11-0
 RUN python3 -m pip --no-cache-dir install \
     rerun-sdk==0.17.0
+
+# Install t4-devkit
+RUN python3 -m pip install git+https://github.com/tier4/t4-devkit@v0.0.7
+
 ENV WGPU_BACKEND=gl
 
 WORKDIR /workspace
