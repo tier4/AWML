@@ -56,6 +56,10 @@ RUN python3 -m pip --no-cache-dir install \
 # Install t4-devkit
 RUN python3 -m pip install git+https://github.com/tier4/t4-devkit@v0.0.7
 
+# force numpy versionto remain at 1.23.5
+RUN python3 -m pip --no-cache-dir install \
+    numpy==1.23.5
+
 ENV WGPU_BACKEND=gl
 
 WORKDIR /workspace
