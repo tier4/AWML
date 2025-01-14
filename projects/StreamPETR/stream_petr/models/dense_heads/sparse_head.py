@@ -1,22 +1,21 @@
 import torch
 import torch.nn as nn 
-from mmcv.cnn import Linear, bias_init_with_prob, Scale
+from mmcv.cnn import Linear
+from mmengine.model import bias_init_with_prob
 
-from mmcv.runner import force_fp32
-from mmdet.core import (build_assigner, build_sampler, multi_apply,
-                        reduce_mean)
-from mmdet.models.utils import build_transformer
-from mmdet.models import HEADS, build_loss
+from mmdet.utils.dist_utils import reduce_mean
+from mmdet.models.task_modules.builder import build_assigner, build_sampler
+from mmdet.models.utils import multi_apply
+from mmdet.registry import MODELS 
 from mmdet.models.dense_heads.anchor_free_head import AnchorFreeHead
-from mmdet.models.utils.transformer import inverse_sigmoid
-from mmdet3d.core.bbox.coders import build_bbox_coder
-from projects.mmdet3d_plugin.core.bbox.util import normalize_bbox
-from projects.mmdet3d_plugin.models.utils.positional_encoding import pos2posemb3d, pos2posemb1d, nerf_positional_encoding
-from projects.mmdet3d_plugin.models.utils.misc import MLN, topk_gather, transform_reference_points, memory_refresh, SELayer_Linear
-import copy
-from mmdet.models.utils import NormedLinear
+from mmdet.models.layers.transformer.utils import inverse_sigmoid
+from mmdet3d.models.task_modules.builder import build_bbox_coder
+from projects.StreamPETR.stream_petr.core.bbox.util import normalize_bbox
+from projects.StreamPETR.stream_petr.models.utils.positional_encoding import pos2posemb3d, pos2posemb1d, nerf_positional_encoding
+from projects.StreamPETR.stream_petr.models.utils.misc import MLN, topk_gather, transform_reference_points, memory_refresh
+from mmdet.models.layers.normed_predictor import NormedLinear
 
-@HEADS.register_module()
+@MODELS.register_module()
 class SparseHead(AnchorFreeHead):
     """Implements the DETR transformer head.
     See `paper: End-to-End Object Detection with Transformers
@@ -170,16 +169,16 @@ class SparseHead(AnchorFreeHead):
         self.normedlinear = normedlinear
         super(SparseHead, self).__init__(num_classes, in_channels, init_cfg = init_cfg)
 
-        self.loss_cls = build_loss(loss_cls)
-        self.loss_bbox = build_loss(loss_bbox)
-        self.loss_iou = build_loss(loss_iou)
+        self.loss_cls = loss_cls
+        self.loss_bbox = loss_bbox
+        self.loss_iou = loss_iou
 
         if self.loss_cls.use_sigmoid:
             self.cls_out_channels = num_classes
         else:
             self.cls_out_channels = num_classes + 1
 
-        self.transformer = build_transformer(transformer)
+        self.transformer = transformer
 
         self.code_weights = nn.Parameter(torch.tensor(
             self.code_weights), requires_grad=False)
@@ -784,7 +783,6 @@ class SparseHead(AnchorFreeHead):
         
         return self.dn_weight * loss_cls, self.dn_weight * loss_bbox
     
-    @force_fp32(apply_to=('preds_dicts'))
     def loss(self,
              gt_bboxes_list,
              gt_labels_list,
@@ -893,7 +891,6 @@ class SparseHead(AnchorFreeHead):
         return loss_dict
 
 
-    @force_fp32(apply_to=('preds_dicts'))
     def get_bboxes(self, preds_dicts, img_metas, rescale=False):
         """Generate bboxes from bbox head predictions.
         Args:

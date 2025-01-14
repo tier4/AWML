@@ -4,20 +4,23 @@ import numpy as np
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from mmcv.cnn import (ConvModule, DepthwiseSeparableConvModule,
-                      bias_init_with_prob)
-from mmcv.ops.nms import batched_nms
-from mmcv.runner import force_fp32
+from mmcv.cnn import (ConvModule, DepthwiseSeparableConvModule)
+from mmengine.model import bias_init_with_prob
 
-from mmdet.core import (MlvlPointGenerator, bbox_xyxy_to_cxcywh,
-                        build_assigner, build_sampler, multi_apply,
-                        reduce_mean)
-from mmdet.models.builder import HEADS, build_loss
+from mmcv.ops.nms import batched_nms
+
+from mmdet.models.task_modules import MlvlPointGenerator
+from mmdet.utils.dist_utils import reduce_mean
+from mmdet.models.task_modules.builder import build_assigner, build_sampler
+from mmdet.models.utils import multi_apply
+
+from mmdet.structures.bbox import bbox_xyxy_to_cxcywh
+from mmdet.registry import MODELS
 from mmdet.models.dense_heads.base_dense_head import BaseDenseHead
 from mmdet.models.dense_heads.dense_test_mixins import BBoxTestMixin
 
 
-@HEADS.register_module()
+@MODELS.register_module()
 class YOLOXHeadCustom(BaseDenseHead, BBoxTestMixin):
     """YOLOXHead head used in `YOLOX <https://arxiv.org/abs/2107.08430>`_.
     Args:
@@ -105,13 +108,13 @@ class YOLOXHeadCustom(BaseDenseHead, BBoxTestMixin):
         self.norm_cfg = norm_cfg
         self.act_cfg = act_cfg
 
-        self.loss_cls = build_loss(loss_cls)
-        self.loss_bbox = build_loss(loss_bbox)
-        self.loss_obj = build_loss(loss_obj)
-        self.loss_centers2d = build_loss(loss_centers2d)
+        self.loss_cls = loss_cls
+        self.loss_bbox = loss_bbox
+        self.loss_obj = loss_obj
+        self.loss_centers2d = loss_centers2d
 
         self.use_l1 = True  # This flag will be modified by hooks.
-        self.loss_l1 = build_loss(loss_l1)
+        self.loss_l1 = loss_l1
 
         self.prior_generator = MlvlPointGenerator(strides, offset=0)
 
@@ -260,7 +263,6 @@ class YOLOXHeadCustom(BaseDenseHead, BBoxTestMixin):
             dets, keep = batched_nms(bboxes, scores, labels, cfg.nms)
             return dets, labels[keep]
 
-    @force_fp32(apply_to=('cls_scores', 'bbox_preds', 'objectnesses', 'centers2d'))
     def loss(self,
              gt_bboxes2d_list,
              gt_labels2d_list,

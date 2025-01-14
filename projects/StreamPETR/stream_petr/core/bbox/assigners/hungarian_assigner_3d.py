@@ -7,7 +7,7 @@ from mmdet.core.bbox.builder import BBOX_ASSIGNERS
 from mmdet.core.bbox.assigners import AssignResult
 from mmdet.core.bbox.assigners import BaseAssigner
 from mmdet.core.bbox.match_costs import build_match_cost
-from projects.mmdet3d_plugin.core.bbox.util import normalize_bbox
+from projects.StreamPETR.stream_petr.core.bbox.util import normalize_bbox
 
 try:
     from scipy.optimize import linear_sum_assignment

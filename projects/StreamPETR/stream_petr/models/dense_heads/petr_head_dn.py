@@ -11,23 +11,22 @@
 # ------------------------------------------------------------------------
 import torch
 import torch.nn as nn
-from mmcv.cnn import Linear, bias_init_with_prob
-
-from mmcv.runner import force_fp32
-from mmdet.core import (build_assigner, build_sampler, multi_apply,
-                        reduce_mean)
-from mmdet.models.utils import build_transformer
-from mmdet.models import HEADS, build_loss
+from mmcv.cnn import Linear
+from mmengine.model import bias_init_with_prob
+from mmdet.utils.dist_utils import reduce_mean
+from mmdet.models.task_modules.builder import build_assigner, build_sampler
+from mmdet.models.utils import multi_apply
+from mmdet.registry import MODELS
 from mmdet.models.dense_heads.anchor_free_head import AnchorFreeHead
-from mmdet.models.utils.transformer import inverse_sigmoid
-from mmdet3d.core.bbox.coders import build_bbox_coder
-from projects.mmdet3d_plugin.core.bbox.util import normalize_bbox
+from mmdet.models.layers.transformer.utils import inverse_sigmoid
+from mmdet3d.models.task_modules.builder import build_bbox_coder
+from projects.StreamPETR.stream_petr.core.bbox.util import normalize_bbox
 
-from mmdet.models.utils import NormedLinear
-from projects.mmdet3d_plugin.models.utils.positional_encoding import pos2posemb3d, pos2posemb1d
-from projects.mmdet3d_plugin.models.utils.misc import MLN, topk_gather, SELayer_Linear
+from mmdet.models.layers.normed_predictor import NormedLinear
+from projects.StreamPETR.stream_petr.models.utils.positional_encoding import pos2posemb3d
+from projects.StreamPETR.stream_petr.models.utils.misc import MLN, topk_gather, SELayer_Linear
 
-@HEADS.register_module()
+@MODELS.register_module()
 class PETRHeadDN(AnchorFreeHead):
     """Implements the DETR transformer head.
     See `paper: End-to-End Object Detection with Transformers
@@ -765,7 +764,6 @@ class PETRHeadDN(AnchorFreeHead):
         
         return self.dn_weight * loss_cls, self.dn_weight * loss_bbox
     
-    @force_fp32(apply_to=('preds_dicts'))
     def loss(self,
              gt_bboxes_list,
              gt_labels_list,
@@ -860,7 +858,6 @@ class PETRHeadDN(AnchorFreeHead):
         return loss_dict
 
 
-    @force_fp32(apply_to=('preds_dicts'))
     def get_bboxes(self, preds_dicts, img_metas, rescale=False):
         """Generate bboxes from bbox head predictions.
         Args:

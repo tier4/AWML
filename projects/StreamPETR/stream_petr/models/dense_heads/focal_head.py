@@ -6,18 +6,19 @@
 # ------------------------------------------------------------------------
 import torch
 import torch.nn as nn
-from mmcv.cnn import bias_init_with_prob
-from mmcv.runner import force_fp32
-from mmdet.core import (build_assigner, build_sampler, multi_apply,
-                        reduce_mean, bbox_cxcywh_to_xyxy, bbox_xyxy_to_cxcywh)
-from mmdet.models import HEADS, build_loss
+from mmengine.model import bias_init_with_prob
+from mmdet.structures.bbox import ( bbox_cxcywh_to_xyxy, bbox_xyxy_to_cxcywh)
+from mmdet.utils.dist_utils import reduce_mean
+from mmdet.models.task_modules.builder import build_assigner, build_sampler
+from mmdet.models.utils import multi_apply
+from mmdet.registry import MODELS
 from mmdet.models.dense_heads.anchor_free_head import AnchorFreeHead
-from projects.mmdet3d_plugin.models.utils.misc import draw_heatmap_gaussian, apply_center_offset, apply_ltrb
-from mmdet.core import bbox_overlaps
+from projects.StreamPETR.stream_petr.models.utils.misc import draw_heatmap_gaussian, apply_center_offset, apply_ltrb
+from mmdet.structures.bbox import bbox_overlaps
 from mmdet3d.models.utils import clip_sigmoid
 import random
 
-@HEADS.register_module()
+@MODELS.register_module()
 class FocalHead(AnchorFreeHead):
     """Implements the DETR transformer head.
     See `paper: End-to-End Object Detection with Transformers
@@ -108,11 +109,11 @@ class FocalHead(AnchorFreeHead):
 
 
 
-        self.loss_cls2d = build_loss(loss_cls2d)
-        self.loss_bbox2d = build_loss(loss_bbox2d)
-        self.loss_iou2d = build_loss(loss_iou2d)
-        self.loss_centers2d = build_loss(loss_centers2d)
-        self.loss_centerness = build_loss(loss_centerness)
+        self.loss_cls2d = loss_cls2d
+        self.loss_bbox2d = loss_bbox2d
+        self.loss_iou2d = loss_iou2d
+        self.loss_centers2d = loss_centers2d
+        self.loss_centerness = loss_centerness
 
         self._init_layers()
 
@@ -192,7 +193,6 @@ class FocalHead(AnchorFreeHead):
 
         return outs
     
-    @force_fp32(apply_to=('preds_dicts'))
     def loss(self,
              gt_bboxes2d_list,
              gt_labels2d_list,

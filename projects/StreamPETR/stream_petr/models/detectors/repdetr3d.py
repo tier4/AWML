@@ -10,14 +10,12 @@
 #  Modified by Shihao Wang
 # ------------------------------------------------------------------------
 import torch
-from mmcv.runner import force_fp32, auto_fp16
-from mmdet.models import DETECTORS
-from mmdet3d.core import bbox3d2result
+from mmdet.registry import MODELS
+from mmdet3d.structures.ops.transforms import bbox3d2result
 from mmdet3d.models.detectors.mvx_two_stage import MVXTwoStageDetector
-from projects.mmdet3d_plugin.models.utils.grid_mask import GridMask
-from projects.mmdet3d_plugin.models.utils.misc import locations
+from projects.StreamPETR.stream_petr.models.utils.grid_mask import GridMask
 
-@DETECTORS.register_module()
+@MODELS.register_module()
 class RepDetr3D(MVXTwoStageDetector):
     """RepDetr3D."""
 
@@ -101,7 +99,6 @@ class RepDetr3D(MVXTwoStageDetector):
         return img_feats_reshaped
 
 
-    @auto_fp16(apply_to=('img'), out_fp32=True)
     def extract_feat(self, img, T, training_mode=False):
         """Extract features from images and points."""
         img_feats = self.extract_img_feat(img, T, training_mode)
@@ -199,7 +196,6 @@ class RepDetr3D(MVXTwoStageDetector):
         else:
             return None
 
-    @force_fp32(apply_to=('img'))
     def forward(self, return_loss=True, **data):
         """Calls either forward_train or forward_test depending on whether
         return_loss=True.

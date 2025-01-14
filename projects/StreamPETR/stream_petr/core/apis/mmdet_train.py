@@ -25,9 +25,9 @@ from mmdet.datasets import (build_dataset,
 from mmdet.utils import get_root_logger
 import time
 import os.path as osp
-from projects.mmdet3d_plugin.datasets.builder import build_dataloader
-from projects.mmdet3d_plugin.core.evaluation.eval_hooks import CustomDistEvalHook
-from projects.mmdet3d_plugin.datasets import custom_build_dataset
+from projects.StreamPETR.stream_petr.datasets.builder import build_dataloader
+from projects.StreamPETR.stream_petr.core.evaluation.eval_hooks import CustomDistEvalHook
+from projects.StreamPETR.stream_petr.datasets import custom_build_dataset
 def custom_train_detector(model,
                    dataset,
                    cfg,
