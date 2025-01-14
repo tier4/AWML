@@ -12,7 +12,7 @@ from .datasets.pipelines.transform_3d import (
     GlobalRotScaleTransImage,
 )
 from .datasets.pipelines.formating import PETRFormatBundle3D
-
+from .datasets.pipelines.loading import StreamPETRLoadAnnotations3D
 __all__ = [
     "Petr3D",
     "StreamPETRHead",
@@ -26,5 +26,6 @@ __all__ = [
     "NormalizeMultiviewImage",
     "ResizeCropFlipRotImage",
     "GlobalRotScaleTransImage",
-    "PETRFormatBundle3D"
+    "PETRFormatBundle3D",
+    "StreamPETRLoadAnnotations3D"
 ]

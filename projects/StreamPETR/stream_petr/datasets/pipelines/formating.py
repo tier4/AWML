@@ -5,7 +5,7 @@
 #  Modified by Shihao Wang
 # ------------------------------------------------------------------------
 import numpy as np
-from mmdet.registry import TRANSFORMS
+from mmdet3d.registry import TRANSFORMS
 from mmengine.structures.base_data_element import BaseDataElement as DC
 from mmdet3d.structures.points import BasePoints
 from mmcv.transforms import to_tensor

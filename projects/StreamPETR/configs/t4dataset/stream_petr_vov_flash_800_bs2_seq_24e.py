@@ -1,6 +1,6 @@
 _base_ = [
     "../../../../autoware_ml/configs/detection3d/default_runtime.py",
-    "../../../../autoware_ml/configs/detection3d/dataset/t4dataset/base.py",
+    "../../../../autoware_ml/configs/detection3d/dataset/t4dataset/xx1.py",
 ]
 custom_imports = dict(
     imports=["projects.StreamPETR.stream_petr"],
@@ -24,6 +24,14 @@ batch_size = 2
 num_iters_per_epoch = 28130 // (num_gpus * batch_size)
 num_epochs = 24
 backend_args = None
+
+eval_class_range = {
+    "car": 120,
+    "truck": 120,
+    "bus": 120,
+    "bicycle": 120,
+    "pedestrian": 120,
+}
 
 queue_length = 1
 num_frame_losses = 1
@@ -156,8 +164,8 @@ model = dict(
     )
 
 dataset_type = 'CBGSDataset'
-data_root = "./data"
-info_directory_path = "info/kokseang_3/"
+data_root = "./data/"
+info_directory_path = "info/cameraonly/streampetr/"
 
 file_client_args = dict(backend='disk')
 
@@ -174,7 +182,7 @@ ida_aug_conf = {
 
 train_pipeline = [
     dict(type='LoadMultiViewImageFromFiles', to_float32=True),
-    dict(type='LoadAnnotations3D', with_bbox_3d=True, with_label_3d=True, with_bbox=True,
+    dict(type='StreamPETRLoadAnnotations3D', with_bbox_3d=True, with_label_3d=True,with_bbox=True,
         with_label=True, with_bbox_depth=True),
     dict(type='ObjectRangeFilter', point_cloud_range=point_cloud_range),
     dict(type='ObjectNameFilter', classes=class_names),
@@ -188,12 +196,14 @@ train_pipeline = [
             ),
     dict(type='mmdet.NormalizeMultiviewImage', **img_norm_cfg),
     dict(type='mmdet.PadMultiViewImage', size_divisor=32),
-    dict(type='mmdet.PETRFormatBundle3D', class_names=class_names, collect_keys=collect_keys + ['prev_exists']),
+    dict(type='PETRFormatBundle3D', class_names=class_names, collect_keys=collect_keys + ['prev_exists']),
     dict(type='Pack3DDetInputs', keys=['gt_bboxes_3d', 'gt_labels_3d', 'img', 'gt_bboxes', 'gt_labels', 'centers2d', 'depths', 'prev_exists'] + collect_keys,
              meta_keys=('filename', 'ori_shape', 'img_shape', 'pad_shape', 'scale_factor', 'flip', 'box_mode_3d', 'box_type_3d', 'img_norm_cfg', 'scene_token', 'gt_bboxes_3d','gt_labels_3d'))
 ]
 test_pipeline = [
     dict(type='LoadMultiViewImageFromFiles', to_float32=True),
+    dict(type='StreamPETRLoadAnnotations3D', with_bbox_3d=True, with_label_3d=True,with_bbox=True,
+        with_label=True, with_bbox_depth=True),
     dict(type='mmdet.ResizeCropFlipRotImage', data_aug_conf = ida_aug_conf, training=False),
     dict(type='mmdet.NormalizeMultiviewImage', **img_norm_cfg),
     dict(type='mmdet.PadMultiViewImage', size_divisor=32),
@@ -223,7 +233,7 @@ train_dataloader = dict(
         dataset=dict(
             type=_base_.dataset_type,
             data_root=data_root,
-            ann_file=info_directory_path + _base_.info_train_file_name,
+            ann_file=info_directory_path + _base_.info_val_file_name,
             pipeline=train_pipeline,
             metainfo=_base_.metainfo,
             class_names=_base_.class_names,
@@ -262,7 +272,7 @@ test_dataloader = dict(
     dataset=dict(
         type=_base_.dataset_type,
         data_root=data_root,
-        ann_file=info_directory_path + _base_.info_test_file_name,
+        ann_file=info_directory_path + _base_.info_val_file_name,
         pipeline=test_pipeline,
         metainfo=_base_.metainfo,
         class_names=_base_.class_names,
@@ -283,6 +293,7 @@ val_evaluator = dict(
     metric="bbox",
     class_names=_base_.class_names,
     name_mapping=_base_.name_mapping,
+    eval_class_range=eval_class_range,
 )
 test_evaluator = dict(
     type="T4Metric",
@@ -292,6 +303,7 @@ test_evaluator = dict(
     metric="bbox",
     class_names=_base_.class_names,
     name_mapping=_base_.name_mapping,
+    eval_class_range=eval_class_range,
 )
 
 
@@ -301,14 +313,10 @@ test_cfg = dict()
 
 optimizer = dict(
     type='AdamW', 
-    lr=4e-4, # bs 8: 2e-4 || bs 16: 4e-4
-    paramwise_cfg=dict(
-        custom_keys={
-            'img_backbone': dict(lr_mult=0.1), # set to 0.1 always better when apply 2D pretrained.
-        }),
+    lr=4e-4, # bs 8: 2e-4 || bs 16: 4e-4,
     weight_decay=0.01)
 optimizer_config = dict(type='Fp16OptimizerHook', loss_scale='dynamic', grad_clip=dict(max_norm=35, norm_type=2))
-optim_wrapper = dict(type='AmpOptimWrapper', optimizer=optimizer)
+optim_wrapper = dict(type='AmpOptimWrapper', optimizer=optimizer, dtype='float16')
 # learning policy
 lr_config = dict(
     policy='CosineAnnealing',
@@ -323,5 +331,6 @@ find_unused_parameters=False #### when use checkpoint, find_unused_parameters mu
 checkpoint_config = dict(interval=num_iters_per_epoch, max_keep_ckpts=3)
 runner = dict(
     type='IterBasedRunner', max_iters=num_epochs * num_iters_per_epoch)
-load_from='work_dirs/ckpts/fcos3d_vovnet_imgbackbone-remapped.pth'
+# load_from='work_dirs/ckpts/fcos3d_vovnet_imgbackbone-remapped.pth'
+load_from=None
 resume_from=None

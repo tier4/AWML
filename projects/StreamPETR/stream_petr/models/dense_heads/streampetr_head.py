@@ -201,7 +201,7 @@ class StreamPETRHead(AnchorFreeHead):
         else:
             self.cls_out_channels = num_classes + 1
 
-        self.transformer = transformer
+        self.transformer = MODELS.build(transformer)
 
         self.code_weights = nn.Parameter(torch.tensor(
             self.code_weights), requires_grad=False)
