@@ -10,7 +10,7 @@
 #  Modified by Shihao Wang
 # ------------------------------------------------------------------------
 import torch
-from mmdet.registry import MODELS
+from mmdet3d.registry import MODELS
 from mmdet3d.structures.ops.transforms import bbox3d2result
 from mmdet3d.models.detectors.mvx_two_stage import MVXTwoStageDetector
 from projects.StreamPETR.stream_petr.models.utils.grid_mask import GridMask

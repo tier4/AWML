@@ -1,7 +1,6 @@
 import torch
 
-from mmdet.core.bbox import BaseBBoxCoder
-from mmdet.core.bbox.builder import BBOX_CODERS
+from mmdet.models.task_modules import BBOX_CODERS, BaseBBoxCoder
 from projects.StreamPETR.stream_petr.core.bbox.util import denormalize_bbox
 
 

@@ -3,10 +3,8 @@
 # Copyright (c) 2021 Wang, Yue
 # ------------------------------------------------------------------------
 import torch
-from mmdet.core.bbox.builder import BBOX_ASSIGNERS
-from mmdet.core.bbox.assigners import AssignResult
-from mmdet.core.bbox.assigners import BaseAssigner
-from mmdet.core.bbox.match_costs import build_match_cost
+
+from mmdet.models.task_modules import AssignResult, BaseAssigner, build_match_cost,BBOX_ASSIGNERS
 from projects.StreamPETR.stream_petr.core.bbox.util import normalize_bbox
 
 try:

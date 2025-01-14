@@ -74,6 +74,7 @@ class FocalHead(AnchorFreeHead):
                          reg_cost=dict(type='BBoxL1Cost', weight=5.0),
                          iou_cost=dict(type='IoUCost', iou_mode='giou', weight=2.0),
                          centers2d_cost=dict(type='BBox3DL1Cost', weight=1.0))),
+                 bbox_coder = dict(type='DistancePointBBoxCoder'),
                  test_cfg=dict(max_per_img=100),
                  init_cfg=None,
                  **kwargs):
@@ -105,18 +106,23 @@ class FocalHead(AnchorFreeHead):
         self.train_ratio=train_ratio
         self.infer_ratio=infer_ratio
 
-        super(FocalHead, self).__init__(num_classes, in_channels, init_cfg = init_cfg)
+        super(FocalHead, self).__init__(num_classes, in_channels, 
+                                        init_cfg = init_cfg, loss_cls=loss_cls2d,
+                                        loss_bbox=loss_bbox2d,bbox_coder=bbox_coder)
 
 
 
-        self.loss_cls2d = loss_cls2d
-        self.loss_bbox2d = loss_bbox2d
-        self.loss_iou2d = loss_iou2d
-        self.loss_centers2d = loss_centers2d
-        self.loss_centerness = loss_centerness
+        self.loss_cls2d = self.loss_cls
+        self.loss_bbox2d = self.loss_bbox
+        self.loss_iou2d = MODELS.build(loss_iou2d)
+        self.loss_centers2d = MODELS.build(loss_centers2d)
+        self.loss_centerness = MODELS.build(loss_centerness)
 
         self._init_layers()
-
+        
+    def loss_by_feat(self, cls_scores, bbox_preds, batch_gt_instances, batch_img_metas, batch_gt_instances_ignore = None):
+        return super().loss_by_feat(cls_scores, bbox_preds, batch_gt_instances, batch_img_metas, batch_gt_instances_ignore)
+    
     def _init_layers(self):
         self.cls = nn.Conv2d(self.embed_dims, self.num_classes, kernel_size=1)
 

@@ -6,7 +6,7 @@ from mmengine.model import bias_init_with_prob
 from mmdet.utils.dist_utils import reduce_mean
 from mmdet.models.task_modules.builder import build_assigner, build_sampler
 from mmdet.models.utils import multi_apply
-from mmdet.registry import MODELS 
+from mmdet3d.registry import MODELS 
 from mmdet.models.dense_heads.anchor_free_head import AnchorFreeHead
 from mmdet.models.layers.transformer.utils import inverse_sigmoid
 from mmdet3d.models.task_modules.builder import build_bbox_coder

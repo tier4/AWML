@@ -8,8 +8,8 @@
 # Copyright 2021 Toyota Research Institute.  All rights reserved.
 # ------------------------------------------------------------------------
 from collections import OrderedDict
-from mmcv.runner import BaseModule
-from mmdet.models.builder import BACKBONES
+from mmengine.model import BaseModule
+from mmdet3d.registry import MODELS
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -284,7 +284,7 @@ class _OSA_stage(nn.Sequential):
             )
 
 
-@BACKBONES.register_module()
+@MODELS.register_module()
 class VoVNetCP(BaseModule):
     def __init__(self, spec_name, input_ch=3, out_features=None, 
                  frozen_stages=-1, norm_eval=True, pretrained=None, init_cfg=None):

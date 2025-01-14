@@ -3,12 +3,8 @@
 #  Modified by Shihao Wang
 # ---------------------------------------------
 import torch
-
-from mmdet.core.bbox.builder import BBOX_ASSIGNERS
-from mmdet.core.bbox.assigners import AssignResult
-from mmdet.core.bbox.assigners import BaseAssigner
-from mmdet.core.bbox.match_costs import build_match_cost
-from mmdet.core import bbox_cxcywh_to_xyxy
+from mmdet.models.task_modules import AssignResult, BaseAssigner, build_match_cost,BBOX_ASSIGNERS
+from mmdet.structures.bbox import bbox_cxcywh_to_xyxy
 
 try:
     from scipy.optimize import linear_sum_assignment

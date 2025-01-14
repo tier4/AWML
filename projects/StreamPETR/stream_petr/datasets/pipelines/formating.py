@@ -5,14 +5,14 @@
 #  Modified by Shihao Wang
 # ------------------------------------------------------------------------
 import numpy as np
-from mmdet.datasets.builder import PIPELINES
-from mmcv.parallel import DataContainer as DC
-from mmdet3d.core.points import BasePoints
-from mmdet.datasets.pipelines import to_tensor
-from mmdet3d.datasets.pipelines import DefaultFormatBundle
+from mmdet.registry import TRANSFORMS
+from mmengine.structures.base_data_element import BaseDataElement as DC
+from mmdet3d.structures.points import BasePoints
+from mmcv.transforms import to_tensor
+from mmdet3d.datasets.transforms import Pack3DDetInputs
 
-@PIPELINES.register_module()
-class PETRFormatBundle3D(DefaultFormatBundle):
+@TRANSFORMS.register_module()
+class PETRFormatBundle3D(Pack3DDetInputs):
     """Default formatting bundle.
 
     It simplifies the pipeline of formatting common fields for voxels,
@@ -28,7 +28,7 @@ class PETRFormatBundle3D(DefaultFormatBundle):
     """
 
     def __init__(self, class_names, collect_keys, with_gt=True, with_label=True):
-        super(PETRFormatBundle3D, self).__init__()
+        super(PETRFormatBundle3D, self).__init__(collect_keys)
         self.class_names = class_names
         self.with_gt = with_gt
         self.with_label = with_label

@@ -16,7 +16,7 @@ from mmengine.model import bias_init_with_prob
 from mmdet.utils.dist_utils import reduce_mean
 from mmdet.models.task_modules.builder import build_assigner, build_sampler
 from mmdet.models.utils import multi_apply
-from mmdet.registry import MODELS
+from mmdet3d.registry import MODELS
 from mmdet.models.dense_heads.anchor_free_head import AnchorFreeHead
 from mmdet.models.layers.transformer.utils import inverse_sigmoid
 from mmdet3d.models.task_modules.builder import build_bbox_coder
@@ -25,7 +25,6 @@ from projects.StreamPETR.stream_petr.core.bbox.util import normalize_bbox
 from mmdet.models.layers.normed_predictor import NormedLinear
 from projects.StreamPETR.stream_petr.models.utils.positional_encoding import pos2posemb3d, pos2posemb1d, nerf_positional_encoding
 from projects.StreamPETR.stream_petr.models.utils.misc import MLN, topk_gather, transform_reference_points, memory_refresh, SELayer_Linear
-
 @MODELS.register_module()
 class StreamPETRHead(AnchorFreeHead):
     """Implements the DETR transformer head.
@@ -187,11 +186,15 @@ class StreamPETRHead(AnchorFreeHead):
                                        dict(type='ReLU', inplace=True))
         self.num_pred = 6
         self.normedlinear = normedlinear
-        super(StreamPETRHead, self).__init__(num_classes, in_channels, init_cfg = init_cfg)
+        super(StreamPETRHead, self).__init__(num_classes, in_channels, 
+                                             init_cfg = init_cfg,
+                                             loss_bbox=loss_bbox,
+                                             loss_cls=loss_cls,
+                                             bbox_coder=bbox_coder)
 
-        self.loss_cls = loss_cls
-        self.loss_bbox = loss_bbox
-        self.loss_iou = loss_iou
+        # self.loss_cls = MODELS.build(loss_cls)  # Already initialized in superclass
+        # self.loss_bbox = MODELS.build(loss_bbox) # Already initialized in superclass
+        self.loss_iou = MODELS.build(loss_iou)
 
         if self.loss_cls.use_sigmoid:
             self.cls_out_channels = num_classes
@@ -307,7 +310,9 @@ class StreamPETRHead(AnchorFreeHead):
             for m in self.cls_branches:
                 nn.init.constant_(m[-1].bias, bias_init)
 
-
+    def loss_by_feat(self, cls_scores, bbox_preds, batch_gt_instances, batch_img_metas, batch_gt_instances_ignore = None):
+        return super().loss_by_feat(cls_scores, bbox_preds, batch_gt_instances, batch_img_metas, batch_gt_instances_ignore)
+    
     def reset_memory(self):
         self.memory_embedding = None
         self.memory_reference_point = None

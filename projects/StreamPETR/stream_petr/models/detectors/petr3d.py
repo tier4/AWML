@@ -10,7 +10,8 @@
 #  Modified by Shihao Wang
 # ------------------------------------------------------------------------
 import torch
-from mmdet.registry import MODELS
+from mmdet3d.registry import MODELS
+
 from mmdet3d.structures.ops.transforms import bbox3d2result
 from mmdet3d.models.detectors.mvx_two_stage import MVXTwoStageDetector
 from projects.StreamPETR.stream_petr.models.utils.grid_mask import GridMask
@@ -43,11 +44,11 @@ class Petr3D(MVXTwoStageDetector):
                  aux_2d_only=True,
                  single_test=False,
                  pretrained=None):
-        super(Petr3D, self).__init__(pts_voxel_layer, pts_voxel_encoder,
-                             pts_middle_encoder, pts_fusion_layer,
-                             img_backbone, pts_backbone, img_neck, pts_neck,
-                             pts_bbox_head, img_roi_head, img_rpn_head,
-                             train_cfg, test_cfg, pretrained)
+        super(Petr3D, self).__init__(pts_voxel_encoder=pts_voxel_encoder,pts_middle_encoder=pts_middle_encoder, 
+                            pts_fusion_layer=pts_fusion_layer,img_backbone=img_backbone, 
+                            pts_backbone=pts_backbone, img_neck=img_neck, pts_neck=pts_neck,
+                            pts_bbox_head=pts_bbox_head, img_roi_head=img_roi_head, img_rpn_head=img_rpn_head,
+                            train_cfg=train_cfg, test_cfg=test_cfg)
         self.grid_mask = GridMask(True, True, rotate=1, offset=False, ratio=0.5, mode=1, prob=0.7)
         self.use_grid_mask = use_grid_mask
         self.prev_scene_token = None

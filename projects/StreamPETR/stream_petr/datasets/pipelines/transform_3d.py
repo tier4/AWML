@@ -12,12 +12,12 @@
 
 import numpy as np
 import mmcv
-from mmdet.datasets.builder import PIPELINES
+from mmdet.registry import TRANSFORMS
 import torch
 from PIL import Image
 
 
-@PIPELINES.register_module()
+@TRANSFORMS.register_module()
 class PadMultiViewImage():
     """Pad the multi-view image.
     There are two padding modes: (1) pad to a fixed size and (2) pad to the
@@ -68,7 +68,7 @@ class PadMultiViewImage():
         return repr_str
 
 
-@PIPELINES.register_module()
+@TRANSFORMS.register_module()
 class NormalizeMultiviewImage(object):
     """Normalize the image.
     Added key is "img_norm_cfg".
@@ -104,7 +104,7 @@ class NormalizeMultiviewImage(object):
         return repr_str
 
 
-@PIPELINES.register_module()
+@TRANSFORMS.register_module()
 class ResizeCropFlipRotImage():
     def __init__(self, data_aug_conf=None, with_2d=True, filter_invisible=True, training=True):
         self.data_aug_conf = data_aug_conf
@@ -297,7 +297,7 @@ class ResizeCropFlipRotImage():
             rotate = 0
         return resize, resize_dims, crop, flip, rotate
 
-@PIPELINES.register_module()
+@TRANSFORMS.register_module()
 class GlobalRotScaleTransImage():
     def __init__(
         self,

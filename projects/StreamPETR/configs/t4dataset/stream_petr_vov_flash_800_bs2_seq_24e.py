@@ -23,6 +23,7 @@ num_gpus = 1
 batch_size = 2
 num_iters_per_epoch = 28130 // (num_gpus * batch_size)
 num_epochs = 24
+backend_args = None
 
 queue_length = 1
 num_frame_losses = 1
@@ -52,25 +53,32 @@ model = dict(
         out_channels=256,
         num_outs=2),
     img_roi_head=dict(
-        type='FocalHead',
+        type='mmdet.FocalHead',
         num_classes=10,
         in_channels=256,
-        loss_cls2d=dict(
+        bbox_coder = dict(type='mmdet.DistancePointBBoxCoder'),
+        loss_cls = dict(
             type='QualityFocalLoss',
+            use_sigmoid=True,
+            gamma=2.0,
+            alpha=0.25,
+            loss_weight=1.0),
+        loss_cls2d=dict(
+            type='mmdet.QualityFocalLoss',
             use_sigmoid=True,
             beta=2.0,
             loss_weight=2.0),
-        loss_centerness=dict(type='GaussianFocalLoss', reduction='mean', loss_weight=1.0),
-        loss_bbox2d=dict(type='L1Loss', loss_weight=5.0),
-        loss_iou2d=dict(type='GIoULoss', loss_weight=2.0),
-        loss_centers2d=dict(type='L1Loss', loss_weight=10.0),
+        loss_centerness=dict(type='mmdet.GaussianFocalLoss', reduction='mean', loss_weight=1.0),
+        loss_bbox2d=dict(type='mmdet.L1Loss', loss_weight=5.0),
+        loss_iou2d=dict(type='mmdet.GIoULoss', loss_weight=2.0),
+        loss_centers2d=dict(type='mmdet.L1Loss', loss_weight=10.0),
         train_cfg=dict(
-        assigner2d=dict(
-            type='HungarianAssigner2D',
-            cls_cost=dict(type='FocalLossCost', weight=2.),
-            reg_cost=dict(type='BBoxL1Cost', weight=5.0, box_format='xywh'),
-            iou_cost=dict(type='IoUCost', iou_mode='giou', weight=2.0),
-            centers2d_cost=dict(type='BBox3DL1Cost', weight=10.0)))
+            assigner2d=dict(
+                type='mmdet.HungarianAssigner2D',
+                cls_cost=dict(type='mmdet.FocalLossCost', weight=2.),
+                reg_cost=dict(type='mmdet.BBoxL1Cost', weight=5.0, box_format='xywh'),
+                iou_cost=dict(type='mmdet.IoUCost', iou_mode='giou', weight=2.0),
+                centers2d_cost=dict(type='mmdet.BBox3DL1Cost', weight=10.0)))
         ),
     pts_bbox_head=dict(
         type='StreamPETRHead',
@@ -117,37 +125,39 @@ model = dict(
                                      'ffn', 'norm')),
             )),
         bbox_coder=dict(
-            type='NMSFreeCoder',
+            type='mmdet.NMSFreeCoder',
             post_center_range=[-61.2, -61.2, -10.0, 61.2, 61.2, 10.0],
             pc_range=point_cloud_range,
             max_num=300,
             voxel_size=voxel_size,
             num_classes=10), 
         loss_cls=dict(
-            type='FocalLoss',
+            type='mmdet.FocalLoss',
             use_sigmoid=True,
             gamma=2.0,
             alpha=0.25,
             loss_weight=2.0),
-        loss_bbox=dict(type='L1Loss', loss_weight=0.25),
-        loss_iou=dict(type='GIoULoss', loss_weight=0.0),),
-    # model training and testing settings
-    train_cfg=dict(pts=dict(
-        grid_size=[512, 512, 1],
-        voxel_size=voxel_size,
-        point_cloud_range=point_cloud_range,
-        out_size_factor=4,
-        assigner=dict(
-            type='HungarianAssigner3D',
-            cls_cost=dict(type='FocalLossCost', weight=2.0),
-            reg_cost=dict(type='BBox3DL1Cost', weight=0.25),
-            iou_cost=dict(type='IoUCost', weight=0.0), # Fake cost. This is just to make it compatible with DETR head. 
-            pc_range=point_cloud_range),)))
+        loss_bbox=dict(type='mmdet.L1Loss', loss_weight=0.25),
+        loss_iou=dict(type='mmdet.GIoULoss', loss_weight=0.0),
+        train_cfg=dict(pts=dict(
+            grid_size=[512, 512, 1],
+            voxel_size=voxel_size,
+            point_cloud_range=point_cloud_range,
+            out_size_factor=4,
+            assigner=dict(
+                type='mmdet.HungarianAssigner3D',
+                cls_cost=dict(type='mmdet.FocalLossCost', weight=2.0),
+                reg_cost=dict(type='mmdet.BBox3DL1Cost', weight=0.25),
+                iou_cost=dict(type='mmdet.IoUCost', weight=0.0), # Fake cost. This is just to make it compatible with DETR head. 
+                pc_range=point_cloud_range),
+            ))
+        ),
+    
+    )
 
-
-dataset_type = 'CustomNuScenesDataset'
+dataset_type = 'CBGSDataset'
 data_root = "./data"
-info_directory_path = "./data/info/kokseang_3"
+info_directory_path = "info/kokseang_3/"
 
 file_client_args = dict(backend='disk')
 
@@ -168,25 +178,25 @@ train_pipeline = [
         with_label=True, with_bbox_depth=True),
     dict(type='ObjectRangeFilter', point_cloud_range=point_cloud_range),
     dict(type='ObjectNameFilter', classes=class_names),
-    dict(type='ResizeCropFlipRotImage', data_aug_conf = ida_aug_conf, training=True),
-    dict(type='GlobalRotScaleTransImage',
+    dict(type='mmdet.ResizeCropFlipRotImage', data_aug_conf = ida_aug_conf, training=True),
+    dict(type='mmdet.GlobalRotScaleTransImage',
             rot_range=[-0.3925, 0.3925],
             translation_std=[0, 0, 0],
             scale_ratio_range=[0.95, 1.05],
             reverse_angle=True,
             training=True,
             ),
-    dict(type='NormalizeMultiviewImage', **img_norm_cfg),
-    dict(type='PadMultiViewImage', size_divisor=32),
-    dict(type='PETRFormatBundle3D', class_names=class_names, collect_keys=collect_keys + ['prev_exists']),
-    dict(type='Collect3D', keys=['gt_bboxes_3d', 'gt_labels_3d', 'img', 'gt_bboxes', 'gt_labels', 'centers2d', 'depths', 'prev_exists'] + collect_keys,
+    dict(type='mmdet.NormalizeMultiviewImage', **img_norm_cfg),
+    dict(type='mmdet.PadMultiViewImage', size_divisor=32),
+    dict(type='mmdet.PETRFormatBundle3D', class_names=class_names, collect_keys=collect_keys + ['prev_exists']),
+    dict(type='Pack3DDetInputs', keys=['gt_bboxes_3d', 'gt_labels_3d', 'img', 'gt_bboxes', 'gt_labels', 'centers2d', 'depths', 'prev_exists'] + collect_keys,
              meta_keys=('filename', 'ori_shape', 'img_shape', 'pad_shape', 'scale_factor', 'flip', 'box_mode_3d', 'box_type_3d', 'img_norm_cfg', 'scene_token', 'gt_bboxes_3d','gt_labels_3d'))
 ]
 test_pipeline = [
     dict(type='LoadMultiViewImageFromFiles', to_float32=True),
-    dict(type='ResizeCropFlipRotImage', data_aug_conf = ida_aug_conf, training=False),
-    dict(type='NormalizeMultiviewImage', **img_norm_cfg),
-    dict(type='PadMultiViewImage', size_divisor=32),
+    dict(type='mmdet.ResizeCropFlipRotImage', data_aug_conf = ida_aug_conf, training=False),
+    dict(type='mmdet.NormalizeMultiviewImage', **img_norm_cfg),
+    dict(type='mmdet.PadMultiViewImage', size_divisor=32),
     dict(
         type='MultiScaleFlipAug3D',
         img_scale=(1333, 800),
@@ -198,36 +208,96 @@ test_pipeline = [
                 collect_keys=collect_keys,
                 class_names=class_names,
                 with_label=False),
-            dict(type='Collect3D', keys=['img'] + collect_keys,
+            dict(type='Pack3DDetInputs', keys=['img'] + collect_keys,
             meta_keys=('filename', 'ori_shape', 'img_shape','pad_shape', 'scale_factor', 'flip', 'box_mode_3d', 'box_type_3d', 'img_norm_cfg', 'scene_token'))
         ])
 ]
 
-data = dict(
-    samples_per_gpu=batch_size,
-    workers_per_gpu=4,
-    train=dict(
-        type=dataset_type,
-        data_root=data_root,
-        ann_file=info_directory_path + 't4dataset_base_infos_train.pkl',
-        num_frame_losses=num_frame_losses,
-        seq_split_num=2, # streaming video training
-        seq_mode=True, # streaming video training
-        pipeline=train_pipeline,
-        classes=class_names,
-        modality=input_modality,
-        collect_keys=collect_keys + ['img', 'prev_exists', 'img_metas'],
-        queue_length=queue_length,
-        test_mode=False,
-        use_valid_flag=True,
-        filter_empty_gt=False,
-        box_type_3d='LiDAR'),
-    val=dict(type=dataset_type, pipeline=test_pipeline, collect_keys=collect_keys + ['img', 'img_metas'], queue_length=queue_length, ann_file=info_directory_path + 't4dataset_base_infos_val.pkl', classes=class_names, modality=input_modality),
-    test=dict(type=dataset_type, pipeline=test_pipeline, collect_keys=collect_keys + ['img', 'img_metas'], queue_length=queue_length, ann_file=info_directory_path + 't4dataset_base_infos_test.pkl', classes=class_names, modality=input_modality),
-    shuffler_sampler=dict(type='InfiniteGroupEachSampleInBatchSampler'),
-    nonshuffler_sampler=dict(type='DistributedSampler')
+train_dataloader = dict(
+    batch_size=1,
+    num_workers=4,
+    persistent_workers=True,
+    sampler=dict(type="DefaultSampler", shuffle=True),
+    dataset=dict(
+        type="CBGSDataset",
+        dataset=dict(
+            type=_base_.dataset_type,
+            data_root=data_root,
+            ann_file=info_directory_path + _base_.info_train_file_name,
+            pipeline=train_pipeline,
+            metainfo=_base_.metainfo,
+            class_names=_base_.class_names,
+            modality=input_modality,
+            test_mode=False,
+            data_prefix=_base_.data_prefix,
+            box_type_3d="LiDAR",
+            backend_args=backend_args,
+        ),
     )
+)
+val_dataloader = dict(
+    batch_size=2,
+    num_workers=2,
+    persistent_workers=True,
+    sampler=dict(type="DefaultSampler", shuffle=False),
+    dataset=dict(
+        type=_base_.dataset_type,
+        data_root=data_root,
+        ann_file=info_directory_path + _base_.info_val_file_name,
+        pipeline=test_pipeline,
+        metainfo=_base_.metainfo,
+        class_names=_base_.class_names,
+        modality=input_modality,
+        data_prefix=_base_.data_prefix,
+        test_mode=True,
+        box_type_3d="LiDAR",
+        backend_args=backend_args,
+    ),
+)
+test_dataloader = dict(
+    batch_size=2,
+    num_workers=2,
+    persistent_workers=True,
+    sampler=dict(type="DefaultSampler", shuffle=False),
+    dataset=dict(
+        type=_base_.dataset_type,
+        data_root=data_root,
+        ann_file=info_directory_path + _base_.info_test_file_name,
+        pipeline=test_pipeline,
+        metainfo=_base_.metainfo,
+        class_names=_base_.class_names,
+        modality=input_modality,
+        data_prefix=_base_.data_prefix,
+        test_mode=True,
+        box_type_3d="LiDAR",
+        backend_args=backend_args,
+    ),
+)
 
+
+val_evaluator = dict(
+    type="T4Metric",
+    data_root=data_root,
+    ann_file=data_root + info_directory_path + _base_.info_val_file_name,
+    backend_args=backend_args,
+    metric="bbox",
+    class_names=_base_.class_names,
+    name_mapping=_base_.name_mapping,
+)
+test_evaluator = dict(
+    type="T4Metric",
+    data_root=data_root,
+    ann_file=data_root + info_directory_path + _base_.info_test_file_name,
+    backend_args=backend_args,
+    metric="bbox",
+    class_names=_base_.class_names,
+    name_mapping=_base_.name_mapping,
+)
+
+
+train_cfg = dict(by_epoch=True, max_epochs=num_epochs)
+val_cfg = dict()
+test_cfg = dict()
 
 optimizer = dict(
     type='AdamW', 

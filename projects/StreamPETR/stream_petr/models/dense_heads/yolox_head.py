@@ -15,7 +15,7 @@ from mmdet.models.task_modules.builder import build_assigner, build_sampler
 from mmdet.models.utils import multi_apply
 
 from mmdet.structures.bbox import bbox_xyxy_to_cxcywh
-from mmdet.registry import MODELS
+from mmdet3d.registry import MODELS
 from mmdet.models.dense_heads.base_dense_head import BaseDenseHead
 from mmdet.models.dense_heads.dense_test_mixins import BBoxTestMixin
 

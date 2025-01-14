@@ -4,7 +4,7 @@ from typing import Optional, Tuple, Union
 
 import nltk
 from mmdet.models.detectors.glip import GLIP
-from mmdet.registry import MODELS
+from mmdet3d.registry import MODELS
 from mmdet.utils import ConfigType
 
 

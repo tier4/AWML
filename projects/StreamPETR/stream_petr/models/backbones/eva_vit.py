@@ -12,7 +12,7 @@ from einops import rearrange, repeat
 import warnings
 import torch.utils.checkpoint as cp
 from ..utils.attention import FlashAttention, FlashMHA
-from mmdet.models.builder import BACKBONES
+from mmdet3d.registry import MODELS
 
 logger = logging.getLogger(__name__)
 BatchNorm2d = torch.nn.BatchNorm2d
@@ -857,7 +857,7 @@ class Block(nn.Module):
             x = self._forward(x)
         return x
 
-@BACKBONES.register_module()
+@MODELS.register_module()
 class EVAViT(nn.Module):
     """
     This module implements Vision Transformer (ViT) backbone in :paper:`vitdet`.
