@@ -90,7 +90,7 @@ def compute_bbox_and_centers(data_dict, bboxes, labels, img_shape):
         object_depth = np.zeros((0,))
         valid_labels = np.zeros(0, dtype=int)
 
-    return bboxes_2d, projected_centers, object_depth, valid_labels
+    return torch.from_numpy(bboxes_2d), torch.from_numpy(projected_centers), torch.from_numpy(object_depth),  torch.from_numpy(valid_labels)
     
       
 @TRANSFORMS.register_module()
@@ -99,7 +99,7 @@ class StreamPETRLoadAnnotations3D(LoadAnnotations3D):
     Overrides some of the methods to make the 
   """
   def _load_2d_infos(self,results):
-      all_bboxes_2d, all_centers_2d, all_depths, all_labels = [],[],[],[]
+      all_bboxes_2d, all_centers_2d, all_depths, all_labels, extrinsics, intrinsics = [],[],[],[],[],[]
       for i,k in enumerate(results["images"]):
         bboxes_2d, projected_centers, depths, valid_labels = compute_bbox_and_centers(
             results["images"][k], 
@@ -111,10 +111,16 @@ class StreamPETRLoadAnnotations3D(LoadAnnotations3D):
         all_centers_2d.append(projected_centers)
         all_depths.append(depths)
         all_labels.append(valid_labels)
+        extrinsics.append(torch.tensor(results["images"][k]["lidar2cam"]))
+        intrinsics.append(torch.tensor(results["images"][k]["cam2img"]))
+        
       results['depths'] = all_depths
       results['centers_2d'] = all_centers_2d
       results['gt_bboxes'] = all_bboxes_2d
       results['gt_labels'] = all_labels
+      results['intrinsics'] = intrinsics
+      results['extrinsics'] = extrinsics
+      
       
   def _load_bboxes_depth(self, results):
       if 'depths' not in results or 'centers_2d' not in results:
