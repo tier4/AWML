@@ -35,7 +35,7 @@ eval_class_range = {
 
 queue_length = 1
 num_frame_losses = 1
-collect_keys=['lidar2img', 'intrinsics', 'extrinsics','timestamp', 'img_timestamp', 'ego_pose', 'ego_pose_inv']
+collect_keys=['gt_bboxes_3d', 'gt_labels_3d', 'img', 'gt_bboxes', 'gt_bboxes_labels', 'centers_2d', 'depths', 'prev_exists','lidar2img', 'intrinsics', 'extrinsics']
 input_modality = dict(
     use_lidar=False,
     use_camera=True,
@@ -163,7 +163,6 @@ model = dict(
     
     )
 
-dataset_type = 'CBGSDataset'
 data_root = "./data/"
 info_directory_path = "info/cameraonly/streampetr/"
 
@@ -196,9 +195,7 @@ train_pipeline = [
             ),
     dict(type='mmdet.NormalizeMultiviewImage', **img_norm_cfg),
     dict(type='mmdet.PadMultiViewImage', size_divisor=32),
-    dict(type='PETRFormatBundle3D', class_names=class_names, collect_keys=collect_keys + ['prev_exists']),
-    dict(type='Pack3DDetInputs', keys=['gt_bboxes_3d', 'gt_labels_3d', 'img', 'gt_bboxes', 'gt_labels', 'centers2d', 'depths', 'prev_exists'] + collect_keys,
-             meta_keys=('filename', 'ori_shape', 'img_shape', 'pad_shape', 'scale_factor', 'flip', 'box_mode_3d', 'box_type_3d', 'img_norm_cfg', 'scene_token', 'gt_bboxes_3d','gt_labels_3d'))
+    # dict(type='PETRFormatBundle3D', keys=collect_keys, meta_keys=['ego_pose', 'ego_pose_inv'])
 ]
 test_pipeline = [
     dict(type='LoadMultiViewImageFromFiles', to_float32=True),
@@ -207,20 +204,7 @@ test_pipeline = [
     dict(type='mmdet.ResizeCropFlipRotImage', data_aug_conf = ida_aug_conf, training=False),
     dict(type='mmdet.NormalizeMultiviewImage', **img_norm_cfg),
     dict(type='mmdet.PadMultiViewImage', size_divisor=32),
-    dict(
-        type='MultiScaleFlipAug3D',
-        img_scale=(1333, 800),
-        pts_scale_ratio=1,
-        flip=False,
-        transforms=[
-            dict(
-                type='PETRFormatBundle3D',
-                collect_keys=collect_keys,
-                class_names=class_names,
-                with_label=False),
-            dict(type='Pack3DDetInputs', keys=['img'] + collect_keys,
-            meta_keys=('filename', 'ori_shape', 'img_shape','pad_shape', 'scale_factor', 'flip', 'box_mode_3d', 'box_type_3d', 'img_norm_cfg', 'scene_token'))
-        ])
+    # dict(type='PETRFormatBundle3D', keys=collect_keys, meta_keys=['ego_pose', 'ego_pose_inv'])
 ]
 
 train_dataloader = dict(
@@ -231,7 +215,7 @@ train_dataloader = dict(
     dataset=dict(
         type="CBGSDataset",
         dataset=dict(
-            type=_base_.dataset_type,
+            type="StreamPETRDataset",
             data_root=data_root,
             ann_file=info_directory_path + _base_.info_val_file_name,
             pipeline=train_pipeline,
@@ -251,7 +235,7 @@ val_dataloader = dict(
     persistent_workers=True,
     sampler=dict(type="DefaultSampler", shuffle=False),
     dataset=dict(
-        type=_base_.dataset_type,
+        type="StreamPETRDataset",
         data_root=data_root,
         ann_file=info_directory_path + _base_.info_val_file_name,
         pipeline=test_pipeline,
@@ -270,7 +254,7 @@ test_dataloader = dict(
     persistent_workers=True,
     sampler=dict(type="DefaultSampler", shuffle=False),
     dataset=dict(
-        type=_base_.dataset_type,
+        type="StreamPETRDataset",
         data_root=data_root,
         ann_file=info_directory_path + _base_.info_val_file_name,
         pipeline=test_pipeline,

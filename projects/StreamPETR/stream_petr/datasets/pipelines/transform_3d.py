@@ -140,7 +140,7 @@ class ResizeCropFlipRotImage():
             if self.training and self.with_2d: # sync_2d bbox labels
                 gt_bboxes = results['gt_bboxes'][i]
                 centers_2d = results['centers_2d'][i]
-                gt_labels = results['gt_labels'][i]
+                gt_labels = results['gt_bboxes_labels'][i]
                 depths = results['depths'][i]
                 if len(gt_bboxes) != 0:
                     gt_bboxes, centers_2d, gt_labels, depths = self._bboxes_transform(
@@ -164,7 +164,7 @@ class ResizeCropFlipRotImage():
             results['intrinsics'][i][:3, :3] = ida_mat @ results['intrinsics'][i][:3, :3]
         results['gt_bboxes'] = new_gt_bboxes
         results['centers_2d'] = new_centers_2d
-        results['gt_labels'] = new_gt_labels
+        results['gt_bboxes_labels'] = new_gt_labels
         results['depths'] = new_depths
         results['img'] = new_imgs
         results['lidar2img'] = [results['intrinsics'][i] @ results['extrinsics'][i] for i in range(len(results['extrinsics']))]
@@ -360,7 +360,7 @@ class GlobalRotScaleTransImage():
         rot_mat_inv = torch.inverse(rot_mat)
 
         results['ego_pose'] = (torch.tensor(results["ego_pose"]).float() @ rot_mat_inv).numpy()
-        results['ego_pose_inv'] = (rot_mat.float() @ torch.tensor(results["ego_pose_inv"])).numpy()
+        results['ego_pose_inv'] = (rot_mat.float() @ torch.tensor(results["ego_pose_inv"]).float()).numpy()
         num_view = len(results["lidar2img"])
         for view in range(num_view):
             results["lidar2img"][view] = (torch.tensor(results["lidar2img"][view]).float() @ rot_mat_inv).numpy()
