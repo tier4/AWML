@@ -68,8 +68,8 @@ class PETRFormatBundle3D(Pack3DDetInputs):
                 if 'gt_names_3d' in results:
                     results['gt_names_3d'] = results['gt_names_3d'][
                         gt_bboxes_3d_mask]
-                if 'centers2d' in results:
-                    results['centers2d'] = results['centers2d'][
+                if 'centers_2d' in results:
+                    results['centers_2d'] = results['centers_2d'][
                         gt_bboxes_3d_mask]
                 if 'depths' in results:
                     results['depths'] = results['depths'][gt_bboxes_3d_mask]

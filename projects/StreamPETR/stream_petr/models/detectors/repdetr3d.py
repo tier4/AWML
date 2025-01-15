@@ -207,7 +207,7 @@ class RepDetr3D(MVXTwoStageDetector):
         augmentations.
         """
         if return_loss:
-            for key in ['gt_bboxes_3d', 'gt_labels_3d', 'gt_bboxes', 'gt_labels', 'centers2d', 'depths', 'img_metas']:
+            for key in ['gt_bboxes_3d', 'gt_labels_3d', 'gt_bboxes', 'gt_labels', 'centers_2d', 'depths', 'img_metas']:
                 data[key] = list(zip(*data[key]))
             return self.forward_train(**data)
         else:

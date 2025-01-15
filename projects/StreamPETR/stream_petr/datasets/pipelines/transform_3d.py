@@ -119,7 +119,7 @@ class ResizeCropFlipRotImage():
         N = len(imgs)
         new_imgs = []
         new_gt_bboxes = []
-        new_centers2d = []
+        new_centers_2d = []
         new_gt_labels = []
         new_depths = []
         assert self.data_aug_conf['rot_lim'] == (0.0, 0.0), "Rotation is not currently supported"
@@ -139,13 +139,13 @@ class ResizeCropFlipRotImage():
             )
             if self.training and self.with_2d: # sync_2d bbox labels
                 gt_bboxes = results['gt_bboxes'][i]
-                centers2d = results['centers2d'][i]
+                centers_2d = results['centers_2d'][i]
                 gt_labels = results['gt_labels'][i]
                 depths = results['depths'][i]
                 if len(gt_bboxes) != 0:
-                    gt_bboxes, centers2d, gt_labels, depths = self._bboxes_transform(
+                    gt_bboxes, centers_2d, gt_labels, depths = self._bboxes_transform(
                         gt_bboxes, 
-                        centers2d,
+                        centers_2d,
                         gt_labels,
                         depths,
                         resize=resize,
@@ -153,17 +153,17 @@ class ResizeCropFlipRotImage():
                         flip=flip,
                     )
                 if len(gt_bboxes) != 0 and self.filter_invisible:
-                    gt_bboxes, centers2d, gt_labels, depths =  self._filter_invisible(gt_bboxes, centers2d, gt_labels, depths)
+                    gt_bboxes, centers_2d, gt_labels, depths =  self._filter_invisible(gt_bboxes, centers_2d, gt_labels, depths)
 
                 new_gt_bboxes.append(gt_bboxes)
-                new_centers2d.append(centers2d)
+                new_centers_2d.append(centers_2d)
                 new_gt_labels.append(gt_labels)
                 new_depths.append(depths)
 
             new_imgs.append(np.array(img).astype(np.float32))
             results['intrinsics'][i][:3, :3] = ida_mat @ results['intrinsics'][i][:3, :3]
         results['gt_bboxes'] = new_gt_bboxes
-        results['centers2d'] = new_centers2d
+        results['centers_2d'] = new_centers_2d
         results['gt_labels'] = new_gt_labels
         results['depths'] = new_depths
         results['img'] = new_imgs
@@ -171,8 +171,8 @@ class ResizeCropFlipRotImage():
 
         return results
 
-    def _bboxes_transform(self, bboxes, centers2d, gt_labels, depths,resize, crop, flip):
-        assert len(bboxes) == len(centers2d) == len(gt_labels) == len(depths)
+    def _bboxes_transform(self, bboxes, centers_2d, gt_labels, depths,resize, crop, flip):
+        assert len(bboxes) == len(centers_2d) == len(gt_labels) == len(depths)
         fH, fW = self.data_aug_conf["final_dim"]
         bboxes = bboxes * resize
         bboxes[:, 0] = bboxes[:, 0] - crop[0]
@@ -193,24 +193,24 @@ class ResizeCropFlipRotImage():
             bboxes[:, 0] = fW - x1
         bboxes = bboxes[keep]
 
-        centers2d  = centers2d * resize
-        centers2d[:, 0] = centers2d[:, 0] - crop[0]
-        centers2d[:, 1] = centers2d[:, 1] - crop[1]
-        centers2d[:, 0] = np.clip(centers2d[:, 0], 0, fW)
-        centers2d[:, 1] = np.clip(centers2d[:, 1], 0, fH) 
+        centers_2d  = centers_2d * resize
+        centers_2d[:, 0] = centers_2d[:, 0] - crop[0]
+        centers_2d[:, 1] = centers_2d[:, 1] - crop[1]
+        centers_2d[:, 0] = np.clip(centers_2d[:, 0], 0, fW)
+        centers_2d[:, 1] = np.clip(centers_2d[:, 1], 0, fH) 
         if flip:
-            centers2d[:, 0] = fW - centers2d[:, 0]
+            centers_2d[:, 0] = fW - centers_2d[:, 0]
 
-        centers2d = centers2d[keep]
+        centers_2d = centers_2d[keep]
         gt_labels = gt_labels[keep]
         depths = depths[keep]
 
-        return bboxes, centers2d, gt_labels, depths
+        return bboxes, centers_2d, gt_labels, depths
 
 
-    def _filter_invisible(self, bboxes, centers2d, gt_labels, depths):
+    def _filter_invisible(self, bboxes, centers_2d, gt_labels, depths):
         # filter invisible 2d bboxes
-        assert len(bboxes) == len(centers2d) == len(gt_labels) == len(depths)
+        assert len(bboxes) == len(centers_2d) == len(gt_labels) == len(depths)
         fH, fW = self.data_aug_conf["final_dim"]
         indices_maps = np.zeros((fH,fW))
         tmp_bboxes = np.zeros_like(bboxes)
@@ -221,7 +221,7 @@ class ResizeCropFlipRotImage():
         tmp_bboxes = tmp_bboxes[sort_idx]
         bboxes = bboxes[sort_idx]
         depths = depths[sort_idx]
-        centers2d = centers2d[sort_idx]
+        centers_2d = centers_2d[sort_idx]
         gt_labels = gt_labels[sort_idx]
         for i in range(bboxes.shape[0]):
             u1, v1, u2, v2 = tmp_bboxes[i]
@@ -229,10 +229,10 @@ class ResizeCropFlipRotImage():
         indices_res = np.unique(indices_maps).astype(np.int64)
         bboxes = bboxes[indices_res]
         depths = depths[indices_res]
-        centers2d = centers2d[indices_res]
+        centers_2d = centers_2d[indices_res]
         gt_labels = gt_labels[indices_res]
 
-        return bboxes, centers2d, gt_labels, depths
+        return bboxes, centers_2d, gt_labels, depths
 
 
 
