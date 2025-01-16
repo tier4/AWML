@@ -22,6 +22,7 @@ class DeploymentRunner(BaseRunner):
         experiment_name: str = "",
         log_level: Union[int, str] = "INFO",
         log_file: Optional[str] = None,
+        onnx_opset_version: int = 13,
     ) -> None:
         """
         :param model_cfg_path: MMDet3D model config path.
@@ -36,6 +37,7 @@ class DeploymentRunner(BaseRunner):
         :param experiment_name: Experiment name.
         :param log_level: Logging and display log messages above this level.
         :param log_file: Logger file.
+        :param oxx_opset_version: onnx opset version.
         """
         super(DeploymentRunner, self).__init__(
             model_cfg_path=model_cfg_path,
@@ -53,6 +55,7 @@ class DeploymentRunner(BaseRunner):
 
         self._rot_y_axis_reference = rot_y_axis_reference
         self._replace_onnx_models = replace_onnx_models
+        self._onnx_opset_version = onnx_opset_version
 
     def build_model(self) -> nn.Module:
         """
@@ -76,6 +79,9 @@ class DeploymentRunner(BaseRunner):
             model_cfg.pts_bbox_head.separate_head.type = "SeparateHeadONNX"
             model_cfg.pts_bbox_head.rot_y_axis_reference = self._rot_y_axis_reference
 
+        if model_cfg.pts_backbone.type == "ConvNeXt_PC":
+            # Always set with_cp (gradient checkpointing) to False for deployment
+            model_cfg.pts_backbone.with_cp = False
         model = MODELS.build(model_cfg)
         model.to(self._torch_device)
 
@@ -94,4 +100,4 @@ class DeploymentRunner(BaseRunner):
         assert hasattr(model, "save_onnx"), "The model must have the function: save_onnx()!"
 
         # Run and save onnx model!
-        model.save_onnx(save_dir=self._work_dir)
+        model.save_onnx(save_dir=self._work_dir, onnx_opset_version=self._onnx_opset_version)

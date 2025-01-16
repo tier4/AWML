@@ -1,0 +1,159 @@
+# Deployed model for CenterPoint-ConvNeXtPC base/0.X
+## Summary
+
+- Main parameter
+  - range = 121.60m
+  - voxel_size = [0.20, 0.20, 8.0]
+	- out_size_factor = 4
+  - grid_size = [1216, 1216, 1]
+- Performance summary
+  - Dataset: DB JPNTAXI v1.0 + DB JPNTAXI v2.0 + DB JPNTAXI v3.0 + DB GSM8 v1.0 + DB J6 v1.0 (total frames: 35,292)
+  - Class mAP for center distance (0.5m, 1.0m, 2.0m, 4.0m)
+
+| eval range: 120m                            | mAP  | car <br> (629,212) | truck <br> (163,402) | bus <br> (39,904) | bicycle <br> (48,043) | pedestrian <br> (383,553) |
+| --------------------------------------------| ---- | ------------------ | -------------------- | ----------------- | --------------------- | ------------------------- |
+| CenterPoint-ConvNeXtPC base/0.1       			| 65.3 | 75.0               | 54.2                 | 78.1              | 52.8                  | 66.2                      |
+| CenterPoint-ConvNeXtPC base/0.2    					| 68.6 | 77.9               | 58.6                 | 80.9              | 56.4                  | 69.3                      |
+
+
+## Release
+### CenterPoint ConvNeXt base/0.2
+- This is same as `CenterPoint-ConvNeXt base/0.1` model except the arhictecture is much bigger by adding more depths and channels
+- Specifically, the main changes in hyperparameters are:
+
+  - Architecture:
+	```python
+  		pts_backbone=dict(
+        	_delete_=True,
+        	type="ConvNeXt_PC",
+        	in_channels=32,
+        	out_channels=[32, 192, 192, 192, 192],
+        	depths=[3, 3, 2, 1, 1],
+        	out_indices=[2, 3, 4],
+        	drop_path_rate=0.4,
+        	layer_scale_init_value=1.0,
+        	gap_before_final_norm=False,
+        	with_cp=True,  # We set with_cp to True for svaing gpu memory
+    	),
+  		pts_neck=dict(
+        	type="SECONDFPN",
+        	in_channels=[192, 192, 192],
+        	out_channels=[128, 128, 128],
+        	upsample_strides=[1, 2, 4],
+        	norm_cfg=dict(type="BN", eps=1e-3, momentum=0.01),
+        	upsample_cfg=dict(type="deconv", bias=False),
+        	use_conv_for_no_stride=True
+    	)
+
+- Evaluation data is the same as `CenterPoint base/1.0`, which is TIER IV's in-house dataset. The improvement of mAP in `ConvNeXt` (0.686 vs 0.644) demostrates a promising direction with a stronger backbone
+- Based on the performance, it looks promising if we would like to try larger settings
+- In deployment of `autoware`:
+    - Please set `workspace_size` to more than `2GB` when running tensorrt optimization  
+    - SECOND vs ConvNeXt:
+      - Max GPU (MB): 4,885 vs 6,087
+      - Mean GPU (MB): 4,721 vs 5,926
+      - Mean processing time (ms): 18.22 vs 48.19
+      - Max processing time (ms): 45.54 vs 106.72
+- In conclusion, it generally shows better performance across all categories and thresholds compared to `CenterPoint-ConvNeXt base/0.1` and `CenterPoint base/1.0`, with particularly large improvements in truck and pedestrian categories
+
+<details>
+<summary> The link of data and evaluation result </summary>
+
+- Model
+  - Training dataset: DB JPNTAXI v1.0 + DB JPNTAXI v2.0 + DB JPNTAXI v3.0 + DB GSM8 v1.0 + DB J6 v1.0 (total frames: 35,392)
+  - [PR](https://github.com/tier4/autoware-ml/pull/352)
+  - [Config file path](https://github.com/tier4/autoware-ml/blob/9aead19d7f42b711fba8ffa38ec82ce135300617/projects/CenterPoint/configs/t4dataset/pillar_020_convnext_standard_secfpn_4xb8_121m_base.py)
+  - [Deployed onnx model and ROS parameter files](https://drive.google.com/drive/folders/1dhthG6LtbZTS91U2OQvd5iQ1q58b2ZEH)
+  - [Training results](https://drive.google.com/drive/folders/1dhthG6LtbZTS91U2OQvd5iQ1q58b2ZEH)
+  - train time: NVIDIA A100 80GB * 4 * 30 epochs = 3.5 days
+- Evaluation result with test-dataset: DB JPNTAXI v1.0 + DB JPNTAXI v2.0 + DB JPNTAXI v3.0 + DB GSM8 v1.0 + DB J6 v1.0 (total frames: 1,394):
+  - Total mAP (eval range = 120m): 0.686
+
+| class_name | Count  | mAP  | AP@0.5m | AP@1.0m | AP@2.0m | AP@4.0m |
+| ---------- | ------ | ---- | ------- | ------- | ------- | ------- |
+| car        | 41,133 | 77.9 | 79.8    | 82.2    | 83.0    | 79.5    |
+| truck      | 8,890  | 58.6 | 34.7    | 59.7    | 67.7    | 72.2    |
+| bus        | 3,275  | 80.9 | 69.2    | 79.6    | 81.1    | 82.6    |
+| bicycle    | 3,635  | 53.2 | 52.3    | 53.4    | 53.5    | 53.6    |
+| pedestrian | 25,981 | 64.8 | 62.4    | 64.0    | 65.4    | 67.4    |
+
+</details>
+
+### CenterPoint-ConvNeXt base/0.1
+- This the CenterPoint model based on `CenterPoint base/1.0` by replacing the SECOND backbone by [ConvNeXt backbone](https://github.com/WayneMao/PillarNeSt/tree/main)
+- It uses higher resolution for voxelization and downsamples the heatmap to reduce gpu memory
+- It enables gradient checkpoint to save more gpu memory at the **cost of training time**
+- Note that it **doesn't** use any pretrained weights
+- Specifically, the main changes in hyperparameters are:
+  - General:
+
+	```python
+		voxel_size: [0.20, 0.20, 8.0]
+  		out_size_factor = 4
+  		data_preprocessor: dict(
+        	type="Det3DDataPreprocessor",
+        	voxel=True,
+        	voxel_layer=dict(
+            	max_num_points=32,
+            	voxel_size=voxel_size,
+            	point_cloud_range=point_cloud_range,
+            	max_voxels=(48000, 60000),
+            	deterministic=True,
+        	),
+      	)
+	```
+
+  - Architecture:
+	```python
+  		pts_backbone=dict(
+        	_delete_=True,
+        	type="ConvNeXt_PC",
+        	in_channels=32,
+        	out_channels=[32, 64, 128, 128, 128],
+        	depths=[3, 2, 1, 1, 1],
+        	out_indices=[2, 3, 4],
+        	drop_path_rate=0.0,	# No drop path
+        	layer_scale_init_value=1.0,
+        	gap_before_final_norm=False,
+        	with_cp=True,  # We set with_cp to True for svaing gpu memory
+    	),
+  		pts_neck=dict(
+        	type="SECONDFPN",
+        	in_channels=[128, 128, 128],
+        	out_channels=[128, 128, 128],
+        	upsample_strides=[1, 2, 4],
+        	norm_cfg=dict(type="BN", eps=1e-3, momentum=0.01),
+        	upsample_cfg=dict(type="deconv", bias=False),
+        	use_conv_for_no_stride=True
+    	)
+- The improvement of mAP only slightly better than `CenterPoint base/1.0` (0.653 vs 0.644), with particularly truck and pedestrian categories
+- In deployment of `autoware`:
+    - Please set `workspace_size` to more than `2GB` when running tensorrt optimization  
+    - SECOND vs ConvNeXt:
+      - Max GPU (MB): 4,885 vs 5,785
+      - Mean GPU (MB): 4,721 vs 5,605
+      - Mean processing time (ms): 18.22 vs 30.42
+      - Max processing time (ms): 45.54 vs 45.98
+
+<details>
+<summary> The link of data and evaluation result </summary>
+
+- Model
+  - Training dataset: DB JPNTAXI v1.0 + DB JPNTAXI v2.0 + DB JPNTAXI v3.0 + DB GSM8 v1.0 + DB J6 v1.0 (total frames: 35,392)
+  - [PR](https://github.com/tier4/autoware-ml/pull/352)
+  - [Config file path](https://github.com/tier4/autoware-ml/blob/9aead19d7f42b711fba8ffa38ec82ce135300617/projects/CenterPoint/configs/t4dataset/pillar_020_convnext_small_secfpn_4xb8_121m_base.py)
+  - [Deployed onnx model and ROS parameter files](https://drive.google.com/drive/folders/1WuP0jo1j6HeAVGf5KehNjb5e9SiLdmgb)
+  - [Training results](https://drive.google.com/drive/folders/1s4V07dXHO5jayExdho3qnP02yZxvp0gY)
+  - train time: NVIDIA A100 80GB * 4 * 30 epochs = 2 days
+- Evaluation result with test-dataset: DB JPNTAXI v1.0 + DB JPNTAXI v2.0 + DB JPNTAXI v3.0 + DB GSM8 v1.0 + DB J6 v1.0 (total frames: 1,394):
+  - Total mAP (eval range = 120m): 0.653
+
+| class_name | Count  | mAP  | AP@0.5m | AP@1.0m | AP@2.0m | AP@4.0m |
+| ---------- | ------ | ---- | ------- | ------- | ------- | ------- |
+| car        | 41,133 | 75.0 | 63.0    | 76.9    | 79.6    | 80.5    |
+| truck      | 8,890  | 54.2 | 29.9    | 55.4    | 63.7    | 68.0    |
+| bus        | 3,275  | 78.1 | 58.3    | 81.8    | 85.3    | 87.1    |
+| bicycle    | 3,635  | 52.8 | 50.9    | 53.3    | 53.4    | 53.5    |
+| pedestrian | 25,981 | 66.2 | 63.5    | 65.4    | 66.8    | 68.9    |
+
+</details>

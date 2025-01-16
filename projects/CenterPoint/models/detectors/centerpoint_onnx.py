@@ -87,6 +87,7 @@ class CenterPointONNX(CenterPoint):
             verbose (bool, optional)
             onnx_opset_version (int, optional)
         """
+        print_log(f"Running onnx_opset_version: {onnx_opset_version}")
         # Get features
         input_features, voxel_dict = self._extract_random_features()
 

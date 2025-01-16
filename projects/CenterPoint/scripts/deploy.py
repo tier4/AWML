@@ -33,6 +33,7 @@ def parse_args():
         default="INFO",
         choices=list(logging._nameToLevel.keys()),
     )
+    parser.add_argument("--onnx_opset_version", type=int, default=13, help="onnx opset version")
     parser.add_argument(
         "--device",
         choices=["cpu", "gpu"],
@@ -70,6 +71,7 @@ def build_deploy_runner(args) -> DeploymentRunner:
         replace_onnx_models=args.replace_onnx_models,
         device=args.device,
         rot_y_axis_reference=args.rot_y_axis_reference,
+        onnx_opset_version=args.onnx_opset_version,
     )
     return deployment_runner
 
