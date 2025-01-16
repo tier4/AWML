@@ -33,11 +33,11 @@ eval_class_range = {
     "pedestrian": 120,
 }
 
-queue_length = 1
-num_frame_losses = 1
-collect_keys=['gt_bboxes_3d', 'gt_labels_3d', 'img', 'gt_bboxes', 'gt_bboxes_labels', 'centers_2d', 'depths', 'prev_exists','lidar2img', 'intrinsics', 'extrinsics']
+queue_length = 4
+num_frame_losses = 2
+collect_keys=['lidar2img', 'intrinsics', 'extrinsics','timestamp', 'img_timestamp', 'ego_pose', 'ego_pose_inv']
 input_modality = dict(
-    use_lidar=False,
+    use_lidar=True,
     use_camera=True,
     use_radar=False,
     use_map=False,
@@ -195,7 +195,7 @@ train_pipeline = [
             ),
     dict(type='mmdet.NormalizeMultiviewImage', **img_norm_cfg),
     dict(type='mmdet.PadMultiViewImage', size_divisor=32),
-    # dict(type='PETRFormatBundle3D', keys=collect_keys, meta_keys=['ego_pose', 'ego_pose_inv'])
+    dict(type='PETRFormatBundle3D', class_names=class_names, collect_keys=collect_keys + ['prev_exists'])
 ]
 test_pipeline = [
     dict(type='LoadMultiViewImageFromFiles', to_float32=True),
@@ -204,30 +204,30 @@ test_pipeline = [
     dict(type='mmdet.ResizeCropFlipRotImage', data_aug_conf = ida_aug_conf, training=False),
     dict(type='mmdet.NormalizeMultiviewImage', **img_norm_cfg),
     dict(type='mmdet.PadMultiViewImage', size_divisor=32),
-    # dict(type='PETRFormatBundle3D', keys=collect_keys, meta_keys=['ego_pose', 'ego_pose_inv'])
+    dict(type='PETRFormatBundle3D', class_names=class_names, collect_keys=collect_keys + ['prev_exists'])
 ]
 
 train_dataloader = dict(
-    batch_size=1,
+    batch_size=2,
     num_workers=4,
     persistent_workers=True,
     sampler=dict(type="DefaultSampler", shuffle=True),
     dataset=dict(
-        type="CBGSDataset",
-        dataset=dict(
-            type="StreamPETRDataset",
-            data_root=data_root,
-            ann_file=info_directory_path + _base_.info_val_file_name,
-            pipeline=train_pipeline,
-            metainfo=_base_.metainfo,
-            class_names=_base_.class_names,
-            modality=input_modality,
-            test_mode=False,
-            data_prefix=_base_.data_prefix,
-            box_type_3d="LiDAR",
-            backend_args=backend_args,
-        ),
-    )
+        type="StreamPETRDataset",
+        data_root=data_root,
+        ann_file=info_directory_path + _base_.info_val_file_name,
+        pipeline=train_pipeline,
+        metainfo=_base_.metainfo,
+        class_names=_base_.class_names,
+        modality=input_modality,
+        test_mode=False,
+        collect_keys=collect_keys + ['img', 'prev_exists', 'img_metas'],
+        random_length=1,
+        queue_length=queue_length,
+        data_prefix=_base_.data_prefix,
+        box_type_3d="LiDAR",
+        backend_args=backend_args,
+    ),
 )
 val_dataloader = dict(
     batch_size=2,
@@ -242,8 +242,10 @@ val_dataloader = dict(
         metainfo=_base_.metainfo,
         class_names=_base_.class_names,
         modality=input_modality,
+        collect_keys=collect_keys + ['img', 'prev_exists', 'img_metas'],
+        queue_length=queue_length,
         data_prefix=_base_.data_prefix,
-        test_mode=True,
+        test_mode=False,
         box_type_3d="LiDAR",
         backend_args=backend_args,
     ),
@@ -261,8 +263,10 @@ test_dataloader = dict(
         metainfo=_base_.metainfo,
         class_names=_base_.class_names,
         modality=input_modality,
+        collect_keys=collect_keys + ['img', 'img_metas'],
+        queue_length=queue_length,
         data_prefix=_base_.data_prefix,
-        test_mode=True,
+        test_mode=False,
         box_type_3d="LiDAR",
         backend_args=backend_args,
     ),

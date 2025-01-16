@@ -136,7 +136,7 @@ class Petr3D(MVXTwoStageDetector):
 
 
     def prepare_location(self, img_metas, **data):
-        pad_h, pad_w, _ = img_metas[0]['pad_shape'][0]
+        pad_h, pad_w, _ = img_metas[0]['pad_shape']
         bs, n = data['img_feats'].shape[:2]
         x = data['img_feats'].flatten(0, 1)
         location = locations(x, self.stride, pad_h, pad_w)[None].repeat(bs*n, 1, 1, 1)
@@ -209,8 +209,10 @@ class Petr3D(MVXTwoStageDetector):
         list[list[dict]]), with the outer list indicating test time
         augmentations.
         """
+        import pdb
+        pdb.set_trace()
         if return_loss:
-            for key in ['gt_bboxes_3d', 'gt_labels_3d', 'gt_bboxes', 'gt_bboxes_labels', 'centers_2d', 'depths', 'img_metas']:
+            for key in ['gt_bboxes_3d', 'gt_labels_3d', 'gt_bboxes', 'gt_bboxes_labels', 'centers_2d', 'depths']:
                 data[key] = list(zip(*data[key]))
             return self.forward_train(**data)
         else:
@@ -252,7 +254,6 @@ class Petr3D(MVXTwoStageDetector):
         if self.test_flag: #for interval evaluation
             self.pts_bbox_head.reset_memory()
             self.test_flag = False
-
         T = data['img'].size(1)
 
         prev_img = data['img'][:, :-self.num_frame_backbone_grads]
@@ -295,7 +296,7 @@ class Petr3D(MVXTwoStageDetector):
         topk_indexes = outs_roi['topk_indexes']
 
         if img_metas[0]['scene_token'] != self.prev_scene_token:
-            self.prev_scene_token = img_metas[0]['scene_token']
+            self.prev_scene_token = img_metas['scene_token']
             data['prev_exists'] = data['img'].new_zeros(1)
             self.pts_bbox_head.reset_memory()
         else:

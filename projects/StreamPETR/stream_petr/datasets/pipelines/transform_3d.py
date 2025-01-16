@@ -15,8 +15,7 @@ import mmcv
 from mmdet.registry import TRANSFORMS
 import torch
 from PIL import Image
-
-
+    
 @TRANSFORMS.register_module()
 class PadMultiViewImage():
     """Pad the multi-view image.
@@ -44,10 +43,10 @@ class PadMultiViewImage():
             padded_img = [mmcv.impad_to_multiple(img,
                                 self.size_divisor, pad_val=self.pad_val) for img in results['img']]
         results['img_shape'] = [img.shape for img in results['img']]
-        results['img'] = padded_img
-        results['pad_shape'] = [img.shape for img in padded_img]
-        results['pad_fix_size'] = self.size
-        results['pad_size_divisor'] = self.size_divisor
+        results['img'] = torch.stack([torch.tensor(img.transpose(2,0,1)) for img in padded_img])
+        results['img_metas']['pad_shape'] = [img.shape for img in padded_img]
+        results['img_metas']['pad_fix_size'] = self.size
+        results['img_metas']['pad_size_divisor'] = self.size_divisor
     
     def __call__(self, results):
         """Call function to pad images, masks, semantic segmentation maps.

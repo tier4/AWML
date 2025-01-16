@@ -35,3 +35,4 @@ TBD
 ## Troubleshooting
 
 ## Reference
+# Currently distortion is not accounted for.
