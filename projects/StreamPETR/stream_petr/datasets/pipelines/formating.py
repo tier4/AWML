@@ -52,8 +52,7 @@ import gc
 #         example = self.pipeline(input_dict)
 
 
-#         return example  
-
+#         return example 
 @DATASETS.register_module()
 class StreamPETRDataset(T4Dataset):
     r"""NuScenes Dataset.
@@ -125,9 +124,12 @@ class StreamPETRDataset(T4Dataset):
             input_dict = self.get_annot_info(i)
             
             if not self.seq_mode: # for sliding window only
-                if input_dict['scene_token'] != prev_scene_token:
+                if prev_scene_token is None:
                     input_dict.update(dict(prev_exists=False))
                     prev_scene_token = input_dict['scene_token']
+                elif input_dict['scene_token'] != prev_scene_token:
+                    queue.insert(0,queue[0])
+                    continue
                 else:
                     input_dict.update(dict(prev_exists=True))
             example = self.pipeline(input_dict)
@@ -214,13 +216,13 @@ class StreamPETRDataset(T4Dataset):
             extrinsics = []
             img_timestamp = []
             for cam_type, cam_info in info['images'].items():
-                img_timestamp.append(cam_info['timestamp'] / 1e6)
+                img_timestamp.append(cam_info.get('timestamp',-1) / 1e6)
                 image_paths.append(cam_info['img_path'])
                 intrinsic_mat = np.array(cam_info["cam2img"])
-                extrinsic_mat = np.array(cam_info["lidar2cam"])[:3,:]
+                extrinsic_mat = np.array(cam_info.get("lidar2cam",np.eye(4)))[:3,:]
                 intrinsics.append(intrinsic_mat)
                 extrinsics.append(extrinsic_mat)
-                lidar2img_rts.append(intrinsic_mat@extrinsic_mat)
+                lidar2img_rts.append(np.concatenate([intrinsic_mat@extrinsic_mat,np.array([[0,0,0,1]])]))
                 
 
             if not self.test_mode: # for seq_mode

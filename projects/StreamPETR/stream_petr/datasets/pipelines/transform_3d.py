@@ -44,7 +44,7 @@ class PadMultiViewImage():
                                 self.size_divisor, pad_val=self.pad_val) for img in results['img']]
         results['img_shape'] = [img.shape for img in results['img']]
         results['img'] = torch.stack([torch.tensor(img.transpose(2,0,1)) for img in padded_img])
-        results['img_metas']['pad_shape'] = [img.shape for img in padded_img]
+        results['img_metas']['pad_shape'] = padded_img[0].shape
         results['img_metas']['pad_fix_size'] = self.size
         results['img_metas']['pad_size_divisor'] = self.size_divisor
     
@@ -166,7 +166,7 @@ class ResizeCropFlipRotImage():
         results['gt_bboxes_labels'] = new_gt_labels
         results['depths'] = new_depths
         results['img'] = new_imgs
-        results['lidar2img'] = [results['intrinsics'][i] @ results['extrinsics'][i] for i in range(len(results['extrinsics']))]
+        results['lidar2img'] = [np.concatenate([results['intrinsics'][i] @ results['extrinsics'][i], np.array([[0,0,0,1]])]) for i in range(len(results['extrinsics']))]
 
         return results
 

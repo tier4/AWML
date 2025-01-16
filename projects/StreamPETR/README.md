@@ -36,3 +36,4 @@ TBD
 
 ## Reference
 # Currently distortion is not accounted for.
+FOr the boundary of sequences, padded using first frame of the minibatch

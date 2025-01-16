@@ -389,7 +389,7 @@ class StreamPETRHead(AnchorFreeHead):
 
         num_sample_tokens = topk_indexes.size(1) if topk_indexes is not None else LEN
 
-        pad_h, pad_w, _ = img_metas[0]['pad_shape'][0]
+        pad_h, pad_w, _ = [x[0] for x in img_metas['pad_shape']]
         memory_centers[..., 0] = memory_centers[..., 0] * pad_w
         memory_centers[..., 1] = memory_centers[..., 1] * pad_h
 
@@ -452,8 +452,10 @@ class StreamPETRHead(AnchorFreeHead):
             
         return tgt, query_pos, reference_points, temp_memory, temp_pos, rec_ego_pose
 
-    def prepare_for_dn(self, batch_size, reference_points, img_metas):
+    def prepare_for_dn(self, batch_size, reference_points, targets, labels):
         if self.training and self.with_dn:
+            import pdb
+            pdb.set_trace()
             targets = [torch.cat((img_meta['gt_bboxes_3d']._data.gravity_center, img_meta['gt_bboxes_3d']._data.tensor[:, 3:]),dim=1) for img_meta in img_metas ]
             labels = [img_meta['gt_labels_3d']._data for img_meta in img_metas ]
             known = [(torch.ones_like(t)).cuda() for t in labels]

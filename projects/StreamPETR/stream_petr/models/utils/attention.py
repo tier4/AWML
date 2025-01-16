@@ -45,7 +45,7 @@ class FlashAttention(nn.Module):
         self.fp16_enabled = True
 
     def forward(self, q, kv, 
-                csal=False, 
+                causal=False, 
                 key_padding_mask=None):
         """Implements the multihead softmax attention.
         Arguments

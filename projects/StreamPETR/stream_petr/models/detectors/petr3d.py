@@ -20,6 +20,7 @@ from projects.StreamPETR.stream_petr.models.utils.misc import locations
 @MODELS.register_module()
 class Petr3D(MVXTwoStageDetector):
     """Petr3D."""
+    INPUT_TENSORS = ['lidar2img', 'intrinsics', 'extrinsics','timestamp', 'img_timestamp', 'ego_pose', 'ego_pose_inv', 'img','img_feats', 'prev_exists']
 
     def __init__(self,
                  use_grid_mask=False,
@@ -60,7 +61,6 @@ class Petr3D(MVXTwoStageDetector):
         self.position_level = position_level
         self.aux_2d_only = aux_2d_only
         self.test_flag = False
-
 
     def extract_img_feat(self, img, len_queue=1, training_mode=False):
         """Extract features of images."""
@@ -104,11 +104,10 @@ class Petr3D(MVXTwoStageDetector):
                             gt_bboxes_3d=None,
                             gt_labels_3d=None,
                             gt_bboxes=None,
-                            gt_labels=None,
+                            gt_bboxes_labels=None,
                             img_metas=None,
-                            centers2d=None,
+                            centers_2d=None,
                             depths=None,
-                            gt_bboxes_ignore=None,
                             **data):
         losses = dict()
         T = data['img'].size(1)
@@ -118,17 +117,15 @@ class Petr3D(MVXTwoStageDetector):
             requires_grad = False
             return_losses = False
             data_t = dict()
-            for key in data:
+            for key in self.INPUT_TENSORS:
                 data_t[key] = data[key][:, i] 
-
-            data_t['img_feats'] = data_t['img_feats']
             if i >= num_nograd_frames:
                 requires_grad = True
             if i >= num_grad_losses:
                 return_losses = True
             loss = self.forward_pts_train(gt_bboxes_3d[i],
                                         gt_labels_3d[i], gt_bboxes[i],
-                                        gt_labels[i], img_metas[i], centers2d[i], depths[i], requires_grad=requires_grad,return_losses=return_losses,**data_t)
+                                        gt_bboxes_labels[i], img_metas[i], centers_2d[i], depths[i], requires_grad=requires_grad,return_losses=return_losses,**data_t)
             if loss is not None:
                 for key, value in loss.items():
                     losses['frame_'+str(i)+"_"+key] = value
@@ -136,7 +133,7 @@ class Petr3D(MVXTwoStageDetector):
 
 
     def prepare_location(self, img_metas, **data):
-        pad_h, pad_w, _ = img_metas[0]['pad_shape']
+        pad_h, pad_w, _ = [x[0] for x in img_metas['pad_shape']]
         bs, n = data['img_feats'].shape[:2]
         x = data['img_feats'].flatten(0, 1)
         location = locations(x, self.stride, pad_h, pad_w)[None].repeat(bs*n, 1, 1, 1)
@@ -154,9 +151,9 @@ class Petr3D(MVXTwoStageDetector):
                           gt_bboxes_3d,
                           gt_labels_3d,
                           gt_bboxes,
-                          gt_labels,
+                          gt_bboxes_labels,
                           img_metas,
-                          centers2d,
+                          centers_2d,
                           depths,
                           requires_grad=True,
                           return_losses=False,
@@ -191,7 +188,7 @@ class Petr3D(MVXTwoStageDetector):
             loss_inputs = [gt_bboxes_3d, gt_labels_3d, outs]
             losses = self.pts_bbox_head.loss(*loss_inputs)
             if self.with_img_roi_head:
-                loss2d_inputs = [gt_bboxes, gt_labels, centers2d, depths, outs_roi, img_metas]
+                loss2d_inputs = [gt_bboxes, gt_bboxes_labels, centers_2d, depths, outs_roi, img_metas]
                 losses2d = self.img_roi_head.loss(*loss2d_inputs)
                 losses.update(losses2d) 
 
@@ -199,6 +196,11 @@ class Petr3D(MVXTwoStageDetector):
         else:
             return None
 
+    def stack_tensors(self, data: dict):
+        for key,values in data.items():
+            if isinstance(values[0], torch.Tensor):
+                # Stack the tensors along the first dimension
+                data[key] = torch.stack(values, dim=0)
     def forward(self, return_loss=True, **data):
         """Calls either forward_train or forward_test depending on whether
         return_loss=True.
@@ -209,11 +211,10 @@ class Petr3D(MVXTwoStageDetector):
         list[list[dict]]), with the outer list indicating test time
         augmentations.
         """
-        import pdb
-        pdb.set_trace()
+        self.stack_tensors(data)
         if return_loss:
-            for key in ['gt_bboxes_3d', 'gt_labels_3d', 'gt_bboxes', 'gt_bboxes_labels', 'centers_2d', 'depths']:
-                data[key] = list(zip(*data[key]))
+            # for key in ['gt_bboxes_3d', 'gt_labels_3d', 'gt_bboxes', 'gt_bboxes_labels', 'centers_2d', 'depths']:
+                # data[key] = list(zip(*data[key]))
             return self.forward_train(**data)
         else:
             return self.forward_test(**data)
@@ -222,11 +223,11 @@ class Petr3D(MVXTwoStageDetector):
                       img_metas=None,
                       gt_bboxes_3d=None,
                       gt_labels_3d=None,
-                      gt_labels=None,
+                      gt_bboxes_labels=None,
                       gt_bboxes=None,
                       gt_bboxes_ignore=None,
                       depths=None,
-                      centers2d=None,
+                      centers_2d=None,
                       **data):
         """Forward training function.
         Args:
@@ -238,7 +239,7 @@ class Petr3D(MVXTwoStageDetector):
                 Ground truth 3D boxes. Defaults to None.
             gt_labels_3d (list[torch.Tensor], optional): Ground truth labels
                 of 3D boxes. Defaults to None.
-            gt_labels (list[torch.Tensor], optional): Ground truth labels
+            gt_bboxes_labels (list[torch.Tensor], optional): Ground truth labels
                 of 2D boxes in images. Defaults to None.
             gt_bboxes (list[torch.Tensor], optional): Ground truth 2D boxes in
                 images. Defaults to None.
@@ -268,10 +269,9 @@ class Petr3D(MVXTwoStageDetector):
             data['img_feats'] = torch.cat([prev_img_feats, rec_img_feats], dim=1)
         else:
             data['img_feats'] = rec_img_feats
-
         losses = self.obtain_history_memory(gt_bboxes_3d,
                         gt_labels_3d, gt_bboxes,
-                        gt_labels, img_metas, centers2d, depths, gt_bboxes_ignore, **data)
+                        gt_bboxes_labels, img_metas, centers_2d, depths, **data)
 
         return losses
   
