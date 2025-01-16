@@ -155,20 +155,19 @@ class StreamPETRDataset(T4Dataset):
         return example
         
     def union2one(self, queue):
+        updated = {}
         for key in self.collect_keys:
             if key != 'img_metas':
-                queue[-1][key] = torch.stack([each[key] for each in queue])
+                updated[key] = torch.stack([each[key] for each in queue])
             else:
-                queue[-1][key] = [each[key] for each in queue]
+                updated[key] = [each[key] for each in queue]
 
         for key in ['gt_bboxes_3d', 'gt_labels_3d', 'gt_bboxes', 'gt_bboxes_labels', 'centers_2d', 'depths']:
             if key == 'gt_bboxes_3d':
-                queue[-1][key] = [each[key] for each in queue]
+                updated[key] = [each[key] for each in queue]
             else:
-                queue[-1][key] = [each[key] for each in queue]
-
-        queue = queue[-1]
-        return queue
+                updated[key] = [each[key] for each in queue]
+        return updated
 
     def get_annot_info(self, index):
         """Get data info according to the given index.
