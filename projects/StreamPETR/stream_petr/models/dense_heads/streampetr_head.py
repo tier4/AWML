@@ -25,6 +25,9 @@ from projects.StreamPETR.stream_petr.core.bbox.util import normalize_bbox
 from mmdet.models.layers.normed_predictor import NormedLinear
 from projects.StreamPETR.stream_petr.models.utils.positional_encoding import pos2posemb3d, pos2posemb1d, nerf_positional_encoding
 from projects.StreamPETR.stream_petr.models.utils.misc import MLN, topk_gather, transform_reference_points, memory_refresh, SELayer_Linear
+from mmdet.models.task_modules import BaseSampler, SamplingResult
+
+
 @MODELS.register_module()
 class StreamPETRHead(AnchorFreeHead):
     """Implements the DETR transformer head.
@@ -83,13 +86,16 @@ class StreamPETRHead(AnchorFreeHead):
                      class_weight=1.0),
                  loss_bbox=dict(type='L1Loss', loss_weight=5.0),
                  loss_iou=dict(type='GIoULoss', loss_weight=2.0),
+                 assigner=dict(
+                    type='HungarianAssigner3D',
+                    cls_cost=dict(type='ClassificationCost', weight=1.),
+                    reg_cost=dict(type='BBoxL1Cost', weight=5.0),
+                    iou_cost=dict(
+                        type='IoUCost', iou_mode='giou', weight=2.0)),
                  train_cfg=dict(
-                     assigner=dict(
-                         type='HungarianAssigner3D',
-                         cls_cost=dict(type='ClassificationCost', weight=1.),
-                         reg_cost=dict(type='BBoxL1Cost', weight=5.0),
-                         iou_cost=dict(
-                             type='IoUCost', iou_mode='giou', weight=2.0)),),
+                    grid_size=[512, 512, 1],
+                    out_size_factor=4,
+                 ),
                  test_cfg=dict(max_per_img=100),
                  depth_step=0.8,
                  depth_num=64,
@@ -143,18 +149,11 @@ class StreamPETRHead(AnchorFreeHead):
             if 'bg_cls_weight' in loss_cls:
                 loss_cls.pop('bg_cls_weight')
             self.bg_cls_weight = bg_cls_weight
-
-        if train_cfg:
-            assert 'assigner' in train_cfg, 'assigner should be provided '\
-                'when train_cfg is set.'
-            assigner = train_cfg['assigner']
-
-
-            self.assigner = build_assigner(assigner)
-            # DETR sampling=False, so use PseudoSampler
-            sampler_cfg = dict(type='PseudoSampler')
-            self.sampler = build_sampler(sampler_cfg, context=self)
-
+        self.assigner = build_assigner(assigner)
+        # DETR sampling=False, so use PseudoSampler
+        sampler_cfg = dict(type='PseudoSampler')
+        self.sampler = build_sampler(sampler_cfg, context=self)
+        
         self.num_query = num_query
         self.num_classes = num_classes
         self.in_channels = in_channels
@@ -454,19 +453,15 @@ class StreamPETRHead(AnchorFreeHead):
 
     def prepare_for_dn(self, batch_size, reference_points, targets, labels):
         if self.training and self.with_dn:
-            import pdb
-            pdb.set_trace()
-            targets = [torch.cat((img_meta['gt_bboxes_3d']._data.gravity_center, img_meta['gt_bboxes_3d']._data.tensor[:, 3:]),dim=1) for img_meta in img_metas ]
-            labels = [img_meta['gt_labels_3d']._data for img_meta in img_metas ]
             known = [(torch.ones_like(t)).cuda() for t in labels]
             know_idx = known
             unmask_bbox = unmask_label = torch.cat(known)
             #gt_num
-            known_num = [t.size(0) for t in targets]
+            known_num = [t.shape[0] for t in targets]
         
             labels = torch.cat([t for t in labels])
-            boxes = torch.cat([t for t in targets])
-            batch_idx = torch.cat([torch.full((t.size(0), ), i) for i, t in enumerate(targets)])
+            boxes = torch.cat([t.tensor for t in targets])
+            batch_idx = torch.cat([torch.full((t.shape[0], ), i) for i, t in enumerate(targets)])
         
             known_indice = torch.nonzero(unmask_label + unmask_bbox)
             known_indice = known_indice.view(-1)
@@ -569,7 +564,7 @@ class StreamPETRHead(AnchorFreeHead):
                                           unexpected_keys, error_msgs)
     
 
-    def forward(self, memory_center, img_metas, topk_indexes=None,  **data):
+    def forward(self, memory_center, img_metas, topk_indexes=None, targets=None,labels=None,**data):
         """Forward function.
         Args:
             mlvl_feats (tuple[Tensor]): Features from the upstream
@@ -601,7 +596,7 @@ class StreamPETRHead(AnchorFreeHead):
         pos_embed = self.featurized_pe(pos_embed, memory)
 
         reference_points = self.reference_points.weight
-        reference_points, attn_mask, mask_dict = self.prepare_for_dn(B, reference_points, img_metas)
+        reference_points, attn_mask, mask_dict = self.prepare_for_dn(B, reference_points, targets,labels)
         query_pos = self.query_embedding(pos2posemb3d(reference_points))
         tgt = torch.zeros_like(query_pos)
 
@@ -709,11 +704,20 @@ class StreamPETRHead(AnchorFreeHead):
 
         assign_result = self.assigner.assign(bbox_pred, cls_score, gt_bboxes,
                                                 gt_labels, gt_bboxes_ignore, self.match_costs, self.match_with_velo)
-        sampling_result = self.sampler.sample(assign_result, bbox_pred,
-                                              gt_bboxes)
-        pos_inds = sampling_result.pos_inds
-        neg_inds = sampling_result.neg_inds
+        pos_inds = torch.nonzero(
+            assign_result.gt_inds > 0, as_tuple=False).squeeze(-1).unique()
+        neg_inds = torch.nonzero(
+            assign_result.gt_inds == 0, as_tuple=False).squeeze(-1).unique()
 
+        gt_flags = bbox_pred.new_zeros(bbox_pred.shape[0], dtype=torch.uint8)
+        sampling_result = SamplingResult(
+            pos_inds=pos_inds,
+            neg_inds=neg_inds,
+            priors=bbox_pred,
+            gt_bboxes=gt_bboxes,
+            assign_result=assign_result,
+            gt_flags=gt_flags,
+            avg_factor_with_neg=False)
         # label targets
         labels = gt_bboxes.new_full((num_bboxes, ),
                                     self.num_classes,
@@ -727,9 +731,9 @@ class StreamPETRHead(AnchorFreeHead):
         # print(gt_bboxes.size(), bbox_pred.size())
         # DETR
         if sampling_result.num_gts > 0:
-            bbox_targets[pos_inds] = sampling_result.pos_gt_bboxes
+            bbox_targets[pos_inds] = sampling_result.pos_gt_bboxes.to(dtype=bbox_targets.dtype)
             bbox_weights[pos_inds] = 1.0
-            labels[pos_inds] = gt_labels[sampling_result.pos_assigned_gt_inds]
+            labels[pos_inds] = gt_labels[sampling_result.pos_assigned_gt_inds].to(dtype=labels.dtype)
         return (labels, label_weights, bbox_targets, bbox_weights, 
                 pos_inds, neg_inds)
 

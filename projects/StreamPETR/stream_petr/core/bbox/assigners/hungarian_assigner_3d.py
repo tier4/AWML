@@ -52,7 +52,7 @@ class HungarianAssigner3D(BaseAssigner):
                 num_gts, assigned_gt_inds, None, labels=assigned_labels)         
         # 2. compute the weighted costs
         # classification and bboxcost.
-        cls_cost = self.cls_cost(cls_pred, gt_labels)
+        cls_cost = self.cls_cost._focal_loss_cost(cls_pred, gt_labels)
         # regression L1 cost
         normalized_gt_bboxes = normalize_bbox(gt_bboxes, self.pc_range)
         if code_weights is not None:

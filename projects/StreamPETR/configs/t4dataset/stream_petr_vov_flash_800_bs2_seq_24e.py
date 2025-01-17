@@ -132,6 +132,18 @@ model = dict(
                     operation_order=('self_attn', 'norm', 'cross_attn', 'norm',
                                      'ffn', 'norm')),
             )),
+        assigner=dict(
+            type='mmdet.HungarianAssigner3D',
+            cls_cost=dict(type='mmdet.FocalLossCost', weight=2.0),
+            reg_cost=dict(type='mmdet.BBox3DL1Cost', weight=0.25),
+            iou_cost=dict(type='mmdet.IoUCost', weight=0.0), # Fake cost. This is just to make it compatible with DETR head. 
+            pc_range=point_cloud_range),
+        train_cfg=dict(
+            grid_size=[512, 512, 1],
+            voxel_size=voxel_size,
+            point_cloud_range=point_cloud_range,
+            out_size_factor=4,
+        ),
         bbox_coder=dict(
             type='mmdet.NMSFreeCoder',
             post_center_range=[-61.2, -61.2, -10.0, 61.2, 61.2, 10.0],
@@ -147,20 +159,7 @@ model = dict(
             loss_weight=2.0),
         loss_bbox=dict(type='mmdet.L1Loss', loss_weight=0.25),
         loss_iou=dict(type='mmdet.GIoULoss', loss_weight=0.0),
-        train_cfg=dict(pts=dict(
-            grid_size=[512, 512, 1],
-            voxel_size=voxel_size,
-            point_cloud_range=point_cloud_range,
-            out_size_factor=4,
-            assigner=dict(
-                type='mmdet.HungarianAssigner3D',
-                cls_cost=dict(type='mmdet.FocalLossCost', weight=2.0),
-                reg_cost=dict(type='mmdet.BBox3DL1Cost', weight=0.25),
-                iou_cost=dict(type='mmdet.IoUCost', weight=0.0), # Fake cost. This is just to make it compatible with DETR head. 
-                pc_range=point_cloud_range),
-            ))
-        ),
-    
+    ),
     )
 
 data_root = "./data/"

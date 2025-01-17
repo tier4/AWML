@@ -17,6 +17,7 @@ from projects.StreamPETR.stream_petr.models.utils.misc import draw_heatmap_gauss
 from mmdet.structures.bbox import bbox_overlaps
 from mmdet3d.models.utils import clip_sigmoid
 import random
+from mmengine.structures import InstanceData
 
 @MODELS.register_module()
 class FocalHead(AnchorFreeHead):
@@ -315,7 +316,7 @@ class FocalHead(AnchorFreeHead):
         # thus the learning target is normalized by the image size. So here
         # we need to re-scale them for calculating IoU loss
         # construct factors used for rescale bboxes
-        img_h, img_w, _ = img_metas[0]['pad_shape'][0]
+        img_h, img_w, _ = [x[0] for x in img_metas['pad_shape']]
 
         factors = []
 
@@ -353,7 +354,7 @@ class FocalHead(AnchorFreeHead):
         num_total_pos = torch.clamp(reduce_mean(num_total_pos), min=1).item()
 
          #centerness BCE loss
-        img_shape = [img_metas[0]['pad_shape'][0]] * num_imgs
+        img_shape = [[x[0] for x in img_metas['pad_shape']] for _ in range(num_imgs)]
         (heatmaps, ) = multi_apply(self._get_heatmap_single, all_centers2d_list, gt_bboxes_list, img_shape)
 
         heatmaps = torch.stack(heatmaps, dim=0)
@@ -440,7 +441,7 @@ class FocalHead(AnchorFreeHead):
         gt_bboxes_ignore_list = [
             gt_bboxes_ignore_list for _ in range(num_imgs)
         ]
-        img_meta = {'pad_shape':img_metas[0]['pad_shape'][0]}
+        img_meta = {'pad_shape':[x[0] for x in img_metas['pad_shape']]}
         img_meta_list = [img_meta for _ in range(num_imgs)]
         # print(1)
         (labels_list, label_weights_list, bbox_targets_list, bbox_weights_list,
@@ -496,7 +497,13 @@ class FocalHead(AnchorFreeHead):
         # assigner and sampler
         assign_result = self.assigner2d.assign(bbox_pred, cls_score, pred_centers2d, gt_bboxes,
                                                gt_labels, centers2d, img_meta, gt_bboxes_ignore)
-        sampling_result = self.sampler.sample(assign_result, bbox_pred, gt_bboxes)
+
+        predictions = InstanceData()
+        ground_truths = InstanceData()
+        predictions.priors = bbox_pred
+        ground_truths.bboxes_3d = gt_bboxes
+        
+        sampling_result = self.sampler.sample(assign_result, predictions, ground_truths)
         pos_inds = sampling_result.pos_inds
         neg_inds = sampling_result.neg_inds
 
@@ -521,7 +528,7 @@ class FocalHead(AnchorFreeHead):
                                        img_h]).unsqueeze(0)
         pos_gt_bboxes_normalized = sampling_result.pos_gt_bboxes / factor
         pos_gt_bboxes_targets = bbox_xyxy_to_cxcywh(pos_gt_bboxes_normalized)
-        bbox_targets[pos_inds] = pos_gt_bboxes_targets
+        bbox_targets[pos_inds] = pos_gt_bboxes_targets.to(dtype=bbox_targets.dtype)
 
         #centers2d target
         centers2d_targets = bbox_pred.new_full((num_bboxes, 2), 0.0, dtype=torch.float32)
@@ -532,6 +539,6 @@ class FocalHead(AnchorFreeHead):
         else:
             centers2d_labels = centers2d[sampling_result.pos_assigned_gt_inds.long(), :]
         centers2d_labels_normalized = centers2d_labels / factor[:, 0:2]
-        centers2d_targets[pos_inds] = centers2d_labels_normalized
+        centers2d_targets[pos_inds] = centers2d_labels_normalized.to(dtype=centers2d_targets.dtype)
         return (labels, label_weights, bbox_targets, bbox_weights, centers2d_targets,
                 pos_inds, neg_inds)

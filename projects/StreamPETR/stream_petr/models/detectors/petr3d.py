@@ -176,13 +176,13 @@ class Petr3D(MVXTwoStageDetector):
         if not requires_grad:
             self.eval()
             with torch.no_grad():
-                outs = self.pts_bbox_head(location, img_metas, None, **data)
+                outs = self.pts_bbox_head(location, img_metas, None, gt_bboxes_3d,gt_labels_3d,**data)
             self.train()
 
         else:
             outs_roi = self.forward_roi_head(location, **data)
             topk_indexes = outs_roi['topk_indexes']
-            outs = self.pts_bbox_head(location, img_metas, topk_indexes, **data)
+            outs = self.pts_bbox_head(location, img_metas, topk_indexes,gt_bboxes_3d,gt_labels_3d, **data)
 
         if return_losses:
             loss_inputs = [gt_bboxes_3d, gt_labels_3d, outs]

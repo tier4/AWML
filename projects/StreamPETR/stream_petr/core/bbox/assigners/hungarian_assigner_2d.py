@@ -5,6 +5,7 @@
 import torch
 from mmdet.models.task_modules import AssignResult, BaseAssigner, build_match_cost,BBOX_ASSIGNERS
 from mmdet.structures.bbox import bbox_cxcywh_to_xyxy
+from mmengine.structures import InstanceData
 
 try:
     from scipy.optimize import linear_sum_assignment
@@ -112,19 +113,32 @@ class HungarianAssigner2D(BaseAssigner):
                 assigned_gt_inds[:] = 0
             return AssignResult(
                 num_gts, assigned_gt_inds, None, labels=assigned_labels)
-        img_h, img_w, _ = img_meta['pad_shape']
+        img_w, img_h, _ = img_meta['pad_shape']
+        img_meta["img_shape"] = (img_w, img_h)
         factor = gt_bboxes.new_tensor([img_w, img_h, img_w,
                                        img_h]).unsqueeze(0)
 
-        # 2. compute the weighted costs
-        # classification and bboxcost.
-        cls_cost = self.cls_cost(cls_pred, gt_labels)
+        predictions = InstanceData()
+        ground_truths = InstanceData()
+        predictions.scores = cls_pred
+        ground_truths.labels = gt_labels
+        cls_cost = self.cls_cost(predictions, ground_truths)
+
         # regression L1 cost
         normalize_gt_bboxes = gt_bboxes / factor
-        reg_cost = self.reg_cost(bbox_pred, normalize_gt_bboxes)
+        predictions = InstanceData()
+        ground_truths = InstanceData()
+        predictions.bboxes = bbox_pred
+        ground_truths.bboxes = normalize_gt_bboxes
+        reg_cost = self.reg_cost(predictions, ground_truths,img_meta)
+
         # regression iou cost, defaultly giou is used in official DETR.
         bboxes = bbox_cxcywh_to_xyxy(bbox_pred) * factor
-        iou_cost = self.iou_cost(bboxes, gt_bboxes)
+        predictions = InstanceData()
+        ground_truths = InstanceData()
+        predictions.bboxes = bboxes
+        ground_truths.bboxes = gt_bboxes
+        iou_cost = self.iou_cost(predictions, ground_truths)
 
         # center2d L1 cost
         normalize_centers2d = centers2d / factor[:, 0:2]

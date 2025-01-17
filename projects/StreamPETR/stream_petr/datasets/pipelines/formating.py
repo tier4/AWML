@@ -7,11 +7,8 @@
 import numpy as np
 from mmdet3d.structures.points import BasePoints
 from mmcv.transforms import to_tensor
-from mmdet3d.datasets.transforms import Pack3DDetInputs
-from mmengine.structures import InstanceData
 
 from mmdet3d.registry import TRANSFORMS,DATASETS
-from mmdet3d.structures import BaseInstance3DBoxes, Det3DDataSample, PointData
 from mmdet3d.structures.points import BasePoints
 from autoware_ml.detection3d.datasets.t4dataset import T4Dataset 
 from typing import Tuple
@@ -21,38 +18,38 @@ import random
 import pickle
 import gc
 
-# @DATASETS.register_module()
-# class StreamPETRDataset(T4Dataset):
-#     def prepare_data(self, index: int) -> Union[dict, None]:
-#         """Data preparation for both training and testing stage.
-
-#         Called by `__getitem__`  of dataset.
-
-#         Args:
-#             index (int): Index for accessing the target data.
-
-#         Returns:
-#             dict or None: Data dict of the corresponding index.
-#         """
-#         ori_input_dict = self.get_data_info(index)
-
-#         # deepcopy here to avoid inplace modification in pipeline.
-#         input_dict = copy.deepcopy(ori_input_dict)
-
-#         # box_type_3d (str): 3D box type.
-#         input_dict['box_type_3d'] = self.box_type_3d
-#         # box_mode_3d (str): 3D box mode.
-#         input_dict['box_mode_3d'] = self.box_mode_3d
-
-#         # pre-pipline return None to random another in `__getitem__`
-#         if not self.test_mode and self.filter_empty_gt:
-#             if len(input_dict['ann_info']['gt_labels_3d']) == 0:
-#                 return None
-
-#         example = self.pipeline(input_dict)
 
 
-#         return example 
+def convert_to_torch(data):
+    """
+    Recursively iterate through a structure (list, dict, or nested combination),
+    and convert all numpy arrays into torch tensors.
+    
+    Args:
+        data: The input data structure, which could be a list, dict, or any nested structure.
+
+    Returns:
+        The modified data structure with numpy arrays converted to torch tensors.
+    """
+    if isinstance(data, np.ndarray):
+        # If the data is a numpy array, convert it to a torch tensor
+        return torch.from_numpy(data)
+    elif isinstance(data, list):
+        # If the data is a list, apply the function recursively to each element
+        return [convert_to_torch(item) for item in data]
+    elif isinstance(data, dict):
+        # If the data is a dictionary, apply the function recursively to each value
+        return {key: convert_to_torch(value) for key, value in data.items()}
+    elif isinstance(data, tuple):
+        # If the data is a tuple, apply the function recursively to each element and return a tuple
+        return tuple(convert_to_torch(item) for item in data)
+    elif isinstance(data, set):
+        # If the data is a set, apply the function recursively to each element and return a set
+        return {convert_to_torch(item) for item in data}
+    else:
+        # If the data is not a recognized structure, return it as-is
+        return data
+        
 @DATASETS.register_module()
 class StreamPETRDataset(T4Dataset):
     r"""NuScenes Dataset.
@@ -168,7 +165,7 @@ class StreamPETRDataset(T4Dataset):
             if key == 'gt_bboxes_3d':
                 updated[key] = [each[key] for each in queue]
             else:
-                updated[key] = [each[key] for each in queue]
+                updated[key] = [convert_to_torch(each[key]) for each in queue]
         return updated
 
     def get_annot_info(self, index):
@@ -218,13 +215,11 @@ class StreamPETRDataset(T4Dataset):
             for cam_type, cam_info in info['images'].items():
                 img_timestamp.append(cam_info.get('timestamp',-1) / 1e6)
                 image_paths.append(cam_info['img_path'])
-                intrinsic_mat = np.array(cam_info["cam2img"])
+                intrinsic_mat = np.array(cam_info.get("cam2img",np.eye(3)))
                 extrinsic_mat = np.array(cam_info.get("lidar2cam",np.eye(4)))[:3,:]
                 intrinsics.append(intrinsic_mat)
                 extrinsics.append(extrinsic_mat)
                 lidar2img_rts.append(np.concatenate([intrinsic_mat@extrinsic_mat,np.array([[0,0,0,1]])]))
-                
-
             if not self.test_mode: # for seq_mode
                 prev_exists  = not (index == 0 or super().get_data_info(index - 1)["scene_token"] != info["scene_token"])
             else:
