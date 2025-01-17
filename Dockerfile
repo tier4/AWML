@@ -32,6 +32,7 @@ RUN apt update && DEBIAN_FRONTEND=noninteractive apt install -y --no-install-rec
 # Install pip dependencies for base library
 RUN python3 -m pip --no-cache-dir install \
     aenum \
+    gitpython \
     nptyping \
     numpy==1.23.5 \
     nvidia-pyindex \
