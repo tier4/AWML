@@ -9,4 +9,4 @@ from .formating import(
     PETRFormatBundle3D,
 )
 
-from .loading import StreamPETRLoadAnnotations3D
+from .loading import StreamPETRLoadAnnotations2D

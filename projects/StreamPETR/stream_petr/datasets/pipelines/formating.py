@@ -223,13 +223,13 @@ class StreamPETRDataset(T4Dataset):
             extrinsics = []
             img_timestamp = []
             for cam_type, cam_info in info['images'].items():
-                img_timestamp.append(cam_info.get('timestamp',-1) / 1e6)
+                img_timestamp.append(cam_info['timestamp'] / 1e6)
                 image_paths.append(cam_info['img_path'])
-                intrinsic_mat = np.array(cam_info.get("cam2img",np.eye(3)))
-                extrinsic_mat = np.array(cam_info.get("lidar2cam",np.eye(4)))[:3,:]
+                intrinsic_mat = np.array(cam_info["cam2img"])
+                extrinsic_mat = np.array(cam_info["lidar2cam"])
                 intrinsics.append(intrinsic_mat)
                 extrinsics.append(extrinsic_mat)
-                lidar2img_rts.append(np.concatenate([intrinsic_mat@extrinsic_mat,np.array([[0,0,0,1]])]))
+                lidar2img_rts.append(np.concatenate([intrinsic_mat@extrinsic_mat[:3,:],np.array([[0,0,0,1]])]))
             if not self.test_mode: # for seq_mode
                 prev_exists  = not (index == 0 or super().get_data_info(index - 1)["scene_token"] != info["scene_token"])
             else:

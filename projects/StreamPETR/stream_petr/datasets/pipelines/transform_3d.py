@@ -36,12 +36,13 @@ class PadMultiViewImage():
     
     def _pad_img(self, results):
         """Pad images according to ``self.size``."""
-        if self.size is not None:
-            padded_img = [mmcv.impad(img,
-                                shape = self.size, pad_val=self.pad_val) for img in results['img']]
-        elif self.size_divisor is not None:
-            padded_img = [mmcv.impad_to_multiple(img,
-                                self.size_divisor, pad_val=self.pad_val) for img in results['img']]
+        # if self.size is not None:
+        #     padded_img = [mmcv.impad(img,
+        #                         shape = self.size, pad_val=self.pad_val) for img in results['img']]
+        # elif self.size_divisor is not None:
+        #     padded_img = [mmcv.impad_to_multiple(img,
+        #                         self.size_divisor, pad_val=self.pad_val) for img in results['img']]
+        padded_img = results['img']
         results['img_shape'] = [img.shape for img in results['img']]
         results['img'] = torch.stack([torch.tensor(img.transpose(2,0,1)) for img in padded_img])
         results['img_metas']['pad_shape'] = padded_img[0].shape
@@ -136,37 +137,37 @@ class ResizeCropFlipRotImage():
                 flip=flip,
                 rotate=rotate,
             )
-            if self.training and self.with_2d: # sync_2d bbox labels
-                gt_bboxes = results['gt_bboxes'][i]
-                centers_2d = results['centers_2d'][i]
-                gt_labels = results['gt_bboxes_labels'][i]
-                depths = results['depths'][i]
-                if len(gt_bboxes) != 0:
-                    gt_bboxes, centers_2d, gt_labels, depths = self._bboxes_transform(
-                        gt_bboxes, 
-                        centers_2d,
-                        gt_labels,
-                        depths,
-                        resize=resize,
-                        crop=crop,
-                        flip=flip,
-                    )
-                if len(gt_bboxes) != 0 and self.filter_invisible:
-                    gt_bboxes, centers_2d, gt_labels, depths =  self._filter_invisible(gt_bboxes, centers_2d, gt_labels, depths)
+            # if self.training and self.with_2d: # sync_2d bbox labels
+            #     gt_bboxes = results['gt_bboxes'][i]
+            #     centers_2d = results['centers_2d'][i]
+            #     gt_labels = results['gt_bboxes_labels'][i]
+            #     depths = results['depths'][i]
+            #     if len(gt_bboxes) != 0:
+            #         gt_bboxes, centers_2d, gt_labels, depths = self._bboxes_transform(
+            #             gt_bboxes, 
+            #             centers_2d,
+            #             gt_labels,
+            #             depths,
+            #             resize=resize,
+            #             crop=crop,
+            #             flip=flip,
+            #         )
+            #     if len(gt_bboxes) != 0 and self.filter_invisible:
+            #         gt_bboxes, centers_2d, gt_labels, depths =  self._filter_invisible(gt_bboxes, centers_2d, gt_labels, depths)
 
-                new_gt_bboxes.append(gt_bboxes)
-                new_centers_2d.append(centers_2d)
-                new_gt_labels.append(gt_labels)
-                new_depths.append(depths)
+            #     new_gt_bboxes.append(gt_bboxes)
+            #     new_centers_2d.append(centers_2d)
+            #     new_gt_labels.append(gt_labels)
+            #     new_depths.append(depths)
 
             new_imgs.append(np.array(img).astype(np.float32))
-            results['intrinsics'][i][:3, :3] = ida_mat @ results['intrinsics'][i][:3, :3]
-        results['gt_bboxes'] = new_gt_bboxes
-        results['centers_2d'] = new_centers_2d
-        results['gt_bboxes_labels'] = new_gt_labels
-        results['depths'] = new_depths
+            results['intrinsics'][i][:3, :3] = ida_mat @ results['intrinsics'][i]
+        # results['gt_bboxes'] = new_gt_bboxes
+        # results['centers_2d'] = new_centers_2d
+        # results['gt_bboxes_labels'] = new_gt_labels
+        # results['depths'] = new_depths
         results['img'] = new_imgs
-        results['lidar2img'] = [np.concatenate([results['intrinsics'][i] @ results['extrinsics'][i], np.array([[0,0,0,1]])]) for i in range(len(results['extrinsics']))]
+        results['lidar2img'] = [np.concatenate([results['intrinsics'][i] @ results['extrinsics'][i][:3,:], np.array([[0,0,0,1]])]) for i in range(len(results['extrinsics']))]
 
         return results
 
@@ -282,8 +283,8 @@ class ResizeCropFlipRotImage():
             crop_w = int(np.random.uniform(0, max(0, newW - fW)))
             crop = (crop_w, crop_h, crop_w + fW, crop_h + fH)
             flip = False
-            if self.data_aug_conf["rand_flip"] and np.random.choice([0, 1]):
-                flip = True
+            # if self.data_aug_conf["rand_flip"] and np.random.choice([0, 1]):
+            #     flip = True
             rotate = np.random.uniform(*self.data_aug_conf["rot_lim"])
         else:
             resize = max(fH / H, fW / W)

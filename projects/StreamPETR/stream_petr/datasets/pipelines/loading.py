@@ -1,6 +1,5 @@
 from mmdet3d.registry import TRANSFORMS
-from mmdet3d.datasets.transforms import LoadAnnotations3D
-import torch
+from mmcv.transforms import BaseTransform
 
 import numpy as np
 
@@ -17,7 +16,7 @@ def project_to_image(points, lidar2cam, cam2img):
     points_img /= points_img[:, 2:3]
     return points_img[:, :2], valid_mask
 
-def compute_bbox_and_centers(data_dict, bboxes, labels, img_shape):
+def compute_bbox_and_centers(lidar2cam,cam2img, bboxes, labels, img_shape):
     """
     Compute the 2D bounding box, 3D center of the projected bounding box, and 3D center in LiDAR coordinates.
 
@@ -35,10 +34,7 @@ def compute_bbox_and_centers(data_dict, bboxes, labels, img_shape):
             - valid_labels: np.ndarray of shape (N,) containing labels for valid boxes
     """
 
-    lidar2cam = np.array(data_dict['lidar2cam'])
-    cam2img = np.array(data_dict['cam2img'])
-    H, W, C = img_shape
-    
+    C, H, W = img_shape
     # Initialize lists to store valid results
     valid_bboxes_2d = []
     valid_projected_centers = []
@@ -61,20 +57,20 @@ def compute_bbox_and_centers(data_dict, bboxes, labels, img_shape):
         # Compute 2D bbox
         x_min, y_min = np.min(corners_img, axis=0)
         x_max, y_max = np.max(corners_img, axis=0)
-        
-        # Check if bbox is within image boundaries
-        if (x_min >= W or x_max <= 0 or y_min >= H or y_max <= 0):
-            continue
             
         # Clip to image boundaries
         x_min = np.clip(x_min, 0, W)
         x_max = np.clip(x_max, 0, W)
         y_min = np.clip(y_min, 0, H)
         y_max = np.clip(y_max, 0, H)
-        
-        # Store valid results
+
+        x_center = np.clip(projected_center[0], 0, W)
+        y_center = np.clip(projected_center[1], 0, H)
+        if x_min==x_max or y_min==y_max:
+            continue
+
         valid_bboxes_2d.append([x_min, y_min, x_max, y_max])
-        valid_projected_centers.append(projected_center)
+        valid_projected_centers.append([x_center,y_center])
         valid_image_depth.append(np.sqrt((center_3d_lidar**2).sum()))
         valid_labels_list.append(label)
 
@@ -94,15 +90,14 @@ def compute_bbox_and_centers(data_dict, bboxes, labels, img_shape):
     
       
 @TRANSFORMS.register_module()
-class StreamPETRLoadAnnotations3D(LoadAnnotations3D):
-  """
-    Overrides some of the methods to make the 
-  """
-  def _load_2d_infos(self,results):
-      all_bboxes_2d, all_centers_2d, all_depths, all_labels, extrinsics, intrinsics = [],[],[],[],[],[]
+class StreamPETRLoadAnnotations2D(BaseTransform):
+
+  def transform(self,results):
+      all_bboxes_2d, all_centers_2d, all_depths, all_labels = [],[],[],[]
       for i,k in enumerate(results["images"]):
         bboxes_2d, projected_centers, depths, valid_labels = compute_bbox_and_centers(
-            results["images"][k], 
+            results["extrinsics"][i],
+            results["intrinsics"][i],
             results["ann_info"]["gt_bboxes_3d"], 
             results["ann_info"]["gt_labels_3d"],
             results["img"][i].shape
@@ -111,31 +106,9 @@ class StreamPETRLoadAnnotations3D(LoadAnnotations3D):
         all_centers_2d.append(projected_centers)
         all_depths.append(depths)
         all_labels.append(valid_labels)
-        extrinsics.append(np.array(results["images"][k]["lidar2cam"])[:3,:])
-        intrinsics.append(np.array(results["images"][k]["cam2img"]))
         
       results['depths'] = all_depths
       results['centers_2d'] = all_centers_2d
       results['gt_bboxes'] = all_bboxes_2d
       results['gt_bboxes_labels'] = all_labels
-      results['intrinsics'] = intrinsics
-      results['extrinsics'] = extrinsics
-      
-      results['ego_pose'] = np.eye(4)
-      results['ego_pose_inv'] = np.eye(4)
-      
-      return results
-  def _load_bboxes_depth(self, results):
-      if 'depths' not in results or 'centers_2d' not in results:
-        results = self._load_2d_infos(results)
-      return results
-      
-  def _load_bboxes(self, results):
-      if 'gt_bboxes' not in results:
-        results = self._load_2d_infos(results)
-      return results
-
-  def _load_labels(self, results: dict) -> dict:
-      if 'gt_bboxes_labels' not in results:
-        results['gt_labels_3d'] = results['ann_info']['gt_labels_3d']
       return results

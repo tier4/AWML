@@ -180,29 +180,31 @@ ida_aug_conf = {
 
 train_pipeline = [
     dict(type='LoadMultiViewImageFromFiles', to_float32=True),
-    dict(type='StreamPETRLoadAnnotations3D', with_bbox_3d=True, with_label_3d=True,with_bbox=True,
-        with_label=True, with_bbox_depth=True),
+    dict(type='LoadAnnotations3D', with_bbox_3d=True, with_label_3d=True,with_bbox=False,
+        with_label=False, with_bbox_depth=False),
     dict(type='ObjectRangeFilter', point_cloud_range=point_cloud_range),
     dict(type='ObjectNameFilter', classes=class_names),
     dict(type='mmdet.ResizeCropFlipRotImage', data_aug_conf = ida_aug_conf, training=True),
-    dict(type='mmdet.GlobalRotScaleTransImage',
-            rot_range=[-0.3925, 0.3925],
-            translation_std=[0, 0, 0],
-            scale_ratio_range=[0.95, 1.05],
-            reverse_angle=True,
-            training=True,
-            ),
-    dict(type='mmdet.NormalizeMultiviewImage', **img_norm_cfg),
+    # dict(type='mmdet.GlobalRotScaleTransImage',
+    #         rot_range=[-0.3925, 0.3925],
+    #         translation_std=[0, 0, 0],
+    #         scale_ratio_range=[0.95, 1.05],
+    #         reverse_angle=True,
+    #         training=True,
+    #         ),
+    # dict(type='mmdet.NormalizeMultiviewImage', **img_norm_cfg),
     dict(type='mmdet.PadMultiViewImage', size_divisor=32),
+    dict(type='StreamPETRLoadAnnotations2D'),
     dict(type='PETRFormatBundle3D', class_names=class_names, collect_keys=collect_keys + ['prev_exists'])
 ]
 test_pipeline = [
     dict(type='LoadMultiViewImageFromFiles', to_float32=True),
-    dict(type='StreamPETRLoadAnnotations3D', with_bbox_3d=True, with_label_3d=True,with_bbox=True,
-        with_label=True, with_bbox_depth=True),
+    dict(type='LoadAnnotations3D', with_bbox_3d=True, with_label_3d=True,with_bbox=False,
+        with_label=False, with_bbox_depth=False),
     dict(type='mmdet.ResizeCropFlipRotImage', data_aug_conf = ida_aug_conf, training=False),
-    dict(type='mmdet.NormalizeMultiviewImage', **img_norm_cfg),
+    # dict(type='mmdet.NormalizeMultiviewImage', **img_norm_cfg),
     dict(type='mmdet.PadMultiViewImage', size_divisor=32),
+    dict(type='StreamPETRLoadAnnotations2D'),
     dict(type='PETRFormatBundle3D', class_names=class_names, collect_keys=collect_keys + ['prev_exists'])
 ]
 
