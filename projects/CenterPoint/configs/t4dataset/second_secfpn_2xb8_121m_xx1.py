@@ -6,6 +6,7 @@ _base_ = [
 custom_imports = dict(imports=["projects.CenterPoint.models"], allow_failed_imports=False)
 custom_imports["imports"] += _base_.custom_imports["imports"]
 custom_imports["imports"] += ["autoware_ml.detection3d.datasets.transforms"]
+custom_imports["imports"] += ["autoware_ml.hooks"]
 
 # This is a base file for t4dataset, add the dataset config.
 # type, data_root and ann_file of data.train, data.val and data.test
@@ -372,9 +373,12 @@ vis_backends = [
 ]
 visualizer = dict(type="Det3DLocalVisualizer", vis_backends=vis_backends, name="visualizer")
 
+logger_interval = 50
 default_hooks = dict(
-    logger=dict(type="LoggerHook", interval=50),
+    logger=dict(type="LoggerHook", interval=logger_interval),
     checkpoint=dict(type="CheckpointHook", interval=1),
 )
 
-custom_hooks = [dict(type="ExtraRuntimeInfoHook")]
+custom_hooks = [
+    dict(type="MomentumInfoHook"),
+]

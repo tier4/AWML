@@ -4,8 +4,8 @@ from mmengine.registry import HOOKS
 
 
 @HOOKS.register_module()
-class ExtraRuntimeInfoHook(Hook):
-    """A hook that updates extra runtime information into message hub.
+class MomentumInfoHook(Hook):
+    """A hook that updates momentum information into message hub.
 
     E.g. ``epoch``, ``iter``, ``max_epochs``, and ``max_iters`` for the
     training state. Components that cannot access the runner can get runtime
