@@ -17,7 +17,7 @@ import torch
 import random
 import pickle
 import gc
-
+import os
 
 
 def convert_to_torch(data):
@@ -70,6 +70,15 @@ class StreamPETRDataset(T4Dataset):
             self.seq_split_num = seq_split_num
             self.random_length = 0
 
+    def _validate_entry(self,info) -> bool:
+        """
+            Validate the necessary entries in the data info dict
+        """
+        if not all([ x["img_path"] and os.path.exists(x["img_path"]) for x in info['images'].values()]):
+            print(f"Found frame  {info['token']} without any image in it, not using it for training")
+            return False
+        return True
+
     def _serialize_data(self) -> Tuple[np.ndarray, np.ndarray]:
         """Serialize ``self.data_list`` to save memory when launching multiple
         workers in data loading. This function will be called in ``full_init``.
@@ -89,8 +98,9 @@ class StreamPETRDataset(T4Dataset):
         # Serialize data information list avoid making multiple copies of
         # `self.data_list` when iterate `import torch.utils.data.dataloader`
         # with multiple workers.
+        self.data_list
         sort_items = [x["token"] for x in self.data_list]
-        self.datalist = [self.data_list[i] for i in np.argsort(sort_items)]
+        self.data_list = [self.data_list[i] for i in np.argsort(sort_items) if self._validate_entry(self.data_list[i])]
         data_list = [_serialize(x) for x in self.data_list]
         address_list = np.asarray([len(x) for x in data_list], dtype=np.int64)
         data_address: np.ndarray = np.cumsum(address_list)
