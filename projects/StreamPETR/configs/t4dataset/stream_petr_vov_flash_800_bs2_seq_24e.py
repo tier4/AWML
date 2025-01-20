@@ -222,7 +222,7 @@ train_dataloader = dict(
     ),
 )
 val_dataloader = dict(
-    batch_size=batch_size,
+    batch_size=1,
     num_workers=2,
     persistent_workers=True,
     sampler=dict(type="DefaultSampler", shuffle=False),
@@ -236,7 +236,7 @@ val_dataloader = dict(
         modality=input_modality,
         random_length=0,
         collect_keys=collect_keys + ['img', 'prev_exists', 'img_metas'],
-        queue_length=queue_length,
+        queue_length=1,
         data_prefix=_base_.data_prefix,
         test_mode=False,
         box_type_3d="LiDAR",
@@ -244,7 +244,7 @@ val_dataloader = dict(
     ),
 )
 test_dataloader = dict(
-    batch_size=batch_size,
+    batch_size=1,
     num_workers=2,
     persistent_workers=True,
     sampler=dict(type="DefaultSampler", shuffle=False),
@@ -257,8 +257,8 @@ test_dataloader = dict(
         random_length=0,
         class_names=_base_.class_names,
         modality=input_modality,
-        collect_keys=collect_keys + ['img', 'img_metas'],
-        queue_length=queue_length,
+        collect_keys=collect_keys + ['img', 'prev_exists','img_metas'],
+        queue_length=1,
         data_prefix=_base_.data_prefix,
         test_mode=False,
         box_type_3d="LiDAR",

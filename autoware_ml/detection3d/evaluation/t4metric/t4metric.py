@@ -228,7 +228,6 @@ class T4Metric(NuScenesMetric):
 
             all_preds = concatenate_eval_boxes(all_preds, preds)
             all_gts = concatenate_eval_boxes(all_gts, gts)
-
         logger.info("==== GT boxes info after filtering in evaluation ====")
         class_names = {}
         eval_boxes = all_gts.boxes

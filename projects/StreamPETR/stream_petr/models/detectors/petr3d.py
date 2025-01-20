@@ -16,6 +16,7 @@ from mmdet3d.structures.ops.transforms import bbox3d2result
 from mmdet3d.models.detectors.mvx_two_stage import MVXTwoStageDetector
 from projects.StreamPETR.stream_petr.models.utils.grid_mask import GridMask
 from projects.StreamPETR.stream_petr.models.utils.misc import locations
+from mmdet3d.structures import CameraInstance3DBoxes, LiDARInstance3DBoxes
 
 @MODELS.register_module()
 class Petr3D(MVXTwoStageDetector):
@@ -86,10 +87,7 @@ class Petr3D(MVXTwoStageDetector):
             img_feats = self.img_neck(img_feats)
 
         BN, C, H, W = img_feats[self.position_level].size()
-        if self.training or training_mode:
-            img_feats_reshaped = img_feats[self.position_level].view(B, len_queue, int(BN/B / len_queue), C, H, W)
-        else:
-            img_feats_reshaped = img_feats[self.position_level].view(B, int(BN/B/len_queue), C, H, W)
+        img_feats_reshaped = img_feats[self.position_level].view(B, len_queue, int(BN/B / len_queue), C, H, W)
 
 
         return img_feats_reshaped
@@ -201,7 +199,7 @@ class Petr3D(MVXTwoStageDetector):
             if isinstance(values[0], torch.Tensor):
                 # Stack the tensors along the first dimension
                 data[key] = torch.stack(values, dim=0)
-    def forward(self, return_loss=True, **data):
+    def forward(self, mode="loss",**data):
         """Calls either forward_train or forward_test depending on whether
         return_loss=True.
         Note this setting will change the expected inputs. When
@@ -212,13 +210,14 @@ class Petr3D(MVXTwoStageDetector):
         augmentations.
         """
         self.stack_tensors(data)
-        if return_loss:
-            # for key in ['gt_bboxes_3d', 'gt_labels_3d', 'gt_bboxes', 'gt_bboxes_labels', 'centers_2d', 'depths']:
-                # data[key] = list(zip(*data[key]))
+        if mode=="loss":
             return self.forward_train(**data)
+        elif mode=="predict":
+            with torch.autocast(device_type='cuda' if torch.cuda.is_available() else 'cpu'):
+                return self.forward_test(**data)
         else:
-            return self.forward_test(**data)
-
+            raise NotImplementedError()
+        
     def forward_train(self,
                       img_metas=None,
                       gt_bboxes_3d=None,
@@ -276,35 +275,35 @@ class Petr3D(MVXTwoStageDetector):
         return losses
   
   
-    def forward_test(self, img_metas, rescale, **data):
+    def forward_test(self, img_metas, **data):
         self.test_flag = True
-        for var, name in [(img_metas, 'img_metas')]:
-            if not isinstance(var, list):
-                raise TypeError('{} must be a list, but got {}'.format(
-                    name, type(var)))
-        for key in data:
-            if key != 'img':
-                data[key] = data[key][0][0].unsqueeze(0)
-            else:
-                data[key] = data[key][0]
-        return self.simple_test(img_metas[0], **data)
+        assert len(img_metas)==1, "Test should be done in streaming manner"
+        # for var, name in [(img_metas, 'img_metas')]:
+        #     if not isinstance(var, list):
+        #         raise TypeError('{} must be a list, but got {}'.format(
+        #             name, type(var)))
+        # for key in data:
+        #     if key != 'img':
+        #         data[key] = data[key][0][0].unsqueeze(0)
+        #     else:
+        #         data[key] = data[key][0] 
+        return self.simple_test(img_metas, **data)
 
     def simple_test_pts(self, img_metas, **data):
         """Test function of point cloud branch."""
         location = self.prepare_location(img_metas, **data)
         outs_roi = self.forward_roi_head(location, **data)
         topk_indexes = outs_roi['topk_indexes']
-
-        if img_metas[0]['scene_token'] != self.prev_scene_token:
+        if img_metas['scene_token'] != self.prev_scene_token:
             self.prev_scene_token = img_metas['scene_token']
             data['prev_exists'] = data['img'].new_zeros(1)
             self.pts_bbox_head.reset_memory()
         else:
             data['prev_exists'] = data['img'].new_ones(1)
-
+        
         outs = self.pts_bbox_head(location, img_metas, topk_indexes, **data)
-        bbox_list = self.pts_bbox_head.get_bboxes(
-            outs, img_metas)
+        bbox_list = self.pts_bbox_head.get_bboxes(outs)
+
         bbox_results = [
             bbox3d2result(bboxes, scores, labels)
             for bboxes, scores, labels in bbox_list
@@ -314,12 +313,24 @@ class Petr3D(MVXTwoStageDetector):
     def simple_test(self, img_metas, **data):
         """Test function without augmentaiton."""
         data['img_feats'] = self.extract_img_feat(data['img'], 1)
+        
+        data_t = dict()
+        for key in self.INPUT_TENSORS:
+            data_t[key] = data[key][:, 0]
+        results_3d = self.simple_test_pts(
+            img_metas[0], **data_t)
+        
+        predictions = []
+        for res_3d in results_3d:
+            res_3d['bboxes_3d'] = LiDARInstance3DBoxes(tensor=res_3d['bboxes_3d'],box_dim=9)
+            predictions.append(
+                dict(
+                    pred_instances_3d=res_3d,
+                    pred_instances={},
+                    sample_idx = img_metas[0]['sample_idx']
+                )
+            )
 
-        bbox_list = [dict() for i in range(len(img_metas))]
-        bbox_pts = self.simple_test_pts(
-            img_metas, **data)
-        for result_dict, pts_bbox in zip(bbox_list, bbox_pts):
-            result_dict['pts_bbox'] = pts_bbox
-        return bbox_list
+        return predictions
 
     

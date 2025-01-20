@@ -380,7 +380,6 @@ class StreamPETRHead(AnchorFreeHead):
         eps = 1e-5
         BN, H, W, _ = memory_centers.shape
         B = data['intrinsics'].size(0)
-
         intrinsic = torch.stack([data['intrinsics'][..., 0, 0], data['intrinsics'][..., 1, 1]], dim=-1)
         intrinsic = torch.abs(intrinsic) / 1e3
         intrinsic = intrinsic.repeat(1, H*W, 1).view(B, -1, 2)
@@ -580,7 +579,6 @@ class StreamPETRHead(AnchorFreeHead):
         """
         # zero init the memory bank
         self.pre_update_memory(data)
-
         x = data['img_feats']
         B, N, C, H, W = x.shape
         num_tokens = N * H * W
@@ -1023,7 +1021,7 @@ class StreamPETRHead(AnchorFreeHead):
         return loss_dict
 
 
-    def get_bboxes(self, preds_dicts, img_metas, rescale=False):
+    def get_bboxes(self, preds_dicts):
         """Generate bboxes from bbox head predictions.
         Args:
             preds_dicts (tuple[list[dict]]): Prediction results.
@@ -1039,7 +1037,6 @@ class StreamPETRHead(AnchorFreeHead):
             preds = preds_dicts[i]
             bboxes = preds['bboxes']
             bboxes[:, 2] = bboxes[:, 2] - bboxes[:, 5] * 0.5
-            bboxes = img_metas[i]['box_type_3d'](bboxes, bboxes.size(-1))
             scores = preds['scores']
             labels = preds['labels']
             ret_list.append([bboxes, scores, labels])

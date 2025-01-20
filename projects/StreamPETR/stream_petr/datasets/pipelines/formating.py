@@ -237,7 +237,7 @@ class StreamPETRDataset(T4Dataset):
                     intrinsics=intrinsics,
                     extrinsics=extrinsics,
                     prev_exists=prev_exists,
-                    img_metas=dict(scene_token=info["scene_token"])
+                    img_metas=dict(scene_token=info["scene_token"], sample_idx=info['token'])
                 ))
         if not self.test_mode:
             annos = self.parse_ann_info(info)
