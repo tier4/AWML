@@ -8,56 +8,19 @@
 
 |          | Eval DB           | precision_top1 | recall_top1 | f1-score_top1 | counts |
 | -------- | ----------------- | -------------- | ----------- | ------------- | ------ |
-| base/1.0 | TLR v1.0 + 4.0    | 69.10          | 68.24       | 68.68         | 9642   |
 | base/1.1 | TLR v1.0 + 4.0    | **70.48**      | **68.67**   | **69.49**     | 9642   |
+| base/1.0 | TLR v1.0 + 4.0    | 69.10          | 68.24       | 68.68         | 9642   |
+| base/1.1 | TLR v5.0          | **48.69**      | **49.91**   | **47.75**     | 306    |
+| base/1.0 | TLR v5.0          | 46.35          | 49.08       | 46.39         | 306    |
 
 ## Release
-### base/1.0
-
-- The first ML model trained with autoware-ml, carefully evaluated against the older version, demonstrating comparable performance. This is a major step towards lifelong MLOps for traffic light recognition models.
-- Introduced the TLR v4.0 dataset, featuring vertical traffic lights in Japan.
-
-<details>
-<summary> The link of data and evaluation result </summary>
-
-- model
-  - Training dataset: TLR v1.0 + TLR v2.0 + TLR v3.0 + TLR v4.0
-  - Eval dataset: TLR v4.0
-  - [PR](https://github.com/tier4/autoware-ml/pull/143)
-  - [Config file path](https://drive.google.com/drive/folders/17XBZ6AcycliejDvT7nSFRINzUyGmsb2X?usp=drive_link)
-  - [Deployed onnx model](https://evaluation.tier4.jp/evaluation/mlpackages/e104265c-2945-4b8a-ae68-13accc1c0af2/releases/d5ce3e03-dd72-4517-b416-7a63a84c9fd3?project_id=zWhWRzei&tab=reports)
-  - [Deployed label file](https://evaluation.tier4.jp/evaluation/mlpackages/e104265c-2945-4b8a-ae68-13accc1c0af2/releases/d5ce3e03-dd72-4517-b416-7a63a84c9fd3?project_id=zWhWRzei&tab=reports)
-  - [Training results](https://drive.google.com/drive/folders/17XBZ6AcycliejDvT7nSFRINzUyGmsb2X?usp=drive_link)
-  - train time: (A40 * 1) * 16 hours ( Used less than 10 GB memory)
-
-- Results
-
-```python
-Class-wise Metrics:
-----------------------------------------------------------------------------
-| Class Name           | Precision  | Recall     | F1-Score   | Counts     |
-----------------------------------------------------------------------------
-| green                | 99.84      | 99.78      | 99.81      | 4986       |
-| left,red             | 98.47      | 94.16      | 96.27      | 137        |
-| left,red,straight    | 98.65      | 99.66      | 99.15      | 293        |
-| red                  | 99.43      | 99.69      | 99.56      | 3845       |
-| red,right            | 97.89      | 95.88      | 96.88      | 194        |
-| red,straight         | 100.00     | 100.00     | 100.00     | 11         |
-| unknown              | 70.97      | 62.86      | 66.67      | 35         |
-| yellow               | 95.86      | 98.58      | 97.20      | 141        |
-| red,up_left          | 0.00       | 0.00       | 0.00       | 0          |
-| red,right,straight   | 0.00       | 0.00       | 0.00       | 0          |
-| red,up_right         | 0.00       | 0.00       | 0.00       | 0          |
-----------------------------------------------------------------------------
-Overall results:  precision_top1: 69.19     , recall_top1: 68.24     , f1-score_top1: 68.68     , support_top1: 9642.00
-
-```
-
-</details>
 
 ### base/1.1
 
-- [DB TLR v5.0](../../../../../autoware_ml/configs/t4dataset/db_tlr_v5.yaml) is used for training.
+- The car traffic light classifier model trained with X2 gen2.0 Odaiba dataset([DB TLR v5.0](../../../../../autoware_ml/configs/t4dataset/db_tlr_v5.yaml) dataset), in addition to the dataset used for training base/1.0.
+- In quantitative analysis, the performance of base/1.1 is better than base/1.0.
+  - Evaluation data for Robobus(X2 gen2.0, [DB TLR v5.0](../../../../../autoware_ml/configs/t4dataset/db_tlr_v5.yaml) dataset) highlights notable improvements, with overall F1 score increasing by approximately 2.9%.
+  - Evaluation data for Robotaxi(XX1, [DB TLR v1](../../../../../autoware_ml/configs/t4dataset/db_tlr_v1.yaml) and [v4](../../../../../autoware_ml/configs/t4dataset/db_tlr_v4.yaml) dataset) highlights improvements, with F1 score increasing by approximately 1.1%.
 
 <details>
 <summary> The link of data and evaluation result </summary>
@@ -116,6 +79,100 @@ Class-wise Metrics:
 | red,up_right         | 0.00       | 0.00       | 0.00       | 0          |
 ----------------------------------------------------------------------------
 Overall results:  precision_top1: 70.48     , recall_top1: 68.67     , f1-score_top1: 69.49     , support_top1: 9642.00   
+```
+
+- Results evaluated with DB TLR v5.0
+  - [Evaluation results](https://drive.google.com/drive/folders/1BdPGEn4PuD3TT4LVjrQHloDhhCBpg11q)
+
+```python
+Class-wise Metrics:
+----------------------------------------------------------------------------
+| Class Name           | Precision  | Recall     | F1-Score   | Counts     |
+----------------------------------------------------------------------------
+| green                | 100.00     | 100.00     | 100.00     | 103        |
+| left,red             | 0.00       | 0.00       | 0.00       | 0          |
+| left,red,straight    | 50.00      | 100.00     | 66.67      | 1          |
+| red                  | 98.41      | 100.00     | 99.20      | 62         |
+| red,right            | 98.98      | 98.98      | 98.98      | 98         |
+| red,straight         | 0.00       | 0.00       | 0.00       | 0          |
+| unknown              | 100.00     | 50.00      | 66.67      | 12         |
+| yellow               | 88.24      | 100.00     | 93.75      | 30         |
+| red,up_left          | 0.00       | 0.00       | 0.00       | 0          |
+| red,right,straight   | 0.00       | 0.00       | 0.00       | 0          |
+| red,up_right         | 0.00       | 0.00       | 0.00       | 0          |
+----------------------------------------------------------------------------
+Overall results:  precision_top1: 48.69     , recall_top1: 49.91     , f1-score_top1: 47.75     , support_top1: 306.00    
+```
+
+</details>
+
+<details>
+<summary> The link to baseline(base/1.0) evaluation result </summary>
+
+- Results evaluated with DB TLR v5.0
+  - [Baseline evaluation results by base/1.0](https://drive.google.com/drive/folders/1np7lq0OqsZ3szBKE7b6Z9GAXe7eGmAuE)
+
+```python
+Class-wise Metrics:
+----------------------------------------------------------------------------
+| Class Name           | Precision  | Recall     | F1-Score   | Counts     |
+----------------------------------------------------------------------------
+| green                | 100.00     | 100.00     | 100.00     | 103        |
+| left,red             | 0.00       | 0.00       | 0.00       | 0          |
+| left,red,straight    | 50.00      | 100.00     | 66.67      | 1          |
+| red                  | 98.28      | 91.94      | 95.00      | 62         |
+| red,right            | 98.97      | 97.96      | 98.46      | 98         |
+| red,straight         | 0.00       | 0.00       | 0.00       | 0          |
+| unknown              | 85.71      | 50.00      | 63.16      | 12         |
+| yellow               | 76.92      | 100.00     | 86.96      | 30         |
+| red,up_left          | 0.00       | 0.00       | 0.00       | 0          |
+| red,right,straight   | 0.00       | 0.00       | 0.00       | 0          |
+| red,up_right         | 0.00       | 0.00       | 0.00       | 0          |
+----------------------------------------------------------------------------
+Overall results:  precision_top1: 46.35     , recall_top1: 49.08     , f1-score_top1: 46.39     , support_top1: 306.00    
+```
+
+</details>
+
+### base/1.0
+
+- The first ML model trained with autoware-ml, carefully evaluated against the older version, demonstrating comparable performance. This is a major step towards lifelong MLOps for traffic light recognition models.
+- Introduced the TLR v4.0 dataset, featuring vertical traffic lights in Japan.
+
+<details>
+<summary> The link of data and evaluation result </summary>
+
+- model
+  - Training dataset: TLR v1.0 + TLR v2.0 + TLR v3.0 + TLR v4.0
+  - Eval dataset: TLR v4.0
+  - [PR](https://github.com/tier4/autoware-ml/pull/143)
+  - [Config file path](https://drive.google.com/drive/folders/17XBZ6AcycliejDvT7nSFRINzUyGmsb2X?usp=drive_link)
+  - [Deployed onnx model](https://evaluation.tier4.jp/evaluation/mlpackages/e104265c-2945-4b8a-ae68-13accc1c0af2/releases/d5ce3e03-dd72-4517-b416-7a63a84c9fd3?project_id=zWhWRzei&tab=reports)
+  - [Deployed label file](https://evaluation.tier4.jp/evaluation/mlpackages/e104265c-2945-4b8a-ae68-13accc1c0af2/releases/d5ce3e03-dd72-4517-b416-7a63a84c9fd3?project_id=zWhWRzei&tab=reports)
+  - [Training results](https://drive.google.com/drive/folders/17XBZ6AcycliejDvT7nSFRINzUyGmsb2X?usp=drive_link)
+  - train time: (A40 * 1) * 16 hours ( Used less than 10 GB memory)
+
+- Results
+
+```python
+Class-wise Metrics:
+----------------------------------------------------------------------------
+| Class Name           | Precision  | Recall     | F1-Score   | Counts     |
+----------------------------------------------------------------------------
+| green                | 99.84      | 99.78      | 99.81      | 4986       |
+| left,red             | 98.47      | 94.16      | 96.27      | 137        |
+| left,red,straight    | 98.65      | 99.66      | 99.15      | 293        |
+| red                  | 99.43      | 99.69      | 99.56      | 3845       |
+| red,right            | 97.89      | 95.88      | 96.88      | 194        |
+| red,straight         | 100.00     | 100.00     | 100.00     | 11         |
+| unknown              | 70.97      | 62.86      | 66.67      | 35         |
+| yellow               | 95.86      | 98.58      | 97.20      | 141        |
+| red,up_left          | 0.00       | 0.00       | 0.00       | 0          |
+| red,right,straight   | 0.00       | 0.00       | 0.00       | 0          |
+| red,up_right         | 0.00       | 0.00       | 0.00       | 0          |
+----------------------------------------------------------------------------
+Overall results:  precision_top1: 69.19     , recall_top1: 68.24     , f1-score_top1: 68.68     , support_top1: 9642.00
+
 ```
 
 </details>
