@@ -323,7 +323,7 @@ class StreamPETRHead(AnchorFreeHead):
         x = data['prev_exists']
         B = x.size(0)
         # refresh the memory when the scene changes
-        if self.memory_embedding is None:
+        if self.memory_embedding is None or B!= self.memory_embedding.size(0):
             self.memory_embedding = x.new_zeros(B, self.memory_len, self.embed_dims)
             self.memory_reference_point = x.new_zeros(B, self.memory_len, 3)
             self.memory_timestamp = x.new_zeros(B, self.memory_len, 1)

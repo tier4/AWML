@@ -116,6 +116,7 @@ class ResizeCropFlipRotImage():
     def __call__(self, results):
 
         imgs = results['img']
+        H,W = imgs[0].shape[:2]
         N = len(imgs)
         new_imgs = []
         new_gt_bboxes = []
@@ -124,7 +125,7 @@ class ResizeCropFlipRotImage():
         new_depths = []
         assert self.data_aug_conf['rot_lim'] == (0.0, 0.0), "Rotation is not currently supported"
 
-        resize, resize_dims, crop, flip, rotate = self._sample_augmentation()
+        resize, resize_dims, crop, flip, rotate = self._sample_augmentation(H,W)
 
 
         for i in range(N):
@@ -137,35 +138,37 @@ class ResizeCropFlipRotImage():
                 flip=flip,
                 rotate=rotate,
             )
-            # if self.training and self.with_2d: # sync_2d bbox labels
-            #     gt_bboxes = results['gt_bboxes'][i]
-            #     centers_2d = results['centers_2d'][i]
-            #     gt_labels = results['gt_bboxes_labels'][i]
-            #     depths = results['depths'][i]
-            #     if len(gt_bboxes) != 0:
-            #         gt_bboxes, centers_2d, gt_labels, depths = self._bboxes_transform(
-            #             gt_bboxes, 
-            #             centers_2d,
-            #             gt_labels,
-            #             depths,
-            #             resize=resize,
-            #             crop=crop,
-            #             flip=flip,
-            #         )
-            #     if len(gt_bboxes) != 0 and self.filter_invisible:
-            #         gt_bboxes, centers_2d, gt_labels, depths =  self._filter_invisible(gt_bboxes, centers_2d, gt_labels, depths)
+            if self.training and self.with_2d: # sync_2d bbox labels
+                gt_bboxes = results['gt_bboxes'][i]
+                centers_2d = results['centers_2d'][i]
+                gt_labels = results['gt_bboxes_labels'][i]
+                depths = results['depths'][i]
+                if len(gt_bboxes) != 0:
+                    gt_bboxes, centers_2d, gt_labels, depths = self._bboxes_transform(
+                        gt_bboxes, 
+                        centers_2d,
+                        gt_labels,
+                        depths,
+                        resize=resize,
+                        crop=crop,
+                        flip=flip,
+                    )
+                if len(gt_bboxes) != 0 and self.filter_invisible:
+                    gt_bboxes, centers_2d, gt_labels, depths =  self._filter_invisible(gt_bboxes, centers_2d, gt_labels, depths)
 
-            #     new_gt_bboxes.append(gt_bboxes)
-            #     new_centers_2d.append(centers_2d)
-            #     new_gt_labels.append(gt_labels)
-            #     new_depths.append(depths)
+                new_gt_bboxes.append(gt_bboxes)
+                new_centers_2d.append(centers_2d)
+                new_gt_labels.append(gt_labels)
+                new_depths.append(depths)
 
             new_imgs.append(np.array(img).astype(np.float32))
             results['intrinsics'][i][:3, :3] = ida_mat @ results['intrinsics'][i]
-        # results['gt_bboxes'] = new_gt_bboxes
-        # results['centers_2d'] = new_centers_2d
-        # results['gt_bboxes_labels'] = new_gt_labels
-        # results['depths'] = new_depths
+            
+        if self.training and self.with_2d: # sync_2d bbox labels
+            results['gt_bboxes'] = new_gt_bboxes
+            results['centers_2d'] = new_centers_2d
+            results['gt_bboxes_labels'] = new_gt_labels
+            results['depths'] = new_depths
         results['img'] = new_imgs
         results['lidar2img'] = [np.concatenate([results['intrinsics'][i] @ results['extrinsics'][i][:3,:], np.array([[0,0,0,1]])]) for i in range(len(results['extrinsics']))]
 
@@ -272,8 +275,7 @@ class ResizeCropFlipRotImage():
         ida_mat[:2, 2] = ida_tran
         return img, ida_mat
 
-    def _sample_augmentation(self):
-        H, W = self.data_aug_conf["H"], self.data_aug_conf["W"]
+    def _sample_augmentation(self, H,W):
         fH, fW = self.data_aug_conf["final_dim"]
         if self.training:
             resize = np.random.uniform(*self.data_aug_conf["resize_lim"])
@@ -283,8 +285,8 @@ class ResizeCropFlipRotImage():
             crop_w = int(np.random.uniform(0, max(0, newW - fW)))
             crop = (crop_w, crop_h, crop_w + fW, crop_h + fH)
             flip = False
-            # if self.data_aug_conf["rand_flip"] and np.random.choice([0, 1]):
-            #     flip = True
+            if self.data_aug_conf["rand_flip"] and np.random.choice([0, 1]):
+                flip = True
             rotate = np.random.uniform(*self.data_aug_conf["rot_lim"])
         else:
             resize = max(fH / H, fW / W)

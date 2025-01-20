@@ -20,8 +20,8 @@ img_norm_cfg = dict(
 class_names = _base_.class_names
 
 num_gpus = 1
-batch_size = 2
-num_iters_per_epoch = 28130 // (num_gpus * batch_size)
+batch_size = 6
+val_interval=1
 num_epochs = 24
 backend_args = None
 
@@ -62,7 +62,7 @@ model = dict(
         num_outs=2),
     img_roi_head=dict(
         type='mmdet.FocalHead',
-        num_classes=10,
+        num_classes=len(class_names),
         in_channels=256,
         bbox_coder = dict(type='mmdet.DistancePointBBoxCoder'),
         loss_cls = dict(
@@ -90,7 +90,7 @@ model = dict(
         ),
     pts_bbox_head=dict(
         type='StreamPETRHead',
-        num_classes=10,
+        num_classes=len(class_names),
         in_channels=256,
         num_query=644,
         memory_len=1024,
@@ -150,7 +150,7 @@ model = dict(
             pc_range=point_cloud_range,
             max_num=300,
             voxel_size=voxel_size,
-            num_classes=10), 
+            num_classes=len(class_names)), 
         loss_cls=dict(
             type='mmdet.FocalLoss',
             use_sigmoid=True,
@@ -169,12 +169,10 @@ file_client_args = dict(backend='disk')
 
 
 ida_aug_conf = {
-        "resize_lim": (0.47, 0.625),
-        "final_dim": (320, 800),
+        "resize_lim": (0.45, 0.55),
+        "final_dim": (540, 720),
         "bot_pct_lim": (0.0, 0.0),
         "rot_lim": (0.0, 0.0),
-        "H": 900,
-        "W": 1600,
         "rand_flip": True,
     }
 
@@ -184,14 +182,7 @@ train_pipeline = [
         with_label=False, with_bbox_depth=False),
     dict(type='ObjectRangeFilter', point_cloud_range=point_cloud_range),
     dict(type='ObjectNameFilter', classes=class_names),
-    dict(type='mmdet.ResizeCropFlipRotImage', data_aug_conf = ida_aug_conf, training=True),
-    # dict(type='mmdet.GlobalRotScaleTransImage',
-    #         rot_range=[-0.3925, 0.3925],
-    #         translation_std=[0, 0, 0],
-    #         scale_ratio_range=[0.95, 1.05],
-    #         reverse_angle=True,
-    #         training=True,
-    #         ),
+    dict(type='mmdet.ResizeCropFlipRotImage', data_aug_conf = ida_aug_conf, training=True, with_2d=False),
     # dict(type='mmdet.NormalizeMultiviewImage', **img_norm_cfg),
     dict(type='mmdet.PadMultiViewImage', size_divisor=32),
     dict(type='StreamPETRLoadAnnotations2D'),
@@ -201,7 +192,7 @@ test_pipeline = [
     dict(type='LoadMultiViewImageFromFiles', to_float32=True),
     dict(type='LoadAnnotations3D', with_bbox_3d=True, with_label_3d=True,with_bbox=False,
         with_label=False, with_bbox_depth=False),
-    dict(type='mmdet.ResizeCropFlipRotImage', data_aug_conf = ida_aug_conf, training=False),
+    dict(type='mmdet.ResizeCropFlipRotImage', data_aug_conf = ida_aug_conf, training=False, with_2d=False),
     # dict(type='mmdet.NormalizeMultiviewImage', **img_norm_cfg),
     dict(type='mmdet.PadMultiViewImage', size_divisor=32),
     dict(type='StreamPETRLoadAnnotations2D'),
@@ -209,8 +200,8 @@ test_pipeline = [
 ]
 
 train_dataloader = dict(
-    batch_size=2,
-    num_workers=4,
+    batch_size=batch_size,
+    num_workers=6,
     persistent_workers=True,
     sampler=dict(type="DefaultSampler", shuffle=True),
     dataset=dict(
@@ -231,7 +222,7 @@ train_dataloader = dict(
     ),
 )
 val_dataloader = dict(
-    batch_size=2,
+    batch_size=batch_size,
     num_workers=2,
     persistent_workers=True,
     sampler=dict(type="DefaultSampler", shuffle=False),
@@ -243,6 +234,7 @@ val_dataloader = dict(
         metainfo=_base_.metainfo,
         class_names=_base_.class_names,
         modality=input_modality,
+        random_length=0,
         collect_keys=collect_keys + ['img', 'prev_exists', 'img_metas'],
         queue_length=queue_length,
         data_prefix=_base_.data_prefix,
@@ -252,7 +244,7 @@ val_dataloader = dict(
     ),
 )
 test_dataloader = dict(
-    batch_size=2,
+    batch_size=batch_size,
     num_workers=2,
     persistent_workers=True,
     sampler=dict(type="DefaultSampler", shuffle=False),
@@ -262,6 +254,7 @@ test_dataloader = dict(
         ann_file=info_directory_path + _base_.info_val_file_name,
         pipeline=test_pipeline,
         metainfo=_base_.metainfo,
+        random_length=0,
         class_names=_base_.class_names,
         modality=input_modality,
         collect_keys=collect_keys + ['img', 'img_metas'],
@@ -287,7 +280,7 @@ val_evaluator = dict(
 test_evaluator = dict(
     type="T4Metric",
     data_root=data_root,
-    ann_file=data_root + info_directory_path + _base_.info_test_file_name,
+    ann_file=data_root + info_directory_path + _base_.info_val_file_name,
     backend_args=backend_args,
     metric="bbox",
     class_names=_base_.class_names,
@@ -296,7 +289,7 @@ test_evaluator = dict(
 )
 
 
-train_cfg = dict(by_epoch=True, max_epochs=num_epochs)
+train_cfg = dict(by_epoch=True, max_epochs=num_epochs, val_interval=val_interval)
 val_cfg = dict()
 test_cfg = dict()
 
@@ -315,11 +308,11 @@ lr_config = dict(
     min_lr_ratio=1e-3,
     )
 
-evaluation = dict(interval=num_iters_per_epoch*num_epochs, pipeline=test_pipeline)
-find_unused_parameters=False #### when use checkpoint, find_unused_parameters must be False
-checkpoint_config = dict(interval=num_iters_per_epoch, max_keep_ckpts=3)
-runner = dict(
-    type='IterBasedRunner', max_iters=num_epochs * num_iters_per_epoch)
-# load_from='work_dirs/ckpts/fcos3d_vovnet_imgbackbone-remapped.pth'
-load_from=None
+default_hooks = dict(
+    logger=dict(type="LoggerHook", interval=50),
+    checkpoint=dict(
+        interval=1, max_keep_ckpts=3, save_best='mAP', type='CheckpointHook'),
+)
+
+load_from='/workspace/work_dirs/ckpts/fcos3d_vovnet_imgbackbone-remapped.pth'
 resume_from=None

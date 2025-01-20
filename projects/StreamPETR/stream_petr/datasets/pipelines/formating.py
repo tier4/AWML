@@ -112,7 +112,10 @@ class StreamPETRDataset(T4Dataset):
         gc.collect()
         return data_bytes, data_address
     
-    def prepare_train_data(self, index):
+    def _validate_data(self,queue):
+        assert all(x["scene_token"]==queue[0]["scene_token"] for x in queue), "All frames must be from same scene"
+
+    def prepare_temporal_data(self, index):
         """
         Training data preparation.
         Args:
@@ -122,7 +125,8 @@ class StreamPETRDataset(T4Dataset):
         """
         queue = []
         index_list = list(range(index-self.queue_length-self.random_length+1, index))
-        random.shuffle(index_list)
+        if self.random_length:
+            random.shuffle(index_list)
         index_list = sorted(index_list[self.random_length:])
         index_list.append(index)
         prev_scene_token = None
@@ -147,23 +151,12 @@ class StreamPETRDataset(T4Dataset):
             if self.filter_empty_gt and \
                 (queue[-k-1] is None or ~(queue[-k-1]['gt_labels_3d'] != -1).any()):
                 return None
-        assert all(x["scene_token"]==queue[0]["scene_token"] for x in queue), "All frames must be from same scene"
-        return self.union2one(queue)
-
-    def prepare_test_data(self, index):
-        """Prepare data for testing.
-
-        Args:
-            index (int): Index for accessing the target data.
-
-        Returns:
-            dict: Testing data dict of the corresponding index.
-        """
-        input_dict = self.get_annot_info(index)
-        example = self.pipeline(input_dict)
-        return example
+            
+        self._validate_data(queue)
         
-    def union2one(self, queue):
+        return self._union2one(queue)
+    
+    def _union2one(self, queue):
         updated = {}
         for key in self.collect_keys:
             if key != 'img_metas':
@@ -248,14 +241,6 @@ class StreamPETRDataset(T4Dataset):
                 ))
         if not self.test_mode:
             annos = self.parse_ann_info(info)
-            # annos.update( 
-            #     dict(
-            #         bboxes=info['bboxes2d'],
-            #         labels=info['labels2d'],
-            #         centers2d=info['centers2d'],
-            #         depths=info['depths'],
-            #         bboxes_ignore=info['bboxes_ignore'])
-            # )
             input_dict['ann_info'] = annos
             
         return input_dict
@@ -266,14 +251,8 @@ class StreamPETRDataset(T4Dataset):
         Returns:
             dict: Data dictionary of the corresponding index.
         """
-        if self.test_mode:
-            return self.prepare_test_data(idx)
-        while True:
-            data = self.prepare_train_data(idx)
-            if data is None:
-                idx = self._rand_another(idx)
-                continue
-            return data
+        data = self.prepare_temporal_data(idx)
+        return data
 
 def invert_matrix_egopose_numpy(egopose):
     """ Compute the inverse transformation of a 4x4 egopose numpy matrix."""
