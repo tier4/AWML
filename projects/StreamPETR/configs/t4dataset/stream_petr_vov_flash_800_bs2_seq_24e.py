@@ -128,7 +128,7 @@ model = dict(
                         ],
                     feedforward_channels=2048,
                     ffn_dropout=0.1,
-                    with_cp=True,  ###use checkpoint to save memory
+                    with_cp=False,  ###use checkpoint to save memory
                     operation_order=('self_attn', 'norm', 'cross_attn', 'norm',
                                      'ffn', 'norm')),
             )),
@@ -311,7 +311,7 @@ lr_config = dict(
 default_hooks = dict(
     logger=dict(type="LoggerHook", interval=50),
     checkpoint=dict(
-        interval=1, max_keep_ckpts=3, save_best='mAP', type='CheckpointHook'),
+        interval=1, max_keep_ckpts=3, save_best='NuScenes metric/T4Metric/mAP', type='CheckpointHook'), # alternative 'NuScenes metric/T4Metric/NDS'
 )
 
 load_from='/workspace/work_dirs/ckpts/fcos3d_vovnet_imgbackbone-remapped.pth'

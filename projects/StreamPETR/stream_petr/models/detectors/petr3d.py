@@ -327,7 +327,7 @@ class Petr3D(MVXTwoStageDetector):
                 dict(
                     pred_instances_3d=res_3d,
                     pred_instances={},
-                    sample_idx = img_metas[0]['sample_idx']
+                    sample_idx = img_metas[0]['sample_idx'][0]
                 )
             )
 

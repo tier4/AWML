@@ -1017,7 +1017,8 @@ class StreamPETRHead(AnchorFreeHead):
                 loss_dict[f'd{num_dec_layer}.dn_loss_cls'] = loss_cls_i.detach()     
                 loss_dict[f'd{num_dec_layer}.dn_loss_bbox'] = loss_bbox_i.detach()     
                 num_dec_layer += 1
-
+        import pdb
+        pdb.set_trace()
         return loss_dict
 
 

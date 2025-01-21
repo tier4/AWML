@@ -215,7 +215,6 @@ class T4Metric(NuScenesMetric):
         logger: MMLogger = MMLogger.get_current_instance()
         result_dict, tmp_dir = self.format_results(results, self.class_names, self.jsonfile_prefix)
         metric_dict = {}
-
         if self.format_only and self.jsonfile_prefix:
             logger.info(f"results are saved in {os.path.basename(self.jsonfile_prefix)}")
             return metric_dict
@@ -310,9 +309,14 @@ class T4Metric(NuScenesMetric):
         all_gts = EvalBoxes()
         for name in result_dict:
             ret_dict, preds, gts = self._evaluate_scene(scene_token, result_dict[name], classes=classes)
+            if not preds:
+                print("Problem evaluating scene {name}, skipping...")
+                continue
             all_preds = concatenate_eval_boxes(all_preds, preds)
             all_gts = concatenate_eval_boxes(all_gts, gts)
             metric_dict.update(ret_dict)
+            print(f"Evaluated scene {name}")
+
         return metric_dict, all_preds, all_gts
 
     def _evaluate_scene(
@@ -352,6 +356,10 @@ class T4Metric(NuScenesMetric):
             self.eval_detection_configs.max_boxes_per_sample,
             verbose=True,
         )
+
+        if set(preds.sample_tokens) != set(gt_boxes.sample_tokens):
+            print(f"Different number of sample tokens for pred {len(set(preds.sample_tokens))} and gts {len(set(gt_boxes.sample_tokens))}")
+            return None,None,None
 
         evaluator = T4DetectionEvaluation(
             config=self.eval_detection_configs,
@@ -468,6 +476,7 @@ class T4Metric(NuScenesMetric):
             annos = []
             boxes, attrs = output_to_nusc_box(det)
             sample_idx = sample_idx_list[i]
+
             sample_token = self.data_infos[sample_idx]["token"]
             boxes = lidar_nusc_box_to_global(self.data_infos[sample_idx], boxes, classes, self.eval_detection_configs)
             for i, box in enumerate(boxes):
