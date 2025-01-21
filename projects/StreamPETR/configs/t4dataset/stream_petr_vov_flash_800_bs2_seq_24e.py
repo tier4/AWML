@@ -12,8 +12,7 @@ backbone_norm_cfg = dict(type='LN', requires_grad=True)
 
 # If point cloud range is changed, the models should also change their point
 # cloud range accordingly
-point_cloud_range = [-51.2, -51.2, -5.0, 51.2, 51.2, 3.0]
-voxel_size = [0.2, 0.2, 8]
+point_cloud_range = [-76.8, -76.8, -4.0, 76.8, 76.8, 6.0]
 img_norm_cfg = dict(
     mean=[103.530, 116.280, 123.675], std=[57.375, 57.120, 58.395], to_rgb=False) # fix img_norm
 # For nuScenes we usually do 10-class detection
@@ -33,7 +32,7 @@ eval_class_range = {
     "pedestrian": 120,
 }
 
-queue_length = 4
+queue_length = 8
 num_frame_losses = 2
 collect_keys=['lidar2img', 'intrinsics', 'extrinsics','timestamp', 'img_timestamp', 'ego_pose', 'ego_pose_inv']
 input_modality = dict(
@@ -139,8 +138,6 @@ model = dict(
             iou_cost=dict(type='mmdet.IoUCost', weight=0.0), # Fake cost. This is just to make it compatible with DETR head. 
             pc_range=point_cloud_range),
         train_cfg=dict(
-            grid_size=[512, 512, 1],
-            voxel_size=voxel_size,
             point_cloud_range=point_cloud_range,
             out_size_factor=4,
         ),
@@ -149,7 +146,6 @@ model = dict(
             post_center_range=[-61.2, -61.2, -10.0, 61.2, 61.2, 10.0],
             pc_range=point_cloud_range,
             max_num=300,
-            voxel_size=voxel_size,
             num_classes=len(class_names)), 
         loss_cls=dict(
             type='mmdet.FocalLoss',
@@ -207,7 +203,7 @@ train_dataloader = dict(
     dataset=dict(
         type="StreamPETRDataset",
         data_root=data_root,
-        ann_file=info_directory_path + _base_.info_train_file_name,
+        ann_file=info_directory_path + _base_.info_val_file_name,
         pipeline=train_pipeline,
         metainfo=_base_.metainfo,
         class_names=_base_.class_names,
@@ -251,7 +247,7 @@ test_dataloader = dict(
     dataset=dict(
         type="StreamPETRDataset",
         data_root=data_root,
-        ann_file=info_directory_path + _base_.info_test_file_name,
+        ann_file=info_directory_path + _base_.info_val_file_name,
         pipeline=test_pipeline,
         metainfo=_base_.metainfo,
         random_length=0,

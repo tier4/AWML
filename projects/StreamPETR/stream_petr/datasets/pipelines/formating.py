@@ -75,7 +75,7 @@ class StreamPETRDataset(T4Dataset):
             Validate the necessary entries in the data info dict
         """
         if not all([ x["img_path"] and os.path.exists(x["img_path"]) for x in info['images'].values()]):
-            print(f"Found frame  {info['token']} without any image in it, not using it for training")
+            print(f"Found frame  {(info['scene_token'],info['token'])} without any image in it, not using it for training")
             return False
         return True
 
@@ -98,11 +98,9 @@ class StreamPETRDataset(T4Dataset):
         # Serialize data information list avoid making multiple copies of
         # `self.data_list` when iterate `import torch.utils.data.dataloader`
         # with multiple workers.
-        self.data_list
         sort_items = [(x["scene_token"],x["timestamp"]) for x in self.data_list]
-        key_indices = list(range(len(sort_items)))
         argsorted_indices = sorted(
-            key_indices,
+            list(range(len(sort_items))),
             key=lambda i: sort_items[i]
         )
         self.data_list = [self.data_list[i] for i in argsorted_indices if self._validate_entry(self.data_list[i])]

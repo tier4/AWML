@@ -332,9 +332,9 @@ class FocalHead(AnchorFreeHead):
 
         # regression IoU loss, defaultly GIoU loss
         loss_iou = self.loss_iou2d(
-            bboxes, bboxes_gt, bbox_weights, avg_factor=num_total_pos)
+            bboxes.float(), bboxes_gt.float(), bbox_weights.float(), avg_factor=num_total_pos)
 
-        iou_score = bbox_overlaps(bboxes_gt, bboxes, is_aligned=True).reshape(-1)
+        iou_score = bbox_overlaps(bboxes_gt.float(), bboxes.float(), is_aligned=True).reshape(-1)
 
         # classification loss
         cls_scores = cls_scores.reshape(-1, self.cls_out_channels)
@@ -346,8 +346,9 @@ class FocalHead(AnchorFreeHead):
                 cls_scores.new_tensor([cls_avg_factor]))
         cls_avg_factor = max(cls_avg_factor, 1)
 
-        loss_cls = self.loss_cls2d(
-            cls_scores, (labels, iou_score.detach()), label_weights, avg_factor=cls_avg_factor)
+        usable = labels!=(self.num_classes+1)
+
+        loss_cls = self.loss_cls2d(cls_scores[usable], (labels[usable], iou_score[usable].detach()), label_weights[usable], avg_factor=cls_avg_factor)
         # Compute the average number of gt boxes across all gpus, for
         # normalization purposes
         num_total_pos = loss_cls.new_tensor([num_total_pos])
@@ -374,6 +375,7 @@ class FocalHead(AnchorFreeHead):
         # centers2d L1 loss
         loss_centers2d = self.loss_centers2d(
             pred_centers2d, centers2d_targets, bbox_weights[:, 0:2], avg_factor=num_total_pos)
+        
         return loss_cls, loss_bbox, loss_iou, loss_centers2d, loss_centerness
 
     def _get_heatmap_single(self, obj_centers2d, obj_bboxes, img_shape):
@@ -509,7 +511,7 @@ class FocalHead(AnchorFreeHead):
 
         # label targets
         labels = gt_bboxes.new_full((num_bboxes, ),
-                                    self.num_classes,
+                                    self.num_classes+1,
                                     dtype=torch.long)
         labels[pos_inds] = gt_labels[sampling_result.pos_assigned_gt_inds].long()
         label_weights = gt_bboxes.new_ones(num_bboxes)

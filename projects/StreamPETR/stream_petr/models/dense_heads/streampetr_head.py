@@ -718,7 +718,7 @@ class StreamPETRHead(AnchorFreeHead):
             avg_factor_with_neg=False)
         # label targets
         labels = gt_bboxes.new_full((num_bboxes, ),
-                                    self.num_classes,
+                                    self.num_classes+1,
                                     dtype=torch.long)
         label_weights = gt_bboxes.new_ones(num_bboxes)
 
@@ -833,8 +833,10 @@ class StreamPETRHead(AnchorFreeHead):
                 cls_scores.new_tensor([cls_avg_factor]))
 
         cls_avg_factor = max(cls_avg_factor, 1)
+        usable = labels!=(self.num_classes+1)
+    
         loss_cls = self.loss_cls(
-            cls_scores, labels, label_weights, avg_factor=cls_avg_factor)
+            cls_scores[usable], labels[usable], label_weights[usable], avg_factor=cls_avg_factor)
 
         # Compute the average number of gt boxes accross all gpus, for
         # normalization purposes
@@ -844,14 +846,15 @@ class StreamPETRHead(AnchorFreeHead):
         # regression L1 loss
         bbox_preds = bbox_preds.reshape(-1, bbox_preds.size(-1))
         normalized_bbox_targets = normalize_bbox(bbox_targets, self.pc_range)
-        isnotnan = torch.isfinite(normalized_bbox_targets).all(dim=-1)
+        usable = torch.isfinite(normalized_bbox_targets).all(dim=-1) & (bbox_targets[:,3:6].mean(1)>0)
         bbox_weights = bbox_weights * self.code_weights
 
         loss_bbox = self.loss_bbox(
-                bbox_preds[isnotnan, :10], normalized_bbox_targets[isnotnan, :10], bbox_weights[isnotnan, :10], avg_factor=num_total_pos)
+                bbox_preds[usable, :10], normalized_bbox_targets[usable, :10], bbox_weights[usable, :10], avg_factor=num_total_pos)
 
         loss_cls = torch.nan_to_num(loss_cls)
         loss_bbox = torch.nan_to_num(loss_bbox)
+
         return loss_cls, loss_bbox
 
    
