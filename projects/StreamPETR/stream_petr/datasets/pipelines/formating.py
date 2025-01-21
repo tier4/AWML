@@ -99,8 +99,13 @@ class StreamPETRDataset(T4Dataset):
         # `self.data_list` when iterate `import torch.utils.data.dataloader`
         # with multiple workers.
         self.data_list
-        sort_items = [x["token"] for x in self.data_list]
-        self.data_list = [self.data_list[i] for i in np.argsort(sort_items) if self._validate_entry(self.data_list[i])]
+        sort_items = [(x["scene_token"],x["timestamp"]) for x in self.data_list]
+        key_indices = list(range(len(sort_items)))
+        argsorted_indices = sorted(
+            key_indices,
+            key=lambda i: sort_items[i]
+        )
+        self.data_list = [self.data_list[i] for i in argsorted_indices if self._validate_entry(self.data_list[i])]
         data_list = [_serialize(x) for x in self.data_list]
         address_list = np.asarray([len(x) for x in data_list], dtype=np.int64)
         data_address: np.ndarray = np.cumsum(address_list)

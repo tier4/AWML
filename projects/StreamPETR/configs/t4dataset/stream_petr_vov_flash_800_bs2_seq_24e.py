@@ -183,7 +183,7 @@ train_pipeline = [
     dict(type='ObjectRangeFilter', point_cloud_range=point_cloud_range),
     dict(type='ObjectNameFilter', classes=class_names),
     dict(type='mmdet.ResizeCropFlipRotImage', data_aug_conf = ida_aug_conf, training=True, with_2d=False),
-    # dict(type='mmdet.NormalizeMultiviewImage', **img_norm_cfg),
+    dict(type='mmdet.NormalizeMultiviewImage', **img_norm_cfg),
     dict(type='mmdet.PadMultiViewImage', size_divisor=32),
     dict(type='StreamPETRLoadAnnotations2D'),
     dict(type='PETRFormatBundle3D', class_names=class_names, collect_keys=collect_keys + ['prev_exists'])
@@ -193,7 +193,7 @@ test_pipeline = [
     dict(type='LoadAnnotations3D', with_bbox_3d=True, with_label_3d=True,with_bbox=False,
         with_label=False, with_bbox_depth=False),
     dict(type='mmdet.ResizeCropFlipRotImage', data_aug_conf = ida_aug_conf, training=False, with_2d=False),
-    # dict(type='mmdet.NormalizeMultiviewImage', **img_norm_cfg),
+    dict(type='mmdet.NormalizeMultiviewImage', **img_norm_cfg),
     dict(type='mmdet.PadMultiViewImage', size_divisor=32),
     dict(type='StreamPETRLoadAnnotations2D'),
     dict(type='PETRFormatBundle3D', class_names=class_names, collect_keys=collect_keys + ['prev_exists'])
@@ -207,7 +207,7 @@ train_dataloader = dict(
     dataset=dict(
         type="StreamPETRDataset",
         data_root=data_root,
-        ann_file=info_directory_path + _base_.info_val_file_name,
+        ann_file=info_directory_path + _base_.info_train_file_name,
         pipeline=train_pipeline,
         metainfo=_base_.metainfo,
         class_names=_base_.class_names,
@@ -251,7 +251,7 @@ test_dataloader = dict(
     dataset=dict(
         type="StreamPETRDataset",
         data_root=data_root,
-        ann_file=info_directory_path + _base_.info_val_file_name,
+        ann_file=info_directory_path + _base_.info_test_file_name,
         pipeline=test_pipeline,
         metainfo=_base_.metainfo,
         random_length=0,
