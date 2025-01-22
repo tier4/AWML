@@ -345,10 +345,7 @@ class FocalHead(AnchorFreeHead):
             cls_avg_factor = reduce_mean(
                 cls_scores.new_tensor([cls_avg_factor]))
         cls_avg_factor = max(cls_avg_factor, 1)
-
-        usable = labels!=(self.num_classes+1)
-
-        loss_cls = self.loss_cls2d(cls_scores[usable], (labels[usable], iou_score[usable].detach()), label_weights[usable], avg_factor=cls_avg_factor)
+        loss_cls = self.loss_cls2d(cls_scores, (labels, iou_score.detach()), label_weights, avg_factor=cls_avg_factor)
         # Compute the average number of gt boxes across all gpus, for
         # normalization purposes
         num_total_pos = loss_cls.new_tensor([num_total_pos])
@@ -511,7 +508,7 @@ class FocalHead(AnchorFreeHead):
 
         # label targets
         labels = gt_bboxes.new_full((num_bboxes, ),
-                                    self.num_classes+1,
+                                    self.num_classes,
                                     dtype=torch.long)
         labels[pos_inds] = gt_labels[sampling_result.pos_assigned_gt_inds].long()
         label_weights = gt_bboxes.new_ones(num_bboxes)

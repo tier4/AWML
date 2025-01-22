@@ -209,7 +209,7 @@ class StreamPETRDataset(T4Dataset):
             next_idx=info.get('next',None),
             scene_token=info['scene_token'],
             frame_idx=info['sample_idx'],
-            timestamp=info['timestamp'] / 1e6,
+            timestamp=info['timestamp'] / 1e9,
         )
 
         if self.modality['use_camera']:
@@ -219,7 +219,7 @@ class StreamPETRDataset(T4Dataset):
             extrinsics = []
             img_timestamp = []
             for cam_type, cam_info in info['images'].items():
-                img_timestamp.append(cam_info['timestamp'] / 1e6)
+                img_timestamp.append(cam_info['timestamp'] / 1e9)
                 image_paths.append(cam_info['img_path'])
                 intrinsic_mat = np.array(cam_info["cam2img"])
                 extrinsic_mat = np.array(cam_info["lidar2cam"])

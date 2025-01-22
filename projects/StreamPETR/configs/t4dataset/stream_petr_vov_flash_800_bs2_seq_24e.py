@@ -12,16 +12,16 @@ backbone_norm_cfg = dict(type='LN', requires_grad=True)
 
 # If point cloud range is changed, the models should also change their point
 # cloud range accordingly
-point_cloud_range = [-76.8, -76.8, -4.0, 76.8, 76.8, 6.0]
+point_cloud_range = [-61.2, -61.2, -10.0, 61.2, 61.2, 10.0]
 img_norm_cfg = dict(
     mean=[103.530, 116.280, 123.675], std=[57.375, 57.120, 58.395], to_rgb=False) # fix img_norm
 # For nuScenes we usually do 10-class detection
-class_names = _base_.class_names
+class_names = _base_.class_names+["unknown"]
 
 num_gpus = 1
-batch_size = 6
-val_interval=1
-num_epochs = 24
+batch_size = 8
+val_interval= 5
+num_epochs = 50
 backend_args = None
 
 eval_class_range = {
@@ -30,6 +30,7 @@ eval_class_range = {
     "bus": 120,
     "bicycle": 120,
     "pedestrian": 120,
+    "unknown": 120,
 }
 
 queue_length = 8
@@ -103,7 +104,7 @@ model = dict(
         split = 0.75, ###positive rate
         LID=True,
         with_position=True,
-        position_range=[-61.2, -61.2, -10.0, 61.2, 61.2, 10.0],
+        position_range=point_cloud_range,
         code_weights = [2.0, 2.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0],
         transformer=dict(
             type='PETRTemporalTransformer',
@@ -197,16 +198,17 @@ test_pipeline = [
 
 train_dataloader = dict(
     batch_size=batch_size,
-    num_workers=6,
+    num_workers=8,
     persistent_workers=True,
     sampler=dict(type="DefaultSampler", shuffle=True),
+    drop_last=True,
     dataset=dict(
         type="StreamPETRDataset",
         data_root=data_root,
         ann_file=info_directory_path + _base_.info_val_file_name,
         pipeline=train_pipeline,
         metainfo=_base_.metainfo,
-        class_names=_base_.class_names,
+        class_names=class_names,
         modality=input_modality,
         test_mode=False,
         collect_keys=collect_keys + ['img', 'prev_exists', 'img_metas'],
@@ -228,7 +230,7 @@ val_dataloader = dict(
         ann_file=info_directory_path + _base_.info_val_file_name,
         pipeline=test_pipeline,
         metainfo=_base_.metainfo,
-        class_names=_base_.class_names,
+        class_names=class_names,
         modality=input_modality,
         random_length=0,
         collect_keys=collect_keys + ['img', 'prev_exists', 'img_metas'],
@@ -251,7 +253,7 @@ test_dataloader = dict(
         pipeline=test_pipeline,
         metainfo=_base_.metainfo,
         random_length=0,
-        class_names=_base_.class_names,
+        class_names=class_names,
         modality=input_modality,
         collect_keys=collect_keys + ['img', 'prev_exists','img_metas'],
         queue_length=1,
@@ -269,7 +271,7 @@ val_evaluator = dict(
     ann_file=data_root + info_directory_path + _base_.info_val_file_name,
     backend_args=backend_args,
     metric="bbox",
-    class_names=_base_.class_names,
+    class_names=class_names,
     name_mapping=_base_.name_mapping,
     eval_class_range=eval_class_range,
 )
@@ -279,7 +281,7 @@ test_evaluator = dict(
     ann_file=data_root + info_directory_path + _base_.info_val_file_name,
     backend_args=backend_args,
     metric="bbox",
-    class_names=_base_.class_names,
+    class_names=class_names,
     name_mapping=_base_.name_mapping,
     eval_class_range=eval_class_range,
 )
@@ -294,7 +296,7 @@ optimizer = dict(
     lr=4e-4, # bs 8: 2e-4 || bs 16: 4e-4,
     weight_decay=0.01)
 optimizer_config = dict(type='Fp16OptimizerHook', loss_scale='dynamic', grad_clip=dict(max_norm=35, norm_type=2))
-optim_wrapper = dict(type='AmpOptimWrapper', optimizer=optimizer, dtype='float16')
+optim_wrapper = dict(type='NoCacheAmpOptimWrapper', optimizer=optimizer)
 # learning policy
 lr_config = dict(
     policy='CosineAnnealing',
@@ -303,11 +305,45 @@ lr_config = dict(
     warmup_ratio=1.0 / 3,
     min_lr_ratio=1e-3,
     )
+param_scheduler = [
+    dict(
+        T_max=20,
+        begin=0,
+        by_epoch=True,
+        convert_to_iter_based=True,
+        end=20,
+        eta_min=0.001,
+        type='CosineAnnealingLR'),
+    dict(
+        T_max=30,
+        begin=20,
+        by_epoch=True,
+        convert_to_iter_based=True,
+        end=80,
+        eta_min=1e-08,
+        type='CosineAnnealingLR'),
+    dict(
+        T_max=20,
+        begin=0,
+        by_epoch=True,
+        convert_to_iter_based=True,
+        end=20,
+        eta_min=0.8947368421052632,
+        type='CosineAnnealingMomentum'),
+    dict(
+        T_max=30,
+        begin=20,
+        by_epoch=True,
+        convert_to_iter_based=True,
+        end=80,
+        eta_min=1,
+        type='CosineAnnealingMomentum'),
+]
 
 default_hooks = dict(
-    logger=dict(type="LoggerHook", interval=50),
+    logger=dict(type="LoggerHook", interval=10),
     checkpoint=dict(
-        interval=1, max_keep_ckpts=3, save_best='NuScenes metric/T4Metric/mAP', type='CheckpointHook'), # alternative 'NuScenes metric/T4Metric/NDS'
+        interval=val_interval, max_keep_ckpts=3, save_best='NuScenes metric/T4Metric/mAP', type='CheckpointHook'), # alternative 'NuScenes metric/T4Metric/NDS'
 )
 
 load_from='/workspace/work_dirs/ckpts/fcos3d_vovnet_imgbackbone-remapped.pth'

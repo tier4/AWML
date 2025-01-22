@@ -61,9 +61,8 @@ class Petr3D(MVXTwoStageDetector):
         self.stride = stride
         self.position_level = position_level
         self.aux_2d_only = aux_2d_only
-        self.test_flag = False
 
-    def extract_img_feat(self, img, len_queue=1, training_mode=False):
+    def extract_img_feat(self, img, len_queue=1):
         """Extract features of images."""
         B = img.size(0)
 
@@ -93,9 +92,9 @@ class Petr3D(MVXTwoStageDetector):
         return img_feats_reshaped
 
 
-    def extract_feat(self, img, T, training_mode=False):
+    def extract_feat(self, img, T):
         """Extract features from images and points."""
-        img_feats = self.extract_img_feat(img, T, training_mode)
+        img_feats = self.extract_img_feat(img, T)
         return img_feats
 
     def obtain_history_memory(self,
@@ -172,11 +171,8 @@ class Petr3D(MVXTwoStageDetector):
         location = self.prepare_location(img_metas, **data)
 
         if not requires_grad:
-            self.eval()
             with torch.no_grad():
                 outs = self.pts_bbox_head(location, img_metas, None, gt_bboxes_3d,gt_labels_3d,**data)
-            self.train()
-
         else:
             outs_roi = self.forward_roi_head(location, **data)
             topk_indexes = outs_roi['topk_indexes']
@@ -251,42 +247,26 @@ class Petr3D(MVXTwoStageDetector):
         Returns:
             dict: Losses of different branches.
         """
-        if self.test_flag: #for interval evaluation
-            self.pts_bbox_head.reset_memory()
-            self.test_flag = False
+        self.pts_bbox_head.reset_memory()
         T = data['img'].size(1)
-
         prev_img = data['img'][:, :-self.num_frame_backbone_grads]
         rec_img = data['img'][:, -self.num_frame_backbone_grads:]
         rec_img_feats = self.extract_feat(rec_img, self.num_frame_backbone_grads)
 
         if T-self.num_frame_backbone_grads > 0:
-            self.eval()
             with torch.no_grad():
-                prev_img_feats = self.extract_feat(prev_img, T-self.num_frame_backbone_grads, True)
-            self.train()
+                prev_img_feats = self.extract_feat(prev_img, T-self.num_frame_backbone_grads)
             data['img_feats'] = torch.cat([prev_img_feats, rec_img_feats], dim=1)
         else:
             data['img_feats'] = rec_img_feats
         losses = self.obtain_history_memory(gt_bboxes_3d,
                         gt_labels_3d, gt_bboxes,
                         gt_bboxes_labels, img_metas, centers_2d, depths, **data)
-
         return losses
   
   
     def forward_test(self, img_metas, **data):
-        self.test_flag = True
         assert len(img_metas)==1, "Test should be done in streaming manner"
-        # for var, name in [(img_metas, 'img_metas')]:
-        #     if not isinstance(var, list):
-        #         raise TypeError('{} must be a list, but got {}'.format(
-        #             name, type(var)))
-        # for key in data:
-        #     if key != 'img':
-        #         data[key] = data[key][0][0].unsqueeze(0)
-        #     else:
-        #         data[key] = data[key][0] 
         return self.simple_test(img_metas, **data)
 
     def simple_test_pts(self, img_metas, **data):

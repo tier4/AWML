@@ -274,7 +274,7 @@ class StreamPETRHead(AnchorFreeHead):
 
         self.reference_points = nn.Embedding(self.num_query, 3)
         if self.num_propagated > 0:
-            self.pseudo_reference_points = nn.Embedding(self.num_propagated, 3)
+            self.pseudo_reference_points = nn.Parameter(torch.rand(self.num_propagated, 3), requires_grad=False)
 
 
         self.query_embedding = nn.Sequential(
@@ -299,9 +299,9 @@ class StreamPETRHead(AnchorFreeHead):
         """Initialize weights of the transformer head."""
         # The initialization for transformer is important
         nn.init.uniform_(self.reference_points.weight.data, 0, 1)
-        if self.num_propagated > 0:
-            nn.init.uniform_(self.pseudo_reference_points.weight.data, 0, 1)
-            self.pseudo_reference_points.weight.requires_grad = False
+        # if self.num_propagated > 0:
+        #     nn.init.uniform_(self.pseudo_reference_points.weight.data, 0, 1)
+        #     self.pseudo_reference_points.weight.requires_grad = False
 
         self.transformer.init_weights()
         if self.loss_cls.use_sigmoid:
@@ -323,7 +323,7 @@ class StreamPETRHead(AnchorFreeHead):
         x = data['prev_exists']
         B = x.size(0)
         # refresh the memory when the scene changes
-        if self.memory_embedding is None or B!= self.memory_embedding.size(0):
+        if self.memory_embedding is None:
             self.memory_embedding = x.new_zeros(B, self.memory_len, self.embed_dims)
             self.memory_reference_point = x.new_zeros(B, self.memory_len, 3)
             self.memory_timestamp = x.new_zeros(B, self.memory_len, 1)
@@ -341,7 +341,7 @@ class StreamPETRHead(AnchorFreeHead):
         
         # for the first frame, padding pseudo_reference_points (non-learnable)
         if self.num_propagated > 0:
-            pseudo_reference_points = self.pseudo_reference_points.weight * (self.pc_range[3:6] - self.pc_range[0:3]) + self.pc_range[0:3]
+            pseudo_reference_points = self.pseudo_reference_points * (self.pc_range[3:6] - self.pc_range[0:3]) + self.pc_range[0:3]
             self.memory_reference_point[:, :self.num_propagated]  = self.memory_reference_point[:, :self.num_propagated] + (1 - x).view(B, 1, 1) * pseudo_reference_points
             self.memory_egopose[:, :self.num_propagated]  = self.memory_egopose[:, :self.num_propagated] + (1 - x).view(B, 1, 1, 1) * torch.eye(4, device=x.device)
 
@@ -718,7 +718,7 @@ class StreamPETRHead(AnchorFreeHead):
             avg_factor_with_neg=False)
         # label targets
         labels = gt_bboxes.new_full((num_bboxes, ),
-                                    self.num_classes+1,
+                                    self.num_classes,
                                     dtype=torch.long)
         label_weights = gt_bboxes.new_ones(num_bboxes)
 
@@ -833,10 +833,9 @@ class StreamPETRHead(AnchorFreeHead):
                 cls_scores.new_tensor([cls_avg_factor]))
 
         cls_avg_factor = max(cls_avg_factor, 1)
-        usable = labels!=(self.num_classes+1)
     
         loss_cls = self.loss_cls(
-            cls_scores[usable], labels[usable], label_weights[usable], avg_factor=cls_avg_factor)
+            cls_scores, labels, label_weights, avg_factor=cls_avg_factor)
 
         # Compute the average number of gt boxes accross all gpus, for
         # normalization purposes
@@ -846,7 +845,7 @@ class StreamPETRHead(AnchorFreeHead):
         # regression L1 loss
         bbox_preds = bbox_preds.reshape(-1, bbox_preds.size(-1))
         normalized_bbox_targets = normalize_bbox(bbox_targets, self.pc_range)
-        usable = torch.isfinite(normalized_bbox_targets).all(dim=-1) & (bbox_targets[:,3:6].mean(1)>0)
+        usable = torch.isfinite(normalized_bbox_targets).all(dim=-1)
         bbox_weights = bbox_weights * self.code_weights
 
         loss_bbox = self.loss_bbox(
