@@ -23,10 +23,17 @@
   - Training dataset: tlr_v0_1 + tlr_v1_0_x2 + tlr_v1_0_xx1 + tlr_v1_2
   - Eval dataset: tlr_v1_2
   - [PR](https://github.com/tier4/autoware-ml/pull/143)
-  - [Config file path](https://drive.google.com/drive/folders/1MH5yQT_dqVdk14WRxOQ4DE01TiMH-oIF)
-  - [Deployed onnx model](https://evaluation.tier4.jp/evaluation/mlpackages/ac288878-9790-44e3-9fc8-ca246c5cd235/releases/e23071aa-1cf9-4837-b71b-2fbbf990748d?project_id=zWhWRzei&tab=items)
-  - [Deployed label file](https://evaluation.tier4.jp/evaluation/mlpackages/ac288878-9790-44e3-9fc8-ca246c5cd235/releases/e23071aa-1cf9-4837-b71b-2fbbf990748d?project_id=zWhWRzei&tab=items)
-  - [Training results](https://drive.google.com/drive/folders/1MH5yQT_dqVdk14WRxOQ4DE01TiMH-oIF)
+  - [Config file path](../../../configs/t4dataset/yolox_s_tlr_416x416_pedcar_t4dataset.py)
+  - Deployed onnx model [[webauto]](https://evaluation.tier4.jp/evaluation/mlpackages/ac288878-9790-44e3-9fc8-ca246c5cd235/releases/e23071aa-1cf9-4837-b71b-2fbbf990748d?project_id=zWhWRzei&tab=items)
+  - Deployed label file [[webauto]](https://evaluation.tier4.jp/evaluation/mlpackages/ac288878-9790-44e3-9fc8-ca246c5cd235/releases/e23071aa-1cf9-4837-b71b-2fbbf990748d?project_id=zWhWRzei&tab=items)
+  - Deployed onnx and labels [model-zoo]
+    - [tlr_car_ped_yolox_s_batch_6.onnx](https://download.autoware-ml-model-zoo.tier4.jp/autoware-ml/models/yolox-opt/yolox-opt-s-trafficlight/t4base/v1.0/tlr_car_ped_yolox_s_batch_6.onnx)
+    - [tlr_labels.txt](https://download.autoware-ml-model-zoo.tier4.jp/autoware-ml/models/yolox-opt/yolox-opt-s-trafficlight/t4base/v1.0/tlr_labels.txt)
+  - Training results [[GDrive]](https://drive.google.com/drive/folders/1MH5yQT_dqVdk14WRxOQ4DE01TiMH-oIF)
+  - Training results [model-zoo]
+    - [config.py](https://download.autoware-ml-model-zoo.tier4.jp/autoware-ml/models/yolox-opt/yolox-opt-s-trafficlight/t4base/v1.0/yolox_s_tlr_416x416_pedcar_t4dataset.py)
+    - [checkpoint_last.pth](https://download.autoware-ml-model-zoo.tier4.jp/autoware-ml/models/yolox-opt/yolox-opt-s-trafficlight/t4base/v1.0/epoch_300.pth)
+    - [logs.zip](https://download.autoware-ml-model-zoo.tier4.jp/autoware-ml/models/yolox-opt/yolox-opt-s-trafficlight/t4base/v1.0/logs.zip)
   - train time: (A100 * 1) * 1 days
 - Total mAP: 0.3588
   - Test dataset: tlr_v0_1+tlr_v1_2

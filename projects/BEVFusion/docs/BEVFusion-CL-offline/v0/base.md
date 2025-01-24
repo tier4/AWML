@@ -33,7 +33,13 @@
   - Eval dataset: DB JPNTAXI v1.0 + DB JPNTAXI v2.0 + DB JPNTAXI v3.0 + DB GSM8 v1.0 + DB J6 v1.0 (total frames: 62)
   - [PR](https://github.com/tier4/autoware-ml/pull/313)
   - [Config file path](https://github.com/tier4/autoware-ml/blob/24b93f3d2f1d649c2fb53b4425afd68102f367ec/projects/BEVFusion/configs/t4dataset/bevfusion_camera_lidar_voxel_second_secfpn_2xb2_t4offline_no_intensity.py)
-  - [Training results](https://drive.google.com/drive/folders/1F5ztzuDMfAqolAtvDXPX8dKgfPyEBwj7?usp=drive_link)
+  - Training results [GDrive](https://drive.google.com/drive/folders/1F5ztzuDMfAqolAtvDXPX8dKgfPyEBwj7?usp=drive_link)
+  - Training results [model-zoo]
+    - [config.py](https://download.autoware-ml-model-zoo.tier4.jp/autoware-ml/models/bevfusion/bevfusion-cl-offline/t4base/v0.1/bevfusion_camera_lidar_voxel_second_secfpn_2xb2_t4offline_no_intensity.py)
+    - [logs.zip](https://download.autoware-ml-model-zoo.tier4.jp/autoware-ml/models/bevfusion/bevfusion-cl-offline/t4base/v0.1/logs.zip)
+    - [checkpoint.pth](https://download.autoware-ml-model-zoo.tier4.jp/autoware-ml/models/bevfusion/bevfusion-cl-offline/t4base/v0.1/epoch_30.pth)
+
+
   - train time: NVIDIA A100 80GB * 2 * 30 epochs = 4 days
   - Total mAP to test dataset (eval range = 120m): 0.737
   - Best epoch: epoch_30.pth

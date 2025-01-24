@@ -35,8 +35,16 @@ TransFusion-L v0 has many breaking changes.
   - Training dataset: DB JPNTAXI v1.0 + DB JPNTAXI v2.0 + DB GSM8 v1.0 + DB J6 v1.0
   - [PR](https://github.com/tier4/autoware-ml/pull/125)
   - [Config file path](https://github.com/tier4/autoware-ml/blob/5f472170f07251184dc009a1ec02be3b4f3bf98c/autoware_ml/configs/detection3d/dataset/t4dataset/base.py)
-  - [Deployed onnx model and ROS parameter files](https://evaluation.tier4.jp/evaluation/mlpackages/1800c7f8-a80e-4162-8574-4ee84432e89d/releases/008b128a-873a-4e4a-afa6-d2583f7fc224?project_id=zWhWRzei&tab=reports)
-  - [Training results](https://drive.google.com/drive/folders/1uyUE-ReYARmykG1GsFG2vYsysWwJv3sW)
+  - Deployed onnx and ROS parameter files [[webauto]](https://evaluation.tier4.jp/evaluation/mlpackages/1800c7f8-a80e-4162-8574-4ee84432e89d/releases/008b128a-873a-4e4a-afa6-d2583f7fc224?project_id=zWhWRzei&tab=reports)
+  - Deployed onnx and ROS parameter files [[model-zoo]]
+    - [detection_class_remapper.param.yaml](https://download.autoware-ml-model-zoo.tier4.jp/autoware-ml/models/transfusion/transfusion-l/t4base/v0.6/detection_class_remapper.param.yaml)
+    - [transfusion_base_ml_package.param.yaml](https://download.autoware-ml-model-zoo.tier4.jp/autoware-ml/models/transfusion/transfusion-l/t4base/v0.6/transfusion_base_ml_package.param.yaml)
+    - [transfusion_base.onnx](https://download.autoware-ml-model-zoo.tier4.jp/autoware-ml/models/transfusion/transfusion-l/t4base/v0.6/transfusion_base.onnx)
+  - Training results [[webauto]](https://drive.google.com/drive/folders/1uyUE-ReYARmykG1GsFG2vYsysWwJv3sW)
+  - Training results [model-zoo]
+    - [logs.zip](https://download.autoware-ml-model-zoo.tier4.jp/autoware-ml/models/transfusion/transfusion-l/t4base/v0.6/logs.zip)
+    - [checkpoint_latest.pth](https://download.autoware-ml-model-zoo.tier4.jp/autoware-ml/models/transfusion/transfusion-l/t4base/v0.6/epoch_50.pth)
+    - [config.py](https://download.autoware-ml-model-zoo.tier4.jp/autoware-ml/models/transfusion/transfusion-l/t4base/v0.6/config.py)
   - train time: NVIDIA RTX 6000 Ada Generation * 2 * 5 days
 - Evaluation result with test-dataset of DB JPNTAXI v1.0 + DB JPNTAXI v2.0 + DB GSM8 v1.0 + DB J6 v1.0
   - Total mAP to test dataset (eval range = 90m): 0.653
@@ -86,8 +94,16 @@ TransFusion-L v0 has many breaking changes.
   - Eval dataset: DB GSM8 v1.0 + DB J6 v1.0
   - [PR](https://github.com/tier4/autoware-ml/pull/126)
   - [Config file path](https://github.com/tier4/autoware-ml/blob/e8701f9953be3034776b0de71ecbd03146c03c5f/projects/TransFusion/configs/t4dataset/transfusion_lidar_pillar_second_secfpn_1xb1_90m-768grid-t4x2.py)
-  - [Deployed onnx and ROS parameter files](https://evaluation.tier4.jp/evaluation/mlpackages/1800c7f8-a80e-4162-8574-4ee84432e89d/releases/acdd07c5-4a8f-4983-88e7-a8823f7dc672?project_id=zWhWRzei)
-  - [Training results](https://drive.google.com/drive/folders/1d_xr8PZq3gB-BkqJ02GMDM5F8mwdEKXx?usp=drive_link)
+  - Deployed onnx and ROS parameter files [[webauto]](https://evaluation.tier4.jp/evaluation/mlpackages/1800c7f8-a80e-4162-8574-4ee84432e89d/releases/acdd07c5-4a8f-4983-88e7-a8823f7dc672?project_id=zWhWRzei)
+  - Deployed onnx and ROS parameter files [[model-zoo]]
+    - [detection_class_remapper.param.yaml](https://download.autoware-ml-model-zoo.tier4.jp/autoware-ml/models/transfusion/transfusion-l/t4base/v0.5/detection_class_remapper.param.yaml)
+    - [transfusion_x2_ml_package.param.yaml](https://download.autoware-ml-model-zoo.tier4.jp/autoware-ml/models/transfusion/transfusion-l/t4base/v0.5/transfusion_x2_ml_package.param.yaml)
+    - [transfusion_x2.onnx](https://download.autoware-ml-model-zoo.tier4.jp/autoware-ml/models/transfusion/transfusion-l/t4base/v0.5/transfusion_x2.onnx)
+  - Training results [[webauto]](https://drive.google.com/drive/folders/1d_xr8PZq3gB-BkqJ02GMDM5F8mwdEKXx?usp=drive_link)
+  - Training results [model-zoo]
+    - [logs.zip](https://download.autoware-ml-model-zoo.tier4.jp/autoware-ml/models/transfusion/transfusion-l/t4base/v0.5/logs.zip)
+    - [checkpoint_latest.pth](https://download.autoware-ml-model-zoo.tier4.jp/autoware-ml/models/transfusion/transfusion-l/t4base/v0.5/epoch_50.pth)
+    - [config.py](https://download.autoware-ml-model-zoo.tier4.jp/autoware-ml/models/transfusion/transfusion-l/t4base/v0.5/config.py)
   - train time: NVIDIA RTX 6000 Ada Generation * 2 * 2 days
   - Total mAP to test dataset (eval range = 90m): 0.585
 
@@ -121,10 +137,14 @@ TransFusion-L v0 has many breaking changes.
   - Eval dataset: DB JPNTAXI v1.0 + DB JPNTAXI v2.0 + DB JPNTAXI v3.0
   - [PR](https://github.com/tier4/autoware-ml/pull/100)
   - [Config file path](https://github.com/tier4/autoware-ml/blob/37cf92a2b4b3d7f80b09c8bd5eaff6229ca18f95/projects/TransFusion/configs/t4dataset/transfusion_lidar_pillar_second_secfpn_1xb1_90m-768grid-t4xx1.py)
-  - [Deployed onnx model](https://awf.ml.dev.web.auto/perception/models/transfusion/t4xx1_90m/v3/transfusion.onnx)
-  - [Deployed ROS parameter file](https://awf.ml.dev.web.auto/perception/models/transfusion/t4xx1_90m/v3/transfusion.param.yaml)
-  - [Deployed ROS param file for remap](https://awf.ml.dev.web.auto/perception/models/transfusion/t4xx1_90m/v3/detection_class_remapper.param.yaml)
-  - [Training results](https://awf.ml.dev.web.auto/perception/models/transfusion/t4xx1_90m/v3/logs.zip)
+  - Deployed onnx model [[webauto]](https://awf.ml.dev.web.auto/perception/models/transfusion/t4xx1_90m/v3/transfusion.onnx) [[model-zoo]](https://download.autoware-ml-model-zoo.tier4.jp/autoware-ml/models/transfusion/transfusion-l/t4base/v0.4/transfusion.onnx)
+  - Deployed ROS parameter file [[webauto]](https://awf.ml.dev.web.auto/perception/models/transfusion/t4xx1_90m/v3/transfusion.param.yaml) [[model-zoo]](https://download.autoware-ml-model-zoo.tier4.jp/autoware-ml/models/transfusion/transfusion-l/t4base/v0.4/transfusion.param.yaml)
+  - Deployed ROS param file for remap [[webauto]](https://awf.ml.dev.web.auto/perception/models/transfusion/t4xx1_90m/v3/detection_class_remapper.param.yaml) [[model-zoo]](https://download.autoware-ml-model-zoo.tier4.jp/autoware-ml/models/transfusion/transfusion-l/t4base/v0.4/detection_class_remapper.param.yaml)
+  - Training results [[webauto]](https://awf.ml.dev.web.auto/perception/models/transfusion/t4xx1_90m/v3/logs.zip)
+  - Training results [model-zoo]
+    - [logs.zip](https://download.autoware-ml-model-zoo.tier4.jp/autoware-ml/models/transfusion/transfusion-l/t4base/v0.4/logs.zip)
+    - [checkpoint_best.pth](https://download.autoware-ml-model-zoo.tier4.jp/autoware-ml/models/transfusion/transfusion-l/t4base/v0.4/epoch_44.pth)
+    - [config.py](https://download.autoware-ml-model-zoo.tier4.jp/autoware-ml/models/transfusion/transfusion-l/t4base/v0.4/transfusion_lidar_pillar_second_secfpn_1xb1_90m-768grid-t4xx1.py)
   - train time: (A100 * 4) * 2 days
 - Total mAP: 0.685
   - Test dataset: DB JPNTAXI v1.0 + DB JPNTAXI v2.0
@@ -172,10 +192,14 @@ TransFusion-L v0 has many breaking changes.
   - Training dataset: DB JPNTAXI v1.0 + DB JPNTAXI v2.0
   - Eval dataset: DB JPNTAXI v1.0 + DB JPNTAXI v2.0
   - [Config file path](https://github.com/tier4/autoware-ml/blob/fe28c0a7de0579c68406e40c5abfe9afcaed41f6/projects/TransFusion/configs/t4dataset/transfusion_lidar_pillar_second_secfpn_1xb4-cyclic-20e_t4xx1_90m_768grid.py) (Note: eval range is 75m in training time)
-  - [Deployed onnx model](https://awf.ml.dev.web.auto/perception/models/transfusion/t4xx1_90m/v2/transfusion.onnx)
-  - [Deployed ROS parameter file](https://awf.ml.dev.web.auto/perception/models/transfusion/t4xx1_90m/v2/transfusion.param.yaml)
-  - [Deployed ROS param file for remap](https://awf.ml.dev.web.auto/perception/models/transfusion/t4xx1_90m/v2/detection_class_remapper.param.yaml)
-  - [Training results](https://awf.ml.dev.web.auto/perception/models/transfusion/t4xx1_90m/v2/logs.zip)
+  - Deployed onnx model [[webauto]](https://awf.ml.dev.web.auto/perception/models/transfusion/t4xx1_90m/v2/transfusion.onnx) [[model-zoo]](https://download.autoware-ml-model-zoo.tier4.jp/autoware-ml/models/transfusion/transfusion-l/t4base/v0.3/transfusion.onnx)
+  - Deployed ROS parameter file [[webauto]](https://awf.ml.dev.web.auto/perception/models/transfusion/t4xx1_90m/v2/transfusion.param.yaml) [[model-zoo]](https://download.autoware-ml-model-zoo.tier4.jp/autoware-ml/models/transfusion/transfusion-l/t4base/v0.3/transfusion.param.yaml)
+  - Deployed ROS param file for remap [[webauto]](https://awf.ml.dev.web.auto/perception/models/transfusion/t4xx1_90m/v2/detection_class_remapper.param.yaml) [[model-zoo]](https://download.autoware-ml-model-zoo.tier4.jp/autoware-ml/models/transfusion/transfusion-l/t4base/v0.3/detection_class_remapper.param.yaml)
+  - Training results [[webauto]](https://awf.ml.dev.web.auto/perception/models/transfusion/t4xx1_90m/v2/logs.zip)
+  - Training results [model-zoo]
+    - [logs.zip](https://download.autoware-ml-model-zoo.tier4.jp/autoware-ml/models/transfusion/transfusion-l/t4base/v0.3/logs.zip)
+    - [checkpoint_best.pth](https://download.autoware-ml-model-zoo.tier4.jp/autoware-ml/models/transfusion/transfusion-l/t4base/v0.3/epoch_50.pth)
+    - [config.py](https://download.autoware-ml-model-zoo.tier4.jp/autoware-ml/models/transfusion/transfusion-l/t4base/v0.3/transfusion_lidar_pillar_second_secfpn_1xb8-cyclic-20e_t4xx1_90m_768grid.py)
   - train time: RTX 3090 * 1 * 8 days
   - Total mAP to test dataset (eval range = 90m): 0.681
 
@@ -203,10 +227,14 @@ TransFusion-L v0 has many breaking changes.
   - Training dataset: DB JPNTAXI v1.0 + DB JPNTAXI v2.0
   - Eval dataset: DB JPNTAXI v1.0 + DB JPNTAXI v2.0
   - [Config file path](https://github.com/tier4/autoware-ml/blob/fe28c0a7de0579c68406e40c5abfe9afcaed41f6/projects/TransFusion/configs/t4dataset/transfusion_lidar_pillar_second_secfpn_1xb6-cyclic-20e_t4xx1_90m_576grid.py) (Note: eval range is 75m in training time)
-  - [Deployed onnx model](https://awf.ml.dev.web.auto/perception/models/transfusion/t4xx1_90m/v1/transfusion.onnx)
-  - [Deployed ROS parameter file](https://awf.ml.dev.web.auto/perception/models/transfusion/t4xx1_90m/v1/transfusion.param.yaml)
-  - [Deployed ROS param file for remap](https://awf.ml.dev.web.auto/perception/models/transfusion/t4xx1_90m/v1/detection_class_remapper.param.yaml)
-  - [Training results](https://awf.ml.dev.web.auto/perception/models/transfusion/t4xx1_90m/v1/logs.zip)
+  - Deployed onnx model [[webauto]](https://awf.ml.dev.web.auto/perception/models/transfusion/t4xx1_90m/v1/transfusion.onnx) [[model-zoo]](https://download.autoware-ml-model-zoo.tier4.jp/autoware-ml/models/transfusion/transfusion-l/t4base/v0.2/transfusion.onnx)
+  - Deployed ROS parameter file [[webauto]](https://awf.ml.dev.web.auto/perception/models/transfusion/t4xx1_90m/v1/transfusion.param.yaml) [[model-zoo]](https://download.autoware-ml-model-zoo.tier4.jp/autoware-ml/models/transfusion/transfusion-l/t4base/v0.2/transfusion.param.yaml)
+  - Deployed ROS param file for remap [[webauto]](https://awf.ml.dev.web.auto/perception/models/transfusion/t4xx1_90m/v1/detection_class_remapper.param.yaml) [[model-zoo]](https://download.autoware-ml-model-zoo.tier4.jp/autoware-ml/models/transfusion/transfusion-l/t4base/v0.2/detection_class_remapper.param.yaml)
+  - Training results [[webauto]](https://awf.ml.dev.web.auto/perception/models/transfusion/t4xx1_90m/v1/logs.zip)
+  - Training results [model-zoo]
+    - [logs.zip](https://download.autoware-ml-model-zoo.tier4.jp/autoware-ml/models/transfusion/transfusion-l/t4base/v0.2/logs.zip)
+    - [checkpoint_best.pth](https://download.autoware-ml-model-zoo.tier4.jp/autoware-ml/models/transfusion/transfusion-l/t4base/v0.2/epoch_66.pth)
+    - [config.py](https://download.autoware-ml-model-zoo.tier4.jp/autoware-ml/models/transfusion/transfusion-l/t4base/v0.2/transfusion_lidar_pillar_second_secfpn_1xb1-cyclic-20e_t4xx1_90m_576grid.py)
   - train time: A100 * 2 * 5 days
   - Total mAP to test dataset (eval range = 90m): 0.578
 
@@ -234,7 +262,7 @@ TransFusion-L v0 has many breaking changes.
   - Training dataset: DB JPNTAXI v1.0
   - Eval dataset: DB JPNTAXI v2.0 (Bug fix and [new dataset config is applied](https://github.com/tier4/autoware-ml/pull/31))
   - [Config file](https://github.com/tier4/autoware-ml/blob/17e8944ac2154f1f1042a507a4001ccf057ffe78/projects/TransFusion/configs/t4dataset/transfusion_lidar_pillar02_second_secfpn_1xb4-cyclic-20e_t4xx1.py)
-  - [Deployed onnx model](https://awf.ml.dev.web.auto/perception/models/transfusion/v1/transfusion.onnx)
+  - Deployed onnx model [[webauto]](https://awf.ml.dev.web.auto/perception/models/transfusion/v1/transfusion.onnx) [[model-zoo]](https://download.autoware-ml-model-zoo.tier4.jp/autoware-ml/models/transfusion/transfusion-l/t4base/v0.1/transfusion.onnx)
 - val
   - Total mAP: 0.485
 
