@@ -14,6 +14,8 @@ jobs:
         config_pair:
           - dataset_config_path: "autoware_ml/configs/t4dataset/db_jpntaxi_v3.yaml"
             webauto_keyword: "DBv1.3"
+          - dataset_config_path: "autoware_ml/configs/t4dataset/db_j6_v2.yaml"
+            webauto_keyword: "DBv3.1"
 
           # Followings are stale datasets and thus shall not be updated
           # - dataset_config_path: "autoware_ml/configs/t4dataset/db_jpntaxi_v1.yaml"
