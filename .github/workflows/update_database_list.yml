@@ -57,6 +57,7 @@ jobs:
     - name: Install dependencies
       run: |
         pip install ruamel.yaml git+ssh://git@github.com/tier4/webauto-auth-py.git
+        pip install attrs==24.3.0
 
     - name: Decode secretes into json
       env:
