@@ -850,7 +850,9 @@ class StreamPETRHead(AnchorFreeHead):
 
         loss_bbox = self.loss_bbox(
                 bbox_preds[usable, :10], normalized_bbox_targets[usable, :10], bbox_weights[usable, :10], avg_factor=num_total_pos)
-
+        if not torch.isfinite(loss_bbox).all():
+            import pdb
+            pdb.set_trace()
         loss_cls = torch.nan_to_num(loss_cls)
         loss_bbox = torch.nan_to_num(loss_bbox)
 

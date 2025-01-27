@@ -36,15 +36,15 @@ class PadMultiViewImage():
     
     def _pad_img(self, results):
         """Pad images according to ``self.size``."""
-        # if self.size is not None:
-        #     padded_img = [mmcv.impad(img,
-        #                         shape = self.size, pad_val=self.pad_val) for img in results['img']]
-        # elif self.size_divisor is not None:
-        #     padded_img = [mmcv.impad_to_multiple(img,
-        #                         self.size_divisor, pad_val=self.pad_val) for img in results['img']]
+        if self.size is not None:
+            padded_img = [mmcv.impad(img,
+                                shape = self.size, pad_val=self.pad_val) for img in results['img']]
+        elif self.size_divisor is not None:
+            padded_img = [mmcv.impad_to_multiple(img,
+                                self.size_divisor, pad_val=self.pad_val) for img in results['img']]
         padded_img = results['img']
         results['img_shape'] = [img.shape for img in results['img']]
-        results['img'] = torch.stack([torch.tensor(img.transpose(2,0,1)) for img in padded_img])
+        results['img'] = padded_img
         results['img_metas']['pad_shape'] = padded_img[0].shape
         results['img_metas']['pad_fix_size'] = self.size
         results['img_metas']['pad_size_divisor'] = self.size_divisor
@@ -92,8 +92,8 @@ class NormalizeMultiviewImage(object):
             dict: Normalized results, 'img_norm_cfg' key is added into
                 result dict.
         """
-        results['img'] = [mmcv.imnormalize(
-            img, self.mean, self.std, self.to_rgb) for img in results['img']]
+        results['img'] = torch.stack([torch.tensor(mmcv.imnormalize(
+            img, self.mean, self.std, self.to_rgb).transpose(2,0,1)) for img in results['img']])
         results['img_norm_cfg'] = dict(
             mean=self.mean, std=self.std, to_rgb=self.to_rgb)
         return results

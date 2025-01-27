@@ -13,7 +13,7 @@ from .datasets.pipelines.transform_3d import (
 )
 from .datasets.pipelines.formating import PETRFormatBundle3D,StreamPETRDataset
 from .datasets.pipelines.loading import StreamPETRLoadAnnotations2D
-from .models.optimizer.amp import NoCacheAmpOptimWrapper
+from .models.optimizer.amp import NoCacheAmpOptimWrapper,DebugOptimWrapper
 __all__ = [
     "Petr3D",
     "StreamPETRHead",
@@ -30,5 +30,6 @@ __all__ = [
     "PETRFormatBundle3D",
     "StreamPETRLoadAnnotations2D",
     "StreamPETRDataset",
-    "NoCacheAmpOptimWrapper"
+    "NoCacheAmpOptimWrapper",
+    "DebugOptimWrapper"
 ]

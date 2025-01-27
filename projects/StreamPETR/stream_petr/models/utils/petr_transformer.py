@@ -231,7 +231,7 @@ class PETRMultiheadAttention(BaseModule):
         self.embed_dims = embed_dims
         self.num_heads = num_heads
         self.batch_first = batch_first
-        self.fp16_enabled = True
+        self.fp16_enabled = fp16
         if fp16:
             self.attn = MultiheadAttentionWrapper(embed_dims, num_heads, attn_drop,  **kwargs)
         else:

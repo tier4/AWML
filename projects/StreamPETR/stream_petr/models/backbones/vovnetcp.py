@@ -350,7 +350,7 @@ class VoVNetCP(BaseModule):
                 self._out_feature_strides[name] = current_stirde = int(current_stirde * 2)
 
         # initialize weights
-        # self._initialize_weights()
+        self._initialize_weights()
 
     def _initialize_weights(self):
         for m in self.modules():

@@ -42,3 +42,4 @@ FOr the boundary of sequences, padded using first frame of the minibatch
 Since this is camera-only. We need to assert that all data comes from the same sensor suite?
 Also, Camera should be in the same order. Or maybe order should not matter, and maybe some cameras can be non-functional too, should I add that as augmentation?
 GlobalRotScaleTransImage augmentation removed for now. Cannot understand the logic behind it
+Maybe in ROSNode it is good to add a service to reset the memory at times

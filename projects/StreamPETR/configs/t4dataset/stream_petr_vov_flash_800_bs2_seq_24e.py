@@ -12,14 +12,15 @@ backbone_norm_cfg = dict(type='LN', requires_grad=True)
 
 # If point cloud range is changed, the models should also change their point
 # cloud range accordingly
-point_cloud_range = [-61.2, -61.2, -10.0, 61.2, 61.2, 10.0]
+point_cloud_range = [-51.2, -51.2, -5.0, 51.2, 51.2, 3.0]
+voxel_size = [0.2, 0.2, 8]
 img_norm_cfg = dict(
     mean=[103.530, 116.280, 123.675], std=[57.375, 57.120, 58.395], to_rgb=False) # fix img_norm
 # For nuScenes we usually do 10-class detection
-class_names = _base_.class_names+["unknown"]
+class_names = _base_.class_names
 
-num_gpus = 1
-batch_size = 8
+num_gpus = 2
+batch_size = 4
 val_interval= 5
 num_epochs = 50
 backend_args = None
@@ -30,14 +31,13 @@ eval_class_range = {
     "bus": 120,
     "bicycle": 120,
     "pedestrian": 120,
-    "unknown": 120,
 }
 
-queue_length = 8
-num_frame_losses = 2
+queue_length = 1
+num_frame_losses = 1
 collect_keys=['lidar2img', 'intrinsics', 'extrinsics','timestamp', 'img_timestamp', 'ego_pose', 'ego_pose_inv']
 input_modality = dict(
-    use_lidar=True,
+    use_lidar=True,  # lidar-related information (like ego-pose) is loaded, but pointcloud is not loaded or used
     use_camera=True,
     use_radar=False,
     use_map=False,
@@ -49,9 +49,9 @@ model = dict(
     num_frame_losses=num_frame_losses,
     use_grid_mask=True,
     img_backbone=dict(
-        type='VoVNetCP', ###use checkpoint to save memory
+        type='VoVNet', ###use checkpoint to save memory
         spec_name='V-99-eSE',
-        norm_eval=True,
+        norm_eval=False,
         frozen_stages=-1,
         input_ch=3,
         out_features=('stage4','stage5',)),
@@ -60,34 +60,34 @@ model = dict(
         in_channels=[768, 1024],
         out_channels=256,
         num_outs=2),
-    img_roi_head=dict(
-        type='mmdet.FocalHead',
-        num_classes=len(class_names),
-        in_channels=256,
-        bbox_coder = dict(type='mmdet.DistancePointBBoxCoder'),
-        loss_cls = dict(
-            type='QualityFocalLoss',
-            use_sigmoid=True,
-            gamma=2.0,
-            alpha=0.25,
-            loss_weight=1.0),
-        loss_cls2d=dict(
-            type='mmdet.QualityFocalLoss',
-            use_sigmoid=True,
-            beta=2.0,
-            loss_weight=2.0),
-        loss_centerness=dict(type='mmdet.GaussianFocalLoss', reduction='mean', loss_weight=1.0),
-        loss_bbox2d=dict(type='mmdet.L1Loss', loss_weight=5.0),
-        loss_iou2d=dict(type='mmdet.GIoULoss', loss_weight=2.0),
-        loss_centers2d=dict(type='mmdet.L1Loss', loss_weight=10.0),
-        train_cfg=dict(
-            assigner2d=dict(
-                type='mmdet.HungarianAssigner2D',
-                cls_cost=dict(type='mmdet.FocalLossCost', weight=2.),
-                reg_cost=dict(type='mmdet.BBoxL1Cost', weight=5.0, box_format='xywh'),
-                iou_cost=dict(type='mmdet.IoUCost', iou_mode='giou', weight=2.0),
-                centers2d_cost=dict(type='mmdet.BBox3DL1Cost', weight=10.0)))
-        ),
+    # img_roi_head=dict(
+    #     type='mmdet.FocalHead',
+    #     num_classes=len(class_names),
+    #     in_channels=256,
+    #     bbox_coder = dict(type='mmdet.DistancePointBBoxCoder'),
+    #     loss_cls = dict(
+    #         type='QualityFocalLoss',
+    #         use_sigmoid=True,
+    #         gamma=2.0,
+    #         alpha=0.25,
+    #         loss_weight=1.0),
+    #     loss_cls2d=dict(
+    #         type='mmdet.QualityFocalLoss',
+    #         use_sigmoid=True,
+    #         beta=2.0,
+    #         loss_weight=2.0),
+    #     loss_centerness=dict(type='mmdet.GaussianFocalLoss', reduction='mean', loss_weight=1.0),
+    #     loss_bbox2d=dict(type='mmdet.L1Loss', loss_weight=5.0),
+    #     loss_iou2d=dict(type='mmdet.GIoULoss', loss_weight=2.0),
+    #     loss_centers2d=dict(type='mmdet.L1Loss', loss_weight=10.0),
+    #     train_cfg=dict(
+    #         assigner2d=dict(
+    #             type='mmdet.HungarianAssigner2D',
+    #             cls_cost=dict(type='mmdet.FocalLossCost', weight=2.),
+    #             reg_cost=dict(type='mmdet.BBoxL1Cost', weight=5.0, box_format='xywh'),
+    #             iou_cost=dict(type='mmdet.IoUCost', iou_mode='giou', weight=2.0),
+    #             centers2d_cost=dict(type='mmdet.BBox3DL1Cost', weight=10.0)))
+    #     ),
     pts_bbox_head=dict(
         type='StreamPETRHead',
         num_classes=len(class_names),
@@ -104,8 +104,8 @@ model = dict(
         split = 0.75, ###positive rate
         LID=True,
         with_position=True,
-        position_range=point_cloud_range,
-        code_weights = [2.0, 2.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0],
+        position_range=[-61.2, -61.2, -10.0, 61.2, 61.2, 10.0],
+        code_weights = [2.0, 2.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 0.0, 0.0],  # setting the last two to zero will disable optimization for velocity
         transformer=dict(
             type='PETRTemporalTransformer',
             decoder=dict(
@@ -121,9 +121,10 @@ model = dict(
                             num_heads=8,
                             dropout=0.1),
                         dict(
-                            type='PETRMultiheadFlashAttention',
+                            type='PETRMultiheadAttention',
                             embed_dims=256,
                             num_heads=8,
+                            fp16=False,
                             dropout=0.1),
                         ],
                     feedforward_channels=2048,
@@ -140,11 +141,13 @@ model = dict(
             pc_range=point_cloud_range),
         train_cfg=dict(
             point_cloud_range=point_cloud_range,
+            voxel_size=voxel_size,
             out_size_factor=4,
         ),
         bbox_coder=dict(
             type='mmdet.NMSFreeCoder',
             post_center_range=[-61.2, -61.2, -10.0, 61.2, 61.2, 10.0],
+            voxel_size=voxel_size,
             pc_range=point_cloud_range,
             max_num=300,
             num_classes=len(class_names)), 
@@ -167,7 +170,7 @@ file_client_args = dict(backend='disk')
 
 ida_aug_conf = {
         "resize_lim": (0.45, 0.55),
-        "final_dim": (540, 720),
+        "final_dim": (528, 720),
         "bot_pct_lim": (0.0, 0.0),
         "rot_lim": (0.0, 0.0),
         "rand_flip": True,
@@ -180,8 +183,8 @@ train_pipeline = [
     dict(type='ObjectRangeFilter', point_cloud_range=point_cloud_range),
     dict(type='ObjectNameFilter', classes=class_names),
     dict(type='mmdet.ResizeCropFlipRotImage', data_aug_conf = ida_aug_conf, training=True, with_2d=False),
-    dict(type='mmdet.NormalizeMultiviewImage', **img_norm_cfg),
     dict(type='mmdet.PadMultiViewImage', size_divisor=32),
+    dict(type='mmdet.NormalizeMultiviewImage', **img_norm_cfg),
     dict(type='StreamPETRLoadAnnotations2D'),
     dict(type='PETRFormatBundle3D', class_names=class_names, collect_keys=collect_keys + ['prev_exists'])
 ]
@@ -190,8 +193,8 @@ test_pipeline = [
     dict(type='LoadAnnotations3D', with_bbox_3d=True, with_label_3d=True,with_bbox=False,
         with_label=False, with_bbox_depth=False),
     dict(type='mmdet.ResizeCropFlipRotImage', data_aug_conf = ida_aug_conf, training=False, with_2d=False),
-    dict(type='mmdet.NormalizeMultiviewImage', **img_norm_cfg),
     dict(type='mmdet.PadMultiViewImage', size_divisor=32),
+    dict(type='mmdet.NormalizeMultiviewImage', **img_norm_cfg),
     dict(type='StreamPETRLoadAnnotations2D'),
     dict(type='PETRFormatBundle3D', class_names=class_names, collect_keys=collect_keys + ['prev_exists'])
 ]
@@ -205,7 +208,7 @@ train_dataloader = dict(
     dataset=dict(
         type="StreamPETRDataset",
         data_root=data_root,
-        ann_file=info_directory_path + _base_.info_val_file_name,
+        ann_file=info_directory_path + _base_.info_train_file_name,
         pipeline=train_pipeline,
         metainfo=_base_.metainfo,
         class_names=class_names,
@@ -249,7 +252,7 @@ test_dataloader = dict(
     dataset=dict(
         type="StreamPETRDataset",
         data_root=data_root,
-        ann_file=info_directory_path + _base_.info_val_file_name,
+        ann_file=info_directory_path + _base_.info_test_file_name,
         pipeline=test_pipeline,
         metainfo=_base_.metainfo,
         random_length=0,
@@ -293,10 +296,16 @@ test_cfg = dict()
 
 optimizer = dict(
     type='AdamW', 
-    lr=4e-4, # bs 8: 2e-4 || bs 16: 4e-4,
+    lr=2e-4, # bs 8: 2e-4 || bs 16: 4e-4,
     weight_decay=0.01)
-optimizer_config = dict(type='Fp16OptimizerHook', loss_scale='dynamic', grad_clip=dict(max_norm=35, norm_type=2))
-optim_wrapper = dict(type='NoCacheAmpOptimWrapper', optimizer=optimizer)
+
+optim_wrapper = dict(
+    type="DebugOptimWrapper",
+    optimizer=optimizer,
+    clip_grad=dict(max_norm=35, norm_type=2),
+)
+
+# optim_wrapper = dict(type='NoCacheAmpOptimWrapper', optimizer=optimizer,clip_grad=dict(max_norm=1, norm_type=2))
 # learning policy
 lr_config = dict(
     policy='CosineAnnealing',

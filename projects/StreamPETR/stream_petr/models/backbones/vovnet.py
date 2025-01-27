@@ -348,14 +348,14 @@ class VoVNet(BaseModule):
                 nn.init.kaiming_normal_(m.weight)
 
     def forward(self, x):
-        outputs = {}
+        outputs = []
         x = self.stem(x)
         if "stem" in self._out_features:
-            outputs["stem"] = x
+            outputs.append(x)
         for name in self.stage_names:
             x = getattr(self, name)(x)
             if name in self._out_features:
-                outputs[name] = x
+                outputs.append(x)
 
         return outputs
 

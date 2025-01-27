@@ -372,7 +372,6 @@ class FocalHead(AnchorFreeHead):
         # centers2d L1 loss
         loss_centers2d = self.loss_centers2d(
             pred_centers2d, centers2d_targets, bbox_weights[:, 0:2], avg_factor=num_total_pos)
-        
         return loss_cls, loss_bbox, loss_iou, loss_centers2d, loss_centerness
 
     def _get_heatmap_single(self, obj_centers2d, obj_bboxes, img_shape):
@@ -511,8 +510,8 @@ class FocalHead(AnchorFreeHead):
                                     self.num_classes,
                                     dtype=torch.long)
         labels[pos_inds] = gt_labels[sampling_result.pos_assigned_gt_inds].long()
-        label_weights = gt_bboxes.new_ones(num_bboxes)
-
+        label_weights = gt_bboxes.new_zeros(num_bboxes)
+        label_weights[pos_inds] = 1.0
 
         # bbox targets
         bbox_targets = torch.zeros_like(bbox_pred)

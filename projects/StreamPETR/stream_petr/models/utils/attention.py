@@ -54,7 +54,7 @@ class FlashAttention(nn.Module):
             kv: The tensor containing the key, and value. (B, S, 2, H, D) 
             key_padding_mask: a bool tensor of shape (B, S)
         """
-        assert q.dtype in [torch.float16, torch.bfloat16] and kv.dtype in [torch.float16, torch.bfloat16]
+        # assert q.dtype in [torch.float16, torch.bfloat16] and kv.dtype in [torch.float16, torch.bfloat16]
         assert q.is_cuda and kv.is_cuda
         assert q.shape[0] == kv.shape[0] and q.shape[-2] == kv.shape[-2] and q.shape[-1] == kv.shape[-1]
 
@@ -68,10 +68,10 @@ class FlashAttention(nn.Module):
             cu_seqlens_k = torch.arange(0, (batch_size + 1) * seqlen_k, step=seqlen_k, dtype=torch.int32,
                                     device=kv.device)                    
             output = flash_attn_varlen_kvpacked_func(
-                q, kv, cu_seqlens_q, cu_seqlens_k, max_sq, max_sk,
+                q.to(dtype=torch.float16), kv.to(dtype=torch.float16), cu_seqlens_q, cu_seqlens_k, max_sq, max_sk,
                 self.dropout_p if self.training else 0.0,
                 softmax_scale=self.softmax_scale, causal=causal
-            )
+            ).float()
             output = rearrange(output, '(b s) ... -> b s ...', b=batch_size)
         else:
             nheads = kv.shape[-2]
@@ -83,10 +83,10 @@ class FlashAttention(nn.Module):
             x_unpad, indices, cu_seqlens_k, max_sk = unpad_input(x, key_padding_mask)
             x_unpad = rearrange(x_unpad, 'nnz (two h d) -> nnz two h d', two=2, h=nheads)
             output_unpad = flash_attn_varlen_kvpacked_func(
-                q, x_unpad, cu_seqlens_q, cu_seqlens_k, max_sq, max_sk,
+                q.to(dtype=torch.float16), x_unpad.to(dtype=torch.float16), cu_seqlens_q, cu_seqlens_k, max_sq, max_sk,
                 self.dropout_p if self.training else 0.0,
                 softmax_scale=self.softmax_scale, causal=causal
-            )
+            ).float()
             output = rearrange(output_unpad, '(b s) ... -> b s ...', b=batch_size)
 
         return output, None

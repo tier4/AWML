@@ -209,8 +209,8 @@ class Petr3D(MVXTwoStageDetector):
         if mode=="loss":
             return self.forward_train(**data)
         elif mode=="predict":
-            with torch.autocast(device_type='cuda' if torch.cuda.is_available() else 'cpu'):
-                return self.forward_test(**data)
+            # with torch.autocast(device_type='cuda' if torch.cuda.is_available() else 'cpu'):
+            return self.forward_test(**data)
         else:
             raise NotImplementedError()
         
