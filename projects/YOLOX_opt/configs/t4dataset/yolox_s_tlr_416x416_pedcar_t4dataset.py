@@ -283,7 +283,7 @@ param_scheduler = [
     ),
 ]
 
-default_hooks = dict(checkpoint=dict(interval=interval, max_keep_ckpts=3))  # only keep latest 3 checkpoints
+default_hooks = dict(checkpoint=dict(interval=interval, max_keep_ckpts=3, save_best='mAP', type='CheckpointHook'))  # only keep latest 3 checkpoints
 
 custom_hooks = [
     dict(

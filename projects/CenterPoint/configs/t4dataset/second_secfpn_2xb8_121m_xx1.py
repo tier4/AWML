@@ -376,7 +376,7 @@ visualizer = dict(type="Det3DLocalVisualizer", vis_backends=vis_backends, name="
 logger_interval = 50
 default_hooks = dict(
     logger=dict(type="LoggerHook", interval=logger_interval),
-    checkpoint=dict(type="CheckpointHook", interval=1),
+    checkpoint=dict(type="CheckpointHook", interval=1, max_keep_ckpts=3,save_best='NuScenes metric/T4Metric/mAP'),
 )
 
 custom_hooks = [
