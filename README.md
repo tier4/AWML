@@ -33,10 +33,9 @@ If you want to know about the design of `autoware-ml`, you should read following
 
 If you want to develop `autoware-ml`, you should read following pages.
 
-- [Docs for contribution flow](/docs/contribution/contribution_flow.md)
-- [Use case for contribution](/docs/contribution/contribution_use_case.md)
+- [Docs for contribution](/docs/contribution/contribution.md)
 
-If you want to search the OSS tools with `autoware-ml`, you should read following pages.
+If you want to search the OSS tools around `autoware-ml`, you should read following pages.
 
 - [Community support](/docs/contribution/community_support.md)
 
