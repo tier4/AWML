@@ -45,9 +45,10 @@ work_dir = "work_dirs/centerpoint/" + _base_.dataset_type + "/second_secfpn_2xb8
 
 Please see README.md in the project you want to update.
 
-## Step 4. Evaluate the model
+## Step 4. Deploy and Evaluate the model
 
-TBD
+Please see README.md in the project you want to update and evaluate the pytorch models on the test dataset.
+Then, follow the steps in the [webauto_evaluator_test.md](./webauto_evaluator_test.md) file if you have the access privileges.
 
 ## Step 5. Create a PR to autoware-ml with a release note for the model
 
