@@ -16,7 +16,7 @@ dataset_version_config_root = "autoware_ml/configs/t4dataset/"
 dataset_version_list = [
     "db_jpntaxi_v1",
     "db_jpntaxi_v2",
-    "db_jpntaxi_v3",
+    "db_jpntaxi_v4",
 ]
 
 # dataset format setting
