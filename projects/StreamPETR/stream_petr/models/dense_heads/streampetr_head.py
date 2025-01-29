@@ -640,6 +640,7 @@ class StreamPETRHead(AnchorFreeHead):
         outs_dec = torch.nan_to_num(outs_dec)
         outputs_classes = []
         outputs_coords = []
+
         for lvl in range(outs_dec.shape[0]):
             with torch.cuda.amp.autocast(enabled=False):
                 reference = inverse_sigmoid(reference_points.clone())
@@ -679,7 +680,6 @@ class StreamPETRHead(AnchorFreeHead):
                 "all_bbox_preds": all_bbox_preds,
                 "dn_mask_dict": None,
             }
-
         return outs
 
     def prepare_for_loss(self, mask_dict):

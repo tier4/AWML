@@ -139,8 +139,8 @@ model = dict(
                 transformerlayers=dict(
                     type="PETRTemporalDecoderLayer",
                     attn_cfgs=[
-                        dict(type="MultiheadAttention", embed_dims=256, num_heads=8, dropout=0.1),
-                        dict(type="PETRMultiheadFlashAttention", embed_dims=256, num_heads=8, fp16=False, dropout=0.1),
+                        dict(type="PETRMultiheadFlashAttention", embed_dims=256, num_heads=8, dropout=0.1),
+                        dict(type="PETRMultiheadFlashAttention", embed_dims=256, num_heads=8, dropout=0.1),
                     ],
                     feedforward_channels=2048,
                     ffn_dropout=0.1,
@@ -185,7 +185,7 @@ file_client_args = dict(backend="disk")
 
 ida_aug_conf = {
     "resize_lim": (0.45, 0.55),
-    "final_dim": (640, 960),  # (528, 720),
+    "final_dim": (640, 960),  # (528, 720), (800,1200), (1088,1440)
     "bot_pct_lim": (0.0, 0.0),
     "rot_lim": (0.0, 0.0),
     "rand_flip": True,
@@ -328,49 +328,54 @@ optimizer = dict(type="AdamW", lr=2e-4, weight_decay=0.01)  # bs 8: 2e-4 || bs 1
 
 optim_wrapper = dict(type="NoCacheAmpOptimWrapper", optimizer=optimizer, clip_grad=dict(max_norm=35, norm_type=2))
 # learning policy
-param_scheduler = [
-    dict(type="LinearLR", start_factor=1.0 / 3, begin=0, end=500, by_epoch=False),
-    dict(
-        type="CosineAnnealingLR",
-        # TODO Figure out what T_max
-        T_max=num_epochs,
-        by_epoch=True,
-    ),
-]
-
 # param_scheduler = [
+#     dict(type="LinearLR", start_factor=1.0 / 3, begin=0, end=500, by_epoch=False),
 #     dict(
-#         T_max=20, begin=0, by_epoch=True, convert_to_iter_based=True, end=20, eta_min=0.001, type="CosineAnnealingLR"
-#     ),
-#     dict(
-#         T_max=30, begin=20, by_epoch=True, convert_to_iter_based=True, end=80, eta_min=1e-08, type="CosineAnnealingLR"
-#     ),
-#     dict(
-#         T_max=20,
-#         begin=0,
+#         type="CosineAnnealingLR",
+#         # TODO Figure out what T_max
+#         T_max=num_epochs,
 #         by_epoch=True,
-#         convert_to_iter_based=True,
-#         end=20,
-#         eta_min=0.8947368421052632,
-#         type="CosineAnnealingMomentum",
-#     ),
-#     dict(
-#         T_max=30,
-#         begin=20,
-#         by_epoch=True,
-#         convert_to_iter_based=True,
-#         end=80,
-#         eta_min=1,
-#         type="CosineAnnealingMomentum",
 #     ),
 # ]
+
+param_scheduler = [
+    dict(
+        T_max=20, begin=0, by_epoch=True, convert_to_iter_based=True, end=20, eta_min=0.001, type="CosineAnnealingLR"
+    ),
+    dict(
+        T_max=30, begin=20, by_epoch=True, convert_to_iter_based=True, end=80, eta_min=1e-08, type="CosineAnnealingLR"
+    ),
+    dict(
+        T_max=20,
+        begin=0,
+        by_epoch=True,
+        convert_to_iter_based=True,
+        end=20,
+        eta_min=0.8947368421052632,
+        type="CosineAnnealingMomentum",
+    ),
+    dict(
+        T_max=30,
+        begin=20,
+        by_epoch=True,
+        convert_to_iter_based=True,
+        end=80,
+        eta_min=1,
+        type="CosineAnnealingMomentum",
+    ),
+]
 
 default_hooks = dict(
     logger=dict(type="LoggerHook", interval=10),
     checkpoint=dict(
-        interval=val_interval, max_keep_ckpts=3, save_best="NuScenes metric/T4Metric/mAP", type="CheckpointHook"
+        interval=100,
+        max_keep_ckpts=3,
+        save_best="NuScenes metric/T4Metric/mAP",
+        type="CheckpointHook",
+        by_epoch=False,
     ),  # alternative 'NuScenes metric/T4Metric/NDS'
 )
 
 load_from = "/workspace/work_dirs/ckpts/fcos3d_vovnet_imgbackbone-remapped.pth"
+# load_from = "/workspace/work_dirs/stream_petr_vov_flash_800_bs2_seq_24e/iter_200.pth"
 resume_from = None

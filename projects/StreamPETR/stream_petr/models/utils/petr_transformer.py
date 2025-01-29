@@ -402,6 +402,7 @@ class PETRTransformerDecoder(TransformerLayerSequence):
                     intermediate.append(self.post_norm(query))
                 else:
                     intermediate.append(query)
+
         return torch.stack(intermediate)
 
 
@@ -746,7 +747,6 @@ class PETRTemporalDecoderLayer(BaseModule):
             elif layer == "ffn":
                 query = self.ffns[ffn_index](query, identity if self.pre_norm else None)
                 ffn_index += 1
-
         return query
 
     def forward(
