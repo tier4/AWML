@@ -10,6 +10,7 @@ from .datasets.pipelines.transform_3d import (
     NormalizeMultiviewImage,
     ResizeCropFlipRotImage,
     GlobalRotScaleTransImage,
+    ConvertTo3dGlobal
 )
 from .datasets.pipelines.formating import PETRFormatBundle3D,StreamPETRDataset
 from .datasets.pipelines.loading import StreamPETRLoadAnnotations2D
@@ -31,5 +32,6 @@ __all__ = [
     "StreamPETRLoadAnnotations2D",
     "StreamPETRDataset",
     "NoCacheAmpOptimWrapper",
-    "DebugOptimWrapper"
+    "DebugOptimWrapper",
+    "ConvertTo3dGlobal"
 ]

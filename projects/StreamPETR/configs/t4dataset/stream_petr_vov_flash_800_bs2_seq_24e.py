@@ -8,58 +8,69 @@ custom_imports = dict(
 )
 custom_imports["imports"] += _base_.custom_imports["imports"]
 
-backbone_norm_cfg = dict(type='LN', requires_grad=True)
+backbone_norm_cfg = dict(type="LN", requires_grad=True)
 
 # If point cloud range is changed, the models should also change their point
 # cloud range accordingly
 point_cloud_range = [-51.2, -51.2, -5.0, 51.2, 51.2, 3.0]
 voxel_size = [0.2, 0.2, 8]
-img_norm_cfg = dict(
-    mean=[103.530, 116.280, 123.675], std=[57.375, 57.120, 58.395], to_rgb=False) # fix img_norm
+img_norm_cfg = dict(mean=[103.530, 116.280, 123.675], std=[57.375, 57.120, 58.395], to_rgb=False)  # fix img_norm
 # For nuScenes we usually do 10-class detection
 class_names = _base_.class_names
 
 num_gpus = 2
 batch_size = 4
-val_interval= 5
+val_interval = 5
 num_epochs = 50
 backend_args = None
 
 eval_class_range = {
-    "car": 120,
-    "truck": 120,
-    "bus": 120,
-    "bicycle": 120,
-    "pedestrian": 120,
+    "car": 75,
+    "truck": 75,
+    "bus": 75,
+    "bicycle": 75,
+    "pedestrian": 75,
 }
 
 queue_length = 1
 num_frame_losses = 1
-collect_keys=['lidar2img', 'intrinsics', 'extrinsics','timestamp', 'img_timestamp', 'ego_pose', 'ego_pose_inv']
+collect_keys = [
+    "lidar2img",
+    "intrinsics",
+    "extrinsics",
+    "timestamp",
+    "img_timestamp",
+    "ego_pose",
+    "ego_pose_inv",
+    # "e2g_matrix",
+    # "l2e_matrix",
+]
 input_modality = dict(
     use_lidar=True,  # lidar-related information (like ego-pose) is loaded, but pointcloud is not loaded or used
     use_camera=True,
     use_radar=False,
     use_map=False,
-    use_external=True)
+    use_external=True,
+)
 model = dict(
-    type='Petr3D',
+    type="Petr3D",
+    streaming_test_mode=queue_length > 1,
     num_frame_head_grads=num_frame_losses,
     num_frame_backbone_grads=num_frame_losses,
     num_frame_losses=num_frame_losses,
     use_grid_mask=True,
     img_backbone=dict(
-        type='VoVNet', ###use checkpoint to save memory
-        spec_name='V-99-eSE',
+        type="VoVNet",  ###use checkpoint to save memory
+        spec_name="V-99-eSE",
         norm_eval=False,
         frozen_stages=-1,
         input_ch=3,
-        out_features=('stage4','stage5',)),
-    img_neck=dict(
-        type='CPFPN',  ###remove unused parameters 
-        in_channels=[768, 1024],
-        out_channels=256,
-        num_outs=2),
+        out_features=(
+            "stage4",
+            "stage5",
+        ),
+    ),
+    img_neck=dict(type="CPFPN", in_channels=[768, 1024], out_channels=256, num_outs=2),  ###remove unused parameters
     # img_roi_head=dict(
     #     type='mmdet.FocalHead',
     #     num_classes=len(class_names),
@@ -89,8 +100,9 @@ model = dict(
     #             centers2d_cost=dict(type='mmdet.BBox3DL1Cost', weight=10.0)))
     #     ),
     pts_bbox_head=dict(
-        type='StreamPETRHead',
+        type="StreamPETRHead",
         num_classes=len(class_names),
+        score_thres=0.1,
         in_channels=256,
         num_query=644,
         memory_len=1024,
@@ -98,105 +110,119 @@ model = dict(
         num_propagated=256,
         with_ego_pos=True,
         match_with_velo=False,
-        scalar=10, ##noise groups
-        noise_scale = 1.0, 
-        dn_weight= 1.0, ##dn loss weight
-        split = 0.75, ###positive rate
+        scalar=10,  ##noise groups
+        noise_scale=1.0,
+        dn_weight=1.0,  ##dn loss weight
+        split=0.75,  ###positive rate
         LID=True,
         with_position=True,
         position_range=[-61.2, -61.2, -10.0, 61.2, 61.2, 10.0],
-        code_weights = [2.0, 2.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 0.0, 0.0],  # setting the last two to zero will disable optimization for velocity
+        code_weights=[
+            2.0,
+            2.0,
+            1.0,
+            1.0,
+            1.0,
+            1.0,
+            1.0,
+            1.0,
+            0.0,
+            0.0,
+        ],  # setting the last two to zero will disable optimization for velocity
         transformer=dict(
-            type='PETRTemporalTransformer',
+            type="PETRTemporalTransformer",
             decoder=dict(
-                type='PETRTransformerDecoder',
+                type="PETRTransformerDecoder",
                 return_intermediate=True,
                 num_layers=6,
                 transformerlayers=dict(
-                    type='PETRTemporalDecoderLayer',
+                    type="PETRTemporalDecoderLayer",
                     attn_cfgs=[
-                        dict(
-                            type='MultiheadAttention',
-                            embed_dims=256,
-                            num_heads=8,
-                            dropout=0.1),
-                        dict(
-                            type='PETRMultiheadAttention',
-                            embed_dims=256,
-                            num_heads=8,
-                            fp16=False,
-                            dropout=0.1),
-                        ],
+                        dict(type="MultiheadAttention", embed_dims=256, num_heads=8, dropout=0.1),
+                        dict(type="PETRMultiheadAttention", embed_dims=256, num_heads=8, fp16=False, dropout=0.1),
+                    ],
                     feedforward_channels=2048,
                     ffn_dropout=0.1,
                     with_cp=False,  ###use checkpoint to save memory
-                    operation_order=('self_attn', 'norm', 'cross_attn', 'norm',
-                                     'ffn', 'norm')),
-            )),
+                    operation_order=("self_attn", "norm", "cross_attn", "norm", "ffn", "norm"),
+                ),
+            ),
+        ),
         assigner=dict(
-            type='mmdet.HungarianAssigner3D',
-            cls_cost=dict(type='mmdet.FocalLossCost', weight=2.0),
-            reg_cost=dict(type='mmdet.BBox3DL1Cost', weight=0.25),
-            iou_cost=dict(type='mmdet.IoUCost', weight=0.0), # Fake cost. This is just to make it compatible with DETR head. 
-            pc_range=point_cloud_range),
+            type="mmdet.HungarianAssigner3D",
+            cls_cost=dict(type="mmdet.FocalLossCost", weight=2.0),
+            reg_cost=dict(type="mmdet.BBox3DL1Cost", weight=0.25),
+            iou_cost=dict(
+                type="mmdet.IoUCost", weight=0.0
+            ),  # Fake cost. This is just to make it compatible with DETR head.
+            pc_range=point_cloud_range,
+        ),
         train_cfg=dict(
             point_cloud_range=point_cloud_range,
             voxel_size=voxel_size,
             out_size_factor=4,
         ),
         bbox_coder=dict(
-            type='mmdet.NMSFreeCoder',
+            type="mmdet.NMSFreeCoder",
             post_center_range=[-61.2, -61.2, -10.0, 61.2, 61.2, 10.0],
             voxel_size=voxel_size,
             pc_range=point_cloud_range,
             max_num=300,
-            num_classes=len(class_names)), 
-        loss_cls=dict(
-            type='mmdet.FocalLoss',
-            use_sigmoid=True,
-            gamma=2.0,
-            alpha=0.25,
-            loss_weight=2.0),
-        loss_bbox=dict(type='mmdet.L1Loss', loss_weight=0.25),
-        loss_iou=dict(type='mmdet.GIoULoss', loss_weight=0.0),
+            num_classes=len(class_names),
+        ),
+        loss_cls=dict(type="mmdet.FocalLoss", use_sigmoid=True, gamma=2.0, alpha=0.25, loss_weight=2.0),
+        loss_bbox=dict(type="mmdet.L1Loss", loss_weight=0.25),
+        loss_iou=dict(type="mmdet.GIoULoss", loss_weight=0.0),
     ),
-    )
+)
 
 data_root = "./data/"
 info_directory_path = "info/cameraonly/streampetr/"
 
-file_client_args = dict(backend='disk')
+file_client_args = dict(backend="disk")
 
 
 ida_aug_conf = {
-        "resize_lim": (0.45, 0.55),
-        "final_dim": (528, 720),
-        "bot_pct_lim": (0.0, 0.0),
-        "rot_lim": (0.0, 0.0),
-        "rand_flip": True,
-    }
+    "resize_lim": (0.45, 0.55),
+    "final_dim": (640, 960),  # (528, 720)
+    "bot_pct_lim": (0.0, 0.0),
+    "rot_lim": (0.0, 0.0),
+    "rand_flip": True,
+}
 
 train_pipeline = [
-    dict(type='LoadMultiViewImageFromFiles', to_float32=True),
-    dict(type='LoadAnnotations3D', with_bbox_3d=True, with_label_3d=True,with_bbox=False,
-        with_label=False, with_bbox_depth=False),
-    dict(type='ObjectRangeFilter', point_cloud_range=point_cloud_range),
-    dict(type='ObjectNameFilter', classes=class_names),
-    dict(type='mmdet.ResizeCropFlipRotImage', data_aug_conf = ida_aug_conf, training=True, with_2d=False),
-    dict(type='mmdet.PadMultiViewImage', size_divisor=32),
-    dict(type='mmdet.NormalizeMultiviewImage', **img_norm_cfg),
-    dict(type='StreamPETRLoadAnnotations2D'),
-    dict(type='PETRFormatBundle3D', class_names=class_names, collect_keys=collect_keys + ['prev_exists'])
+    dict(type="LoadMultiViewImageFromFiles", to_float32=True),
+    dict(
+        type="LoadAnnotations3D",
+        with_bbox_3d=True,
+        with_label_3d=True,
+        with_bbox=False,
+        with_label=False,
+        with_bbox_depth=False,
+    ),
+    dict(type="ObjectRangeFilter", point_cloud_range=point_cloud_range),
+    dict(type="ObjectNameFilter", classes=class_names),
+    dict(type="mmdet.ResizeCropFlipRotImage", data_aug_conf=ida_aug_conf, training=True, with_2d=False),
+    dict(type="mmdet.PadMultiViewImage", size_divisor=32),
+    dict(type="mmdet.NormalizeMultiviewImage", **img_norm_cfg),
+    dict(type="StreamPETRLoadAnnotations2D"),
+    dict(type="PETRFormatBundle3D", class_names=class_names, collect_keys=collect_keys + ["prev_exists"]),
 ]
 test_pipeline = [
-    dict(type='LoadMultiViewImageFromFiles', to_float32=True),
-    dict(type='LoadAnnotations3D', with_bbox_3d=True, with_label_3d=True,with_bbox=False,
-        with_label=False, with_bbox_depth=False),
-    dict(type='mmdet.ResizeCropFlipRotImage', data_aug_conf = ida_aug_conf, training=False, with_2d=False),
-    dict(type='mmdet.PadMultiViewImage', size_divisor=32),
-    dict(type='mmdet.NormalizeMultiviewImage', **img_norm_cfg),
-    dict(type='StreamPETRLoadAnnotations2D'),
-    dict(type='PETRFormatBundle3D', class_names=class_names, collect_keys=collect_keys + ['prev_exists'])
+    dict(type="LoadMultiViewImageFromFiles", to_float32=True),
+    dict(
+        type="LoadAnnotations3D",
+        with_bbox_3d=True,
+        with_label_3d=True,
+        with_bbox=False,
+        with_label=False,
+        with_bbox_depth=False,
+    ),
+    dict(type="mmdet.ResizeCropFlipRotImage", data_aug_conf=ida_aug_conf, training=False, with_2d=False),
+    dict(type="mmdet.PadMultiViewImage", size_divisor=32),
+    dict(type="mmdet.NormalizeMultiviewImage", **img_norm_cfg),
+    dict(type="StreamPETRLoadAnnotations2D"),
+    dict(type="PETRFormatBundle3D", class_names=class_names, collect_keys=collect_keys + ["prev_exists"]),
 ]
 
 train_dataloader = dict(
@@ -213,8 +239,7 @@ train_dataloader = dict(
         metainfo=_base_.metainfo,
         class_names=class_names,
         modality=input_modality,
-        test_mode=False,
-        collect_keys=collect_keys + ['img', 'prev_exists', 'img_metas'],
+        collect_keys=collect_keys + ["img", "prev_exists", "img_metas"],
         random_length=1,
         queue_length=queue_length,
         data_prefix=_base_.data_prefix,
@@ -236,10 +261,9 @@ val_dataloader = dict(
         class_names=class_names,
         modality=input_modality,
         random_length=0,
-        collect_keys=collect_keys + ['img', 'prev_exists', 'img_metas'],
+        collect_keys=collect_keys + ["img", "prev_exists", "img_metas"],
         queue_length=1,
         data_prefix=_base_.data_prefix,
-        test_mode=False,
         box_type_3d="LiDAR",
         backend_args=backend_args,
     ),
@@ -247,21 +271,20 @@ val_dataloader = dict(
 test_dataloader = dict(
     batch_size=1,
     num_workers=2,
-    persistent_workers=True,
+    persistent_workers=False,
     sampler=dict(type="DefaultSampler", shuffle=False),
     dataset=dict(
         type="StreamPETRDataset",
         data_root=data_root,
-        ann_file=info_directory_path + _base_.info_test_file_name,
+        ann_file="info/cameraonly/streampetr/" + _base_.info_test_file_name,
         pipeline=test_pipeline,
         metainfo=_base_.metainfo,
-        random_length=0,
         class_names=class_names,
         modality=input_modality,
-        collect_keys=collect_keys + ['img', 'prev_exists','img_metas'],
+        random_length=0,
+        collect_keys=collect_keys + ["img", "prev_exists", "img_metas"],
         queue_length=1,
         data_prefix=_base_.data_prefix,
-        test_mode=False,
         box_type_3d="LiDAR",
         backend_args=backend_args,
     ),
@@ -281,7 +304,7 @@ val_evaluator = dict(
 test_evaluator = dict(
     type="T4Metric",
     data_root=data_root,
-    ann_file=data_root + info_directory_path + _base_.info_val_file_name,
+    ann_file=data_root + "info/cameraonly/streampetr/" + _base_.info_test_file_name,
     backend_args=backend_args,
     metric="bbox",
     class_names=class_names,
@@ -294,10 +317,7 @@ train_cfg = dict(by_epoch=True, max_epochs=num_epochs, val_interval=val_interval
 val_cfg = dict()
 test_cfg = dict()
 
-optimizer = dict(
-    type='AdamW', 
-    lr=2e-4, # bs 8: 2e-4 || bs 16: 4e-4,
-    weight_decay=0.01)
+optimizer = dict(type="AdamW", lr=2e-4, weight_decay=0.01)  # bs 8: 2e-4 || bs 16: 4e-4,
 
 optim_wrapper = dict(
     type="DebugOptimWrapper",
@@ -307,53 +327,49 @@ optim_wrapper = dict(
 
 # optim_wrapper = dict(type='NoCacheAmpOptimWrapper', optimizer=optimizer,clip_grad=dict(max_norm=1, norm_type=2))
 # learning policy
-lr_config = dict(
-    policy='CosineAnnealing',
-    warmup='linear',
-    warmup_iters=500,
-    warmup_ratio=1.0 / 3,
-    min_lr_ratio=1e-3,
-    )
 param_scheduler = [
+    dict(type="LinearLR", start_factor=1.0 / 3, begin=0, end=500, by_epoch=False),
     dict(
-        T_max=20,
-        begin=0,
+        type="CosineAnnealingLR",
+        # TODO Figure out what T_max
+        T_max=num_epochs,
         by_epoch=True,
-        convert_to_iter_based=True,
-        end=20,
-        eta_min=0.001,
-        type='CosineAnnealingLR'),
-    dict(
-        T_max=30,
-        begin=20,
-        by_epoch=True,
-        convert_to_iter_based=True,
-        end=80,
-        eta_min=1e-08,
-        type='CosineAnnealingLR'),
-    dict(
-        T_max=20,
-        begin=0,
-        by_epoch=True,
-        convert_to_iter_based=True,
-        end=20,
-        eta_min=0.8947368421052632,
-        type='CosineAnnealingMomentum'),
-    dict(
-        T_max=30,
-        begin=20,
-        by_epoch=True,
-        convert_to_iter_based=True,
-        end=80,
-        eta_min=1,
-        type='CosineAnnealingMomentum'),
+    ),
 ]
+
+# param_scheduler = [
+#     dict(
+#         T_max=20, begin=0, by_epoch=True, convert_to_iter_based=True, end=20, eta_min=0.001, type="CosineAnnealingLR"
+#     ),
+#     dict(
+#         T_max=30, begin=20, by_epoch=True, convert_to_iter_based=True, end=80, eta_min=1e-08, type="CosineAnnealingLR"
+#     ),
+#     dict(
+#         T_max=20,
+#         begin=0,
+#         by_epoch=True,
+#         convert_to_iter_based=True,
+#         end=20,
+#         eta_min=0.8947368421052632,
+#         type="CosineAnnealingMomentum",
+#     ),
+#     dict(
+#         T_max=30,
+#         begin=20,
+#         by_epoch=True,
+#         convert_to_iter_based=True,
+#         end=80,
+#         eta_min=1,
+#         type="CosineAnnealingMomentum",
+#     ),
+# ]
 
 default_hooks = dict(
     logger=dict(type="LoggerHook", interval=10),
     checkpoint=dict(
-        interval=val_interval, max_keep_ckpts=3, save_best='NuScenes metric/T4Metric/mAP', type='CheckpointHook'), # alternative 'NuScenes metric/T4Metric/NDS'
+        interval=val_interval, max_keep_ckpts=3, save_best="NuScenes metric/T4Metric/mAP", type="CheckpointHook"
+    ),  # alternative 'NuScenes metric/T4Metric/NDS'
 )
 
-load_from='/workspace/work_dirs/ckpts/fcos3d_vovnet_imgbackbone-remapped.pth'
-resume_from=None
+load_from = "/workspace/work_dirs/ckpts/fcos3d_vovnet_imgbackbone-remapped.pth"
+resume_from = None

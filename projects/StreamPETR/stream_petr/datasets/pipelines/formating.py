@@ -8,9 +8,9 @@ import numpy as np
 from mmdet3d.structures.points import BasePoints
 from mmcv.transforms import to_tensor
 
-from mmdet3d.registry import TRANSFORMS,DATASETS
+from mmdet3d.registry import TRANSFORMS, DATASETS
 from mmdet3d.structures.points import BasePoints
-from autoware_ml.detection3d.datasets.t4dataset import T4Dataset 
+from autoware_ml.detection3d.datasets.t4dataset import T4Dataset
 from typing import Tuple
 
 import torch
@@ -24,7 +24,7 @@ def convert_to_torch(data):
     """
     Recursively iterate through a structure (list, dict, or nested combination),
     and convert all numpy arrays into torch tensors.
-    
+
     Args:
         data: The input data structure, which could be a list, dict, or any nested structure.
 
@@ -49,7 +49,8 @@ def convert_to_torch(data):
     else:
         # If the data is not a recognized structure, return it as-is
         return data
-        
+
+
 @DATASETS.register_module()
 class StreamPETRDataset(T4Dataset):
     r"""NuScenes Dataset.
@@ -57,7 +58,17 @@ class StreamPETRDataset(T4Dataset):
     This datset only add camera intrinsics and extrinsics to the results.
     """
 
-    def __init__(self, collect_keys, seq_mode=False, seq_split_num=1, num_frame_losses=1, queue_length=8, random_length=0, *args, **kwargs):
+    def __init__(
+        self,
+        collect_keys,
+        seq_mode=False,
+        seq_split_num=1,
+        num_frame_losses=1,
+        queue_length=8,
+        random_length=0,
+        *args,
+        **kwargs,
+    ):
         super().__init__(*args, **kwargs)
         self.queue_length = queue_length
         self.collect_keys = collect_keys
@@ -70,12 +81,14 @@ class StreamPETRDataset(T4Dataset):
             self.seq_split_num = seq_split_num
             self.random_length = 0
 
-    def _validate_entry(self,info) -> bool:
+    def _validate_entry(self, info) -> bool:
         """
-            Validate the necessary entries in the data info dict
+        Validate the necessary entries in the data info dict
         """
-        if not all([ x["img_path"] and os.path.exists(x["img_path"]) for x in info['images'].values()]):
-            print(f"Found frame  {(info['scene_token'],info['token'])} without any image in it, not using it for training")
+        if not all([x["img_path"] and os.path.exists(x["img_path"]) for x in info["images"].values()]):
+            print(
+                f"Found frame  {(info['scene_token'],info['token'])} without any image in it, not using it for training"
+            )
             return False
         return True
 
@@ -98,11 +111,12 @@ class StreamPETRDataset(T4Dataset):
         # Serialize data information list avoid making multiple copies of
         # `self.data_list` when iterate `import torch.utils.data.dataloader`
         # with multiple workers.
-        sort_items = [(x["scene_token"],x["timestamp"]) for x in self.data_list]
-        argsorted_indices = sorted(
-            list(range(len(sort_items))),
-            key=lambda i: sort_items[i]
-        )
+        sort_items = [(x["scene_token"], x["timestamp"]) for x in self.data_list]
+        for i in range(len(self.data_list)):
+            self.data_list[i][
+                "pre_sample_idx"
+            ] = i  # This is necessary to match gts and predictions for frames in testing
+        argsorted_indices = sorted(list(range(len(sort_items))), key=lambda i: sort_items[i])
         self.data_list = [self.data_list[i] for i in argsorted_indices if self._validate_entry(self.data_list[i])]
         data_list = [_serialize(x) for x in self.data_list]
         address_list = np.asarray([len(x) for x in data_list], dtype=np.int64)
@@ -114,9 +128,9 @@ class StreamPETRDataset(T4Dataset):
         self.data_list.clear()
         gc.collect()
         return data_bytes, data_address
-    
-    def _validate_data(self,queue):
-        assert all(x["scene_token"]==queue[0]["scene_token"] for x in queue), "All frames must be from same scene"
+
+    def _validate_data(self, queue):
+        assert all(x["scene_token"] == queue[0]["scene_token"] for x in queue), "All frames must be from same scene"
 
     def prepare_temporal_data(self, index):
         """
@@ -127,22 +141,22 @@ class StreamPETRDataset(T4Dataset):
             dict: Training data dict of the corresponding index.
         """
         queue = []
-        index_list = list(range(index-self.queue_length-self.random_length+1, index))
+        index_list = list(range(index - self.queue_length - self.random_length + 1, index))
         if self.random_length:
             random.shuffle(index_list)
-        index_list = sorted(index_list[self.random_length:])
+        index_list = sorted(index_list[self.random_length :])
         index_list.append(index)
         prev_scene_token = None
         for i in index_list:
             i = max(0, i)
             input_dict = self.get_annot_info(i)
-            
-            if not self.seq_mode: # for sliding window only
+
+            if not self.seq_mode:  # for sliding window only
                 if prev_scene_token is None:
                     input_dict.update(dict(prev_exists=False))
-                    prev_scene_token = input_dict['scene_token']
-                elif input_dict['scene_token'] != prev_scene_token:
-                    queue.insert(0,queue[0])
+                    prev_scene_token = input_dict["scene_token"]
+                elif input_dict["scene_token"] != prev_scene_token:
+                    queue.insert(0, queue[0])
                     continue
                 else:
                     input_dict.update(dict(prev_exists=True))
@@ -151,24 +165,23 @@ class StreamPETRDataset(T4Dataset):
             queue.append(example)
 
         for k in range(self.num_frame_losses):
-            if self.filter_empty_gt and \
-                (queue[-k-1] is None or ~(queue[-k-1]['gt_labels_3d'] != -1).any()):
+            if self.filter_empty_gt and (queue[-k - 1] is None or ~(queue[-k - 1]["gt_labels_3d"] != -1).any()):
                 return None
-            
+
         self._validate_data(queue)
-        
+
         return self._union2one(queue)
-    
+
     def _union2one(self, queue):
         updated = {}
         for key in self.collect_keys:
-            if key != 'img_metas':
+            if key != "img_metas":
                 updated[key] = torch.stack([each[key] for each in queue])
             else:
                 updated[key] = [each[key] for each in queue]
 
-        for key in ['gt_bboxes_3d', 'gt_labels_3d', 'gt_bboxes', 'gt_bboxes_labels', 'centers_2d', 'depths']:
-            if key == 'gt_bboxes_3d':
+        for key in ["gt_bboxes_3d", "gt_labels_3d", "gt_bboxes", "gt_bboxes_labels", "centers_2d", "depths"]:
+            if key == "gt_bboxes_3d":
                 updated[key] = [each[key] for each in queue]
             else:
                 updated[key] = [convert_to_torch(each[key]) for each in queue]
@@ -184,7 +197,6 @@ class StreamPETRDataset(T4Dataset):
             dict: Data information that will be passed to the data \
                 preprocessing pipelines. It includes the following keys:
 
-                - sample_idx (str): Sample index.
                 - pts_filename (str): Filename of point clouds.
                 - sweeps (list[dict]): Infos of sweeps.
                 - timestamp (float): Sample timestamp.
@@ -195,59 +207,61 @@ class StreamPETRDataset(T4Dataset):
         """
         info = super().get_data_info(index)
         # standard protocal modified from SECOND.Pytorch
-        e2g_matrix = np.array(info["ego2global"]) 
-        l2e_matrix = np.eye(4)
-        ego_pose =  e2g_matrix @ l2e_matrix # lidar2global
+        e2g_matrix = np.array(info["ego2global"])
+        l2e_matrix = np.array(info["lidar_points"]["lidar2ego"])
+        ego_pose = e2g_matrix @ l2e_matrix  # lidar2global
         ego_pose_inv = invert_matrix_egopose_numpy(ego_pose)
         input_dict = dict(
-            sample_idx=info['token'],
-            pts_filename=info['lidar_path'],
-            sweeps=info.get('sweeps',[]),
+            pts_filename=info["lidar_path"],
+            sweeps=info.get("sweeps", []),
             ego_pose=ego_pose,
-            ego_pose_inv = ego_pose_inv,
-            prev_idx=info.get('prev',None),
-            next_idx=info.get('next',None),
-            scene_token=info['scene_token'],
-            frame_idx=info['sample_idx'],
-            timestamp=info['timestamp'] / 1e9,
+            ego_pose_inv=ego_pose_inv,
+            prev_idx=info.get("prev", None),
+            next_idx=info.get("next", None),
+            scene_token=info["scene_token"],
+            frame_idx=info["token"],
+            timestamp=info["timestamp"] / 1e9,
+            l2e_matrix=l2e_matrix,
+            e2g_matrix=e2g_matrix,
         )
 
-        if self.modality['use_camera']:
+        if self.modality["use_camera"]:
             image_paths = []
             lidar2img_rts = []
             intrinsics = []
             extrinsics = []
             img_timestamp = []
-            for cam_type, cam_info in info['images'].items():
-                img_timestamp.append(cam_info['timestamp'] / 1e9)
-                image_paths.append(cam_info['img_path'])
+            for cam_type, cam_info in info["images"].items():
+                img_timestamp.append(cam_info["timestamp"] / 1e9)
+                image_paths.append(cam_info["img_path"])
                 intrinsic_mat = np.array(cam_info["cam2img"])
                 extrinsic_mat = np.array(cam_info["lidar2cam"])
                 intrinsics.append(intrinsic_mat)
                 extrinsics.append(extrinsic_mat)
-                lidar2img_rts.append(np.concatenate([intrinsic_mat@extrinsic_mat[:3,:],np.array([[0,0,0,1]])]))
-            if not self.test_mode: # for seq_mode
-                prev_exists  = not (index == 0 or super().get_data_info(index - 1)["scene_token"] != info["scene_token"])
-            else:
-                prev_exists = None
+                lidar2img_rts.append(np.concatenate([intrinsic_mat @ extrinsic_mat[:3, :], np.array([[0, 0, 0, 1]])]))
+
+            prev_exists = not (index == 0 or super().get_data_info(index - 1)["scene_token"] != info["scene_token"])
 
             input_dict.update(
                 dict(
-                    images= info['images'],
+                    images=info["images"],
                     img_timestamp=img_timestamp,
                     img_filename=image_paths,
                     lidar2img=lidar2img_rts,
                     intrinsics=intrinsics,
                     extrinsics=extrinsics,
                     prev_exists=prev_exists,
-                    img_metas=dict(scene_token=info["scene_token"], sample_idx=info['sample_idx'])
-                ))
-        if not self.test_mode:
-            annos = self.parse_ann_info(info)
-            input_dict['ann_info'] = annos
-            
-        return input_dict
+                    img_metas=dict(
+                        scene_token=info["scene_token"],
+                        sample_idx=info["pre_sample_idx"],
+                        sample_token=info["token"],
+                    ),
+                )
+            )
 
+        annos = self.parse_ann_info(info)
+        input_dict["ann_info"] = annos
+        return input_dict
 
     def prepare_data(self, idx):
         """Get item from infos according to the given index.
@@ -257,8 +271,9 @@ class StreamPETRDataset(T4Dataset):
         data = self.prepare_temporal_data(idx)
         return data
 
+
 def invert_matrix_egopose_numpy(egopose):
-    """ Compute the inverse transformation of a 4x4 egopose numpy matrix."""
+    """Compute the inverse transformation of a 4x4 egopose numpy matrix."""
     inverse_matrix = np.zeros((4, 4), dtype=np.float32)
     rotation = egopose[:3, :3]
     translation = egopose[:3, 3]
@@ -267,12 +282,14 @@ def invert_matrix_egopose_numpy(egopose):
     inverse_matrix[3, 3] = 1.0
     return inverse_matrix
 
+
 def convert_egopose_to_matrix_numpy(rotation, translation):
     transformation_matrix = np.zeros((4, 4), dtype=np.float32)
     transformation_matrix[:3, :3] = rotation
     transformation_matrix[:3, 3] = translation
     transformation_matrix[3, 3] = 1.0
     return transformation_matrix
+
 
 @TRANSFORMS.register_module()
 class PETRFormatBundle3D:
@@ -296,6 +313,7 @@ class PETRFormatBundle3D:
         self.with_gt = with_gt
         self.with_label = with_label
         self.collect_keys = collect_keys
+
     def __call__(self, results):
         """Call function to transform and format common fields in results.
 
@@ -307,70 +325,63 @@ class PETRFormatBundle3D:
                 default bundle.
         """
         # Format 3D data
-        if 'points' in results:
-            assert isinstance(results['points'], BasePoints)
-            results['points'] = results['points'].tensor
+        if "points" in results:
+            assert isinstance(results["points"], BasePoints)
+            results["points"] = results["points"].tensor
 
         for key in self.collect_keys:
-            if key in ['timestamp',  'img_timestamp']:
-                 results[key] = to_tensor(np.array(results[key], dtype=np.float64))
+            if key in ["timestamp", "img_timestamp"]:
+                results[key] = to_tensor(np.array(results[key], dtype=np.float64))
             else:
-                 results[key] = to_tensor(np.array(results[key], dtype=np.float32))
+                results[key] = to_tensor(np.array(results[key], dtype=np.float32))
 
-        for key in ['voxels', 'coors', 'voxel_centers', 'num_points']:
+        for key in ["voxels", "coors", "voxel_centers", "num_points"]:
             if key not in results:
                 continue
             results[key] = to_tensor(results[key])
 
         if self.with_gt:
             # Clean GT bboxes in the final
-            if 'gt_bboxes_3d_mask' in results:
-                gt_bboxes_3d_mask = results['gt_bboxes_3d_mask']
-                results['gt_bboxes_3d'] = results['gt_bboxes_3d'][
-                    gt_bboxes_3d_mask]
-                if 'gt_names_3d' in results:
-                    results['gt_names_3d'] = results['gt_names_3d'][
-                        gt_bboxes_3d_mask]
-                if 'centers2d' in results:
-                    results['centers2d'] = results['centers2d'][
-                        gt_bboxes_3d_mask]
-                if 'depths' in results:
-                    results['depths'] = results['depths'][gt_bboxes_3d_mask]
-            if 'gt_bboxes_mask' in results:
-                gt_bboxes_mask = results['gt_bboxes_mask']
-                if 'gt_bboxes' in results:
-                    results['gt_bboxes'] = results['gt_bboxes'][gt_bboxes_mask]
-                results['gt_names'] = results['gt_names'][gt_bboxes_mask]
+            if "gt_bboxes_3d_mask" in results:
+                gt_bboxes_3d_mask = results["gt_bboxes_3d_mask"]
+                results["gt_bboxes_3d"] = results["gt_bboxes_3d"][gt_bboxes_3d_mask]
+                if "gt_names_3d" in results:
+                    results["gt_names_3d"] = results["gt_names_3d"][gt_bboxes_3d_mask]
+                if "centers2d" in results:
+                    results["centers2d"] = results["centers2d"][gt_bboxes_3d_mask]
+                if "depths" in results:
+                    results["depths"] = results["depths"][gt_bboxes_3d_mask]
+            if "gt_bboxes_mask" in results:
+                gt_bboxes_mask = results["gt_bboxes_mask"]
+                if "gt_bboxes" in results:
+                    results["gt_bboxes"] = results["gt_bboxes"][gt_bboxes_mask]
+                results["gt_names"] = results["gt_names"][gt_bboxes_mask]
             if self.with_label:
-                if 'gt_names' in results and len(results['gt_names']) == 0:
-                    results['gt_bboxes_labels'] = np.array([], dtype=np.int64)
-                    results['attr_labels'] = np.array([], dtype=np.int64)
-                elif 'gt_names' in results and isinstance(
-                        results['gt_names'][0], list):
+                if "gt_names" in results and len(results["gt_names"]) == 0:
+                    results["gt_bboxes_labels"] = np.array([], dtype=np.int64)
+                    results["attr_labels"] = np.array([], dtype=np.int64)
+                elif "gt_names" in results and isinstance(results["gt_names"][0], list):
                     # gt_labels might be a list of list in multi-view setting
-                    results['gt_bboxes_labels'] = [
-                        np.array([self.class_names.index(n) for n in res],
-                                 dtype=np.int64) for res in results['gt_names']
+                    results["gt_bboxes_labels"] = [
+                        np.array([self.class_names.index(n) for n in res], dtype=np.int64)
+                        for res in results["gt_names"]
                     ]
-                elif 'gt_names' in results:
-                    results['gt_bboxes_labels'] = np.array([
-                        self.class_names.index(n) for n in results['gt_names']
-                    ],
-                                                    dtype=np.int64)
+                elif "gt_names" in results:
+                    results["gt_bboxes_labels"] = np.array(
+                        [self.class_names.index(n) for n in results["gt_names"]], dtype=np.int64
+                    )
                 # we still assume one pipeline for one frame LiDAR
                 # thus, the 3D name is list[string]
-                if 'gt_names_3d' in results:
-                    results['gt_labels_3d'] = np.array([
-                        self.class_names.index(n)
-                        for n in results['gt_names_3d']
-                    ],
-                                                       dtype=np.int64)
+                if "gt_names_3d" in results:
+                    results["gt_labels_3d"] = np.array(
+                        [self.class_names.index(n) for n in results["gt_names_3d"]], dtype=np.int64
+                    )
         # results = super(PETRFormatBundle3D, self).__call__(results)
         return results
 
     def __repr__(self):
         """str: Return a string that describes the module."""
         repr_str = self.__class__.__name__
-        repr_str += f'(class_names={self.class_names}, '
-        repr_str += f'collect_keys={self.collect_keys}, with_gt={self.with_gt}, with_label={self.with_label})'
+        repr_str += f"(class_names={self.class_names}, "
+        repr_str += f"collect_keys={self.collect_keys}, with_gt={self.with_gt}, with_label={self.with_label})"
         return repr_str
