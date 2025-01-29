@@ -4,15 +4,16 @@ import torch.nn as nn
 import torch
 import datetime
 import os
-from mmengine.optim.optimizer.amp_optimizer_wrapper import AmpOptimWrapper,OptimWrapper
+from mmengine.optim.optimizer.amp_optimizer_wrapper import AmpOptimWrapper, OptimWrapper
 from mmengine.registry import OPTIM_WRAPPERS
+
 
 @OPTIM_WRAPPERS.register_module()
 class NoCacheAmpOptimWrapper(AmpOptimWrapper):
     """
-      The gradients disappear for the Linear layers when using mixed precision training, so need to disable the cache.
-      This happens because there are no_grad operations used for a few forward passes before using forward passes with grad
-      https://github.com/pytorch/pytorch/issues/142234
+    The gradients disappear for the Linear layers when using mixed precision training, so need to disable the cache.
+    This happens because there are no_grad operations used for a few forward passes before using forward passes with grad
+    https://github.com/pytorch/pytorch/issues/142234
     """
 
     @contextmanager
@@ -25,6 +26,7 @@ class NoCacheAmpOptimWrapper(AmpOptimWrapper):
             model (nn.Module): The training model.
         """
         from mmengine.runner.amp import autocast
+
         with super().optim_context(model), autocast(dtype=self.cast_dtype, cache_enabled=False):
             yield
 
@@ -39,9 +41,11 @@ class NoCacheAmpOptimWrapper(AmpOptimWrapper):
         self.loss_scaler.scale(loss).backward(**kwargs)
         self._inner_count += 1
 
+
 @OPTIM_WRAPPERS.register_module()
 class DebugOptimWrapper(OptimWrapper):
 
     def backward(self, loss: torch.Tensor, **kwargs) -> None:
-        loss.backward(**kwargs)
+        with torch.autograd.detect_anomaly():
+            loss.backward(**kwargs)
         self._inner_count += 1

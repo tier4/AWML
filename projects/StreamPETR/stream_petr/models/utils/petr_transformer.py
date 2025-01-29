@@ -12,11 +12,13 @@
 import warnings
 import torch
 import torch.nn as nn
-from mmcv.cnn.bricks.transformer import (BaseTransformerLayer,
-                                         TransformerLayerSequence,
-                                         build_transformer_layer_sequence,
-                                         build_attention,
-                                         build_feedforward_network)
+from mmcv.cnn.bricks.transformer import (
+    BaseTransformerLayer,
+    TransformerLayerSequence,
+    build_transformer_layer_sequence,
+    build_attention,
+    build_feedforward_network,
+)
 from mmcv.cnn.bricks.drop import build_dropout
 from mmcv.cnn import build_norm_layer
 from mmengine.model import xavier_init, BaseModule
@@ -27,6 +29,7 @@ import copy
 from torch.nn import ModuleList
 from .attention import FlashMHA
 import torch.utils.checkpoint as cp
+
 
 @MODELS.register_module()
 class PETRMultiheadFlashAttention(BaseModule):
@@ -49,48 +52,51 @@ class PETRMultiheadFlashAttention(BaseModule):
              Default to False.
     """
 
-    def __init__(self,
-                 embed_dims,
-                 num_heads,
-                 attn_drop=0.,
-                 proj_drop=0.,
-                 dropout_layer=dict(type='Dropout', drop_prob=0.),
-                 init_cfg=None,
-                 batch_first=True,
-                 **kwargs):
+    def __init__(
+        self,
+        embed_dims,
+        num_heads,
+        attn_drop=0.0,
+        proj_drop=0.0,
+        dropout_layer=dict(type="Dropout", drop_prob=0.0),
+        init_cfg=None,
+        batch_first=True,
+        **kwargs,
+    ):
         super(PETRMultiheadFlashAttention, self).__init__(init_cfg)
-        if 'dropout' in kwargs:
+        if "dropout" in kwargs:
             warnings.warn(
-                'The arguments `dropout` in MultiheadAttention '
-                'has been deprecated, now you can separately '
-                'set `attn_drop`(float), proj_drop(float), '
-                'and `dropout_layer`(dict) ', DeprecationWarning)
-            attn_drop = kwargs['dropout']
-            dropout_layer['drop_prob'] = kwargs.pop('dropout')
+                "The arguments `dropout` in MultiheadAttention "
+                "has been deprecated, now you can separately "
+                "set `attn_drop`(float), proj_drop(float), "
+                "and `dropout_layer`(dict) ",
+                DeprecationWarning,
+            )
+            attn_drop = kwargs["dropout"]
+            dropout_layer["drop_prob"] = kwargs.pop("dropout")
 
         self.embed_dims = embed_dims
         self.num_heads = num_heads
         self.batch_first = True
 
-        self.attn = FlashMHA(embed_dims, num_heads, attn_drop, dtype=torch.float16, device='cuda',
-                                          **kwargs)
+        self.attn = FlashMHA(embed_dims, num_heads, attn_drop, dtype=torch.float16, device="cuda", **kwargs)
 
         self.proj_drop = nn.Dropout(proj_drop)
-        self.dropout_layer = build_dropout(
-            dropout_layer) if dropout_layer else nn.Identity()
+        self.dropout_layer = build_dropout(dropout_layer) if dropout_layer else nn.Identity()
 
-    @deprecated_api_warning({'residual': 'identity'},
-                            cls_name='MultiheadAttention')
-    def forward(self,
-                query,
-                key=None,
-                value=None,
-                identity=None,
-                query_pos=None,
-                key_pos=None,
-                attn_mask=None,
-                key_padding_mask=None,
-                **kwargs):
+    @deprecated_api_warning({"residual": "identity"}, cls_name="MultiheadAttention")
+    def forward(
+        self,
+        query,
+        key=None,
+        value=None,
+        identity=None,
+        query_pos=None,
+        key_pos=None,
+        attn_mask=None,
+        key_padding_mask=None,
+        **kwargs,
+    ):
         """Forward function for `MultiheadAttention`.
         **kwargs allow passing a more general data flow when combining
         with other operations in `transformerlayer`.
@@ -140,8 +146,7 @@ class PETRMultiheadFlashAttention(BaseModule):
                 if query_pos.shape == key.shape:
                     key_pos = query_pos
                 else:
-                    warnings.warn(f'position encoding of key is'
-                                  f'missing in {self.__class__.__name__}.')
+                    warnings.warn(f"position encoding of key is" f"missing in {self.__class__.__name__}.")
         if query_pos is not None:
             query = query + query_pos
         if key_pos is not None:
@@ -157,12 +162,8 @@ class PETRMultiheadFlashAttention(BaseModule):
             query = query.transpose(0, 1)
             key = key.transpose(0, 1)
             value = value.transpose(0, 1)
-        
-        out = self.attn(
-            q=query,
-            k=key,
-            v=value,
-            key_padding_mask=None)[0]
+
+        out = self.attn(q=query, k=key, v=value, key_padding_mask=None)[0]
 
         if self.batch_first:
             out = out.transpose(0, 1)
@@ -180,12 +181,13 @@ class MultiheadAttentionWrapper(nn.MultiheadAttention):
 
     def forward_fp32(self, *args, **kwargs):
         return super(MultiheadAttentionWrapper, self).forward(*args, **kwargs)
-    
+
     def forward(self, *args, **kwargs):
         if self.training:
             return self.forward_fp16(*args, **kwargs)
         else:
-            return self.forward_fp32( *args, **kwargs)
+            return self.forward_fp32(*args, **kwargs)
+
 
 @MODELS.register_module()
 class PETRMultiheadAttention(BaseModule):
@@ -208,51 +210,55 @@ class PETRMultiheadAttention(BaseModule):
              Default to False.
     """
 
-    def __init__(self,
-                 embed_dims,
-                 num_heads,
-                 attn_drop=0.,
-                 proj_drop=0.,
-                 dropout_layer=dict(type='Dropout', drop_prob=0.),
-                 init_cfg=None,
-                 batch_first=False,
-                 fp16 = False,
-                 **kwargs):
+    def __init__(
+        self,
+        embed_dims,
+        num_heads,
+        attn_drop=0.0,
+        proj_drop=0.0,
+        dropout_layer=dict(type="Dropout", drop_prob=0.0),
+        init_cfg=None,
+        batch_first=False,
+        fp16=False,
+        **kwargs,
+    ):
         super(PETRMultiheadAttention, self).__init__(init_cfg)
-        if 'dropout' in kwargs:
+        if "dropout" in kwargs:
             warnings.warn(
-                'The arguments `dropout` in MultiheadAttention '
-                'has been deprecated, now you can separately '
-                'set `attn_drop`(float), proj_drop(float), '
-                'and `dropout_layer`(dict) ', DeprecationWarning)
-            attn_drop = kwargs['dropout']
-            dropout_layer['drop_prob'] = kwargs.pop('dropout')
+                "The arguments `dropout` in MultiheadAttention "
+                "has been deprecated, now you can separately "
+                "set `attn_drop`(float), proj_drop(float), "
+                "and `dropout_layer`(dict) ",
+                DeprecationWarning,
+            )
+            attn_drop = kwargs["dropout"]
+            dropout_layer["drop_prob"] = kwargs.pop("dropout")
 
         self.embed_dims = embed_dims
         self.num_heads = num_heads
         self.batch_first = batch_first
         self.fp16_enabled = fp16
         if fp16:
-            self.attn = MultiheadAttentionWrapper(embed_dims, num_heads, attn_drop,  **kwargs)
+            self.attn = MultiheadAttentionWrapper(embed_dims, num_heads, attn_drop, **kwargs)
         else:
-            self.attn = nn.MultiheadAttention(embed_dims, num_heads, attn_drop,  **kwargs)
+            self.attn = nn.MultiheadAttention(embed_dims, num_heads, attn_drop, **kwargs)
 
         self.proj_drop = nn.Dropout(proj_drop)
-        self.dropout_layer = build_dropout(
-            dropout_layer) if dropout_layer else nn.Identity()
+        self.dropout_layer = build_dropout(dropout_layer) if dropout_layer else nn.Identity()
 
-    @deprecated_api_warning({'residual': 'identity'},
-                            cls_name='MultiheadAttention')
-    def forward(self,
-                query,
-                key=None,
-                value=None,
-                identity=None,
-                query_pos=None,
-                key_pos=None,
-                attn_mask=None,
-                key_padding_mask=None,
-                **kwargs):
+    @deprecated_api_warning({"residual": "identity"}, cls_name="MultiheadAttention")
+    def forward(
+        self,
+        query,
+        key=None,
+        value=None,
+        identity=None,
+        query_pos=None,
+        key_pos=None,
+        attn_mask=None,
+        key_padding_mask=None,
+        **kwargs,
+    ):
         """Forward function for `MultiheadAttention`.
         **kwargs allow passing a more general data flow when combining
         with other operations in `transformerlayer`.
@@ -302,8 +308,7 @@ class PETRMultiheadAttention(BaseModule):
                 if query_pos.shape == key.shape:
                     key_pos = query_pos
                 else:
-                    warnings.warn(f'position encoding of key is'
-                                  f'missing in {self.__class__.__name__}.')
+                    warnings.warn(f"position encoding of key is" f"missing in {self.__class__.__name__}.")
         if query_pos is not None:
             query = query + query_pos
         if key_pos is not None:
@@ -320,18 +325,12 @@ class PETRMultiheadAttention(BaseModule):
             key = key.transpose(0, 1).contiguous()
             value = value.transpose(0, 1).contiguous()
 
-        out = self.attn(
-            query=query,
-            key=key,
-            value=value,
-            attn_mask=attn_mask,
-            key_padding_mask=key_padding_mask)[0]
+        out = self.attn(query=query, key=key, value=value, attn_mask=attn_mask, key_padding_mask=key_padding_mask)[0]
 
         if self.batch_first:
             out = out.transpose(0, 1).contiguous()
 
         return identity + self.dropout_layer(self.proj_drop(out))
-
 
 
 @MODELS.register_module()
@@ -342,15 +341,12 @@ class PETRTransformerEncoder(TransformerLayerSequence):
             `LN`. Only used when `self.pre_norm` is `True`
     """
 
-    def __init__(self, *args, post_norm_cfg=dict(type='LN'), **kwargs):
+    def __init__(self, *args, post_norm_cfg=dict(type="LN"), **kwargs):
         super(PETRTransformerEncoder, self).__init__(*args, **kwargs)
         if post_norm_cfg is not None:
-            self.post_norm = build_norm_layer(
-                post_norm_cfg, self.embed_dims)[1] if self.pre_norm else None
+            self.post_norm = build_norm_layer(post_norm_cfg, self.embed_dims)[1] if self.pre_norm else None
         else:
-            assert not self.pre_norm, f'Use prenorm in ' \
-                                      f'{self.__class__.__name__},' \
-                                      f'Please specify post_norm_cfg'
+            assert not self.pre_norm, f"Use prenorm in " f"{self.__class__.__name__}," f"Please specify post_norm_cfg"
             self.post_norm = None
 
     def forward(self, *args, **kwargs):
@@ -373,17 +369,12 @@ class PETRTransformerDecoder(TransformerLayerSequence):
             `LN`.
     """
 
-    def __init__(self,
-                 *args,
-                 post_norm_cfg=dict(type='LN'),
-                 return_intermediate=False,
-                 **kwargs):
+    def __init__(self, *args, post_norm_cfg=dict(type="LN"), return_intermediate=False, **kwargs):
 
         super(PETRTransformerDecoder, self).__init__(*args, **kwargs)
         self.return_intermediate = return_intermediate
         if post_norm_cfg is not None:
-            self.post_norm = build_norm_layer(post_norm_cfg,
-                                              self.embed_dims)[1]
+            self.post_norm = build_norm_layer(post_norm_cfg, self.embed_dims)[1]
         else:
             self.post_norm = None
 
@@ -412,7 +403,6 @@ class PETRTransformerDecoder(TransformerLayerSequence):
                 else:
                     intermediate.append(query)
         return torch.stack(intermediate)
-
 
 
 @MODELS.register_module()
@@ -447,12 +437,22 @@ class PETRTemporalTransformer(BaseModule):
     def init_weights(self):
         # follow the official DETR to init parameters
         for m in self.modules():
-            if hasattr(m, 'weight') and m.weight.dim() > 1:
-                xavier_init(m, distribution='uniform')
+            if hasattr(m, "weight") and m.weight.dim() > 1:
+                xavier_init(m, distribution="uniform")
         self._is_init = True
 
-
-    def forward(self, memory, tgt, query_pos, pos_embed, attn_masks, temp_memory=None, temp_pos=None, mask=None, reg_branch=None):
+    def forward(
+        self,
+        memory,
+        tgt,
+        query_pos,
+        pos_embed,
+        attn_masks,
+        temp_memory=None,
+        temp_pos=None,
+        mask=None,
+        reg_branch=None,
+    ):
         """Forward function for `Transformer`.
         Args:
             x (Tensor): Input query with shape [bs, c, h, w] where
@@ -475,7 +475,7 @@ class PETRTemporalTransformer(BaseModule):
         memory = memory.transpose(0, 1).contiguous()
         query_pos = query_pos.transpose(0, 1).contiguous()
         pos_embed = pos_embed.transpose(0, 1).contiguous()
-        
+
         n, bs, c = memory.shape
 
         if tgt is None:
@@ -485,7 +485,7 @@ class PETRTemporalTransformer(BaseModule):
 
         if temp_memory is not None:
             temp_memory = temp_memory.transpose(0, 1).contiguous()
-            temp_pos =  temp_pos.transpose(0, 1).contiguous()
+            temp_pos = temp_pos.transpose(0, 1).contiguous()
 
         # out_dec: [num_layers, num_query, bs, dim]
         out_dec = self.decoder(
@@ -499,10 +499,10 @@ class PETRTemporalTransformer(BaseModule):
             key_padding_mask=mask,
             attn_masks=[attn_masks, None],
             reg_branch=reg_branch,
-            )
+        )
         out_dec = out_dec.transpose(1, 2).contiguous()
         memory = memory.reshape(-1, bs, c).transpose(0, 1).contiguous()
-        return  out_dec, memory
+        return out_dec, memory
 
 
 @MODELS.register_module()
@@ -542,70 +542,74 @@ class PETRTemporalDecoderLayer(BaseModule):
             or (n, batch, embed_dim). Default to False.
     """
 
-    def __init__(self,
-                 attn_cfgs=None,
-                 ffn_cfgs=dict(
-                     type='FFN',
-                     embed_dims=256,
-                     feedforward_channels=1024,
-                     num_fcs=2,
-                     ffn_drop=0.,
-                     act_cfg=dict(type='ReLU', inplace=True),
-                 ),
-                 operation_order=None,
-                 norm_cfg=dict(type='LN'),
-                 init_cfg=None,
-                 batch_first=False,
-                 with_cp=True,
-                 **kwargs):
+    def __init__(
+        self,
+        attn_cfgs=None,
+        ffn_cfgs=dict(
+            type="FFN",
+            embed_dims=256,
+            feedforward_channels=1024,
+            num_fcs=2,
+            ffn_drop=0.0,
+            act_cfg=dict(type="ReLU", inplace=True),
+        ),
+        operation_order=None,
+        norm_cfg=dict(type="LN"),
+        init_cfg=None,
+        batch_first=False,
+        with_cp=True,
+        **kwargs,
+    ):
 
         deprecated_args = dict(
-            feedforward_channels='feedforward_channels',
-            ffn_dropout='ffn_drop',
-            ffn_num_fcs='num_fcs')
+            feedforward_channels="feedforward_channels", ffn_dropout="ffn_drop", ffn_num_fcs="num_fcs"
+        )
         for ori_name, new_name in deprecated_args.items():
             if ori_name in kwargs:
                 warnings.warn(
-                    f'The arguments `{ori_name}` in BaseTransformerLayer '
-                    f'has been deprecated, now you should set `{new_name}` '
-                    f'and other FFN related arguments '
-                    f'to a dict named `ffn_cfgs`. ', DeprecationWarning)
+                    f"The arguments `{ori_name}` in BaseTransformerLayer "
+                    f"has been deprecated, now you should set `{new_name}` "
+                    f"and other FFN related arguments "
+                    f"to a dict named `ffn_cfgs`. ",
+                    DeprecationWarning,
+                )
                 ffn_cfgs[new_name] = kwargs[ori_name]
 
         super().__init__(init_cfg)
 
         self.batch_first = batch_first
 
-        assert set(operation_order) & {
-            'self_attn', 'norm', 'ffn', 'cross_attn'} == \
-            set(operation_order), f'The operation_order of' \
-            f' {self.__class__.__name__} should ' \
-            f'contains all four operation type ' \
+        assert set(operation_order) & {"self_attn", "norm", "ffn", "cross_attn"} == set(operation_order), (
+            f"The operation_order of"
+            f" {self.__class__.__name__} should "
+            f"contains all four operation type "
             f"{['self_attn', 'norm', 'ffn', 'cross_attn']}"
+        )
 
-        num_attn = operation_order.count('self_attn') + operation_order.count(
-            'cross_attn')
+        num_attn = operation_order.count("self_attn") + operation_order.count("cross_attn")
         if isinstance(attn_cfgs, dict):
             attn_cfgs = [copy.deepcopy(attn_cfgs) for _ in range(num_attn)]
         else:
-            assert num_attn == len(attn_cfgs), f'The length ' \
-                f'of attn_cfg {num_attn} is ' \
-                f'not consistent with the number of attention' \
-                f'in operation_order {operation_order}.'
+            assert num_attn == len(attn_cfgs), (
+                f"The length "
+                f"of attn_cfg {num_attn} is "
+                f"not consistent with the number of attention"
+                f"in operation_order {operation_order}."
+            )
 
         self.num_attn = num_attn
         self.operation_order = operation_order
         self.norm_cfg = norm_cfg
-        self.pre_norm = operation_order[0] == 'norm'
+        self.pre_norm = operation_order[0] == "norm"
         self.attentions = ModuleList()
 
         index = 0
         for operation_name in operation_order:
-            if operation_name in ['self_attn', 'cross_attn']:
-                if 'batch_first' in attn_cfgs[index]:
-                    assert self.batch_first == attn_cfgs[index]['batch_first']
+            if operation_name in ["self_attn", "cross_attn"]:
+                if "batch_first" in attn_cfgs[index]:
+                    assert self.batch_first == attn_cfgs[index]["batch_first"]
                 else:
-                    attn_cfgs[index]['batch_first'] = self.batch_first
+                    attn_cfgs[index]["batch_first"] = self.batch_first
                 attention = build_attention(attn_cfgs[index])
                 # Some custom attentions used as `self_attn`
                 # or `cross_attn` can have different behavior.
@@ -616,40 +620,40 @@ class PETRTemporalDecoderLayer(BaseModule):
         self.embed_dims = self.attentions[0].embed_dims
 
         self.ffns = ModuleList()
-        num_ffns = operation_order.count('ffn')
+        num_ffns = operation_order.count("ffn")
         if isinstance(ffn_cfgs, dict):
             ffn_cfgs = ConfigDict(ffn_cfgs)
         if isinstance(ffn_cfgs, dict):
             ffn_cfgs = [copy.deepcopy(ffn_cfgs) for _ in range(num_ffns)]
         assert len(ffn_cfgs) == num_ffns
         for ffn_index in range(num_ffns):
-            if 'embed_dims' not in ffn_cfgs[ffn_index]:
-                ffn_cfgs[ffn_index]['embed_dims'] = self.embed_dims
+            if "embed_dims" not in ffn_cfgs[ffn_index]:
+                ffn_cfgs[ffn_index]["embed_dims"] = self.embed_dims
             else:
-                assert ffn_cfgs[ffn_index]['embed_dims'] == self.embed_dims
-            self.ffns.append(
-                build_feedforward_network(ffn_cfgs[ffn_index],
-                                          dict(type='FFN')))
+                assert ffn_cfgs[ffn_index]["embed_dims"] == self.embed_dims
+            self.ffns.append(build_feedforward_network(ffn_cfgs[ffn_index], dict(type="FFN")))
 
         self.norms = ModuleList()
-        num_norms = operation_order.count('norm')
+        num_norms = operation_order.count("norm")
         for _ in range(num_norms):
             self.norms.append(build_norm_layer(norm_cfg, self.embed_dims)[1])
 
         self.use_checkpoint = with_cp
 
-    def _forward(self,
-                query,
-                key=None,
-                value=None,
-                query_pos=None,
-                key_pos=None,
-                temp_memory=None,
-                temp_pos=None,
-                attn_masks=None,
-                query_key_padding_mask=None,
-                key_padding_mask=None,
-                **kwargs):
+    def _forward(
+        self,
+        query,
+        key=None,
+        value=None,
+        query_pos=None,
+        key_pos=None,
+        temp_memory=None,
+        temp_pos=None,
+        attn_masks=None,
+        query_key_padding_mask=None,
+        key_padding_mask=None,
+        **kwargs,
+    ):
         """Forward function for `TransformerDecoderLayer`.
 
         **kwargs contains some specific arguments of attentions.
@@ -688,19 +692,18 @@ class PETRTemporalDecoderLayer(BaseModule):
         if attn_masks is None:
             attn_masks = [None for _ in range(self.num_attn)]
         elif isinstance(attn_masks, torch.Tensor):
-            attn_masks = [
-                copy.deepcopy(attn_masks) for _ in range(self.num_attn)
-            ]
-            warnings.warn(f'Use same attn_mask in all attentions in '
-                          f'{self.__class__.__name__} ')
+            attn_masks = [copy.deepcopy(attn_masks) for _ in range(self.num_attn)]
+            warnings.warn(f"Use same attn_mask in all attentions in " f"{self.__class__.__name__} ")
         else:
-            assert len(attn_masks) == self.num_attn, f'The length of ' \
-                        f'attn_masks {len(attn_masks)} must be equal ' \
-                        f'to the number of attention in ' \
-                        f'operation_order {self.num_attn}'
+            assert len(attn_masks) == self.num_attn, (
+                f"The length of "
+                f"attn_masks {len(attn_masks)} must be equal "
+                f"to the number of attention in "
+                f"operation_order {self.num_attn}"
+            )
 
         for layer in self.operation_order:
-            if layer == 'self_attn':
+            if layer == "self_attn":
                 if temp_memory is not None:
                     temp_key = temp_value = torch.cat([query, temp_memory], dim=0)
                     temp_pos = torch.cat([query_pos, temp_pos], dim=0)
@@ -716,15 +719,16 @@ class PETRTemporalDecoderLayer(BaseModule):
                     key_pos=temp_pos,
                     attn_mask=attn_masks[attn_index],
                     key_padding_mask=query_key_padding_mask,
-                    **kwargs)
+                    **kwargs,
+                )
                 attn_index += 1
                 identity = query
 
-            elif layer == 'norm':
+            elif layer == "norm":
                 query = self.norms[norm_index](query)
                 norm_index += 1
 
-            elif layer == 'cross_attn':
+            elif layer == "cross_attn":
                 query = self.attentions[attn_index](
                     query,
                     key,
@@ -734,30 +738,31 @@ class PETRTemporalDecoderLayer(BaseModule):
                     key_pos=key_pos,
                     attn_mask=attn_masks[attn_index],
                     key_padding_mask=key_padding_mask,
-                    **kwargs)
+                    **kwargs,
+                )
                 attn_index += 1
                 identity = query
 
-            elif layer == 'ffn':
-                query = self.ffns[ffn_index](
-                    query, identity if self.pre_norm else None)
+            elif layer == "ffn":
+                query = self.ffns[ffn_index](query, identity if self.pre_norm else None)
                 ffn_index += 1
 
         return query
 
-    def forward(self, 
-                query,
-                key=None,
-                value=None,
-                query_pos=None,
-                key_pos=None,
-                temp_memory=None,
-                temp_pos=None,
-                attn_masks=None,
-                query_key_padding_mask=None,
-                key_padding_mask=None,
-                **kwargs
-                ):
+    def forward(
+        self,
+        query,
+        key=None,
+        value=None,
+        query_pos=None,
+        key_pos=None,
+        temp_memory=None,
+        temp_pos=None,
+        attn_masks=None,
+        query_key_padding_mask=None,
+        key_padding_mask=None,
+        **kwargs,
+    ):
         """Forward function for `TransformerCoder`.
         Returns:
             Tensor: forwarded results with shape [num_query, bs, embed_dims].
@@ -765,7 +770,7 @@ class PETRTemporalDecoderLayer(BaseModule):
 
         if self.use_checkpoint and self.training:
             x = cp.checkpoint(
-                self._forward, 
+                self._forward,
                 query,
                 key,
                 value,
@@ -776,19 +781,18 @@ class PETRTemporalDecoderLayer(BaseModule):
                 attn_masks,
                 query_key_padding_mask,
                 key_padding_mask,
-                )
+            )
         else:
             x = self._forward(
-            query,
-            key,
-            value,
-            query_pos,
-            key_pos,
-            temp_memory,
-            temp_pos,
-            attn_masks,
-            query_key_padding_mask,
-            key_padding_mask,
-        )
+                query,
+                key,
+                value,
+                query_pos,
+                key_pos,
+                temp_memory,
+                temp_pos,
+                attn_masks,
+                query_key_padding_mask,
+                key_padding_mask,
+            )
         return x
-

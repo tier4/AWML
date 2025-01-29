@@ -8,15 +8,16 @@ def project_to_image(points, lidar2cam, cam2img):
     """Transform points from LiDAR to image coordinates."""
     points_hom = np.hstack((points, np.ones((points.shape[0], 1))))
     points_cam = np.dot(lidar2cam, points_hom.T).T
-    
+
     # Filter points behind the camera
     valid_mask = points_cam[:, 2] > 0
-    
+
     points_img = np.dot(cam2img, points_cam[:, :3].T).T
     points_img /= points_img[:, 2:3]
     return points_img[:, :2], valid_mask
 
-def compute_bbox_and_centers(lidar2cam,cam2img, bboxes, labels, img_shape):
+
+def compute_bbox_and_centers(lidar2cam, cam2img, bboxes, labels, img_shape):
     """
     Compute the 2D bounding box, 3D center of the projected bounding box, and 3D center in LiDAR coordinates.
 
@@ -45,19 +46,20 @@ def compute_bbox_and_centers(lidar2cam,cam2img, bboxes, labels, img_shape):
     for bbox_std, bbox, label in zip(bboxes, bboxes.corners, labels):
         # Project corners to image
         center_3d_lidar = bbox_std[:3].numpy()
-        corners_img, valid_mask = project_to_image(np.concatenate([bbox,bbox.mean(0).reshape(1,3)]), lidar2cam, cam2img)
+        corners_img, valid_mask = project_to_image(
+            np.concatenate([bbox, bbox.mean(0).reshape(1, 3)]), lidar2cam, cam2img
+        )
         projected_center = corners_img[-1]
-        
+
         corners_img = corners_img[:-1][valid_mask[:-1]]
-        
-        
+
         if len(corners_img) == 0:  # Skip if no corners are visible
             continue
-            
+
         # Compute 2D bbox
         x_min, y_min = np.min(corners_img, axis=0)
         x_max, y_max = np.max(corners_img, axis=0)
-            
+
         # Clip to image boundaries
         x_min = np.clip(x_min, 0, W)
         x_max = np.clip(x_max, 0, W)
@@ -66,11 +68,11 @@ def compute_bbox_and_centers(lidar2cam,cam2img, bboxes, labels, img_shape):
 
         x_center = np.clip(projected_center[0], 0, W)
         y_center = np.clip(projected_center[1], 0, H)
-        if x_min==x_max or y_min==y_max:
+        if x_min == x_max or y_min == y_max:
             continue
 
         valid_bboxes_2d.append([x_min, y_min, x_max, y_max])
-        valid_projected_centers.append([x_center,y_center])
+        valid_projected_centers.append([x_center, y_center])
         valid_image_depth.append(np.sqrt((center_3d_lidar**2).sum()))
         valid_labels_list.append(label)
 
@@ -86,29 +88,29 @@ def compute_bbox_and_centers(lidar2cam,cam2img, bboxes, labels, img_shape):
         object_depth = np.zeros((0,))
         valid_labels = np.zeros(0, dtype=int)
 
-    return bboxes_2d, projected_centers, object_depth,  valid_labels
-    
-      
+    return bboxes_2d, projected_centers, object_depth, valid_labels
+
+
 @TRANSFORMS.register_module()
 class StreamPETRLoadAnnotations2D(BaseTransform):
 
-  def transform(self,results):
-      all_bboxes_2d, all_centers_2d, all_depths, all_labels = [],[],[],[]
-      for i,k in enumerate(results["images"]):
-        bboxes_2d, projected_centers, depths, valid_labels = compute_bbox_and_centers(
-            results["extrinsics"][i],
-            results["intrinsics"][i],
-            results["ann_info"]["gt_bboxes_3d"], 
-            results["ann_info"]["gt_labels_3d"],
-            results["img"][i].shape
-        )
-        all_bboxes_2d.append(bboxes_2d)
-        all_centers_2d.append(projected_centers)
-        all_depths.append(depths)
-        all_labels.append(valid_labels)
-        
-      results['depths'] = all_depths
-      results['centers_2d'] = all_centers_2d
-      results['gt_bboxes'] = all_bboxes_2d
-      results['gt_bboxes_labels'] = all_labels
-      return results
+    def transform(self, results):
+        all_bboxes_2d, all_centers_2d, all_depths, all_labels = [], [], [], []
+        for i, k in enumerate(results["images"]):
+            bboxes_2d, projected_centers, depths, valid_labels = compute_bbox_and_centers(
+                results["extrinsics"][i],
+                results["intrinsics"][i],
+                results["ann_info"]["gt_bboxes_3d"],
+                results["ann_info"]["gt_labels_3d"],
+                results["img"][i].shape,
+            )
+            all_bboxes_2d.append(bboxes_2d)
+            all_centers_2d.append(projected_centers)
+            all_depths.append(depths)
+            all_labels.append(valid_labels)
+
+        results["depths"] = all_depths
+        results["centers_2d"] = all_centers_2d
+        results["gt_bboxes"] = all_bboxes_2d
+        results["gt_bboxes_labels"] = all_labels
+        return results

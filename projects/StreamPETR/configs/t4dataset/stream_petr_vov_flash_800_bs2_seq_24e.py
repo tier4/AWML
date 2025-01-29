@@ -133,13 +133,14 @@ model = dict(
             type="PETRTemporalTransformer",
             decoder=dict(
                 type="PETRTransformerDecoder",
+                post_norm_cfg=dict(type="LN"),
                 return_intermediate=True,
                 num_layers=6,
                 transformerlayers=dict(
                     type="PETRTemporalDecoderLayer",
                     attn_cfgs=[
                         dict(type="MultiheadAttention", embed_dims=256, num_heads=8, dropout=0.1),
-                        dict(type="PETRMultiheadAttention", embed_dims=256, num_heads=8, fp16=False, dropout=0.1),
+                        dict(type="PETRMultiheadFlashAttention", embed_dims=256, num_heads=8, fp16=False, dropout=0.1),
                     ],
                     feedforward_channels=2048,
                     ffn_dropout=0.1,
@@ -184,7 +185,7 @@ file_client_args = dict(backend="disk")
 
 ida_aug_conf = {
     "resize_lim": (0.45, 0.55),
-    "final_dim": (640, 960),  # (528, 720)
+    "final_dim": (640, 960),  # (528, 720),
     "bot_pct_lim": (0.0, 0.0),
     "rot_lim": (0.0, 0.0),
     "rand_flip": True,
@@ -203,7 +204,7 @@ train_pipeline = [
     dict(type="ObjectRangeFilter", point_cloud_range=point_cloud_range),
     dict(type="ObjectNameFilter", classes=class_names),
     dict(type="mmdet.ResizeCropFlipRotImage", data_aug_conf=ida_aug_conf, training=True, with_2d=False),
-    dict(type="mmdet.PadMultiViewImage", size_divisor=32),
+    dict(type="mmdet.PadMultiViewImage", size_divisor=16),
     dict(type="mmdet.NormalizeMultiviewImage", **img_norm_cfg),
     dict(type="StreamPETRLoadAnnotations2D"),
     dict(type="PETRFormatBundle3D", class_names=class_names, collect_keys=collect_keys + ["prev_exists"]),
@@ -219,7 +220,7 @@ test_pipeline = [
         with_bbox_depth=False,
     ),
     dict(type="mmdet.ResizeCropFlipRotImage", data_aug_conf=ida_aug_conf, training=False, with_2d=False),
-    dict(type="mmdet.PadMultiViewImage", size_divisor=32),
+    dict(type="mmdet.PadMultiViewImage", size_divisor=16),
     dict(type="mmdet.NormalizeMultiviewImage", **img_norm_cfg),
     dict(type="StreamPETRLoadAnnotations2D"),
     dict(type="PETRFormatBundle3D", class_names=class_names, collect_keys=collect_keys + ["prev_exists"]),
@@ -319,13 +320,13 @@ test_cfg = dict()
 
 optimizer = dict(type="AdamW", lr=2e-4, weight_decay=0.01)  # bs 8: 2e-4 || bs 16: 4e-4,
 
-optim_wrapper = dict(
-    type="DebugOptimWrapper",
-    optimizer=optimizer,
-    clip_grad=dict(max_norm=35, norm_type=2),
-)
+# optim_wrapper = dict(
+#     type="DebugOptimWrapper",
+#     optimizer=optimizer,
+#     clip_grad=dict(max_norm=35, norm_type=2),
+# )
 
-# optim_wrapper = dict(type='NoCacheAmpOptimWrapper', optimizer=optimizer,clip_grad=dict(max_norm=1, norm_type=2))
+optim_wrapper = dict(type="NoCacheAmpOptimWrapper", optimizer=optimizer, clip_grad=dict(max_norm=35, norm_type=2))
 # learning policy
 param_scheduler = [
     dict(type="LinearLR", start_factor=1.0 / 3, begin=0, end=500, by_epoch=False),

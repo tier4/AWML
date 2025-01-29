@@ -18,7 +18,6 @@ from mmdet.models.task_modules.builder import build_assigner, build_sampler
 from mmdet.models.utils import multi_apply
 from mmdet3d.registry import MODELS
 from mmdet.models.dense_heads.anchor_free_head import AnchorFreeHead
-from mmdet.models.layers.transformer.utils import inverse_sigmoid
 from mmdet3d.models.task_modules.builder import build_bbox_coder
 from projects.StreamPETR.stream_petr.core.bbox.util import normalize_bbox
 
@@ -36,6 +35,7 @@ from projects.StreamPETR.stream_petr.models.utils.misc import (
     SELayer_Linear,
 )
 from mmdet.models.task_modules import BaseSampler, SamplingResult
+from projects.StreamPETR.stream_petr.models.utils.misc import inverse_sigmoid
 
 
 @MODELS.register_module()
@@ -618,7 +618,6 @@ class StreamPETRHead(AnchorFreeHead):
         memory = topk_gather(memory, topk_indexes)
 
         pos_embed, cone = self.position_embeding(data, memory_center, topk_indexes, img_metas)
-
         memory = self.memory_embed(memory)
 
         # spatial_alignment in focal petr
@@ -642,17 +641,17 @@ class StreamPETRHead(AnchorFreeHead):
         outputs_classes = []
         outputs_coords = []
         for lvl in range(outs_dec.shape[0]):
-            reference = inverse_sigmoid(reference_points.clone())
-            assert reference.shape[-1] == 3
-            outputs_class = self.cls_branches[lvl](outs_dec[lvl])
-            tmp = self.reg_branches[lvl](outs_dec[lvl])
+            with torch.cuda.amp.autocast(enabled=False):
+                reference = inverse_sigmoid(reference_points.clone())
+                assert reference.shape[-1] == 3
+                outputs_class = self.cls_branches[lvl](outs_dec[lvl])
+                tmp = self.reg_branches[lvl](outs_dec[lvl])
 
-            tmp[..., 0:3] += reference[..., 0:3]
-            tmp[..., 0:3] = tmp[..., 0:3].sigmoid()
+                tmp[..., 0:3] += reference[..., 0:3]
+                tmp[..., 0:3] = tmp[..., 0:3].sigmoid()
 
-            outputs_coord = tmp
-            outputs_classes.append(outputs_class)
-            outputs_coords.append(outputs_coord)
+                outputs_classes.append(outputs_class)
+                outputs_coords.append(tmp)
 
         all_cls_scores = torch.stack(outputs_classes)
         all_bbox_preds = torch.stack(outputs_coords)
