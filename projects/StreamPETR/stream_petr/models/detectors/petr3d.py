@@ -17,6 +17,7 @@ from mmdet3d.models.detectors.mvx_two_stage import MVXTwoStageDetector
 from projects.StreamPETR.stream_petr.models.utils.grid_mask import GridMask
 from projects.StreamPETR.stream_petr.models.utils.misc import locations
 from mmdet3d.structures import CameraInstance3DBoxes, LiDARInstance3DBoxes
+from mmengine.runner.amp import autocast
 
 
 @MODELS.register_module()
@@ -242,8 +243,8 @@ class Petr3D(MVXTwoStageDetector):
         if mode == "loss":
             return self.forward_train(**data)
         elif mode == "predict":
-            # with torch.autocast(device_type='cuda' if torch.cuda.is_available() else 'cpu'):
-            return self.forward_test(**data)
+            with autocast(dtype=None, cache_enabled=False):
+                return self.forward_test(**data)
         else:
             raise NotImplementedError()
 

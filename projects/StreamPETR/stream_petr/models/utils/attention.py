@@ -97,7 +97,7 @@ class FlashAttention(nn.Module):
                 self.dropout_p if self.training else 0.0,
                 softmax_scale=self.softmax_scale,
                 causal=causal,
-            ).float()
+            )
             output = rearrange(output_unpad, "(b s) ... -> b s ...", b=batch_size)
 
         return output, None

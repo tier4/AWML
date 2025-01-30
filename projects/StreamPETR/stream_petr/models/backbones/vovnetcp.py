@@ -18,73 +18,73 @@ import warnings
 import torch.utils.checkpoint as cp
 
 VoVNet19_slim_dw_eSE = {
-    'stem': [64, 64, 64],
-    'stage_conv_ch': [64, 80, 96, 112],
-    'stage_out_ch': [112, 256, 384, 512],
+    "stem": [64, 64, 64],
+    "stage_conv_ch": [64, 80, 96, 112],
+    "stage_out_ch": [112, 256, 384, 512],
     "layer_per_block": 3,
     "block_per_stage": [1, 1, 1, 1],
     "eSE": True,
-    "dw": True
+    "dw": True,
 }
 
 VoVNet19_dw_eSE = {
-    'stem': [64, 64, 64],
+    "stem": [64, 64, 64],
     "stage_conv_ch": [128, 160, 192, 224],
     "stage_out_ch": [256, 512, 768, 1024],
     "layer_per_block": 3,
     "block_per_stage": [1, 1, 1, 1],
     "eSE": True,
-    "dw": True
+    "dw": True,
 }
 
 VoVNet19_slim_eSE = {
-    'stem': [64, 64, 128],
-    'stage_conv_ch': [64, 80, 96, 112],
-    'stage_out_ch': [112, 256, 384, 512],
-    'layer_per_block': 3,
-    'block_per_stage': [1, 1, 1, 1],
-    'eSE': True,
-    "dw": False
+    "stem": [64, 64, 128],
+    "stage_conv_ch": [64, 80, 96, 112],
+    "stage_out_ch": [112, 256, 384, 512],
+    "layer_per_block": 3,
+    "block_per_stage": [1, 1, 1, 1],
+    "eSE": True,
+    "dw": False,
 }
 
 VoVNet19_eSE = {
-    'stem': [64, 64, 128],
+    "stem": [64, 64, 128],
     "stage_conv_ch": [128, 160, 192, 224],
     "stage_out_ch": [256, 512, 768, 1024],
     "layer_per_block": 3,
     "block_per_stage": [1, 1, 1, 1],
     "eSE": True,
-    "dw": False
+    "dw": False,
 }
 
 VoVNet39_eSE = {
-    'stem': [64, 64, 128],
+    "stem": [64, 64, 128],
     "stage_conv_ch": [128, 160, 192, 224],
     "stage_out_ch": [256, 512, 768, 1024],
     "layer_per_block": 5,
     "block_per_stage": [1, 1, 2, 2],
     "eSE": True,
-    "dw": False
+    "dw": False,
 }
 
 VoVNet57_eSE = {
-    'stem': [64, 64, 128],
+    "stem": [64, 64, 128],
     "stage_conv_ch": [128, 160, 192, 224],
     "stage_out_ch": [256, 512, 768, 1024],
     "layer_per_block": 5,
     "block_per_stage": [1, 1, 4, 3],
     "eSE": True,
-    "dw": False
+    "dw": False,
 }
 
 VoVNet99_eSE = {
-    'stem': [64, 64, 128],
+    "stem": [64, 64, 128],
     "stage_conv_ch": [128, 160, 192, 224],
     "stage_out_ch": [256, 512, 768, 1024],
     "layer_per_block": 5,
     "block_per_stage": [1, 3, 9, 3],
     "eSE": True,
-    "dw": False
+    "dw": False,
 }
 
 _STAGE_SPECS = {
@@ -102,7 +102,7 @@ def dw_conv3x3(in_channels, out_channels, module_name, postfix, stride=1, kernel
     """3x3 convolution with padding"""
     return [
         (
-            '{}_{}/dw_conv3x3'.format(module_name, postfix),
+            "{}_{}/dw_conv3x3".format(module_name, postfix),
             nn.Conv2d(
                 in_channels,
                 out_channels,
@@ -110,15 +110,15 @@ def dw_conv3x3(in_channels, out_channels, module_name, postfix, stride=1, kernel
                 stride=stride,
                 padding=padding,
                 groups=out_channels,
-                bias=False
-            )
+                bias=False,
+            ),
         ),
         (
-            '{}_{}/pw_conv1x1'.format(module_name, postfix),
-            nn.Conv2d(in_channels, out_channels, kernel_size=1, stride=1, padding=0, groups=1, bias=False)
+            "{}_{}/pw_conv1x1".format(module_name, postfix),
+            nn.Conv2d(in_channels, out_channels, kernel_size=1, stride=1, padding=0, groups=1, bias=False),
         ),
-        ('{}_{}/pw_norm'.format(module_name, postfix), nn.BatchNorm2d(out_channels)),
-        ('{}_{}/pw_relu'.format(module_name, postfix), nn.ReLU(inplace=True)),
+        ("{}_{}/pw_norm".format(module_name, postfix), nn.BatchNorm2d(out_channels)),
+        ("{}_{}/pw_relu".format(module_name, postfix), nn.ReLU(inplace=True)),
     ]
 
 
@@ -188,7 +188,16 @@ class eSEModule(nn.Module):
 
 class _OSA_module(nn.Module):
     def __init__(
-        self, in_ch, stage_ch, concat_ch, layer_per_block, module_name, SE=False, identity=False, depthwise=False, with_cp=True
+        self,
+        in_ch,
+        stage_ch,
+        concat_ch,
+        layer_per_block,
+        module_name,
+        SE=False,
+        identity=False,
+        depthwise=False,
+        with_cp=True,
     ):
 
         super(_OSA_module, self).__init__()
@@ -279,15 +288,23 @@ class _OSA_stage(nn.Sequential):
                     module_name,
                     SE,
                     identity=True,
-                    depthwise=depthwise
+                    depthwise=depthwise,
                 ),
             )
 
 
 @MODELS.register_module()
 class VoVNetCP(BaseModule):
-    def __init__(self, spec_name, input_ch=3, out_features=None, 
-                 frozen_stages=-1, norm_eval=True, pretrained=None, init_cfg=None):
+    def __init__(
+        self,
+        spec_name,
+        input_ch=3,
+        out_features=None,
+        frozen_stages=-1,
+        norm_eval=True,
+        pretrained=None,
+        init_cfg=None,
+    ):
         """
         Args:
             input_ch(int) : the number of input channel
@@ -299,9 +316,8 @@ class VoVNetCP(BaseModule):
         self.norm_eval = norm_eval
 
         if isinstance(pretrained, str):
-            warnings.warn('DeprecationWarning: pretrained is deprecated, '
-                          'please use "init_cfg" instead')
-            self.init_cfg = dict(type='Pretrained', checkpoint=pretrained)
+            warnings.warn("DeprecationWarning: pretrained is deprecated, " 'please use "init_cfg" instead')
+            self.init_cfg = dict(type="Pretrained", checkpoint=pretrained)
         stage_specs = _STAGE_SPECS[spec_name]
 
         stem_ch = stage_specs["stem"]
@@ -383,13 +399,13 @@ class VoVNetCP(BaseModule):
 
     def _freeze_stages(self):
         if self.frozen_stages >= 0:
-            m = getattr(self, 'stem')
+            m = getattr(self, "stem")
             m.eval()
             for param in m.parameters():
                 param.requires_grad = False
 
         for i in range(1, self.frozen_stages + 1):
-            m = getattr(self, f'stage{i+1}')
+            m = getattr(self, f"stage{i+1}")
             m.eval()
             for param in m.parameters():
                 param.requires_grad = False
@@ -404,4 +420,3 @@ class VoVNetCP(BaseModule):
                 # trick: eval have effect on BatchNorm only
                 if isinstance(m, _BatchNorm):
                     m.eval()
-

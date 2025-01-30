@@ -109,6 +109,7 @@ model = dict(
         topk_proposals=256,
         num_propagated=256,
         with_ego_pos=True,
+        with_dn=False,
         match_with_velo=False,
         scalar=10,  ##noise groups
         noise_scale=1.0,
@@ -277,7 +278,7 @@ test_dataloader = dict(
     dataset=dict(
         type="StreamPETRDataset",
         data_root=data_root,
-        ann_file="info/cameraonly/streampetr/" + _base_.info_test_file_name,
+        ann_file="info/cameraonly/streampetr_dummy/" + _base_.info_test_file_name,
         pipeline=test_pipeline,
         metainfo=_base_.metainfo,
         class_names=class_names,
@@ -305,7 +306,7 @@ val_evaluator = dict(
 test_evaluator = dict(
     type="T4Metric",
     data_root=data_root,
-    ann_file=data_root + "info/cameraonly/streampetr/" + _base_.info_test_file_name,
+    ann_file=data_root + "info/cameraonly/streampetr_dummy/" + _base_.info_test_file_name,
     backend_args=backend_args,
     metric="bbox",
     class_names=class_names,
@@ -328,51 +329,51 @@ optimizer = dict(type="AdamW", lr=2e-4, weight_decay=0.01)  # bs 8: 2e-4 || bs 1
 
 optim_wrapper = dict(type="NoCacheAmpOptimWrapper", optimizer=optimizer, clip_grad=dict(max_norm=35, norm_type=2))
 # learning policy
-# param_scheduler = [
-#     dict(type="LinearLR", start_factor=1.0 / 3, begin=0, end=500, by_epoch=False),
-#     dict(
-#         type="CosineAnnealingLR",
-#         # TODO Figure out what T_max
-#         T_max=num_epochs,
-#         by_epoch=True,
-#     ),
-# ]
-
 param_scheduler = [
+    dict(type="LinearLR", start_factor=1.0 / 3, begin=0, end=500, by_epoch=False),
     dict(
-        T_max=20, begin=0, by_epoch=True, convert_to_iter_based=True, end=20, eta_min=0.001, type="CosineAnnealingLR"
-    ),
-    dict(
-        T_max=30, begin=20, by_epoch=True, convert_to_iter_based=True, end=80, eta_min=1e-08, type="CosineAnnealingLR"
-    ),
-    dict(
-        T_max=20,
-        begin=0,
+        type="CosineAnnealingLR",
+        # TODO Figure out what T_max
+        T_max=num_epochs,
         by_epoch=True,
-        convert_to_iter_based=True,
-        end=20,
-        eta_min=0.8947368421052632,
-        type="CosineAnnealingMomentum",
-    ),
-    dict(
-        T_max=30,
-        begin=20,
-        by_epoch=True,
-        convert_to_iter_based=True,
-        end=80,
-        eta_min=1,
-        type="CosineAnnealingMomentum",
     ),
 ]
+
+# param_scheduler = [
+#     dict(
+#         T_max=20, begin=0, by_epoch=True, convert_to_iter_based=True, end=20, eta_min=0.001, type="CosineAnnealingLR"
+#     ),
+#     dict(
+#         T_max=30, begin=20, by_epoch=True, convert_to_iter_based=True, end=80, eta_min=1e-08, type="CosineAnnealingLR"
+#     ),
+#     dict(
+#         T_max=20,
+#         begin=0,
+#         by_epoch=True,
+#         convert_to_iter_based=True,
+#         end=20,
+#         eta_min=0.8947368421052632,
+#         type="CosineAnnealingMomentum",
+#     ),
+#     dict(
+#         T_max=30,
+#         begin=20,
+#         by_epoch=True,
+#         convert_to_iter_based=True,
+#         end=80,
+#         eta_min=1,
+#         type="CosineAnnealingMomentum",
+#     ),
+# ]
 
 default_hooks = dict(
     logger=dict(type="LoggerHook", interval=10),
     checkpoint=dict(
-        interval=100,
+        interval=1,
         max_keep_ckpts=3,
         save_best="NuScenes metric/T4Metric/mAP",
         type="CheckpointHook",
-        by_epoch=False,
+        # by_epoch=False,
     ),  # alternative 'NuScenes metric/T4Metric/NDS'
 )
 
