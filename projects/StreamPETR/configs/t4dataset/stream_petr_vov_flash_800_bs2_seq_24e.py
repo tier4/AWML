@@ -23,6 +23,7 @@ batch_size = 4
 val_interval = 5
 num_epochs = 50
 backend_args = None
+stride = 16  # downsampling factor of extracted features form image
 
 eval_class_range = {
     "car": 75,
@@ -54,6 +55,7 @@ input_modality = dict(
 )
 model = dict(
     type="Petr3D",
+    stride=stride,
     streaming_test_mode=queue_length > 1,
     num_frame_head_grads=num_frame_losses,
     num_frame_backbone_grads=num_frame_losses,

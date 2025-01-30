@@ -17,6 +17,7 @@ from .datasets.pipelines.dataset import StreamPETRDataset
 from .datasets.pipelines.loading import StreamPETRLoadAnnotations2D
 from .models.optimizer.amp import NoCacheAmpOptimWrapper, DebugOptimWrapper
 
+
 __all__ = [
     "Petr3D",
     "StreamPETRHead",

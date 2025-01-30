@@ -60,6 +60,7 @@ class Petr3D(MVXTwoStageDetector):
         position_level=0,
         aux_2d_only=True,
         streaming_test_mode=True,
+        **kwargs
     ):
         super(Petr3D, self).__init__(
             pts_voxel_encoder=pts_voxel_encoder,
