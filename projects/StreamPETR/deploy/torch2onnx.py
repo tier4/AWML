@@ -36,7 +36,11 @@ from mmengine import Config
 from mmengine.registry import RUNNERS
 import onnx
 from onnxsim import simplify
-from projects.StreamPETR.deploy.containers import TrtPtsHeadContainer, TrtEncoderContainer
+from projects.StreamPETR.deploy.containers import (
+    TrtPtsHeadContainer,
+    TrtEncoderContainer,
+    TrtPositionEmbeddingContainer,
+)
 from mmengine.runner import load_checkpoint
 
 
@@ -73,7 +77,7 @@ def main():
 
     height, width = cfg.ida_aug_conf.final_dim
 
-    if args.section not in ["extract_img_feat", "pts_head_memory"]:
+    if args.section not in ["extract_img_feat", "pts_head_memory", "position_embedding"]:
         raise RuntimeError("unknown section {}".format(args.section))
         exit(-1)
 
@@ -94,9 +98,9 @@ def main():
         c = int(cfg.model.pts_bbox_head.in_channels)
         print(f"feature size: {c},{feat_h},{feat_w}")
         arrs = [
-            torch.from_numpy(np.random.uniform(-0.5, 0.5, size=(1, 6, c, feat_h, feat_w))).float(),
-            torch.from_numpy(np.random.uniform(-0.5, 0.5, size=(1, feat_h * feat_w * 6, c))).float(),
-            torch.from_numpy(np.random.uniform(-0.5, 0.5, size=(1, feat_h * feat_w * 6, 8))).float(),
+            torch.from_numpy(np.random.uniform(-0.5, 0.5, size=(1, cfg.num_cameras, c, feat_h, feat_w))).float(),
+            torch.from_numpy(np.random.uniform(-0.5, 0.5, size=(1, feat_h * feat_w * cfg.num_cameras, c))).float(),
+            torch.from_numpy(np.random.uniform(-0.5, 0.5, size=(1, feat_h * feat_w * cfg.num_cameras, 8))).float(),
             torch.from_numpy(np.random.uniform(-0.5, 0.5, size=(1,))).double(),
             torch.from_numpy(np.random.uniform(-0.5, 0.5, size=(1, 4, 4))).float(),
             torch.from_numpy(np.random.uniform(-0.5, 0.5, size=(1, 4, 4))).float(),
@@ -136,6 +140,24 @@ def main():
             "outs_dec",
         ]
         tm.mod.pts_bbox_head.with_dn = False
+    elif args.section == "position_embedding":
+        from onnxruntime.tools import pytorch_export_contrib_ops
+
+        pytorch_export_contrib_ops.register()
+
+        feat_h = int(height / cfg.stride)
+        feat_w = int(width / cfg.stride)
+        c = int(cfg.model.pts_bbox_head.in_channels)
+
+        tm = TrtPositionEmbeddingContainer(model)
+        arrs = [
+            torch.from_numpy(np.array([height, width, 3])).int(),
+            torch.from_numpy(np.random.uniform(-0.5, 0.5, size=(1, cfg.num_cameras, c, feat_h, feat_w))).float(),
+            torch.from_numpy(np.random.uniform(-0.5, 0.5, size=(1, cfg.num_cameras, 4, 4))).float(),
+            torch.from_numpy(np.random.uniform(-0.5, 0.5, size=(1, cfg.num_cameras, 4, 4))).float(),
+        ]
+        input_names = ["img_metas_pad", "img_feats", "intrinsics", "img2lidar"]
+        output_names = ["pos_embed", "cone"]
 
     tm.float()
     tm.cpu()

@@ -26,12 +26,26 @@ TBD
 
 ### 3. Train
 
-TBD
 
-### 4. Deploy
+### 4. Evaluation
 
-TBD
+```bash
 
+python3 tools/detection3d/test.py projects/StreamPETR/configs/t4dataset/stream_petr_vov_flash_800_bs2_seq_24e.py "/workspace/work_dirs/stream_petr_vov_flash_800_bs2_seq_24e/best_NuScenes metric_T4Metric_mAP_epoch_30.pth"
+
+```
+
+### 5. Deploy
+
+```bash
+python3 projects/StreamPETR/deploy/torch2onnx.py projects/StreamPETR/configs/t4dataset/stream_petr_vov_flash_800_bs2_seq_24e.py --section extract_img_feat --checkpoint "/workspace/work_dirs/stream_petr_vov_flash_800_bs2_seq_24e/best_NuScenes metric_T4Metric_mAP_epoch_30.pth" 
+
+python3 projects/StreamPETR/deploy/torch2onnx.py projects/StreamPETR/configs/t4dataset/stream_petr_vov_flash_800_bs2_seq_24e.py --section pts_head_memory --checkpoint "/workspace/work_dirs/stream_petr_vov_flash_800_bs2_seq_24e/best_NuScenes metric_T4Metric_mAP_epoch_30.pth" 
+
+python3 projects/StreamPETR/deploy/torch2onnx.py projects/StreamPETR/configs/t4dataset/stream_petr_vov_flash_800_bs2_seq_24e.py --section position_embedding --checkpoint "/workspace/work_dirs/stream_petr_vov_flash_800_bs2_seq_24e/best_NuScenes metric_T4Metric_mAP_epoch_30.pth" 
+
+
+```
 ## Troubleshooting
 
 ## Reference
@@ -43,3 +57,13 @@ Since this is camera-only. We need to assert that all data comes from the same s
 Also, Camera should be in the same order. Or maybe order should not matter, and maybe some cameras can be non-functional too, should I add that as augmentation?
 GlobalRotScaleTransImage augmentation removed for now. Cannot understand the logic behind it
 Maybe in ROSNode it is good to add a service to reset the memory at times
+
+# THINGS TODO
+
+- Experiment with different training strategies (in order of priority)
+  - Train with denoising
+  - Temporal training with different temporal and losses frame count
+  - Image order shuffle augmentation
+  - Larger image backbone
+  - Larger and smaller image sizes
+  

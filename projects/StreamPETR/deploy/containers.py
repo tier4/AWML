@@ -4,8 +4,25 @@ from projects.StreamPETR.stream_petr.models.utils.positional_encoding import (
 )
 from projects.StreamPETR.stream_petr.models.utils.misc import topk_gather, transform_reference_points, inverse_sigmoid
 
+# Wrapper Classes for onnx conversion
 
-# Wrapper Class for onnx conversion
+
+class TrtPositionEmbeddingContainer(torch.nn.Module):
+    def __init__(self, mod, *args, **kwargs) -> None:
+        super().__init__(*args, **kwargs)
+        self.mod = mod
+
+    def forward(self, img_metas_pad, img_feats, intrinsics, img2lidar):
+        mod = self.mod
+        data = {
+            "img_feats": img_feats,
+            "intrinsics": intrinsics,
+            "img2lidar": img2lidar,
+        }
+        location = mod.prepare_location(img_metas_pad, **data)
+        return mod.pts_bbox_head.position_embeding(data, location, None, img_metas_pad)
+
+
 class TrtEncoderContainer(torch.nn.Module):
     def __init__(self, mod, *args, **kwargs) -> None:
         super().__init__(*args, **kwargs)
@@ -13,10 +30,9 @@ class TrtEncoderContainer(torch.nn.Module):
 
     def forward(self, img):
         mod = self.mod
-        return mod.extract_img_feat(img, 1).unsqueeze(1)
+        return mod.extract_img_feat(img, 1).squeeze(1)
 
 
-# Wrapper Class for onnx conversion
 class TrtPtsHeadContainer(torch.nn.Module):
     def __init__(self, mod, *args, **kwargs) -> None:
         super().__init__(*args, **kwargs)

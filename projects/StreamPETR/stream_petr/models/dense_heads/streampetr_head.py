@@ -389,7 +389,7 @@ class StreamPETRHead(AnchorFreeHead):
         self.memory_timestamp -= data["timestamp"].unsqueeze(-1).unsqueeze(-1)
         self.memory_egopose = data["ego_pose"].unsqueeze(1) @ self.memory_egopose
 
-    def position_embeding(self, data, memory_centers, topk_indexes, img_metas):
+    def position_embeding(self, data, memory_centers, topk_indexes, pad_shape):
         eps = 1e-5
         BN, H, W, _ = memory_centers.shape
         B = data["intrinsics"].size(0)
@@ -400,7 +400,7 @@ class StreamPETRHead(AnchorFreeHead):
 
         num_sample_tokens = topk_indexes.size(1) if topk_indexes is not None else LEN
 
-        pad_h, pad_w, _ = [x[0] for x in img_metas["pad_shape"]]
+        pad_h, pad_w, _ = pad_shape
         memory_centers[..., 0] = memory_centers[..., 0] * pad_w
         memory_centers[..., 1] = memory_centers[..., 1] * pad_h
 
@@ -415,7 +415,12 @@ class StreamPETRHead(AnchorFreeHead):
 
         coords = coords.unsqueeze(-1)
 
-        img2lidars = data["lidar2img"].inverse()
+        if "img2lidar" in data:
+            img2lidars = data["img2lidar"]
+        elif "lidar2img" in data:
+            img2lidars = data["lidar2img"].inverse()
+        else:
+            raise KeyError("Not found img2lidar or lidar2img matrices")
         img2lidars = img2lidars.view(BN, 1, 1, 4, 4).repeat(1, H * W, D, 1, 1).view(B, LEN, D, 4, 4)
         img2lidars = topk_gather(img2lidars, topk_indexes)
 
@@ -617,7 +622,9 @@ class StreamPETRHead(AnchorFreeHead):
         memory = x.permute(0, 1, 3, 4, 2).reshape(B, num_tokens, C)
         memory = topk_gather(memory, topk_indexes)
 
-        pos_embed, cone = self.position_embeding(data, memory_center, topk_indexes, img_metas)
+        pos_embed, cone = self.position_embeding(
+            data, memory_center, topk_indexes, [x[0] for x in img_metas["pad_shape"]]
+        )
         memory = self.memory_embed(memory)
 
         # spatial_alignment in focal petr

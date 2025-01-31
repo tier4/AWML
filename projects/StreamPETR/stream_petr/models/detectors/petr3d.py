@@ -162,8 +162,8 @@ class Petr3D(MVXTwoStageDetector):
                     losses["frame_" + str(i) + "_" + key] = value
         return losses
 
-    def prepare_location(self, img_metas, **data):
-        pad_h, pad_w, _ = [x[0] for x in img_metas["pad_shape"]]
+    def prepare_location(self, shape, **data):
+        pad_h, pad_w, _ = shape
         bs, n = data["img_feats"].shape[:2]
         x = data["img_feats"].flatten(0, 1)
         location = locations(x, self.stride, pad_h, pad_w)[None].repeat(bs * n, 1, 1, 1)
@@ -202,7 +202,7 @@ class Petr3D(MVXTwoStageDetector):
         Returns:
             dict: Losses of each branch.
         """
-        location = self.prepare_location(img_metas, **data)
+        location = self.prepare_location([x[0] for x in img_metas["pad_shape"]], **data)
 
         if not requires_grad:
             with torch.no_grad():
@@ -307,7 +307,7 @@ class Petr3D(MVXTwoStageDetector):
 
     def simple_test_pts(self, img_metas, **data):
         """Test function of point cloud branch."""
-        location = self.prepare_location(img_metas, **data)
+        location = self.prepare_location([x[0] for x in img_metas["pad_shape"]], **data)
         outs_roi = self.forward_roi_head(location, **data)
         topk_indexes = outs_roi["topk_indexes"]
 

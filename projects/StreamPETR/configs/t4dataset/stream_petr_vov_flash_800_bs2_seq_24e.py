@@ -22,9 +22,9 @@ num_gpus = 2
 batch_size = 4
 val_interval = 5
 num_epochs = 50
+num_cameras = 6
 backend_args = None
 stride = 16  # downsampling factor of extracted features form image
-
 eval_class_range = {
     "car": 75,
     "truck": 75,
@@ -382,3 +382,4 @@ default_hooks = dict(
 load_from = "/workspace/work_dirs/ckpts/fcos3d_vovnet_imgbackbone-remapped.pth"
 # load_from = "/workspace/work_dirs/stream_petr_vov_flash_800_bs2_seq_24e/iter_200.pth"
 resume_from = None
+work_dir = "./work_dirs/onnx"
