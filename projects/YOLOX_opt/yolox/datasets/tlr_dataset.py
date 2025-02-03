@@ -36,6 +36,7 @@ def read_json_file(file_path):
 
 
 def get_instance_key(path: str, bbox: List[float]):
+    path = "/".join(path.split("/")[-5:])  # only use the part of the path after the dataset-id
     x1, y1, x2, y2 = [int(x) for x in bbox]
     return f"{path}_{x1}_{y1}_{x2},{y2}"
 
