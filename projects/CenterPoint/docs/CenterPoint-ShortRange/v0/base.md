@@ -1,0 +1,141 @@
+# Deployed model for CenterPoint-ConvNeXtPC base/0.X
+## Summary
+
+- Main parameter
+  - range = 51.20m
+- Performance summary
+  - Dataset: DB JPNTAXI v1.0 + DB JPNTAXI v2.0 + DB JPNTAXI v3.0 + DB GSM8 v1.0 + DB J6 v1.0 (total frames: 35,292)
+  - [Comparisons in details](https://docs.google.com/spreadsheets/d/1cOIwmyiXA4Z0uAEl1mkPoaAjqJJ8Mq1O66tzzAOW15I/edit?gid=980227559#gid=980227559)
+  - Class mAP for center distance (0.5m, 1.0m, 2.0m, 4.0m)
+
+| eval range: 52m                             | mAP  | car <br> (629,212) | truck <br> (163,402) | bus <br> (39,904) | bicycle <br> (48,043) | pedestrian <br> (383,553) |
+| --------------------------------------------| ---- | ------------------ | -------------------- | ----------------- | --------------------- | ------------------------- |
+| CenterPoint-ShortRange base/0.1       			| 77.4 | 83.2               | 67.5                 | 79.4              | 82.3                  | 74.4                      |
+| CenterPoint-ShortRange base/0.2    					| 76.7 | 87.9               | 64.5                 | 84.3              | 75.5                  | 71.3                      |
+| CenterPoint-ShortRange base/0.3    					| 81.5 | 89.1               | 71.3                 | 91.3              | 81.0                  | 75.1                      |
+
+- Deployment summary
+
+| Runtime (ms)                       | Min  | P25      | P50    | P75    | P90    | Max    | Mean            |  
+| --------------------------------   | ---- | ------   | ------ | -----  | ------ | -----  |---------------  |
+| CenterPoint-ShortRange base/0.1    | 5.91 | 9.08     | 10.28  |  12.23 | 16.77  | 30.79  |  11.33 (+-3.50) |
+| CenterPoint-ShortRange base/0.2    | 5.91 | 9.08     | 10.28  |  12.23 | 16.77  |	30.79  |  11.33 (+-3.50) |
+| CenterPoint-ShortRange base/0.3    | 9.96 | 12.29		 | 14.64  |  16.32 | 19.03	|	45.82  |  15.35 (+-3.36) |
+
+
+| GPU Memory (MB)                    | Min  	  | P25      		| P50    		| P75    		 | P90       | Max    	| Mean            	 |  
+| --------------------------------   | -------- | ----------  | --------- | ---------- | --------  | -------  | -----------------  |
+| CenterPoint-ShortRange base/0.1    | 4486.06  | 4508.69     | 4521.00  	| 4524.44 	 | 4543.19   | 4633.81  |  4519.30 (+-20.38) |
+| CenterPoint-ShortRange base/0.2    | 4486.06  | 4508.69     | 4521.00   | 4524.44 	 | 4543.19   | 4633.81  |  4519.30 (+-20.38) |
+| CenterPoint-ShortRange base/0.3    | 3879.88  | 3882.56		 	| 3884.44  	| 4084.62 	 | 4087.56	 | 4218.75  |  3948.19 (+-96.93) |
+
+## Release
+### CenterPoint-ShortRange base/0.3
+- This is exactly the model [CenterPoint-ConvNeXtPC base/0.2](../../CenterPoint-ConvNeXtPC/v0/base.md) except it evaluates in 50m only
+- The performance of detection is generally better than `CenterPoint-ShortRange base/0.1` (81.5 vs 77.4) since it also has better performance in 120m, especially, vehicle classes:
+  - car (89.1 vs 83.2)
+  - truck (71.3 vs 67.5)
+  - bus (91.3 vs 79.4)
+- However, the following small classes have only limited improvment or even worse performance:
+  - bicycle (81.0 vs 82.3)
+  - pedestrian (75.1 vs 74.4)
+
+where it is suspected that we should further increase the resolution (e.g., 0.20 -> 0.16) and maintain the output factor by 1:1 (4 -> 1) for the small classes
+
+<details>
+<summary> The link of data and evaluation result </summary>
+
+- Model
+  - Please refer to this [summary](../../CenterPoint/v1/base.md) for the details  
+
+- Evaluation result with test-dataset: DB JPNTAXI v1.0 + DB JPNTAXI v2.0 + DB JPNTAXI v3.0 + DB GSM8 v1.0 + DB J6 v1.0 (total frames: 1,394):
+  - Total mAP (eval range = 52m): 0.767
+
+| class_name | Count  | mAP  | AP@0.5m | AP@1.0m | AP@2.0m | AP@4.0m |
+| ---------- | ------ | ---- | ------- | ------- | ------- | ------- |
+| car        | 41,133 | 89.1 | 81.3    | 90.7    | 92.9    | 92.4    |
+| truck      | 8,890  | 71.3 | 49.9    | 73.7    | 79.6    | 81.8    |
+| bus        | 3,275  | 91.3 | 81.1    | 93.5    | 95.2    | 95.3    |
+| bicycle    | 3,635  | 81.0 | 79.2    | 81.6    | 81.7    | 81.7    |
+| pedestrian | 25,981 | 75.1 | 72.2    | 74.4    | 77.8    | 77.8    |
+
+</details>
+
+### CenterPoint-ShortRange base/0.2
+- This is exactly the model [CenterPoint base/1.0](../../CenterPoint/v1/base.md) except it evaluates in 50m only
+- The performance of detection is slightly worse compared to `CenterPoint-ShortRange base/0.1` (76.7 vs 77.4), however, the following classes perform better:
+  - car (87.9 vs 83.2)
+  - bus (84.3 vs 79.4)
+
+where it is suspected that the higher resolution setting ([0.16, 0.16, 8.0]) should generally performs better in small classes, for example, bicycle and pedestrian
+
+<details>
+<summary> The link of data and evaluation result </summary>
+
+- Model
+  - Please refer to this [summary](../../CenterPoint/v1/base.md) for the details  
+
+- Evaluation result with test-dataset: DB JPNTAXI v1.0 + DB JPNTAXI v2.0 + DB JPNTAXI v3.0 + DB GSM8 v1.0 + DB J6 v1.0 (total frames: 1,394):
+  - Total mAP (eval range = 52m): 0.767
+
+| class_name | Count  | mAP  | AP@0.5m | AP@1.0m | AP@2.0m | AP@4.0m |
+| ---------- | ------ | ---- | ------- | ------- | ------- | ------- |
+| car        | 41,133 | 87.9 | 80.1    | 89.4    | 90.9    | 91.2    |
+| truck      | 8,890  | 64.5 | 41.2    | 66.0    | 73.9    | 77.0    |
+| bus        | 3,275  | 84.3 | 77.5    | 85.8    | 86.9    | 87.1    |
+| bicycle    | 3,635  | 75.5 | 74.7    | 75.7    | 75.8    | 75.8    |
+| pedestrian | 25,981 | 71.3 | 68.8    | 70.6    | 72.0    | 73.7    |
+
+</details>
+
+### CenterPoint-ShortRange base/0.1
+- This is the CenterPoint model based on `CenterPoint base/1.0` by targeting only objects near to the ego vehicle in 50m and increasing resolution during training  
+- Note that it **doesn't** use any pretrained weights
+- Specifically, the main changes in hyperparameters are:
+	```python
+		voxel_size: [0.16, 0.16, 8.0]
+  		out_size_factor = 4
+  		data_preprocessor: dict(
+        	type="Det3DDataPreprocessor",
+        	voxel=True,
+        	voxel_layer=dict(
+            	max_num_points=32,
+            	voxel_size=voxel_size,
+            	point_cloud_range=point_cloud_range,
+            	max_voxels=(32000, 60000),
+            	deterministic=True,
+        	),
+      	)
+	```
+<details>
+<summary> The link of data and evaluation result </summary>
+
+- Model
+  - Training dataset: DB JPNTAXI v1.0 + DB JPNTAXI v2.0 + DB JPNTAXI v3.0 + DB GSM8 v1.0 + DB J6 v1.0 (total frames: 35,392)
+  - [PR](https://github.com/tier4/autoware-ml/pull/369)
+  - [Config file path](https://github.com/tier4/autoware-ml/blob/cacf3f3dc282aed5760aeb596094e0652300c113/projects/CenterPoint/configs/t4dataset/pillar_016_second_secfpn_2xb8_50m_base.py)
+  - Deployed onnx model and ROS parameter files [[GDrive]](https://drive.google.com/drive/folders/18dNXXK0BzgXX3VKkiTMh59cj3b1-HMQP?usp=drive_link)
+	- Deployed onnx and ROS parameter files [model-zoo]
+    - [detection_class_remapper.param.yaml](https://download.autoware-ml-model-zoo.tier4.jp/autoware-ml/models/centerpoint/centerpoint-shortrange/t4base/v0.1/detection_class_remapper.param.yaml)
+    - [centerpoint_x2_ml_package.param.yaml](https://download.autoware-ml-model-zoo.tier4.jp/autoware-ml/models/centerpoint/centerpoint-shortrange/t4base/v0.1/centerpoint_x2_ml_package.param.yaml)
+    - [deploy_metadata.yaml](https://download.autoware-ml-model-zoo.tier4.jp/autoware-ml/models/centerpoint/centerpoint-shortrange/t4base/v0.1/deploy_metadata.yaml)
+    - [pts_voxel_encoder_centerpoint_x2.onnx](https://download.autoware-ml-model-zoo.tier4.jp/autoware-ml/models/centerpoint/centerpoint-shortrange/t4base/v0.1/pts_voxel_encoder_centerpoint_x2.onnx)
+    - [pts_backbone_neck_head_centerpoint_x2.onnx](https://download.autoware-ml-model-zoo.tier4.jp/autoware-ml/models/centerpoint/centerpoint-shortrange/t4base/v0.1/pts_backbone_neck_head_centerpoint_x2.onnx)
+  - Training results [[GDrive]](https://drive.google.com/drive/folders/1V9QDda9WLo6T-t0IA4A0NZ_xJDgtCrb1?usp=drive_link)
+  - Training results [model-zoo]
+    - [logs.zip](https://download.autoware-ml-model-zoo.tier4.jp/autoware-ml/models/centerpoint/centerpoint-shortrange/t4base/v0.1/logs.zip)
+    - [checkpoint_best.pth](https://download.autoware-ml-model-zoo.tier4.jp/autoware-ml/models/centerpoint/centerpoint-shortrange/t4base/v0.2/epoch_50.pth)
+    - [config.py](https://download.autoware-ml-model-zoo.tier4.jp/autoware-ml/models/centerpoint/centerpoint-shortrange/t4base/v0.2/pillar_016_second_secfpn_2xb8_50m_base.py)
+  - train time: NVIDIA A100 80GB * 2 * 50 epochs = 3.5 days
+- Evaluation result with test-dataset: DB JPNTAXI v1.0 + DB JPNTAXI v2.0 + DB JPNTAXI v3.0 + DB GSM8 v1.0 + DB J6 v1.0 (total frames: 1,394):
+  - Total mAP (eval range = 52m): 0.774
+
+| class_name | Count  | mAP  | AP@0.5m | AP@1.0m | AP@2.0m | AP@4.0m |
+| ---------- | ------ | ---- | ------- | ------- | ------- | ------- |
+| car        | 41,133 | 83.2 | 78.0    | 84.2    | 85.3    | 85.5    |
+| truck      | 8,890  | 67.5 | 47.2    | 69.5    | 76.0    | 77.3    |
+| bus        | 3,275  | 79.4 | 63.7    | 82.2    | 85.0    | 86.7    |
+| bicycle    | 3,635  | 82.3 | 81.4    | 82.5    | 82.6    | 82.6    |
+| pedestrian | 25,981 | 74.4 | 72.7    | 73.9    | 75.1    | 76.1    |
+
+</details>
