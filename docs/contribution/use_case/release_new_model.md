@@ -44,6 +44,11 @@ work_dir = "work_dirs/centerpoint/" + _base_.dataset_type + "/second_secfpn_2xb8
 ## Step 3. Train the model
 
 Please see README.md in the project you want to update.
+Note that if you train for the model using Autoware, don't forget
+
+- Make onnx file (Please confirm in README.md of each project)
+- [Update onnx metadata](/tools/deploy_to_autoware/)
+- [Make the yaml file of ROS parameter](/tools/deploy_to_autoware/)
 
 ## Step 4. Deploy and Evaluate the model
 
