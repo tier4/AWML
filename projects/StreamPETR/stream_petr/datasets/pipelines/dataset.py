@@ -57,6 +57,7 @@ class StreamPETRDataset(T4Dataset):
         num_frame_losses=1,
         queue_length=8,
         random_length=0,
+        camera_order=["CAM_BACK_RIGHT", "CAM_BACK", "CAM_FRONT_RIGHT", "CAM_BACK_LEFT", "CAM_FRONT", "CAM_FRONT_LEFT"],
         *args,
         **kwargs,
     ):
@@ -71,6 +72,7 @@ class StreamPETRDataset(T4Dataset):
             self.queue_length = 1
             self.seq_split_num = seq_split_num
             self.random_length = 0
+        self.camera_order = camera_order
 
     def _validate_entry(self, info) -> bool:
         """
@@ -222,7 +224,11 @@ class StreamPETRDataset(T4Dataset):
             intrinsics = []
             extrinsics = []
             img_timestamp = []
-            for cam_type, cam_info in info["images"].items():
+            assert self.camera_order == list(
+                info["images"].keys()
+            ), f"ORDER SHOULD BE {self.camera_order} found {info['images'].keys()} "
+            for cam_type in self.camera_order:
+                cam_info = info["images"][cam_type]
                 img_timestamp.append(cam_info["timestamp"] / 1e9)
                 image_paths.append(cam_info["img_path"])
                 intrinsic_mat = np.array(cam_info["cam2img"])

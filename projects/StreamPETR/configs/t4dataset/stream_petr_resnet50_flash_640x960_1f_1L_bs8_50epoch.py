@@ -18,8 +18,8 @@ img_norm_cfg = dict(mean=[103.530, 116.280, 123.675], std=[57.375, 57.120, 58.39
 # For nuScenes we usually do 10-class detection
 class_names = _base_.class_names
 
-num_gpus = 2
-batch_size = 4
+num_gpus = 1
+batch_size = 8
 val_interval = 5
 num_epochs = 50
 num_cameras = 6
@@ -62,17 +62,20 @@ model = dict(
     num_frame_losses=num_frame_losses,
     use_grid_mask=True,
     img_backbone=dict(
-        type="VoVNet",  ###use checkpoint to save memory
-        spec_name="V-99-eSE",
-        norm_eval=False,
-        frozen_stages=-1,
-        input_ch=3,
-        out_features=(
-            "stage4",
-            "stage5",
+        type="mmpretrain.ResNet",
+        init_cfg=dict(
+            type="Pretrained",
+            checkpoint="./work_dirs/ckpts/cascade_mask_rcnn_r50_fpn_coco-20e_20e_nuim_20201009_124951-40963960.pth",
+            prefix="backbone",
         ),
+        depth=50,
+        num_stages=4,
+        out_indices=(2, 3),
+        frozen_stages=-1,
+        norm_cfg=dict(type="BN2d", requires_grad=True),
+        style="pytorch",
     ),
-    img_neck=dict(type="CPFPN", in_channels=[768, 1024], out_channels=256, num_outs=2),  ###remove unused parameters
+    img_neck=dict(type="CPFPN", in_channels=[1024, 2048], out_channels=256, num_outs=2),  ###remove unused parameters
     # img_roi_head=dict(
     #     type='mmdet.FocalHead',
     #     num_classes=len(class_names),
@@ -207,7 +210,7 @@ train_pipeline = [
     dict(type="ObjectRangeFilter", point_cloud_range=point_cloud_range),
     dict(type="ObjectNameFilter", classes=class_names),
     dict(type="mmdet.ResizeCropFlipRotImage", data_aug_conf=ida_aug_conf, training=True, with_2d=False),
-    dict(type="mmdet.PadMultiViewImage", size_divisor=16),
+    dict(type="mmdet.PadMultiViewImage", size_divisor=stride),
     dict(type="mmdet.NormalizeMultiviewImage", **img_norm_cfg),
     dict(type="StreamPETRLoadAnnotations2D"),
     dict(type="PETRFormatBundle3D", class_names=class_names, collect_keys=collect_keys + ["prev_exists"]),
@@ -223,7 +226,7 @@ test_pipeline = [
         with_bbox_depth=False,
     ),
     dict(type="mmdet.ResizeCropFlipRotImage", data_aug_conf=ida_aug_conf, training=False, with_2d=False),
-    dict(type="mmdet.PadMultiViewImage", size_divisor=16),
+    dict(type="mmdet.PadMultiViewImage", size_divisor=stride),
     dict(type="mmdet.NormalizeMultiviewImage", **img_norm_cfg),
     dict(type="StreamPETRLoadAnnotations2D"),
     dict(type="PETRFormatBundle3D", class_names=class_names, collect_keys=collect_keys + ["prev_exists"]),
@@ -372,14 +375,12 @@ default_hooks = dict(
     logger=dict(type="LoggerHook", interval=10),
     checkpoint=dict(
         interval=1,
-        max_keep_ckpts=3,
+        max_keep_ckpts=5,
         save_best="NuScenes metric/T4Metric/mAP",
         type="CheckpointHook",
         # by_epoch=False,
     ),  # alternative 'NuScenes metric/T4Metric/NDS'
 )
 
-load_from = "/workspace/work_dirs/ckpts/fcos3d_vovnet_imgbackbone-remapped.pth"
-# load_from = "/workspace/work_dirs/stream_petr_vov_flash_800_bs2_seq_24e/iter_200.pth"
+load_from = None
 resume_from = None
-work_dir = "./work_dirs/onnx"

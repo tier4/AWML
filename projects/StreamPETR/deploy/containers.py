@@ -47,15 +47,15 @@ class TrtPtsHeadContainer(torch.nn.Module):
         rec_score = all_cls_scores[-1].sigmoid().topk(1, dim=-1).values[..., 0:1]
         rec_timestamp = torch.zeros_like(rec_score, dtype=torch.float64)
 
+        head = self.mod.pts_bbox_head
         # topk proposals
-        _, topk_indexes = torch.topk(rec_score, 128, dim=1)
+        _, topk_indexes = torch.topk(rec_score, head.topk_proposals, dim=1)
         rec_timestamp = topk_gather(rec_timestamp, topk_indexes)
         rec_reference_points = topk_gather(rec_reference_points, topk_indexes).detach()
         rec_memory = topk_gather(rec_memory, topk_indexes).detach()
         rec_ego_pose = topk_gather(rec_ego_pose, topk_indexes)
         rec_velo = topk_gather(rec_velo, topk_indexes).detach()
 
-        head = self.mod.pts_bbox_head
         head.memory_embedding = torch.cat([rec_memory, head.memory_embedding], dim=1)
         head.memory_timestamp = torch.cat([rec_timestamp, head.memory_timestamp], dim=1)
         head.memory_egopose = torch.cat([rec_ego_pose, head.memory_egopose], dim=1)
@@ -69,13 +69,13 @@ class TrtPtsHeadContainer(torch.nn.Module):
         # cast to float64 out-of-tensorrt
         # head.memory_timestamp -= data_timestamp.unsqueeze(-1).unsqueeze(-1)
 
-    def _pts_head(self, x, pos_embed, cone):
+    def _pts_head(self, x, pos_embed, cone, topk_indexes=None):
         head = self.mod.pts_bbox_head
 
         B, N, C, H, W = x.shape
         num_tokens = N * H * W
         memory = x.permute(0, 1, 3, 4, 2).reshape(B, num_tokens, C)
-
+        memory = topk_gather(memory, topk_indexes)
         # don't do on-the-fly position_embedding
         # head.position_embeding(data, memory_center, topk_indexes, img_metas)
 
@@ -101,16 +101,15 @@ class TrtPtsHeadContainer(torch.nn.Module):
         outputs_classes = []
         outputs_coords = []
         reference = inverse_sigmoid(reference_points.clone())
-        for lvl in range(1):
+        for lvl in range(outs_dec.shape[0]):
             outputs_class = head.cls_branches[lvl](outs_dec[lvl])
             tmp = head.reg_branches[lvl](outs_dec[lvl])
 
             tmp[..., 0:3] += reference[..., 0:3]
             tmp[..., 0:3] = tmp[..., 0:3].sigmoid()
 
-            outputs_coord = tmp
             outputs_classes.append(outputs_class)
-            outputs_coords.append(outputs_coord)
+            outputs_coords.append(tmp)
         all_cls_scores = torch.stack(outputs_classes)
         all_bbox_preds = torch.stack(outputs_coords)
         all_bbox_preds[..., 0:3] = (
@@ -173,7 +172,7 @@ class TrtPtsHeadContainer(torch.nn.Module):
             all_cls_scores,
             all_bbox_preds,
             rec_ego_pose,
-        ) = self._pts_head(x, pos_embed, cone)
+        ) = self._pts_head(x, pos_embed, cone, topk_indexes=None)
 
         # memory update after head
         self._post_update_memory(data_ego_pose, data_timestamp, rec_ego_pose, all_cls_scores, all_bbox_preds, outs_dec)

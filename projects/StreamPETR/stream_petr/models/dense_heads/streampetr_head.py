@@ -648,10 +648,11 @@ class StreamPETRHead(AnchorFreeHead):
         outputs_classes = []
         outputs_coords = []
 
+        reference = inverse_sigmoid(reference_points.clone())
+        assert reference.shape[-1] == 3
+
         for lvl in range(outs_dec.shape[0]):
             with torch.cuda.amp.autocast(enabled=False):
-                reference = inverse_sigmoid(reference_points.clone())
-                assert reference.shape[-1] == 3
                 outputs_class = self.cls_branches[lvl](outs_dec[lvl])
                 tmp = self.reg_branches[lvl](outs_dec[lvl])
 
