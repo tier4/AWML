@@ -23,6 +23,14 @@
 <details>
 <summary> The link of data and evaluation result </summary>
 
+We evaluate for T4dataset and compare to old library.
+Old library is based on mmdetection3d v0 and we integrate to mmdetection3d v1 based library.
+
+| Eval range = 120m             | mAP  | car  | truck | bus  | bicycle | pedestrian |
+| ----------------------------- | ---- | ---- | ----- | ---- | ------- | ---------- |
+| Old library version (122.88m) | 62.2 | 74.7 | 43.0  | 75.0 | 54.0    | 64.1       |
+| CenterPoint v1.0.0 (122.88m)  | 64.5 | 75.0 | 50.7  | 78.1 | 53.2    | 64.8       |
+
 - Model
   - Training dataset: DB JPNTAXI v1.0 + DB JPNTAXI v2.0 + DB JPNTAXI v3.0 + DB GSM8 v1.0 + DB J6 v1.0 (total frames: 34,137)
   - [PR](https://github.com/tier4/autoware-ml/pull/159)

@@ -24,6 +24,19 @@ TransFusion-L v0 has many breaking changes.
 | Train model-japantaxi and model-X2 | 68.1          | 58.5   |
 | Train base model with All dataset  | 67.4          | 66.0   |
 
+- Note
+  - XX1: DB JPNTAXI v1.0 + DB JPNTAXI v2.0
+  - XX1new: DB JPNTAXI v4.0
+  - X2: DB GSM8 v1.0 + DB J6 v1.0
+
+| TransFusion-L 90m | train        | eval | All  | car  | truck | bus  | bicycle | pedestrian |
+| ----------------- | ------------ | ---- | ---- | ---- | ----- | ---- | ------- | ---------- |
+| base/0.6          | XX1 + X2     | XX1  | 67.4 | 80.7 | 56.0  | 77.6 | 57.4    | 65.5       |
+| base/0.3          | XX1          | XX1  | 68.1 | 80.5 | 58.0  | 80.8 | 58.0    | 63.2       |
+| base/0.4          | XX1 + XX1new | XX1  | 68.5 | 81.7 | 62.4  | 83.5 | 50.9    | 64.1       |
+| base/0.6          | XX1 + X2     | X2   | 66.0 | 82.3 | 47.5  | 83.6 | 55.1    | 61.6       |
+| base/0.5          | X2           | X2   | 58.5 | 80.5 | 28.1  | 82.4 | 48.0    | 53.7       |
+
 <details>
 <summary> The link of data and evaluation result </summary>
 
@@ -182,6 +195,26 @@ TransFusion-L v0 has many breaking changes.
 | -------- | ---- | ---- | ----- | ---- | ------- | ---------- |
 | base/0.3 | 68.1 | 80.5 | 58.0  | 80.8 | 58.0    | 63.2       |
 | base/0.2 | 57.8 | 74.0 | 48.0  | 72.0 | 42.7    | 52.1       |
+
+- We evaluated to old internal library
+  - Dataset: DB JPNTAXI v1.0 + DB JPNTAXI v2.0 (eval range: 75m)
+  - Class mAP for center distance (0.5m, 1.0m, 2.0m, 4.0m)
+  - CenterPoint-PP = PointPainting
+  - we evaluated CenterPoint by our internal old library for CenterPoint, CenterPoint-sigma, and CenterPoint-PointPainting.
+  - sw = sweep
+
+|                        | grid, range | mAP  | car  | truck | bus  | bicycle | pedestrian |
+| ---------------------- | ----------- | ---- | ---- | ----- | ---- | ------- | ---------- |
+| Eval dataset           |             |      |      |       |      |         |            |
+| CenterPoint            | 480, 76.8m  | 61.1 | 84.9 | 52.4  | 39.1 | 57.7    | 71.7       |
+| CenterPoint-sigma      | 640, 102.4m | 61.8 | 84.6 | 52.8  | 38.8 | 61.2    | 71.6       |
+| CenterPoint-PP         | 560, 89.6m  | 62.7 | 81.5 | 57.2  | 53.1 | 48.2    | 73.7       |
+| TransFusion-L base/0.2 | 512, 92.16m | 57.0 | 77.7 | 50.6  | 52.1 | 45.7    | 59.1       |
+| TransFusion-L base/0.3 | 768, 92.16m | 67.7 | 85.7 | 65.1  | 60.1 | 56.8    | 70.9       |
+| Test dataset           |             |      |      |       |      |         |            |
+| CenterPoint-sigma (t)  | 640, 102.4m | 64.7 | 81.7 | 55.1  | 62.2 | 58.3    | 66.0       |
+| TransFusion-L base/0.2 | 512, 92.16m | 61.0 | 75.4 | 49.7  | 77.1 | 48.3    | 54.4       |
+| TransFusion-L base/0.3 | 768, 92.16m | 71.1 | 83.1 | 60.2  | 86.4 | 61.5    | 64.4       |
 
 <details>
 <summary> The link of data and evaluation result </summary>

@@ -10,10 +10,10 @@
   - Dataset: DB JPNTAXI v1.0 + DB JPNTAXI v2.0 + DB JPNTAXI v3.0 + DB GSM8 v1.0 + DB J6 v1.0 (total frames: 35,292)
   - Class mAP for center distance (0.5m, 1.0m, 2.0m, 4.0m)
 
-| eval range: 120m                            | mAP  | car <br> (629,212) | truck <br> (163,402) | bus <br> (39,904) | bicycle <br> (48,043) | pedestrian <br> (383,553) |
-| --------------------------------------------| ---- | ------------------ | -------------------- | ----------------- | --------------------- | ------------------------- |
-| CenterPoint-ConvNeXtPC base/0.1       			| 65.3 | 75.0               | 54.2                 | 78.1              | 52.8                  | 66.2                      |
-| CenterPoint-ConvNeXtPC base/0.2    					| 68.6 | 77.9               | 58.6                 | 80.9              | 56.4                  | 69.3                      |
+| eval range: 120m                | mAP  | car <br> (629,212) | truck <br> (163,402) | bus <br> (39,904) | bicycle <br> (48,043) | pedestrian <br> (383,553) |
+| ------------------------------- | ---- | ------------------ | -------------------- | ----------------- | --------------------- | ------------------------- |
+| CenterPoint-ConvNeXtPC base/0.1 | 65.3 | 75.0               | 54.2                 | 78.1              | 52.8                  | 66.2                      |
+| CenterPoint-ConvNeXtPC base/0.2 | 68.6 | 77.9               | 58.6                 | 80.9              | 56.4                  | 69.3                      |
 
 
 ## Release
@@ -58,6 +58,22 @@
 
 <details>
 <summary> The link of data and evaluation result </summary>
+
+- Comparison for Base Detection:
+
+| Model (120m)                  | mAP         | Time    | Memory |
+| ----------------------------- | ----------- | ------- | ------ |
+| CenterPoint base/1.0          | 64.4        | 18.2 ms | 4.7 GB |
+| CenterPoint-ConvNeXt base/0.1 | 65.3 (+0.9) | 30.4 ms | 5.6 GB |
+| CenterPoint-ConvNeXt base/0.2 | 68.6 (+4.2) | 48.1 ms | 5.9 GB |
+
+- Comparison for Nearby Models:
+
+| Model (50m)                   | Time   | Memory |
+| ----------------------------- | ------ | ------ |
+| CenterPoint base/1.0          | 5.9 ms | 4.5 GB |
+| CenterPoint-ConvNeXt base/0.1 | 7.2 ms | 3.9 GB |
+| CenterPoint-ConvNeXt base/0.2 | 9.9 ms | 3.6 GB |
 
 - Model
   - Training dataset: DB JPNTAXI v1.0 + DB JPNTAXI v2.0 + DB JPNTAXI v3.0 + DB GSM8 v1.0 + DB J6 v1.0 (total frames: 35,392)
