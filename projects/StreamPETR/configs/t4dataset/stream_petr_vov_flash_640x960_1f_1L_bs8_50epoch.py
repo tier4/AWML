@@ -15,7 +15,8 @@ backbone_norm_cfg = dict(type="LN", requires_grad=True)
 point_cloud_range = [-51.2, -51.2, -5.0, 51.2, 51.2, 3.0]
 voxel_size = [0.2, 0.2, 8]
 img_norm_cfg = dict(mean=[103.530, 116.280, 123.675], std=[57.375, 57.120, 58.395], to_rgb=False)  # fix img_norm
-camera_order = ["CAMERA_FRONT", "CAM_BACK", "CAMERA_FRONT_LEFT", "CAMERA_BACK_LEFT", "CAMERA_FRONT_RIGHT", "CAMERA_BACK_RIGHT"]
+camera_order = None # This will lead to shuffled camera order
+# camera_order = ["CAMERA_FRONT", "CAM_BACK", "CAMERA_FRONT_LEFT", "CAMERA_BACK_LEFT", "CAMERA_FRONT_RIGHT", "CAMERA_BACK_RIGHT"]
 # For nuScenes we usually do 10-class detection
 class_names = _base_.class_names
 
@@ -385,7 +386,6 @@ default_hooks = dict(
     ),  # alternative 'NuScenes metric/T4Metric/NDS'
 )
 
-load_from = "/workspace/work_dirs/ckpts/fcos3d_vovnet_imgbackbone-remapped.pth"
+load_from = "/workspace/work_dirs/ckpts/stream_petr_vov_flash_800_bs2_seq_24e.pth"
 # load_from = "/workspace/work_dirs/stream_petr_vov_flash_800_bs2_seq_24e/iter_200.pth"
 resume_from = None
-work_dir = "./work_dirs/onnx"

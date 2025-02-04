@@ -73,7 +73,7 @@ class StreamPETRDataset(T4Dataset):
             self.seq_split_num = seq_split_num
             self.random_length = 0
         self.camera_order = camera_order
-
+        print(f"Camera corder: {self.camera_order} test_mode: {self.test_mode}")
     def _validate_entry(self, info) -> bool:
         """
         Validate the necessary entries in the data info dict
@@ -231,7 +231,6 @@ class StreamPETRDataset(T4Dataset):
                 camera_order = list(info["images"].keys())
                 if not self.test_mode:
                     np.random.shuffle(camera_order)
-
             for cam_type in camera_order :
                 cam_info = info["images"][cam_type]
                 img_timestamp.append(cam_info["timestamp"] / 1e9)
