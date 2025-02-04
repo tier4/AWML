@@ -15,6 +15,7 @@ backbone_norm_cfg = dict(type="LN", requires_grad=True)
 point_cloud_range = [-51.2, -51.2, -5.0, 51.2, 51.2, 3.0]
 voxel_size = [0.2, 0.2, 8]
 img_norm_cfg = dict(mean=[103.530, 116.280, 123.675], std=[57.375, 57.120, 58.395], to_rgb=False)  # fix img_norm
+camera_order = ["CAMERA_FRONT", "CAM_BACK", "CAMERA_FRONT_LEFT", "CAMERA_BACK_LEFT", "CAMERA_FRONT_RIGHT", "CAMERA_BACK_RIGHT"]
 # For nuScenes we usually do 10-class detection
 class_names = _base_.class_names
 
@@ -63,12 +64,8 @@ model = dict(
     use_grid_mask=True,
     img_backbone=dict(
         type="mmpretrain.ResNet",
-        init_cfg=dict(
-            type="Pretrained",
-            checkpoint="./work_dirs/ckpts/cascade_mask_rcnn_r50_fpn_coco-20e_20e_nuim_20201009_124951-40963960.pth",
-            prefix="backbone",
-        ),
-        depth=50,
+        init_cfg=dict(type="Pretrained", checkpoint="torchvision://resnet101"),
+        depth=101,
         num_stages=4,
         out_indices=(2, 3),
         frozen_stages=-1,
@@ -240,6 +237,7 @@ train_dataloader = dict(
     drop_last=True,
     dataset=dict(
         type="StreamPETRDataset",
+        camera_order=camera_order,
         data_root=data_root,
         ann_file=info_directory_path + _base_.info_train_file_name,
         pipeline=train_pipeline,
@@ -261,6 +259,8 @@ val_dataloader = dict(
     sampler=dict(type="DefaultSampler", shuffle=False),
     dataset=dict(
         type="StreamPETRDataset",
+        test_mode=True,
+        camera_order=camera_order,
         data_root=data_root,
         ann_file=info_directory_path + _base_.info_val_file_name,
         pipeline=test_pipeline,
@@ -282,8 +282,10 @@ test_dataloader = dict(
     sampler=dict(type="DefaultSampler", shuffle=False),
     dataset=dict(
         type="StreamPETRDataset",
+        test_mode=True,
+        camera_order=camera_order,
         data_root=data_root,
-        ann_file="info/cameraonly/streampetr_dummy/" + _base_.info_test_file_name,
+        ann_file=info_directory_path + _base_.info_test_file_name,
         pipeline=test_pipeline,
         metainfo=_base_.metainfo,
         class_names=class_names,
@@ -311,7 +313,7 @@ val_evaluator = dict(
 test_evaluator = dict(
     type="T4Metric",
     data_root=data_root,
-    ann_file=data_root + "info/cameraonly/streampetr_dummy/" + _base_.info_test_file_name,
+    ann_file=data_root + info_directory_path + _base_.info_test_file_name,
     backend_args=backend_args,
     metric="bbox",
     class_names=class_names,
@@ -382,5 +384,5 @@ default_hooks = dict(
     ),  # alternative 'NuScenes metric/T4Metric/NDS'
 )
 
-load_from = None
+# load_from = ""
 resume_from = None

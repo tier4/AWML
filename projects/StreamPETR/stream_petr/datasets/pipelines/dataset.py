@@ -57,7 +57,7 @@ class StreamPETRDataset(T4Dataset):
         num_frame_losses=1,
         queue_length=8,
         random_length=0,
-        camera_order=["CAM_BACK_RIGHT", "CAM_BACK", "CAM_FRONT_RIGHT", "CAM_BACK_LEFT", "CAM_FRONT", "CAM_FRONT_LEFT"],
+        camera_order=None,
         *args,
         **kwargs,
     ):
@@ -224,10 +224,15 @@ class StreamPETRDataset(T4Dataset):
             intrinsics = []
             extrinsics = []
             img_timestamp = []
-            assert self.camera_order == list(
-                info["images"].keys()
-            ), f"ORDER SHOULD BE {self.camera_order} found {info['images'].keys()} "
-            for cam_type in self.camera_order:
+            
+            if self.camera_order:
+                camera_order = self.camera_order
+            else:
+                camera_order = list(info["images"].keys())
+                if not self.test_mode:
+                    np.random.shuffle(camera_order)
+
+            for cam_type in camera_order :
                 cam_info = info["images"][cam_type]
                 img_timestamp.append(cam_info["timestamp"] / 1e9)
                 image_paths.append(cam_info["img_path"])
