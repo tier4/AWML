@@ -100,7 +100,6 @@ class StreamPETRDataset(T4Dataset):
         def _serialize(data):
             buffer = pickle.dumps(data, protocol=4)
             return np.frombuffer(buffer, dtype=np.uint8)
-
         # Serialize data information list avoid making multiple copies of
         # `self.data_list` when iterate `import torch.utils.data.dataloader`
         # with multiple workers.
@@ -230,8 +229,11 @@ class StreamPETRDataset(T4Dataset):
             else:
                 camera_order = list(info["images"].keys())
                 if not self.test_mode:
-                    np.random.shuffle(camera_order)
-            for cam_type in camera_order :
+                    random.shuffle(camera_order)
+            
+            info["images"] = {x:info["images"][x] for x in camera_order}
+
+            for cam_type in info["images"] :
                 cam_info = info["images"][cam_type]
                 img_timestamp.append(cam_info["timestamp"] / 1e9)
                 image_paths.append(cam_info["img_path"])

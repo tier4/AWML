@@ -16,7 +16,8 @@ from mmdet.registry import TRANSFORMS
 import torch
 from PIL import Image
 import pyquaternion
-
+from mmpretrain.registry import TRANSFORMS as TRANSFORMS_MMPRETRAIN
+from mmcv.transforms import Compose
 
 @TRANSFORMS.register_module()
 class PadMultiViewImage:
@@ -39,16 +40,16 @@ class PadMultiViewImage:
 
     def _pad_img(self, results):
         """Pad images according to ``self.size``."""
-        if self.size is not None:
-            padded_img = [mmcv.impad(img, shape=self.size, pad_val=self.pad_val) for img in results["img"]]
-        elif self.size_divisor is not None:
-            padded_img = [
-                mmcv.impad_to_multiple(img, self.size_divisor, pad_val=self.pad_val) for img in results["img"]
-            ]
-        padded_img = results["img"]
+        # if self.size is not None:
+        #     padded_img = [mmcv.impad(img, shape=self.size, pad_val=self.pad_val) for img in results["img"]]
+        # elif self.size_divisor is not None:
+        #     padded_img = [
+        #         mmcv.impad_to_multiple(img, self.size_divisor, pad_val=self.pad_val) for img in results["img"]
+        #     ]
+        # padded_img = results["img"]
         results["img_shape"] = [img.shape for img in results["img"]]
-        results["img"] = padded_img
-        results["img_metas"]["pad_shape"] = padded_img[0].shape
+        # results["img"] = padded_img
+        results["img_metas"]["pad_shape"] = results["img"][0].shape
         results["img_metas"]["pad_fix_size"] = self.size
         results["img_metas"]["pad_size_divisor"] = self.size_divisor
 
@@ -283,7 +284,8 @@ class ResizeCropFlipRotImage:
     def _sample_augmentation(self, H, W):
         fH, fW = self.data_aug_conf["final_dim"]
         if self.training:
-            resize = np.random.uniform(*self.data_aug_conf["resize_lim"])
+            resize = max(fH / H, fW / W) 
+            resize = min(np.random.uniform(resize+self.data_aug_conf["resize_lim"][0], resize+self.data_aug_conf["resize_lim"][1]),1)
             resize_dims = (int(W * resize), int(H * resize))
             newW, newH = resize_dims
             crop_h = int((1 - np.random.uniform(*self.data_aug_conf["bot_pct_lim"])) * newH) - fH
@@ -409,4 +411,71 @@ class ConvertTo3dGlobal:
 
         results["gt_bboxes_3d"] = box
 
+        return results
+
+@TRANSFORMS.register_module()
+class ImageAugmentation:
+    """
+    Applies a series of image augmentations with a given probability.
+
+    This class wraps a sequence of transformations defined using mmcv's
+    `Compose` and applies them to the image(s) in the input `results` dictionary
+    with a probability `p`.  It's designed to integrate with the mmpretrain
+    framework.
+
+    Args:
+        transforms (list): A list of transformation dictionaries, where each
+            dictionary defines a transformation to be applied.  These
+            dictionaries should be compatible with `mmpretrain.registry.TRANSFORMS.build`.
+            For example:
+            ```
+            transforms = [
+                dict(type='RandomResizedCrop', size=224),
+                dict(type='RandomFlip', flip_prob=0.5),
+                dict(type='Normalize', mean=[123.675, 116.28, 103.53], std=[58.395, 57.12, 57.375], to_rgb=True)
+            ]
+            ```
+        p (float, optional): The probability with which the augmentations are
+            applied. Defaults to 0.75.
+
+    Returns:
+        dict: The input `results` dictionary with the image(s) potentially
+            augmented.  The image(s) are accessed via `results["img"]`.  If
+            multiple images are present (e.g., in multi-view testing), `results["img"]`
+            should be a list of images.
+
+    Example:
+        ```python
+        transforms = [
+            dict(type='RandomResizedCrop', size=224),
+            dict(type='RandomFlip', flip_prob=0.5)
+        ]
+        augmentation = ImageAugmentation(transforms, p=0.5)
+
+        # Example usage with a single image:
+        results = {'img': np.random.randint(0, 256, size=(256, 256, 3)).astype(np.uint8)}
+        augmented_results = augmentation(results)
+        print(augmented_results['img'].shape) # Output shape after transformation
+
+        # Example usage with multiple images (e.g., multi-view):
+        results_multi = {'img': [
+            np.random.randint(0, 256, size=(256, 256, 3)).astype(np.uint8),
+            np.random.randint(0, 256, size=(256, 256, 3)).astype(np.uint8)
+        ]}
+        augmented_results_multi = augmentation(results_multi)
+        for img in augmented_results_multi['img']:
+          print(img.shape) # Output shape after transformation for each image
+
+        ```
+    """
+
+    def __init__(self, transforms: [], p=0.75):
+        self.transforms = Compose([TRANSFORMS_MMPRETRAIN.build(t) for t in transforms])
+        self.p = p
+
+    def __call__(self, results):
+        if self.transforms:
+            for i,image in enumerate(results["img"]):
+                if np.random.rand() < self.p:
+                    results["img"][i] = self.transforms({"img": image.astype(np.uint8)})["img"]
         return results

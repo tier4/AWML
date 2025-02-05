@@ -11,6 +11,7 @@ from .datasets.pipelines.transform_3d import (
     ResizeCropFlipRotImage,
     GlobalRotScaleTransImage,
     ConvertTo3dGlobal,
+    ImageAugmentation
 )
 from .datasets.pipelines.formating import PETRFormatBundle3D
 from .datasets.pipelines.dataset import StreamPETRDataset
@@ -37,4 +38,5 @@ __all__ = [
     "NoCacheAmpOptimWrapper",
     "DebugOptimWrapper",
     "ConvertTo3dGlobal",
+    "ImageAugmentation"
 ]

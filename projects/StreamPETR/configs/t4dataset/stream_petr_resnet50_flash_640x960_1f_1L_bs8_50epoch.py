@@ -15,7 +15,7 @@ backbone_norm_cfg = dict(type="LN", requires_grad=True)
 point_cloud_range = [-51.2, -51.2, -5.0, 51.2, 51.2, 3.0]
 voxel_size = [0.2, 0.2, 8]
 img_norm_cfg = dict(mean=[103.530, 116.280, 123.675], std=[57.375, 57.120, 58.395], to_rgb=False)  # fix img_norm
-camera_order = ["CAMERA_FRONT", "CAM_BACK", "CAMERA_FRONT_LEFT", "CAMERA_BACK_LEFT", "CAMERA_FRONT_RIGHT", "CAMERA_BACK_RIGHT"]
+camera_order = ["CAM_FRONT", "CAM_BACK", "CAM_FRONT_LEFT", "CAM_BACK_LEFT", "CAM_FRONT_RIGHT", "CAM_BACK_RIGHT"]
 # For nuScenes we usually do 10-class detection
 class_names = _base_.class_names
 

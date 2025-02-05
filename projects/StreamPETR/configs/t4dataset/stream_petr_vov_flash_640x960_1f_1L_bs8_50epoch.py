@@ -189,13 +189,16 @@ file_client_args = dict(backend="disk")
 
 
 ida_aug_conf = {
-    "resize_lim": (0.45, 0.55),
+    "resize_lim": (0.0, 0.05),  # How much to crop inside the image (lower_limit, upper_limit)
     "final_dim": (640, 960),  # (528, 720), (800,1200), (1088,1440)
     "bot_pct_lim": (0.0, 0.0),
     "rot_lim": (0.0, 0.0),
     "rand_flip": True,
 }
-
+augmementations = [
+    {"type": "mmpretrain.ColorJitter", "brightness":0.5, "contrast":0.5, "saturation":0.5, "hue":0.5},
+    {"type": "mmpretrain.GaussianBlur", "magnitude_range":(0,2), "prob":0.5},
+]
 train_pipeline = [
     dict(type="LoadMultiViewImageFromFiles", to_float32=True),
     dict(
@@ -210,6 +213,7 @@ train_pipeline = [
     dict(type="ObjectNameFilter", classes=class_names),
     dict(type="mmdet.ResizeCropFlipRotImage", data_aug_conf=ida_aug_conf, training=True, with_2d=False),
     dict(type="mmdet.PadMultiViewImage", size_divisor=stride),
+    dict(type="mmdet.ImageAugmentation", transforms=augmementations, p=0.75),
     dict(type="mmdet.NormalizeMultiviewImage", **img_norm_cfg),
     dict(type="StreamPETRLoadAnnotations2D"),
     dict(type="PETRFormatBundle3D", class_names=class_names, collect_keys=collect_keys + ["prev_exists"]),
