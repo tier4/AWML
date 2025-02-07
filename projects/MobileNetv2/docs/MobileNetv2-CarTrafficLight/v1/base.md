@@ -6,14 +6,89 @@
   - Note
     - Eval DB: Evaluation dataset
 
-|          | Eval DB           | precision_top1 | recall_top1 | f1-score_top1 | counts |
-| -------- | ----------------- | -------------- | ----------- | ------------- | ------ |
-| base/1.1 | TLR v1.0 + 4.0    | **70.48**      | **68.67**   | **69.49**     | 9642   |
-| base/1.0 | TLR v1.0 + 4.0    | 69.10          | 68.24       | 68.68         | 9642   |
-| base/1.1 | TLR v5.0          | **48.69**      | **49.91**   | **47.75**     | 306    |
-| base/1.0 | TLR v5.0          | 46.35          | 49.08       | 46.39         | 306    |
+|          | Eval DB            | precision_top1 | recall_top1 | f1-score_top1 | counts |
+| -------- | -----------------  | -------------- | ----------- | ------------- | ------ |
+| base/1.2 | TLR v1.0, 4.0, 5.0 | **69.75**      | **68.09**   | **68.85**     | 9648   |
+| base/1.1 | TLR v1.0, 4.0, 5.0 | **70.64**      | **68.28**   | **69.29**     | 9648   |
+| base/1.2 | TLR v6.0           | **21.19**      | **24.17**   | **22.18**     | 957    |
+| base/1.1 | TLR v6.0           | **18.21**      | **17.56**   | **12.99**     | 957    |
+| base/1.1 | TLR v1.0 + 4.0     | **70.48**      | **68.67**   | **69.49**     | 9642   |
+| base/1.0 | TLR v1.0 + 4.0     | 69.10          | 68.24       | 68.68         | 9642   |
+| base/1.1 | TLR v5.0           | **48.69**      | **49.91**   | **47.75**     | 306    |
+| base/1.0 | TLR v5.0           | 46.35          | 49.08       | 46.39         | 306    |
 
 ## Release
+
+### base/1.2
+- The car traffic light classifier model trained with X2 gen1.0 BRT dataset([DB TLR v6.0](../../../../../autoware_ml/configs/t4dataset/db_tlr_v6.yaml) dataset), in addition to the dataset used for training base/1.1.
+- [DB TLR v6.0](../../../../../autoware_ml/configs/t4dataset/db_tlr_v6.yaml) is dataset of vertical traffic lights, which is different from all other dataset versions.
+- The older models base/1.1 performed poorly on db_tlr_v6, whearas the newly trained model has good classification performance across all datasets.
+
+<details>
+<summary> The link of data and evaluation result </summary>
+
+- model
+  - Training dataset: DB TLR v1.0, 2.0, 3.0, 4.0, 5.0, 6.0
+  - Eval dataset: DB TLR v1.0, 4.0, 5.0, 6.0
+  - [PR](https://github.com/tier4/autoware-ml/pull/354)
+  - [Config file path](../../../configs/t4dataset/mobilenet-v2_tlr_car_t4dataset.py)
+  - Deployed onnx model [[webauto]](https://evaluation.tier4.jp/evaluation/mlpackages/e104265c-2945-4b8a-ae68-13accc1c0af2/releases/40d09664-0a7b-406e-9578-f65a0707bee3?project_id=zWhWRzei)
+  - Deployed onnx model [model-zoo]
+    - [traffic_light_classifier_mobilenetv2_batch_1.onnx](https://download.autoware-ml-model-zoo.tier4.jp/autoware-ml/models/mobilenet-v2/car_traffic_light/t4base/v1.2/traffic_light_classifier_mobilenetv2_batch_1.onnx)
+    - [traffic_light_classifier_mobilenetv2_batch_4.onnx](https://download.autoware-ml-model-zoo.tier4.jp/autoware-ml/models/mobilenet-v2/car_traffic_light/t4base/v1.2/traffic_light_classifier_mobilenetv2_batch_4.onnx)
+    - [traffic_light_classifier_mobilenetv2_batch_6.onnx](https://download.autoware-ml-model-zoo.tier4.jp/autoware-ml/models/mobilenet-v2/car_traffic_light/t4base/v1.2/traffic_light_classifier_mobilenetv2_batch_6.onnx)
+
+  - Deployed [label file](https://download.autoware-ml-model-zoo.tier4.jp/autoware-ml/models/mobilenet-v2/car_traffic_light/t4base/v1.2/lamp_labels.txt)
+  - Training results [model-zoo]
+    - [config.py](https://download.autoware-ml-model-zoo.tier4.jp/autoware-ml/models/mobilenet-v2/car_traffic_light/t4base/v1.2/mobilenet-v2_tlr_car_t4dataset.py)
+    - [checkpoint_best.pth](https://download.autoware-ml-model-zoo.tier4.jp/autoware-ml/models/mobilenet-v2/car_traffic_light/t4base/v1.2/best_multi-label_f1-score_top1_epoch_110.pth)
+    - [logs.zip](https://download.autoware-ml-model-zoo.tier4.jp/autoware-ml/models/mobilenet-v2/car_traffic_light/t4base/v1.2/logs.zip)
+    
+  - train time: (NVIDIA A100-SXM4-80GB * 1) * 300 epochs = 22 hours
+
+- Results evaluated with DB TLR v6.0
+
+```python
+Class-wise Metrics:
+----------------------------------------------------------------------------
+| Class Name           | Precision  | Recall     | F1-Score   | Counts     |
+----------------------------------------------------------------------------
+| green                | 99.77      | 100.00     | 99.89      | 441        |
+| left,red             | 0.00       | 0.00       | 0.00       | 0          |
+| left,red,straight    | 0.00       | 0.00       | 0.00       | 0          |
+| red                  | 100.00     | 99.22      | 99.61      | 513        |
+| red,right            | 0.00       | 0.00       | 0.00       | 0          |
+| red,straight         | 0.00       | 0.00       | 0.00       | 0          |
+| unknown              | 33.33      | 66.67      | 44.44      | 3          |
+| yellow               | 0.00       | 0.00       | 0.00       | 0          |
+| red,up_left          | 0.00       | 0.00       | 0.00       | 0          |
+| red,right,straight   | 0.00       | 0.00       | 0.00       | 0          |
+| red,up_right         | 0.00       | 0.00       | 0.00       | 0          |
+----------------------------------------------------------------------------
+```
+
+- Results evaluated with DB TLR v1.0, 4.0, 5.0
+
+```python
+Class-wise Metrics:
+----------------------------------------------------------------------------
+| Class Name           | Precision  | Recall     | F1-Score   | Counts     |
+----------------------------------------------------------------------------
+| green                | 99.90      | 99.88      | 99.89      | 5089       |
+| left,red             | 100.00     | 89.78      | 94.62      | 137        |
+| left,red,straight    | 99.31      | 98.30      | 98.80      | 294        |
+| red                  | 99.31      | 99.72      | 99.51      | 3907       |
+| red,right            | 96.64      | 98.63      | 97.63      | 292        |
+| red,straight         | 100.00     | 100.00     | 100.00     | 11         |
+| unknown              | 75.00      | 63.83      | 68.97      | 47         |
+| yellow               | 97.13      | 98.83      | 97.97      | 171        |
+| red,up_left          | 0.00       | 0.00       | 0.00       | 0          |
+| red,right,straight   | 0.00       | 0.00       | 0.00       | 0          |
+| red,up_right         | 0.00       | 0.00       | 0.00       | 0          |
+----------------------------------------------------------------------------
+```
+
+</details>
 
 ### base/1.1
 
