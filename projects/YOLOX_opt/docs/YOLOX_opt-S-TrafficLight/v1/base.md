@@ -173,7 +173,7 @@ AP50: 0.6990  AP60: 0.6990  AP70: 0.6830  AP80: 0.6830  AP90: 0.4830  mAP: 0.649
   - Training dataset: tlr_v0_1 + tlr_v1_0_x2 + tlr_v1_0_xx1 + tlr_v1_2
   - Eval dataset: tlr_v1_2
   - [PR](https://github.com/tier4/autoware-ml/pull/143)
-  - [Config file path](../../../configs/t4dataset/yolox_s_tlr_416x416_pedcar_t4dataset.py)
+  - [Config file path](../../../configs/t4dataset/YOLOX_opt-S-TrafficLight/yolox_s_tlr_416x416_pedcar_t4dataset.py)
   - Deployed onnx model [[webauto]](https://evaluation.tier4.jp/evaluation/mlpackages/ac288878-9790-44e3-9fc8-ca246c5cd235/releases/e23071aa-1cf9-4837-b71b-2fbbf990748d?project_id=zWhWRzei&tab=items)
   - Deployed label file [[webauto]](https://evaluation.tier4.jp/evaluation/mlpackages/ac288878-9790-44e3-9fc8-ca246c5cd235/releases/e23071aa-1cf9-4837-b71b-2fbbf990748d?project_id=zWhWRzei&tab=items)
   - Deployed onnx and labels [model-zoo]

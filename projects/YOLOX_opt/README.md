@@ -30,7 +30,7 @@
 - For traffic light recognition of fine detector
 
 ```bash
-python3 tools/detection2d/train.py /workspace/projects/YOLOX_opt/configs/t4dataset/yolox_s_tlr_416x416_pedcar_t4dataset.py
+python3 tools/detection2d/train.py /workspace/projects/YOLOX_opt/configs/t4dataset/YOLOX_opt-S-TrafficLight/yolox_s_tlr_416x416_pedcar_t4dataset.py
 ```
 
 ### 3. Evaluate

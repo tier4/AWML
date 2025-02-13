@@ -32,8 +32,8 @@ python3 tools/detection2d/create_data_t4dataset.py --config autoware_ml/configs/
 ### 2. Train
 
 ```bash
-python3 tools/detection2d/train.py /workspace/projects/MobileNetv2/configs/t4dataset/mobilenet-v2_tlr_car_t4dataset.py
-python3 tools/detection2d/train.py /workspace/projects/MobileNetv2/configs/t4dataset/mobilenet-v2_tlr_ped_t4dataset.py
+python3 tools/detection2d/train.py /workspace/projects/MobileNetv2/configs/t4dataset/MobileNetv2-CarTrafficLight/mobilenet-v2_tlr_car_t4dataset.py
+python3 tools/detection2d/train.py /workspace/projects/MobileNetv2/configs/t4dataset/MobileNetv2-PedestrianTrafficLight/mobilenet-v2_tlr_ped_t4dataset.py
 ```
 
 ### 3. Evaluate
@@ -48,22 +48,22 @@ python3 tools/classification2d/test.py /workspace/work_dirs/mobilenet-v2_tlr_ped
 
 ```bash
 #car_mobilenet-v2-224x224_batch_1
-python3 tools/classification2d/deploy.py /workspace/projects/MobileNetv2/configs/deploy/car_mobilenet-v2-224x224_batch_1.py /workspace/projects/MobileNetv2/configs/t4dataset/mobilenet-v2_tlr_car_t4dataset.py /workspace/work_dirs/mobilenet-v2_tlr_car_t4dataset/best_multi-label_f1-score_top1_epoch_12.pth /workspace/data/tlr/tlr_v0_1/8bb655ad-e12e-40a1-a7d7-43f279a1bd51/0/data/CAM_TRAFFIC_LIGHT_NEAR/0.jpg 1 --device cuda --work-dir /workspace/work_dirs/mobilenet-v2_tlr_car_t4dataset/
+python3 tools/classification2d/deploy.py /workspace/projects/MobileNetv2/configs/deploy/MobileNetv2-CarTrafficLight/car_mobilenet-v2-224x224_batch_1.py /workspace/projects/MobileNetv2/configs/t4dataset/MobileNetv2-CarTrafficLight/mobilenet-v2_tlr_car_t4dataset.py /workspace/work_dirs/mobilenet-v2_tlr_car_t4dataset/best_multi-label_f1-score_top1_epoch_12.pth /workspace/data/tlr/tlr_v0_1/8bb655ad-e12e-40a1-a7d7-43f279a1bd51/0/data/CAM_TRAFFIC_LIGHT_NEAR/0.jpg 1 --device cuda --work-dir /workspace/work_dirs/mobilenet-v2_tlr_car_t4dataset/
 
 #car_mobilenet-v2-224x224_batch_4
-python3 tools/classification2d/deploy.py /workspace/projects/MobileNetv2/configs/deploy/car_mobilenet-v2-224x224_batch_4.py /workspace/projects/MobileNetv2/configs/t4dataset/mobilenet-v2_tlr_car_t4dataset.py /workspace/work_dirs/mobilenet-v2_tlr_car_t4dataset/best_multi-label_f1-score_top1_epoch_12.pth /workspace/data/tlr/tlr_v0_1/8bb655ad-e12e-40a1-a7d7-43f279a1bd51/0/data/CAM_TRAFFIC_LIGHT_NEAR/0.jpg 4 --device cuda --work-dir /workspace/work_dirs/mobilenet-v2_tlr_car_t4dataset/
+python3 tools/classification2d/deploy.py /workspace/projects/MobileNetv2/configs/deploy/MobileNetv2-CarTrafficLight/car_mobilenet-v2-224x224_batch_4.py /workspace/projects/MobileNetv2/configs/t4dataset/MobileNetv2-CarTrafficLight/mobilenet-v2_tlr_car_t4dataset.py /workspace/work_dirs/mobilenet-v2_tlr_car_t4dataset/best_multi-label_f1-score_top1_epoch_12.pth /workspace/data/tlr/tlr_v0_1/8bb655ad-e12e-40a1-a7d7-43f279a1bd51/0/data/CAM_TRAFFIC_LIGHT_NEAR/0.jpg 4 --device cuda --work-dir /workspace/work_dirs/mobilenet-v2_tlr_car_t4dataset/
 
 #car_mobilenet-v2-224x224_batch_6
-python3 tools/classification2d/deploy.py /workspace/projects/MobileNetv2/configs/deploy/car_mobilenet-v2-224x224_batch_6.py /workspace/projects/MobileNetv2/configs/t4dataset/mobilenet-v2_tlr_car_t4dataset.py /workspace/work_dirs/mobilenet-v2_tlr_car_t4dataset/best_multi-label_f1-score_top1_epoch_12.pth /workspace/data/tlr/tlr_v0_1/8bb655ad-e12e-40a1-a7d7-43f279a1bd51/0/data/CAM_TRAFFIC_LIGHT_NEAR/0.jpg 6 --device cuda --work-dir /workspace/work_dirs/mobilenet-v2_tlr_car_t4dataset/
+python3 tools/classification2d/deploy.py /workspace/projects/MobileNetv2/configs/deploy/MobileNetv2-CarTrafficLight/car_mobilenet-v2-224x224_batch_6.py /workspace/projects/MobileNetv2/configs/t4dataset/MobileNetv2-CarTrafficLight/mobilenet-v2_tlr_car_t4dataset.py /workspace/work_dirs/mobilenet-v2_tlr_car_t4dataset/best_multi-label_f1-score_top1_epoch_12.pth /workspace/data/tlr/tlr_v0_1/8bb655ad-e12e-40a1-a7d7-43f279a1bd51/0/data/CAM_TRAFFIC_LIGHT_NEAR/0.jpg 6 --device cuda --work-dir /workspace/work_dirs/mobilenet-v2_tlr_car_t4dataset/
 
 #ped_mobilenet-v2-224x224_batch_1
-python3 tools/classification2d/deploy.py /workspace/projects/MobileNetv2/configs/deploy/ped_mobilenet-v2-224x224_batch_1.py /workspace/projects/MobileNetv2/configs/t4dataset/mobilenet-v2_tlr_ped_t4dataset.py /workspace/work_dirs/mobilenet-v2_tlr_ped_t4dataset/best_multi-label_f1-score_top1_epoch_54.pth /workspace/data/tlr/tlr_v0_1/8bb655ad-e12e-40a1-a7d7-43f279a1bd51/0/data/CAM_TRAFFIC_LIGHT_NEAR/0.jpg 1 --device cuda --work-dir /workspace/work_dirs/mobilenet-v2_tlr_ped_t4dataset
+python3 tools/classification2d/deploy.py /workspace/projects/MobileNetv2/configs/deploy/MobileNetv2-PedestrianTrafficLight/ped_mobilenet-v2-224x224_batch_1.py /workspace/projects/MobileNetv2/configs/t4dataset/MobileNetv2-PedestrianTrafficLight/mobilenet-v2_tlr_ped_t4dataset.py /workspace/work_dirs/mobilenet-v2_tlr_ped_t4dataset/best_multi-label_f1-score_top1_epoch_54.pth /workspace/data/tlr/tlr_v0_1/8bb655ad-e12e-40a1-a7d7-43f279a1bd51/0/data/CAM_TRAFFIC_LIGHT_NEAR/0.jpg 1 --device cuda --work-dir /workspace/work_dirs/mobilenet-v2_tlr_ped_t4dataset
 
 #ped_mobilenet-v2-224x224_batch_4
-python3 tools/classification2d/deploy.py /workspace/projects/MobileNetv2/configs/deploy/ped_mobilenet-v2-224x224_batch_4.py /workspace/projects/MobileNetv2/configs/t4dataset/mobilenet-v2_tlr_ped_t4dataset.py /workspace/work_dirs/mobilenet-v2_tlr_ped_t4dataset/best_multi-label_f1-score_top1_epoch_54.pth /workspace/data/tlr/tlr_v0_1/8bb655ad-e12e-40a1-a7d7-43f279a1bd51/0/data/CAM_TRAFFIC_LIGHT_NEAR/0.jpg 4 --device cuda --work-dir /workspace/work_dirs/mobilenet-v2_tlr_ped_t4dataset
+python3 tools/classification2d/deploy.py /workspace/projects/MobileNetv2/configs/deploy/MobileNetv2-PedestrianTrafficLight/ped_mobilenet-v2-224x224_batch_4.py /workspace/projects/MobileNetv2/configs/t4dataset/MobileNetv2-PedestrianTrafficLight/mobilenet-v2_tlr_ped_t4dataset.py /workspace/work_dirs/mobilenet-v2_tlr_ped_t4dataset/best_multi-label_f1-score_top1_epoch_54.pth /workspace/data/tlr/tlr_v0_1/8bb655ad-e12e-40a1-a7d7-43f279a1bd51/0/data/CAM_TRAFFIC_LIGHT_NEAR/0.jpg 4 --device cuda --work-dir /workspace/work_dirs/mobilenet-v2_tlr_ped_t4dataset
 
 #ped_mobilenet-v2-224x224_batch_6
-python3 tools/classification2d/deploy.py /workspace/projects/MobileNetv2/configs/deploy/ped_mobilenet-v2-224x224_batch_6.py /workspace/projects/MobileNetv2/configs/t4dataset/mobilenet-v2_tlr_ped_t4dataset.py /workspace/work_dirs/mobilenet-v2_tlr_ped_t4dataset/best_multi-label_f1-score_top1_epoch_54.pth /workspace/data/tlr/tlr_v0_1/8bb655ad-e12e-40a1-a7d7-43f279a1bd51/0/data/CAM_TRAFFIC_LIGHT_NEAR/0.jpg 6 --device cuda --work-dir /workspace/work_dirs/mobilenet-v2_tlr_ped_t4dataset
+python3 tools/classification2d/deploy.py /workspace/projects/MobileNetv2/configs/deploy/MobileNetv2-PedestrianTrafficLight/ped_mobilenet-v2-224x224_batch_6.py /workspace/projects/MobileNetv2/configs/t4dataset/MobileNetv2-PedestrianTrafficLight/mobilenet-v2_tlr_ped_t4dataset.py /workspace/work_dirs/mobilenet-v2_tlr_ped_t4dataset/best_multi-label_f1-score_top1_epoch_54.pth /workspace/data/tlr/tlr_v0_1/8bb655ad-e12e-40a1-a7d7-43f279a1bd51/0/data/CAM_TRAFFIC_LIGHT_NEAR/0.jpg 6 --device cuda --work-dir /workspace/work_dirs/mobilenet-v2_tlr_ped_t4dataset
 ```
 
 ## Troubleshooting

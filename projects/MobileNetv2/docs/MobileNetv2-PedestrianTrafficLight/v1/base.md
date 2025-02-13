@@ -24,7 +24,7 @@
   - Training dataset: tlr_v0_1 + tlr_v1_0_x2 + tlr_v1_0_xx1 + tlr_v1_2
   - Eval dataset: tlr_v1_2
   - [PR](https://github.com/tier4/autoware-ml/pull/143)
-  - [Config file path](../../../configs/t4dataset/mobilenet-v2_tlr_ped_t4dataset.py)
+  - [Config file path](../../../configs/t4dataset/MobileNetv2-PedestrianTrafficLight/mobilenet-v2_tlr_ped_t4dataset.py)
   - Deployed onnx model [[GDrive]](https://evaluation.tier4.jp/evaluation/mlpackages/e104265c-2945-4b8a-ae68-13accc1c0af2/releases/d5ce3e03-dd72-4517-b416-7a63a84c9fd3?project_id=zWhWRzei&tab=reports)
   - Deployed onnx model [model-zoo]
     - [ped_traffic_light_classifier_mobilenetv2_batch_1.onnx](https://download.autoware-ml-model-zoo.tier4.jp/autoware-ml/models/mobilenet-v2/pedestrian_traffic_light/t4base/v1.0/ped_traffic_light_classifier_mobilenetv2_batch_1.onnx)

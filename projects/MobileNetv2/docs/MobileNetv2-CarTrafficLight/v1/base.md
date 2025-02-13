@@ -104,7 +104,7 @@ Class-wise Metrics:
   - Training dataset: DB TLR v1.0, 2.0, 3.0, 4.0, 5.0
   - Eval dataset: DB TLR v1.0, 4.0, 5.0
   - [PR](https://github.com/tier4/autoware-ml/pull/354)
-  - [Config file path](../../../configs/t4dataset/mobilenet-v2_tlr_car_t4dataset.py)
+  - [Config file path](../../../configs/t4dataset/MobileNetv2-CarTrafficLight/mobilenet-v2_tlr_car_t4dataset.py)
   - Deployed onnx model [[webauto]](https://evaluation.tier4.jp/evaluation/mlpackages/e104265c-2945-4b8a-ae68-13accc1c0af2/releases/84e9b9b6-6b3b-4a60-8cfe-d410b2af6ba4?project_id=zWhWRzei)
   - Deployed onnx model [model-zoo]
     - [traffic_light_classifier_mobilenetv2_batch_1.onnx](https://download.autoware-ml-model-zoo.tier4.jp/autoware-ml/models/mobilenet-v2/car_traffic_light/t4base/v1.1/traffic_light_classifier_mobilenetv2_batch_1.onnx)
@@ -232,7 +232,7 @@ Overall results:  precision_top1: 46.35     , recall_top1: 49.08     , f1-score_
   - Training dataset: TLR v1.0 + TLR v2.0 + TLR v3.0 + TLR v4.0
   - Eval dataset: TLR v4.0
   - [PR](https://github.com/tier4/autoware-ml/pull/143)
-  - [Config file path](../../../configs/t4dataset/mobilenet-v2_tlr_car_t4dataset.py)
+  - [Config file path](../../../configs/t4dataset/MobileNetv2-CarTrafficLight/mobilenet-v2_tlr_car_t4dataset.py)
   - Deployed onnx model [[webauto]](https://evaluation.tier4.jp/evaluation/mlpackages/e104265c-2945-4b8a-ae68-13accc1c0af2/releases/d5ce3e03-dd72-4517-b416-7a63a84c9fd3?project_id=zWhWRzei&tab=reports)
   - Deployed onnx model [model-zoo]
     - [traffic_light_classifier_mobilenetv2_batch_1.onnx](https://download.autoware-ml-model-zoo.tier4.jp/autoware-ml/models/mobilenet-v2/car_traffic_light/t4base/v1.0/traffic_light_classifier_mobilenetv2_batch_1.onnx)
