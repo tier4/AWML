@@ -50,12 +50,7 @@ Note that if you train for the model using Autoware, don't forget
 - [Update onnx metadata](/tools/deploy_to_autoware/)
 - [Make the yaml file of ROS parameter](/tools/deploy_to_autoware/)
 
-## Step 4. Deploy and Evaluate the model
-
-Please see README.md in the project you want to update and evaluate the pytorch models on the test dataset.
-Then, follow the steps in the [webauto_evaluator_test.md](./webauto_evaluator_test.md) file if you have the access privileges.
-
-## Step 5. Create a PR to autoware-ml with a release note for the model
+## Step 4. Create a PR to autoware-ml with a release note for the model
 
 If you want to release new model in a project, you may add/fix config files in configs of dataset or `projects/{model_name}/configs/*.py`.
 After creating the model, update the documentation for release note of models in addition to the PR.
