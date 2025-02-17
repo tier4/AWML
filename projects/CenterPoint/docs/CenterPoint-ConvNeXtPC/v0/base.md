@@ -18,6 +18,7 @@
 
 ## Release
 ### CenterPoint ConvNeXt base/0.2
+
 - This is same as `CenterPoint-ConvNeXt base/0.1` model except the arhictecture is much bigger by adding more depths and channels
 - Specifically, the main changes in hyperparameters are:
 
@@ -102,6 +103,31 @@
 | bus        | 3,275  | 80.9 | 69.2    | 79.6    | 81.1    | 82.6    |
 | bicycle    | 3,635  | 53.2 | 52.3    | 53.4    | 53.5    | 53.6    |
 | pedestrian | 25,981 | 64.8 | 62.4    | 64.0    | 65.4    | 67.4    |
+
+- Evaluation for XX1
+	- Same as CenterPoint ConvNeXtPC base/0.2
+	- Evaluation result with test-dataset: DB JPNTAXI v1.0 + DB JPNTAXI v2.0 + DB JPNTAXI v4.0 (total frames: 1,507)
+  - Total mAP (eval range = 120m): 0.678
+
+| class_name | Count  | mAP  | AP@0.5m | AP@1.0m | AP@2.0m | AP@4.0m |
+| ---------- | ------ | ---- | ------- | ------- | ------- | ------- |
+| car        | 16,126 | 77.1 | 61.3    | 80.1    | 83.0    | 84.0    |
+| truck      | 4,578  | 57.4 | 34.3    | 58.0    | 66.0    | 71.2    |
+| bus        | 1,457  | 73.9 | 58.3    | 75.0    | 79.7    | 82.5    |
+| bicycle    | 1,040  | 61.5 | 56.6    | 62.5    | 63.2    | 63.6    |
+| pedestrian | 11,971 | 69.1 | 65.7    | 70.1    | 70.1    | 72.4    |
+
+- Evaluation for X2
+	- Evaluation result with test-dataset: DB GSM8 v1.0 + DB J6 v1.0 (total frames: 1,280):
+  - Total mAP (eval range = 120m): 0.686
+
+| class_name | Count  | mAP  | AP@0.5m | AP@1.0m | AP@2.0m | AP@4.0m |
+| ---------- | ------ | ---- | ------- | ------- | ------- | ------- |
+| car        | 25,007 | 78.5 | 69.9    | 79.9    | 82.0    | 82.4    |
+| truck      | 4,573  | 55.5 | 32.0    | 55.9    | 64.1    | 69.9    |
+| bus        | 1,818  | 86.4 | 76.0    | 88.9    | 89.8    | 90.6    |
+| bicycle    | 2,567  | 54.3 | 53.6    | 54.5    | 54.5    | 54.6    |
+| pedestrian | 14,010 | 69.3 | 67.1    | 68.3    | 69.9    | 72.1    |
 
 </details>
 
