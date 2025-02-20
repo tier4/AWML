@@ -15,8 +15,8 @@ info_test_file_name = "t4dataset_xx1_infos_test.pkl"
 dataset_version_config_root = "autoware_ml/configs/t4dataset/"
 dataset_version_list = [
     "db_jpntaxi_v1",
-    "db_jpntaxi_v2",
-    "db_jpntaxi_v3",
+    # "db_jpntaxi_v2",
+    # "db_jpntaxi_v3",
 ]
 
 # dataset format setting

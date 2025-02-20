@@ -1,6 +1,6 @@
 _base_ = [
     "../../../../autoware_ml/configs/detection3d/default_runtime.py",
-    "../../../../autoware_ml/configs/detection3d/dataset/t4dataset/xx1.py",
+    "../../../../autoware_ml/configs/detection3d/dataset/t4dataset/base.py",
 ]
 custom_imports = dict(
     imports=["projects.StreamPETR.stream_petr"],
@@ -21,9 +21,9 @@ camera_order = None # This will lead to shuffled camera order
 class_names = _base_.class_names
 
 num_gpus = 2
-batch_size = 4
+batch_size = 8
 val_interval = 5
-num_epochs = 50
+num_epochs = 100
 num_cameras = 6
 backend_args = None
 stride = 16  # downsampling factor of extracted features form image
@@ -183,7 +183,7 @@ model = dict(
 )
 
 data_root = "./data/"
-info_directory_path = "info/cameraonly/streampetr/"
+info_directory_path = "info/cameraonly/streampetr_all/"
 
 file_client_args = dict(backend="disk")
 
@@ -392,3 +392,13 @@ default_hooks = dict(
 
 load_from = "./work_dirs/ckpts/fcos3d_vovnet_imgbackbone-remapped.pth"  # Using the nuscenes pre-trained model from StreamPETR repo causes gradient explosion.
 resume_from = None
+
+env_cfg = dict(
+    cudnn_benchmark=False,
+    mp_cfg=dict(mp_start_method="fork", opencv_num_threads=0),
+    dist_cfg=dict(backend='nccl', timeout=3600)
+)  # Since we are doing inference with batch_size=1, it can be slow so timeout needs to be increased
+
+# load_from = "/workspace/work_dirs/stream_petr_vov_flash_640x960_1f_1L_bs8_50epoch/epoch_10.pth"  # Using the nuscenes pre-trained model from StreamPETR repo causes gradient explosion.
+# resume = True
+# work_dir="./work_dirs/temporary"

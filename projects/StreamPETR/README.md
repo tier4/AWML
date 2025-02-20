@@ -31,18 +31,18 @@ TBD
 
 ```bash
 
-python3 tools/detection3d/test.py projects/StreamPETR/configs/t4dataset/stream_petr_vov_flash_640x960_1f_1L_bs8_50epoch.py "/workspace/work_dirs/stream_petr_vov_flash_640x960_1f_1L_bs8_50epoch/best_NuScenes metric_T4Metric_mAP_epoch_45.pth"
+python3 tools/detection3d/test.py /workspace/work_dirs/stream_petr_vov_flash_640x960_1f_1L_bs8_50epoch_dn/stream_petr_vov_flash_640x960_1f_1L_bs8_50epoch_dn.py "/workspace/work_dirs/stream_petr_vov_flash_640x960_1f_1L_bs8_50epoch_dn/best_NuScenes metric_T4Metric_mAP_epoch_45.pth"
 
 ```
 
 ### 5. Deploy
 
 ```bash
-python3 projects/StreamPETR/deploy/torch2onnx.py projects/StreamPETR/configs/t4dataset/stream_petr_vov_flash_640x960_1f_1L_bs8_50epoch.py --section extract_img_feat --checkpoint "/workspace/work_dirs/stream_petr_vov_flash_640x960_1f_1L_bs8_50epoch/best_NuScenes metric_T4Metric_mAP_epoch_45.pth" 
+python3 projects/StreamPETR/deploy/torch2onnx.py /workspace/work_dirs/stream_petr_vov_flash_640x960_1f_1L_bs8_50epoch_dn/stream_petr_vov_flash_640x960_1f_1L_bs8_50epoch_dn.py --section extract_img_feat --checkpoint "/workspace/work_dirs/stream_petr_vov_flash_640x960_1f_1L_bs8_50epoch_dn/best_NuScenes metric_T4Metric_mAP_epoch_45.pth" 
 
-python3 projects/StreamPETR/deploy/torch2onnx.py projects/StreamPETR/configs/t4dataset/stream_petr_vov_flash_640x960_1f_1L_bs8_50epoch.py --section pts_head_memory --checkpoint "/workspace/work_dirs/stream_petr_vov_flash_640x960_1f_1L_bs8_50epoch/best_NuScenes metric_T4Metric_mAP_epoch_45.pth" 
+python3 projects/StreamPETR/deploy/torch2onnx.py /workspace/work_dirs/stream_petr_vov_flash_640x960_1f_1L_bs8_50epoch_dn/stream_petr_vov_flash_640x960_1f_1L_bs8_50epoch_dn.py --section pts_head_memory --checkpoint "/workspace/work_dirs/stream_petr_vov_flash_640x960_1f_1L_bs8_50epoch_dn/best_NuScenes metric_T4Metric_mAP_epoch_45.pth" 
 
-python3 projects/StreamPETR/deploy/torch2onnx.py projects/StreamPETR/configs/t4dataset/stream_petr_vov_flash_640x960_1f_1L_bs8_50epoch.py --section position_embedding --checkpoint "/workspace/work_dirs/stream_petr_vov_flash_640x960_1f_1L_bs8_50epoch/best_NuScenes metric_T4Metric_mAP_epoch_45.pth" 
+python3 projects/StreamPETR/deploy/torch2onnx.py /workspace/work_dirs/stream_petr_vov_flash_640x960_1f_1L_bs8_50epoch_dn/stream_petr_vov_flash_640x960_1f_1L_bs8_50epoch_dn.py --section position_embedding --checkpoint "/workspace/work_dirs/stream_petr_vov_flash_640x960_1f_1L_bs8_50epoch_dn/best_NuScenes metric_T4Metric_mAP_epoch_45.pth" 
 
 
 ```

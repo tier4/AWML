@@ -14,15 +14,26 @@ info_test_file_name = "t4dataset_base_infos_test.pkl"
 # dataset scene setting
 dataset_version_config_root = "autoware_ml/configs/t4dataset/"
 dataset_version_list = [
+    "db_j6_v1",
+    "db_j6_v2",
+    "db_j6_v3",
+    "db_gsm8_v1",
     "db_jpntaxi_v1",
     "db_jpntaxi_v2",
     "db_jpntaxi_v3",
-    "db_gsm8_v1",
-    "db_j6_v1",
 ]
 
 # dataset format setting
-data_prefix = dict(pts="", sweeps="")
+data_prefix = dict(
+    pts="",
+    sweeps="",
+    CAM_FRONT="",
+    CAM_FRONT_LEFT="",
+    CAM_FRONT_RIGHT="",
+    CAM_BACK="",
+    CAM_BACK_RIGHT="",
+    CAM_BACK_LEFT="",
+)
 camera_types = {
     "CAM_FRONT",
     "CAM_FRONT_RIGHT",

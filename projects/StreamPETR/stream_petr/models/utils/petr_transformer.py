@@ -711,17 +711,18 @@ class PETRTemporalDecoderLayer(BaseModule):
                 else:
                     temp_key = temp_value = query
                     temp_pos = query_pos
-                query = self.attentions[attn_index](
-                    query,
-                    temp_key,
-                    temp_value,
-                    identity if self.pre_norm else None,
-                    query_pos=query_pos,
-                    key_pos=temp_pos,
-                    attn_mask=attn_masks[attn_index],
-                    key_padding_mask=query_key_padding_mask,
-                    **kwargs,
-                )
+                with torch.cuda.amp.autocast(enabled=False):
+                    query = self.attentions[attn_index](
+                        query,
+                        temp_key,
+                        temp_value,
+                        identity if self.pre_norm else None,
+                        query_pos=query_pos,
+                        key_pos=temp_pos,
+                        attn_mask=attn_masks[attn_index],
+                        key_padding_mask=query_key_padding_mask,
+                        **kwargs,
+                    )
                 attn_index += 1
                 identity = query
 

@@ -70,10 +70,11 @@ def main():
 
     model = runner.model
 
-    load_checkpoint(
-        model,
-        args.checkpoint,
-    )
+    if args.checkpoint:
+        load_checkpoint(
+            model,
+            args.checkpoint,
+        )
 
     height, width = cfg.ida_aug_conf.final_dim
 

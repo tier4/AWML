@@ -1,6 +1,6 @@
 _base_ = [
     "../../../../autoware_ml/configs/detection3d/default_runtime.py",
-    "../../../../autoware_ml/configs/detection3d/dataset/t4dataset/xx1.py",
+    "../../../../autoware_ml/configs/detection3d/dataset/t4dataset/base.py",
 ]
 custom_imports = dict(
     imports=["projects.StreamPETR.stream_petr"],
@@ -15,18 +15,13 @@ backbone_norm_cfg = dict(type="LN", requires_grad=True)
 point_cloud_range = [-51.2, -51.2, -5.0, 51.2, 51.2, 3.0]
 voxel_size = [0.2, 0.2, 8]
 img_norm_cfg = dict(mean=[103.530, 116.280, 123.675], std=[57.375, 57.120, 58.395], to_rgb=False)  # fix img_norm
+camera_order = None # This will lead to shuffled camera order
 # camera_order = ["CAM_FRONT", "CAM_BACK", "CAM_FRONT_LEFT", "CAM_BACK_LEFT", "CAM_FRONT_RIGHT", "CAM_BACK_RIGHT"]
-camera_order = None
 # For nuScenes we usually do 10-class detection
 class_names = _base_.class_names
 
-augmementations = [
-    {"type": "mmpretrain.ColorJitter", "brightness":0.5, "contrast":0.5, "saturation":0.5, "hue":0.5},
-    {"type": "mmpretrain.GaussianBlur", "magnitude_range":(0,2), "prob":0.5},
-]
-
 num_gpus = 2
-batch_size = 8
+batch_size = 4
 val_interval = 5
 num_epochs = 50
 num_cameras = 6
@@ -69,55 +64,56 @@ model = dict(
     num_frame_losses=num_frame_losses,
     use_grid_mask=True,
     img_backbone=dict(
-        type="mmpretrain.ResNet",
-        init_cfg=dict(type="Pretrained", checkpoint="torchvision://resnet101"),
-        depth=101,
-        num_stages=4,
-        out_indices=(2, 3),
+        type="VoVNet",  ###use checkpoint to save memory
+        spec_name="V-99-eSE",
+        norm_eval=False,
         frozen_stages=-1,
-        norm_cfg=dict(type="BN2d", requires_grad=True),
-        style="pytorch",
+        input_ch=3,
+        out_features=(
+            "stage4",
+            "stage5",
+        ),
     ),
-    img_neck=dict(type="CPFPN", in_channels=[1024, 2048], out_channels=256, num_outs=2),  ###remove unused parameters
-    # img_roi_head=dict(
-    #     type='mmdet.FocalHead',
-    #     num_classes=len(class_names),
-    #     in_channels=256,
-    #     bbox_coder = dict(type='mmdet.DistancePointBBoxCoder'),
-    #     loss_cls = dict(
-    #         type='QualityFocalLoss',
-    #         use_sigmoid=True,
-    #         gamma=2.0,
-    #         alpha=0.25,
-    #         loss_weight=1.0),
-    #     loss_cls2d=dict(
-    #         type='mmdet.QualityFocalLoss',
-    #         use_sigmoid=True,
-    #         beta=2.0,
-    #         loss_weight=2.0),
-    #     loss_centerness=dict(type='mmdet.GaussianFocalLoss', reduction='mean', loss_weight=1.0),
-    #     loss_bbox2d=dict(type='mmdet.L1Loss', loss_weight=5.0),
-    #     loss_iou2d=dict(type='mmdet.GIoULoss', loss_weight=2.0),
-    #     loss_centers2d=dict(type='mmdet.L1Loss', loss_weight=10.0),
-    #     train_cfg=dict(
-    #         assigner2d=dict(
-    #             type='mmdet.HungarianAssigner2D',
-    #             cls_cost=dict(type='mmdet.FocalLossCost', weight=2.),
-    #             reg_cost=dict(type='mmdet.BBoxL1Cost', weight=5.0, box_format='xywh'),
-    #             iou_cost=dict(type='mmdet.IoUCost', iou_mode='giou', weight=2.0),
-    #             centers2d_cost=dict(type='mmdet.BBox3DL1Cost', weight=10.0)))
-    #     ),
+    img_neck=dict(type="CPFPN", in_channels=[768, 1024], out_channels=256, num_outs=2),  ###remove unused parameters
+    img_roi_head=dict(
+        type='mmdet.FocalHead',
+        num_classes=len(class_names),
+        in_channels=256,
+        bbox_coder = dict(type='mmdet.DistancePointBBoxCoder'),
+        loss_cls = dict(
+            type='QualityFocalLoss',
+            use_sigmoid=True,
+            gamma=2.0,
+            alpha=0.25,
+            loss_weight=1.0),
+        loss_cls2d=dict(
+            type='mmdet.QualityFocalLoss',
+            use_sigmoid=True,
+            beta=2.0,
+            loss_weight=2.0),
+        loss_centerness=dict(type='mmdet.GaussianFocalLoss', reduction='mean', loss_weight=1.0),
+        loss_bbox2d=dict(type='mmdet.L1Loss', loss_weight=5.0),
+        loss_iou2d=dict(type='mmdet.GIoULoss', loss_weight=2.0),
+        loss_centers2d=dict(type='mmdet.L1Loss', loss_weight=10.0),
+        train_cfg=dict(
+            assigner2d=dict(
+                type='mmdet.HungarianAssigner2D',
+                cls_cost=dict(type='mmdet.FocalLossCost', weight=2.),
+                reg_cost=dict(type='mmdet.BBoxL1Cost', weight=5.0, box_format='xywh'),
+                iou_cost=dict(type='mmdet.IoUCost', iou_mode='giou', weight=2.0),
+                centers2d_cost=dict(type='mmdet.BBox3DL1Cost', weight=10.0)))
+        ),
     pts_bbox_head=dict(
         type="StreamPETRHead",
         num_classes=len(class_names),
-        score_thres=0.1,
+        score_thres=0.0,
         in_channels=256,
         num_query=644,
         memory_len=1024,
         topk_proposals=256,
         num_propagated=256,
         with_ego_pos=True,
-        with_dn=False,
+        with_dn=True,
         match_with_velo=False,
         scalar=10,  ##noise groups
         noise_scale=1.0,
@@ -126,18 +122,7 @@ model = dict(
         LID=True,
         with_position=True,
         position_range=[-61.2, -61.2, -10.0, 61.2, 61.2, 10.0],
-        code_weights=[
-            2.0,
-            2.0,
-            1.0,
-            1.0,
-            1.0,
-            1.0,
-            1.0,
-            1.0,
-            0.0,
-            0.0,
-        ],  # setting the last two to zero will disable optimization for velocity
+        code_weights=[2.0, 2.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0],  # you can set the last two to zero will disable optimization for velocity
         transformer=dict(
             type="PETRTemporalTransformer",
             decoder=dict(
@@ -148,7 +133,7 @@ model = dict(
                 transformerlayers=dict(
                     type="PETRTemporalDecoderLayer",
                     attn_cfgs=[
-                        dict(type="PETRMultiheadFlashAttention", embed_dims=256, num_heads=8, dropout=0.1),
+                        dict(type="MultiheadAttention", embed_dims=256, num_heads=8,dropout=0.1),
                         dict(type="PETRMultiheadFlashAttention", embed_dims=256, num_heads=8, dropout=0.1),
                     ],
                     feedforward_channels=2048,
@@ -187,19 +172,22 @@ model = dict(
 )
 
 data_root = "./data/"
-info_directory_path = "info/cameraonly/streampetr/"
+info_directory_path = "info/cameraonly/streampetr_all/"
 
 file_client_args = dict(backend="disk")
 
 
 ida_aug_conf = {
-    "resize_lim": (0.45, 0.55),
+    "resize_lim": (0.0, 0.05),  # How much to crop inside the image (lower_limit, upper_limit)
     "final_dim": (640, 960),  # (528, 720), (800,1200), (1088,1440)
     "bot_pct_lim": (0.0, 0.0),
     "rot_lim": (0.0, 0.0),
     "rand_flip": True,
 }
-
+augmementations = [
+    {"type": "mmpretrain.ColorJitter", "brightness":0.5, "contrast":0.5, "saturation":0.5, "hue":0.5},
+    {"type": "mmpretrain.GaussianBlur", "magnitude_range":(0,2), "prob":0.5},
+]
 train_pipeline = [
     dict(type="LoadMultiViewImageFromFiles", to_float32=True),
     dict(
@@ -333,7 +321,7 @@ train_cfg = dict(by_epoch=True, max_epochs=num_epochs, val_interval=val_interval
 val_cfg = dict()
 test_cfg = dict()
 
-optimizer = dict(type="AdamW", lr=2e-4, weight_decay=0.01)  # bs 8: 2e-4 || bs 16: 4e-4,
+optimizer = dict(type="AdamW", lr=2e-4,weight_decay=0.01)  # bs 8: 2e-4 || bs 16: 4e-4,
 
 # optim_wrapper = dict(
 #     type="DebugOptimWrapper",
@@ -341,8 +329,8 @@ optimizer = dict(type="AdamW", lr=2e-4, weight_decay=0.01)  # bs 8: 2e-4 || bs 1
 #     clip_grad=dict(max_norm=35, norm_type=2),
 # )
 
-optim_wrapper = dict(type="NoCacheAmpOptimWrapper", optimizer=optimizer, clip_grad=dict(max_norm=35, norm_type=2))
-# learning policy
+optim_wrapper = dict(type="NoCacheAmpOptimWrapper", optimizer=optimizer, paramwise_cfg=dict(custom_keys={'img_backbone': dict(lr_mult=0.1),}), loss_scale="dynamic",clip_grad=dict(max_norm=35, norm_type=2))
+# lrg policy
 param_scheduler = [
     dict(type="LinearLR", start_factor=1.0 / 3, begin=0, end=500, by_epoch=False),
     dict(
@@ -383,15 +371,17 @@ param_scheduler = [
 default_hooks = dict(
     logger=dict(type="LoggerHook", interval=10),
     checkpoint=dict(
-        interval=1,
+        interval=2,
         max_keep_ckpts=5,
+        by_epoch=True,
         save_best="NuScenes metric/T4Metric/mAP",
         type="CheckpointHook",
         # by_epoch=False,
     ),  # alternative 'NuScenes metric/T4Metric/NDS'
 )
 
-# load_from = ""
+# load_from = "./work_dirs/ckpts/fcos3d_vovnet_imgbackbone-remapped.pth"
+load_from = "./work_dirs/ckpts/stream_petr_vov_flash_800_bs2_seq_24e.pth"
 resume_from = None
 
 env_cfg = dict(
@@ -400,4 +390,6 @@ env_cfg = dict(
     dist_cfg=dict(backend='nccl', timeout=3600)
 )  # Since we are doing inference with batch_size=1, it can be slow so timeout needs to be increased
 
-work_dir = "./work_dirs/stream_petr_resnet101_flash_640x960_1f_1L_bs8_50epoch"
+# load_from = "/workspace/work_dirs/stream_petr_vov_flash_640x960_1f_1L_bs8_50epoch_dn/best_NuScenes metric_T4Metric_mAP_iter_48270.pth" 
+# resume = True
+# work_dir="./work_dirs/temporary"
