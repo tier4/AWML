@@ -408,7 +408,7 @@ class BaseDepthTransform(BaseViewTransform):
                 camera_indices * height * width + masked_coords[:, 0] * width +
                 masked_coords[:, 1])
             updates_flat = torch.zeros(
-                (num_imgs * channels * height * width).cpu().item(),
+                (num_imgs * channels * height * width),
                 device=depth.device)
 
             updates_flat.scatter_(
