@@ -19,6 +19,8 @@ dataset_version_list = [
     "db_jpntaxi_v4",
     "db_gsm8_v1",
     "db_j6_v1",
+    "db_j6_v2",
+    "db_j6_v3",
 ]
 
 # dataset format setting
