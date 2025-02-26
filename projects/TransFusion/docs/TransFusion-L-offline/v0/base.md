@@ -28,7 +28,6 @@ TransFusion-L-offline v0 has many breaking changes.
   - grid_size = [768, 768, 1]
 - model
   - Training dataset: DB JPNTAXI v1.0 + DB JPNTAXI v2.0 + DB GSM8 v1.0 + DB J6 v1.0
-  - [PR](https://github.com/tier4/autoware-ml/pull/146)
   - [Config file path](https://github.com/tier4/autoware-ml/blob/304ba041e85adc2a47d16229ac1768aea156a2a9/projects/TransFusion/configs/t4dataset/transfusion_lidar_pillar_second_secfpn_1xb1_120m-768grid-t4base.py)
   - [Deployed onnx model and ROS parameter files](https://evaluation.tier4.jp/evaluation/mlpackages/1800c7f8-a80e-4162-8574-4ee84432e89d/releases/6d18aacb-c1d8-468e-a9fc-5ef616b3b55a?project_id=zWhWRzei)
   - [Training results](https://drive.google.com/drive/folders/1v4QN696n4iMIlk0j5O_Pxho7zgoBsJa5)
@@ -83,10 +82,10 @@ TransFusion-L-offline v0 has many breaking changes.
   - Training dataset: DB JPNTAXI v1.0 + DB JPNTAXI v2.0
   - Eval dataset: DB JPNTAXI v1.0 + DB JPNTAXI v2.0
   - [Config file path](https://github.com/tier4/autoware-ml/blob/3df40a10310dff2d12e4590e26f81017e002a2a0/projects/TransFusion/configs/t4dataset/transfusion_lidar_pillar_second_secfpn_1xb1-cyclic-20e_t4xx1_120m_768grid.py)
-  - Deployed ROS parameter file [[webauto]](https://awf.ml.dev.web.auto/perception/models/transfusion/t4xx1_120m/v1/transfusion_ml_package.param.yaml) [[model-zoo]](https://download.autoware-ml-model-zoo.tier4.jp/autoware-ml/models/transfusion/transfusion-l-offline/t4base/v0.1/transfusion_ml_package.param.yaml)
-  - Deployed onnx model [[webauto]](https://awf.ml.dev.web.auto/perception/models/transfusion/t4xx1_120m/v1/transfusion.onnx) [[model-zoo]](https://download.autoware-ml-model-zoo.tier4.jp/autoware-ml/models/transfusion/transfusion-l-offline/t4base/v0.1/transfusion.onnx)
+  - Deployed ROS parameter file [[AWF model resistry]](https://awf.ml.dev.web.auto/perception/models/transfusion/t4xx1_120m/v1/transfusion_ml_package.param.yaml) [[model-zoo]](https://download.autoware-ml-model-zoo.tier4.jp/autoware-ml/models/transfusion/transfusion-l-offline/t4base/v0.1/transfusion_ml_package.param.yaml)
+  - Deployed onnx model [[AWF model resistry]](https://awf.ml.dev.web.auto/perception/models/transfusion/t4xx1_120m/v1/transfusion.onnx) [[model-zoo]](https://download.autoware-ml-model-zoo.tier4.jp/autoware-ml/models/transfusion/transfusion-l-offline/t4base/v0.1/transfusion.onnx)
   - Deployed ROS param file for remap [[model-zoo]](https://download.autoware-ml-model-zoo.tier4.jp/autoware-ml/models/transfusion/transfusion-l-offline/t4base/v0.1/detection_class_remapper.param.yaml)
-  - Training results [[webauto]](https://awf.ml.dev.web.auto/perception/models/transfusion/t4xx1_120m/v1/logs.zip)
+  - Training results [[AWF model resistry]](https://awf.ml.dev.web.auto/perception/models/transfusion/t4xx1_120m/v1/logs.zip)
   - Training results [model-zoo]
     - [logs.zip](https://download.autoware-ml-model-zoo.tier4.jp/autoware-ml/models/transfusion/transfusion-l-offline/t4base/v0.1/log.zip)
     - [checkpoint_best.pth](https://download.autoware-ml-model-zoo.tier4.jp/autoware-ml/models/transfusion/transfusion-l-offline/t4base/v0.1/epoch_48.pth)

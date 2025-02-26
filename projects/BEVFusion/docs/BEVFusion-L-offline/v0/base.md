@@ -22,9 +22,8 @@
   - Training dataset: DB JPNTAXI v1.0 + DB JPNTAXI v2.0 + DB JPNTAXI v3.0 + DB GSM8 v1.0 + DB J6 v1.0 (total frames: 34,137)
   - Eval dataset: DB JPNTAXI v1.0 + DB JPNTAXI v2.0 + DB JPNTAXI v3.0 + DB GSM8 v1.0 + DB J6 v1.0 (total frames: 62)
   - *No intensity*
-  - [PR](https://github.com/tier4/autoware-ml/pull/215)
   - [Config file path](https://github.com/tier4/autoware-ml/blob/5b71e0d4b51c5024e3dbcc64506365bbe68f8f0b/projects/BEVFusion/configs/t4dataset/bevfusion_lidar_voxel_second_secfpn_2xb2_t4offline_no_intensity.py)
-  - Training results [[GDrive]](https://drive.google.com/drive/folders/1qUCfjYRaO2v_EePVK2btaxjlrBZqdWhk?usp=drive_link)
+  - Training results [[Google drive (for internal)]](https://drive.google.com/drive/folders/1qUCfjYRaO2v_EePVK2btaxjlrBZqdWhk?usp=drive_link)
   - Training results [model-zoo]
     - [logs.zip](https://download.autoware-ml-model-zoo.tier4.jp/autoware-ml/models/bevfusion/bevfusion-l-offline/t4base/v0.2/logs.zip)
     - [configs.py](https://download.autoware-ml-model-zoo.tier4.jp/autoware-ml/models/bevfusion/bevfusion-l-offline/t4base/v0.2/bevfusion_lidar_voxel_second_secfpn_2xb2_t4offline_base_no_intensity.py)
@@ -53,9 +52,8 @@
 - model
   - Training dataset: DB JPNTAXI v1.0 + DB JPNTAXI v2.0
   - Eval dataset: DB JPNTAXI v1.0 + DB JPNTAXI v2.0
-  - [PR](https://github.com/tier4/autoware-ml/pull/110)
   - [Config file path](https://github.com/tier4/autoware-ml/blob/249ebfe5cff685c0911c664ea1ef2b855cc6b52f/projects/BEVFusion/configs/t4dataset/bevfusion_lidar_voxel_second_secfpn_1xb1_t4offline.py)
-  - Training results [GDrive](https://drive.google.com/drive/folders/16f-IDF0_qXwEbln6RKKkLolQ3cDkZg35)
+  - Training results [Google drive (for internal)](https://drive.google.com/drive/folders/16f-IDF0_qXwEbln6RKKkLolQ3cDkZg35)
   - Training results [model-zoo]
     - [logs.zip](https://download.autoware-ml-model-zoo.tier4.jp/autoware-ml/models/bevfusion/bevfusion-l-offline/t4base/v0.1/logs.zip)
     - [configs.py](https://download.autoware-ml-model-zoo.tier4.jp/autoware-ml/models/bevfusion/bevfusion-l-offline/t4base/v0.1/bevfusion_lidar_voxel0075_second_secfpn_1xb1-cyclic-20e_t4_offline_2.py)

@@ -51,50 +51,19 @@ The directory architecture is following.
 We manage the version of T4dataset as "the type of T4dataset" + "vehicle name" + "vX.Y".
 For example, we use like "DB JPNTAXI v2.2", "DB GSM8 v1.1", "Pseudo J6Gen2 v1.0".
 
-#### "the type of T4dataset"
+> "the type of T4dataset"
 
 As the type of T4dataset, we use "DB" for database T4dataset, "UC" for use case T4dataset, and "Pseudo" for pseudo T4dataset.
 
-#### "vehicle name".
+> "vehicle name".
 
-We define as following.
+The vehicle name as JPNTAXI.
 
-- "JPNTAXI"
-
-"JPNTAXI" is the taxi based on "JPN TAXI".
-It is categorized in Robo-Taxi, what we call "XX1".
-The sensor configuration basically consists of 1 * VLS-128 as top LiDAR, 3 * VLP-16 as side LiDARs, 6 * TIER IV C1 cameras (85deg) as cameras for object recognition, 1 * TIER IV C1 camera (85deg) as camera for traffic light recognition, 1 * TIER IV C2 camera (62deg) as camera for traffic light recognition, and 6 * continental ARS408-21 as radars.
-The sensors depends on when the data was taken.
-
-- "GSM8"
-
-"GSM8" is the EV mini-bus version 0 based on the vehicle of "GSM8"
-It is categorized in shuttle bus, what we call "X2".
-The sensor configuration consists of 4 * Hesai Pandar40P as main LiDARs, 4 * Hesai PandarQT64 as LiDARs for surround objects, 6 * TIER IV C1 cameras (85deg) as cameras for object recognition, 2 * TIER IV C1 camera (85deg) as camera for traffic light recognition.
-
-- "J6"
-
-"J6" is the EV mini-bus version 1 based on the vehicle of "J6"
-It is categorized in shuttle bus, what we call "X2".
-The sensor configuration is basically same as "GSM8".
-The sensor configuration consists of 4 * Hesai Pandar40P as main LiDARs, 4 * Hesai PandarQT64 as LiDARs for surround objects, 6 * TIER IV C1 cameras (85deg) as cameras for object recognition, 2 * TIER IV C1 camera (85deg) as camera for traffic light recognition, and 6 * continental ARS408 as radars.
-
-- "J6Gen2"
-
-"J6Gen2" is the EV mini-bus version 2 based on the vehicle of "J6" and update the sensor configuration from "J6".
-It is categorized in gen2 of shuttle bus, what we call "X2Gen2".
-The sensor configuration basically consists of 4 * Hesai OT128 as main LiDARs, 4 * Hesai QT128 as LiDARs for surround objects, 9 * TIER IV C1 cameras (85deg) as cameras for object recognition, 1 * TIER IV C2 camera (62deg) as camera for traffic light recognition, 1 * TIER IV C2 camera (30deg) as camera for traffic light recognition, and 6 * continental ARS540 as radars.
-
-- "TLR"
-
-In addition to T4dataset with each vehicle, we construct T4dataset for traffic light recognition (TLR).
-It don't depends on the type of vehicles, so we call the dataset as "TLR".
-
-#### X: Management classification for dataset
+> X: Management classification for dataset
 
 It is recommended to change the number depending on the location and data set creation time.
 
-#### Y: The version of dataset
+> Y: The version of dataset
 
 Upgrade the version every time a change may have a negative impact on performance for training.
 For example, if we change of the way to annotation, we update the dataset and this version.

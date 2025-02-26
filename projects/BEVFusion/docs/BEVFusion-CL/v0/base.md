@@ -19,7 +19,6 @@
 - model
   - Training dataset: DB JPNTAXI v1.0 + DB JPNTAXI v2.0
   - Eval dataset: DB JPNTAXI v1.0 + DB JPNTAXI v2.0
-  - [PR](https://github.com/tier4/autoware-ml/pull/140)
   - [Config file path](https://github.com/tier4/autoware-ml/blob/05302ecc9e832f3c988019f5d30fdfc105455027/projects/BEVFusion/configs/t4dataset/bevfusion_camera_lidar_voxel_second_secfpn_1xb1_t4xx1.py)
   - Results are in internal data.
   - 5 batch A100 * 2 * 7 days

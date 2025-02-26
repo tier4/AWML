@@ -1,28 +1,19 @@
 version: 1
 dataset_version: db-tlr-v6.0
 
-docs: |
-  Product: J6
-  Place: Hitachi
-  Amount: x annotated images
-  Sensor: C2 Camera
-  Annotation: 10 Hz & 1 Hz
-  NOTE: This is a special type of traffic light
-  See https://docs.google.com/spreadsheets/d/1A3ag-oW6KGJx8L_wAlX2e8E2B49WfiyVTPN_ik0XEEg/edit?gid=1451581070#gid=1451581070
-
 train:
-  - eb3c134d-f204-4ae5-89ed-76dbd68cf019 # location 1. Several green frames >20
-  - 9e434ebc-6619-4aee-bdb6-5dcfc9e52287 # location 2
-  - ec64c19f-03e4-4fe8-ab7f-850996afebed # location 2
-  - 1909b8b7-ddc9-4884-98a3-d8317f5b3e01 # location 2
-  - 2e04254a-016d-4a0f-933d-528535c217fc # location 2
-  - 21a07b65-a6d2-4fed-b2e8-e3b8a1043a0d # location 3  (after 4 traffic lights)
-  - ade3e225-9a48-4426-aa1a-84ea8e5ecf41 # location 4 
-  - fccaa083-22b9-4660-a1e7-afbfd6e2da8c # location 4
-  - 24e5fb43-9f83-4b76-b510-dd8900c4651d # location 4
-  - 2922f804-c77d-4cce-b5ca-d969e65f73aa # location 4
+  - eb3c134d-f204-4ae5-89ed-76dbd68cf019
+  - 9e434ebc-6619-4aee-bdb6-5dcfc9e52287
+  - ec64c19f-03e4-4fe8-ab7f-850996afebed
+  - 1909b8b7-ddc9-4884-98a3-d8317f5b3e01
+  - 2e04254a-016d-4a0f-933d-528535c217fc
+  - 21a07b65-a6d2-4fed-b2e8-e3b8a1043a0d
+  - ade3e225-9a48-4426-aa1a-84ea8e5ecf41
+  - fccaa083-22b9-4660-a1e7-afbfd6e2da8c
+  - 24e5fb43-9f83-4b76-b510-dd8900c4651d
+  - 2922f804-c77d-4cce-b5ca-d969e65f73aa
 val: []
 test:
-  - 8828d243-a204-453b-8ea0-df56088a70f2 # location 2
-  - 4b0d27fc-97eb-4086-9922-590f631148aa # location 1. Only last few 8 are green
-  - b71fb6dc-fbe9-429f-b5b8-a6479144b509 # location 4. Also includes beginning of location 3
+  - 8828d243-a204-453b-8ea0-df56088a70f2
+  - 4b0d27fc-97eb-4086-9922-590f631148aa
+  - b71fb6dc-fbe9-429f-b5b8-a6479144b509

@@ -7,7 +7,7 @@
     - Eval DB: Evaluation dataset
 
 |          | Eval DB            | precision_top1 | recall_top1 | f1-score_top1 | counts |
-| -------- | -----------------  | -------------- | ----------- | ------------- | ------ |
+| -------- | ------------------ | -------------- | ----------- | ------------- | ------ |
 | base/1.2 | TLR v1.0, 4.0, 5.0 | **69.75**      | **68.09**   | **68.85**     | 9648   |
 | base/1.1 | TLR v1.0, 4.0, 5.0 | **70.64**      | **68.28**   | **69.29**     | 9648   |
 | base/1.2 | TLR v6.0           | **21.19**      | **24.17**   | **22.18**     | 957    |
@@ -30,9 +30,8 @@
 - model
   - Training dataset: DB TLR v1.0, 2.0, 3.0, 4.0, 5.0, 6.0
   - Eval dataset: DB TLR v1.0, 4.0, 5.0, 6.0
-  - [PR](https://github.com/tier4/autoware-ml/pull/354)
   - [Config file path](../../../configs/t4dataset/mobilenet-v2_tlr_car_t4dataset.py)
-  - Deployed onnx model [[webauto]](https://evaluation.tier4.jp/evaluation/mlpackages/e104265c-2945-4b8a-ae68-13accc1c0af2/releases/40d09664-0a7b-406e-9578-f65a0707bee3?project_id=zWhWRzei)
+  - Deployed onnx model [[WebAuto (for internal)]](https://evaluation.tier4.jp/evaluation/mlpackages/e104265c-2945-4b8a-ae68-13accc1c0af2/releases/40d09664-0a7b-406e-9578-f65a0707bee3?project_id=zWhWRzei)
   - Deployed onnx model [model-zoo]
     - [traffic_light_classifier_mobilenetv2_batch_1.onnx](https://download.autoware-ml-model-zoo.tier4.jp/autoware-ml/models/mobilenet-v2/car_traffic_light/t4base/v1.2/traffic_light_classifier_mobilenetv2_batch_1.onnx)
     - [traffic_light_classifier_mobilenetv2_batch_4.onnx](https://download.autoware-ml-model-zoo.tier4.jp/autoware-ml/models/mobilenet-v2/car_traffic_light/t4base/v1.2/traffic_light_classifier_mobilenetv2_batch_4.onnx)
@@ -43,7 +42,7 @@
     - [config.py](https://download.autoware-ml-model-zoo.tier4.jp/autoware-ml/models/mobilenet-v2/car_traffic_light/t4base/v1.2/mobilenet-v2_tlr_car_t4dataset.py)
     - [checkpoint_best.pth](https://download.autoware-ml-model-zoo.tier4.jp/autoware-ml/models/mobilenet-v2/car_traffic_light/t4base/v1.2/best_multi-label_f1-score_top1_epoch_110.pth)
     - [logs.zip](https://download.autoware-ml-model-zoo.tier4.jp/autoware-ml/models/mobilenet-v2/car_traffic_light/t4base/v1.2/logs.zip)
-    
+
   - train time: (NVIDIA A100-SXM4-80GB * 1) * 300 epochs = 22 hours
 
 - Results evaluated with DB TLR v6.0
@@ -103,26 +102,25 @@ Class-wise Metrics:
 - model
   - Training dataset: DB TLR v1.0, 2.0, 3.0, 4.0, 5.0
   - Eval dataset: DB TLR v1.0, 4.0, 5.0
-  - [PR](https://github.com/tier4/autoware-ml/pull/354)
   - [Config file path](../../../configs/t4dataset/MobileNetv2-CarTrafficLight/mobilenet-v2_tlr_car_t4dataset.py)
-  - Deployed onnx model [[webauto]](https://evaluation.tier4.jp/evaluation/mlpackages/e104265c-2945-4b8a-ae68-13accc1c0af2/releases/84e9b9b6-6b3b-4a60-8cfe-d410b2af6ba4?project_id=zWhWRzei)
+  - Deployed onnx model [[WebAuto (for internal)]](https://evaluation.tier4.jp/evaluation/mlpackages/e104265c-2945-4b8a-ae68-13accc1c0af2/releases/84e9b9b6-6b3b-4a60-8cfe-d410b2af6ba4?project_id=zWhWRzei)
   - Deployed onnx model [model-zoo]
     - [traffic_light_classifier_mobilenetv2_batch_1.onnx](https://download.autoware-ml-model-zoo.tier4.jp/autoware-ml/models/mobilenet-v2/car_traffic_light/t4base/v1.1/traffic_light_classifier_mobilenetv2_batch_1.onnx)
     - [traffic_light_classifier_mobilenetv2_batch_4.onnx](https://download.autoware-ml-model-zoo.tier4.jp/autoware-ml/models/mobilenet-v2/car_traffic_light/t4base/v1.1/traffic_light_classifier_mobilenetv2_batch_4.onnx)
     - [traffic_light_classifier_mobilenetv2_batch_6.onnx](https://download.autoware-ml-model-zoo.tier4.jp/autoware-ml/models/mobilenet-v2/car_traffic_light/t4base/v1.1/traffic_light_classifier_mobilenetv2_batch_6.onnx)
 
-  - Deployed label file: It is the same as [base/1.0](#base10) 
-  - Training results [[GDrive]](https://drive.google.com/drive/folders/1ozAAvqQOJKenUx8LE454-Cu83mgYmDVG?usp=drive_link)
+  - Deployed label file: It is the same as [base/1.0](#base10)
+  - Training results [[Google drive (for internal)]](https://drive.google.com/drive/folders/1ozAAvqQOJKenUx8LE454-Cu83mgYmDVG?usp=drive_link)
   - Training results [model-zoo]
     - [config.py](https://download.autoware-ml-model-zoo.tier4.jp/autoware-ml/models/mobilenet-v2/car_traffic_light/t4base/v1.1/mobilenet-v2_tlr_car_t4dataset.py)
     - [checkpoint_best.pth](https://download.autoware-ml-model-zoo.tier4.jp/autoware-ml/models/mobilenet-v2/car_traffic_light/t4base/v1.1/best_multi-label_f1-score_top1_epoch_224.pth)
     - [checkpoint_last.pth](https://download.autoware-ml-model-zoo.tier4.jp/autoware-ml/models/mobilenet-v2/car_traffic_light/t4base/v1.1/epoch_300.pth)
     - [logs.zip](https://download.autoware-ml-model-zoo.tier4.jp/autoware-ml/models/mobilenet-v2/car_traffic_light/t4base/v1.1/logs.zip)
-    
+
   - train time: (NVIDIA A100-SXM4-80GB * 1) * 300 epochs = 22 hours
 
 - Results evaluated with DB TLR v1.0, 4.0, 5.0
-  - Evaluation results [[GDrive]](https://drive.google.com/drive/folders/1K8LJ8sCWfK0tLcYVvy0-dhXWfkegp1mj?usp=drive_link) [Also in ↑logs.zip file in model zoo training results]
+  - Evaluation results [[Google drive (for internal)]](https://drive.google.com/drive/folders/1K8LJ8sCWfK0tLcYVvy0-dhXWfkegp1mj?usp=drive_link) [Also in ↑logs.zip file in model zoo training results]
 
 ```python
 Class-wise Metrics:
@@ -164,7 +162,7 @@ Class-wise Metrics:
 | red,right,straight   | 0.00       | 0.00       | 0.00       | 0          |
 | red,up_right         | 0.00       | 0.00       | 0.00       | 0          |
 ----------------------------------------------------------------------------
-Overall results:  precision_top1: 70.48     , recall_top1: 68.67     , f1-score_top1: 69.49     , support_top1: 9642.00   
+Overall results:  precision_top1: 70.48     , recall_top1: 68.67     , f1-score_top1: 69.49     , support_top1: 9642.00  
 ```
 
 - Results evaluated with DB TLR v5.0
@@ -187,7 +185,7 @@ Class-wise Metrics:
 | red,right,straight   | 0.00       | 0.00       | 0.00       | 0          |
 | red,up_right         | 0.00       | 0.00       | 0.00       | 0          |
 ----------------------------------------------------------------------------
-Overall results:  precision_top1: 48.69     , recall_top1: 49.91     , f1-score_top1: 47.75     , support_top1: 306.00    
+Overall results:  precision_top1: 48.69     , recall_top1: 49.91     , f1-score_top1: 47.75     , support_top1: 306.00  
 ```
 
 </details>
@@ -215,7 +213,7 @@ Class-wise Metrics:
 | red,right,straight   | 0.00       | 0.00       | 0.00       | 0          |
 | red,up_right         | 0.00       | 0.00       | 0.00       | 0          |
 ----------------------------------------------------------------------------
-Overall results:  precision_top1: 46.35     , recall_top1: 49.08     , f1-score_top1: 46.39     , support_top1: 306.00    
+Overall results:  precision_top1: 46.35     , recall_top1: 49.08     , f1-score_top1: 46.39     , support_top1: 306.00  
 ```
 
 </details>
@@ -231,15 +229,14 @@ Overall results:  precision_top1: 46.35     , recall_top1: 49.08     , f1-score_
 - model
   - Training dataset: TLR v1.0 + TLR v2.0 + TLR v3.0 + TLR v4.0
   - Eval dataset: TLR v4.0
-  - [PR](https://github.com/tier4/autoware-ml/pull/143)
   - [Config file path](../../../configs/t4dataset/MobileNetv2-CarTrafficLight/mobilenet-v2_tlr_car_t4dataset.py)
-  - Deployed onnx model [[webauto]](https://evaluation.tier4.jp/evaluation/mlpackages/e104265c-2945-4b8a-ae68-13accc1c0af2/releases/d5ce3e03-dd72-4517-b416-7a63a84c9fd3?project_id=zWhWRzei&tab=reports)
+  - Deployed onnx model [[WebAuto (for internal)]](https://evaluation.tier4.jp/evaluation/mlpackages/e104265c-2945-4b8a-ae68-13accc1c0af2/releases/d5ce3e03-dd72-4517-b416-7a63a84c9fd3?project_id=zWhWRzei&tab=reports)
   - Deployed onnx model [model-zoo]
     - [traffic_light_classifier_mobilenetv2_batch_1.onnx](https://download.autoware-ml-model-zoo.tier4.jp/autoware-ml/models/mobilenet-v2/car_traffic_light/t4base/v1.0/traffic_light_classifier_mobilenetv2_batch_1.onnx)
     - [traffic_light_classifier_mobilenetv2_batch_4.onnx](https://download.autoware-ml-model-zoo.tier4.jp/autoware-ml/models/mobilenet-v2/car_traffic_light/t4base/v1.0/traffic_light_classifier_mobilenetv2_batch_4.onnx)
     - [traffic_light_classifier_mobilenetv2_batch_6.onnx](https://download.autoware-ml-model-zoo.tier4.jp/autoware-ml/models/mobilenet-v2/car_traffic_light/t4base/v1.0/traffic_light_classifier_mobilenetv2_batch_6.onnx)
-  - Deployed label file [[GDrive]](https://evaluation.tier4.jp/evaluation/mlpackages/e104265c-2945-4b8a-ae68-13accc1c0af2/releases/d5ce3e03-dd72-4517-b416-7a63a84c9fd3?project_id=zWhWRzei&tab=reports) [[model-zoo]](https://download.autoware-ml-model-zoo.tier4.jp/autoware-ml/models/mobilenet-v2/car_traffic_light/t4base/v1.0/lamp_labels.txt)
-  - Training results [[GDrive]](https://drive.google.com/drive/folders/17XBZ6AcycliejDvT7nSFRINzUyGmsb2X?usp=drive_link)
+  - Deployed label file [[Google drive (for internal)]](https://evaluation.tier4.jp/evaluation/mlpackages/e104265c-2945-4b8a-ae68-13accc1c0af2/releases/d5ce3e03-dd72-4517-b416-7a63a84c9fd3?project_id=zWhWRzei&tab=reports) [[model-zoo]](https://download.autoware-ml-model-zoo.tier4.jp/autoware-ml/models/mobilenet-v2/car_traffic_light/t4base/v1.0/lamp_labels.txt)
+  - Training results [[Google drive (for internal)]](https://drive.google.com/drive/folders/17XBZ6AcycliejDvT7nSFRINzUyGmsb2X?usp=drive_link)
   - Training results [model-zoo]
     - [config.py](https://download.autoware-ml-model-zoo.tier4.jp/autoware-ml/models/mobilenet-v2/car_traffic_light/t4base/v1.0/mobilenet-v2_tlr_car_t4dataset.py)
     - [checkpoint_best.pth](https://download.autoware-ml-model-zoo.tier4.jp/autoware-ml/models/mobilenet-v2/car_traffic_light/t4base/v1.0/best_multi-label_f1-score_top1_epoch_12.pth)

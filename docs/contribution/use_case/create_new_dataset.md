@@ -9,27 +9,19 @@ By using WebAuto system, a dataset engineer create dataset.
 ## 2. [Dataset engineer] Create a PR to add a new config file
 
 - Add a new yaml file for [T4Dataset config](/autoware_ml/configs/t4dataset) like `db_j6gen2_v2.yaml` after uploading T4dataset.
-  - Add a document for the dataset
 - Fix a sensor config for [detection3d config](/autoware_ml/configs/detection3d/dataset/t4dataset) like `x2_gen2.py`.
 
 ```yaml
 # db_j6gen2_v2.yaml
 
 version: 1
-dataset_version: db-j6gen2-v2.0
-docs: |
-  Product: J6Gen2
-  Place: Shiojiri
-  Amount: About 5000 frames
-  Sensor: Hesai LiDAR + C1 Camera + Radar data
-  Annotation: All the data are collected at 10Hz and annotated at 2Hz
 
 train:
-  - 80b37b8c-ae9d-4641-a921-0b0c2012eee8 #DB-J6Gen2-v2-odaiba_0
+  - 80b37b8c-ae9d-4641-a921-0b0c2012eee8
 val:
-  - c8cf2fe3-9097-4f8d-8984-e99c4ddd0ced #DB-J6Gen2-v2-odaiba_1
+  - c8cf2fe3-9097-4f8d-8984-e99c4ddd0ced
 test:
-  - 9e973a55-3f70-48e0-8b37-a68b66a99686 #DB-J6Gen2-v2-odaiba_2
+  - 9e973a55-3f70-48e0-8b37-a68b66a99686
 ```
 
 ```py

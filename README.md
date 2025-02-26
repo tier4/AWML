@@ -69,7 +69,6 @@ If you want to know about `autoware-ml`, you should read following pages.
 
 ## Supported pipelines
 
-- [Deploy 3D detection model](/pipelines/deploy_detection3d/)
 - [Integration test for training and deployment](/pipelines/test_integration/)
 - [Use autoware-ml with WebAuto](/pipelines/webauto/)
 - (TBD) [Project adaptation](/pipelines/project_adaptation/)
@@ -115,3 +114,4 @@ If you want to know about `autoware-ml`, you should read following pages.
 ### Additional operation
 
 - [SparseConvolutions](/projects/SparseConvolution/)
+- [ConvNeXt](/projects/ConvNeXt_PC/)

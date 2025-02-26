@@ -1,5 +1,4 @@
 # `autoware-ml` design
-
 ## Pipeline design
 ### Overview diagram
 
@@ -157,25 +156,12 @@ The config files in `autoware_ml` is used commonly for each projects.
 - dataset configs: `autoware_ml/configs/*.yaml`
 
 The file like `detection3d/db_jpntaxi_v1.yaml` defines dataset ids of T4dataset.
-It contains document about T4dataset as belows.
-
-```yaml
-docs: |
-  Product: XX1
-  Place: Odaiba, Nishi-Shinjuku, and Shiojiri
-  Amount: About 12000 frames
-  Sensor: Velodyne LiDAR + BFS Camera
-  Annotation: All the data are collected at 10Hz and most of them are annotated at 2Hz and DBv1.0_nishi_shinjuku_[0-7]_ are annotated at 10Hz
-```
-
 We define T4dataset version as below.
 
-```
 - version: major.minor.build
   - major: sensor configuration
   - minor: dataset scenes
   - build: dataset version
-```
 
 ### docs/
 
