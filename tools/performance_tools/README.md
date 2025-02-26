@@ -40,6 +40,7 @@ python3 tools/performance_tools/onnx_to_tensorrt.py \
     <output_engine_path> \
     [--fp16] \
     [--workspace <workspace_size_in_GB>]
+    [--max_dynamic_shape <max size for dynamic parameters>]
 ```
 
 Example:
@@ -48,6 +49,16 @@ CUDA_VISIBLE_DEVICES=0 python3 tools/performance_tools/onnx_to_tensorrt.py \
     work_dirs/yolox_s_tlr_416x416_pedcar_t4dataset/tlr_car_ped_yolox_s_batch_6.onnx \
     work_dirs/yolox_s_tlr_416x416_pedcar_t4dataset/tlr_car_ped_yolox_s_batch_6.engine \
     --workspace 4
+
+CUDA_VISIBLE_DEVICES=1 python3 tools/performance_tools/onnx_to_tensorrt.py \
+    work_dirs/centerpoint/pts_voxel_encoder.onnx work_dirs/centerpoint/pts_voxel_encoder.engine \
+    --fp16
+    --max_dynamic_shape 40000 32 9
+
+CUDA_VISIBLE_DEVICES=1 python3 tools/performance_tools/onnx_to_tensorrt.py \
+    work_dirs/centerpoint/pts_backbone_neck_head.onnx work_dirs/centerpoint/pts_backbone_neck_head.engine \
+    --fp16
+    --max_dynamic_shape 1 32 760 760
 ```
 
 ### 3. Measuring TensorRT Performance
