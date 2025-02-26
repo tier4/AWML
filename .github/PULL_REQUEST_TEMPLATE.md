@@ -1,5 +1,11 @@
 ## Summary
 
+Write what you change and why you change
+
+## Change point
+
+Explain for detail
+
 If you add new feature or fix for core library
 
 - feat(autoware-ml): add {feature name}
@@ -15,22 +21,14 @@ If you change the thing without program
 
 - chore(BEVFusion): add README.md
 
-## Change point
-
-Write as below.
-
-- Add/Fix feature
-
-Explain for detail
-
 ## Note
 
 Write note like influences for other projects.
 
 ## Test performed
 
-- Trained by local
+- Log
 
 ```
-train log
+Log output
 ```

@@ -1,28 +1,21 @@
 version: 1
 dataset_version: db-tlr-v3.0
 
-docs: |
-  Product: GSM8
-  Place: Shiojiri
-  Amount: 1684 annotated images
-  Sensor: C1, C2 Camera
-  Annotation: No information available regarding annotation frequency
-
 train:
-  - 156a8efb-3645-4c0f-a107-37aea48d3e1e # TLRv1.0_shiojiri_230621_no.7_outbound_n1
-  - debcd4e0-effd-4b73-ad56-04d7d1a95674 # TLRv1.0_shiojiri_230621_no.7-custom_outbound_n1
-  - f5e45377-cc96-45d9-86b7-274b200246b3 # TLRv1.0_shiojiri_230621_no.4_n2
-  - 6936f12c-9928-45c0-8986-af9219865dcf # TLRv1.0_shiojiri_230621_nissan_outbound_n1
-  - 17d49bf4-5c8c-4ea8-b2ec-699a95b0994a # TLRv1.0_shiojiri_230620_routeZ_outbound_n4
-  - 1f384ffb-e6d9-4924-9f23-f97fc4759c83 # TLRv1.0_shiojiri_230620_routeZ-night_outbound_n1
-  - d18f6eb4-cfa2-4526-bd22-5c25be417e90 # TLRv1.0_shiojiri_230620_matsumoto-dental_return_night
-  - 224d9317-c0be-46d8-b9c7-36063374efa0 # TLRv1.0_shiojiri_230620_main-night_return_n1
-  - 4d9180e8-7f6d-4653-bd23-e4fad4ee8dce # TLRv1.0_shiojiri_230620_main-night_outbound_n1
-  - 786f3e17-519d-446b-b4f4-59089ed8f90e # TLRv1.0_shiojiri_230619_matsumoto-dental_return
-  - 13d7e9c0-e66a-49a1-a4ab-1846c2158c38 # TLRv1.0_shiojiri_230616_route3_return_j6#2_n1
-  - a44f6d75-c5fa-426f-8d14-d7f4bc93a979 # TLRv1.0_shiojiri_230616_route3_outbound_j6#2_n2
-  - 144bf497-ed61-4763-9202-d8c28970146a # TLRv1.0_shiojiri_230616_route3_outbound_j6#2_n1
-  - ce6f9a40-84c6-48c3-a09f-3db357f5edff # TLRv1.0_shiojiri_230616_charge_spot
+  - 156a8efb-3645-4c0f-a107-37aea48d3e1e
+  - debcd4e0-effd-4b73-ad56-04d7d1a95674
+  - f5e45377-cc96-45d9-86b7-274b200246b3
+  - 6936f12c-9928-45c0-8986-af9219865dcf
+  - 17d49bf4-5c8c-4ea8-b2ec-699a95b0994a
+  - 1f384ffb-e6d9-4924-9f23-f97fc4759c83
+  - d18f6eb4-cfa2-4526-bd22-5c25be417e90
+  - 224d9317-c0be-46d8-b9c7-36063374efa0
+  - 4d9180e8-7f6d-4653-bd23-e4fad4ee8dce
+  - 786f3e17-519d-446b-b4f4-59089ed8f90e
+  - 13d7e9c0-e66a-49a1-a4ab-1846c2158c38
+  - a44f6d75-c5fa-426f-8d14-d7f4bc93a979
+  - 144bf497-ed61-4763-9202-d8c28970146a
+  - ce6f9a40-84c6-48c3-a09f-3db357f5edff
 
 val: []
 

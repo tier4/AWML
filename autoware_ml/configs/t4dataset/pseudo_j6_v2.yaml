@@ -1,26 +1,18 @@
 version: 1
 dataset_version: pseudo-j6-v2.0
 
-docs: |
-  Product: J6
-  Place: Komatsu
-  Amount: 6,589 frames
-  Sensor: Hesai LiDAR + C1 Camera + Radar data
-  Annotation: All the data are annotated by BEVFusion-L-offline base/0.2 at 10HZ (https://docs.google.com/spreadsheets/d/1m4p-H-ythtwjhW6BfNNnMICffwxl1Vv47Ea5bLHu7DA/edit?gid=1623786180#gid=1623786180&range=D11)
-  Confidences: {'car': 0.35, 'truck': 0.20, 'bus': 0.20, 'bicycle': 0.35, 'pedestrian': 0.35}
-
 train:
-  - f117e0b4-52b3-4e34-83ef-0738873a062f  # Pseudo_J6_v2_6c3101a7-02c3-4d8b-ba53-420d4b581891
-  - f79a38b9-802f-421c-b759-1bbbf37be0f8  # Pseudo_J6_v2_69ccc4e7-dc58-47c8-b942-b3e5d46a47f0
-  - f2e90115-258c-45e4-a370-4df3d99650fb  # Pseudo_J6_v2_78f55892-4834-43a9-a0a4-ea87f1f7186a
-  - 5c8e91a8-567b-4d79-aed1-37d976a1e61e  # Pseudo_J6_v2_724538a2-1679-4288-affa-dd59f133aab5
-  - 0ed1b9d7-55af-481f-86cc-57acc39c58a4  # Pseudo_J6_v2_bced8a4e-3f07-4517-801c-a80e7bc4fe54
-  - 32f8d580-02a5-46a6-84c5-bbd34e362f59  # Pseudo_J6_v2_f615599d-7450-4dc7-8724-3f8edefe4c8a
-  - 785e7ac1-ec1d-4a07-8aa7-2300b629a385  # Pseudo_J6_v2_16a8bdf5-d08f-4188-8eb4-f87fa9a624f8
-  - 006eaec1-47da-4d9d-bf27-0ed8904422c9  # Pseudo_J6_v2_f540aac4-6b33-4828-a0f2-72f534cb8528
-  - 9ff065d8-c12e-4ce6-a760-c9ad603c5157  # Pseudo_J6_v2_78f55892-4834-43a9-a0a4-ea87f1f7186a
-  - cb1c3dbb-9016-4c46-8366-aa4c2664a8a2  # Pseudo_J6_v2_4778fda3-9db0-4d29-879b-8d10b95792dd
-  - 8871ad4c-d02e-47b8-890f-b19b28522340  # Pseudo_J6_v2_c5658c89-613c-4d7a-a353-84916077a81a
+  - f117e0b4-52b3-4e34-83ef-0738873a062f
+  - f79a38b9-802f-421c-b759-1bbbf37be0f8
+  - f2e90115-258c-45e4-a370-4df3d99650fb
+  - 5c8e91a8-567b-4d79-aed1-37d976a1e61e
+  - 0ed1b9d7-55af-481f-86cc-57acc39c58a4
+  - 32f8d580-02a5-46a6-84c5-bbd34e362f59
+  - 785e7ac1-ec1d-4a07-8aa7-2300b629a385
+  - 006eaec1-47da-4d9d-bf27-0ed8904422c9
+  - 9ff065d8-c12e-4ce6-a760-c9ad603c5157
+  - cb1c3dbb-9016-4c46-8366-aa4c2664a8a2
+  - 8871ad4c-d02e-47b8-890f-b19b28522340
 
 val: []
 

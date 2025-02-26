@@ -21,6 +21,6 @@ Note that you need to make as small PR as possible.
     - [Add a new set of T4dataset for a vehicle with an existing dataset](use_case/create_new_dataset.md)
     - [Add some new T4datasets for an existing dataset](use_case/add_dataset.md)
   - [Release new model](use_case/release_new_model.md)
-- For researchers or engineers to make new application
+- For researchers and engineers to make new application
   - [Create a new project or a new tool](use_case/create_new_project.md)
   - [Create a new library](use_case/create_new_library.md)

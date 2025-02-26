@@ -12,7 +12,6 @@ For PR review list with code owner
 - [ ] Add `/projects/{model_name}/README.md`
 - [ ] Write the result log for new model
 
-When creating the PR, we recommend writing a PR summary as https://github.com/tier4/autoware-ml/pull/134.
 We would you like to write summary of the new model considering the case when some engineers want to catch up.
 If someone want to catch up this model, it is best situation that they need to see only github and do not need to search the information in Jira ticket jungle, Confluence ocean, and Slack universe.
 
