@@ -25,7 +25,7 @@ class QuickCumsum(torch.autograd.Function):
 
     @staticmethod
     def backward(ctx, gradx, gradgeom):
-        (kept, ) = ctx.saved_tensors
+        (kept,) = ctx.saved_tensors
         back = torch.cumsum(kept, 0)
         back[kept] -= 1
 
@@ -96,7 +96,7 @@ class QuickCumsumCuda(torch.autograd.Function):
         W,
     ):
         output = g.op(
-            'autoware::QuickCumsumCuda',
+            "autoware::QuickCumsumCuda",
             x,
             geom_feats,
             interval_lengths,
@@ -109,16 +109,14 @@ class QuickCumsumCuda(torch.autograd.Function):
         )
 
         features_shape = _get_tensor_sizes(x)
-        if features_shape is not None and hasattr(x.type(), 'with_sizes'):
-            output_type = x.type().with_sizes(
-                [B, D, H, W, _get_tensor_dim_size(x, -1)])
+        if features_shape is not None and hasattr(x.type(), "with_sizes"):
+            output_type = x.type().with_sizes([B, D, H, W, _get_tensor_dim_size(x, -1)])
             output.setType(output_type)
 
         return output
 
     @staticmethod
-    def forward(ctx, x, geom_feats, interval_lengths, interval_starts, B, D, H,
-                W):
+    def forward(ctx, x, geom_feats, interval_lengths, interval_starts, B, D, H, W):
         out = bev_pool_ext.bev_pool_forward(
             x,
             geom_feats,
@@ -145,8 +143,7 @@ def bev_pool(feats, coords, ranks, B, D, H, W, is_training):
 
     else:
 
-        kept = torch.ones(
-            feats.shape[0], device=feats.device, dtype=torch.bool)
+        kept = torch.ones(feats.shape[0], device=feats.device, dtype=torch.bool)
         kept[1:] = ranks[1:] != ranks[:-1]
         interval_starts = torch.where(kept)[0].int()
         interval_lengths = torch.zeros_like(interval_starts)
@@ -156,9 +153,9 @@ def bev_pool(feats, coords, ranks, B, D, H, W, is_training):
         if coords.dtype != torch.int32:
             coords = coords.int()
 
-        x = QuickCumsumCuda.apply(feats, coords, interval_lengths,
-                                  interval_starts, int(B), D.item(), H.item(),
-                                  W.item())
+        x = QuickCumsumCuda.apply(
+            feats, coords, interval_lengths, interval_starts, int(B), D.item(), H.item(), W.item()
+        )
 
     x = x.permute(0, 4, 1, 2, 3).contiguous()
 

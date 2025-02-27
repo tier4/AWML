@@ -41,21 +41,21 @@ class BEVFusionSparseEncoder(SparseEncoder):
             Default to False.
     """
 
-    def __init__(self,
-                 in_channels,
-                 sparse_shape,
-                 order=('conv', 'norm', 'act'),
-                 norm_cfg=dict(type='BN1d', eps=1e-3, momentum=0.01),
-                 base_channels=16,
-                 output_channels=128,
-                 encoder_channels=((16, ), (32, 32, 32), (64, 64, 64), (64, 64,
-                                                                        64)),
-                 encoder_paddings=((1, ), (1, 1, 1), (1, 1, 1), ((0, 1, 1), 1,
-                                                                 1)),
-                 block_type='conv_module',
-                 return_middle_feats=False):
+    def __init__(
+        self,
+        in_channels,
+        sparse_shape,
+        order=("conv", "norm", "act"),
+        norm_cfg=dict(type="BN1d", eps=1e-3, momentum=0.01),
+        base_channels=16,
+        output_channels=128,
+        encoder_channels=((16,), (32, 32, 32), (64, 64, 64), (64, 64, 64)),
+        encoder_paddings=((1,), (1, 1, 1), (1, 1, 1), ((0, 1, 1), 1, 1)),
+        block_type="conv_module",
+        return_middle_feats=False,
+    ):
         super(SparseEncoder, self).__init__()
-        assert block_type in ['conv_module', 'basicblock']
+        assert block_type in ["conv_module", "basicblock"]
         self.sparse_shape = sparse_shape
         self.in_channels = in_channels
         self.order = order
@@ -69,18 +69,19 @@ class BEVFusionSparseEncoder(SparseEncoder):
         # Spconv init all weight on its own
 
         assert isinstance(order, tuple) and len(order) == 3
-        assert set(order) == {'conv', 'norm', 'act'}
+        assert set(order) == {"conv", "norm", "act"}
 
-        if self.order[0] != 'conv':  # pre activate
+        if self.order[0] != "conv":  # pre activate
             self.conv_input = make_sparse_convmodule(
                 in_channels,
                 self.base_channels,
                 3,
                 norm_cfg=norm_cfg,
                 padding=1,
-                indice_key='subm1',
-                conv_type='SubMConv3d',
-                order=('conv', ))
+                indice_key="subm1",
+                conv_type="SubMConv3d",
+                order=("conv",),
+            )
         else:  # post activate
             self.conv_input = make_sparse_convmodule(
                 in_channels,
@@ -88,14 +89,13 @@ class BEVFusionSparseEncoder(SparseEncoder):
                 3,
                 norm_cfg=norm_cfg,
                 padding=1,
-                indice_key='subm1',
-                conv_type='SubMConv3d')
+                indice_key="subm1",
+                conv_type="SubMConv3d",
+            )
 
         encoder_out_channels = self.make_encoder_layers(
-            make_sparse_convmodule,
-            norm_cfg,
-            self.base_channels,
-            block_type=block_type)
+            make_sparse_convmodule, norm_cfg, self.base_channels, block_type=block_type
+        )
 
         self.conv_out = make_sparse_convmodule(
             encoder_out_channels,
@@ -104,8 +104,9 @@ class BEVFusionSparseEncoder(SparseEncoder):
             stride=(1, 1, 2),
             norm_cfg=norm_cfg,
             padding=0,
-            indice_key='spconv_down2',
-            conv_type='SparseConv3d')
+            indice_key="spconv_down2",
+            conv_type="SparseConv3d",
+        )
 
     def forward(self, voxel_features, coors, batch_size):
         """Forward of SparseEncoder.
@@ -127,8 +128,7 @@ class BEVFusionSparseEncoder(SparseEncoder):
                 module returns middle features.
         """
         coors = coors.int()
-        input_sp_tensor = SparseConvTensor(voxel_features, coors,
-                                           self.sparse_shape, batch_size)
+        input_sp_tensor = SparseConvTensor(voxel_features, coors, self.sparse_shape, batch_size)
         x = self.conv_input(input_sp_tensor)
 
         encode_features = []

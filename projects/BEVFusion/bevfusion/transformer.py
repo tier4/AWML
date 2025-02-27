@@ -1,8 +1,7 @@
 # Copyright (c) OpenMMLab. All rights reserved.
+from mmdet3d.registry import MODELS
 from mmdet.models import DetrTransformerDecoderLayer
 from torch import Tensor, nn
-
-from mmdet3d.registry import MODELS
 
 
 class PositionEncodingLearned(nn.Module):
@@ -12,8 +11,10 @@ class PositionEncodingLearned(nn.Module):
         super().__init__()
         self.position_embedding_head = nn.Sequential(
             nn.Conv1d(input_channel, num_pos_feats, kernel_size=1),
-            nn.BatchNorm1d(num_pos_feats), nn.ReLU(inplace=True),
-            nn.Conv1d(num_pos_feats, num_pos_feats, kernel_size=1))
+            nn.BatchNorm1d(num_pos_feats),
+            nn.ReLU(inplace=True),
+            nn.Conv1d(num_pos_feats, num_pos_feats, kernel_size=1),
+        )
 
     def forward(self, xyz):
         xyz = xyz.transpose(1, 2).contiguous()
@@ -24,23 +25,23 @@ class PositionEncodingLearned(nn.Module):
 @MODELS.register_module()
 class TransformerDecoderLayer(DetrTransformerDecoderLayer):
 
-    def __init__(self,
-                 pos_encoding_cfg=dict(input_channel=2, num_pos_feats=128),
-                 **kwargs):
+    def __init__(self, pos_encoding_cfg=dict(input_channel=2, num_pos_feats=128), **kwargs):
         super().__init__(**kwargs)
         self.self_posembed = PositionEncodingLearned(**pos_encoding_cfg)
         self.cross_posembed = PositionEncodingLearned(**pos_encoding_cfg)
 
-    def forward(self,
-                query: Tensor,
-                key: Tensor = None,
-                value: Tensor = None,
-                query_pos: Tensor = None,
-                key_pos: Tensor = None,
-                self_attn_mask: Tensor = None,
-                cross_attn_mask: Tensor = None,
-                key_padding_mask: Tensor = None,
-                **kwargs) -> Tensor:
+    def forward(
+        self,
+        query: Tensor,
+        key: Tensor = None,
+        value: Tensor = None,
+        query_pos: Tensor = None,
+        key_pos: Tensor = None,
+        self_attn_mask: Tensor = None,
+        cross_attn_mask: Tensor = None,
+        key_padding_mask: Tensor = None,
+        **kwargs
+    ) -> Tensor:
         """
         Args:
             query (Tensor): The input query, has shape (bs, num_queries, dim).
@@ -89,7 +90,8 @@ class TransformerDecoderLayer(DetrTransformerDecoderLayer):
             query_pos=query_pos,
             key_pos=query_pos,
             attn_mask=self_attn_mask,
-            **kwargs)
+            **kwargs
+        )
         query = self.norms[0](query)
         # Note that the `value` (equal to `key`) is encoded with `key_pos`.
         # This is different from the standard DETR Decoder Layer.
@@ -101,7 +103,8 @@ class TransformerDecoderLayer(DetrTransformerDecoderLayer):
             key_pos=key_pos,
             attn_mask=cross_attn_mask,
             key_padding_mask=key_padding_mask,
-            **kwargs)
+            **kwargs
+        )
         query = self.norms[1](query)
         query = self.ffn(query)
         query = self.norms[2](query)

@@ -3,26 +3,25 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from mmcv.cnn import ConvModule
-from mmengine.model import BaseModule
-
 from mmdet3d.registry import MODELS
+from mmengine.model import BaseModule
 
 
 @MODELS.register_module()
 class GeneralizedLSSFPN(BaseModule):
 
     def __init__(
-            self,
-            in_channels,
-            out_channels,
-            num_outs,
-            start_level=0,
-            end_level=-1,
-            no_norm_on_lateral=False,
-            conv_cfg=None,
-            norm_cfg=dict(type='BN2d'),
-            act_cfg=dict(type='ReLU'),
-            upsample_cfg=dict(mode='bilinear', align_corners=True),
+        self,
+        in_channels,
+        out_channels,
+        num_outs,
+        start_level=0,
+        end_level=-1,
+        no_norm_on_lateral=False,
+        conv_cfg=None,
+        norm_cfg=dict(type="BN2d"),
+        act_cfg=dict(type="ReLU"),
+        upsample_cfg=dict(mode="bilinear", align_corners=True),
     ) -> None:
         super().__init__()
         assert isinstance(in_channels, list)
@@ -50,9 +49,7 @@ class GeneralizedLSSFPN(BaseModule):
 
         for i in range(self.start_level, self.backbone_end_level):
             l_conv = ConvModule(
-                in_channels[i] +
-                (in_channels[i + 1] if i == self.backbone_end_level -
-                 1 else out_channels),
+                in_channels[i] + (in_channels[i + 1] if i == self.backbone_end_level - 1 else out_channels),
                 out_channels,
                 1,
                 conv_cfg=conv_cfg,

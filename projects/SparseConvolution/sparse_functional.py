@@ -10,9 +10,7 @@ from spconv.core import ConvAlgo
 from spconv.core_cc.csrc.sparse.all import SpconvOps
 from spconv.core_cc.csrc.sparse.convops.spops import ConvGemmOps
 from spconv.pytorch.core import ThrustSortAllocator
-from spconv.pytorch.cppcore import (_TORCH_DTYPE_TO_TV, TorchAllocator,
-                                    get_arch, get_current_stream,
-                                    torch_tensor_to_tv)
+from spconv.pytorch.cppcore import _TORCH_DTYPE_TO_TV, TorchAllocator, get_arch, get_current_stream, torch_tensor_to_tv
 from spconv.tools import CUDAKernelTimer
 from torch.autograd import Function
 from torch.onnx.symbolic_helper import _get_tensor_sizes
@@ -21,14 +19,25 @@ from torch.onnx.symbolic_helper import _get_tensor_sizes
 class GetIndicePairsImplicitGemm(Function):
 
     @staticmethod
-    def symbolic(g, indices: torch.Tensor, batch_size: int,
-                 spatial_shape: List[int], algo: ConvAlgo, ksize: List[int],
-                 stride: List[int], padding: List[int], dilation: List[int],
-                 out_padding: List[int], subm: bool, transpose: bool,
-                 is_train: bool, alloc: Optional[ThrustSortAllocator],
-                 timer: CUDAKernelTimer):
+    def symbolic(
+        g,
+        indices: torch.Tensor,
+        batch_size: int,
+        spatial_shape: List[int],
+        algo: ConvAlgo,
+        ksize: List[int],
+        stride: List[int],
+        padding: List[int],
+        dilation: List[int],
+        out_padding: List[int],
+        subm: bool,
+        transpose: bool,
+        is_train: bool,
+        alloc: Optional[ThrustSortAllocator],
+        timer: CUDAKernelTimer,
+    ):
         outputs = g.op(
-            'autoware::GetIndicePairsImplicitGemm',
+            "autoware::GetIndicePairsImplicitGemm",
             indices,
             batch_size_i=batch_size,
             spatial_shape_i=spatial_shape,
@@ -44,8 +53,7 @@ class GetIndicePairsImplicitGemm(Function):
             outputs=5,
         )
         indices_shape = _get_tensor_sizes(indices)
-        if (indices_shape is not None
-                and hasattr(indices.type(), 'with_sizes')):
+        if indices_shape is not None and hasattr(indices.type(), "with_sizes"):
             output_type_1 = indices.type().with_sizes([None, indices_shape[1]])
             output_type_2 = indices.type().with_sizes([np.prod(ksize), None])
             output_type_3 = indices.type().with_sizes([None, 1])
@@ -60,12 +68,23 @@ class GetIndicePairsImplicitGemm(Function):
         return outputs
 
     @staticmethod
-    def forward(ctx, indices: torch.Tensor, batch_size: int,
-                spatial_shape: List[int], algo: ConvAlgo, ksize: List[int],
-                stride: List[int], padding: List[int], dilation: List[int],
-                out_padding: List[int], subm: bool, transpose: bool,
-                is_train: bool, alloc: Optional[ThrustSortAllocator],
-                timer: CUDAKernelTimer) -> torch.Tensor:
+    def forward(
+        ctx,
+        indices: torch.Tensor,
+        batch_size: int,
+        spatial_shape: List[int],
+        algo: ConvAlgo,
+        ksize: List[int],
+        stride: List[int],
+        padding: List[int],
+        dilation: List[int],
+        out_padding: List[int],
+        subm: bool,
+        transpose: bool,
+        is_train: bool,
+        alloc: Optional[ThrustSortAllocator],
+        timer: CUDAKernelTimer,
+    ) -> torch.Tensor:
         """Why return tuple?
 
         because pytorch seems don't support custom object in autograd.
@@ -114,7 +133,8 @@ class GetIndicePairsImplicitGemm(Function):
             num_out_act_bound,
             timer=timer_cpp,
             direct_table=direct_table,
-            do_sort=do_sort)
+            do_sort=do_sort,
+        )
 
         mask_split_count = mask_tensor.dim(0)
         # NOTE(knzo25): we support only the simplest case
@@ -131,8 +151,7 @@ class GetIndicePairsImplicitGemm(Function):
             pair_mask_in_splits = pair_mask[0]
             mask_argsort_in_splits = mask_argsort[0]
             pair_fwd = pair[0]
-            return (out_inds, pair[0], pair_mask_in_splits,
-                    mask_argsort_in_splits, num_act_out)
+            return (out_inds, pair[0], pair_mask_in_splits, mask_argsort_in_splits, num_act_out)
         else:
             pair_fwd = thalloc.allocated[AllocKeys.PairFwd]
             pair_mask_fwd = thalloc.allocated[AllocKeys.PairMask]
@@ -140,8 +159,7 @@ class GetIndicePairsImplicitGemm(Function):
             pair_mask_fwd_splits = pair_mask_fwd[0]
             mask_argsort_fwd_splits = mask_argsort_fwd[0]
 
-            return (out_inds, pair_fwd, pair_mask_fwd_splits,
-                    mask_argsort_fwd_splits, num_act_out)
+            return (out_inds, pair_fwd, pair_mask_fwd_splits, mask_argsort_fwd_splits, num_act_out)
 
     @staticmethod
     def backward(ctx: Any, grad_output: torch.Tensor) -> tuple:
@@ -151,19 +169,32 @@ class GetIndicePairsImplicitGemm(Function):
 class ImplicitGemm(Function):
 
     @staticmethod
-    def symbolic(g, features: torch.Tensor, filters: torch.Tensor,
-                 pair_fwd: torch.Tensor, pair_mask_fwd_splits: torch.Tensor,
-                 mask_argsort_fwd_splits: torch.Tensor, num_activate_out: int,
-                 masks: List[np.ndarray], is_train: bool, is_subm: bool,
-                 timer: CUDAKernelTimer, fp32_accum: Optional[bool],
-                 bias: Optional[torch.Tensor], act_alpha: float,
-                 act_beta: float, act_type: tv.gemm.Activation,
-                 output_scale: float, scale: Optional[torch.Tensor],
-                 output_add: Optional[torch.Tensor], output_add_scale: float,
-                 output_dtype: Optional[torch.dtype]):
+    def symbolic(
+        g,
+        features: torch.Tensor,
+        filters: torch.Tensor,
+        pair_fwd: torch.Tensor,
+        pair_mask_fwd_splits: torch.Tensor,
+        mask_argsort_fwd_splits: torch.Tensor,
+        num_activate_out: int,
+        masks: List[np.ndarray],
+        is_train: bool,
+        is_subm: bool,
+        timer: CUDAKernelTimer,
+        fp32_accum: Optional[bool],
+        bias: Optional[torch.Tensor],
+        act_alpha: float,
+        act_beta: float,
+        act_type: tv.gemm.Activation,
+        output_scale: float,
+        scale: Optional[torch.Tensor],
+        output_add: Optional[torch.Tensor],
+        output_add_scale: float,
+        output_dtype: Optional[torch.dtype],
+    ):
 
         output = g.op(
-            'autoware::ImplicitGemm',
+            "autoware::ImplicitGemm",
             features,
             filters,
             pair_fwd,
@@ -180,43 +211,43 @@ class ImplicitGemm(Function):
         )
         features_shape = _get_tensor_sizes(features)
         filters_shape = _get_tensor_sizes(filters)
-        if (features_shape is not None
-                and hasattr(features.type(), 'with_sizes')):
-            output_type = features.type().with_sizes(
-                [features_shape[0], filters_shape[0]])
+        if features_shape is not None and hasattr(features.type(), "with_sizes"):
+            output_type = features.type().with_sizes([features_shape[0], filters_shape[0]])
             output.setType(output_type)
 
         return output
 
     @staticmethod
-    def forward(ctx,
-                features: torch.Tensor,
-                filters: torch.Tensor,
-                pair_fwd: torch.Tensor,
-                pair_mask_fwd_splits: torch.Tensor,
-                mask_argsort_fwd_splits: torch.Tensor,
-                num_activate_out: int,
-                masks: List[np.ndarray],
-                is_train: bool,
-                is_subm: bool,
-                timer: CUDAKernelTimer = CUDAKernelTimer(False),
-                fp32_accum: Optional[bool] = None,
-                bias: Optional[torch.Tensor] = None,
-                act_alpha: float = 0.0,
-                act_beta: float = 0.0,
-                act_type: tv.gemm.Activation = tv.gemm.Activation.None_,
-                output_scale: float = 1.0,
-                scale: Optional[torch.Tensor] = None,
-                output_add: Optional[torch.Tensor] = None,
-                output_add_scale: float = 0.0,
-                output_dtype: Optional[torch.dtype] = None):
+    def forward(
+        ctx,
+        features: torch.Tensor,
+        filters: torch.Tensor,
+        pair_fwd: torch.Tensor,
+        pair_mask_fwd_splits: torch.Tensor,
+        mask_argsort_fwd_splits: torch.Tensor,
+        num_activate_out: int,
+        masks: List[np.ndarray],
+        is_train: bool,
+        is_subm: bool,
+        timer: CUDAKernelTimer = CUDAKernelTimer(False),
+        fp32_accum: Optional[bool] = None,
+        bias: Optional[torch.Tensor] = None,
+        act_alpha: float = 0.0,
+        act_beta: float = 0.0,
+        act_type: tv.gemm.Activation = tv.gemm.Activation.None_,
+        output_scale: float = 1.0,
+        scale: Optional[torch.Tensor] = None,
+        output_add: Optional[torch.Tensor] = None,
+        output_add_scale: float = 0.0,
+        output_dtype: Optional[torch.dtype] = None,
+    ):
 
         # NOTE(knzo25): start of custom changes needed for deployment
         pair_mask_fwd_splits = [pair_mask_fwd_splits]
         mask_argsort_fwd_splits = [mask_argsort_fwd_splits]
 
-        assert fp32_accum is None, 'fp32_accum is not supported'
-        assert bias is None, 'bias is not supported'
+        assert fp32_accum is None, "fp32_accum is not supported"
+        assert bias is None, "bias is not supported"
         assert scale is None
         assert output_add is None
         assert output_dtype is torch.float32
@@ -238,12 +269,8 @@ class ImplicitGemm(Function):
         alloc = TorchAllocator(features.device, features.dtype == torch.qint8)
         features_tv = torch_tensor_to_tv(features)
         pair_fwd_tv = torch_tensor_to_tv(pair_fwd)
-        pair_mask_fwd_splits_tv = [
-            torch_tensor_to_tv(t, tv.uint32) for t in pair_mask_fwd_splits
-        ]
-        mask_argsort_fwd_splits_tv = [
-            torch_tensor_to_tv(t) for t in mask_argsort_fwd_splits
-        ]
+        pair_mask_fwd_splits_tv = [torch_tensor_to_tv(t, tv.uint32) for t in pair_mask_fwd_splits]
+        mask_argsort_fwd_splits_tv = [torch_tensor_to_tv(t) for t in mask_argsort_fwd_splits]
 
         filters_tv = torch_tensor_to_tv(filters)
         mask = np.array([np.iinfo(np.uint32).max], dtype=np.uint32)
@@ -283,7 +310,8 @@ class ImplicitGemm(Function):
             scale=scale_tv,
             output_add=output_add_tv,
             output_add_scale=output_add_scale,
-            output_dtype=output_dtype_tv)
+            output_dtype=output_dtype_tv,
+        )
         out_features = alloc.allocated[AllocKeys.OutFeatures]
         mask_output_fwd = alloc.allocated.get(AllocKeys.MaskOutputFwd, None)
         if is_train:

@@ -132,4 +132,3 @@ Total mAP: 0.649
 It seems that the YOLOX-L Selection is not better compared to random sampling. But nevertheless, it can be used to pick scenes with specific objects as necessary. For example, if we want to pick scenes with more bicycles in a particular area, we can use the YOLOX-L Selection.
 
 ---
-

@@ -41,8 +41,7 @@ model = dict(
         sparse_shape=grid_size,
         order=("conv", "norm", "act"),
         norm_cfg=dict(type="BN1d", eps=0.001, momentum=0.01),
-        encoder_channels=((16, 16, 32), (32, 32, 64), (64, 64, 128), (128,
-                                                                      128)),
+        encoder_channels=((16, 16, 32), (32, 32, 64), (64, 64, 128), (128, 128)),
         encoder_paddings=((0, 0, 1), (0, 0, 1), (0, 0, (1, 1, 0)), (0, 0)),
         block_type="basicblock",
     ),
@@ -100,11 +99,7 @@ model = dict(
             assigner=dict(
                 type="HungarianAssigner3D",
                 iou_calculator=dict(type="BboxOverlaps3D", coordinate="lidar"),
-                cls_cost=dict(
-                    type="mmdet.FocalLossCost",
-                    gamma=2.0,
-                    alpha=0.25,
-                    weight=0.15),
+                cls_cost=dict(type="mmdet.FocalLossCost", gamma=2.0, alpha=0.25, weight=0.15),
                 reg_cost=dict(type="BBoxBEVL1Cost", weight=0.25),
                 iou_cost=dict(type="IoU3DCost", weight=0.25),
             ),
@@ -117,8 +112,7 @@ model = dict(
             pc_range=point_cloud_range[0:2],
             nms_type=None,
         ),
-        common_heads=dict(
-            center=[2, 2], height=[1, 2], dim=[3, 2], rot=[2, 2], vel=[2, 2]),
+        common_heads=dict(center=[2, 2], height=[1, 2], dim=[3, 2], rot=[2, 2], vel=[2, 2]),
         bbox_coder=dict(
             type="TransFusionBBoxCoder",
             pc_range=point_cloud_range[0:2],
@@ -136,10 +130,8 @@ model = dict(
             reduction="mean",
             loss_weight=1.0,
         ),
-        loss_heatmap=dict(
-            type="mmdet.GaussianFocalLoss", reduction="mean", loss_weight=1.0),
-        loss_bbox=dict(
-            type="mmdet.L1Loss", reduction="mean", loss_weight=0.25),
+        loss_heatmap=dict(type="mmdet.GaussianFocalLoss", reduction="mean", loss_weight=1.0),
+        loss_bbox=dict(type="mmdet.L1Loss", reduction="mean", loss_weight=0.25),
     ),
 )
 
@@ -147,11 +139,11 @@ vis_backends = [
     dict(type="LocalVisBackend"),
     dict(type="TensorboardVisBackend"),
 ]
-visualizer = dict(
-    type="Det3DLocalVisualizer", vis_backends=vis_backends, name="visualizer")
+visualizer = dict(type="Det3DLocalVisualizer", vis_backends=vis_backends, name="visualizer")
 
 default_hooks = dict(
     logger=dict(type="LoggerHook", interval=50),
-    checkpoint=dict(type="CheckpointHook", interval=1, max_keep_ckpts=3,save_best='NuScenes metric/T4Metric/mAP'))
+    checkpoint=dict(type="CheckpointHook", interval=1, max_keep_ckpts=3, save_best="NuScenes metric/T4Metric/mAP"),
+)
 custom_hooks = [dict(type="DisableObjectSampleHook", disable_after_epoch=15)]
 log_processor = dict(window_size=50)

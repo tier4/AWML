@@ -1,10 +1,9 @@
 _base_ = [
     "../default/bevfusion_lidar_voxel_second_secfpn_1xb1_t4base.py",
-    "../../../../../autoware_ml/configs/detection3d/dataset/t4dataset/xx1.py"
+    "../../../../../autoware_ml/configs/detection3d/dataset/t4dataset/xx1.py",
 ]
 
-custom_imports = dict(
-    imports=["projects.BEVFusion.bevfusion"], allow_failed_imports=False)
+custom_imports = dict(imports=["projects.BEVFusion.bevfusion"], allow_failed_imports=False)
 custom_imports["imports"] += _base_.custom_imports["imports"]
 
 # user setting
@@ -45,7 +44,8 @@ model = dict(
             point_cloud_range=point_cloud_range,
             voxel_size=voxel_size,
             max_voxels=max_voxels,
-        ), ),
+        ),
+    ),
     pts_middle_encoder=dict(sparse_shape=grid_size),
     bbox_head=dict(
         num_proposals=num_proposals,
@@ -129,11 +129,7 @@ train_pipeline = [
         remove_close=True,
         backend_args=backend_args,
     ),
-    dict(
-        type="LoadAnnotations3D",
-        with_bbox_3d=True,
-        with_label_3d=True,
-        with_attr_label=False),
+    dict(type="LoadAnnotations3D", with_bbox_3d=True, with_label_3d=True, with_attr_label=False),
     # TODO: support object sample
     # dict(type='ObjectSample', db_sampler=db_sampler),
     dict(
@@ -163,10 +159,7 @@ train_pipeline = [
     dict(type="PointShuffle"),
     dict(
         type="Pack3DDetInputs",
-        keys=[
-            "points", "img", "gt_bboxes_3d", "gt_labels_3d", "gt_bboxes",
-            "gt_labels"
-        ],
+        keys=["points", "img", "gt_bboxes_3d", "gt_labels_3d", "gt_bboxes", "gt_labels"],
         meta_keys=[
             "cam2img",
             "ori_cam2img",
@@ -314,8 +307,7 @@ vis_backends = [
     dict(type="LocalVisBackend"),
     dict(type="TensorboardVisBackend"),
 ]
-visualizer = dict(
-    type="Det3DLocalVisualizer", vis_backends=vis_backends, name="visualizer")
+visualizer = dict(type="Det3DLocalVisualizer", vis_backends=vis_backends, name="visualizer")
 
 # learning rate
 lr = 0.0001
@@ -366,8 +358,7 @@ param_scheduler = [
 ]
 
 # runtime settings
-train_cfg = dict(
-    by_epoch=True, max_epochs=max_epochs, val_interval=val_interval)
+train_cfg = dict(by_epoch=True, max_epochs=max_epochs, val_interval=val_interval)
 val_cfg = dict()
 test_cfg = dict()
 
@@ -382,5 +373,4 @@ optim_wrapper = dict(
 #       or not by default.
 #   - `base_batch_size` = (8 GPUs) x (4 samples per GPU).
 # auto_scale_lr = dict(enable=False, base_batch_size=32)
-auto_scale_lr = dict(
-    enable=False, base_batch_size=train_gpu_size * train_batch_size)
+auto_scale_lr = dict(enable=False, base_batch_size=train_gpu_size * train_batch_size)

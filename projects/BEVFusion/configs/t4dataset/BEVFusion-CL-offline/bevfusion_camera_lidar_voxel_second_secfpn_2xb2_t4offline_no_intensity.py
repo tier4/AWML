@@ -1,10 +1,9 @@
 _base_ = [
     "../default/bevfusion_lidar_voxel_second_secfpn_1xb1_t4base.py",
-    "../../../../../autoware_ml/configs/detection3d/dataset/t4dataset/base.py"
+    "../../../../../autoware_ml/configs/detection3d/dataset/t4dataset/base.py",
 ]
 
-custom_imports = dict(
-    imports=["projects.BEVFusion.bevfusion"], allow_failed_imports=False)
+custom_imports = dict(imports=["projects.BEVFusion.bevfusion"], allow_failed_imports=False)
 custom_imports["imports"] += _base_.custom_imports["imports"]
 
 # user setting
@@ -42,7 +41,7 @@ num_workers = 1
 sweeps_num = 1
 
 model = dict(
-    type='BEVFusion',
+    type="BEVFusion",
     data_preprocessor=dict(
         voxelize_cfg=dict(
             max_num_points=max_num_points,
@@ -50,7 +49,7 @@ model = dict(
             voxel_size=voxel_size,
             max_voxels=max_voxels,
         ),
-        type='Det3DDataPreprocessor',
+        type="Det3DDataPreprocessor",
         mean=[123.675, 116.28, 103.53],
         std=[58.395, 57.12, 57.375],
         bgr_to_rgb=False,
@@ -58,7 +57,7 @@ model = dict(
     pts_voxel_encoder=dict(type="HardSimpleVFE", num_features=4),
     pts_middle_encoder=dict(in_channels=4, sparse_shape=grid_size),
     img_backbone=dict(
-        type='mmdet.SwinTransformer',
+        type="mmdet.SwinTransformer",
         embed_dims=96,
         depths=[2, 2, 6, 2],
         num_heads=[3, 6, 12, 24],
@@ -74,37 +73,38 @@ model = dict(
         with_cp=False,
         convert_weights=True,
         init_cfg=dict(
-            type='Pretrained',
-            checkpoint=  # noqa: E251
-            'https://github.com/SwinTransformer/storage/releases/download/v1.0.0/swin_tiny_patch4_window7_224.pth'  # noqa: E501
-        )),
+            type="Pretrained",
+            checkpoint="https://github.com/SwinTransformer/storage/releases/download/v1.0.0/swin_tiny_patch4_window7_224.pth",  # noqa: E251  # noqa: E501
+        ),
+    ),
     img_neck=dict(
-        type='GeneralizedLSSFPN',
+        type="GeneralizedLSSFPN",
         in_channels=[192, 384, 768],
         out_channels=256,
         start_level=0,
         num_outs=3,
-        norm_cfg=dict(type='BN2d', requires_grad=True),
-        act_cfg=dict(type='ReLU', inplace=True),
-        upsample_cfg=dict(mode='bilinear', align_corners=False)),
+        norm_cfg=dict(type="BN2d", requires_grad=True),
+        act_cfg=dict(type="ReLU", inplace=True),
+        upsample_cfg=dict(mode="bilinear", align_corners=False),
+    ),
     view_transform=dict(
-        type='DepthLSSTransform',
+        type="DepthLSSTransform",
         in_channels=256,
         out_channels=80,
         image_size=image_size,
         feature_size=[32, 88],
-        #xbound=[-54.0, 54.0, 0.3],
-        #ybound=[-54.0, 54.0, 0.3],
+        # xbound=[-54.0, 54.0, 0.3],
+        # ybound=[-54.0, 54.0, 0.3],
         # xbound=[-122.4, 122.4, 0.68],
         # ybound=[-122.4, 122.4, 0.68],
         xbound=[-122.4, 122.4, 0.3],
         ybound=[-122.4, 122.4, 0.3],
         zbound=[-10.0, 10.0, 20.0],
-        #dbound=[1.0, 60.0, 0.5],
+        # dbound=[1.0, 60.0, 0.5],
         dbound=[1.0, 166.2, 1.4],
-        downsample=2),
-    fusion_layer=dict(
-        type='ConvFuser', in_channels=[80, 256], out_channels=256),
+        downsample=2,
+    ),
+    fusion_layer=dict(type="ConvFuser", in_channels=[80, 256], out_channels=256),
     bbox_head=dict(
         num_proposals=num_proposals,
         num_classes=_base_.num_class,
@@ -165,11 +165,12 @@ model = dict(
 
 train_pipeline = [
     dict(
-        type='BEVLoadMultiViewImageFromFiles',
+        type="BEVLoadMultiViewImageFromFiles",
         data_root=data_root,
         to_float32=True,
-        color_type='color',
-        backend_args=backend_args),
+        color_type="color",
+        backend_args=backend_args,
+    ),
     dict(
         type="LoadPointsFromFile",
         coord_type="LIDAR",
@@ -193,21 +194,18 @@ train_pipeline = [
         remove_close=True,
         backend_args=backend_args,
     ),
-    dict(
-        type="LoadAnnotations3D",
-        with_bbox_3d=True,
-        with_label_3d=True,
-        with_attr_label=False),
+    dict(type="LoadAnnotations3D", with_bbox_3d=True, with_label_3d=True, with_attr_label=False),
     # TODO: support object sample
     # dict(type='ObjectSample', db_sampler=db_sampler),
     dict(
-        type='ImageAug3D',
+        type="ImageAug3D",
         final_dim=image_size,
         resize_lim=[0.38, 0.55],
         bot_pct_lim=[0.0, 0.0],
         rot_lim=[-5.4, 5.4],
         rand_flip=True,
-        is_train=True),
+        is_train=True,
+    ),
     dict(
         type="GlobalRotScaleTrans",
         rot_range=[-1.571, 1.571],
@@ -235,10 +233,7 @@ train_pipeline = [
     dict(type="PointShuffle"),
     dict(
         type="Pack3DDetInputs",
-        keys=[
-            "points", "img", "gt_bboxes_3d", "gt_labels_3d", "gt_bboxes",
-            "gt_labels"
-        ],
+        keys=["points", "img", "gt_bboxes_3d", "gt_labels_3d", "gt_bboxes", "gt_labels"],
         meta_keys=[
             "cam2img",
             "ori_cam2img",
@@ -263,11 +258,13 @@ train_pipeline = [
 
 test_pipeline = [
     dict(
-        type='BEVLoadMultiViewImageFromFiles',
+        type="BEVLoadMultiViewImageFromFiles",
         data_root=data_root,
         to_float32=True,
-        color_type='color',
-        backend_args=backend_args, test_mode=True),
+        color_type="color",
+        backend_args=backend_args,
+        test_mode=True,
+    ),
     dict(
         type="LoadPointsFromFile",
         coord_type="LIDAR",
@@ -283,15 +280,17 @@ test_pipeline = [
         pad_empty_sweeps=True,
         remove_close=True,
         backend_args=backend_args,
-        test_mode=True),
+        test_mode=True,
+    ),
     dict(
-        type='ImageAug3D',
+        type="ImageAug3D",
         final_dim=image_size,
         resize_lim=[0.48, 0.48],
         bot_pct_lim=[0.0, 0.0],
         rot_lim=[0.0, 0.0],
         rand_flip=False,
-        is_train=False),
+        is_train=False,
+    ),
     dict(type="PointsRangeFilter", point_cloud_range=point_cloud_range),
     dict(
         type="Pack3DDetInputs",
@@ -381,7 +380,8 @@ val_evaluator = dict(
     class_names=_base_.class_names,
     name_mapping=_base_.name_mapping,
     eval_class_range=eval_class_range,
-    filter_attributes=_base_.filter_attributes)
+    filter_attributes=_base_.filter_attributes,
+)
 test_evaluator = dict(
     type="T4Metric",
     data_root=data_root,
@@ -391,7 +391,8 @@ test_evaluator = dict(
     class_names=_base_.class_names,
     name_mapping=_base_.name_mapping,
     eval_class_range=eval_class_range,
-    filter_attributes=_base_.filter_attributes)
+    filter_attributes=_base_.filter_attributes,
+)
 
 # learning rate
 lr = 0.0001
@@ -442,8 +443,7 @@ param_scheduler = [
 ]
 
 # runtime settings
-train_cfg = dict(
-    by_epoch=True, max_epochs=max_epochs, val_interval=val_interval)
+train_cfg = dict(by_epoch=True, max_epochs=max_epochs, val_interval=val_interval)
 val_cfg = dict()
 test_cfg = dict()
 
@@ -458,10 +458,9 @@ optim_wrapper = dict(
 #       or not by default.
 #   - `base_batch_size` = (8 GPUs) x (4 samples per GPU).
 # auto_scale_lr = dict(enable=False, base_batch_size=32)
-auto_scale_lr = dict(
-    enable=False, base_batch_size=train_gpu_size * train_batch_size)
+auto_scale_lr = dict(enable=False, base_batch_size=train_gpu_size * train_batch_size)
 
 if train_gpu_size > 1:
-    sync_bn = 'torch'
+    sync_bn = "torch"
 
 randomness = dict(seed=0, diff_rank_seed=False, deterministic=True)

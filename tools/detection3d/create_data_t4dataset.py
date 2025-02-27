@@ -108,7 +108,7 @@ def get_info(
         l2e_t,
     ) = extract_tier4_data(t4, sample, lidar_token)
 
-    sd_record:SampleData = t4.get("sample_data", lidar_token)
+    sd_record: SampleData = t4.get("sample_data", lidar_token)
 
     info = get_empty_standard_data_info(cfg.camera_types)
 
