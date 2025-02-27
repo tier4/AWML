@@ -38,27 +38,28 @@ def allocate_buffers(engine, context):
     return inputs, outputs, stream
 
 def infer(engine, context, inputs, outputs, stream, iterations=100):
-    """Run inference using execute_async_v3 and measure execution time."""
-    
-    # Generate random input data and copy it to device
+    """Run inference using execute_async_v3 and measure execution time with statistics."""
+
+    # Generate random input data and copy it to the device
     for name, inp in inputs.items():
         inp["host"] = np.random.random(inp["host"].shape).astype(inp["host"].dtype)
         cuda.memcpy_htod_async(inp["device"], inp["host"], stream)
 
     # Warm-up run
     context.execute_async_v3(stream_handle=stream.handle)
-
-    # Synchronize and start timing
     stream.synchronize()
-    start_time = time.perf_counter()
+
+    # Timing variables
+    times = []
 
     # Run inference multiple times
     for _ in range(iterations):
+        start_time = time.perf_counter()
         context.execute_async_v3(stream_handle=stream.handle)
+        stream.synchronize()
+        end_time = time.perf_counter()
 
-    # Synchronize and stop timing
-    stream.synchronize()
-    end_time = time.perf_counter()
+        times.append((end_time - start_time) * 1000)  # Convert to milliseconds
 
     # Copy outputs back to host
     for name, out in outputs.items():
@@ -66,8 +67,24 @@ def infer(engine, context, inputs, outputs, stream, iterations=100):
 
     stream.synchronize()
 
-    avg_time = (end_time - start_time) / iterations
-    print(f"Average inference time: {avg_time * 1000:.3f} ms")
+    # Compute statistics
+    mean_time = np.mean(times)
+    std_dev = np.std(times)
+    percentiles = np.percentile(times, [50, 80, 90, 95, 99])
+
+    # Print formatted results
+    print("\nInference Execution Time Statistics:")
+    print("-" * 50)
+    print(f"Iterations       : {iterations}")
+    print(f"Mean Time        : {mean_time:.3f} ms")
+    print(f"Standard Dev.    : {std_dev:.3f} ms")
+    print(f"50th Percentile  : {percentiles[0]:.3f} ms")
+    print(f"80th Percentile  : {percentiles[1]:.3f} ms")
+    print(f"90th Percentile  : {percentiles[2]:.3f} ms")
+    print(f"95th Percentile  : {percentiles[3]:.3f} ms")
+    print(f"99th Percentile  : {percentiles[4]:.3f} ms")
+    print("-" * 50)
+
 
 def get_device_info(device_id=0):
     """Print the GPU device being used."""
