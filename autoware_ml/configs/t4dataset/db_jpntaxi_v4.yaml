@@ -1,13 +1,6 @@
 version: 1
 dataset_version: db-jpntaxi-v4.0
 
-docs: |
-  Product: JPNTAXI
-  Place: Odaiba
-  Amount: About 6000 frames
-  Sensor: Velodyne LiDAR + C1 Camera + Radar data
-  Annotation: WIP
-
 train:
   - a2e3c321-7b5a-439d-847b-18b54e74aecf
   - e2a32890-1e00-496b-a8a3-7bd623e06b30
@@ -435,7 +428,6 @@ train:
   - 988f407d-581f-4b77-bde5-470534941f05
   - a9452ca7-84d4-487f-bf5d-ca7d8e31b01c
   - 37989cf7-eb68-40ae-bb18-93d993011fe0
-  #- 8db9a7fc-dc8f-4d2e-84f9-1ab273b4d866 # velocity bug
   - cfa6f007-1f2a-4f7c-9d24-98e7ae2d9762
   - b9dbe01c-5d09-4f66-aecf-85697a0ca235
   - 07e78a5f-3e52-4c5d-aee4-a27398cc2bb3

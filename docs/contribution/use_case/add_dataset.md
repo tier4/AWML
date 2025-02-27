@@ -28,23 +28,15 @@ By using WebAuto system, a dataset engineer modify dataset.
 # db_j6gen2_v2.yaml
 
 version: 1
-dataset_version: db-j6gen2-v2.0
-docs: |
-  Product: J6Gen2
-  Place: Shiojiri
-  Amount: About 5000 frames
-  Sensor: Hesai LiDAR + C1 Camera + Radar data
-  Annotation: All the data are collected at 10Hz and annotated at 2Hz
-
 train:
-  - 80b37b8c-ae9d-4641-a921-0b0c2012eee8 #DB-J6Gen2-v2-odaiba_0
-  - 4d50abff-427f-4fa8-9c04-99dc13a3a836 #DB-J6Gen2-v2-odaiba_3
+  - 80b37b8c-ae9d-4641-a921-0b0c2012eee8
+  - 4d50abff-427f-4fa8-9c04-99dc13a3a836
 val:
-  - c8cf2fe3-9097-4f8d-8984-e99c4ddd0ced #DB-J6Gen2-v2-odaiba_1
-  - a1f10b82-6f10-47ab-a253-a12a2f131929 #DB-J6Gen2-v2-odaiba_4
+  - c8cf2fe3-9097-4f8d-8984-e99c4ddd0ced
+  - a1f10b82-6f10-47ab-a253-a12a2f131929
 test:
-  - 9e973a55-3f70-48e0-8b37-a68b66a99686 #DB-J6Gen2-v2-odaiba_2
-  - 54a6cc24-ec9d-47f5-b2bf-813d0da9bf47 #DB-J6Gen2-v2-odaiba_5
+  - 9e973a55-3f70-48e0-8b37-a68b66a99686
+  - 54a6cc24-ec9d-47f5-b2bf-813d0da9bf47
 ```
 
 For PR review list with code owner

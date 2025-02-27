@@ -6,7 +6,6 @@ The main topic is following.
 - New architecture for project's configs
 
 We integrated fine tuning strategy for 3D detection.
-Please see [experiment result](https://github.com/tier4/autoware-ml/issues/148) and [The PR updating configs](https://github.com/tier4/autoware-ml/pull/320) in detail.
 
 - Integrated model management with S3
 

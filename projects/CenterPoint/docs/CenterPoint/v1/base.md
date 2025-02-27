@@ -34,31 +34,30 @@
 
 - Evaluation result with db_jpntaxi_v1 + db_jpntaxi_v2 + db_jpntaxi_v4 + db_gsm8_v1 + db_j6_v1 + db_j6_v2 + db_j6_v3 (total frames: 3026):
 
-| Eval range = 120m             | mAP  | car  | truck | bus  | bicycle | pedestrian |
-| ----------------------------- | ---- | ---- | ----- | ---- | ------- | ---------- |
-| base/1.1 (122.88m)            | 64.7 | 76.0 | 53.2  | 77.6 | 52.4    | 64.0       |
-| base/1.0 (122.88m)            | 62.6 | 74.2 | 48.3  | 75.4 | 51.6    | 63.4       |
+| Eval range = 120m  | mAP  | car  | truck | bus  | bicycle | pedestrian |
+| ------------------ | ---- | ---- | ----- | ---- | ------- | ---------- |
+| base/1.1 (122.88m) | 64.7 | 76.0 | 53.2  | 77.6 | 52.4    | 64.0       |
+| base/1.0 (122.88m) | 62.6 | 74.2 | 48.3  | 75.4 | 51.6    | 63.4       |
 
 
 - Evaluation result with db_jpntaxi_v1 + db_jpntaxi_v2 + db_jpntaxi_v4 + db_gsm8_v1 + db_j6_v1 + db_j6_v2 (total frames: 2787):
 
-| Eval range = 120m             | mAP  | car  | truck | bus  | bicycle | pedestrian |
-| ----------------------------- | ---- | ---- | ----- | ---- | ------- | ---------- |
-| base/1.1 (122.88m)            | 64.8 | 76.1 | 53.2  | 78.7 | 51.8    | 64.4       |
-| base/1.0 (122.88m)            | 64.5 | 75.0 | 50.7  | 78.1 | 53.2    | 64.8       |
+| Eval range = 120m  | mAP  | car  | truck | bus  | bicycle | pedestrian |
+| ------------------ | ---- | ---- | ----- | ---- | ------- | ---------- |
+| base/1.1 (122.88m) | 64.8 | 76.1 | 53.2  | 78.7 | 51.8    | 64.4       |
+| base/1.0 (122.88m) | 64.5 | 75.0 | 50.7  | 78.1 | 53.2    | 64.8       |
 
 - Evaluation result with db_j6_v3  (total frames: 239):
 
-| Eval range = 120m             | mAP  | car  | truck | bus  | bicycle | pedestrian |
-| ----------------------------- | ---- | ---- | ----- | ---- | ------- | ---------- |
-| base/1.1 (122.88m)            | 49.2 | 77.0 | 54.1  | 19.1 | 76.6    | 19.5       |
-| base/1.0 (122.88m)            | 38.6 | 71.4 | 29.4  | 17.8 | 67.1    | 7.5        |
+| Eval range = 120m  | mAP  | car  | truck | bus  | bicycle | pedestrian |
+| ------------------ | ---- | ---- | ----- | ---- | ------- | ---------- |
+| base/1.1 (122.88m) | 49.2 | 77.0 | 54.1  | 19.1 | 76.6    | 19.5       |
+| base/1.0 (122.88m) | 38.6 | 71.4 | 29.4  | 17.8 | 67.1    | 7.5        |
 
 - Model
   - Training dataset: db_jpntaxi_v1 + db_jpntaxi_v2 + db_jpntaxi_v3 + db_gsm8_v1 + db_j6_v1 + db_j6_v2 + db_j6_v3 (total frames: 40769)
-  - [PR](https://github.com/tier4/autoware-ml/pull/389)
   - [Config file path](https://github.com/tier4/autoware-ml/blob/d037b1d511d0ffb6f37f3e4e13460bc8483e2ccf/projects/CenterPoint/configs/t4dataset/Centerpoint/second_secfpn_2xb8_121m_base.py)
-  - Deployed onnx model and ROS parameter files [[webauto]](https://evaluation.tier4.jp/evaluation/mlpackages/7156b453-2861-4ae9-b135-e24e48cc9029/releases/48c47d87-5f09-415d-9f69-d9857f513fff?project_id=zWhWRzei&tab=items)
+  - Deployed onnx model and ROS parameter files [[WebAuto (for internal)]](https://evaluation.tier4.jp/evaluation/mlpackages/7156b453-2861-4ae9-b135-e24e48cc9029/releases/48c47d87-5f09-415d-9f69-d9857f513fff?project_id=zWhWRzei&tab=items)
   - Deployed onnx and ROS parameter files [[model-zoo]]
     - [detection_class_remapper.param.yaml](https://download.autoware-ml-model-zoo.tier4.jp/autoware-ml/models/centerpoint/centerpoint/t4base/v1.1/detection_class_remapper.param.yaml)
     - [centerpoint_t4base_ml_package.param.yaml](https://download.autoware-ml-model-zoo.tier4.jp/autoware-ml/models/centerpoint/centerpoint/t4base/v1.1/centerpoint_t4base_ml_package.param.yaml)
@@ -74,7 +73,7 @@
   - Total mAP (eval range = 120m): 0.647
 
 | class_name | mAP  | AP@0.5m | AP@1.0m | AP@2.0m | AP@4.0m |
-| ---- | ---- | ---- | ---- | ---- | ---- |
+| ---------- | ---- | ------- | ------- | ------- | ------- |
 | car        | 76.0 | 66.9    | 77.4    | 79.5    | 80.4    |
 | truck      | 53.2 | 32.4    | 53.3    | 60.7    | 66.5    |
 | bus        | 77.6 | 66.4    | 79.8    | 81.4    | 82.8    |
@@ -85,7 +84,7 @@
   - Total mAP (eval range = 120m): 0.648
 
 | class_name | mAP  | AP@0.5m | AP@1.0m | AP@2.0m | AP@4.0m |
-| ---- | ---- | ---- | ---- | ---- | ---- |
+| ---------- | ---- | ------- | ------- | ------- | ------- |
 | car        | 76.1 | 66.6    | 77.9    | 79.6    | 80.4    |
 | truck      | 53.2 | 31.9    | 53.2    | 60.8    | 67.0    |
 | bus        | 78.7 | 67.4    | 80.9    | 82.6    | 84.0    |
@@ -96,7 +95,7 @@
   - Total mAP (eval range = 120m): 0.492
 
 | class_name | mAP  | AP@0.5m | AP@1.0m | AP@2.0m | AP@4.0m |
-| ---- | ---- | ---- | ---- | ---- | ---- |
+| ---------- | ---- | ------- | ------- | ------- | ------- |
 | car        | 77.0 | 71.3    | 77.6    | 79.0    | 80.1    |
 | truck      | 54.1 | 44.7    | 54.2    | 56.7    | 60.5    |
 | bus        | 19.1 | 13.8    | 20.9    | 20.9    | 20.9    |
@@ -107,7 +106,7 @@
   - Total mAP (eval range = 120m): 0.386
 
 | class_name | mAP  | AP@0.5m | AP@1.0m | AP@2.0m | AP@4.0m |
-| ---- | ---- | ---- | ---- | ---- | ---- |
+| ---------- | ---- | ------- | ------- | ------- | ------- |
 | car        | 71.4 | 65.6    | 71.5    | 73.7    | 74.9    |
 | truck      | 29.4 | 21.8    | 29.6    | 31.9    | 34.4    |
 | bus        | 17.8 | 15.3    | 18.6    | 18.6    | 18.6    |
@@ -118,7 +117,7 @@
   - Total mAP (eval range = 120m): 0.626
 
 | class_name | mAP  | AP@0.5m | AP@1.0m | AP@2.0m | AP@4.0m |
-| ---- | ---- | ---- | ---- | ---- | ---- |
+| ---------- | ---- | ------- | ------- | ------- | ------- |
 | car        | 74.2 | 64.0    | 75.7    | 78.1    | 79.0    |
 | truck      | 48.3 | 26.1    | 48.5    | 56.7    | 62.1    |
 | bus        | 75.4 | 65.9    | 76.8    | 78.8    | 80.1    |
@@ -146,16 +145,15 @@ Old library is based on mmdetection3d v0 and we integrate to mmdetection3d v1 ba
 
 - Model
   - Training dataset: DB JPNTAXI v1.0 + DB JPNTAXI v2.0 + DB JPNTAXI v3.0 + DB GSM8 v1.0 + DB J6 v1.0 (total frames: 34,137)
-  - [PR](https://github.com/tier4/autoware-ml/pull/159)
   - [Config file path](https://github.com/tier4/autoware-ml/blob/5f472170f07251184dc009a1ec02be3b4f3bf98c/autoware_ml/configs/detection3d/dataset/t4dataset/base.py)
-  - Deployed onnx model and ROS parameter files [[webauto]](https://evaluation.tier4.jp/evaluation/mlpackages/7156b453-2861-4ae9-b135-e24e48cc9029/releases/1711f9c5-defa-4af1-b94b-e7978500df89?project_id=zWhWRzei)
+  - Deployed onnx model and ROS parameter files [[WebAuto (for internal)]](https://evaluation.tier4.jp/evaluation/mlpackages/7156b453-2861-4ae9-b135-e24e48cc9029/releases/1711f9c5-defa-4af1-b94b-e7978500df89?project_id=zWhWRzei)
   - Deployed onnx and ROS parameter files [[model-zoo]]
     - [detection_class_remapper.param.yaml](https://download.autoware-ml-model-zoo.tier4.jp/autoware-ml/models/centerpoint/centerpoint/t4base/v1.0/detection_class_remapper.param.yaml)
     - [centerpoint_t4base_ml_package.param.yaml](https://download.autoware-ml-model-zoo.tier4.jp/autoware-ml/models/centerpoint/centerpoint/t4base/v1.0/centerpoint_t4base_ml_package.param.yaml)
     - [deploy_metadata.yaml](https://download.autoware-ml-model-zoo.tier4.jp/autoware-ml/models/centerpoint/centerpoint/t4base/v1.0/deploy_metadata.yaml)
     - [pts_voxel_encoder_centerpoint_t4base.onnx](https://download.autoware-ml-model-zoo.tier4.jp/autoware-ml/models/centerpoint/centerpoint/t4base/v1.0/pts_voxel_encoder_centerpoint_t4base.onnx)
     - [pts_backbone_neck_head_centerpoint_t4base.onnx](https://download.autoware-ml-model-zoo.tier4.jp/autoware-ml/models/centerpoint/centerpoint/t4base/v1.0/pts_backbone_neck_head_centerpoint_t4base.onnx)
-  - Training results [[GDrive]](https://drive.google.com/drive/u/0/folders/1bMarMoNQXdF_3nB-BjFx28S5HMIfgeIJ)
+  - Training results [[Google drive (for internal)]](https://drive.google.com/drive/u/0/folders/1bMarMoNQXdF_3nB-BjFx28S5HMIfgeIJ)
   - Training results [model-zoo]
     - [logs.zip](https://download.autoware-ml-model-zoo.tier4.jp/autoware-ml/models/centerpoint/centerpoint/t4base/v1.0/logs.zip)
     - [checkpoint_best.pth](https://download.autoware-ml-model-zoo.tier4.jp/autoware-ml/models/centerpoint/centerpoint/t4base/v1.0/epoch_50.pth)

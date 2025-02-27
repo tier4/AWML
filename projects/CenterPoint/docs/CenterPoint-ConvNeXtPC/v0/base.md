@@ -78,16 +78,15 @@
 
 - Model
   - Training dataset: DB JPNTAXI v1.0 + DB JPNTAXI v2.0 + DB JPNTAXI v3.0 + DB GSM8 v1.0 + DB J6 v1.0 (total frames: 35,392)
-  - [PR](https://github.com/tier4/autoware-ml/pull/352)
   - [Config file path](https://github.com/tier4/autoware-ml/blob/9aead19d7f42b711fba8ffa38ec82ce135300617/projects/CenterPoint/configs/t4dataset/pillar_020_convnext_standard_secfpn_4xb8_121m_base.py)
-  - Deployed onnx model and ROS parameter files [[GDrive]](https://drive.google.com/drive/folders/1dhthG6LtbZTS91U2OQvd5iQ1q58b2ZEH)
+  - Deployed onnx model and ROS parameter files [[Google drive (for internal)]](https://drive.google.com/drive/folders/1dhthG6LtbZTS91U2OQvd5iQ1q58b2ZEH)
   - Deployed onnx and ROS parameter files [[model-zoo]]
     - [detection_class_remapper.param.yaml](https://download.autoware-ml-model-zoo.tier4.jp/autoware-ml/models/centerpoint/centerpoint-convnextpc/t4base/v0.2/detection_class_remapper.param.yaml)
     - [centerpoint_x2_ml_package.param.yaml](https://download.autoware-ml-model-zoo.tier4.jp/autoware-ml/models/centerpoint/centerpoint-convnextpc/t4base/v0.2/centerpoint_x2_ml_package.param.yaml)
     - [deploy_metadata.yaml](https://download.autoware-ml-model-zoo.tier4.jp/autoware-ml/models/centerpoint/centerpoint-convnextpc/t4base/v0.2/deploy_metadata.yaml)
     - [pts_voxel_encoder_centerpoint_x2.onnx](https://download.autoware-ml-model-zoo.tier4.jp/autoware-ml/models/centerpoint/centerpoint-convnextpc/t4base/v0.2/pts_voxel_encoder_centerpoint_x2.onnx)
     - [pts_backbone_neck_head_centerpoint_x2.onnx](https://download.autoware-ml-model-zoo.tier4.jp/autoware-ml/models/centerpoint/centerpoint-convnextpc/t4base/v0.2/pts_backbone_neck_head_centerpoint_x2.onnx)
-  - Training results [[GDrive]](https://drive.google.com/drive/folders/1dhthG6LtbZTS91U2OQvd5iQ1q58b2ZEH)
+  - Training results [[Google drive (for internal)]](https://drive.google.com/drive/folders/1dhthG6LtbZTS91U2OQvd5iQ1q58b2ZEH)
   - Training results [model-zoo]
     - [logs.zip](https://download.autoware-ml-model-zoo.tier4.jp/autoware-ml/models/centerpoint/centerpoint-convnextpc/t4base/v0.2/logs.zip)
     - [checkpoint_best.pth](https://download.autoware-ml-model-zoo.tier4.jp/autoware-ml/models/centerpoint/centerpoint-convnextpc/t4base/v0.2/epoch_30.pth)
@@ -192,16 +191,15 @@
 
 - Model
   - Training dataset: DB JPNTAXI v1.0 + DB JPNTAXI v2.0 + DB JPNTAXI v3.0 + DB GSM8 v1.0 + DB J6 v1.0 (total frames: 35,392)
-  - [PR](https://github.com/tier4/autoware-ml/pull/352)
   - [Config file path](https://github.com/tier4/autoware-ml/blob/9aead19d7f42b711fba8ffa38ec82ce135300617/projects/CenterPoint/configs/t4dataset/pillar_020_convnext_small_secfpn_4xb8_121m_base.py)
-  - Deployed onnx model and ROS parameter files [[GDrive]](https://drive.google.com/drive/folders/1WuP0jo1j6HeAVGf5KehNjb5e9SiLdmgb)
+  - Deployed onnx model and ROS parameter files [[Google drive (for internal)]](https://drive.google.com/drive/folders/1WuP0jo1j6HeAVGf5KehNjb5e9SiLdmgb)
   - Deployed onnx and ROS parameter files [[model-zoo]]
     - [detection_class_remapper.param.yaml](https://download.autoware-ml-model-zoo.tier4.jp/autoware-ml/models/centerpoint/centerpoint-convnextpc/t4base/v0.1/detection_class_remapper.param.yaml)
     - [centerpoint_x2_ml_package.param.yaml](https://download.autoware-ml-model-zoo.tier4.jp/autoware-ml/models/centerpoint/centerpoint-convnextpc/t4base/v0.1/centerpoint_x2_ml_package.param.yaml)
     - [deploy_metadata.yaml](https://download.autoware-ml-model-zoo.tier4.jp/autoware-ml/models/centerpoint/centerpoint-convnextpc/t4base/v0.1/deploy_metadata.yaml)
     - [pts_voxel_encoder_centerpoint_x2.onnx](https://download.autoware-ml-model-zoo.tier4.jp/autoware-ml/models/centerpoint/centerpoint-convnextpc/t4base/v0.1/pts_voxel_encoder_centerpoint_x2.onnx)
     - [pts_backbone_neck_head_centerpoint_x2.onnx](https://download.autoware-ml-model-zoo.tier4.jp/autoware-ml/models/centerpoint/centerpoint-convnextpc/t4base/v0.1/pts_backbone_neck_head_centerpoint_x2.onnx)
-  - Training results [[GDrive]](https://drive.google.com/drive/folders/1s4V07dXHO5jayExdho3qnP02yZxvp0gY)
+  - Training results [[Google drive (for internal)]](https://drive.google.com/drive/folders/1s4V07dXHO5jayExdho3qnP02yZxvp0gY)
   - Training results [model-zoo]
     - [logs.zip](https://download.autoware-ml-model-zoo.tier4.jp/autoware-ml/models/centerpoint/centerpoint-convnextpc/t4base/v0.1/logs.zip)
     - [checkpoint_best.pth](https://download.autoware-ml-model-zoo.tier4.jp/autoware-ml/models/centerpoint/centerpoint-convnextpc/t4base/v0.1/epoch_30.pth)

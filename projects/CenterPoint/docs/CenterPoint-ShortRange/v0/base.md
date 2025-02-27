@@ -8,26 +8,26 @@
   - [Comparisons in details](https://docs.google.com/spreadsheets/d/1cOIwmyiXA4Z0uAEl1mkPoaAjqJJ8Mq1O66tzzAOW15I/edit?gid=980227559#gid=980227559)
   - Class mAP for center distance (0.5m, 1.0m, 2.0m, 4.0m)
 
-| eval range: 52m                             | mAP  | car <br> (629,212) | truck <br> (163,402) | bus <br> (39,904) | bicycle <br> (48,043) | pedestrian <br> (383,553) |
-| --------------------------------------------| ---- | ------------------ | -------------------- | ----------------- | --------------------- | ------------------------- |
-| CenterPoint-ShortRange base/0.1       			| 77.4 | 83.2               | 67.5                 | 79.4              | 82.3                  | 74.4                      |
-| CenterPoint-ShortRange base/0.2    					| 76.7 | 87.9               | 64.5                 | 84.3              | 75.5                  | 71.3                      |
-| CenterPoint-ShortRange base/0.3    					| 81.5 | 89.1               | 71.3                 | 91.3              | 81.0                  | 75.1                      |
+| eval range: 52m                 | mAP  | car <br> (629,212) | truck <br> (163,402) | bus <br> (39,904) | bicycle <br> (48,043) | pedestrian <br> (383,553) |
+| ------------------------------- | ---- | ------------------ | -------------------- | ----------------- | --------------------- | ------------------------- |
+| CenterPoint-ShortRange base/0.1 | 77.4 | 83.2               | 67.5                 | 79.4              | 82.3                  | 74.4                      |
+| CenterPoint-ShortRange base/0.2 | 76.7 | 87.9               | 64.5                 | 84.3              | 75.5                  | 71.3                      |
+| CenterPoint-ShortRange base/0.3 | 81.5 | 89.1               | 71.3                 | 91.3              | 81.0                  | 75.1                      |
 
 - Deployment summary
 
-| Runtime (ms)                       | Min  | P25      | P50    | P75    | P90    | Max    | Mean            |  
-| --------------------------------   | ---- | ------   | ------ | -----  | ------ | -----  |---------------  |
-| CenterPoint-ShortRange base/0.1    | 5.91 | 9.08     | 10.28  |  12.23 | 16.77  | 30.79  |  11.33 (+-3.50) |
-| CenterPoint-ShortRange base/0.2    | 5.91 | 9.08     | 10.28  |  12.23 | 16.77  |	30.79  |  11.33 (+-3.50) |
-| CenterPoint-ShortRange base/0.3    | 9.96 | 12.29		 | 14.64  |  16.32 | 19.03	|	45.82  |  15.35 (+-3.36) |
+| Runtime (ms)                    | Min  | P25   | P50   | P75   | P90   | Max   | Mean           |
+| ------------------------------- | ---- | ----- | ----- | ----- | ----- | ----- | -------------- |
+| CenterPoint-ShortRange base/0.1 | 5.91 | 9.08  | 10.28 | 12.23 | 16.77 | 30.79 | 11.33 (+-3.50) |
+| CenterPoint-ShortRange base/0.2 | 5.91 | 9.08  | 10.28 | 12.23 | 16.77 | 30.79 | 11.33 (+-3.50) |
+| CenterPoint-ShortRange base/0.3 | 9.96 | 12.29 | 14.64 | 16.32 | 19.03 | 45.82 | 15.35 (+-3.36) |
 
 
-| GPU Memory (MB)                    | Min  	  | P25      		| P50    		| P75    		 | P90       | Max    	| Mean            	 |  
-| --------------------------------   | -------- | ----------  | --------- | ---------- | --------  | -------  | -----------------  |
-| CenterPoint-ShortRange base/0.1    | 4486.06  | 4508.69     | 4521.00  	| 4524.44 	 | 4543.19   | 4633.81  |  4519.30 (+-20.38) |
-| CenterPoint-ShortRange base/0.2    | 4486.06  | 4508.69     | 4521.00   | 4524.44 	 | 4543.19   | 4633.81  |  4519.30 (+-20.38) |
-| CenterPoint-ShortRange base/0.3    | 3879.88  | 3882.56		 	| 3884.44  	| 4084.62 	 | 4087.56	 | 4218.75  |  3948.19 (+-96.93) |
+| GPU Memory (MB)                 | Min     | P25     | P50     | P75     | P90     | Max     | Mean              |
+| ------------------------------- | ------- | ------- | ------- | ------- | ------- | ------- | ----------------- |
+| CenterPoint-ShortRange base/0.1 | 4486.06 | 4508.69 | 4521.00 | 4524.44 | 4543.19 | 4633.81 | 4519.30 (+-20.38) |
+| CenterPoint-ShortRange base/0.2 | 4486.06 | 4508.69 | 4521.00 | 4524.44 | 4543.19 | 4633.81 | 4519.30 (+-20.38) |
+| CenterPoint-ShortRange base/0.3 | 3879.88 | 3882.56 | 3884.44 | 4084.62 | 4087.56 | 4218.75 | 3948.19 (+-96.93) |
 
 ## Release
 ### CenterPoint-ShortRange base/0.3
@@ -112,16 +112,15 @@ where it is suspected that the higher resolution setting ([0.16, 0.16, 8.0]) sho
 
 - Model
   - Training dataset: DB JPNTAXI v1.0 + DB JPNTAXI v2.0 + DB JPNTAXI v3.0 + DB GSM8 v1.0 + DB J6 v1.0 (total frames: 35,392)
-  - [PR](https://github.com/tier4/autoware-ml/pull/369)
   - [Config file path](https://github.com/tier4/autoware-ml/blob/cacf3f3dc282aed5760aeb596094e0652300c113/projects/CenterPoint/configs/t4dataset/pillar_016_second_secfpn_2xb8_50m_base.py)
-  - Deployed onnx model and ROS parameter files [[GDrive]](https://drive.google.com/drive/folders/18dNXXK0BzgXX3VKkiTMh59cj3b1-HMQP?usp=drive_link)
+  - Deployed onnx model and ROS parameter files [[Google drive (for internal)]](https://drive.google.com/drive/folders/18dNXXK0BzgXX3VKkiTMh59cj3b1-HMQP?usp=drive_link)
 	- Deployed onnx and ROS parameter files [model-zoo]
     - [detection_class_remapper.param.yaml](https://download.autoware-ml-model-zoo.tier4.jp/autoware-ml/models/centerpoint/centerpoint-shortrange/t4base/v0.1/detection_class_remapper.param.yaml)
     - [centerpoint_x2_ml_package.param.yaml](https://download.autoware-ml-model-zoo.tier4.jp/autoware-ml/models/centerpoint/centerpoint-shortrange/t4base/v0.1/centerpoint_x2_ml_package.param.yaml)
     - [deploy_metadata.yaml](https://download.autoware-ml-model-zoo.tier4.jp/autoware-ml/models/centerpoint/centerpoint-shortrange/t4base/v0.1/deploy_metadata.yaml)
     - [pts_voxel_encoder_centerpoint_x2.onnx](https://download.autoware-ml-model-zoo.tier4.jp/autoware-ml/models/centerpoint/centerpoint-shortrange/t4base/v0.1/pts_voxel_encoder_centerpoint_x2.onnx)
     - [pts_backbone_neck_head_centerpoint_x2.onnx](https://download.autoware-ml-model-zoo.tier4.jp/autoware-ml/models/centerpoint/centerpoint-shortrange/t4base/v0.1/pts_backbone_neck_head_centerpoint_x2.onnx)
-  - Training results [[GDrive]](https://drive.google.com/drive/folders/1V9QDda9WLo6T-t0IA4A0NZ_xJDgtCrb1?usp=drive_link)
+  - Training results [[Google drive (for internal)]](https://drive.google.com/drive/folders/1V9QDda9WLo6T-t0IA4A0NZ_xJDgtCrb1?usp=drive_link)
   - Training results [model-zoo]
     - [logs.zip](https://download.autoware-ml-model-zoo.tier4.jp/autoware-ml/models/centerpoint/centerpoint-shortrange/t4base/v0.1/logs.zip)
     - [checkpoint_best.pth](https://download.autoware-ml-model-zoo.tier4.jp/autoware-ml/models/centerpoint/centerpoint-shortrange/t4base/v0.2/epoch_50.pth)
