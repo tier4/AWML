@@ -1,5 +1,5 @@
 # Onnx export
-onnx==1.16.0
+onnx==1.16.2
 onnx_simplifier==0.4.8
 onnxsim==0.4.10
 onnxruntime==1.13.1
