@@ -118,4 +118,6 @@ If you want to know about `AWML`, you should read following pages.
 
 ## Reference
 
-- [Autoware](https://github.com/autowarefoundation/autoware) is a registered trademark of the Autoware Foundation.
+- [Autoware](https://github.com/autowarefoundation/autoware)
+  - Autoware is a registered trademark of the Autoware Foundation.
+- [OpenMMLab](https://github.com/open-mmlab)
