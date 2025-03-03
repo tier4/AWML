@@ -1,13 +1,13 @@
-ARG AWML_BASE_IMAGE="ghcr.io/tier4/AWML-base:latest"
+ARG AWML_BASE_IMAGE="ghcr.io/tier4/autoware-ml-base:latest"
 FROM ${AWML_BASE_IMAGE}
 
 # Install pip dependencies (1)
 RUN python3 -m pip --no-cache-dir install \
-    tensorrt
+  tensorrt
 
 # Install pip dependencies (depend on 1)
 RUN python3 -m pip --no-cache-dir install \
-    onnx-graphsurgeon
+  onnx-graphsurgeon
 
 # Apply patches
 COPY mmdeploy.patch /tmp/mmdeploy.patch

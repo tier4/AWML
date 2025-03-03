@@ -45,14 +45,14 @@ git clone https://github.com/tier4/AWML
   - See https://github.com/tier4/AWML/pkgs/container/autoware-ml-base
 
 ```
-docker pull ghcr.io/tier4/AWML-base:latest
+docker pull ghcr.io/tier4/autoware-ml-base:latest
 ```
 
 - Docker pull for `AWML` environment with `ROS2`
   - See https://github.com/tier4/AWML/pkgs/container/autoware-ml-ros2
 
 ```
-docker pull ghcr.io/tier4/AWML-ros2:latest
+docker pull ghcr.io/tier4/autoware-ml-ros2:latest
 ```
 
 ## Tips
