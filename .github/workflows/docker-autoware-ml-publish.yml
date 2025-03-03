@@ -46,7 +46,7 @@ jobs:
       with:
         push: true
         tags: |
-          ghcr.io/tier4/AWML-base:${{ env.TAG }}
+          ghcr.io/tier4/autoware-ml-base:${{ env.TAG }}
 
     - name: Build and push Docker image with ROS2 support
       uses: docker/build-push-action@v2
@@ -54,6 +54,6 @@ jobs:
         file: ./tools/setting_environment/ros2/Dockerfile
         push: true
         tags: |
-          ghcr.io/tier4/AWML-ros2:${{ env.TAG }}
+          ghcr.io/tier4/autoware-ml-ros2:${{ env.TAG }}
         build-args: |
-          AWML_BASE_IMAGE=ghcr.io/tier4/AWML-base:${{ env.TAG }}
+          AWML_BASE_IMAGE=ghcr.io/tier4/autoware-ml-base:${{ env.TAG }}
