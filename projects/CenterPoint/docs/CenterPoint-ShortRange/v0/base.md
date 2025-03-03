@@ -112,7 +112,7 @@ where it is suspected that the higher resolution setting ([0.16, 0.16, 8.0]) sho
 
 - Model
   - Training dataset: DB JPNTAXI v1.0 + DB JPNTAXI v2.0 + DB JPNTAXI v3.0 + DB GSM8 v1.0 + DB J6 v1.0 (total frames: 35,392)
-  - [Config file path](https://github.com/tier4/autoware-ml/blob/cacf3f3dc282aed5760aeb596094e0652300c113/projects/CenterPoint/configs/t4dataset/pillar_016_second_secfpn_2xb8_50m_base.py)
+  - [Config file path](https://github.com/tier4/AWML/blob/cacf3f3dc282aed5760aeb596094e0652300c113/projects/CenterPoint/configs/t4dataset/pillar_016_second_secfpn_2xb8_50m_base.py)
   - Deployed onnx model and ROS parameter files [[Google drive (for internal)]](https://drive.google.com/drive/folders/18dNXXK0BzgXX3VKkiTMh59cj3b1-HMQP?usp=drive_link)
 	- Deployed onnx and ROS parameter files [model-zoo]
     - [detection_class_remapper.param.yaml](https://download.autoware-ml-model-zoo.tier4.jp/autoware-ml/models/centerpoint/centerpoint-shortrange/t4base/v0.1/detection_class_remapper.param.yaml)

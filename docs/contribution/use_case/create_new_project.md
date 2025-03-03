@@ -19,8 +19,8 @@ If someone want to catch up this model, it is best situation that they need to s
 
 As another way, which we recommend for especially researcher, you can make a new algorithm or a new tool on your repository.
 The repository [mm-project-template](https://github.com/scepter914/mm-project-template) is one example of template repository.
-You can start from this template and you can add code of `/tools/*` and `/projects/*` from `autoware-ml` to use for your a new algorithm or a new tool.
-We are glad if you want to contribute to `autoware-ml` and the PR to add for the document of [community_support](/docs/tips/community_support.md).
+You can start from this template and you can add code of `/tools/*` and `/projects/*` from `AWML` to use for your a new algorithm or a new tool.
+We are glad if you want to contribute to `AWML` and the PR to add for the document of [community_support](/docs/tips/community_support.md).
 We hope it promotes the community of robotics ML researchers and engineers.
 
 For PR review list with code owner

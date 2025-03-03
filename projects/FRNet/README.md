@@ -1,7 +1,7 @@
 # FRNet
 ## Summary
 
-- [Support priority](https://github.com/tier4/autoware-ml/blob/main/docs/design/autoware_ml_design.md#support-priority): Tier B
+- [Support priority](https://github.com/tier4/AWML/blob/main/docs/design/autoware_ml_design.md#support-priority): Tier B
 - ROS package: [lidar_frnet_py](https://github.com/tier4/lidar_frnet_py) (prototype)
 - Supported dataset
   - [x] NuScenes

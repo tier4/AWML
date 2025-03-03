@@ -1,7 +1,7 @@
 # TransFusion
 ## Summary
 
-- [Support priority](https://github.com/tier4/autoware-ml/blob/main/docs/design/autoware_ml_design.md#support-priority): Tier S
+- [Support priority](https://github.com/tier4/AWML/blob/main/docs/design/autoware_ml_design.md#support-priority): Tier S
 - ROS package: [autoware_lidar_transfusion](https://github.com/autowarefoundation/autoware.universe/tree/main/perception/autoware_lidar_transfusion)
 - Supported dataset
   - [x] NuScenes
@@ -12,7 +12,7 @@
   - [x] Add script to make .onnx file and deploy to Autoware
   - [ ] Add unit test
 - Limited feature
-  - For now, Camera-LiDAR fusion model is not supported in `autoware-ml` because of performance.
+  - For now, Camera-LiDAR fusion model is not supported in `AWML` because of performance.
 
 ## Results and models
 

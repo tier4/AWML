@@ -1,7 +1,7 @@
 # BEVFusion
 ## Summary
 
-- [Support priority](https://github.com/tier4/autoware-ml/blob/main/docs/design/autoware_ml_design.md#support-priority): Tier A
+- [Support priority](https://github.com/tier4/AWML/blob/main/docs/design/autoware_ml_design.md#support-priority): Tier A
 - ROS package: [Link](https://github.com/knzo25/bevfusion_ros2)
 - Supported datasets
   - [x] NuScenes
@@ -55,7 +55,7 @@ By default, mmcv's backend will be used, but the commonly adopted backend is tra
 pip install spconv-cu120
 ```
 
-`autoware-ml` will automatically select this implementation if the dependency is installed.
+`AWML` will automatically select this implementation if the dependency is installed.
 
 ### 2. Train
 #### 2.1. Train the LiDAR-only model first

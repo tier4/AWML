@@ -28,10 +28,10 @@
 <summary> The link of data and evaluation result </summary>
 
 - model
-  - DB JPNTAXI v3.0 version: https://github.com/tier4/autoware-ml/blob/707908ec2b36fffad2b08e418a5ddfb29f84cb98/autoware_ml/configs/detection3d/dataset/t4dataset/database_v1_3.yaml
+  - DB JPNTAXI v3.0 version: https://github.com/tier4/AWML/blob/707908ec2b36fffad2b08e418a5ddfb29f84cb98/autoware_ml/configs/detection3d/dataset/t4dataset/database_v1_3.yaml
   - Training dataset: DB JPNTAXI v1.0 + DB JPNTAXI v2.0 + DB JPNTAXI v3.0 + DB GSM8 v1.0 + DB J6 v1.0 (total frames: 34,137)
   - Eval dataset: DB JPNTAXI v1.0 + DB JPNTAXI v2.0 + DB JPNTAXI v3.0 + DB GSM8 v1.0 + DB J6 v1.0 (total frames: 62)
-  - [Config file path](https://github.com/tier4/autoware-ml/blob/24b93f3d2f1d649c2fb53b4425afd68102f367ec/projects/BEVFusion/configs/t4dataset/bevfusion_camera_lidar_voxel_second_secfpn_2xb2_t4offline_no_intensity.py)
+  - [Config file path](https://github.com/tier4/AWML/blob/24b93f3d2f1d649c2fb53b4425afd68102f367ec/projects/BEVFusion/configs/t4dataset/bevfusion_camera_lidar_voxel_second_secfpn_2xb2_t4offline_no_intensity.py)
   - Training results [Google drive (for internal)](https://drive.google.com/drive/folders/1F5ztzuDMfAqolAtvDXPX8dKgfPyEBwj7?usp=drive_link)
   - Training results [model-zoo]
     - [config.py](https://download.autoware-ml-model-zoo.tier4.jp/autoware-ml/models/bevfusion/bevfusion-cl-offline/t4base/v0.1/bevfusion_camera_lidar_voxel_second_secfpn_2xb2_t4offline_no_intensity.py)

@@ -1,7 +1,7 @@
 # GLIP
 ## Summary
 
-- [Support priority](https://github.com/tier4/autoware-ml/blob/main/docs/design/autoware_ml_design.md#support-priority): Tier A
+- [Support priority](https://github.com/tier4/AWML/blob/main/docs/design/autoware_ml_design.md#support-priority): Tier A
 - ROS package: Not supported
 - Supported dataset for training: Not supported
 - Other supported feature
@@ -42,12 +42,12 @@ projects/GLIP/configs/glip_atss_swin-l_fpn_dyhead_pretrain_mixeddata.py \
 ## Troubleshooting
 ### mmdetection version
 
-`autoware-ml` support mmdetection==3.2.0, but we use configs of version 3.3.0 for GLIP.
+`AWML` support mmdetection==3.2.0, but we use configs of version 3.3.0 for GLIP.
 So, we install mmdet[multimodal]==3.3.0 for docker environment for GRIP project.
 
 ### Issue with NLTK
 
-When integrating to `autoware-ml`, we face the issue same as https://github.com/open-mmlab/mmdetection/issues/11362.
+When integrating to `AWML`, we face the issue same as https://github.com/open-mmlab/mmdetection/issues/11362.
 So we make `GLIP_FIXED` class to fix this.
 
 ## Reference

@@ -1,12 +1,12 @@
 # PR rule
-## The philosophy for PR in `autoware-ml`
+## The philosophy for PR in `AWML`
 ### Reduce maintenance costs as much as possible
 
 Basically, we do not merge unused code as a library because the code itself becomes technical debt.
-Because we have few resource to develop `autoware-ml`, we merge the PR only if the code quality reach enough to be maintained.
+Because we have few resource to develop `AWML`, we merge the PR only if the code quality reach enough to be maintained.
 If you make the PR of new feature that is experimental code or lack of maintainability, we will not merge.
-If you make prototype code but you think it is useful feature for `autoware-ml`, please make fork repository and let us by issues and please explain in detail why it has to be in `autoware-ml`.
-After considering whether to integration and prioritizing with other developing items, we will integrate to `autoware-ml`.
+If you make prototype code but you think it is useful feature for `AWML`, please make fork repository and let us by issues and please explain in detail why it has to be in `AWML`.
+After considering whether to integration and prioritizing with other developing items, we will integrate to `AWML`.
 
 ### Architecture design is more important than code itself
 
@@ -19,7 +19,7 @@ Of course, please keep the code itself as clean as possible at the point you mak
 
 When you change core libraries or core tools, we will review PRs strictly.
 Please follow the PR template and write the changing point as much as possible.
-As you judge how core it is, you can refer [Support priority](https://github.com/tier4/autoware-ml/blob/main/docs/design/autoware_ml_design.md#support-priority).
+As you judge how core it is, you can refer [Support priority](https://github.com/tier4/AWML/blob/main/docs/design/autoware_ml_design.md#support-priority).
 
 ### Independent software as much as possible
 

@@ -56,7 +56,7 @@
 
 - Model
   - Training dataset: db_jpntaxi_v1 + db_jpntaxi_v2 + db_jpntaxi_v3 + db_gsm8_v1 + db_j6_v1 + db_j6_v2 + db_j6_v3 (total frames: 40769)
-  - [Config file path](https://github.com/tier4/autoware-ml/blob/d037b1d511d0ffb6f37f3e4e13460bc8483e2ccf/projects/CenterPoint/configs/t4dataset/Centerpoint/second_secfpn_2xb8_121m_base.py)
+  - [Config file path](https://github.com/tier4/AWML/blob/d037b1d511d0ffb6f37f3e4e13460bc8483e2ccf/projects/CenterPoint/configs/t4dataset/Centerpoint/second_secfpn_2xb8_121m_base.py)
   - Deployed onnx model and ROS parameter files [[WebAuto (for internal)]](https://evaluation.tier4.jp/evaluation/mlpackages/7156b453-2861-4ae9-b135-e24e48cc9029/releases/48c47d87-5f09-415d-9f69-d9857f513fff?project_id=zWhWRzei&tab=items)
   - Deployed onnx and ROS parameter files [[model-zoo]]
     - [detection_class_remapper.param.yaml](https://download.autoware-ml-model-zoo.tier4.jp/autoware-ml/models/centerpoint/centerpoint/t4base/v1.1/detection_class_remapper.param.yaml)
@@ -145,7 +145,7 @@ Old library is based on mmdetection3d v0 and we integrate to mmdetection3d v1 ba
 
 - Model
   - Training dataset: DB JPNTAXI v1.0 + DB JPNTAXI v2.0 + DB JPNTAXI v3.0 + DB GSM8 v1.0 + DB J6 v1.0 (total frames: 34,137)
-  - [Config file path](https://github.com/tier4/autoware-ml/blob/5f472170f07251184dc009a1ec02be3b4f3bf98c/autoware_ml/configs/detection3d/dataset/t4dataset/base.py)
+  - [Config file path](https://github.com/tier4/AWML/blob/5f472170f07251184dc009a1ec02be3b4f3bf98c/autoware_ml/configs/detection3d/dataset/t4dataset/base.py)
   - Deployed onnx model and ROS parameter files [[WebAuto (for internal)]](https://evaluation.tier4.jp/evaluation/mlpackages/7156b453-2861-4ae9-b135-e24e48cc9029/releases/1711f9c5-defa-4af1-b94b-e7978500df89?project_id=zWhWRzei)
   - Deployed onnx and ROS parameter files [[model-zoo]]
     - [detection_class_remapper.param.yaml](https://download.autoware-ml-model-zoo.tier4.jp/autoware-ml/models/centerpoint/centerpoint/t4base/v1.0/detection_class_remapper.param.yaml)

@@ -1,12 +1,12 @@
-# `autoware-ml` design
+# `AWML` design
 ## Pipeline design
 ### Overview diagram
 
-`autoware-ml` is designed for deployment from training and evaluation with Autoware and active learning framework.
+`AWML` is designed for deployment from training and evaluation with Autoware and active learning framework.
 
 ![](/docs/fig/autoware-ml.drawio.svg)
 
-### The pipeline design of `autoware-ml`
+### The pipeline design of `AWML`
 
 ![](/docs/fig/pipeline.drawio.svg)
 
@@ -27,7 +27,7 @@
   - Make pseudo-label T4dataset from the info file which is based on pseudo label.
 - (8) choose_annotation.py
   - Choose using annotation from raw pseudo label.
-  - The info file which is used in [mmdetection3d](https://github.com/open-mmlab/mmdetection3d) by pickle file (`.pkl`) is used in auto labeling  of `autoware-ml` as interface.
+  - The info file which is used in [mmdetection3d](https://github.com/open-mmlab/mmdetection3d) by pickle file (`.pkl`) is used in auto labeling  of `AWML` as interface.
   - For example, it is used for `scene_selector` and `pseudo_label` to tune the parameter of the threshold of confidence with offline model.
 
 ### The format of infos file
@@ -100,12 +100,12 @@
 
 - [pytorch v2.2.0](https://github.com/pytorch/pytorch/tree/v2.2.0)
 
-`autoware-ml` is based on pytorch.
+`AWML` is based on pytorch.
 
 - [mmdetection3d v1.4](https://github.com/open-mmlab/mmdetection3d/tree/v1.4.0).
 
 This is machine learning framework for 3D detection.
-`autoware-ml` is strongly based on this framework.
+`AWML` is strongly based on this framework.
 
 If you want to learn about use of `mmdetection3d`, we recommend to read [user guides](https://mmdetection3d.readthedocs.io/en/latest/user_guides/index.html) at first.
 If you want to learn about config files of `mmdetection3d`, we recommend to read [user guides for configs](https://mmdetection3d.readthedocs.io/en/latest/user_guides/config.html).
@@ -119,9 +119,9 @@ This is machine learning framework for 2D detection.
 - [mmdeploy v1.3.1](https://github.com/open-mmlab/mmdeploy/tree/v1.3.1)
 
 These are core library for MMLab libraries.
-If you want to develop `autoware-ml`, we recommend to read the documents of these.
+If you want to develop `AWML`, we recommend to read the documents of these.
 
-## `autoware-ml` architecture
+## `AWML` architecture
 ### autoware_ml/
 
 The directory of `autoware_ml` is library for autoware-ml.
@@ -165,8 +165,8 @@ We define T4dataset version as below.
 
 ### docs/
 
-The directory of `docs/` is design documents for `autoware-ml`.
-The target of documents is a designer of whole ML pipeline system and developers of `autoware-ml` core library.
+The directory of `docs/` is design documents for `AWML`.
+The target of documents is a designer of whole ML pipeline system and developers of `AWML` core library.
 
 ### pipelines/
 
@@ -174,7 +174,7 @@ The directory of `pipelines/` manages the pipelines that consist of `tools`.
 This directory can depend on `/autoware_ml`, `projects`, `/tools`, and other `/pipelines`.
 
 Each pipeline has `README.md`, a process document to use when you ask someone else to do the work.
-The target of `README.md` is a user of `autoware-ml`.
+The target of `README.md` is a user of `AWML`.
 
 ### projects/
 
@@ -189,7 +189,7 @@ This directory can depend on `/autoware_ml` and other `projects`.
 ```
 
 Each project has `README.md` for users.
-The target of `README.md` is a user of `autoware-ml`.
+The target of `README.md` is a user of `AWML`.
 
 ### tools/
 
@@ -206,7 +206,7 @@ This directory can depend on `/autoware_ml` and other `/tools`.
 ```
 
 Each tool has `README.md` for developers.
-The target of `README.md` is a developer of `autoware-ml`.
+The target of `README.md` is a developer of `AWML`.
 
 ## Support priority
 
@@ -228,7 +228,7 @@ We define "support priority" for each tools and projects. Maintainers handle han
   - If it is not used for long time, we delete it.
   - We put a low priority on support to it.
 
-## Versioning strategy for `autoware-ml`
+## Versioning strategy for `AWML`
 
 We follow basically [semantic versioning](https://semver.org/).
 As our strategy, we follow as below.

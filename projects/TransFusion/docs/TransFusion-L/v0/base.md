@@ -46,7 +46,7 @@ TransFusion-L v0 has many breaking changes.
   - grid_size = [768, 768, 1]
 - model
   - Training dataset: DB JPNTAXI v1.0 + DB JPNTAXI v2.0 + DB GSM8 v1.0 + DB J6 v1.0
-  - [Config file path](https://github.com/tier4/autoware-ml/blob/5f472170f07251184dc009a1ec02be3b4f3bf98c/autoware_ml/configs/detection3d/dataset/t4dataset/base.py)
+  - [Config file path](https://github.com/tier4/AWML/blob/5f472170f07251184dc009a1ec02be3b4f3bf98c/autoware_ml/configs/detection3d/dataset/t4dataset/base.py)
   - Deployed onnx and ROS parameter files [[WebAuto (for internal)]](https://evaluation.tier4.jp/evaluation/mlpackages/1800c7f8-a80e-4162-8574-4ee84432e89d/releases/008b128a-873a-4e4a-afa6-d2583f7fc224?project_id=zWhWRzei&tab=reports)
   - Deployed onnx and ROS parameter files [[model-zoo]]
     - [detection_class_remapper.param.yaml](https://download.autoware-ml-model-zoo.tier4.jp/autoware-ml/models/transfusion/transfusion-l/t4base/v0.6/detection_class_remapper.param.yaml)
@@ -104,7 +104,7 @@ TransFusion-L v0 has many breaking changes.
 - model
   - Training dataset: DB GSM8 v1.0 + DB J6 v1.0
   - Eval dataset: DB GSM8 v1.0 + DB J6 v1.0
-  - [Config file path](https://github.com/tier4/autoware-ml/blob/e8701f9953be3034776b0de71ecbd03146c03c5f/projects/TransFusion/configs/t4dataset/transfusion_lidar_pillar_second_secfpn_1xb1_90m-768grid-t4x2.py)
+  - [Config file path](https://github.com/tier4/AWML/blob/e8701f9953be3034776b0de71ecbd03146c03c5f/projects/TransFusion/configs/t4dataset/transfusion_lidar_pillar_second_secfpn_1xb1_90m-768grid-t4x2.py)
   - Deployed onnx and ROS parameter files [[WebAuto (for internal)]](https://evaluation.tier4.jp/evaluation/mlpackages/1800c7f8-a80e-4162-8574-4ee84432e89d/releases/acdd07c5-4a8f-4983-88e7-a8823f7dc672?project_id=zWhWRzei)
   - Deployed onnx and ROS parameter files [[model-zoo]]
     - [detection_class_remapper.param.yaml](https://download.autoware-ml-model-zoo.tier4.jp/autoware-ml/models/transfusion/transfusion-l/t4base/v0.5/detection_class_remapper.param.yaml)
@@ -146,7 +146,7 @@ TransFusion-L v0 has many breaking changes.
 - model
   - Training dataset: DB JPNTAXI v1.0 + DB JPNTAXI v2.0 + DB JPNTAXI v3.0
   - Eval dataset: DB JPNTAXI v1.0 + DB JPNTAXI v2.0 + DB JPNTAXI v3.0
-  - [Config file path](https://github.com/tier4/autoware-ml/blob/37cf92a2b4b3d7f80b09c8bd5eaff6229ca18f95/projects/TransFusion/configs/t4dataset/transfusion_lidar_pillar_second_secfpn_1xb1_90m-768grid-t4xx1.py)
+  - [Config file path](https://github.com/tier4/AWML/blob/37cf92a2b4b3d7f80b09c8bd5eaff6229ca18f95/projects/TransFusion/configs/t4dataset/transfusion_lidar_pillar_second_secfpn_1xb1_90m-768grid-t4xx1.py)
   - Deployed onnx model [[AWF model resistry]](https://awf.ml.dev.web.auto/perception/models/transfusion/t4xx1_90m/v3/transfusion.onnx) [[model-zoo]](https://download.autoware-ml-model-zoo.tier4.jp/autoware-ml/models/transfusion/transfusion-l/t4base/v0.4/transfusion.onnx)
   - Deployed ROS parameter file [[AWF model resistry]](https://awf.ml.dev.web.auto/perception/models/transfusion/t4xx1_90m/v3/transfusion.param.yaml) [[model-zoo]](https://download.autoware-ml-model-zoo.tier4.jp/autoware-ml/models/transfusion/transfusion-l/t4base/v0.4/transfusion.param.yaml)
   - Deployed ROS param file for remap [[AWF model resistry]](https://awf.ml.dev.web.auto/perception/models/transfusion/t4xx1_90m/v3/detection_class_remapper.param.yaml) [[model-zoo]](https://download.autoware-ml-model-zoo.tier4.jp/autoware-ml/models/transfusion/transfusion-l/t4base/v0.4/detection_class_remapper.param.yaml)
@@ -221,7 +221,7 @@ TransFusion-L v0 has many breaking changes.
 - model
   - Training dataset: DB JPNTAXI v1.0 + DB JPNTAXI v2.0
   - Eval dataset: DB JPNTAXI v1.0 + DB JPNTAXI v2.0
-  - [Config file path](https://github.com/tier4/autoware-ml/blob/fe28c0a7de0579c68406e40c5abfe9afcaed41f6/projects/TransFusion/configs/t4dataset/transfusion_lidar_pillar_second_secfpn_1xb4-cyclic-20e_t4xx1_90m_768grid.py) (Note: eval range is 75m in training time)
+  - [Config file path](https://github.com/tier4/AWML/blob/fe28c0a7de0579c68406e40c5abfe9afcaed41f6/projects/TransFusion/configs/t4dataset/transfusion_lidar_pillar_second_secfpn_1xb4-cyclic-20e_t4xx1_90m_768grid.py) (Note: eval range is 75m in training time)
   - Deployed onnx model [[AWF model resistry]](https://awf.ml.dev.web.auto/perception/models/transfusion/t4xx1_90m/v2/transfusion.onnx) [[model-zoo]](https://download.autoware-ml-model-zoo.tier4.jp/autoware-ml/models/transfusion/transfusion-l/t4base/v0.3/transfusion.onnx)
   - Deployed ROS parameter file [[AWF model resistry]](https://awf.ml.dev.web.auto/perception/models/transfusion/t4xx1_90m/v2/transfusion.param.yaml) [[model-zoo]](https://download.autoware-ml-model-zoo.tier4.jp/autoware-ml/models/transfusion/transfusion-l/t4base/v0.3/transfusion.param.yaml)
   - Deployed ROS param file for remap [[AWF model resistry]](https://awf.ml.dev.web.auto/perception/models/transfusion/t4xx1_90m/v2/detection_class_remapper.param.yaml) [[model-zoo]](https://download.autoware-ml-model-zoo.tier4.jp/autoware-ml/models/transfusion/transfusion-l/t4base/v0.3/detection_class_remapper.param.yaml)
@@ -245,7 +245,7 @@ TransFusion-L v0 has many breaking changes.
 
 ### TransFusion-L base/0.2
 
-- We fixed the bug of `autoware-ml` and improve the performance.
+- We fixed the bug of `AWML` and improve the performance.
 - Note that this model is trained by DB JPNTAXI v1.0 + DB JPNTAXI v2.0.
 
 <details>
@@ -256,7 +256,7 @@ TransFusion-L v0 has many breaking changes.
 - model
   - Training dataset: DB JPNTAXI v1.0 + DB JPNTAXI v2.0
   - Eval dataset: DB JPNTAXI v1.0 + DB JPNTAXI v2.0
-  - [Config file path](https://github.com/tier4/autoware-ml/blob/fe28c0a7de0579c68406e40c5abfe9afcaed41f6/projects/TransFusion/configs/t4dataset/transfusion_lidar_pillar_second_secfpn_1xb6-cyclic-20e_t4xx1_90m_576grid.py) (Note: eval range is 75m in training time)
+  - [Config file path](https://github.com/tier4/AWML/blob/fe28c0a7de0579c68406e40c5abfe9afcaed41f6/projects/TransFusion/configs/t4dataset/transfusion_lidar_pillar_second_secfpn_1xb6-cyclic-20e_t4xx1_90m_576grid.py) (Note: eval range is 75m in training time)
   - Deployed onnx model [[AWF model resistry]](https://awf.ml.dev.web.auto/perception/models/transfusion/t4xx1_90m/v1/transfusion.onnx) [[model-zoo]](https://download.autoware-ml-model-zoo.tier4.jp/autoware-ml/models/transfusion/transfusion-l/t4base/v0.2/transfusion.onnx)
   - Deployed ROS parameter file [[AWF model resistry]](https://awf.ml.dev.web.auto/perception/models/transfusion/t4xx1_90m/v1/transfusion.param.yaml) [[model-zoo]](https://download.autoware-ml-model-zoo.tier4.jp/autoware-ml/models/transfusion/transfusion-l/t4base/v0.2/transfusion.param.yaml)
   - Deployed ROS param file for remap [[AWF model resistry]](https://awf.ml.dev.web.auto/perception/models/transfusion/t4xx1_90m/v1/detection_class_remapper.param.yaml) [[model-zoo]](https://download.autoware-ml-model-zoo.tier4.jp/autoware-ml/models/transfusion/transfusion-l/t4base/v0.2/detection_class_remapper.param.yaml)
@@ -281,7 +281,7 @@ TransFusion-L v0 has many breaking changes.
 ### TransFusion-L base/0.1
 
 - We released first model of TransFusion-L
-- Note that this model is low performance because of `autoware-ml` bug.
+- Note that this model is low performance because of `AWML` bug.
 
 <details>
 <summary> The link of data and evaluation result </summary>
@@ -291,7 +291,7 @@ TransFusion-L v0 has many breaking changes.
 - model
   - Training dataset: DB JPNTAXI v1.0
   - Eval dataset: DB JPNTAXI v2.0 (Bug fix and new dataset config is applied)
-  - [Config file](https://github.com/tier4/autoware-ml/blob/17e8944ac2154f1f1042a507a4001ccf057ffe78/projects/TransFusion/configs/t4dataset/transfusion_lidar_pillar02_second_secfpn_1xb4-cyclic-20e_t4xx1.py)
+  - [Config file](https://github.com/tier4/AWML/blob/17e8944ac2154f1f1042a507a4001ccf057ffe78/projects/TransFusion/configs/t4dataset/transfusion_lidar_pillar02_second_secfpn_1xb4-cyclic-20e_t4xx1.py)
   - Deployed onnx model [[AWF model resistry]](https://awf.ml.dev.web.auto/perception/models/transfusion/v1/transfusion.onnx) [[model-zoo]](https://download.autoware-ml-model-zoo.tier4.jp/autoware-ml/models/transfusion/transfusion-l/t4base/v0.1/transfusion.onnx)
 - val
   - Total mAP: 0.485

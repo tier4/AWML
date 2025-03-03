@@ -2,7 +2,7 @@
 
 You can download T4dataset by script using WebAuto CLI.
 
-- [Support priority](https://github.com/tier4/autoware-ml/blob/main/docs/design/autoware_ml_design.md#support-priority): Tier S
+- [Support priority](https://github.com/tier4/AWML/blob/main/docs/design/autoware_ml_design.md#support-priority): Tier S
 
 ## Environment
 

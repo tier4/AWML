@@ -19,7 +19,7 @@
 - model
   - Training dataset: DB JPNTAXI v1.0 + DB JPNTAXI v2.0
   - Eval dataset: DB JPNTAXI v1.0 + DB JPNTAXI v2.0
-  - [Config file path](https://github.com/tier4/autoware-ml/blob/249ebfe5cff685c0911c664ea1ef2b855cc6b52f/projects/BEVFusion/configs/t4dataset/bevfusion_lidar_voxel_second_secfpn_1xb1_t4xx1.py)
+  - [Config file path](https://github.com/tier4/AWML/blob/249ebfe5cff685c0911c664ea1ef2b855cc6b52f/projects/BEVFusion/configs/t4dataset/bevfusion_lidar_voxel_second_secfpn_1xb1_t4xx1.py)
   - Results are in internal data.
   - 16 batch A100 * 2 * 4 days
   - Total mAP to test dataset (eval range = 120m): 0.606

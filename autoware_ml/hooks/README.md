@@ -1,6 +1,6 @@
 # Custom Hooks
 
-This folder consists of custom hooks that can be used by both detection2d and detection3d in `autoware-ml`. Hooks are actions that will be triggered at certain points during running cycles in a mmengine runner. Please refer to this [official turorial](https://mmengine.readthedocs.io/en/latest/tutorials/hook.html) for more details about hooks.
+This folder consists of custom hooks that can be used by both detection2d and detection3d in `AWML`. Hooks are actions that will be triggered at certain points during running cycles in a mmengine runner. Please refer to this [official turorial](https://mmengine.readthedocs.io/en/latest/tutorials/hook.html) for more details about hooks.
 
 ## Usage
 

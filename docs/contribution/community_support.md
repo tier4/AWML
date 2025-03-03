@@ -1,8 +1,8 @@
 # Community support
 
 This page shows community support.
-We show the tools and ML algorithms around `autoware-ml`.
-`Autoware-ml` is based on [Autoware Core & Universe strategy](https://autoware.org/autoware-overview/).
+We show the tools and ML algorithms around `AWML`.
+`AWML` is based on [Autoware Core & Universe strategy](https://autoware.org/autoware-overview/).
 We hope that this page promote the community between Autoware and ML researchers and engineers.
 
 ![](/docs/fig/autoware_ml_community.drawio.svg)
@@ -22,6 +22,6 @@ We are implementing `autoware-ml-prediction` for now, which aims to deploy ML-ba
 - [mm-project-template](https://github.com/scepter914/mm-project-template/tree/main)
 
 This repository is the project template based on [mm series](https://github.com/open-mmlab).
-You can start from this template and you can add code of `/tools/*` and `/projects/*` from `autoware-ml` to use for your a new algorithm or a new tool.
+You can start from this template and you can add code of `/tools/*` and `/projects/*` from `AWML` to use for your a new algorithm or a new tool.
 
 ## Model

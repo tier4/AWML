@@ -1,6 +1,6 @@
 ## Main topic of next release
 
-We will release next version of `autoware-ml`.
+We will release next version of `AWML`.
 The main topic is following.
 
 - New architecture for project's configs
@@ -10,7 +10,7 @@ We integrated fine tuning strategy for 3D detection.
 - Integrated model management with S3
 
 We started to manage the trained model and data like log file and config file by AWS S3.
-Please see [document](https://github.com/tier4/autoware-ml/blob/main/docs/design/architecture_s3.md) in detail.
+Please see [document](https://github.com/tier4/AWML/blob/main/docs/design/architecture_s3.md) in detail.
 
 - Release nearby model
 

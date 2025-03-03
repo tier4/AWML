@@ -29,7 +29,7 @@ TransFusion-L-nearby v0 has many breaking changes.
 - model
   - Training dataset: DB JPNTAXI v1.0 + DB JPNTAXI v2.0
   - Eval dataset: DB JPNTAXI v1.0 + DB JPNTAXI v2.0
-  - [Config file path](https://github.com/tier4/autoware-ml/blob/3df40a10310dff2d12e4590e26f81017e002a2a0/projects/TransFusion/configs/t4dataset/transfusion_lidar_pillar_second_secfpn_1xb1-cyclic-20e_t4xx1_50m_512grid.py)
+  - [Config file path](https://github.com/tier4/AWML/blob/3df40a10310dff2d12e4590e26f81017e002a2a0/projects/TransFusion/configs/t4dataset/transfusion_lidar_pillar_second_secfpn_1xb1-cyclic-20e_t4xx1_50m_512grid.py)
   - Deployed ROS parameter file [[AWF model resistry]](https://awf.ml.dev.web.auto/perception/models/transfusion/t4xx1_50m/v1/transfusion_ml_package.param.yaml) [[model-zoo]](https://download.autoware-ml-model-zoo.tier4.jp/autoware-ml/models/transfusion/transfusion-l-nearby/t4base/v0.1/transfusion.param.yaml)
   - Deployed ROS param file for remap [[model-zoo]](https://download.autoware-ml-model-zoo.tier4.jp/autoware-ml/models/transfusion/transfusion-l-nearby/t4base/v0.1/detection_class_remapper.param.yaml)
   - Deployed onnx model [[AWF model resistry]](https://awf.ml.dev.web.auto/perception/models/transfusion/t4xx1_50m/v1/transfusion.onnx) [[model-zoo]](https://download.autoware-ml-model-zoo.tier4.jp/autoware-ml/models/transfusion/transfusion-l-nearby/t4base/v0.1/transfusion.param.yaml)

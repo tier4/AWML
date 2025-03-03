@@ -78,7 +78,7 @@
 
 - Model
   - Training dataset: DB JPNTAXI v1.0 + DB JPNTAXI v2.0 + DB JPNTAXI v3.0 + DB GSM8 v1.0 + DB J6 v1.0 (total frames: 35,392)
-  - [Config file path](https://github.com/tier4/autoware-ml/blob/9aead19d7f42b711fba8ffa38ec82ce135300617/projects/CenterPoint/configs/t4dataset/pillar_020_convnext_standard_secfpn_4xb8_121m_base.py)
+  - [Config file path](https://github.com/tier4/AWML/blob/9aead19d7f42b711fba8ffa38ec82ce135300617/projects/CenterPoint/configs/t4dataset/pillar_020_convnext_standard_secfpn_4xb8_121m_base.py)
   - Deployed onnx model and ROS parameter files [[Google drive (for internal)]](https://drive.google.com/drive/folders/1dhthG6LtbZTS91U2OQvd5iQ1q58b2ZEH)
   - Deployed onnx and ROS parameter files [[model-zoo]]
     - [detection_class_remapper.param.yaml](https://download.autoware-ml-model-zoo.tier4.jp/autoware-ml/models/centerpoint/centerpoint-convnextpc/t4base/v0.2/detection_class_remapper.param.yaml)
@@ -191,7 +191,7 @@
 
 - Model
   - Training dataset: DB JPNTAXI v1.0 + DB JPNTAXI v2.0 + DB JPNTAXI v3.0 + DB GSM8 v1.0 + DB J6 v1.0 (total frames: 35,392)
-  - [Config file path](https://github.com/tier4/autoware-ml/blob/9aead19d7f42b711fba8ffa38ec82ce135300617/projects/CenterPoint/configs/t4dataset/pillar_020_convnext_small_secfpn_4xb8_121m_base.py)
+  - [Config file path](https://github.com/tier4/AWML/blob/9aead19d7f42b711fba8ffa38ec82ce135300617/projects/CenterPoint/configs/t4dataset/pillar_020_convnext_small_secfpn_4xb8_121m_base.py)
   - Deployed onnx model and ROS parameter files [[Google drive (for internal)]](https://drive.google.com/drive/folders/1WuP0jo1j6HeAVGf5KehNjb5e9SiLdmgb)
   - Deployed onnx and ROS parameter files [[model-zoo]]
     - [detection_class_remapper.param.yaml](https://download.autoware-ml-model-zoo.tier4.jp/autoware-ml/models/centerpoint/centerpoint-convnextpc/t4base/v0.1/detection_class_remapper.param.yaml)
