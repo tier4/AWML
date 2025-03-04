@@ -1,6 +1,6 @@
 # Remote development
 
-VS Code gives a convinient way for remote development using devcontainer configuration files. It is suggested for `autoware-ml` users to setup configuration by themselves based on current environment.
+VS Code gives a convinient way for remote development using devcontainer configuration files. It is suggested for `AWML` users to setup configuration by themselves based on current environment.
 
 ## Configuration
 

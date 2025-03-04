@@ -9,7 +9,7 @@
 Choose the PR type from the list below.
 Note that you need to make as small PR as possible.
 
-- For autoware-ml developers
+- For AWML developers
   - [Add/Fix functions to `autoware_ml`](use_case/fix_core_library.md)
   - [Fix code in `/tools`](use_case/fix_tools.md)
   - [Fix code in `/projects`](use_case/fix_projects.md)

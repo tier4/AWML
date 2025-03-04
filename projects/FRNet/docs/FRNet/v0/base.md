@@ -13,7 +13,7 @@
 - Model
   - Training dataset: nuScenes
   - Eval dataset: nuScenes
-  - [Config file path](https://github.com/tier4/autoware-ml/blob/2f06bc2a243b6fd44860fed7c77f8fd1e521e89e/projects/FRNet/configs/nuscenes/frnet_1xb4_nus-seg.py)
+  - [Config file path](https://github.com/tier4/AWML/blob/2f06bc2a243b6fd44860fed7c77f8fd1e521e89e/projects/FRNet/configs/nuscenes/frnet_1xb4_nus-seg.py)
   - Deployed onnx [[Google drive (for internal)]](https://drive.google.com/file/d/1tJ2qje4sF1_EaHLvMut1JXV-euJx-JJw/view?usp=drive_link) [[model-zoo]](https://download.autoware-ml-model-zoo.tier4.jp/autoware-ml/models/frnet/frnet-base/nuscenes/v0.1/frnet.onnx)
   - Training results [[Google drive (for internal)]](https://drive.google.com/file/d/1GBxHcYd9U6mTNaDyTrTh2FGW1WaJHUcR/view?usp=drive_link)
   - Training results [model-zoo]

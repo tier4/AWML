@@ -65,7 +65,7 @@ The release note include
 - In detail, you should write
   - The URL link of PR
   - The path to the config file
-    - You should use the commit hash (like `https://github.com/tier4/autoware-ml/blob/5f472170f07251184dc009a1ec02be3b4f3bf98c/autoware_ml/configs/detection3d/dataset/t4dataset/base.py`) instead of branch name (like `https://github.com/tier4/autoware-ml/blob/main/autoware_ml/configs/detection3d/dataset/t4dataset/base.py`)
+    - You should use the commit hash (like `https://github.com/tier4/AWML/blob/5f472170f07251184dc009a1ec02be3b4f3bf98c/autoware_ml/configs/detection3d/dataset/t4dataset/base.py`) instead of branch name (like `https://github.com/tier4/AWML/blob/main/autoware_ml/configs/detection3d/dataset/t4dataset/base.py`)
   - The URL link of the model (checkpoint) and logs
     - When you make a PR at first, you can write a temporary URL (like google drive) of trained model and logs before upload to S3 or Web.Auto ML Packages.
   - Evaluation result

@@ -8,7 +8,7 @@ The whole pipeline of deployment flow with S3
 
 An engineer makes model data of basic model (any of pretrain model, base model, product model, offline model).
 Model data has checkpoint of the model, training log, onnx file for Autoware, ROS parameter for Autoware.
-If the model is used for not only `autoware-ml` but also Autoware, we also upload to WebAuto model management system (Basically, we will upload product model).
+If the model is used for not only `AWML` but also Autoware, we also upload to WebAuto model management system (Basically, we will upload product model).
 
 We plan that we upload model data to S3 from local PC until MLOps system is constructed.
 
@@ -16,11 +16,11 @@ We plan that we upload model data to S3 from local PC until MLOps system is cons
 
 We got the issue from projects, we deploy for a model dedicated to that project.
 So the engineer who makes project model upload to WebAuto model management system.
-Because project models are not managed by `autoware-ml`, he/she upload the model data only to WebAuto model management system.
+Because project models are not managed by `AWML`, he/she upload the model data only to WebAuto model management system.
 
 - 3. S3 model registry
 
-`Autoware-ml` manage pretrain model, base model, product model, and offline model.
+`AWML` manage pretrain model, base model, product model, and offline model.
 
 - 4. WebAuto model management system
 
@@ -29,7 +29,7 @@ In detail, please see [WebAuto document](https://docs.web.auto/en/user-manuals/e
 
 - 5. autoware-ml user
 
-`Autoware-ml` users can use S3 model registry as model zoo.
+`AWML` users can use S3 model registry as model zoo.
 For example, the user of auto labeling can use offline model, and the user of fine-tuning can use base model.
 
 - 6. Autoware user
@@ -52,7 +52,7 @@ The architecture of directory is following.
 ### `/autoware-ml/models/`: Data about models
 
 We use the model registered in S3 storage for fine tuning like model zoo.
-In `autoware-ml`, we can use URL path instead of local path as MMLab libraries.
+In `AWML`, we can use URL path instead of local path as MMLab libraries.
 For example, we can run the script as `python tools/detection2d/test.py projects/YOLOX/configs/yolox_l_8xb8-300e_coco.py https://download.openmmlab.com/mmdetection/v2.0/yolox/yolox_l_8x8_300e_coco/yolox_l_8x8_300e_coco_20211126_140236-d3bd2b23.pth`.
 
 Model data to manage in S3 are following

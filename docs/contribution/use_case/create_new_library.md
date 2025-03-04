@@ -1,10 +1,10 @@
 # Make new library
 
-There are many cases that you want to make as new library with `autoware-ml`.
+There are many cases that you want to make as new library with `AWML`.
 Here is examples.
 
-- An engineer wants to use `autoware-ml` for a secret project with private own dataset
-- An engineer wants to construct ML library for new task with `autoware-ml`
+- An engineer wants to use `AWML` for a secret project with private own dataset
+- An engineer wants to construct ML library for new task with `AWML`
 
 If you face these cases, we recommend the procedure as below.
 
@@ -14,21 +14,21 @@ If you face these cases, we recommend the procedure as below.
 - your_new_repository/
 ```
 
-## 2. Use `autoware-ml` as submodule
+## 2. Use `AWML` as submodule
 
-- We recommend to fix the version of `autoware-ml`
+- We recommend to fix the version of `AWML`
 
 ```
 - your_new_repository/
-  - autoware-ml (submodule)
+  - AWML (submodule)
 ```
 
 - Here is commands to add submodule.
 
 ```
 cd your_new_repository
-git submodule add https://github.com/tier4/autoware-ml autoware-ml
-git commit -m "add autoware-ml as a submodule"
+git submodule add https://github.com/tier4/AWML AWML
+git commit -m "add AWML as a submodule"
 ```
 
 ## 3. Add feature
@@ -38,18 +38,18 @@ git commit -m "add autoware-ml as a submodule"
 
 ```
 - your_new_repository/
-  - autoware-ml (submodule)
+  - AWML (submodule)
   - projects/
     - your_new_algorithm/
 ```
 
 ### 3.2 Add new dataset
 
-- If you want to new dataset, you should add new config files to library directory and set sensor configs like `autoware-ml`.
+- If you want to new dataset, you should add new config files to library directory and set sensor configs like `AWML`.
 
 ```
 - your_new_repository/
-  - autoware-ml (submodule)
+  - AWML (submodule)
   - {your_package_name}/
     - configs/
       - your_dataset/
@@ -64,7 +64,7 @@ git commit -m "add autoware-ml as a submodule"
 
 ```
 - your_new_repository/
-  - autoware-ml (submodule)
+  - AWML (submodule)
   - {your_package_name}/
     - configs/
       - your_dataset/
@@ -80,14 +80,14 @@ git commit -m "add autoware-ml as a submodule"
 ```
 
 - new_config.py
-  - Note that the the hierarchy is off by one level from `autoware-ml`.
+  - Note that the the hierarchy is off by one level from `AWML`.
 
 ```py
 _base_ = [
     #"../../../../autoware_ml/configs/detection3d/default_runtime.py",
     #"../../../../autoware_ml/configs/detection3d/dataset/t4dataset/base.py",
-    "../../../../autoware-ml/autoware_ml/configs/detection3d/default_runtime.py",
-    "../../../../autoware-ml/autoware_ml/configs/detection3d/dataset/t4dataset/base.py",
+    "../../../../AWML/autoware_ml/configs/detection3d/default_runtime.py",
+    "../../../../AWML/autoware_ml/configs/detection3d/dataset/t4dataset/base.py",
     "../models/centerpoint_second_secfpn_base.py",
 ]
 ```
@@ -98,7 +98,7 @@ _base_ = [
 
 ```
 - your_new_repository/
-  - autoware-ml (submodule)
+  - AWML (submodule)
   - {your_package_name}/
     - new_library.py
 ```

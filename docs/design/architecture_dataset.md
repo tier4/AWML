@@ -27,7 +27,7 @@ Pseudo T4dataset is mainly used to train pre-training model.
 We call pseudo T4dataset as "Pseudo {vehicle name} vX.Y".
 For example, we use like "Pseudo JPNTAXI v1.0".
 We manage pseudo T4dataset in [dataset config](/autoware_ml/configs/detection3d/dataset/t4dataset) like `pseudo_jpntaxi_v1.yaml` (file name use only the version of X).
-Note that `autoware-ml` do not manage Pseudo T4dataset which is used for domain adaptation.
+Note that `AWML` do not manage Pseudo T4dataset which is used for domain adaptation.
 
 ## T4dataset
 
@@ -97,7 +97,7 @@ Create non-annotated T4dataset from rosbag file by using [T4dataset tools](https
 
 - 2. Semi-auto labeling
 
-`autoware-ml` make pseudo-annotated T4dataset from non-annotated T4dataset.
+`AWML` make pseudo-annotated T4dataset from non-annotated T4dataset.
 It is used for training with pseudo label and semi-auto labeling to make T4dataset.
 Semi-auto labeling makes short time to human annotation.
 In addition to it, pseudo-annotated T4dataset is also used for domain adaptation and training of pretrain model.
@@ -110,7 +110,7 @@ Annotated dataset is made by human annotation and then annotated T4dataset is cr
 - 4. Dataset management
 
 We upload to [WebAuto](https://web.auto/) system and manage T4dataset.
-`autoware-ml` use T4dataset downloading by WebAutoCLI.
+`AWML` use T4dataset downloading by WebAutoCLI.
 
 ### Update T4dataset
 

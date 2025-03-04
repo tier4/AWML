@@ -1,8 +1,8 @@
 # Setting environment for autoware-ml
 
-Tools setting environment for `autoware-ml`.
+Tools setting environment for `AWML`.
 
-- [Support priority](https://github.com/tier4/autoware-ml/blob/main/docs/design/autoware_ml_design.md#support-priority): Tier S
+- [Support priority](https://github.com/tier4/AWML/blob/main/docs/design/autoware_ml_design.md#support-priority): Tier S
 - Environment
   - [x] Ubuntu22.04 LTS
     - This scripts do not need docker environment
@@ -24,7 +24,7 @@ If you want to use open dataset like nuScenes dataset, please follow [mmdetectio
 - Set environment
 
 ```sh
-git clone https://github.com/tier4/autoware-ml
+git clone https://github.com/tier4/AWML
 ```
 
 ```sh
@@ -42,14 +42,14 @@ git clone https://github.com/tier4/autoware-ml
 ### 2.2 Prepare docker
 
 - Docker pull for base environment
-  - See https://github.com/tier4/autoware-ml/pkgs/container/autoware-ml-base
+  - See https://github.com/tier4/AWML/pkgs/container/autoware-ml-base
 
 ```
 docker pull ghcr.io/tier4/autoware-ml-base:latest
 ```
 
-- Docker pull for `autoware-ml` environment with `ROS2`
-  - See https://github.com/tier4/autoware-ml/pkgs/container/autoware-ml-ros2
+- Docker pull for `AWML` environment with `ROS2`
+  - See https://github.com/tier4/AWML/pkgs/container/autoware-ml-ros2
 
 ```
 docker pull ghcr.io/tier4/autoware-ml-ros2:latest
@@ -66,7 +66,7 @@ docker pull ghcr.io/tier4/autoware-ml-ros2:latest
 DOCKER_BUILDKIT=1 docker build -t autoware-ml .
 ```
 
-- If you want to use `autoware-ml` with `ROS2`, you can use other docker environment
+- If you want to use `AWML` with `ROS2`, you can use other docker environment
 
 ```
 DOCKER_BUILDKIT=1 docker build -t autoware-ml-ros2 ./tools/setting_environment/ros2/

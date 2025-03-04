@@ -6,17 +6,17 @@
 
 Please confirm the model you use.
 The model is in `/projects/*` and confirm what configs you should use.
-As an example, we use [CenterPoint](/projects/CenterPoint/) and [this config file](https://github.com/tier4/autoware-ml/tree/e73f827483d49af53fe0aa4f1e7aebccf720971a/projects/CenterPoint/configs/t4dataset/second_secfpn_2xb8_121m_x2.py).
+As an example, we use [CenterPoint](/projects/CenterPoint/) and [this config file](https://github.com/tier4/AWML/tree/e73f827483d49af53fe0aa4f1e7aebccf720971a/projects/CenterPoint/configs/t4dataset/second_secfpn_2xb8_121m_x2.py).
 
 2. Confirm the parameter to train
 
-To confirm the parameters for training, please see like [the parameters of config file](https://github.com/tier4/autoware-ml/tree/e73f827483d49af53fe0aa4f1e7aebccf720971a/projects/CenterPoint/configs/t4dataset/second_secfpn_2xb8_121m_x2.py#L305).
+To confirm the parameters for training, please see like [the parameters of config file](https://github.com/tier4/AWML/tree/e73f827483d49af53fe0aa4f1e7aebccf720971a/projects/CenterPoint/configs/t4dataset/second_secfpn_2xb8_121m_x2.py#L305).
 
 3. Confirm the dataset config
 
-From [the import file](https://github.com/tier4/autoware-ml/tree/e73f827483d49af53fe0aa4f1e7aebccf720971a/projects/CenterPoint/configs/t4dataset/second_secfpn_2xb8_121m_x2.py#L3), confirm the dataset config in `/autoware_ml/configs/detection3d/dataset/`.
-As an example, please confirm like [dataset config](https://github.com/tier4/autoware-ml/tree/e73f827483d49af53fe0aa4f1e7aebccf720971a/autoware_ml/configs/detection3d/dataset/t4dataset/x2.py#L14).
-An [the yaml files](https://github.com/tier4/autoware-ml/tree/e73f827483d49af53fe0aa4f1e7aebccf720971a/autoware_ml/configs/detection3d/dataset/t4dataset/db_gsm8_v1.yaml) are defined and it has the information of dataset.
+From [the import file](https://github.com/tier4/AWML/tree/e73f827483d49af53fe0aa4f1e7aebccf720971a/projects/CenterPoint/configs/t4dataset/second_secfpn_2xb8_121m_x2.py#L3), confirm the dataset config in `/autoware_ml/configs/detection3d/dataset/`.
+As an example, please confirm like [dataset config](https://github.com/tier4/AWML/tree/e73f827483d49af53fe0aa4f1e7aebccf720971a/autoware_ml/configs/detection3d/dataset/t4dataset/x2.py#L14).
+An [the yaml files](https://github.com/tier4/AWML/tree/e73f827483d49af53fe0aa4f1e7aebccf720971a/autoware_ml/configs/detection3d/dataset/t4dataset/db_gsm8_v1.yaml) are defined and it has the information of dataset.
 
 ### How to manage the config files
 

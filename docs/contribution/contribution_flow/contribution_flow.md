@@ -39,7 +39,7 @@ pre-commit run -a
 pre-commit install  # ()
 ```
 
-- If you use VSCode, you can use [tasks of VSCode](https://github.com/tier4/autoware-ml/blob/main/.vscode/tasks.json).
+- If you use VSCode, you can use [tasks of VSCode](https://github.com/tier4/AWML/blob/main/.vscode/tasks.json).
   - "Ctrl+shift+P" -> Select "Tasks: Run Task" -> Select "Pre-commit: Run"
 - In addition to it, we recommend VSCode extension
   - [black-formatter](https://marketplace.visualstudio.com/items?itemName=ms-python.black-formatter)

@@ -1,12 +1,12 @@
 # analysis_3d
 
-It provides a framework to developers in `autoware-ml` to add analyses for 3D annotations in T4dataset easily.
+It provides a framework to developers in `AWML` to add analyses for 3D annotations in T4dataset easily.
 With this framework, developers don't need to generate any `info` files or rewrite their data loading for the dataset.
 They only need to follow `AnalysisCallbackInterface` to add the analyses they are interested in.
 
 ## Summary
 
-- [Support priority](https://github.com/tier4/autoware-ml/blob/main/docs/design/autoware_ml_design.md#support-priority): Tier B
+- [Support priority](https://github.com/tier4/AWML/blob/main/docs/design/autoware_ml_design.md#support-priority): Tier B
 - Supported dataset
   - [x] T4dataset
   - [] NuScenes

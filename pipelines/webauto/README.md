@@ -1,10 +1,10 @@
 
 # Pipeline with WebAuto
 
-This is the tools to use `autoware-ml` with WebAuto.
+This is the tools to use `AWML` with WebAuto.
 You check data access right of [WebAuto(> v0.40.0)](https://docs.web.auto/en/user-manuals/).
 
-- [Support priority](https://github.com/tier4/autoware-ml/blob/main/docs/design/autoware_ml_design.md#support-priority): Write for each tools
+- [Support priority](https://github.com/tier4/AWML/blob/main/docs/design/autoware_ml_design.md#support-priority): Write for each tools
 
 ## tools
 

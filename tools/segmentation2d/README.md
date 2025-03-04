@@ -2,7 +2,7 @@
 
 Training and evaluation tools for 2D segmentation.
 
-- [Support priority](https://github.com/tier4/autoware-ml/blob/main/docs/design/autoware_ml_design.md#support-priority): Tier B
+- [Support priority](https://github.com/tier4/AWML/blob/main/docs/design/autoware_ml_design.md#support-priority): Tier B
 - Supported dataset
   - [ ] NuScenes
   - [ ] T4dataset

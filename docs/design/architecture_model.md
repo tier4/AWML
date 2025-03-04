@@ -24,14 +24,14 @@ In 3D detection, we deploy the following models:
 
 "Pretrain model" is used for training the base model to increase generalization performance.
 "Pretrain model" is basically trained by public datasets and pseudo-label datasets.
-"Pretrain model" is managed by `autoware-ml`.
+"Pretrain model" is managed by `AWML`.
 
 ### 2. Base model
 
 "Base model" can be used for a wide range of projects.
 "Base model" is based on a LiDAR-only model for 3D detection for general purposes.
 "Base model" is basically fine-tuned using all of the T4dataset from the "Pretrain model".
-"Base model" is managed by `autoware-ml`.
+"Base model" is managed by `AWML`.
 
 ### 3. Product model
 
@@ -39,21 +39,21 @@ In 3D detection, we deploy the following models:
 "Product model" can use specific sensor configurations for deployment.
 It can be used for a sensor fusion model because the sensor configuration is fixed.
 "Product model" is basically fine-tuned from the "Base model".
-"Product model" is managed by `autoware-ml`.
+"Product model" is managed by `AWML`.
 
 ### 4. Project model
 
 If the performance of the "product model" is not enough for some reason, the "Project model" can be used for specific projects.
 "Project model" adapts to specific domains and is trained by pseudo-labels using the "Offline model".
 "Project model" sometimes uses project-only datasets, which cannot be used for other projects for some reason.
-"Project model" is not managed by `autoware-ml` as it is just prepared as an interface from `autoware-ml`, so the user should manage the "project model".
+"Project model" is not managed by `AWML` as it is just prepared as an interface from `AWML`, so the user should manage the "project model".
 
 ### 5. Offline model
 
 "Offline model" can be used for offline processes like pseudo-labeling and cannot be used for real-time autonomous driving applications.
 "Offline model" is based on a LiDAR-only model for 3D detection for generalization performance.
 "Offline model" is basically trained using all datasets.
-"Offline model" is managed by `autoware-ml`.
+"Offline model" is managed by `AWML`.
 
 ## Model management of ML model
 ### Definition of model name

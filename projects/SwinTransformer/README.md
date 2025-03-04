@@ -1,6 +1,6 @@
 # SwinTransformer
 
-- [Support priority](https://github.com/tier4/autoware-ml/blob/main/docs/design/autoware_ml_design.md#support-priority): Tier C
+- [Support priority](https://github.com/tier4/AWML/blob/main/docs/design/autoware_ml_design.md#support-priority): Tier C
 - ROS package: None
 - Supported dataset
   - [x] NuScenes
