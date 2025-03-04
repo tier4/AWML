@@ -21,6 +21,7 @@ dataset_version_list = [
     "db_j6_v1",
     "db_j6_v2",
     "db_j6_v3",
+    "db_j6_v5",
 ]
 
 # dataset format setting
