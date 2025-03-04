@@ -1,5 +1,7 @@
-import tensorrt as trt
 import argparse
+
+import tensorrt as trt
+
 
 def build_engine(onnx_file_path, engine_file_path, fp16_mode=True, workspace_size=2, max_dynamic_shape=[]):
     """Converts ONNX model to TensorRT engine."""
@@ -27,9 +29,9 @@ def build_engine(onnx_file_path, engine_file_path, fp16_mode=True, workspace_siz
         shape = input_tensor.shape
         if -1 in shape:  # Dynamic shape detected
             print(f"dynamic shape detected: {shape}. {max_dynamic_shape} will be used")
-            min_shape = [s if s != -1 else max_dynamic_shape[i]  for i,s in enumerate(shape)]
-            opt_shape = [s if s != -1 else max_dynamic_shape[i]  for i,s in enumerate(shape)]
-            max_shape = [s if s != -1 else max_dynamic_shape[i]  for i,s in enumerate(shape)]
+            min_shape = [s if s != -1 else max_dynamic_shape[i] for i, s in enumerate(shape)]
+            opt_shape = [s if s != -1 else max_dynamic_shape[i] for i, s in enumerate(shape)]
+            max_shape = [s if s != -1 else max_dynamic_shape[i] for i, s in enumerate(shape)]
 
             profile.set_shape(input_tensor.name, min_shape, opt_shape, max_shape)
             config.add_optimization_profile(profile)
@@ -51,8 +53,13 @@ if __name__ == "__main__":
     parser.add_argument("engine_file", type=str, help="Path to save TensorRT engine")
     parser.add_argument("--fp16", action="store_true", help="Enable FP16 precision")
     parser.add_argument("--workspace", type=int, default=8, help="Workspace size in GB")
-    parser.add_argument("--max_dynamic_shape", type=int, nargs='+', default=[], help="Max sizes for dynamic axes (provide space-separated integers)")
-
+    parser.add_argument(
+        "--max_dynamic_shape",
+        type=int,
+        nargs="+",
+        default=[],
+        help="Max sizes for dynamic axes (provide space-separated integers)",
+    )
 
     args = parser.parse_args()
     build_engine(args.onnx_file, args.engine_file, args.fp16, args.workspace, args.max_dynamic_shape)

@@ -1,9 +1,10 @@
 import argparse
+import functools
 import os
 import os.path as osp
 import time
+
 import numpy as np
-import functools
 from mmengine.config import Config
 from mmengine.registry import RUNNERS
 from mmengine.runner import Runner
@@ -21,13 +22,13 @@ def parse_args():
     return args
 
 
-def wrapper(function_call, time_required, batch_size, max_iter, warmup_iters = 10):
+def wrapper(function_call, time_required, batch_size, max_iter, warmup_iters=10):
     @functools.wraps(function_call)
     def function(*args, **kwargs):
         start_time = time.perf_counter()
         result = function_call(*args, **kwargs)
         end_time = time.perf_counter()
-        
+
         time_taken = end_time - start_time
         time_required.append(time_taken)
 
@@ -48,11 +49,12 @@ def wrapper(function_call, time_required, batch_size, max_iter, warmup_iters = 1
             print(f"95th Percentile  : {percentiles[3]:.6f} sec")
             print(f"99th Percentile  : {percentiles[4]:.6f} sec")
             print("-" * 40)
-            
+
             time_required.clear()
             exit(0)
-        
-        return result 
+
+        return result
+
     return function
 
 
@@ -69,7 +71,13 @@ def main():
 
     time_required = []
     test_function = runner.model.test_step
-    runner.model.test_step = wrapper(test_function, time_required, args.batch_size, min(args.max_iter, len(runner.test_dataloader.dataset)-args.warmup_iters),args.warmup_iters)
+    runner.model.test_step = wrapper(
+        test_function,
+        time_required,
+        args.batch_size,
+        min(args.max_iter, len(runner.test_dataloader.dataset) - args.warmup_iters),
+        args.warmup_iters,
+    )
     runner.test()
 
 

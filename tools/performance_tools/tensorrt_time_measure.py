@@ -1,15 +1,18 @@
-import numpy as np
-import tensorrt as trt
-import pycuda.driver as cuda
-import pycuda.autoinit
-import time
 import argparse
+import time
+
+import numpy as np
+import pycuda.autoinit
+import pycuda.driver as cuda
+import tensorrt as trt
+
 
 def load_engine(engine_path):
     """Load a serialized TensorRT engine from file."""
     TRT_LOGGER = trt.Logger(trt.Logger.WARNING)
     with open(engine_path, "rb") as f, trt.Runtime(TRT_LOGGER) as runtime:
         return runtime.deserialize_cuda_engine(f.read())
+
 
 def allocate_buffers(engine, context):
     """Allocate input and output buffers for the TensorRT engine."""
@@ -36,6 +39,7 @@ def allocate_buffers(engine, context):
         context.set_tensor_address(name, int(device_mem))
 
     return inputs, outputs, stream
+
 
 def infer(engine, context, inputs, outputs, stream, iterations=100):
     """Run inference using execute_async_v3 and measure execution time with statistics."""
@@ -92,6 +96,7 @@ def get_device_info(device_id=0):
     device = cuda.Device(device_id)  # Assume using the first GPU
     print(f"Using GPU: {device.name()} (Compute Capability: {device.compute_capability()})")
 
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="TensorRT Inference Script")
     parser.add_argument("--engine_path", type=str, required=True, help="Path to the TensorRT engine file")
@@ -99,7 +104,7 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     get_device_info()
-    
+
     engine = load_engine(args.engine_path)
     context = engine.create_execution_context()
     inputs, outputs, stream = allocate_buffers(engine, context)
