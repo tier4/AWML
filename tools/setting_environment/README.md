@@ -71,3 +71,9 @@ DOCKER_BUILDKIT=1 docker build -t autoware-ml .
 ```
 DOCKER_BUILDKIT=1 docker build -t autoware-ml-ros2 ./tools/setting_environment/ros2/
 ```
+
+- If you want to do performance testing with tensorrt, you can use tensorrt docker environment.
+
+```
+DOCKER_BUILDKIT=1 docker build -t autoware-ml-tensorrt ./tools/setting_environment/tensorrt/
+```
