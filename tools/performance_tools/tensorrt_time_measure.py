@@ -1,5 +1,6 @@
 import argparse
 import time
+import logging
 from typing import Dict, Tuple
 
 import numpy as np
@@ -7,14 +8,24 @@ import pycuda.autoinit  # noqa: F401
 import pycuda.driver as cuda
 import tensorrt as trt
 
+# Configure logging
+logging.basicConfig(
+    level=logging.INFO,  # Change to DEBUG for more detailed logs
+    format="%(asctime)s - %(levelname)s - %(message)s",
+)
+logger = logging.getLogger(__name__)
+
 def load_engine(engine_path: str) -> trt.ICudaEngine:
     """Load a serialized TensorRT engine from file."""
     TRT_LOGGER = trt.Logger(trt.Logger.WARNING)
     with open(engine_path, "rb") as f, trt.Runtime(TRT_LOGGER) as runtime:
+        logger.info(f"Loading TensorRT engine from: {engine_path}")
         return runtime.deserialize_cuda_engine(f.read())
 
 def allocate_buffers(engine: trt.ICudaEngine, context: trt.IExecutionContext) -> Tuple[Dict[str, Dict[str, np.ndarray]], Dict[str, Dict[str, np.ndarray]], cuda.Stream]:
     """Allocate input and output buffers for the TensorRT engine."""
+    logger.info("Allocating buffers for TensorRT engine...")
+    
     inputs: Dict[str, Dict[str, np.ndarray]] = {}
     outputs: Dict[str, Dict[str, np.ndarray]] = {}
     stream = cuda.Stream()
@@ -36,7 +47,9 @@ def allocate_buffers(engine: trt.ICudaEngine, context: trt.IExecutionContext) ->
 
         # Set tensor address for execution context
         context.set_tensor_address(name, int(device_mem))
+        logger.debug(f"Allocated buffer for tensor: {name}, shape: {engine.get_tensor_shape(name)}, dtype: {dtype}")
 
+    logger.info("Buffer allocation completed.")
     return inputs, outputs, stream
 
 def infer(
@@ -49,6 +62,8 @@ def infer(
 ) -> Dict[str, float]:
     """Run inference using execute_async_v3 and measure execution time with statistics."""
 
+    logger.info(f"Running inference for {iterations} iterations...")
+
     # Generate random input data and copy it to the device
     for inp in inputs.values():
         inp["host"] = np.random.random(inp["host"].shape).astype(inp["host"].dtype)
@@ -58,7 +73,6 @@ def infer(
     context.execute_async_v3(stream_handle=stream.handle)
     stream.synchronize()
 
-    # Timing variables
     times = []
 
     # Run inference multiple times
@@ -80,7 +94,6 @@ def infer(
     std_dev = np.std(times)
     percentiles = np.percentile(times, [50, 80, 90, 95, 99])
 
-    # Store results in a dictionary
     results = {
         "iterations": iterations,
         "mean_time": mean_time,
@@ -92,20 +105,20 @@ def infer(
         "99th_percentile": percentiles[4],
     }
 
-    # Print formatted results
-    print("\nInference Execution Time Statistics:")
-    print("-" * 50)
+    # Log formatted results
+    logger.info("\nInference Execution Time Statistics:")
+    logger.info("-" * 50)
     for key, value in results.items():
-        print(f"{key.replace('_', ' ').title():<20}: {value:.3f} ms")
-    print("-" * 50)
+        logger.info(f"{key.replace('_', ' ').title():<20}: {value:.3f} ms")
+    logger.info("-" * 50)
 
     return results
 
 def get_device_info(device_id: int = 0) -> None:
-    """Print the GPU device being used."""
+    """Log the GPU device being used."""
     cuda.init()
     device = cuda.Device(device_id)
-    print(f"Using GPU: {device.name()} (Compute Capability: {device.compute_capability()})")
+    logger.info(f"Using GPU: {device.name()} (Compute Capability: {device.compute_capability()})")
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="TensorRT Inference Script")

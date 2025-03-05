@@ -1,6 +1,14 @@
 import argparse
 import tensorrt as trt
+import logging
 from typing import List, Optional
+
+# Configure logger
+logging.basicConfig(
+    level=logging.INFO,  # Change to DEBUG for more verbosity
+    format="%(asctime)s - %(levelname)s - %(message)s",
+)
+logger = logging.getLogger(__name__)
 
 def build_engine(
     onnx_file_path: str,
@@ -8,7 +16,7 @@ def build_engine(
     fp16_mode: bool = True,
     workspace_size: int = 2,
     max_dynamic_shape: Optional[List[int]] = None,
-) -> bool:
+) -> None:
     """Converts ONNX model to TensorRT engine."""
     if max_dynamic_shape is None:
         max_dynamic_shape = []
@@ -27,8 +35,9 @@ def build_engine(
     with open(onnx_file_path, "rb") as model:
         if not parser.parse(model.read()):
             for error in range(parser.num_errors):
-                print(parser.get_error(error))
-            raise RuntimeError("ONNX parsing failed!")
+                logger.error(parser.get_error(error))
+            logger.error("ONNX parsing failed!")
+            return
 
     # Handle dynamic input shapes (if any)
     profile = builder.create_optimization_profile()
@@ -36,7 +45,7 @@ def build_engine(
         input_tensor = network.get_input(i)
         shape = input_tensor.shape
         if -1 in shape:  # Dynamic shape detected
-            print(f"Dynamic shape detected: {shape}. {max_dynamic_shape} will be used")
+            logger.info(f"Dynamic shape detected: {shape}. {max_dynamic_shape} will be used")
             min_shape = [s if s != -1 else max_dynamic_shape[i] for i, s in enumerate(shape)]
             opt_shape = [s if s != -1 else max_dynamic_shape[i] for i, s in enumerate(shape)]
             max_shape = [s if s != -1 else max_dynamic_shape[i] for i, s in enumerate(shape)]
@@ -47,14 +56,13 @@ def build_engine(
     # Build serialized network
     serialized_engine = builder.build_serialized_network(network, config)
     if serialized_engine is None:
-        raise RuntimeError("Failed to build TensorRT engine!")
+        logger.error("Failed to build TensorRT engine!")
+        return
 
     with open(engine_file_path, "wb") as f:
         f.write(serialized_engine)
 
-    print(f"Successfully created TensorRT engine: {engine_file_path}")
-    return True
-
+    logger.info(f"Successfully created TensorRT engine: {engine_file_path}")
 
 def main() -> None:
     parser = argparse.ArgumentParser(description="Convert ONNX to TensorRT Engine")
@@ -72,7 +80,6 @@ def main() -> None:
 
     args = parser.parse_args()
     build_engine(args.onnx_file, args.engine_file, args.fp16, args.workspace, args.max_dynamic_shape)
-
 
 if __name__ == "__main__":
     main()
