@@ -18,7 +18,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--batch-size", default=1, type=int, help="override the batch size in the config")
     parser.add_argument("--max-iter", default=200, type=int, help="maximum number of iterations to test")
     parser.add_argument("--warmup-iters", default=50, type=int, help="maximum number of iterations for warmup")
-    
+
     return parser.parse_args()
 
 
@@ -32,6 +32,7 @@ def wrapper(
     """
     Wraps a function to measure execution time and prints statistics.
     """
+
     @functools.wraps(function_call)
     def function(*args, **kwargs):
         start_time = time.perf_counter()

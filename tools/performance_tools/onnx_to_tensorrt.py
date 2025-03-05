@@ -1,6 +1,8 @@
 import argparse
-import tensorrt as trt
 from typing import List, Optional
+
+import tensorrt as trt
+
 
 def build_engine(
     onnx_file_path: str,

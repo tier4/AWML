@@ -7,13 +7,17 @@ import pycuda.autoinit  # noqa: F401
 import pycuda.driver as cuda
 import tensorrt as trt
 
+
 def load_engine(engine_path: str) -> trt.ICudaEngine:
     """Load a serialized TensorRT engine from file."""
     TRT_LOGGER = trt.Logger(trt.Logger.WARNING)
     with open(engine_path, "rb") as f, trt.Runtime(TRT_LOGGER) as runtime:
         return runtime.deserialize_cuda_engine(f.read())
 
-def allocate_buffers(engine: trt.ICudaEngine, context: trt.IExecutionContext) -> Tuple[Dict[str, Dict[str, np.ndarray]], Dict[str, Dict[str, np.ndarray]], cuda.Stream]:
+
+def allocate_buffers(
+    engine: trt.ICudaEngine, context: trt.IExecutionContext
+) -> Tuple[Dict[str, Dict[str, np.ndarray]], Dict[str, Dict[str, np.ndarray]], cuda.Stream]:
     """Allocate input and output buffers for the TensorRT engine."""
     inputs: Dict[str, Dict[str, np.ndarray]] = {}
     outputs: Dict[str, Dict[str, np.ndarray]] = {}
@@ -39,13 +43,14 @@ def allocate_buffers(engine: trt.ICudaEngine, context: trt.IExecutionContext) ->
 
     return inputs, outputs, stream
 
+
 def infer(
     engine: trt.ICudaEngine,
     context: trt.IExecutionContext,
     inputs: Dict[str, Dict[str, np.ndarray]],
     outputs: Dict[str, Dict[str, np.ndarray]],
     stream: cuda.Stream,
-    iterations: int = 100
+    iterations: int = 100,
 ) -> Dict[str, float]:
     """Run inference using execute_async_v3 and measure execution time with statistics."""
 
@@ -101,11 +106,13 @@ def infer(
 
     return results
 
+
 def get_device_info(device_id: int = 0) -> None:
     """Print the GPU device being used."""
     cuda.init()
     device = cuda.Device(device_id)
     print(f"Using GPU: {device.name()} (Compute Capability: {device.compute_capability()})")
+
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="TensorRT Inference Script")
