@@ -1,0 +1,11 @@
+--- /mmdet3d/datasets/det3d_dataset.py	2025-03-02 21:23:44.948248286 +0900
++++ /mmdet3d/datasets/det3d_dataset.py.corrected	2025-03-03 00:25:12.891021215 +0900
+@@ -249,7 +249,7 @@
+                 elif ann_name in name_mapping:
+                     temp_anns = np.array(temp_anns).astype(np.float32)
+                 else:
+-                    temp_anns = np.array(temp_anns)
++                    temp_anns = np.array(temp_anns, dtype=object)
+
+                 ann_info[mapped_ann_name] = temp_anns
+             ann_info['instances'] = info['instances']
