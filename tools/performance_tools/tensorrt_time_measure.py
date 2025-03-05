@@ -1,6 +1,6 @@
 import argparse
-import time
 import logging
+import time
 from typing import Dict, Tuple
 
 import numpy as np
@@ -15,6 +15,7 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
+
 def load_engine(engine_path: str) -> trt.ICudaEngine:
     """Load a serialized TensorRT engine from file."""
     TRT_LOGGER = trt.Logger(trt.Logger.WARNING)
@@ -28,7 +29,7 @@ def allocate_buffers(
 ) -> Tuple[Dict[str, Dict[str, np.ndarray]], Dict[str, Dict[str, np.ndarray]], cuda.Stream]:
     """Allocate input and output buffers for the TensorRT engine."""
     logger.info("Allocating buffers for TensorRT engine...")
-    
+
     inputs: Dict[str, Dict[str, np.ndarray]] = {}
     outputs: Dict[str, Dict[str, np.ndarray]] = {}
     stream = cuda.Stream()

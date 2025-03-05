@@ -1,7 +1,8 @@
 import argparse
-import tensorrt as trt
 import logging
 from typing import List, Optional
+
+import tensorrt as trt
 
 # Configure logger
 logging.basicConfig(
@@ -9,6 +10,7 @@ logging.basicConfig(
     format="%(asctime)s - %(levelname)s - %(message)s",
 )
 logger = logging.getLogger(__name__)
+
 
 def build_engine(
     onnx_file_path: str,
@@ -64,6 +66,7 @@ def build_engine(
 
     logger.info(f"Successfully created TensorRT engine: {engine_file_path}")
 
+
 def main() -> None:
     parser = argparse.ArgumentParser(description="Convert ONNX to TensorRT Engine")
     parser.add_argument("onnx_file", type=str, help="Path to ONNX model file")
@@ -80,6 +83,7 @@ def main() -> None:
 
     args = parser.parse_args()
     build_engine(args.onnx_file, args.engine_file, args.fp16, args.workspace, args.max_dynamic_shape)
+
 
 if __name__ == "__main__":
     main()
