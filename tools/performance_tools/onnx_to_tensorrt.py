@@ -1,10 +1,18 @@
 import argparse
-
 import tensorrt as trt
+from typing import List, Optional
 
-
-def build_engine(onnx_file_path, engine_file_path, fp16_mode=True, workspace_size=2, max_dynamic_shape=[]):
+def build_engine(
+    onnx_file_path: str,
+    engine_file_path: str,
+    fp16_mode: bool = True,
+    workspace_size: int = 2,
+    max_dynamic_shape: Optional[List[int]] = None,
+) -> bool:
     """Converts ONNX model to TensorRT engine."""
+    if max_dynamic_shape is None:
+        max_dynamic_shape = []
+
     TRT_LOGGER = trt.Logger(trt.Logger.WARNING)
     builder = trt.Builder(TRT_LOGGER)
     network = builder.create_network(1 << int(trt.NetworkDefinitionCreationFlag.EXPLICIT_BATCH))
@@ -28,7 +36,7 @@ def build_engine(onnx_file_path, engine_file_path, fp16_mode=True, workspace_siz
         input_tensor = network.get_input(i)
         shape = input_tensor.shape
         if -1 in shape:  # Dynamic shape detected
-            print(f"dynamic shape detected: {shape}. {max_dynamic_shape} will be used")
+            print(f"Dynamic shape detected: {shape}. {max_dynamic_shape} will be used")
             min_shape = [s if s != -1 else max_dynamic_shape[i] for i, s in enumerate(shape)]
             opt_shape = [s if s != -1 else max_dynamic_shape[i] for i, s in enumerate(shape)]
             max_shape = [s if s != -1 else max_dynamic_shape[i] for i, s in enumerate(shape)]
@@ -45,9 +53,10 @@ def build_engine(onnx_file_path, engine_file_path, fp16_mode=True, workspace_siz
         f.write(serialized_engine)
 
     print(f"Successfully created TensorRT engine: {engine_file_path}")
+    return True
 
 
-if __name__ == "__main__":
+def main() -> None:
     parser = argparse.ArgumentParser(description="Convert ONNX to TensorRT Engine")
     parser.add_argument("onnx_file", type=str, help="Path to ONNX model file")
     parser.add_argument("engine_file", type=str, help="Path to save TensorRT engine")
@@ -57,9 +66,13 @@ if __name__ == "__main__":
         "--max_dynamic_shape",
         type=int,
         nargs="+",
-        default=[],
+        default=None,
         help="Max sizes for dynamic axes (provide space-separated integers)",
     )
 
     args = parser.parse_args()
     build_engine(args.onnx_file, args.engine_file, args.fp16, args.workspace, args.max_dynamic_shape)
+
+
+if __name__ == "__main__":
+    main()

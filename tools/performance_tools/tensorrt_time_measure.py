@@ -1,23 +1,22 @@
 import argparse
 import time
+from typing import Dict, Tuple
 
 import numpy as np
-import pycuda.autoinit
+import pycuda.autoinit  # noqa: F401
 import pycuda.driver as cuda
 import tensorrt as trt
 
-
-def load_engine(engine_path):
+def load_engine(engine_path: str) -> trt.ICudaEngine:
     """Load a serialized TensorRT engine from file."""
     TRT_LOGGER = trt.Logger(trt.Logger.WARNING)
     with open(engine_path, "rb") as f, trt.Runtime(TRT_LOGGER) as runtime:
         return runtime.deserialize_cuda_engine(f.read())
 
-
-def allocate_buffers(engine, context):
+def allocate_buffers(engine: trt.ICudaEngine, context: trt.IExecutionContext) -> Tuple[Dict[str, Dict[str, np.ndarray]], Dict[str, Dict[str, np.ndarray]], cuda.Stream]:
     """Allocate input and output buffers for the TensorRT engine."""
-    inputs = {}
-    outputs = {}
+    inputs: Dict[str, Dict[str, np.ndarray]] = {}
+    outputs: Dict[str, Dict[str, np.ndarray]] = {}
     stream = cuda.Stream()
 
     for idx in range(engine.num_io_tensors):
@@ -40,12 +39,18 @@ def allocate_buffers(engine, context):
 
     return inputs, outputs, stream
 
-
-def infer(engine, context, inputs, outputs, stream, iterations=100):
+def infer(
+    engine: trt.ICudaEngine,
+    context: trt.IExecutionContext,
+    inputs: Dict[str, Dict[str, np.ndarray]],
+    outputs: Dict[str, Dict[str, np.ndarray]],
+    stream: cuda.Stream,
+    iterations: int = 100
+) -> Dict[str, float]:
     """Run inference using execute_async_v3 and measure execution time with statistics."""
 
     # Generate random input data and copy it to the device
-    for name, inp in inputs.items():
+    for inp in inputs.values():
         inp["host"] = np.random.random(inp["host"].shape).astype(inp["host"].dtype)
         cuda.memcpy_htod_async(inp["device"], inp["host"], stream)
 
@@ -66,9 +71,8 @@ def infer(engine, context, inputs, outputs, stream, iterations=100):
         times.append((end_time - start_time) * 1000)  # Convert to milliseconds
 
     # Copy outputs back to host
-    for name, out in outputs.items():
+    for out in outputs.values():
         cuda.memcpy_dtoh_async(out["host"], out["device"], stream)
-
     stream.synchronize()
 
     # Compute statistics
@@ -76,26 +80,32 @@ def infer(engine, context, inputs, outputs, stream, iterations=100):
     std_dev = np.std(times)
     percentiles = np.percentile(times, [50, 80, 90, 95, 99])
 
+    # Store results in a dictionary
+    results = {
+        "iterations": iterations,
+        "mean_time": mean_time,
+        "std_dev": std_dev,
+        "50th_percentile": percentiles[0],
+        "80th_percentile": percentiles[1],
+        "90th_percentile": percentiles[2],
+        "95th_percentile": percentiles[3],
+        "99th_percentile": percentiles[4],
+    }
+
     # Print formatted results
     print("\nInference Execution Time Statistics:")
     print("-" * 50)
-    print(f"Iterations       : {iterations}")
-    print(f"Mean Time        : {mean_time:.3f} ms")
-    print(f"Standard Dev.    : {std_dev:.3f} ms")
-    print(f"50th Percentile  : {percentiles[0]:.3f} ms")
-    print(f"80th Percentile  : {percentiles[1]:.3f} ms")
-    print(f"90th Percentile  : {percentiles[2]:.3f} ms")
-    print(f"95th Percentile  : {percentiles[3]:.3f} ms")
-    print(f"99th Percentile  : {percentiles[4]:.3f} ms")
+    for key, value in results.items():
+        print(f"{key.replace('_', ' ').title():<20}: {value:.3f} ms")
     print("-" * 50)
 
+    return results
 
-def get_device_info(device_id=0):
+def get_device_info(device_id: int = 0) -> None:
     """Print the GPU device being used."""
     cuda.init()
-    device = cuda.Device(device_id)  # Assume using the first GPU
+    device = cuda.Device(device_id)
     print(f"Using GPU: {device.name()} (Compute Capability: {device.compute_capability()})")
-
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="TensorRT Inference Script")
@@ -109,5 +119,3 @@ if __name__ == "__main__":
     context = engine.create_execution_context()
     inputs, outputs, stream = allocate_buffers(engine, context)
     infer(engine, context, inputs, outputs, stream, iterations=args.iterations)
-
-# CUDA_VISIBLE_DEVICES=1 python3 tools/performance_tools/tensorrt_time_measure.py --engine_path work_dirs/yolox_s_tlr_416x416_pedcar_t4dataset/tlr_car_ped_yolox_s_batch_6.engine --iterations 1000

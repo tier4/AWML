@@ -3,6 +3,7 @@ import functools
 import os
 import os.path as osp
 import time
+from typing import Callable, List
 
 import numpy as np
 from mmengine.config import Config
@@ -10,27 +11,35 @@ from mmengine.registry import RUNNERS
 from mmengine.runner import Runner
 
 
-def parse_args():
+def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="MMDet3D test (and eval) a model")
     parser.add_argument("config", help="test config file path")
     parser.add_argument("checkpoint", help="checkpoint file")
     parser.add_argument("--batch-size", default=1, type=int, help="override the batch size in the config")
     parser.add_argument("--max-iter", default=200, type=int, help="maximum number of iterations to test")
     parser.add_argument("--warmup-iters", default=50, type=int, help="maximum number of iterations for warmup")
+    
+    return parser.parse_args()
 
-    args = parser.parse_args()
-    return args
 
-
-def wrapper(function_call, time_required, batch_size, max_iter, warmup_iters=10):
+def wrapper(
+    function_call: Callable,
+    time_required: List[float],
+    batch_size: int,
+    max_iter: int,
+    warmup_iters: int = 10,
+) -> Callable:
+    """
+    Wraps a function to measure execution time and prints statistics.
+    """
     @functools.wraps(function_call)
     def function(*args, **kwargs):
         start_time = time.perf_counter()
         result = function_call(*args, **kwargs)
         end_time = time.perf_counter()
 
-        time_taken = end_time - start_time
-        time_required.append(time_taken * 1000)
+        time_taken = (end_time - start_time) * 1000  # Convert to milliseconds
+        time_required.append(time_taken)
 
         if len(time_required) >= max_iter + warmup_iters:
             mean_time = np.mean(time_required[warmup_iters:])
@@ -50,7 +59,6 @@ def wrapper(function_call, time_required, batch_size, max_iter, warmup_iters=10)
             print(f"99th Percentile  : {percentiles[4]:.6f} ms")
             print("-" * 40)
 
-            time_required.clear()
             exit(0)
 
         return result
@@ -58,7 +66,7 @@ def wrapper(function_call, time_required, batch_size, max_iter, warmup_iters=10)
     return function
 
 
-def main():
+def main() -> None:
     args = parse_args()
     cfg = Config.fromfile(args.config)
     cfg.test_dataloader.batch_size = args.batch_size
@@ -69,7 +77,7 @@ def main():
     else:
         runner = RUNNERS.build(cfg)
 
-    time_required = []
+    time_required: List[float] = []
     test_function = runner.model.test_step
     runner.model.test_step = wrapper(
         test_function,
