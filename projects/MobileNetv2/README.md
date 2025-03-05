@@ -66,6 +66,16 @@ python3 tools/classification2d/deploy.py /workspace/projects/MobileNetv2/configs
 python3 tools/classification2d/deploy.py /workspace/projects/MobileNetv2/configs/deploy/MobileNetv2-PedestrianTrafficLight/ped_mobilenet-v2-224x224_batch_6.py /workspace/projects/MobileNetv2/configs/t4dataset/MobileNetv2-PedestrianTrafficLight/mobilenet-v2_tlr_ped_t4dataset.py /workspace/work_dirs/mobilenet-v2_tlr_ped_t4dataset/best_multi-label_f1-score_top1_epoch_54.pth /workspace/data/tlr/tlr_v0_1/8bb655ad-e12e-40a1-a7d7-43f279a1bd51/0/data/CAM_TRAFFIC_LIGHT_NEAR/0.jpg 6 --device cuda --work-dir /workspace/work_dirs/mobilenet-v2_tlr_ped_t4dataset
 ```
 
+## Latency
+
+### Mobilenet-V2 224x224 batch_size-6
+
+| Name                                             | Mean (ms) | Std Dev (ms) | Median (ms) | 80th Percentile (ms) | 90th Percentile (ms) | 95th Percentile (ms) | 99th Percentile (ms) |
+|--------------------------------------------------|-----------|-------------|------------|----------------------|----------------------|----------------------|------------------------|
+| traffic_light_fine_detector Ros2 node  (RTX 3090)| 2.69      | 1.52        | 2.0        | 3.0                  | 5.0                  | 6.0                  | 8.00                   |
+| tensorrt (A100 80 GB) (No pre,post processing)   | 0.78      | 0.002       | 0.789      | 0.790                | 0.791                | 0.792                | 0.793                  |   
+| pytorch        (A100 80 GB)                      | 49.16     | 95.90       | 9.90       | 14.05                | 271.85               | 311.14               | 333.24                 |
+
 ## Troubleshooting
 
 ## Reference

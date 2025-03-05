@@ -56,6 +56,16 @@ python3 tools/detection2d/deploy_yolox.py /workspace/work_dirs/yolox_s_tlr_416x4
 python3 tools/detection2d/deploy_yolox.py /workspace/work_dirs/yolox_s_tlr_416x416_pedcar_t4dataset/epoch_300.pth --input_size 416 416 --model yolox-s --batch_size 6 --output_onnx_file tlr_car_ped_yolox_s_batch_6.onnx
 ```
 
+## Latency
+
+### YOLOX-S 416x416 batch_size-6
+
+| Name                                             | Mean (ms) | Std Dev (ms) | Median (ms) | 80th Percentile (ms) | 90th Percentile (ms) | 95th Percentile (ms) | 99th Percentile (ms) |
+|--------------------------------------------------|-----------|-------------|------------|----------------------|----------------------|----------------------|------------------------|
+| traffic_light_fine_detector Ros2 node  (RTX 3090)| 5.27      | 1.15        | 5.0        | 6.0                  | 6.0                  | 6.0                  | 6.90                   |
+| tensorrt (A100 80 GB) (No pre,post processing)   | 5.77      | 2.03        | 7.2        | 7.4                  | 7.6                  | 7.7                  | 7.9                    |
+| pytorch        (A100 80 GB)                      | 123.92    | 50.41       | 144.35     | 157.64               | 163.84               | 174.32               | 218.65                 |
+
 ## Troubleshooting
 
 ## Reference
