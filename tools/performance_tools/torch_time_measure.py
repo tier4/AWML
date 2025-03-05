@@ -30,7 +30,7 @@ def wrapper(function_call, time_required, batch_size, max_iter, warmup_iters=10)
         end_time = time.perf_counter()
 
         time_taken = end_time - start_time
-        time_required.append(time_taken*1000)
+        time_required.append(time_taken * 1000)
 
         if len(time_required) >= max_iter + warmup_iters:
             mean_time = np.mean(time_required[warmup_iters:])
