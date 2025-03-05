@@ -108,6 +108,6 @@ if __name__ == "__main__":
     engine = load_engine(args.engine_path)
     context = engine.create_execution_context()
     inputs, outputs, stream = allocate_buffers(engine, context)
-    infer(engine, context, inputs, outputs, stream, iterations=100)
+    infer(engine, context, inputs, outputs, stream, iterations=args.iterations)
 
 # CUDA_VISIBLE_DEVICES=1 python3 tools/performance_tools/tensorrt_time_measure.py --engine_path work_dirs/yolox_s_tlr_416x416_pedcar_t4dataset/tlr_car_ped_yolox_s_batch_6.engine --iterations 1000
