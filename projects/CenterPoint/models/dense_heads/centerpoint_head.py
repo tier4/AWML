@@ -2,13 +2,16 @@ from typing import Dict, List, Tuple
 
 import numpy as np
 import torch
+from torch import Tensor, nn
 from mmdet3d.models import CenterHead as _CenterHead
 from mmdet3d.models.utils import clip_sigmoid
 from mmdet3d.registry import MODELS
 from mmdet3d.structures.bbox_3d.utils import limit_period
 from mmengine import print_log
 from mmengine.structures import InstanceData
-
+from mmdet.models.utils import multi_apply
+from mmdet3d.models.dense_heads.centerpoint_head import SeparateHead as _SeparateHead
+from mmcv.cnn import ConvModule, build_conv_layer
 
 def get_rotation_bin(rot, dir_offset=0, num_bins=2, one_hot=True):
     """Encode rotation to 0 ~ num_bins-1.
@@ -58,6 +61,36 @@ def get_direction_bin(rot, dir_offset=0, one_hot=True):
 
 
 @MODELS.register_module(force=True)
+class SeparateHead(_SeparateHead):
+
+    def __init__(self,
+                 in_channels,
+                 heads,
+                 head_conv=64,
+                 final_kernel=1,
+                 init_bias=-2.19,
+                 conv_cfg=dict(type='Conv2d'),
+                 norm_cfg=dict(type='BN2d'),
+                 bias='auto',
+                 init_cfg=None,
+                 **kwargs):
+        assert init_cfg is None, 'To prevent abnormal initialization ' \
+            'behavior, init_cfg is not allowed to be set'
+        super(SeparateHead, self).__init__(in_channels=in_channels, heads=heads, head_conv=head_conv, final_kernel=final_kernel, init_bias=init_bias, conv_cfg=conv_cfg, norm_cfg=norm_cfg, bias=bias, init_cfg=init_cfg, **kwargs)
+        if init_cfg is None:
+            self.init_cfg = dict(type='Kaiming', layer='Conv2d')
+
+        self.init_bias_weights()
+
+    def init_bias_weights(self):
+        """Initialize weights."""
+        # super().init_weights()
+        for head in self.heads:
+            if head == 'heatmap':
+                self.__getattr__(head)[-1].bias.data.fill_(self.init_bias)
+
+
+@MODELS.register_module(force=True)
 class CenterHead(_CenterHead):
     """overwritten class of CenterHead
     Note:
@@ -77,6 +110,22 @@ class CenterHead(_CenterHead):
         self._class_wise_loss = loss_cls.get("reduction") == "none"
         if not self._class_wise_loss:
             print_log("If you want to see a class-wise heatmap loss, use reduction='none' of 'loss_cls'.")
+
+    def forward(self, feats: List[Tensor]) -> Tuple[List[Tensor]]:
+        """Forward pass.
+
+        Args:
+            feats (list[torch.Tensor]): Multi-level features, e.g.,
+                features produced by FPN.
+
+        Returns:
+            tuple(list[dict]): Output results for tasks.
+        """
+        # with torch.cuda.amp.autocast(enabled=False):
+        #     # Cast to fp32
+        #     feats = [feat.float() for feat in feats]
+        outputs = multi_apply(self.forward_single, feats)
+        return outputs 
 
     def loss_by_feat(self, preds_dicts: Tuple[List[dict]], batch_gt_instances_3d: List[InstanceData], *args, **kwargs):
         """Loss function for CenterHead.

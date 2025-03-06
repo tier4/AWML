@@ -39,15 +39,15 @@ eval_class_range = {
 }
 
 # user setting
-data_root = "data/t4dataset/"
-info_directory_path = "info/kokseang_5/"
+data_root = "data/t4datasets/"
+info_directory_path = "info/kokseang_2/"
 train_gpu_size = 2
 train_batch_size = 8
 test_batch_size = 2
 num_workers = 32
 val_interval = 1
-max_epochs = 50
-work_dir = "work_dirs/centerpoint/" + _base_.dataset_type + "/second_secfpn_2xb4_121m_base_high_resolution/"
+max_epochs = 30
+work_dir = "work_dirs/centerpoint/" + _base_.dataset_type + "/pillar_020_second_secfpn_2xb8_121m_base_amp/"
 
 train_pipeline = [
     dict(
@@ -142,7 +142,7 @@ train_dataloader = dict(
         modality=input_modality,
         backend_args=backend_args,
         data_root=data_root,
-        ann_file=info_directory_path + _base_.info_train_file_name,
+        ann_file=info_directory_path + _base_.info_val_file_name,
         metainfo=_base_.metainfo,
         class_names=_base_.class_names,
         test_mode=False,
@@ -221,7 +221,7 @@ model = dict(
             max_num_points=20,
             voxel_size=voxel_size,
             point_cloud_range=point_cloud_range,
-            max_voxels=(32000, 60000),
+            max_voxels=(48000, 60000),
             deterministic=True,
         ),
     ),
@@ -247,6 +247,7 @@ model = dict(
         layer_strides=[1, 2, 2],
         norm_cfg=dict(type="BN", eps=1e-3, momentum=0.01),
         conv_cfg=dict(type="Conv2d", bias=False),
+
     ),
     pts_neck=dict(
         type="SECONDFPN",
@@ -263,6 +264,7 @@ model = dict(
         tasks=[
             dict(num_class=5, class_names=["car", "truck", "bus", "bicycle", "pedestrian"]),
         ],
+        separate_head=dict(type="SeparateHead", init_bias=-2.19*4, final_kernel=1),
         bbox_coder=dict(
             voxel_size=voxel_size,
             pc_range=point_cloud_range,
@@ -270,8 +272,9 @@ model = dict(
             post_center_range=[-200.0, -200.0, -10.0, 200.0, 200.0, 10.0],
             out_size_factor=out_size_factor,
         ),
-        loss_cls=dict(type="mmdet.GaussianFocalLoss", reduction="none", loss_weight=1.0),
-        loss_bbox=dict(type="mmdet.L1Loss", reduction="mean", loss_weight=0.25),
+        loss_cls=dict(type="CustomGaussianFocalLoss", reduction="none", loss_weight=1.0),
+        # loss_bbox=dict(type="mmdet.L1Loss", reduction="mean", loss_weight=0.25),
+        loss_bbox=dict(type="CustomL1Loss", reduction="mean", loss_weight=0.25),
         norm_bbox=True,
     ),
     train_cfg=dict(
@@ -298,7 +301,7 @@ randomness = dict(seed=0, diff_rank_seed=False, deterministic=True)
 
 # learning rate
 # Since mmengine doesn't support OneCycleMomentum yet, we use CosineAnnealing from the default configs
-lr = 0.0003
+lr = 1e-4
 param_scheduler = [
     # learning rate scheduler
     # During the first (max_epochs * 0.3) epochs, learning rate increases from 0 to lr * 10
@@ -306,18 +309,18 @@ param_scheduler = [
     # lr * 1e-4
     dict(
         type="CosineAnnealingLR",
-        T_max=int(max_epochs * 0.3),
+        T_max=8,
         eta_min=lr * 10,
         begin=0,
-        end=int(max_epochs * 0.3),
+        end=8,
         by_epoch=True,
         convert_to_iter_based=True,
     ),
     dict(
         type="CosineAnnealingLR",
-        T_max=max_epochs - int(max_epochs * 0.3),
+        T_max=22,
         eta_min=lr * 1e-4,
-        begin=int(max_epochs * 0.3),
+        begin=8,
         end=max_epochs,
         by_epoch=True,
         convert_to_iter_based=True,
@@ -327,18 +330,18 @@ param_scheduler = [
     # during the next epochs, momentum increases from 0.85 / 0.95 to 1
     dict(
         type="CosineAnnealingMomentum",
-        T_max=int(max_epochs * 0.3),
+        T_max=8,
         eta_min=0.85 / 0.95,
         begin=0,
-        end=int(max_epochs * 0.3),
+        end=8,
         by_epoch=True,
         convert_to_iter_based=True,
     ),
     dict(
         type="CosineAnnealingMomentum",
-        T_max=max_epochs - int(max_epochs * 0.3),
+        T_max=22,
         eta_min=1,
-        begin=int(max_epochs * 0.3),
+        begin=8,
         end=max_epochs,
         by_epoch=True,
         convert_to_iter_based=True,
@@ -350,11 +353,11 @@ train_cfg = dict(by_epoch=True, max_epochs=max_epochs, val_interval=val_interval
 val_cfg = dict()
 test_cfg = dict()
 
-optim_wrapper = dict(
-    type="OptimWrapper",
-    optimizer=dict(type="AdamW", lr=lr, weight_decay=0.01),
-    clip_grad=dict(max_norm=35, norm_type=2),
-)
+# optim_wrapper = dict(
+#     type="OptimWrapper",
+#     optimizer=dict(type="AdamW", lr=lr, weight_decay=0.01),
+#     clip_grad=dict(max_norm=35, norm_type=2),
+# )
 
 # Default setting for scaling LR automatically
 #   - `enable` means enable scaling LR automatically
@@ -362,6 +365,17 @@ optim_wrapper = dict(
 #   - `base_batch_size` = (2 GPUs) x (8 samples per GPU).
 # auto_scale_lr = dict(enable=False, base_batch_size=32)
 auto_scale_lr = dict(enable=False, base_batch_size=train_gpu_size * train_batch_size)
+optimizer = dict(type="AdamW", lr=lr, weight_decay=0.01)    
+clip_grad = dict(max_norm=35, norm_type=2)
+
+# optim_wrapper = dict(type="OptimWrapper", optimizer=optimizer, clip_grad=clip_grad)
+optim_wrapper = dict(type="AmpOptimWrapper", dtype='float16', optimizer=optimizer, clip_grad=clip_grad, loss_scale={
+	'init_scale': 2.0**8,
+	'growth_interval': 200
+})
+	# 'growth_factor': 2.0, 
+	# 'backoff_factor': 0.1,
+# optim_wrapper = dict(type="AmpOptimWrapper", dtype='float16', optimizer=optimizer, clip_grad=clip_grad, loss_scale="dynamic")
 
 # Only set if the number of train_gpu_size more than 1
 if train_gpu_size > 1:

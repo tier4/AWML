@@ -33,6 +33,7 @@ model = dict(
         layer_strides=[2, 2, 2],
         norm_cfg=dict(type="BN", eps=0.001, momentum=0.01),
         conv_cfg=dict(type="Conv2d", bias=False),
+				
     ),
     pts_neck=dict(
         type="SECONDFPN",
