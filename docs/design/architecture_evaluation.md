@@ -37,53 +37,64 @@ Figure below shows the top-level overview of evaluation pipeline in AWML:
 	{
 		'scene_0': {
 			'frame_0': {
-				'car': {
-					'metric_1': ,
-					'metric_2': ,
-					... 
-				},
-				'bicycle': {
-					'metric_1': ,
-					'metric_2': ,
-					... 
+				'metric_1': {
+					'car':, 
+					...
 				}, 
+				'metric_2'; {
+					'car':, 
+					...
+				},
 				...
 			},
 			'frame_1': {
-				'car': {
-					'metric_1': ,
-					'metric_2': ,
-					... 
-				},
-				'bicycle': {
-					'metric_1': ,
-					'metric_2': ,
-					... 
+				'metric_1': {
+					'car':, 
+					...
 				}, 
+				'metric_2'; {
+					'car':, 
+					...
+				},
 				...
 			},
 			...
 		}, 
 		'scene_1': {
 			'frame_0': {
-				'car': {
-					'metric_1': ,
-					'metric_2': ,
-					... 
-				},
-				'bicycle': {
-					'metric_1': ,
-					'metric_2': ,
-					... 
+				'metric_1': {
+					'car':, 
+					...
 				}, 
+				'metric_2'; {
+					'car':, 
+					...
+				},
 				...
-			}
+			},
+			'frame_1': {
+				'metric_1': {
+					'car':, 
+					...
+				}, 
+				'metric_2'; {
+					'car':, 
+					...
+				},
+				...
+			},
+			...
 		}, 
 	}
 	- Aggregate metrics and calibrate confidence scores, and save them in `aggregated_metrics.json` with the following template:
 	{
 		'aggregated_metrics': {
 			{
+				'metric_1': {
+					'car': {
+						''
+					}
+				}
 				'car': {
 					'metric_1': ,
 					'metric_2': ,
@@ -96,7 +107,7 @@ Figure below shows the top-level overview of evaluation pipeline in AWML:
 					'optimal_confidence_threshold':
 					...
 				}
-			}
+		}
 		},
 	}
 
