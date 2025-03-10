@@ -2,23 +2,23 @@
 
 - Add new backbone for 3D detection.
 
-We introduced ConvNeXtPC as new backbone in 3D detection.
+We introduced ConvNeXtPC as the new backbone in 3D detection.
 
-Comparison for Base Detection:
+Comparison: Base Detection
 
-| Model                    | mAP         | Time    | Memory |
-| ------------------------ | ----------- | ------- | ------ |
-| base/1.0 (120m)          | 64.4        | 18.2 ms | 4.7 GB |
-| ConvNeXt-small (120m)    | 65.3 (+0.9) | 30.4 ms | 5.6 GB |
-| ConvNeXt-standard (120m) | 68.6 (+4.2) | 48.1 ms | 5.9 GB |
+| Model                      | mAP         | Time    | Memory |
+| -------------------------- | ----------- | ------- | ------ |
+| base/1.0 (120m)            | 64.4        | 18.2 ms | 4.7 GB |
+| ConvNeXtPC-small (120m)    | 65.3 (+0.9) | 30.4 ms | 5.6 GB |
+| ConvNeXtPC-standard (120m) | 68.6 (+4.2) | 48.1 ms | 5.9 GB |
 
-Comparison for Nearby Models:
+Comparison: Nearby Models
 
-| Model                   | Time   | Memory |
-| ----------------------- | ------ | ------ |
-| base/1.0 (50m)          | 5.9 ms | 4.5 GB |
-| ConvNeXt-small (50m)    | 7.2 ms | 3.9 GB |
-| ConvNeXt-standard (50m) | 9.9 ms | 3.6 GB |
+| Model                     | Time   | Memory |
+| ------------------------- | ------ | ------ |
+| base/1.0 (50m)            | 5.9 ms | 4.5 GB |
+| ConvNeXtPC-small (50m)    | 7.2 ms | 3.9 GB |
+| ConvNeXtPC-standard (50m) | 9.9 ms | 3.6 GB |
 
 ## v0.7.0
 

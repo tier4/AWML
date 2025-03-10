@@ -4,9 +4,7 @@
 
 ## Next release
 
-We plan belows for next release.
-
-- Release major version v1.0.0
+- Release Major version v1.0.0
 
 We released major version v1.0.0 as OSS "AWML".
 
@@ -31,7 +29,3 @@ We released major version v1.0.0 as OSS "AWML".
 
 - Fix docs
   - https://github.com/tier4/AWML/pull/6
-
-## v1.0.0
-
-TBD
