@@ -1,7 +1,7 @@
 # Architecture for evaluation pipeline
 **Note that this work is still in progress and undergoing significant development, please check the [Release Plans](#Release-plans) for upcoming changes.**
 
-An evaluation pipeline in `AWML` is a systematic framework designed to assess the performance of a trained model. It involves a series of well-defined steps that help determine how well a model generalizes to unseen data. An effective evaluation pipeline ensures that the model is robust, reliable, and well-tuned for actual deployment, while minimizing the risk of overfitting or underfitting. This design doc outlines the main design of evaluation pipeline in both experimental and deployment environments. 
+An evaluation pipeline in `AWML` is a systematic framework designed to assess the performance of a trained model. It involves a series of well-defined steps that help determine how well a model generalizes to unseen data. An effective evaluation pipeline ensures that the model is robust, reliable, and well-tuned for actual deployment, while minimizing the risk of overfitting or underfitting. This design doc outlines the main design of evaluation pipeline in both experimental and deployment environments.
 
 
 # Dependencies
@@ -29,7 +29,7 @@ Figure below shows the top-level overview of evaluation pipeline in AWML:
 		| `confidence_score_thresholds_path`   | `Optional[str]`              | Set to load confidence score threadolds from the path, otherwise it will calibrate from aggregated metrics  |
   - Difference of test mode and validation mode is that confidence scores will be calibrated in the validation mode, but test mode will use the confidence scores from the validation mode
 
-  - `evaluation_config` 
+  - `evaluation_config`
 	  - Example of default configs (e.g., `autoware_ml/configs/detection3d/dataset/t4dataset/base.py`)
 		```python
 		evaluation_configs=dict(
@@ -76,7 +76,7 @@ Figure below shows the top-level overview of evaluation pipeline in AWML:
 		)
 		```
 
-	- Prediction 
+	- Prediction
 		- Predictions/GTs from every frame are converted to `PerceptionFrameResult`, and grouped by the same scenario id
 		- For every scenerio id, it saves a dict of `PerceptionFrameResult` with a frame id, which can be represented by `sample_idx`
 		- `results.pkl` save results with the following template:
@@ -103,53 +103,53 @@ Figure below shows the top-level overview of evaluation pipeline in AWML:
 			'scene_0': {
 				'frame_0': {
 					'metric_1': {
-						'car':, 
+						'car':,
 						...
-					}, 
+					},
 					'metric_2'; {
-						'car':, 
+						'car':,
 						...
 					},
 					...
 				},
 				'frame_1': {
 					'metric_1': {
-						'car':, 
+						'car':,
 						...
-					}, 
+					},
 					'metric_2'; {
-						'car':, 
+						'car':,
 						...
 					},
 					...
 				},
 				...
-			}, 
+			},
 			'scene_1': {
 				'frame_0': {
 					'metric_1': {
-						'car':, 
+						'car':,
 						...
-					}, 
+					},
 					'metric_2'; {
-						'car':, 
+						'car':,
 						...
 					},
 					...
 				},
 				'frame_1': {
 					'metric_1': {
-						'car':, 
+						'car':,
 						...
-					}, 
+					},
 					'metric_2'; {
-						'car':, 
+						'car':,
 						...
 					},
 					...
 				},
 				...
-			}, 
+			},
 		}
 		```
 	  - Aggregate metrics and calibrate confidence scores, and save them in `aggregated_metrics.json` with the following template:
@@ -166,7 +166,7 @@ Figure below shows the top-level overview of evaluation pipeline in AWML:
 						'metric_1': ,
 						'metric_2': ,
 						'optimal_confidence_threshold':
-						... 
+						...
 					},
 					'bicycle': {
 						'metric_1': ,
@@ -178,7 +178,7 @@ Figure below shows the top-level overview of evaluation pipeline in AWML:
 			},
 		}
 		```
-	
+
 ### `<class> T4MetricVisualization(...)`
   - A class to render metric results, for example, PR curve and confusion metrics from an evaluation
 	- Parameters of `T4MetricVisalization` are as follows:
@@ -201,4 +201,4 @@ Figure below shows the top-level overview of evaluation pipeline in AWML:
     - [] Visualize metrics and worst K samples (`T4MetricVisualization`)
     - [] Unit tests for simple cases
 - Misc:
-    - [] Resample train/val/test splits 
+    - [] Resample train/val/test splits
