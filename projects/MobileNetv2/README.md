@@ -70,11 +70,12 @@ python3 tools/classification2d/deploy.py /workspace/projects/MobileNetv2/configs
 
 ### Mobilenet-V2 224x224 batch_size-6
 
-| Name                                             | Mean (ms) | Std Dev (ms) | Median (ms) | 80th Percentile (ms) | 90th Percentile (ms) | 95th Percentile (ms) | 99th Percentile (ms) |
-|--------------------------------------------------|-----------|-------------|------------|----------------------|----------------------|----------------------|------------------------|
-| traffic_light_classifier Ros2 node  (RTX 3090)   | 2.69      | 1.52        | 2.0        | 3.0                  | 5.0                  | 6.0                  | 8.00                   |
-| tensorrt (A100 80 GB) (No pre,post processing)   | 0.78      | 0.002       | 0.789      | 0.790                | 0.791                | 0.792                | 0.793                  |  
-| pytorch  (A100 80 GB)                            | 49.16     | 95.90       | 9.90       | 14.05                | 271.85               | 311.14               | 333.24                 |
+| Name                                             | Mean ± Std Dev (ms) | Median (ms) | 80th Percentile (ms) | 90th Percentile (ms) | 95th Percentile (ms) | 99th Percentile (ms) |  
+|--------------------------------------------------|----------------------|------------|----------------------|----------------------|----------------------|------------------------|  
+| traffic_light_classifier Ros2 node (RTX 3090)   | 2.69 ± 1.52          | 2.0        | 3.0                  | 5.0                  | 6.0                  | 8.00                   |  
+| tensorrt (A100 80 GB) (No pre, post processing)  | 0.78 ± 0.002         | 0.789      | 0.790                | 0.791                | 0.792                | 0.793                  |  
+| pytorch (A100 80 GB)                             | 49.16 ± 95.90        | 9.90       | 14.05                | 271.85               | 311.14               | 333.24                 |  
+
 
 ## Troubleshooting
 
