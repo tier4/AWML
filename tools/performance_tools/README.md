@@ -13,6 +13,8 @@ The repository contains three main tools:
 
 ## Usage Instructions
 
+In order to run the time measurement tools, specifically the `onnx_to_tensorrt.py` and `tensorrt_time_measure.py` tools, you need to build and run the tools under a specific docker environement provided by this [Dockerfile](../setting_environment/tensorrt/Dockerfile).
+
 ### 1. Measuring PyTorch Model Performance
 
 ```bash
