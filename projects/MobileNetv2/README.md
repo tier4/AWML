@@ -68,13 +68,29 @@ python3 tools/classification2d/deploy.py /workspace/projects/MobileNetv2/configs
 
 ## Latency
 
-### Mobilenet-V2 224x224 batch_size-6
+### MobileNetV2 224x224 batch_size-6
 
-| Name                                             | Mean ± Std Dev (ms) | Median (ms) | 80th Percentile (ms) | 90th Percentile (ms) | 95th Percentile (ms) | 99th Percentile (ms) |  
-|--------------------------------------------------|----------------------|------------|----------------------|----------------------|----------------------|------------------------|  
-| traffic_light_classifier Ros2 node (RTX 3090)   | 2.69 ± 1.52          | 2.0        | 3.0                  | 5.0                  | 6.0                  | 8.00                   |  
-| tensorrt (A100 80 GB) **(No pre, post processing)**  | 0.78 ± 0.002         | 0.789      | 0.790                | 0.791                | 0.792                | 0.793                  |  
-| pytorch (A100 80 GB)                             | 49.16 ± 95.90        | 9.90       | 14.05                | 271.85               | 311.14               | 333.24                 |  
+| Name                                                    | Mean ± Std Dev (ms) | Median (ms) | 80th Percentile (ms) | 90th Percentile (ms) | 95th Percentile (ms) | 99th Percentile (ms)   |  
+|---------------------------------------------------------|----------------------|------------|----------------------|----------------------|----------------------|------------------------|  
+| traffic_light_classifier Ros2 node (RTX 3090)           | 1.89 ± 1.32          | 1.0        | 3.0                  | 4.0                  | 5.0                  | 6.00                   |  
+| tensorrt (A100 80 GB) **(No pre, post processing) fp16**| 0.224 ± 0.035        | 0.223      | 0.225                | 0.226                | 0.227                | 0.228                  |  
+| pytorch (A100 80 GB)                                    | 25.61 ± 50.10        | 10.94      | 12.90                | 35.46                | 134.77               | 264.12                 |  
+
+### MobileNetV2 224x224 batch_size-4
+
+| Name                                                    | Mean ± Std Dev (ms) | Median (ms) | 80th Percentile (ms) | 90th Percentile (ms) | 95th Percentile (ms) | 99th Percentile (ms)   |  
+|---------------------------------------------------------|----------------------|------------|----------------------|----------------------|----------------------|------------------------|  
+| traffic_light_classifier Ros2 node (RTX 3090)           | 1.72 ± 1.45          | 1.0        | 2.0                  | 3.0                  | 4.0                  | 5.00                   |  
+| tensorrt (A100 80 GB) **(No pre, post processing) fp16**| 0.202 ± 0.026        | 0.201      | 0.203                | 0.204                | 0.205                | 0.206                  |  
+| pytorch (A100 80 GB)                                    | 17.90 ± 28.49        | 10.30      | 11.85                | 14.78                | 90.21                | 147.73                 |  
+
+### MobileNetV2 224x224 batch_size-1
+
+| Name                                                    | Mean ± Std Dev (ms) | Median (ms) | 80th Percentile (ms) | 90th Percentile (ms) | 95th Percentile (ms) | 99th Percentile (ms)   |  
+|---------------------------------------------------------|----------------------|------------|----------------------|----------------------|----------------------|------------------------|  
+| traffic_light_classifier Ros2 node (RTX 3090)           | 1.65 ± 1.30          | 1.0        | 2.0                  | 3.0                  | 4.0                  | 5.00                   |  
+| tensorrt (A100 80 GB) **(No pre, post processing) fp16**| 0.180 ± 0.020        | 0.179      | 0.181                | 0.182                | 0.183                | 0.184                  |  
+| pytorch (A100 80 GB)                                    | 9.88 ± 1.85          | 9.68       | 10.85                | 11.62                | 12.56                | 17.99                  |  
 
 
 ## Troubleshooting
