@@ -82,8 +82,6 @@ class BEVFusionSparseEncoder(SparseEncoder):
         if aug_features:
             self.in_channels = in_channels * num_aug_features * 2
             self.exponents = 2 ** torch.arange(0, num_aug_features).to(torch.device("cuda")).float()
-            print(f"==================== exponents.shape={self.exponents}")
-            print(f"==================== in_channels.shape={self.in_channels}")
 
         assert isinstance(order, tuple) and len(order) == 3
         assert set(order) == {"conv", "norm", "act"}
@@ -146,16 +144,13 @@ class BEVFusionSparseEncoder(SparseEncoder):
         """
 
         if self.aug_features:
-            # print(f"==================== ORIGINAL_voxel_features.shape={voxel_features.shape}")
             num_points = voxel_features.shape[0]
-            # num_features = x.shape[0]
             x = (voxel_features - self.aug_features_min_values.view(1, -1)) / (
                 self.aug_features_max_values - self.aug_features_min_values
             ).view(1, -1)
             y = x.reshape(-1, 1) * np.pi * self.exponents.reshape(1, -1)
             y = y.reshape(num_points, -1)
             voxel_features = torch.cat([torch.cos(y), torch.sin(y)], dim=1)
-            # print(f"==================== voxel_features.shape={voxel_features.shape}")
 
         coors = coors.int()
         input_sp_tensor = SparseConvTensor(voxel_features, coors, self.sparse_shape, batch_size)
