@@ -33,6 +33,8 @@
     "--volume=/etc/localtime:/etc/localtime:ro",
     "--volume=/dev/dri:/dev/dri:ro",
     "--volume=${env:HOME}/autoware_data:/home/autoware/autoware_data",
+    "--volume=/media/kokseangtantier4jp/data:/workspace/data",
+		"--volume=/media/kokseangtantier4jp/data/autoware-ml_work_dir/exps/:/workspace/exps",
     "--gpus",
     "all",
     "--shm-size=64gb"
