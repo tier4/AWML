@@ -94,7 +94,7 @@ If you want to know about `AWML`, you should read following pages.
 
 - Model for Autoware
   - [YOLOX](/projects/YOLOX/)
-  - [YOLOX-opt](/projects/YOLOX-opt/)
+  - [YOLOX_opt](/projects/YOLOX_opt/)
 - Model for ML tools
   - [GLIP](/projects/GLIP/)
   - [SwinTransformer](/projects/SwinTransformer/)

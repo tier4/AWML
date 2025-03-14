@@ -18,7 +18,8 @@
 
 - YOLOX_opt-S-TrafficLight
   - v0
-    - [YOLOX_opt-S-TrafficLight base/0.X](./docs/YOLOX_opt-S-TrafficLight/v0/base.md)
+    - [YOLOX_opt-S-TrafficLight base/1.X](./docs/YOLOX_opt-S-TrafficLight/v1/base.md)
+    - [YOLOX_opt-S-TrafficLight x2/1.X](./docs/YOLOX_opt-S-TrafficLight/v1/x2.md)
 
 ## Get started
 ### 1. Setup
