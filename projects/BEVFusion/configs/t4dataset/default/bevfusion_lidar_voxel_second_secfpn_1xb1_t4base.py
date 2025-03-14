@@ -5,11 +5,11 @@ point_cloud_range = [-14.4, -14.4, -3.0, 14.4, 14.4, 5.0]
 voxel_size = [0.01, 0.01, 0.01]
 grid_size = [1440, 1440, 41]
 eval_class_range = {
-    "car": 120,
-    "truck": 120,
-    "bus": 120,
-    "bicycle": 120,
-    "pedestrian": 120,
+    "car": 121,
+    "truck": 121,
+    "bus": 121,
+    "bicycle": 121,
+    "pedestrian": 121,
 }
 
 # model parameter
@@ -38,6 +38,10 @@ model = dict(
     pts_middle_encoder=dict(
         type="BEVFusionSparseEncoder",
         in_channels=5,
+        aug_features=False,
+        aug_features_min_values=[],
+        aug_features_max_values=[],
+        num_aug_features=0,
         sparse_shape=grid_size,
         order=("conv", "norm", "act"),
         norm_cfg=dict(type="BN1d", eps=0.001, momentum=0.01),
