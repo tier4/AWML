@@ -53,6 +53,8 @@
 
 - Model
   - Training dataset: db_jpntaxi_v1 + db_jpntaxi_v2 + db_jpntaxi_v3 + db_gsm8_v1 + db_j6_v1 + db_j6_v2 + db_j6_v3 + db_j6_v5 (total frames: 41835)
+  - [Pull Request](https://github.com/tier4/AWML/pull/18)
+  - [Config file path](https://github.com/tier4/AWML/blob/d037b1d511d0ffb6f37f3e4e13460bc8483e2ccf/projects/CenterPoint/configs/t4dataset/Centerpoint/second_secfpn_2xb8_121m_base.py)
   - Deployed onnx model and ROS parameter files [[WebAuto (for internal)]](https://evaluation.tier4.jp/evaluation/mlpackages/7156b453-2861-4ae9-b135-e24e48cc9029/releases/bc069e21-0152-4e89-aa2d-67c94fcf0582?project_id=zWhWRzei)
   - Deployed onnx and ROS parameter files [[model-zoo]]
     - [detection_class_remapper.param.yaml](https://download.autoware-ml-model-zoo.tier4.jp/autoware-ml/models/centerpoint/centerpoint/t4base/v1.2/detection_class_remapper.param.yaml)
