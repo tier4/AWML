@@ -6,13 +6,14 @@
   - voxel_size = [0.32, 0.32, 8.0]
   - grid_size = [760, 760, 1]
 - Performance summary
-  - Dataset: test dataset of db_jpntaxi_v1 + db_jpntaxi_v2 + db_jpntaxi_v4 + db_gsm8_v1 + db_j6_v1 + db_j6_v2 + db_j6_v3 (total frames: 3026)
+  - Dataset: test dataset of db_jpntaxi_v1 + db_jpntaxi_v2 + db_jpntaxi_v4 + db_gsm8_v1 + db_j6_v1 + db_j6_v2 + db_j6_v3 + db_j6_v5 (total frames: 3083):
   - Class mAP for center distance (0.5m, 1.0m, 2.0m, 4.0m)
 
 | eval range: 120m     | mAP  | car <br> (610,396) | truck <br> (151,672) | bus <br> (37,876) | bicycle <br> (47,739) | pedestrian <br> (367,200) |
 | -------------------- | ---- | ------------------ | -------------------- | ----------------- | --------------------- | ------------------------- |
-| CenterPoint base/1.1 | 64.7 | 76.0               | 53.2                 | 77.6              | 52.4                  | 64.0                      |
-| CenterPoint base/1.0 | 62.6 | 74.2               | 48.3                 | 75.4              | 51.6                  | 63.4                      |
+| CenterPoint base/1.2 | 65.7 | 77.2               | 54.7                 | 77.9              | 53.7                  | 64.9                      |
+| CenterPoint base/1.1 | 64.2 | 77.0               | 52.8                 | 76.7              | 51.9                  | 62.7                      |
+| CenterPoint base/1.0 | 62.6 | 75.2               | 47.4                 | 74.7              | 52.0                  | 63.9                      |
 
 ## Release
 
