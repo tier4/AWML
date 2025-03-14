@@ -143,7 +143,7 @@
 | car        | 70.1 | 61.5    | 69.1    | 74.8    | 75.3    |
 | truck      | 8.2  | 0.0     | 4.2     | 14.4    | 14.4    |
 | bus        | 49.2 | 48.0    | 49.3    | 49.8    | 49.8    |
-| bicycle (0)| 0.0  | 0.0     | 0.0     | 0.0     | 0.0     |   
+| bicycle (0)| 0.0  | 0.0     | 0.0     | 0.0     | 0.0     |  
 | pedestrian | 58.0 | 52.1    | 57.8    | 60.3    | 62.0    |
 
 - Evaluation result  of **base/1.1 ↓** with eval-dataset db_j6_v3 + db_j6_v5 (total frames: 337). These two datasets are from same location, so we jointly evaluate on them too:
