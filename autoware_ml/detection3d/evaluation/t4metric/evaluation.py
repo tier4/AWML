@@ -2,7 +2,6 @@ import json
 import os
 from typing import Any, Dict, List, Tuple
 
-from mmengine.registry import TASK_UTILS
 from nuscenes.eval.common.data_classes import EvalBoxes
 from nuscenes.eval.detection.data_classes import DetectionConfig
 from nuscenes.eval.detection.evaluate import DetectionEval
