@@ -62,7 +62,7 @@ RUN python3 -m pip install git+https://github.com/tier4/t4-devkit@v0.0.7
 # Instakll autoware-perception-evaluation
 # RUN python3 -m pip install git+https://github.com/tier4/autoware_perception_evaluation@feat/support_perception_evaluation_in_awml
 # RUN python3 -m pip --no-cache-dir install git+https://github.com/tier4/autoware_perception_evaluation@feat/add_serialization_to_frame_results
-RUN python3 -m pip --no-cache-dir install git+https://github.com/tier4/autoware_perception_evaluation@ee14ccc5910e3e9758f9dd6eb7383e105580041a
+RUN python3 -m pip --no-cache-dir install git+https://github.com/tier4/autoware_perception_evaluation@9f86f0d0a46d9b6515f4c6badb06829c52583ed4
 
 # NOTE(knzo25): this patch is needed to use numpy versions over 1.23.5 (version used in mmdet3d 1.4.0)
 # It can be safely deleted when mmdet3d updates the numpy version

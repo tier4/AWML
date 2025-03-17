@@ -154,11 +154,10 @@ filter_attributes = [
 evaluation_task = "detection"
 
 evaluator_metric_configs = dict(
-    evaluation_task="detection",
+    evaluation_task=evaluation_task,
     target_labels=class_names,
     center_distance_thresholds=[2.0, 4.0],
     plane_distance_thresholds=[0.5, 1.0, 2.0, 4.0],
     iou_2d_thresholds=None,
     iou_3d_thresholds=None,
-    label_prefix="autoware",
 )

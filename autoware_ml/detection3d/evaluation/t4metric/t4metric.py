@@ -20,19 +20,11 @@ from autoware_ml.detection3d.evaluation.t4metric.evaluation import T4DetectionCo
 from autoware_ml.detection3d.evaluation.t4metric.loading import t4metric_load_gt, t4metric_load_prediction
 
 from perception_eval.config.perception_evaluation_config import PerceptionEvaluationConfig
-from perception_eval.evaluation.result.perception_frame_config import PerceptionPassFailConfig, CriticalObjectFilterConfig
-from perception_eval.evaluation.result.perception_frame_result import PerceptionFrameResult
+from perception_eval.evaluation.result.perception_frame_config import (
+    PerceptionPassFailConfig,
+    CriticalObjectFilterConfig,
+)
 from perception_eval.evaluation.metrics import MetricsScoreConfig
-
-from perception_eval.evaluation.result.object_result import DynamicObjectWithPerceptionResult
-from perception_eval.common.object import DynamicObject
-from perception_eval.common.schema import FrameID
-from pyquaternion import Quaternion
-from perception_eval.common.shape import Shape, ShapeType
-from perception_eval.common.label import Label, LabelType, AutowareLabel
-from perception_eval.common.dataset import FrameGroundTruth
-
-import pickle 
 
 __all__ = ["T4Metric"]
 
@@ -165,21 +157,16 @@ class T4Metric(NuScenesMetric):
         }
         self.eval_detection_configs = T4DetectionConfig.deserialize(eval_config_dict)
         # TODO(KOkSeang): Remove all asterisk parameters and pass config to the class instead of initializing it here
-        self.metrics_score_config = MetricsScoreConfig(
-            **evaluator_metric_configs
-        )
-        self.perception_evaluator_configs = PerceptionEvaluationConfig(
-            **perception_evaluator_configs
-        )
+        self.metrics_score_config = MetricsScoreConfig(**evaluator_metric_configs)
+        self.perception_evaluator_configs = PerceptionEvaluationConfig(**perception_evaluator_configs)
 
         self.critical_object_filter_config = CriticalObjectFilterConfig(
-            evaluator_config=self.perception_evaluator_configs,
-            **critical_object_filter_config)
-        self.frame_pass_fail_config = PerceptionPassFailConfig(
-            evaluator_config=self.perception_evaluator_configs, 
-            **frame_pass_fail_config
+            evaluator_config=self.perception_evaluator_configs, **critical_object_filter_config
         )
-    
+        self.frame_pass_fail_config = PerceptionPassFailConfig(
+            evaluator_config=self.perception_evaluator_configs, **frame_pass_fail_config
+        )
+
     def process(self, data_batch: dict, data_samples: Sequence[dict]) -> None:
         """Process one batch of data samples and predictions.
 
@@ -190,67 +177,20 @@ class T4Metric(NuScenesMetric):
             data_batch (dict): A batch of data from the dataloader.
             data_samples (Sequence[dict]): A batch of outputs from the model.
         """
-        self.outputs = []
         for data_sample in data_samples:
             result = dict()
-            pred_3d = data_sample['pred_instances_3d']
-            pred_2d = data_sample['pred_instances']
+            pred_3d = data_sample["pred_instances_3d"]
+            pred_2d = data_sample["pred_instances"]
             for attr_name in pred_3d:
-                pred_3d[attr_name] = pred_3d[attr_name].to('cpu')
-            result['pred_instances_3d'] = pred_3d
+                pred_3d[attr_name] = pred_3d[attr_name].to("cpu")
+            result["pred_instances_3d"] = pred_3d
             for attr_name in pred_2d:
-                pred_2d[attr_name] = pred_2d[attr_name].to('cpu')
-            result['pred_instances'] = pred_2d
-            sample_idx = data_sample['sample_idx']
-            result['sample_idx'] = sample_idx
+                pred_2d[attr_name] = pred_2d[attr_name].to("cpu")
+            result["pred_instances"] = pred_2d
+            sample_idx = data_sample["sample_idx"]
+            result["sample_idx"] = sample_idx
             self.results.append(result)
-            
-            dynamic_object = DynamicObject(
-                    unix_time=1,
-                    frame_id=FrameID.BASE_LINK,
-                    position=[0, 0, 0],
-                    orientation=Quaternion([1.0, 0, 0, 0]),
-                    shape=Shape(shape_type=ShapeType.BOUNDING_BOX, 
-                                size=[1.0, 1.0, 1.0]
-                                ),
-                    velocity=[0, 0, 0],
-                    semantic_score=0.0,
-                    semantic_label=Label(
-                        label=AutowareLabel.CAR,
-                        name='car'
-                    ),
-            )
-            object_results = [
-              DynamicObjectWithPerceptionResult(
-                estimated_object=dynamic_object,
-                ground_truth_object=None
-              ),
-            ]
-            frame_ground_truth = FrameGroundTruth(
-                unix_time=1,
-                frame_name='0',
-                objects=dynamic_object
-            )
-            perception_frame_result = PerceptionFrameResult(
-                object_results=object_results,
-                frame_ground_truth=frame_ground_truth,
-                metrics_config=self.metrics_score_config,
-                critical_object_filter_config=self.critical_object_filter_config,
-                frame_pass_fail_config=self.frame_pass_fail_config,
-                unix_time=1,
-                target_labels=self.class_names
-            )
-            self.outputs.append(perception_frame_result)
 
-        with open(self.perception_evaluator_configs.result_root_directory + '/perception_frame_result.pkl', 'wb') as f:
-            pickle.dump(self.outputs, f)
-          
-        with open(self.perception_evaluator_configs.result_root_directory + '/perception_frame_result.pkl', 'rb') as f:
-            outputs = pickle.load(f)
-            print(len(outputs))
-            print(outputs[0])
-
-            
     @staticmethod
     def _get_scene_info(data_infos: List[dict]) -> Tuple[List[str], List[str]]:
         """Get scene tokens and directory names from data infos.
@@ -265,7 +205,7 @@ class T4Metric(NuScenesMetric):
         scene_tokens = []
         directories = []
         for info in data_infos:
-            
+
             scene_token = info["scene_token"]
             # ['db_jpntaxi_v1', '3a13032b-6045-4db4-8632-9c52c3dd2fd9', '0', 'data', 'LIDAR_CONCAT', '98.pcd.bin']
             directory_list = info["lidar_points"]["lidar_path"].split("/")
