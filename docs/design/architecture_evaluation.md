@@ -15,9 +15,10 @@ Figure below shows the top-level overview of evaluation pipeline in AWML:
 ![](/docs/fig/awml_evaluation_architecture.drawio.svg)
 
 ## Low-level design (LLD)
-### `<class> T4Metric(...)`
+### `<class> T4MetricV2(...)`
+  - Note that `T4MetricV2` is a class name during development, and it will eventually replace `T4Metric` after a transition period
   - A class to execute evaluation pipeline for a trained machine learning model
-	- Parameters of `T4Metric` are as follows:
+	- Parameters of `T4MetricV2` are as follows:
 		| Arguments                            | Type                         | Description                                                                                   							|
 		| :----------------------------------- | :--------------------------  | :---------------------------------------------------------------------------------------------------------- |
 		| `data_root`                      		 | `str`                        | Dataset path                                                                                 								|
@@ -55,7 +56,7 @@ Figure below shows the top-level overview of evaluation pipeline in AWML:
 				max_y_position=121.0,
 		)
 		test_evaluator = dict(
-				type="T4Metric",
+				type="T4MetricV2",
 				data_root=data_root,
 				test_mode=True,
 				ann_file=data_root + info_directory_path + _base_.info_test_file_name,
@@ -65,7 +66,7 @@ Figure below shows the top-level overview of evaluation pipeline in AWML:
 				confidence_score_thresholds_path=None
 		)
 		val_evaluator = dict(
-				type="T4Metric",
+				type="T4MetricV2",
 				data_root=data_root,
 				test_mode=False,
 				ann_file=data_root + info_directory_path + _base_.info_test_file_name,
@@ -192,13 +193,13 @@ Figure below shows the top-level overview of evaluation pipeline in AWML:
 
 ## Release plans
 - autoware_perception_evaluation:
-    - [] Implementation of nuScene metrics in autoware_perception_evaluation, this includes NDS and calibration of confidence thresholds
-    - [] Make filter optional
-    - [] Support loading FrameGroundTruth and sensor data without providing dataset_paths
+    - [ ] Implementation of nuScene metrics in autoware_perception_evaluation, this includes NDS and calibration of confidence thresholds
+    - [ ] Make filter optional
+    - [ ] Support loading FrameGroundTruth and sensor data without providing dataset_paths
 - AWML:
-    - [] Integrate PerceptionFrameResult and refactor inference to save predictions/gts in every step, also save intermediate results results.pickle for all scenes
-    - [] Configuration of autoware_perception_evaluation through experiment configs, and process T4Frame with autoware_perception_evaluation.add_frame_result and autoware_perception_evaluation.get_scene_result
-    - [] Visualize metrics and worst K samples (`T4MetricVisualization`)
-    - [] Unit tests for simple cases
+    - [ ] Integrate PerceptionFrameResult and refactor inference to save predictions/gts in every step, also save intermediate results results.pickle for all scenes
+    - [ ] Configuration of autoware_perception_evaluation through experiment configs, and process T4Frame with autoware_perception_evaluation.add_frame_result and autoware_perception_evaluation.get_scene_result
+    - [ ] Visualize metrics and worst K samples (`T4MetricVisualization`)
+    - [ ] Unit tests for simple cases
 - Misc:
-    - [] Resample train/val/test splits
+    - [ ] Resample train/val/test splits
