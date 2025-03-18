@@ -188,9 +188,39 @@ test_dataloader = dict(
         backend_args=backend_args,
     ),
 )
+# Add evaluator configs
+evaluator_configs = dict(
+    evaluation_task=_base_.evaluation_task,
+    label_prefix="autoware",
+    max_distance=[121.0, 121.0, 121.0, 121.0, 121.0],
+    min_distance=[0.0, 0.0, 0.0, 0.0, 0.0],
+    min_point_numbers=0,
+    target_labels=_base_.class_names,
+)
+
+perception_evaluator_configs = dict(
+    dataset_paths=data_root,
+    frame_id="base_link",
+    result_root_directory=work_dir + "/result",
+    evaluation_config_dict=evaluator_configs,
+    load_raw_data=False,
+)
+
+critical_object_filter_config = dict(
+    target_labels=_base_.class_names,
+    ignore_attributes=None,
+    max_distance_list=[121.0, 121.0, 121.0, 121.0, 121.0],
+    min_distance_list=[0.0, 0.0, 0.0, 0.0, 0.0],
+)
+
+frame_pass_fail_config = dict(
+    target_labels=_base_.class_names,
+    matching_threshold_list=None,
+    confidence_threshold_list=None,
+)
 
 val_evaluator = dict(
-    type="T4Metric",
+    type="T4MetricV2",
     data_root=data_root,
     ann_file=data_root + info_directory_path + _base_.info_val_file_name,
     metric="bbox",
@@ -199,10 +229,14 @@ val_evaluator = dict(
     name_mapping={{_base_.name_mapping}},
     eval_class_range=eval_class_range,
     filter_attributes=_base_.filter_attributes,
+    evaluator_metric_configs=_base_.evaluator_metric_configs,
+    perception_evaluator_configs=perception_evaluator_configs,
+    critical_object_filter_config=critical_object_filter_config,
+    frame_pass_fail_config=frame_pass_fail_config,
 )
 
 test_evaluator = dict(
-    type="T4Metric",
+    type="T4MetricV2",
     data_root=data_root,
     ann_file=data_root + info_directory_path + _base_.info_test_file_name,
     metric="bbox",
@@ -211,6 +245,10 @@ test_evaluator = dict(
     name_mapping={{_base_.name_mapping}},
     eval_class_range=eval_class_range,
     filter_attributes=_base_.filter_attributes,
+    evaluator_metric_configs=_base_.evaluator_metric_configs,
+    perception_evaluator_configs=perception_evaluator_configs,
+    critical_object_filter_config=critical_object_filter_config,
+    frame_pass_fail_config=frame_pass_fail_config,
 )
 
 model = dict(

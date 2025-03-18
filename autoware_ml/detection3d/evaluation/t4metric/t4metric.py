@@ -15,12 +15,6 @@ from nuscenes import NuScenes
 from nuscenes.eval.common.data_classes import EvalBoxes
 from nuscenes.eval.detection.data_classes import DetectionConfig
 from nuscenes.utils.data_classes import Box as NuScenesBox
-from perception_eval.config.perception_evaluation_config import PerceptionEvaluationConfig
-from perception_eval.evaluation.metrics import MetricsScoreConfig
-from perception_eval.evaluation.result.perception_frame_config import (
-    CriticalObjectFilterConfig,
-    PerceptionPassFailConfig,
-)
 
 from autoware_ml.detection3d.evaluation.t4metric.evaluation import T4DetectionConfig, T4DetectionEvaluation
 from autoware_ml.detection3d.evaluation.t4metric.loading import t4metric_load_gt, t4metric_load_prediction
@@ -38,10 +32,6 @@ class T4Metric(NuScenesMetric):
         self,
         data_root: str,
         ann_file: str,
-        perception_evaluator_configs: Dict[str, Any],
-        evaluator_metric_configs: Dict[str, Any],
-        critical_object_filter_config: Dict[str, Any],
-        frame_pass_fail_config: Dict[str, Any],
         filter_attributes: Optional[List[Tuple[str, str]]] = None,
         metric: Union[str, List[str]] = "bbox",
         modality: dict = dict(use_camera=False, use_lidar=True),
@@ -155,40 +145,6 @@ class T4Metric(NuScenesMetric):
             "mean_ap_weight": 5,
         }
         self.eval_detection_configs = T4DetectionConfig.deserialize(eval_config_dict)
-        # TODO(KOkSeang): Remove all asterisk parameters and pass config to the class instead of initializing it here
-        self.metrics_score_config = MetricsScoreConfig(**evaluator_metric_configs)
-        self.perception_evaluator_configs = PerceptionEvaluationConfig(**perception_evaluator_configs)
-
-        self.critical_object_filter_config = CriticalObjectFilterConfig(
-            evaluator_config=self.perception_evaluator_configs, **critical_object_filter_config
-        )
-        self.frame_pass_fail_config = PerceptionPassFailConfig(
-            evaluator_config=self.perception_evaluator_configs, **frame_pass_fail_config
-        )
-
-    def process(self, data_batch: dict, data_samples: Sequence[dict]) -> None:
-        """Process one batch of data samples and predictions.
-
-        The processed results should be stored in ``self.results``, which will
-        be used to compute the metrics when all batches have been processed.
-
-        Args:
-            data_batch (dict): A batch of data from the dataloader.
-            data_samples (Sequence[dict]): A batch of outputs from the model.
-        """
-        for data_sample in data_samples:
-            result = dict()
-            pred_3d = data_sample["pred_instances_3d"]
-            pred_2d = data_sample["pred_instances"]
-            for attr_name in pred_3d:
-                pred_3d[attr_name] = pred_3d[attr_name].to("cpu")
-            result["pred_instances_3d"] = pred_3d
-            for attr_name in pred_2d:
-                pred_2d[attr_name] = pred_2d[attr_name].to("cpu")
-            result["pred_instances"] = pred_2d
-            sample_idx = data_sample["sample_idx"]
-            result["sample_idx"] = sample_idx
-            self.results.append(result)
 
     @staticmethod
     def _get_scene_info(data_infos: List[dict]) -> Tuple[List[str], List[str]]:
