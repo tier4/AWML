@@ -1,7 +1,7 @@
 import os
 import tempfile
 from os import path as osp
-from typing import Any, Dict, List, Optional, Sequence, Tuple, Union
+from typing import Dict, List, Optional, Tuple, Union
 
 import mmengine
 import numpy as np
@@ -160,7 +160,6 @@ class T4Metric(NuScenesMetric):
         scene_tokens = []
         directories = []
         for info in data_infos:
-
             scene_token = info["scene_token"]
             # ['db_jpntaxi_v1', '3a13032b-6045-4db4-8632-9c52c3dd2fd9', '0', 'data', 'LIDAR_CONCAT', '98.pcd.bin']
             directory_list = info["lidar_points"]["lidar_path"].split("/")
