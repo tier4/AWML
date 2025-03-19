@@ -1,12 +1,21 @@
+import pickle
 from typing import Any, Dict, List, Optional, Sequence, Tuple, Union
 
 from mmdet3d.registry import METRICS
+from perception_eval.common import DynamicObject
+from perception_eval.common.dataset import FrameGroundTruth
+from perception_eval.common.label import AutowareLabel, Label
+from perception_eval.common.schema import FrameID
+from perception_eval.common.shape import Shape, ShapeType
 from perception_eval.config.perception_evaluation_config import PerceptionEvaluationConfig
 from perception_eval.evaluation.metrics import MetricsScoreConfig
+from perception_eval.evaluation.result.object_result import DynamicObjectWithPerceptionResult
 from perception_eval.evaluation.result.perception_frame_config import (
     CriticalObjectFilterConfig,
     PerceptionPassFailConfig,
 )
+from perception_eval.evaluation.result.perception_frame_result import PerceptionFrameResult
+from pyquaternion.quaternion import Quaternion
 
 from autoware_ml.detection3d.evaluation.t4metric.t4metric import T4Metric
 
@@ -107,16 +116,43 @@ class T4MetricV2(T4Metric):
             filter_attributes=filter_attributes,
         )
 
-        # TODO(KOkSeang): Remove all asterisk parameters and pass config to the class instead of initializing it here
-        self.metrics_score_config = MetricsScoreConfig(**evaluator_metric_configs)
         self.perception_evaluator_configs = PerceptionEvaluationConfig(**perception_evaluator_configs)
-
         self.critical_object_filter_config = CriticalObjectFilterConfig(
             evaluator_config=self.perception_evaluator_configs, **critical_object_filter_config
         )
         self.frame_pass_fail_config = PerceptionPassFailConfig(
             evaluator_config=self.perception_evaluator_configs, **frame_pass_fail_config
         )
+
+        dynamic_object = DynamicObject(
+            unix_time=1,
+            frame_id=FrameID.BASE_LINK,
+            position=[1.0, 1.0, 1.0],
+            orientation=Quaternion([1.0, 0.0, 0.0, 0.0]),
+            shape=Shape(
+                shape_type=ShapeType.BOUNDING_BOX,
+                size=[1.0, 1.0, 1.0],
+            ),
+            velocity=[1.0, 1.0, 1.0],
+            semantic_score=1.0,
+            semantic_label=Label(label=AutowareLabel.CAR, name="car"),
+        )
+        perception_frame_result = PerceptionFrameResult(
+            object_results=[
+                DynamicObjectWithPerceptionResult(estimated_object=dynamic_object, ground_truth_object=None)
+            ],
+            frame_ground_truth=FrameGroundTruth(unix_time=1, frame_name="1", objects=[dynamic_object]),
+            metrics_config=self.perception_evaluator_configs.metrics_config,
+            critical_object_filter_config=self.critical_object_filter_config,
+            frame_pass_fail_config=self.frame_pass_fail_config,
+            target_labels=self.class_names,
+            unix_time=1,
+        )
+        with open(self.perception_evaluator_configs.result_root_directory + "outs.pkl", "wb") as f:
+            pickle.dump(perception_frame_result, f)
+
+        with open(self.perception_evaluator_configs.result_root_directory + "outs.pkl", "rb") as f:
+            a = pickle.load(f)
 
     def process(self, data_batch: dict, data_samples: Sequence[dict]) -> None:
         """Process one batch of data samples and predictions.

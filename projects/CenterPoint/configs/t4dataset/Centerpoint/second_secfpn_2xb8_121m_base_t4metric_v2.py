@@ -1,6 +1,6 @@
 _base_ = [
     "../../../../../autoware_ml/configs/detection3d/default_runtime.py",
-    "../../../../../autoware_ml/configs/detection3d/dataset/t4dataset/x2.py",
+    "../../../../../autoware_ml/configs/detection3d/dataset/t4dataset/base.py",
     "../../default/second_secfpn_base.py",
 ]
 custom_imports = dict(imports=["projects.CenterPoint.models"], allow_failed_imports=False)
@@ -40,14 +40,14 @@ eval_class_range = {
 
 # user setting
 data_root = "data/t4dataset/"
-info_directory_path = "info/"
+info_directory_path = "info/user_name/"
 train_gpu_size = 2
 train_batch_size = 8
 test_batch_size = 2
 num_workers = 32
 val_interval = 1
 max_epochs = 50
-work_dir = "work_dirs/centerpoint/" + _base_.dataset_type + "/second_secfpn_2xb8_121m_base/"
+work_dir = "work_dirs/centerpoint/" + _base_.dataset_type + "/second_secfpn_2xb8_121m_base_t4metric_v2/"
 
 train_pipeline = [
     dict(
@@ -193,14 +193,7 @@ perception_evaluator_configs = dict(
     dataset_paths=data_root,
     frame_id="base_link",
     result_root_directory=work_dir + "/result",
-    evaluation_config_dict=dict(
-        evaluation_task=_base_.evaluator_metric_configs.evaluation_task,
-        label_prefix="autoware",
-        max_distance=121.0,
-        min_distance=0.0,
-        min_point_numbers=0,
-        target_labels=_base_.class_names,
-    ),
+    evaluation_config_dict=_base_.evaluator_metric_configs,
     load_raw_data=False,
 )
 

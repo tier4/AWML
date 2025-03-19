@@ -159,4 +159,8 @@ evaluator_metric_configs = dict(
     plane_distance_thresholds=[2.0, 4.0],
     iou_2d_thresholds=None,
     iou_3d_thresholds=None,
+    label_prefix="autoware",
+    max_distance=121.0,
+    min_distance=0.0,
+    min_point_numbers=0,
 )
