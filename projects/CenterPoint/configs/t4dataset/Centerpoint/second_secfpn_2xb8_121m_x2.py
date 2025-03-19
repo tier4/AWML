@@ -40,7 +40,7 @@ eval_class_range = {
 
 # user setting
 data_root = "data/t4dataset/"
-info_directory_path = "info/"
+info_directory_path = "info/user_name/"
 train_gpu_size = 2
 train_batch_size = 8
 test_batch_size = 2
