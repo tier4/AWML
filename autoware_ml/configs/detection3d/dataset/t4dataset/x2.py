@@ -111,13 +111,11 @@ filter_attributes = [
     ("motorcycle", "motorcycle_state.without_rider"),
 ]
 
-evaluation_task = "detection"
-
 evaluator_metric_configs = dict(
-    evaluation_task=evaluation_task,
+    evaluation_task="detection",
     target_labels=class_names,
-    center_distance_thresholds=[2.0, 4.0],
-    plane_distance_thresholds=[0.5, 1.0, 2.0, 4.0],
+    center_distance_thresholds=[0.5, 1.0, 2.0, 4.0],
+    plane_distance_thresholds=[2.0, 4.0],
     iou_2d_thresholds=None,
     iou_3d_thresholds=None,
 )
