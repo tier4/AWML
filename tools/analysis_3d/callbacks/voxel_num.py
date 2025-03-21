@@ -40,7 +40,7 @@ class VoxelNumAnalysisCallback(AnalysisCallbackInterface):
         self.voxel_sizes = voxel_sizes
         self.analysis_dir = analysis_dir
         self.load_dim = load_dim
-        self.use_dum = use_dim
+        self.use_dim = use_dim
         self.sweeps_num = sweeps_num
         self.remove_close = remove_close
         self.full_output_path = self.out_path / self.analysis_dir
