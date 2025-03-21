@@ -124,7 +124,7 @@ class AnalysisRunner:
                     num_pts_feats=lidar_sweep["lidar_points"]["num_pts_feats"],
                     lidar_path=lidar_sweep["lidar_points"]["lidar_path"],
                 )
-                for lidar_sweep in lidar_sweep_info
+                for lidar_sweep in lidar_sweep_info["lidar_sweeps"]
             ]
 
             # Convert to SampleData
