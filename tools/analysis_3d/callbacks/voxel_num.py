@@ -17,6 +17,7 @@ class VoxelNumAnalysisCallback(AnalysisCallbackInterface):
 
     def __init__(
         self,
+        data_root_path: Path,
         out_path: Path,
         pc_ranges: List[float],
         voxel_sizes: List[float],
@@ -33,6 +34,7 @@ class VoxelNumAnalysisCallback(AnalysisCallbackInterface):
         :param remapping_classes: Set if compute frequency of every category after remapping.
         """
         super(AnalysisCallbackInterface, self).__init__()
+        self.data_root_path = data_root_path
         self.out_path = out_path
         self.pc_ranges = pc_ranges
         self.voxel_sizes = voxel_sizes
@@ -68,6 +70,7 @@ class VoxelNumAnalysisCallback(AnalysisCallbackInterface):
 
     def _load_points(self, pcd_file: str) -> npt.NDArray[np.float32]:
         """ """
+        pcd_file = self.data_root_path / pcd_file
         return np.fromfile(pcd_file, dtype=np.float32).reshape(-1, self.load_dim)
 
     def _load_multisweeps(self, points: npt.NDArray[np.float32], sweeps: List[LidarSweep]) -> npt.NDArray[np.float32]:

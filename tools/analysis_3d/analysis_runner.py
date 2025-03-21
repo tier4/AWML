@@ -52,6 +52,7 @@ class AnalysisRunner:
         # TODO (KokSeang): Configure through CLI
         self.analysis_callbacks: List[AnalysisCallbackInterface] = [
             VoxelNumAnalysisCallback(
+                data_root_path=Path(self.data_root_path),
                 out_path=self.out_path,
                 pc_ranges=[-121.60, -121.60, -3.0, 121.60, 121.60, 5.0],
                 voxel_sizes=[0.32, 0.32, 8.0],
