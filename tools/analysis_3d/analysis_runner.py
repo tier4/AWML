@@ -9,10 +9,19 @@ from t4_devkit import Tier4
 from tools.analysis_3d.callbacks.callback_interface import AnalysisCallbackInterface
 from tools.analysis_3d.callbacks.category import CategoryAnalysisCallback
 from tools.analysis_3d.callbacks.category_attribute import CategoryAttributeAnalysisCallback
-from tools.analysis_3d.data_classes import AnalysisData, DatasetSplitName, SampleData, ScenarioData
+from tools.analysis_3d.callbacks.voxel_num import VoxelNumAnalysisCallback
+from tools.analysis_3d.data_classes import (
+    AnalysisData,
+    DatasetSplitName,
+    LidarPoint,
+    LidarSweep,
+    SampleData,
+    ScenarioData,
+)
 from tools.analysis_3d.split_options import SplitOptions
 from tools.analysis_3d.utils import extract_tier4_sample_data
 from tools.detection3d.create_data_t4dataset import get_scene_root_dir_path
+from tools.detection3d.t4dataset_converters.t4converter import get_lidar_points_info, get_lidar_sweeps_info
 
 
 class AnalysisRunner:
@@ -23,6 +32,7 @@ class AnalysisRunner:
         data_root_path: str,
         config_path: str,
         out_path: str,
+        max_sweeps: int = 10,
     ) -> None:
         """
         :param data_root_path: Path where to save data.
@@ -36,29 +46,37 @@ class AnalysisRunner:
         self.config = Config.fromfile(self.config_path)
         self.out_path.mkdir(parents=True, exist_ok=True)
         self.remapping_classes = self.config.name_mapping
+        self.max_sweeps = max_sweeps
 
         # Default callbacks to generate analyses
         # TODO (KokSeang): Configure through CLI
         self.analysis_callbacks: List[AnalysisCallbackInterface] = [
-            CategoryAnalysisCallback(out_path=self.out_path, remapping_classes=self.remapping_classes),
-            CategoryAttributeAnalysisCallback(
-                out_path=self.out_path, category_name="vehicle.motorcycle", analysis_dir="vehicle_motorcycle_attr"
-            ),
-            CategoryAttributeAnalysisCallback(
-                out_path=self.out_path, category_name="vehicle.bicycle", analysis_dir="vehicle_bicycle_attr"
-            ),
-            CategoryAttributeAnalysisCallback(
-                out_path=self.out_path, category_name="bicycle", analysis_dir="bicycle_attr"
-            ),
-            CategoryAttributeAnalysisCallback(
-                out_path=self.out_path, category_name="motorcycle", analysis_dir="motorcycle_attr"
-            ),
-            CategoryAttributeAnalysisCallback(
+            VoxelNumAnalysisCallback(
                 out_path=self.out_path,
-                category_name="bicycle",
-                analysis_dir="remapping_bicycle_attr",
-                remapping_classes=self.remapping_classes,
+                pc_ranges=[-121.60, -121.60, -3.0, 121.60, 121.60, 5.0],
+                voxel_sizes=[0.32, 0.32, 8.0],
+                analysis_dir="voxel_nums",
+                bins=100,
             ),
+            # CategoryAnalysisCallback(out_path=self.out_path, remapping_classes=self.remapping_classes),
+            # CategoryAttributeAnalysisCallback(
+            #     out_path=self.out_path, category_name="vehicle.motorcycle", analysis_dir="vehicle_motorcycle_attr"
+            # ),
+            # CategoryAttributeAnalysisCallback(
+            #     out_path=self.out_path, category_name="vehicle.bicycle", analysis_dir="vehicle_bicycle_attr"
+            # ),
+            # CategoryAttributeAnalysisCallback(
+            #     out_path=self.out_path, category_name="bicycle", analysis_dir="bicycle_attr"
+            # ),
+            # CategoryAttributeAnalysisCallback(
+            #     out_path=self.out_path, category_name="motorcycle", analysis_dir="motorcycle_attr"
+            # ),
+            # CategoryAttributeAnalysisCallback(
+            #     out_path=self.out_path,
+            #     category_name="bicycle",
+            #     analysis_dir="remapping_bicycle_attr",
+            #     remapping_classes=self.remapping_classes,
+            # ),
         ]
 
     def _get_dataset_scenario_names(self, dataset_version: str) -> Dict[str, List[str]]:
@@ -82,9 +100,39 @@ class AnalysisRunner:
             # Extract sample data
             tier4_sample_data = extract_tier4_sample_data(sample=sample, t4=t4)
 
+            lidar_point_info = get_lidar_points_info(
+                lidar_path=tier4_sample_data.lidar_path,
+                cs_record=tier4_sample_data.cs_record,
+                num_features=5,
+            )
+            lidar_point = LidarPoint(
+                num_pts_feats=lidar_point_info["num_pts_feats"],
+                lidar_path=lidar_point_info["lidar_path"],
+                lidar2ego=lidar_point_info["lidar2ego"],
+            )
+
+            lidar_sweep_info = get_lidar_sweeps_info(
+                t4=t4,
+                cs_record=tier4_sample_data.cs_record,
+                sd_rec=tier4_sample_data.sd_record,
+                pose_record=tier4_sample_data.pose_record,
+                num_features=5,
+                max_sweeps=self.max_sweeps,
+            )
+            lidar_sweeps = [
+                LidarSweep(
+                    num_pts_feats=lidar_sweep["lidar_points"]["num_pts_feats"],
+                    lidar_path=lidar_sweep["lidar_points"]["lidar_path"],
+                )
+                for lidar_sweep in lidar_sweep_info
+            ]
+
             # Convert to SampleData
             sample_data[sample.token] = SampleData.create_sample_data(
-                sample_token=sample.token, boxes=tier4_sample_data.boxes
+                sample_token=sample.token,
+                boxes=tier4_sample_data.boxes,
+                lidar_point=lidar_point,
+                lidar_sweeps=lidar_sweeps,
             )
         return sample_data
 
