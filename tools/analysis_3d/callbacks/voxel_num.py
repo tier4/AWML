@@ -132,6 +132,7 @@ class VoxelNumAnalysisCallback(AnalysisCallbackInterface):
             voxel_counts.append(self._get_total_voxel_counts(points))
 
         _, ax = plt.subplots(figsize=figsize)
+        print_log(f"Total num of voxels: {len(voxel_counts)}")
         ax.hist(voxel_counts, bins=self.bins, log=log_scale)
         ax.set_ylabel(self.y_axis_label)
         ax.set_xlabel(self.x_axis_label)
