@@ -106,7 +106,7 @@ class AnalysisRunner:
                 num_features=5,
             )
             lidar_point = LidarPoint(
-                num_pts_feats=lidar_point_info["num_pts_feats"],
+                num_pts_feats=lidar_point_info["num_feats"],
                 lidar_path=lidar_point_info["lidar_path"],
                 lidar2ego=lidar_point_info["lidar2ego"],
             )
