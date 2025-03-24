@@ -189,6 +189,8 @@ class VoxelNumAnalysisCallback(AnalysisCallbackInterface):
                     continue
                 dataset_voxel_data[dataset_split_name.dataset_version] = analysis_data
 
-            voxel_counts = self._compute_split_voxel_counts(analysis_data=dataset_voxel_data)
-            self._visualize_voxel_counts(voxel_counts, split_name=split_name, log_scale=False, figsize=(15, 15))
+            voxel_counts = self._compute_split_voxel_counts(dataset_analysis_data=dataset_voxel_data)
+            self._visualize_voxel_counts(
+                voxel_counts=voxel_counts, split_name=split_name, log_scale=False, figsize=(15, 15)
+            )
         print_log(f"Done running {self.__class__.__name__}")
