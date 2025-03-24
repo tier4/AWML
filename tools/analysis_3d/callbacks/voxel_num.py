@@ -165,13 +165,16 @@ class VoxelNumAnalysisCallback(AnalysisCallbackInterface):
             voxel_count = voxel_counts[point_threshold]
 
             p_values = np.percentile(voxel_count, percentiles)
-
+            mean = np.mean(voxel_count)
             print_log(
                 f"Split name: {split_name}, Point threshold: {point_threshold}, total num of samples: {len(voxel_count)}"
             )
+
             ax.hist(voxel_count, bins=self.bins, log=log_scale)
             for value, percentile, color in zip(p_values, percentiles, colors):
                 ax.axvline(value, color=color, linestyle="dashed", linewidth=2, label=f"P{percentile}:{value:.2f}")
+
+            ax.axvline(mean, color="black", linestyle="dashed", linewidth=2, label=f"mean:{mean:.2f}")
             ax.set_ylabel(self.y_axis_label)
             ax.set_xlabel(self.x_axis_label)
             ax.set_title(
