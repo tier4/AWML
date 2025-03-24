@@ -117,7 +117,7 @@ class VoxelNumAnalysisCallback(AnalysisCallbackInterface):
         for scenario_data in analysis_data.scenario_data.values():
             sample_data = list(scenario_data.sample_data.values())
             selected_sample_data = (
-                np.random.choice(len(sample_data), int(len(sample_data) * self.sample_ratio), replace=False)
+                np.random.choice(sample_data, int(len(sample_data) * self.sample_ratio), replace=False)
                 if len(sample_data) > 0
                 else sample_data
             )
