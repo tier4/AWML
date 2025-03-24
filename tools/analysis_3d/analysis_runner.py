@@ -57,7 +57,7 @@ class AnalysisRunner:
                 out_path=self.out_path,
                 pc_ranges=[-121.60, -121.60, -3.0, 121.60, 121.60, 5.0],
                 voxel_sizes=[0.32, 0.32, 8.0],
-                point_thresholds=[1, 5, 10, 20],
+                point_thresholds=[1, 5, 10],
                 analysis_dir="voxel_nums_121_032",
                 bins=50,
                 sweeps_num=1,
