@@ -1,10 +1,10 @@
-from collections import defaultdict
 from pathlib import Path
-from typing import Dict, List, Optional
+from typing import Dict, List
 
 import matplotlib.pyplot as plt
 import numpy as np
 import numpy.typing as npt
+from matplotlib.ticker import MaxNLocator
 from mmengine.logging import print_log
 
 from tools.analysis_3d.callbacks.callback_interface import AnalysisCallbackInterface
@@ -158,7 +158,9 @@ class VoxelNumAnalysisCallback(AnalysisCallbackInterface):
 
             p_values = np.percentile(voxel_count, percentiles)
 
-            print_log(f"Point threshold: {point_threshold}, total num of voxels: {len(voxel_count)}")
+            print_log(
+                f"Split name: {split_name}, Point threshold: {point_threshold}, total num of voxels: {len(voxel_count)}"
+            )
             ax.hist(voxel_count, bins=self.bins, log=log_scale)
             for value, percentile, color in zip(p_values, percentiles, colors):
                 ax.axvline(value, color=color, linestyle="dashed", linewidth=2, label=f"P{percentile}:{value:.2f}")
@@ -168,6 +170,8 @@ class VoxelNumAnalysisCallback(AnalysisCallbackInterface):
                 f"Voxel counts for {split_name} \n {self.pc_ranges} \n {self.voxel_sizes} \n threshold: {point_threshold}"
             )
             ax.legend()
+            ax.gca().xaxis.set_major_locator(MaxNLocator(integer=True))
+            ax.gca().yaxis.set_major_locator(MaxNLocator(integer=True))
 
         plt.tight_layout()
         analysis_file_name = self.full_output_path / self.analysis_file_name.format(split_name)
@@ -191,6 +195,6 @@ class VoxelNumAnalysisCallback(AnalysisCallbackInterface):
 
             voxel_counts = self._compute_split_voxel_counts(dataset_analysis_data=dataset_voxel_data)
             self._visualize_voxel_counts(
-                voxel_counts=voxel_counts, split_name=split_name, log_scale=False, figsize=(15, 15)
+                voxel_counts=voxel_counts, split_name=split_name, log_scale=False, figsize=(24, 24)
             )
         print_log(f"Done running {self.__class__.__name__}")
