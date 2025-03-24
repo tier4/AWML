@@ -167,7 +167,7 @@ class VoxelNumAnalysisCallback(AnalysisCallbackInterface):
             p_values = np.percentile(voxel_count, percentiles)
 
             print_log(
-                f"Split name: {split_name}, Point threshold: {point_threshold}, total num of voxels: {len(voxel_count)}"
+                f"Split name: {split_name}, Point threshold: {point_threshold}, total num of scenarios: {len(voxel_count)}"
             )
             ax.hist(voxel_count, bins=self.bins, log=log_scale)
             for value, percentile, color in zip(p_values, percentiles, colors):
