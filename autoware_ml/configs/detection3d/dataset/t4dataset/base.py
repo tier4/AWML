@@ -36,7 +36,6 @@ camera_types = {
 }
 
 # class setting
-# class setting
 name_mapping = {
     # DBv1.0
     "vehicle.car": "car",
