@@ -22,6 +22,7 @@ class VoxelNumAnalysisCallback(AnalysisCallbackInterface):
         pc_ranges: List[float],
         voxel_sizes: List[float],
         point_thresholds: List[int],
+        sample_ratio: float = 0.3,
         load_dim: int = 5,
         use_dim: List[int] = [0, 1, 2],
         sweeps_num: int = 1,
@@ -45,12 +46,13 @@ class VoxelNumAnalysisCallback(AnalysisCallbackInterface):
         self.sweeps_num = sweeps_num
         self.remove_close = remove_close
         self.point_thresholds = point_thresholds
+        self.sample_ratio = sample_ratio
         self.full_output_path = self.out_path / self.analysis_dir
         self.full_output_path.mkdir(exist_ok=True, parents=True)
 
         self.analysis_file_name = "voxel_count_{}.png"
-        self.y_axis_label = "Number of voxels"
-        self.x_axis_label = "Bins"
+        self.y_axis_label = "Frequency"
+        self.x_axis_label = "Number of voxels per frame"
         self.legend_loc = "upper right"
         self.bins = bins
 
@@ -113,13 +115,19 @@ class VoxelNumAnalysisCallback(AnalysisCallbackInterface):
         """Gather voxel counts for each scenario in a dataset."""
         voxel_counts = {i: [] for i in self.point_thresholds}
         for scenario_data in analysis_data.scenario_data.values():
-            for sample_data in scenario_data.sample_data.values():
-                if sample_data.lidar_point is None:
+            sample_data = list(scenario_data.sample_data.values())
+            selected_sample_data = (
+                np.random.choice(len(sample_data), int(len(sample_data) * self.sample_ratio), replace=False)
+                if len(sample_data) > 0
+                else sample_data
+            )
+            for sample in selected_sample_data:
+                if sample.lidar_point is None:
                     continue
 
-                points = self._load_points(sample_data.lidar_point.lidar_path)
-                if sample_data.lidar_sweeps:
-                    points = self._load_multisweeps(points, sample_data.lidar_sweeps)
+                points = self._load_points(sample.lidar_point.lidar_path)
+                if sample.lidar_sweeps:
+                    points = self._load_multisweeps(points, sample.lidar_sweeps)
 
                 for point_threshold in self.point_thresholds:
                     voxel_counts[point_threshold].append(self._get_total_voxel_counts(points, point_threshold))
@@ -169,7 +177,7 @@ class VoxelNumAnalysisCallback(AnalysisCallbackInterface):
             ax.set_title(
                 f"Voxel counts for {split_name} \n {self.pc_ranges} \n {self.voxel_sizes} \n threshold: {point_threshold}"
             )
-            ax.legend()
+            ax.legend(loc=self.legend_loc)
             ax.xaxis.set_major_locator(MaxNLocator(integer=True))
             ax.yaxis.set_major_locator(MaxNLocator(integer=True))
 
@@ -180,6 +188,7 @@ class VoxelNumAnalysisCallback(AnalysisCallbackInterface):
             format="png",
             bbox_inches="tight",
         )
+        print_log(f"Saved analysis to {analysis_file_name}")
         plt.close()
 
     def run(self, dataset_split_analysis_data: Dict[DatasetSplitName, AnalysisData]) -> None:
@@ -195,6 +204,6 @@ class VoxelNumAnalysisCallback(AnalysisCallbackInterface):
 
             voxel_counts = self._compute_split_voxel_counts(dataset_analysis_data=dataset_voxel_data)
             self._visualize_voxel_counts(
-                voxel_counts=voxel_counts, split_name=split_name, log_scale=False, figsize=(24, 24)
+                voxel_counts=voxel_counts, split_name=split_name, log_scale=False, figsize=(24, 12)
             )
         print_log(f"Done running {self.__class__.__name__}")
