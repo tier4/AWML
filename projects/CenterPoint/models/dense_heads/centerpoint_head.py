@@ -3,6 +3,7 @@ from typing import Dict, List, Tuple
 import numpy as np
 import torch
 from mmdet3d.models import CenterHead as _CenterHead
+from mmdet3d.models.dense_heads.centerpoint_head import SeparateHead as _SeparateHead
 from mmdet3d.models.utils import clip_sigmoid
 from mmdet3d.registry import MODELS
 from mmdet3d.structures.bbox_3d.utils import limit_period
