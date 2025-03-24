@@ -45,7 +45,7 @@ train_gpu_size = 2
 train_batch_size = 8
 test_batch_size = 2
 num_workers = 32
-val_interval = 1
+val_interval = 5
 max_epochs = 50
 work_dir = "work_dirs/centerpoint/" + _base_.dataset_type + "/second_secfpn_2xb8_121m_xx1/"
 
@@ -346,7 +346,10 @@ param_scheduler = [
 ]
 
 # runtime settings
-train_cfg = dict(by_epoch=True, max_epochs=max_epochs, val_interval=val_interval)
+# Run validation for every val_interval epochs before max_epochs - 10, and run validation every 2 epoch after max_epochs - 10
+train_cfg = dict(
+    by_epoch=True, max_epochs=max_epochs, val_interval=val_interval, dynamic_intervals=[(max_epochs - 10, 2)]
+)
 val_cfg = dict()
 test_cfg = dict()
 
