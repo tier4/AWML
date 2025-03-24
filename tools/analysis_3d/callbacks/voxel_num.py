@@ -167,7 +167,7 @@ class VoxelNumAnalysisCallback(AnalysisCallbackInterface):
             p_values = np.percentile(voxel_count, percentiles)
 
             print_log(
-                f"Split name: {split_name}, Point threshold: {point_threshold}, total num of scenarios: {len(voxel_count)}"
+                f"Split name: {split_name}, Point threshold: {point_threshold}, total num of samples: {len(voxel_count)}"
             )
             ax.hist(voxel_count, bins=self.bins, log=log_scale)
             for value, percentile, color in zip(p_values, percentiles, colors):
@@ -175,7 +175,7 @@ class VoxelNumAnalysisCallback(AnalysisCallbackInterface):
             ax.set_ylabel(self.y_axis_label)
             ax.set_xlabel(self.x_axis_label)
             ax.set_title(
-                f"Voxel counts for {split_name} \n {self.pc_ranges} \n {self.voxel_sizes} \n threshold: {point_threshold}"
+                f"Voxel counts for {split_name} \n {self.pc_ranges} \n {self.voxel_sizes} \n frames: {len(voxel_count)} \n threshold: {point_threshold}"
             )
             ax.legend(loc=self.legend_loc)
             ax.xaxis.set_major_locator(MaxNLocator(integer=True))
