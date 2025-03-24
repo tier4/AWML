@@ -170,8 +170,8 @@ class VoxelNumAnalysisCallback(AnalysisCallbackInterface):
                 f"Voxel counts for {split_name} \n {self.pc_ranges} \n {self.voxel_sizes} \n threshold: {point_threshold}"
             )
             ax.legend()
-            ax.gca().xaxis.set_major_locator(MaxNLocator(integer=True))
-            ax.gca().yaxis.set_major_locator(MaxNLocator(integer=True))
+            ax.xaxis.set_major_locator(MaxNLocator(integer=True))
+            ax.yaxis.set_major_locator(MaxNLocator(integer=True))
 
         plt.tight_layout()
         analysis_file_name = self.full_output_path / self.analysis_file_name.format(split_name)

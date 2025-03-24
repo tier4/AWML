@@ -1,3 +1,4 @@
+import time
 from pathlib import Path
 from typing import Dict, List
 
@@ -56,17 +57,18 @@ class AnalysisRunner:
                 out_path=self.out_path,
                 pc_ranges=[-121.60, -121.60, -3.0, 121.60, 121.60, 5.0],
                 voxel_sizes=[0.32, 0.32, 8.0],
+                point_thresholds=[5, 10, 20],
                 analysis_dir="voxel_nums_121_032",
                 bins=100,
             ),
-            VoxelNumAnalysisCallback(
-                data_root_path=Path(self.data_root_path),
-                out_path=self.out_path,
-                pc_ranges=[-121.60, -121.60, -3.0, 121.60, 121.60, 5.0],
-                voxel_sizes=[0.20, 0.20, 8.0],
-                analysis_dir="voxel_nums_121_020",
-                bins=100,
-            ),
+            # VoxelNumAnalysisCallback(
+            #     data_root_path=Path(self.data_root_path),
+            #     out_path=self.out_path,
+            #     pc_ranges=[-121.60, -121.60, -3.0, 121.60, 121.60, 5.0],
+            #     voxel_sizes=[0.20, 0.20, 8.0],
+            #     analysis_dir="voxel_nums_121_020",
+            #     bins=100,
+            # ),
             # CategoryAnalysisCallback(out_path=self.out_path, remapping_classes=self.remapping_classes),
             # CategoryAttributeAnalysisCallback(
             #     out_path=self.out_path, category_name="vehicle.motorcycle", analysis_dir="vehicle_motorcycle_attr"
@@ -207,6 +209,9 @@ class AnalysisRunner:
         print_log("=========")
         print_log("Calling Analysis Callbacks")
         for callback in self.analysis_callbacks:
+            starting_time = time.time()
             callback.run(dataset_split_analysis_data=dataset_split_analysis_data)
+            elapsed_time = time.time() - starting_time
+            print_log(f"Time taken for {callback.__class__.__name__}: {elapsed_time:.6f} seconds")
         print_log("=========")
         print_log("Done running AnalysisRunner!!")
