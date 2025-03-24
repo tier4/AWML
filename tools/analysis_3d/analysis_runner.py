@@ -59,7 +59,7 @@ class AnalysisRunner:
                 voxel_sizes=[0.32, 0.32, 8.0],
                 point_thresholds=[5, 10, 20],
                 analysis_dir="voxel_nums_121_032",
-                bins=100,
+                bins=50,
             ),
             # VoxelNumAnalysisCallback(
             #     data_root_path=Path(self.data_root_path),
