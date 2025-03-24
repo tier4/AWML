@@ -36,13 +36,14 @@ camera_types = {
 }
 
 # class setting
+# class setting
 name_mapping = {
     # DBv1.0
     "vehicle.car": "car",
     "vehicle.construction": "truck",
     "vehicle.emergency (ambulance & police)": "car",
     "vehicle.motorcycle": "bicycle",
-    "vehicle.trailer": "truck",
+    "vehicle.trailer": "trailer",
     "vehicle.truck": "truck",
     "vehicle.bicycle": "bicycle",
     "vehicle.bus (bendy & rigid)": "bus",
@@ -64,7 +65,7 @@ name_mapping = {
     "car": "car",
     "truck": "truck",
     "bus": "bus",
-    "trailer": "truck",
+    "trailer": "trailer",
     "motorcycle": "bicycle",
     "bicycle": "bicycle",
     "police_car": "car",
@@ -95,8 +96,16 @@ name_mapping = {
     "vehicle.fire": "truck",
     "vehicle.motorcycle": "bicycle",
     "vehicle.police": "car",
-    "vehicle.trailer": "truck",
+    "vehicle.trailer": "trailer",
     "vehicle.truck": "truck",
+    # Special cases
+    "ambulance": "car",
+    "kart": "car",
+    "wheel_chair": "pedestrian",
+    "personal_mobility": "pedestrian",
+    "fire_truck": "truck",
+    "semi_trailer": "trailer",
+    "tractor_unit": "truck",
 }
 class_names = [
     "car",
