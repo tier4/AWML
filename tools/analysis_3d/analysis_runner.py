@@ -56,7 +56,15 @@ class AnalysisRunner:
                 out_path=self.out_path,
                 pc_ranges=[-121.60, -121.60, -3.0, 121.60, 121.60, 5.0],
                 voxel_sizes=[0.32, 0.32, 8.0],
-                analysis_dir="voxel_nums",
+                analysis_dir="voxel_nums_121_032",
+                bins=100,
+            ),
+            VoxelNumAnalysisCallback(
+                data_root_path=Path(self.data_root_path),
+                out_path=self.out_path,
+                pc_ranges=[-121.60, -121.60, -3.0, 121.60, 121.60, 5.0],
+                voxel_sizes=[0.20, 0.20, 8.0],
+                analysis_dir="voxel_nums_121_020",
                 bins=100,
             ),
             # CategoryAnalysisCallback(out_path=self.out_path, remapping_classes=self.remapping_classes),
@@ -149,7 +157,7 @@ class AnalysisRunner:
         :return: A dict of {scenario token: ScenarioData}.
         """
         scenario_data = {}
-        for scene_token in scene_tokens:
+        for scene_token in scene_tokens[:2]:
             print_log(f"Creating scenario data for the scene: {scene_token}")
             scene_root_dir_path = get_scene_root_dir_path(
                 root_path=self.data_root_path,

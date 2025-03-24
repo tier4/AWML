@@ -95,7 +95,7 @@ class VoxelNumAnalysisCallback(AnalysisCallbackInterface):
         """ """
         # Normalize the points by dividing by voxel size
         voxel_indices = np.floor(
-            (points - np.array([self.pc_ranges[0], self.pc_ranges[1], self.pc_ranges[2]])) / self.voxel_sizes
+            (points[:, :3] - np.array([self.pc_ranges[0], self.pc_ranges[1], self.pc_ranges[2]])) / self.voxel_sizes
         ).astype(np.int32)
 
         # Remove duplicate voxels (points inside the same voxel)
