@@ -21,6 +21,7 @@ class VoxelNumAnalysisCallback(AnalysisCallbackInterface):
         out_path: Path,
         pc_ranges: List[float],
         voxel_sizes: List[float],
+        point_thresholds: List[int],
         load_dim: int = 5,
         use_dim: List[int] = [0, 1, 2],
         sweeps_num: int = 1,
@@ -43,10 +44,11 @@ class VoxelNumAnalysisCallback(AnalysisCallbackInterface):
         self.use_dim = use_dim
         self.sweeps_num = sweeps_num
         self.remove_close = remove_close
+        self.point_thresholds = point_thresholds
         self.full_output_path = self.out_path / self.analysis_dir
         self.full_output_path.mkdir(exist_ok=True, parents=True)
 
-        self.analysis_file_name = "voxel_count_{}_{}_{}.png"
+        self.analysis_file_name = "voxel_count_{}.png"
         self.y_axis_label = "Number of voxels"
         self.x_axis_label = "Bins"
         self.legend_loc = "upper right"
@@ -91,7 +93,7 @@ class VoxelNumAnalysisCallback(AnalysisCallbackInterface):
         points = np.concatenate(sweep_points_list, axis=0)
         return points
 
-    def _get_total_voxel_counts(self, points: npt.NDArray[np.float64]) -> int:
+    def _get_total_voxel_counts(self, points: npt.NDArray[np.float64], point_threshold: int) -> int:
         """ """
         # Normalize the points by dividing by voxel size
         voxel_indices = np.floor(
@@ -99,30 +101,17 @@ class VoxelNumAnalysisCallback(AnalysisCallbackInterface):
         ).astype(np.int32)
 
         # Remove duplicate voxels (points inside the same voxel)
-        unique_voxels = np.unique(voxel_indices, axis=0)
+        unique_voxels, unique_counts = np.unique(voxel_indices, axis=0, return_counts=True)
 
+        unique_voxels = unique_voxels[unique_counts >= point_threshold]
         return len(unique_voxels)
 
-    def _visualize_dataset_voxel_counts(
-        self,
-        dataset_analysis_data: Dict[str, AnalysisData],
-        split_name: str,
-        log_scale: bool = False,
-        figsize: tuple[int, int] = (15, 15),
-    ) -> None:
-        """ """
-        for dataset_name, analysis_data in dataset_analysis_data.items():
-            self._visualize_voxel_counts(analysis_data, split_name, log_scale, figsize)
-
-    def _visualize_voxel_counts(
+    def _compute_scenario_voxel_counts(
         self,
         analysis_data: AnalysisData,
-        split_name: str,
-        log_scale: bool = False,
-        figsize: tuple[int, int] = (15, 15),
-    ) -> None:
-        """ """
-        voxel_counts = []
+    ) -> Dict[str, List[int]]:
+        """Gather voxel counts for each scenario in a dataset."""
+        voxel_counts = {i: [] for i in self.point_thresholds}
         for scenario_data in analysis_data.scenario_data.values():
             for sample_data in scenario_data.sample_data.values():
                 if sample_data.lidar_point is None:
@@ -132,18 +121,56 @@ class VoxelNumAnalysisCallback(AnalysisCallbackInterface):
                 if sample_data.lidar_sweeps:
                     points = self._load_multisweeps(points, sample_data.lidar_sweeps)
 
-            voxel_counts.append(self._get_total_voxel_counts(points))
+                for point_threshold in self.point_thresholds:
+                    voxel_counts[point_threshold].append(self._get_total_voxel_counts(points, point_threshold))
 
-        _, ax = plt.subplots(figsize=figsize)
-        print_log(f"Total num of voxels: {len(voxel_counts)}")
-        ax.hist(voxel_counts, bins=self.bins, log=log_scale)
-        ax.set_ylabel(self.y_axis_label)
-        ax.set_xlabel(self.x_axis_label)
-        ax.set_title(f"Voxel counts for {split_name} \n {self.pc_ranges} \n {self.voxel_sizes}")
+        return voxel_counts
+
+    def _compute_split_voxel_counts(
+        self,
+        dataset_analysis_data: Dict[str, AnalysisData],
+    ) -> Dict[int, List[int]]:
+        """ """
+        voxel_counts = {i: [] for i in self.point_thresholds}
+        for analysis_data in dataset_analysis_data.values():
+            dataset_voxel_counts = self._compute_scenario_voxel_counts(analysis_data)
+
+            for i in self.point_thresholds:
+                voxel_counts[i] += dataset_voxel_counts[i]
+
+        return voxel_counts
+
+    def _visualize_voxel_counts(
+        self,
+        voxel_counts: Dict[int, List[int]],
+        split_name: str,
+        log_scale: bool = False,
+        figsize: tuple[int, int] = (15, 15),
+    ) -> None:
+        """ """
+        columns = len(self.point_thresholds)
+        _, axes = plt.subplots(nrows=1, ncols=columns, figsize=figsize)
+        percentiles = [0, 25, 50, 75, 95, 100]
+        colors = ["blue", "orange", "green", "red", "purple", "brown"]
+        # Plot something in each subplot
+        for point_threshold, ax in zip(voxel_counts, axes.flatten()):
+            voxel_count = voxel_counts[point_threshold]
+
+            p_values = np.percentile(voxel_count, percentiles)
+
+            print_log(f"Point threshold: {point_threshold}, total num of voxels: {len(voxel_count)}")
+            ax.hist(voxel_count, bins=self.bins, log=log_scale)
+            for value, percentile, color in zip(p_values, percentiles, colors):
+                ax.axvline(value, color=color, linestyle="dashed", linewidth=2, label=f"P{percentile}:{value:.2f}")
+            ax.set_ylabel(self.y_axis_label)
+            ax.set_xlabel(self.x_axis_label)
+            ax.set_title(
+                f"Voxel counts for {split_name} \n {self.pc_ranges} \n {self.voxel_sizes} \n threshold: {point_threshold}"
+            )
+            ax.legend()
+
         plt.tight_layout()
-        analysis_file_name = self.full_output_path / self.analysis_file_name.format(
-            split_name, self.pc_ranges, self.voxel_sizes
-        )
+        analysis_file_name = self.full_output_path / self.analysis_file_name.format(split_name)
         plt.savefig(
             fname=analysis_file_name,
             format="png",
@@ -162,5 +189,6 @@ class VoxelNumAnalysisCallback(AnalysisCallbackInterface):
                     continue
                 dataset_voxel_data[dataset_split_name.dataset_version] = analysis_data
 
-            self._visualize_dataset_voxel_counts(dataset_analysis_data=dataset_voxel_data, split_name=split_name)
+            voxel_counts = self._compute_split_voxel_counts(analysis_data=dataset_voxel_data)
+            self._visualize_voxel_counts(voxel_counts, split_name=split_name, log_scale=False, figsize=(15, 15))
         print_log(f"Done running {self.__class__.__name__}")
