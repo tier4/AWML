@@ -76,10 +76,10 @@ class VoxelNumAnalysisCallback(AnalysisCallbackInterface):
         """ """
         pcd_file = self.data_root_path / pcd_file
         points = np.fromfile(pcd_file, dtype=np.float32).reshape(-1, self.load_dim)
-        in_radius = (
-            self.pc_ranges[0] <= points[:, 0] <= self.pc_ranges[3]
-            and self.pc_ranges[1] <= points[:, 1] <= self.pc_ranges[4]
-            and self.pc_ranges[2] <= points[:, 2] <= self.pc_ranges[5]
+        in_radius = np.logical_and(
+            self.pc_ranges[0] <= points[:, 0] <= self.pc_ranges[3],
+            self.pc_ranges[1] <= points[:, 1] <= self.pc_ranges[4],
+            self.pc_ranges[2] <= points[:, 2] <= self.pc_ranges[5],
         )
         points = points[in_radius]
         return points
