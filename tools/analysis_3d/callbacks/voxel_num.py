@@ -75,7 +75,14 @@ class VoxelNumAnalysisCallback(AnalysisCallbackInterface):
     def _load_points(self, pcd_file: str) -> npt.NDArray[np.float32]:
         """ """
         pcd_file = self.data_root_path / pcd_file
-        return np.fromfile(pcd_file, dtype=np.float32).reshape(-1, self.load_dim)
+        points = np.fromfile(pcd_file, dtype=np.float32).reshape(-1, self.load_dim)
+        in_radius = (
+            self.pc_ranges[0] <= points[:, 0] <= self.pc_ranges[3]
+            and self.pc_ranges[1] <= points[:, 1] <= self.pc_ranges[4]
+            and self.pc_ranges[2] <= points[:, 2] <= self.pc_ranges[5]
+        )
+        points = points[in_radius]
+        return points
 
     def _load_multisweeps(self, points: npt.NDArray[np.float32], sweeps: List[LidarSweep]) -> npt.NDArray[np.float32]:
         """ """
