@@ -18,7 +18,8 @@
 
 - YOLOX_opt-S-TrafficLight
   - v0
-    - [YOLOX_opt-S-TrafficLight base/0.X](./docs/YOLOX_opt-S-TrafficLight/v0/base.md)
+    - [YOLOX_opt-S-TrafficLight base/1.X](./docs/YOLOX_opt-S-TrafficLight/v1/base.md)
+    - [YOLOX_opt-S-TrafficLight x2/1.X](./docs/YOLOX_opt-S-TrafficLight/v1/x2.md)
 
 ## Get started
 ### 1. Setup
@@ -55,6 +56,33 @@ python3 tools/detection2d/deploy_yolox.py /workspace/work_dirs/yolox_s_tlr_416x4
 # batch size 6
 python3 tools/detection2d/deploy_yolox.py /workspace/work_dirs/yolox_s_tlr_416x416_pedcar_t4dataset/epoch_300.pth --input_size 416 416 --model yolox-s --batch_size 6 --output_onnx_file tlr_car_ped_yolox_s_batch_6.onnx
 ```
+
+## Latency
+
+### YOLOX 224x224 batch_size-6
+
+| Name                                                    | Mean ± Std Dev (ms) | Median (ms) | 80th Percentile (ms) | 90th Percentile (ms) | 95th Percentile (ms) | 99th Percentile (ms)   |  
+|---------------------------------------------------------|----------------------|------------|----------------------|----------------------|----------------------|------------------------|  
+| traffic_light_classifier Ros2 node (RTX 3090)           | 2.69 ± 1.52          | 2.0        | 3.0                  | 5.0                  | 6.0                  | 8.00                   |  
+| tensorrt (A100 80 GB) **(No pre, post processing) fp16**| 1.45 ± 0.07          | 1.44       | 1.45                 | 1.45                 | 1.45                 | 1.46                   |
+| pytorch (A100 80 GB) num_workers=16                     | 42.19 ± 10.00        | 40.54      | 47.36                | 51.28                | 55.14                | 68.69                  |  
+
+### YOLOX 224x224 batch_size-4
+
+| Name                                                    | Mean ± Std Dev (ms) | Median (ms) | 80th Percentile (ms) | 90th Percentile (ms) | 95th Percentile (ms) | 99th Percentile (ms)   |  
+|---------------------------------------------------------|----------------------|------------|----------------------|----------------------|----------------------|------------------------|  
+| traffic_light_classifier Ros2 node (RTX 3090)           | 2.10 ± 1.81          | 1.0        | 4.0                  | 5.0                  | 6.0                  | 8.00                   |  
+| tensorrt (A100 80 GB) **(No pre, post processing) fp16**| 1.17 ± 0.05          | 1.17       | 1.17                 | 1.17                 | 1.18                 | 1.18                   |
+| pytorch (A100 80 GB) num_workers=16                     | 30.75 ± 5.77         | 29.70      | 35.01                | 37.38                | 39.46                | 46.72                  |  
+
+### YOLOX 224x224 batch_size-1
+
+| Name                                                    | Mean ± Std Dev (ms) | Median (ms) | 80th Percentile (ms) | 90th Percentile (ms) | 95th Percentile (ms) | 99th Percentile (ms)   |  
+|---------------------------------------------------------|----------------------|------------|----------------------|----------------------|----------------------|------------------------|  
+| traffic_light_classifier Ros2 node (RTX 3090)           | 1.90 ± 1.85          | 1.0        | 2.0                  | 4.0                  | 5.0                  | 6.00                   |  
+| tensorrt (A100 80 GB) **(No pre, post processing) fp16**| 0.86 ± 0.05          | 0.86       | 0.86                 | 0.86                 | 0.86                 | 0.87                   |  
+| pytorch (A100 80 GB) num_workers=16                     | 19.42 ± 3.96         | 19.37      | 23.89                | 25.30                | 26.37                | 29.27                  |  
+
 
 ## Troubleshooting
 

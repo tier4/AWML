@@ -214,30 +214,27 @@ val_evaluator = dict(
     type="T4MetricV2",
     data_root=data_root,
     ann_file=data_root + info_directory_path + _base_.info_val_file_name,
-    metric="bbox",
-    backend_args=backend_args,
     class_names={{_base_.class_names}},
     name_mapping={{_base_.name_mapping}},
-    eval_class_range=eval_class_range,
-    filter_attributes=_base_.filter_attributes,
     perception_evaluator_configs=perception_evaluator_configs,
     critical_object_filter_config=critical_object_filter_config,
     frame_pass_fail_config=frame_pass_fail_config,
+    save_preds_and_gt_to_pickle=False,
+    load_preds_and_gt_from_pickle=False,
 )
 
 test_evaluator = dict(
     type="T4MetricV2",
     data_root=data_root,
     ann_file=data_root + info_directory_path + _base_.info_test_file_name,
-    metric="bbox",
-    backend_args=backend_args,
     class_names={{_base_.class_names}},
     name_mapping={{_base_.name_mapping}},
-    eval_class_range=eval_class_range,
-    filter_attributes=_base_.filter_attributes,
     perception_evaluator_configs=perception_evaluator_configs,
     critical_object_filter_config=critical_object_filter_config,
     frame_pass_fail_config=frame_pass_fail_config,
+    save_preds_and_gt_to_pickle=True,
+    load_preds_and_gt_from_pickle=False,
+    results_pickle_path="/workspace/pickles",
 )
 
 model = dict(

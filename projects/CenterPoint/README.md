@@ -19,8 +19,6 @@
   - v1 (121m range, grid_size = 760)
     - [CenterPoint base/1.X](./docs/CenterPoint/v1/base.md)
     - [CenterPoint x2/1.X](./docs/CenterPoint/v1/x2.md)
-    - [(TBD) CenterPoint x2-gen2/1.X](./docs/CenterPoint/v1/x2-gen2.md)
-    - [(TBD) CenterPoint japantaxi/1.X](./docs/CenterPoint/v1/japantaxi.md)
     - [CenterPoint-ConvNeXtPC base/0.x](./docs/CenterPoint-ConvNeXtPC/v0/base.md)
 
 ## Get started
