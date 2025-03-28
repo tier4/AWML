@@ -135,17 +135,16 @@ class BEVLoadMultiViewImageFromFiles(LoadMultiViewImageFromFiles):
         # TODO: record the origin shape and padded shape
         filename, cam2img, lidar2cam, cam2lidar, lidar2img = [], [], [], [], []
 
+        num_expected_cameras = len(results["images"].keys())
         # to fill None data
         # for _ , cam_item in results['images'].items():
         for cam_type, cam_item in results["images"].items():
-            # TODO (KokSeang): This sometime causes an error when we set num_workers > 1 during training,
-            # it's likely due to multiprocessing in CPU. We should probably process this part when creating info files
             if cam_item["img_path"] is None:
-                cam_item = self.before_camera_info[cam_type]
-                print("Warning: fill None data")
-            else:
-                self.before_camera_info[cam_type] = cam_item
+                continue
 
+            if not os.path.exists(os.path.join(self.data_root, cam_item["img_path"])):
+                print(f"Image missing: {cam_item['img_path']}")
+                continue
             filename.append(cam_item["img_path"])
             lidar2cam.append(cam_item["lidar2cam"])
 
@@ -162,6 +161,15 @@ class BEVLoadMultiViewImageFromFiles(LoadMultiViewImageFromFiles):
             cam2img.append(cam2img_array)
             lidar2img.append(cam2img_array @ lidar2cam_array)
 
+        num_current_cameras = len(filename)
+        # print(f"num_cameras={num_current_cameras}. expected_cameras={num_expected_cameras}", flush=True)
+        for i in range(num_expected_cameras - num_current_cameras):
+            print(f"Warning: repeating {num_expected_cameras - num_current_cameras} samples", flush=True)
+            filename.append(filename[i % num_current_cameras])
+            lidar2cam.append(lidar2cam[i % num_current_cameras])
+            cam2lidar.append(cam2lidar[i % num_current_cameras])
+            cam2img.append(cam2img[i % num_current_cameras])
+            lidar2img.append(lidar2img[i % num_current_cameras])
         results["img_path"] = filename
         results["cam2img"] = np.stack(cam2img, axis=0)
         results["lidar2cam"] = np.stack(lidar2cam, axis=0)
