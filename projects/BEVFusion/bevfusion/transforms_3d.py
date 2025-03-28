@@ -20,14 +20,28 @@ class ImageAug3D(BaseTransform):
         self.rot_lim = rot_lim
         self.is_train = is_train
 
-    def sample_augmentation(self, results):
+    def sample_augmentation(self, results, camera_index):
         H, W = results["ori_shape"]
         fH, fW = self.final_dim
+        cam2image = results["cam2img"][camera_index]
+        fx = cam2image[0, 0]
+        fy = cam2image[1, 1]
+        cx = cam2image[0, 2]
+        cy = cam2image[1, 2]
+
+        r31, r32, r33 = results["cam2lidar"][camera_index, 2, :3]
+
+        yl = cy + cx * (fy / fx) * (r31 / r32) - fy * (r33 / r32)
+        yr = cy + (cx - W + 1) * (fy / fx) * (r31 / r32) - fy * (r33 / r32)
+        yh = max(0, min(yr, yl))
         if self.is_train:
             resize = np.random.uniform(*self.resize_lim)
             resize_dims = (int(W * resize), int(H * resize))
             newW, newH = resize_dims
-            crop_h = int((1 - np.random.uniform(*self.bot_pct_lim)) * newH) - fH
+            yh_resized = yh * resize
+            crop_h = int(min(newH - fH, yh_resized))
+            # crop_h = int(
+            #    (1 - np.random.uniform(*self.bot_pct_lim)) * newH) - fH
             crop_w = int(np.random.uniform(0, max(0, newW - fW)))
             crop = (crop_w, crop_h, crop_w + fW, crop_h + fH)
             flip = False
@@ -38,7 +52,9 @@ class ImageAug3D(BaseTransform):
             resize = np.mean(self.resize_lim)
             resize_dims = (int(W * resize), int(H * resize))
             newW, newH = resize_dims
-            crop_h = int((1 - np.mean(self.bot_pct_lim)) * newH) - fH
+            yh_resized = yh * resize
+            crop_h = int(min(newH - fH, yh_resized))
+            # crop_h = int((1 - np.mean(self.bot_pct_lim)) * newH) - fH
             crop_w = int(max(0, newW - fW) / 2)
             crop = (crop_w, crop_h, crop_w + fW, crop_h + fH)
             flip = False
@@ -80,8 +96,8 @@ class ImageAug3D(BaseTransform):
         imgs = data["img"]
         new_imgs = []
         transforms = []
-        for img in imgs:
-            resize, resize_dims, crop, flip, rotate = self.sample_augmentation(data)
+        for camera_index, img in enumerate(imgs):
+            resize, resize_dims, crop, flip, rotate = self.sample_augmentation(data, camera_index)
             post_rot = torch.eye(2)
             post_tran = torch.zeros(2)
             new_img, rotation, translation = self.img_transform(
@@ -99,6 +115,12 @@ class ImageAug3D(BaseTransform):
             transform[:2, 3] = translation
             new_imgs.append(np.array(new_img).astype(np.float32))
             transforms.append(transform.numpy())
+
+            # TODO(knzo25): keep this during the review to generate evidence. remove before merging
+            """ old_img = Image.open(data['img_path'][camera_index])
+            old_img.save(f'img_{camera_index}.png')
+            new_img.save(f'img_aug_{camera_index}.png') """
+
         data["img"] = new_imgs
         # update the calibration matrices
         data["img_aug_matrix"] = transforms

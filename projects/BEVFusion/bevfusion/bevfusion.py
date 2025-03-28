@@ -66,7 +66,7 @@ class BEVFusion(Base3DDetector):
 
         # NOTE(knzo25): this is used during onnx export
         batch_input_metas = [item.metainfo for item in batch_data_samples]
-        feats = self.extract_feat(batch_inputs_dict, batch_input_metas)
+        feats, _ = self.extract_feat(batch_inputs_dict, batch_input_metas)
 
         if self.with_bbox_head:
             outputs = self.bbox_head(feats, batch_input_metas)
@@ -109,7 +109,7 @@ class BEVFusion(Base3DDetector):
         return loss, log_vars  # type: ignore
 
     def init_weights(self) -> None:
-        if self.img_backbone is not None:
+        if self.img_backbone is not None and self.img_backbone.init_cfg.checkpoint is not None:
             self.img_backbone.init_weights()
 
     @property
@@ -152,7 +152,7 @@ class BEVFusion(Base3DDetector):
 
         with torch.cuda.amp.autocast(enabled=False):
             # with torch.autocast(device_type='cuda', dtype=torch.float32):
-            x = self.view_transform(
+            x, depth_loss = self.view_transform(
                 x,
                 points,
                 lidar2image,
@@ -166,11 +166,11 @@ class BEVFusion(Base3DDetector):
                 lidar_aug_matrix_inverse,
                 geom_feats,
             )
-        return x
+        return x, depth_loss
 
     def extract_pts_feat(self, batch_inputs_dict) -> torch.Tensor:
 
-        if "points" in batch_inputs_dict:
+        if "voxels" not in batch_inputs_dict:
             # NOTE(knzo25): training and normal inference
             points = batch_inputs_dict["points"]
             with torch.cuda.amp.autocast(enabled=False):
@@ -252,7 +252,7 @@ class BEVFusion(Base3DDetector):
                 contains a tensor with shape (num_instances, 7).
         """
         batch_input_metas = [item.metainfo for item in batch_data_samples]
-        feats = self.extract_feat(batch_inputs_dict, batch_input_metas)
+        feats, _ = self.extract_feat(batch_inputs_dict, batch_input_metas)
 
         if self.with_bbox_head:
             outputs = self.bbox_head.predict(feats, batch_input_metas)
@@ -270,6 +270,8 @@ class BEVFusion(Base3DDetector):
         imgs = batch_inputs_dict.get("imgs", None)
         points = batch_inputs_dict.get("points", None)
         features = []
+        depth_loss = 0.0
+
         if imgs is not None and "lidar2img" not in batch_inputs_dict:
             # NOTE(knzo25): normal training and testing
             imgs = imgs.contiguous()
@@ -287,7 +289,7 @@ class BEVFusion(Base3DDetector):
             camera2lidar = imgs.new_tensor(np.asarray(camera2lidar))
             img_aug_matrix = imgs.new_tensor(np.asarray(img_aug_matrix))
             lidar_aug_matrix = imgs.new_tensor(np.asarray(lidar_aug_matrix))
-            img_feature = self.extract_img_feat(
+            img_feature, depth_loss = self.extract_img_feat(
                 imgs,
                 deepcopy(points),
                 lidar2image,
@@ -318,10 +320,9 @@ class BEVFusion(Base3DDetector):
             feats = feats.sum(dim=1, keepdim=False) / sizes.type_as(feats).view(-1, 1)
 
             geom_feats = batch_inputs_dict["geom_feats"]
-            img_feature = self.extract_img_feat(
+            img_feature, depth_loss = self.extract_img_feat(
                 imgs,
-                [feats],
-                # points,
+                points,
                 lidar2image,
                 camera_intrinsics,
                 camera2lidar,
@@ -344,15 +345,17 @@ class BEVFusion(Base3DDetector):
         x = self.pts_backbone(x)
         x = self.pts_neck(x)
 
-        return x
+        return x, depth_loss
 
     def loss(
         self, batch_inputs_dict: Dict[str, Optional[Tensor]], batch_data_samples: List[Det3DDataSample], **kwargs
     ) -> List[Det3DDataSample]:
         batch_input_metas = [item.metainfo for item in batch_data_samples]
-        feats = self.extract_feat(batch_inputs_dict, batch_input_metas)
+        feats, depth_loss = self.extract_feat(batch_inputs_dict, batch_input_metas)
 
         losses = dict()
+        losses["depth_loss"] = depth_loss
+
         if self.with_bbox_head:
             bbox_loss = self.bbox_head.loss(feats, batch_data_samples)
 
