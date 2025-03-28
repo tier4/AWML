@@ -56,6 +56,9 @@ if __name__ == "__main__":
 
     deploy_cfg, model_cfg = load_config(deploy_cfg_path, model_cfg_path)
     model_cfg.launcher = "none"
+    model_cfg.load_from = checkpoint_path
+    if "img_backbone" in model_cfg.model:
+        model_cfg.model.img_backbone.init_cfg.checkpoint = None  # checkpoint_path
 
     data_preprocessor_cfg = deepcopy(model_cfg.model.data_preprocessor)
 

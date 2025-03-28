@@ -37,8 +37,27 @@ class VoxelDetection(_VoxelDetection):
         collate_data = pseudo_collate(data)
         data[0]["inputs"]["points"] = data[0]["inputs"]["points"].to(self.device)
 
+        """ cam2img = data[0]["data_samples"].cam2img
+        cam2lidar = data[0]["data_samples"].cam2lidar
+        lidar2image = data[0]["data_samples"].lidar2img
+        lidar2camera = data[0]["data_samples"].lidar2cam
+        img_aux_matrix = data[0]["data_samples"].img_aug_matrix
+
+        import pickle
+        d = {}
+        d["cam2img"] = cam2img
+        d["cam2lidar"] = cam2lidar
+        d["lidar2image"] = lidar2image
+        d["lidar2camera"] = lidar2camera
+        d["img_aux_matrix"] = img_aux_matrix
+        d["points"] = data[0]['inputs']['points'].cpu().numpy()
+
+        with open("example.pkl", "wb") as f:
+            pickle.dump(d, f) """
+
         assert data_preprocessor is not None
         collate_data = data_preprocessor(collate_data, False)
+        points = collate_data["inputs"]["points"][0]
         voxels = collate_data["inputs"]["voxels"]
         inputs = [voxels["voxels"], voxels["num_points"], voxels["coors"]]
 
@@ -47,8 +66,13 @@ class VoxelDetection(_VoxelDetection):
 
         # NOTE(knzo25): preprocessing in BEVFusion and the
         # data_preprocessor work different.
+        # The original code/model uses [batch, x, y, z]
+        # but the data_preprocessor used here uses [batch, z, y, x]
+        # In addition, the deployment's voxelization uses [z, y, x]
+        # Since this is outside the graph we format it as [z, y, x]
+        # and convert it to [batch, x, y, z] inside the graph
         coors = voxels["coors"]
-        coors = coors[:, [0, 2, 3, 1]]
+        coors = coors[:, 1:]
 
         if "imgs" not in self.deploy_cfg.onnx_config.input_names:
             return collate_data, [feats, coors, num_points_per_voxel]
@@ -81,10 +105,24 @@ class VoxelDetection(_VoxelDetection):
 
         geom_feats, kept, ranks, indices = model.view_transform.bev_pool_aux(geom)
 
+        # TODO(knzo25): just a test. remove
+        """ import pickle
+        data = {}
+        data["geom"] = geom.cpu()
+        data["geom_feats"] = geom_feats.cpu()
+        data["kept"] = kept.cpu()
+        data["ranks"] = ranks.cpu()
+        data["indices"] = indices.cpu()
+
+        with open("precomputed_features.pkl", "wb") as f:
+            pickle.dump(data, f) """
+
         inputs = [
             feats,
             coors,
             num_points_per_voxel,
+            points,
+            torch.ones((img.size(0)), device=img.device),
             img,
             lidar2image,
             # NOTE(knzo25): not used during export

@@ -66,7 +66,7 @@ class BEVFusion(Base3DDetector):
 
         # NOTE(knzo25): this is used during onnx export
         batch_input_metas = [item.metainfo for item in batch_data_samples]
-        feats = self.extract_feat(batch_inputs_dict, batch_input_metas)
+        feats, _ = self.extract_feat(batch_inputs_dict, batch_input_metas)
 
         if self.with_bbox_head:
             outputs = self.bbox_head(feats, batch_input_metas)
@@ -109,7 +109,7 @@ class BEVFusion(Base3DDetector):
         return loss, log_vars  # type: ignore
 
     def init_weights(self) -> None:
-        if self.img_backbone is not None:
+        if self.img_backbone is not None and self.img_backbone.init_cfg.checkpoint is not None:
             self.img_backbone.init_weights()
 
     @property
@@ -170,7 +170,7 @@ class BEVFusion(Base3DDetector):
 
     def extract_pts_feat(self, batch_inputs_dict) -> torch.Tensor:
 
-        if "points" in batch_inputs_dict:
+        if "voxels" not in batch_inputs_dict:
             # NOTE(knzo25): training and normal inference
             points = batch_inputs_dict["points"]
             with torch.cuda.amp.autocast(enabled=False):
@@ -270,6 +270,8 @@ class BEVFusion(Base3DDetector):
         imgs = batch_inputs_dict.get("imgs", None)
         points = batch_inputs_dict.get("points", None)
         features = []
+        depth_loss = 0.0
+
         if imgs is not None and "lidar2img" not in batch_inputs_dict:
             # NOTE(knzo25): normal training and testing
             imgs = imgs.contiguous()
@@ -318,10 +320,9 @@ class BEVFusion(Base3DDetector):
             feats = feats.sum(dim=1, keepdim=False) / sizes.type_as(feats).view(-1, 1)
 
             geom_feats = batch_inputs_dict["geom_feats"]
-            img_feature = self.extract_img_feat(
+            img_feature, depth_loss = self.extract_img_feat(
                 imgs,
-                [feats],
-                # points,
+                points,
                 lidar2image,
                 camera_intrinsics,
                 camera2lidar,
@@ -350,7 +351,7 @@ class BEVFusion(Base3DDetector):
         self, batch_inputs_dict: Dict[str, Optional[Tensor]], batch_data_samples: List[Det3DDataSample], **kwargs
     ) -> List[Det3DDataSample]:
         batch_input_metas = [item.metainfo for item in batch_data_samples]
-        feats = self.extract_feat(batch_inputs_dict, batch_input_metas)
+        feats, depth_loss = self.extract_feat(batch_inputs_dict, batch_input_metas)
 
         losses = dict()
         losses["depth_loss"] = depth_loss
