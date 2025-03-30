@@ -40,14 +40,14 @@ eval_class_range = {
 
 # user setting
 data_root = "data/t4dataset/"
-info_directory_path = "info/kokseang_x2_gen2/"
+info_directory_path = "info/kokseang_x2_gen2_fix_mapping//"
 train_gpu_size = 4
 train_batch_size = 8
 test_batch_size = 2
 num_workers = 32
 val_interval = 5
 max_epochs = 50
-work_dir = "work_dirs/centerpoint/" + _base_.dataset_type + "/second_secfpn_4xb8_121m_base_centerpoint_1_3/"
+work_dir = "work_dirs/centerpoint/" + _base_.dataset_type + "/second_secfpn_4xb8_121m_base_centerpoint_1_3_1/"
 
 train_pipeline = [
     dict(
@@ -379,7 +379,7 @@ visualizer = dict(type="Det3DLocalVisualizer", vis_backends=vis_backends, name="
 logger_interval = 50
 default_hooks = dict(
     logger=dict(type="LoggerHook", interval=logger_interval),
-    checkpoint=dict(type="CheckpointHook", interval=1, max_keep_ckpts=3, save_best="NuScenes metric/T4Metric/mAP"),
+    checkpoint=dict(type="CheckpointHook", interval=1, max_keep_ckpts=10, save_best="NuScenes metric/T4Metric/mAP"),
 )
 
 custom_hooks = [
