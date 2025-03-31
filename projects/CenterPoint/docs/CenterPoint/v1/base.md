@@ -19,7 +19,6 @@
 <summary> Results with previous datasets </summary>
 
 - Dataset: test dataset of db_jpntaxi_v1 + db_jpntaxi_v2 + db_jpntaxi_v4 + db_gsm8_v1 + db_j6_v1 + db_j6_v2 + db_j6_v3 + db_j6_v5 (total frames: 3083)
-
 - Class mAP for center distance (0.5m, 1.0m, 2.0m, 4.0m):
 
 | eval range: 120m     | mAP  | car <br> (49,507) | truck <br> (9,474) | bus <br> (3,394) | bicycle <br> (3,734) | pedestrian <br> (26,778) |
