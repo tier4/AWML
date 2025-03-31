@@ -6,14 +6,26 @@
   - voxel_size = [0.32, 0.32, 8.0]
   - grid_size = [760, 760, 1]
 - Performance summary
-  - Dataset: test dataset of db_jpntaxi_v1 + db_jpntaxi_v2 + db_jpntaxi_v4 + db_gsm8_v1 + db_j6_v1 + db_j6_v2 + db_j6_v3 + db_j6_v5 (total frames: 3083):
+  - Dataset: test dataset of db_jpntaxi_v1 + db_jpntaxi_v2 + db_jpntaxi_v4 + db_gsm8_v1 + db_j6_v1 + db_j6_v2 + db_j6_v3 + db_j6_v5 + db_j6gen2_v1 (total frames: 3804):
   - Class mAP for center distance (0.5m, 1.0m, 2.0m, 4.0m)
 
-| eval range: 120m     | mAP  | car <br> (610,396) | truck <br> (151,672) | bus <br> (37,876) | bicycle <br> (47,739) | pedestrian <br> (367,200) |
+| eval range: 120m     | mAP  | car <br> (76,497) | truck <br> (10,253) | bus <br> (4,597) | bicycle <br> (3,742) | pedestrian <br> (30,518) |
 | -------------------- | ---- | ------------------ | -------------------- | ----------------- | --------------------- | ------------------------- |
-| CenterPoint base/1.2 | 65.7 | 77.2               | 54.7                 | 77.9              | 53.7                  | 64.9                      |
+| CenterPoint base/1.3 | 66.7 | 80.6               | 53.7                 | 80.2              | 54.3                  | 64.7                      |
+| CenterPoint base/1.2 | 65.6 | 78.7               | 52.6                 | 79.6              | 53.6                  | 63.5                      |
+
+## Deprecated summary
+<details>
+  - Results with previous datasets
+  - Dataset: test dataset of db_jpntaxi_v1 + db_jpntaxi_v2 + db_jpntaxi_v4 + db_gsm8_v1 + db_j6_v1 + db_j6_v2 + db_j6_v3 + db_j6_v5 (total frames: 3083):
+| eval range: 120m     | mAP  | car <br> (49,507) | truck <br> (9,474) | bus <br> (3,394) | bicycle <br> (3,734) | pedestrian <br> (26,778) |
+| -------------------- | ---- | ------------------ | -------------------- | ----------------- | --------------------- | ------------------------- |
+| CenterPoint base/1.2 | 65.7 | 77.2               | 54.7                 | 77.9              | 53.7                  | 64.
+9                      |
 | CenterPoint base/1.1 | 64.2 | 77.0               | 52.8                 | 76.7              | 51.9                  | 62.7                      |
 | CenterPoint base/1.0 | 62.6 | 75.2               | 47.4                 | 74.7              | 52.0                  | 63.9                      |
+
+</details>
 
 ## Release
 
