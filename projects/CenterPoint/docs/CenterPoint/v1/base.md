@@ -16,7 +16,7 @@
 
 ## Deprecated summary
 <details>
-  
+
 - Results with previous datasets
 - Dataset: test dataset of db_jpntaxi_v1 + db_jpntaxi_v2 + db_jpntaxi_v4 + db_gsm8_v1 + db_j6_v1 + db_j6_v2 + db_j6_v3 + db_j6_v5 (total frames: 3083):
 
