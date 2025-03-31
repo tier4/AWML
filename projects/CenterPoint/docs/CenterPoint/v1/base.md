@@ -103,7 +103,7 @@
 
 - Evaluation result with db_j6gen2_v1 (total frames: 721)
   - Total mAP (eval range = 120m): 0.549
-  
+
 | class_name  | Count   | mAP  | AP@0.5m | AP@1.0m | AP@2.0m | AP@4.0m |
 | ----------  | ------  | ---- | ------- | ------- | ------- | ------- |
 | car         | 26,990  | 86.3 | 80.3    | 86.6    | 88.9    | 89.3    |
