@@ -63,7 +63,7 @@
 | base/1.2           | 49.0 | 82.0 | 28.4  | 83.0 | 0.0     | 51.5       |
 
 - Model
-  - Training dataset: DB JPNTAXI v1.0 + DB JPNTAXI v2.0 + DB JPNTAXI v3.0 + DB GSM8 v1.0 + DB J6 v1.0 + DB J6 Gen2 v1.0 (total frames: 49,605)
+  - Training dataset: DB JPNTAXI v1.0 + DB JPNTAXI v2.0 + DB JPNTAXI v4.0 + DB GSM8 v1.0 + DB J6 v1.0 + DB J6 v2.0 + DB J6 v3.0 + DB J6 v5.0 + DB J6 Gen2 v1.0 (total frames: 49,605)
   - [Config file path](https://github.com/tier4/AWML/blob/5f472170f07251184dc009a1ec02be3b4f3bf98c/autoware_ml/configs/detection3d/dataset/t4dataset/base.py)
   - Deployed onnx model and ROS parameter files [[WebAuto (for internal)]](WIP)
   - Deployed onnx and ROS parameter files [[model-zoo]]
