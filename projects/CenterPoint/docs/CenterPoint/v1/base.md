@@ -33,9 +33,9 @@
 
 ### CenterPoint base/1.3
 
-- This is the first CenterPoint model trained with `J6 Gen2` data, which incorporating a new sensor setup alongside previous datasets. 
+- This is the first CenterPoint model trained with `J6 Gen2` data, which incorporating a new sensor setup alongside previous datasets
 - It demonstrates an overall performance improvement on both Gen1 and Gen2 data, particularly in the detection of bicycles and pedestrians
-- In gen2 test set, `base/1.3` outperforms `base/1.2` in most categories (54.9 vs 49.0), which the improvement is significant (~5%). However, both models fail to detect bicycles since the number of bicycles in test set is too small (only 8 for this setup).
+- In gen2 test set, `base/1.3` outperforms `base/1.2` in most categories (54.9 vs 49.0), which the improvement is significant (~5%). However, both models fail to detect bicycles since the number of bicycles in test set is too small (only 8 for this setup)
 
 <details>
 <summary> The link of data and evaluation result </summary>
