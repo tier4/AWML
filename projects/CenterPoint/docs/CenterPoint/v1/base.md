@@ -65,18 +65,18 @@
 - Model
   - Training dataset: DB JPNTAXI v1.0 + DB JPNTAXI v2.0 + DB JPNTAXI v4.0 + DB GSM8 v1.0 + DB J6 v1.0 + DB J6 v2.0 + DB J6 v3.0 + DB J6 v5.0 + DB J6 Gen2 v1.0 (total frames: 49,605)
   - [Config file path](https://github.com/tier4/AWML/blob/5f472170f07251184dc009a1ec02be3b4f3bf98c/autoware_ml/configs/detection3d/dataset/t4dataset/base.py)
-  - Deployed onnx model and ROS parameter files [[WebAuto (for internal)]](WIP)
+  - Deployed onnx model and ROS parameter files [[WebAuto (for internal)]](https://evaluation.tier4.jp/evaluation/mlpackages/7156b453-2861-4ae9-b135-e24e48cc9029/releases/9a2bc8ce-e7f1-46d8-a335-9c188d30b2e1?project_id=zWhWRzei)
   - Deployed onnx and ROS parameter files [[model-zoo]]
-    - [detection_class_remapper.param.yaml](WIP)
-    - [centerpoint_t4base_ml_package.param.yaml](WIP)
-    - [deploy_metadata.yaml](WIP)
-    - [pts_voxel_encoder_centerpoint_t4base.onnx](WIP)
-    - [pts_backbone_neck_head_centerpoint_t4base.onnx](WIP)
+    - [detection_class_remapper.param.yaml](https://autoware-ml-model-zoo.s3.ap-northeast-1.amazonaws.com/autoware-ml/models/centerpoint/centerpoint/t4base/v1.3/detection_class_remapper.param.yaml)
+    - [centerpoint_t4base_ml_package.param.yaml](https://autoware-ml-model-zoo.s3.ap-northeast-1.amazonaws.com/autoware-ml/models/centerpoint/centerpoint/t4base/v1.3/centerpoint_t4base_ml_package.param.yaml)
+    - [deploy_metadata.yaml](https://autoware-ml-model-zoo.s3.ap-northeast-1.amazonaws.com/autoware-ml/models/centerpoint/centerpoint/t4base/v1.3/deploy_metadata.yaml)
+    - [pts_voxel_encoder_centerpoint_t4base.onnx](https://autoware-ml-model-zoo.s3.ap-northeast-1.amazonaws.com/autoware-ml/models/centerpoint/centerpoint/t4base/v1.3/pts_voxel_encoder.onnx)
+    - [pts_backbone_neck_head_centerpoint_t4base.onnx](https://autoware-ml-model-zoo.s3.ap-northeast-1.amazonaws.com/autoware-ml/models/centerpoint/centerpoint/t4base/v1.3/pts_backbone_neck_head.onnx)
   - Training results [[Google drive (for internal)]](https://drive.google.com/drive/folders/1hgV7icWzmXQOP-lfX45e3rWWEaRlLoZX?usp=drive_link)
   - Training results [model-zoo]
-    - [logs.zip](WIP)
-    - [checkpoint_best.pth](WIP)
-    - [config.py](WIP)
+    - [logs.zip](https://autoware-ml-model-zoo.s3.ap-northeast-1.amazonaws.com/autoware-ml/models/centerpoint/centerpoint/t4base/v1.3/logs.zip)
+    - [checkpoint_best.pth](https://autoware-ml-model-zoo.s3.ap-northeast-1.amazonaws.com/autoware-ml/models/centerpoint/centerpoint/t4base/v1.3/best_NuScenes+metric_T4Metric_mAP_epoch_49.pth)
+    - [config.py](https://autoware-ml-model-zoo.s3.ap-northeast-1.amazonaws.com/autoware-ml/models/centerpoint/centerpoint/t4base/v1.3/second_secfpn_4xb8_121m_base.py)
   - Train time: NVIDIA A100 80GB * 4 * 50 epochs = 3.0 days
   - Batch size: 4*8 = 32
 
