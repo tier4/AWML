@@ -88,7 +88,7 @@ name_mapping = {
     "pedestrian.wheelchair": "pedestrian",
     "static_object.bicycle rack": "bicycle rack",
     "static_object.bollard": "bollard",
-    "vehicle.ambulance": "car",         # Define vehicle.ambulance as car since vehicle.emergency (ambulance & police) is defined as car
+    "vehicle.ambulance": "car",  # Define vehicle.ambulance as car since vehicle.emergency (ambulance & police) is defined as car
     "vehicle.bicycle": "bicycle",
     "vehicle.bus": "bus",
     "vehicle.car": "car",
@@ -98,10 +98,10 @@ name_mapping = {
     "vehicle.police": "car",
     "vehicle.trailer": "trailer",
     "vehicle.truck": "truck",
-    # Fixes
+    # DBv1.3
     "ambulance": "car",
     "kart": "car",
-    "wheel_chair": "pedestrian",
+    "wheelchair": "pedestrian",
     "personal_mobility": "pedestrian",
     "fire_truck": "truck",
     "semi_trailer": "trailer",
