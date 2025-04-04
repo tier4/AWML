@@ -1,4 +1,4 @@
-from typing import Optional, Tuple, List
+from typing import List, Optional, Tuple
 
 import torch
 from mmdet3d.models.voxel_encoders.utils import PFNLayer, get_paddings_indicator
