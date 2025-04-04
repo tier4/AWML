@@ -1,4 +1,4 @@
-""" Script to compute analysis of T4 datasets. """
+"""Script to compute analysis of T4 datasets."""
 
 import argparse
 

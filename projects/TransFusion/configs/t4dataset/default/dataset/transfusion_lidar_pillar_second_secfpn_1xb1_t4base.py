@@ -111,7 +111,7 @@ visualizer = dict(
     name="visualizer",
 )
 
-train_cfg = dict(by_epoch=True, max_epochs=max_epochs)
+train_cfg = dict(by_epoch=True, max_epochs=max_epochs, dynamic_intervals=[(max_epochs - 10, 2)])
 val_cfg = dict()
 test_cfg = dict()
 
