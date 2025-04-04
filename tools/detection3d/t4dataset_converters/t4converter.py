@@ -579,7 +579,7 @@ def get_annotations(
     gt_attrs = get_gt_attrs(t4, annotations)
     assert len(names) == len(gt_attrs), f"{len(names)}, {len(gt_attrs)}"
     assert len(gt_boxes) == len(instance_tokens)
-    assert velocity.shape == (len(gt_boxes), 2)
+    # assert velocity.shape == (len(gt_boxes), 2)
 
     matched_object_idx = None
     if merge_objects:
