@@ -33,7 +33,7 @@ class AnalysisRunner:
         data_root_path: str,
         config_path: str,
         out_path: str,
-        max_sweeps: int = 10,
+        max_sweeps: int = 2,
     ) -> None:
         """
         :param data_root_path: Path where to save data.
