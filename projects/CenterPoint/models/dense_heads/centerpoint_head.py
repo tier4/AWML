@@ -58,6 +58,48 @@ def get_direction_bin(rot, dir_offset=0, one_hot=True):
 
 
 @MODELS.register_module(force=True)
+class CustomSeparateHead(_SeparateHead):
+
+    def __init__(
+        self,
+        in_channels,
+        heads,
+        head_conv=64,
+        final_kernel=1,
+        init_bias=-2.19,
+        conv_cfg=dict(type="Conv2d"),
+        norm_cfg=dict(type="BN2d"),
+        bias="auto",
+        init_cfg=None,
+        **kwargs,
+    ):
+        assert init_cfg is None, "To prevent abnormal initialization " "behavior, init_cfg is not allowed to be set"
+        super(CustomSeparateHead, self).__init__(
+            in_channels=in_channels,
+            heads=heads,
+            head_conv=head_conv,
+            final_kernel=final_kernel,
+            init_bias=init_bias,
+            conv_cfg=conv_cfg,
+            norm_cfg=norm_cfg,
+            bias=bias,
+            init_cfg=init_cfg,
+            **kwargs,
+        )
+        if init_cfg is None:
+            self.init_cfg = dict(type="Kaiming", layer="Conv2d")
+
+        self.init_bias_weights()
+
+    def init_bias_weights(self):
+        """Initialize weights."""
+        # super().init_weights()
+        for head in self.heads:
+            if head == "heatmap":
+                self.__getattr__(head)[-1].bias.data.fill_(self.init_bias)
+
+
+@MODELS.register_module(force=True)
 class CenterHead(_CenterHead):
     """overwritten class of CenterHead
     Note:
