@@ -1,4 +1,4 @@
-from .dense_heads.centerpoint_head import CenterHead
+from .dense_heads.centerpoint_head import CenterHead, CustomSeparateHead
 from .dense_heads.centerpoint_head_onnx import CenterHeadONNX, SeparateHeadONNX
 from .detectors.centerpoint import CenterPoint
 from .detectors.centerpoint_onnx import CenterPointONNX
@@ -9,6 +9,7 @@ from .voxel_encoders.pillar_encoder_onnx import BackwardPillarFeatureNetONNX, Pi
 __all__ = [
     "CenterPoint",
     "CenterHead",
+    "CustomSeparateHead",
     "BackwardPillarFeatureNet",
     "PillarFeatureNetONNX",
     "BackwardPillarFeatureNetONNX",
