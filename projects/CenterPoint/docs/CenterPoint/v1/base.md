@@ -36,7 +36,7 @@
 - This release adds additional `30` datasets from `J6 gen2` as compared to `base/1.3`
 - It fixes mapping, especially, `truck`, `trailer` and `vehicle.ambulances`
 - It has better performance compared to `base/1.3` on gen2 datasets in general
-- The overall performance is almost similar except `bicycle`, where `base/1.3` is better than `base1.4`
+- The overall performance is almost similar except `bicycle`, where `base/1.3` is better than `base/1.4`
 
 <details>
 <summary> The link of data and evaluation result </summary>
@@ -52,13 +52,13 @@
 
 | Eval range = 120m  | mAP  | car  | truck | bus  | bicycle | pedestrian |
 | ------------------ | ---- | ---- | ----- | ---- | ------- | ---------- |
-| base/1.3           | 56.0 | 86.5 | 48.3  | 85.4 | 0.2     | 59.5       |
-| base/1.2           | 54.9 | 86.3 | 46.0  | 84.0 | 0.0     | 58.2       |
+| base/1.4           | 56.0 | 86.5 | 48.3  | 85.4 | 0.2     | 59.5       |
+| base/1.3           | 54.9 | 86.3 | 46.0  | 84.0 | 0.0     | 58.2       |
 
 - Model
   - Training dataset: DB JPNTAXI v1.0 + DB JPNTAXI v2.0 + DB JPNTAXI v4.0 + DB GSM8 v1.0 + DB J6 v1.0 + DB J6 v2.0 + DB J6 v3.0 + DB J6 v5.0 + DB J6 Gen2 v1.0 (total frames: 49,605)
   - [Config file path](https://github.com/tier4/AWML/blob/9eae79d9b415738078dca6982cff1bc25fe7530b/autoware_ml/configs/detection3d/dataset/t4dataset/base.py)
-  - Deployed onnx model and ROS parameter files [[WebAuto (for internal)]](https://evaluation.tier4.jp/evaluation/mlpackages/7156b453-2861-4ae9-b135-e24e48cc9029/releases/9a2bc8ce-e7f1-46d8-a335-9c188d30b2e1?project_id=zWhWRzei)
+  - Deployed onnx model and ROS parameter files [[WebAuto (for internal)]](https://evaluation.tier4.jp/evaluation/mlpackages/7156b453-2861-4ae9-b135-e24e48cc9029/releases/2aab1e91-57cf-467c-96a8-54cc9b914829?project_id=zWhWRzei)
   - Deployed onnx and ROS parameter files [[model-zoo]]
     - [detection_class_remapper.param.yaml](https://download.autoware-ml-model-zoo.tier4.jp/autoware-ml/models/centerpoint/centerpoint/t4base/v1.4/detection_class_remapper.param.yaml)
     - [centerpoint_t4base_ml_package.param.yaml](https://download.autoware-ml-model-zoo.tier4.jp/autoware-ml/models/centerpoint/centerpoint/t4base/v1.4/centerpoint_t4base_ml_package.param.yaml)
