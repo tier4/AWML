@@ -1,4 +1,4 @@
-from typing import Dict, List, Tuple
+from typing import List, Tuple
 
 import numpy as np
 import torch
@@ -70,6 +70,8 @@ class CenterHead(_CenterHead):
 
     def __init__(
         self,
+        freeze_shared_conv: bool = False,
+        freeze_task_heads: bool = False,
         **kwargs,
     ):
         super(CenterHead, self).__init__(**kwargs)
@@ -77,6 +79,23 @@ class CenterHead(_CenterHead):
         self._class_wise_loss = loss_cls.get("reduction") == "none"
         if not self._class_wise_loss:
             print_log("If you want to see a class-wise heatmap loss, use reduction='none' of 'loss_cls'.")
+
+        self.freeze_shared_conv = freeze_shared_conv
+        self.freeze_task_heads = freeze_task_heads
+        self._freeze_parameters()
+
+    def _freeze_parameters(self) -> None:
+        """Freeze parameters in the head."""
+        if self.freeze_shared_conv:
+            print_log("Freeze shared conv")
+            for params in self.shared_conv.parameters():
+                params.requires_grad = False
+
+        if self.freeze_task_heads:
+            print_log("Freeze task heads")
+            for task in self.task_heads:
+                for params in task.parameters():
+                    params.requires_grad = False
 
     def loss_by_feat(self, preds_dicts: Tuple[List[dict]], batch_gt_instances_3d: List[InstanceData], *args, **kwargs):
         """Loss function for CenterHead.
