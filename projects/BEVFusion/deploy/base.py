@@ -17,12 +17,11 @@ from mmdeploy.core import FUNCTION_REWRITER
 @FUNCTION_REWRITER.register_rewriter("mmdet3d.models.detectors.Base3DDetector.forward")  # noqa: E501
 def basedetector__forward(
     self,
-    # NOTE(knzo25): BEVFusion originally uses the whole se of points
-    # for the camera branch. For now I will try to use only the voxels
-    # points: torch.Tensor,
     voxels: Optional[torch.Tensor] = None,
     coors: Optional[torch.Tensor] = None,
     num_points_per_voxel: Optional[torch.Tensor] = None,
+    points: Optional[torch.Tensor] = None,
+    camera_mask: Optional[torch.Tensor] = None,
     imgs: Optional[torch.Tensor] = None,
     lidar2image: Optional[torch.Tensor] = None,
     # NOTE(knzo25): not used during export
@@ -39,8 +38,13 @@ def basedetector__forward(
     **kwargs
 ) -> Tuple[List[torch.Tensor]]:
 
+    # coors are generated in zyx order in the deployment's preprocessing
+    # so we need to convert them to xyz order and add a batch dimension
+    coors = coors[:, [2, 1, 0]]
+    coors = torch.cat((torch.zeros(coors.size(0), 1, dtype=coors.dtype, device=coors.device), coors), dim=1)
+
     batch_inputs_dict = {
-        # 'points': [points],
+        "points": [points],
         "voxels": {"voxels": voxels, "coors": coors, "num_points_per_voxel": num_points_per_voxel},
     }
 
@@ -67,7 +71,7 @@ def basedetector__forward(
                 "img_aug_matrix_inverse": img_aug_matrix_inverse.unsqueeze(dim=0),
                 "lidar_aug_matrix": lidar_aug_matrix.unsqueeze(dim=0),
                 "lidar_aug_matrix_inverse": lidar_aug_matrix.unsqueeze(dim=0),
-                "geom_feats": (geom_feats, kept, ranks, indices),
+                "geom_feats": (geom_feats, kept, ranks, indices, camera_mask),
             }
         )
 
