@@ -91,6 +91,7 @@ class TranslationDiffAnalysisCallback(AnalysisCallbackInterface):
                 # Compute quartiles and IQR
                 q1 = np.percentile(translation_diff, 25)
                 q3 = np.percentile(translation_diff, 75)
+                median = np.percentile(translation_diff, 50)
                 iqr = q3 - q1
 
                 mean = np.mean(translation_diff)
@@ -109,6 +110,13 @@ class TranslationDiffAnalysisCallback(AnalysisCallbackInterface):
                     xy=(1.1, q3),
                     xytext=(1.2, q3),
                     arrowprops=dict(facecolor="green", shrink=0.05),
+                    fontsize=10,
+                )
+                ax.annotate(
+                    f"Median = {median:.2f}",
+                    xy=(1.1, median),
+                    xytext=(1.2, median),
+                    arrowprops=dict(facecolor="orange", shrink=0.05),
                     fontsize=10,
                 )
                 ax.text(
