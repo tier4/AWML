@@ -64,7 +64,7 @@ class TranslationDiffAnalysisCallback(AnalysisCallbackInterface):
                 for instance_name, translation_diffs in sample_data.items():
                     # Extract the category name from the instance name
                     category_name = instance_name.split("/")[0]
-                    category_translation_diffs[category_name].append(translation_diffs)
+                    category_translation_diffs[category_name] += translation_diffs
 
         return category_translation_diffs
 
@@ -82,6 +82,8 @@ class TranslationDiffAnalysisCallback(AnalysisCallbackInterface):
         axes = axes.flatten()
         translation_names = ["X", "Y", "Z"]
         for category_name, translation_diffs in category_translation_diffs.items():
+            print(len(translation_diffs))
+            print(translation_diffs[0])
             for index, translation_diff in enumerate(translation_diffs):
                 ax = axes[index]
                 translation_name = translation_names[index]
