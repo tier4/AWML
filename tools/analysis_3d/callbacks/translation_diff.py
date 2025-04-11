@@ -77,13 +77,11 @@ class TranslationDiffAnalysisCallback(AnalysisCallbackInterface):
         """
         :param category_translation_diffs: {category_name: [translation_diff]}.
         """
-        # Plot translation differences for each category and differences in translations
-        fig, axes = plt.subplots(nrows=1, ncols=3, figsize=figsize)
-        axes = axes.flatten()
         translation_names = ["X", "Y", "Z"]
         for category_name, translation_diffs in category_translation_diffs.items():
-            print(category_name)
-            print(len(translation_diffs))
+            # Plot translation differences for each category and differences in translations
+            fig, axes = plt.subplots(nrows=1, ncols=3, figsize=figsize)
+            axes = axes.flatten()
             for index in range(3):
                 translation_diff = [diff[index] for diff in translation_diffs]
                 ax = axes[index]
