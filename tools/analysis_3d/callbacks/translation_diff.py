@@ -82,9 +82,8 @@ class TranslationDiffAnalysisCallback(AnalysisCallbackInterface):
         axes = axes.flatten()
         translation_names = ["X", "Y", "Z"]
         for category_name, translation_diffs in category_translation_diffs.items():
-            print(len(translation_diffs))
-            print(translation_diffs[0])
-            for index, translation_diff in enumerate(translation_diffs):
+            for index in range(3):
+                translation_diff = [diff[index] for diff in translation_diffs]
                 ax = axes[index]
                 translation_name = translation_names[index]
                 ax.boxplot(translation_diff, vert=True, patch_artist=True)
