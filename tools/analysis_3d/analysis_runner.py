@@ -10,6 +10,7 @@ from t4_devkit import Tier4
 from tools.analysis_3d.callbacks.callback_interface import AnalysisCallbackInterface
 from tools.analysis_3d.callbacks.category import CategoryAnalysisCallback
 from tools.analysis_3d.callbacks.category_attribute import CategoryAttributeAnalysisCallback
+from tools.analysis_3d.callbacks.translation_diff import TranslationDiffAnalysisCallback
 from tools.analysis_3d.callbacks.voxel_num import VoxelNumAnalysisCallback
 from tools.analysis_3d.data_classes import (
     AnalysisData,
@@ -108,6 +109,7 @@ class AnalysisRunner:
         :return: A dict of {sample token: SampleData}.
         """
         sample_data = {}
+        instance_tables = t4.get("instance_table")
         for sample in t4.sample:
             # Extract sample data
             tier4_sample_data = extract_tier4_sample_data(sample=sample, t4=t4)
@@ -139,12 +141,18 @@ class AnalysisRunner:
                 for lidar_sweep in lidar_sweep_info["lidar_sweeps"]
             ]
 
+            # Extract instance names
+            instance_names = [t4.get("instance", box.uuid)["name"] for box in tier4_sample_data.boxes]
+
             # Convert to SampleData
             sample_data[sample.token] = SampleData.create_sample_data(
                 sample_token=sample.token,
                 boxes=tier4_sample_data.boxes,
                 lidar_point=lidar_point,
                 lidar_sweeps=lidar_sweeps,
+                instance_names=instance_names,
+                next_sample_token=sample.next,
+                timestamp=sample.timestamp,
             )
         return sample_data
 

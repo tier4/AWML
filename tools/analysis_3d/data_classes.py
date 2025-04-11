@@ -24,6 +24,7 @@ class Detection3DBox:
 
     box: Box3D
     attrs: List[str]
+    instance_name: str
 
 
 @dataclass(frozen=True)
@@ -44,7 +45,9 @@ class SampleData:
     """Dataclass to save data for a sample, for example, 3D bounding boxes."""
 
     sample_token: str
+    timestamp: int
     detection_3d_boxes: List[Detection3DBox]
+    next_sample_token: Optional[str] = None  # Token of the next sample
     lidar_point: Optional[LidarPoint] = None  # Path to the lidar file
     lidar_sweeps: Optional[List[LidarSweep]] = None  # List of lidar sweeps
 
@@ -96,7 +99,10 @@ class SampleData:
     def create_sample_data(
         cls,
         sample_token: str,
+        timestamp: int,
         boxes: List[Box3D],
+        instance_names: List[str],
+        next_sample_token: Optional[str] = None,
         lidar_point: Optional[LidarPoint] = None,
         lidar_sweeps: Optional[List[LidarSweep]] = None,
     ) -> SampleData:
@@ -104,14 +110,23 @@ class SampleData:
         Create a SampleData given the params.
         :param sample_token: Sample token to represent a sample (lidar frame).
         :param detection_3d_boxes: List of 3D bounding boxes for the given sample token.
+        :param instance_nanes: List of instance names for the given sample token.
         """
-        detection_3d_boxes = [Detection3DBox(box=box, attrs=box.semantic_label.attributes) for box in boxes]
+        assert len(boxes) == len(
+            instance_names
+        ), f"Boxes and instance names have different lengths: {len(boxes)} != {len(instance_names)}"
+        detection_3d_boxes = [
+            Detection3DBox(box=box, attrs=box.semantic_label.attributes, instance_name=instance_name)
+            for box, instance_name in zip(boxes, instance_names)
+        ]
 
         return SampleData(
             sample_token=sample_token,
             detection_3d_boxes=detection_3d_boxes,
             lidar_sweeps=lidar_sweeps,
             lidar_point=lidar_point,
+            next_sample_token=next_sample_token,
+            timestamp=timestamp,
         )
 
 
