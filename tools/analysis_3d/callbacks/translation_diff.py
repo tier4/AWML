@@ -125,7 +125,6 @@ class TranslationDiffAnalysisCallback(AnalysisCallbackInterface):
                 ax.axhline(
                     mean, color="red", linestyle="--", linewidth=1.5, label=f"Mean = {mean:.2f}, std = {std:.2f}"
                 )
-                ax.set_title(f"translation_{translation_name}")
                 ax.set_ylabel("Difference")
                 ax.set_xticks([1])
                 ax.set_xticklabels([translation_name])
