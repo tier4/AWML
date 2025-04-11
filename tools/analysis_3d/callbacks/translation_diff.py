@@ -276,7 +276,6 @@ class TranslationDiffAnalysisCallback(AnalysisCallbackInterface):
             scene_trans_diff = defaultdict(lambda: defaultdict(lambda: defaultdict(list)))
             for scene_token, scenario_data in analysis_data.scenario_data.items():
                 trans_diff = self.compute_sceneario_trans_diff(
-                    scene_token=scene_token,
                     scenario_data=scenario_data,
                 )
                 scene_trans_diff[scene_token] = trans_diff
