@@ -152,7 +152,7 @@ class AnalysisRunner:
             ]
 
             # Extract instance names
-            instance_names = [t4.get("instance", box.uuid).name for box in tier4_sample_data.boxes]
+            instance_names = [t4.get("instance", box.uuid).instance_name for box in tier4_sample_data.boxes]
 
             # Convert to SampleData
             sample_data[sample.token] = SampleData.create_sample_data(
