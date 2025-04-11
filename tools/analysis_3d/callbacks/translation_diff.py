@@ -88,15 +88,6 @@ class TranslationDiffAnalysisCallback(AnalysisCallbackInterface):
                 translation_name = translation_names[index]
                 ax.boxplot(translation_diff, vert=True, patch_artist=True)
 
-                x_jittered = np.random.normal(1, 0.04, size=len(translation_diff))
-                ax.scatter(
-                    translation_diff,
-                    x_jittered,
-                    color="black",
-                    s=10,
-                    label=f"Translation Difference in {translation_name}",
-                )
-
                 # Compute quartiles and IQR
                 q1 = np.percentile(translation_diff, 25)
                 q3 = np.percentile(translation_diff, 75)
