@@ -117,15 +117,15 @@ class TranslationDiffAnalysisCallback(AnalysisCallbackInterface):
                 ax.axhline(
                     mean, color="red", linestyle="--", linewidth=1.5, label=f"Mean = {mean:.2f}, std = {std:.2f}"
                 )
-
-                ax.set_title(f"Translation Differences for {category_name}")
-                ax.set_ylabel("Differences")
+                ax.set_title(f"Translation_{translation_name}")
+                ax.set_ylabel("Difference")
                 ax.set_xticks([1])
                 ax.set_xticklabels([translation_name])
                 ax.legend()
 
             # Save the plot
             plot_file_name = self.full_output_path / self.analysis_file_name.format(category_name, dataset_name)
+            plt.title(category_name)
             plt.tight_layout()
             plt.savefig(plot_file_name)
             print_log(f"Saved translation diff plot to {plot_file_name}")
