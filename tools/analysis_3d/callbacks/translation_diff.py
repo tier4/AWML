@@ -29,6 +29,7 @@ class TranslationDiffAnalysisCallback(AnalysisCallbackInterface):
         out_path: Path,
         bins: int = 100,
         remapping_classes: Optional[Dict[str, str]] = None,
+        analysis_dir: str = "translation_diffs",
     ) -> None:
         """
         :param out_path: Path to save outputs.
@@ -38,6 +39,7 @@ class TranslationDiffAnalysisCallback(AnalysisCallbackInterface):
         super(AnalysisCallbackInterface, self).__init__()
         self.data_root_path = data_root_path
         self.out_path = out_path
+        self.analysis_dir = analysis_dir
         self.full_output_path = self.out_path / self.analysis_dir
         self.full_output_path.mkdir(exist_ok=True, parents=True)
 

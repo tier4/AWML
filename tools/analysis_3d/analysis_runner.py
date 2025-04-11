@@ -120,7 +120,6 @@ class AnalysisRunner:
         :return: A dict of {sample token: SampleData}.
         """
         sample_data = {}
-        instance_tables = t4.get("instance_table")
         for sample in t4.sample:
             # Extract sample data
             tier4_sample_data = extract_tier4_sample_data(sample=sample, t4=t4)
