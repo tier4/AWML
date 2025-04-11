@@ -188,15 +188,20 @@ class TranslationDiffAnalysisCallback(AnalysisCallbackInterface):
     def run(self, dataset_split_analysis_data: Dict[DatasetSplitName, AnalysisData]) -> None:
         """Inherited, check the superclass."""
         print_log(f"Running {self.__class__.__name__}")
+        # Convert to {dataset: AnalysisData}
+        dataset_analysis_data: Dict[str, List[AnalysisData]] = defaultdict(list)
         for dataset_split_name, analysis_data in dataset_split_analysis_data.items():
+            dataset_analysis_data[dataset_split_name.dataset_version].append(analysis_data)
 
-            # scene: sample: instance
+        for dataset_name, analysis_data in dataset_analysis_data.items():
             scene_trans_diff = defaultdict(lambda: defaultdict(lambda: defaultdict(list)))
-            for scene_token, scenario_data in analysis_data.scenario_data.items():
-                trans_diff = self.compute_sceneario_trans_diff(
-                    scenario_data=scenario_data,
-                )
-                scene_trans_diff[scene_token] = trans_diff
+            for analysis in analysis_data:
+                # scene: sample: instance
+                for scene_token, scenario_data in analysis_data.scenario_data.items():
+                    trans_diff = self.compute_sceneario_trans_diff(
+                        scenario_data=scenario_data,
+                    )
+                    scene_trans_diff[scene_token] = trans_diff
 
             category_translation_diffs = self.gather_dataset_category_translation_diff(scene_trans_diff)
             dataset_version = dataset_split_name.dataset_version
