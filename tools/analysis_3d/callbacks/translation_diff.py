@@ -94,7 +94,7 @@ class TranslationDiffAnalysisCallback(AnalysisCallbackInterface):
                 iqr = q3 - q1
 
                 mean = np.mean(translation_diff)
-                std = np.mean(translation_diff)
+                std = np.std(translation_diff)
 
                 # Annotate Q1, Q3, and IQR
                 ax.annotate(
