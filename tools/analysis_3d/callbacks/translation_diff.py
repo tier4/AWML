@@ -225,7 +225,7 @@ class TranslationDiffAnalysisCallback(AnalysisCallbackInterface):
     def compute_sceneario_trans_diff(self, scenario_data: ScenarioData) -> Dict[str, Dict[str, List[tuple]]]:
         """Compute translation difference between two frames."""
         # sample_token: instance_name: []
-        instance_trans_diffs: Dict[str, Dict[str, List[tuple]]] = defaultdict(defaultdict(lambda: list))
+        instance_trans_diffs: Dict[str, Dict[str, List[tuple]]] = defaultdict(lambda: defaultdict(list))
 
         sample_data = sorted(scenario_data.sample_data.values(), key=lambda x: x.timestamp)
 
@@ -276,6 +276,7 @@ class TranslationDiffAnalysisCallback(AnalysisCallbackInterface):
             scene_trans_diff = defaultdict(lambda: defaultdict(lambda: defaultdict(list)))
             for scene_token, scenario_data in analysis_data.scenario_data.items():
                 trans_diff = self.compute_sceneario_trans_diff(
+                    scene_token=scene_token,
                     scenario_data=scenario_data,
                 )
                 scene_trans_diff[scene_token] = trans_diff
