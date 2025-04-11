@@ -78,10 +78,12 @@ class TranslationDiffAnalysisCallback(AnalysisCallbackInterface):
         :param category_translation_diffs: {category_name: [translation_diff]}.
         """
         # Plot translation differences for each category and differences in translations
-        _, axes = plt.subplots(nrows=1, ncols=3, figsize=figsize)
+        fig, axes = plt.subplots(nrows=1, ncols=3, figsize=figsize)
         axes = axes.flatten()
         translation_names = ["X", "Y", "Z"]
         for category_name, translation_diffs in category_translation_diffs.items():
+            print(category_name)
+            print(len(translation_diffs))
             for index in range(3):
                 translation_diff = [diff[index] for diff in translation_diffs]
                 ax = axes[index]
@@ -117,7 +119,7 @@ class TranslationDiffAnalysisCallback(AnalysisCallbackInterface):
                 ax.axhline(
                     mean, color="red", linestyle="--", linewidth=1.5, label=f"Mean = {mean:.2f}, std = {std:.2f}"
                 )
-                ax.set_title(f"Translation_{translation_name}")
+                ax.set_title(f"translation_{translation_name}")
                 ax.set_ylabel("Difference")
                 ax.set_xticks([1])
                 ax.set_xticklabels([translation_name])
@@ -125,7 +127,7 @@ class TranslationDiffAnalysisCallback(AnalysisCallbackInterface):
 
             # Save the plot
             plot_file_name = self.full_output_path / self.analysis_file_name.format(category_name, dataset_name)
-            plt.title(category_name)
+            fig.suptitle(category_name)
             plt.tight_layout()
             plt.savefig(plot_file_name)
             print_log(f"Saved translation diff plot to {plot_file_name}")
