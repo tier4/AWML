@@ -81,7 +81,7 @@ class TranslationDiffAnalysisCallback(AnalysisCallbackInterface):
         _, axes = plt.subplots(nrows=1, ncols=3, figsize=figsize)
         axes = axes.flatten()
         translation_names = ["X", "Y", "Z"]
-        for category_name, translation_diffs in zip(category_translation_diffs.items()):
+        for category_name, translation_diffs in category_translation_diffs.items():
             for index, translation_diff in enumerate(translation_diffs):
                 ax = axes[index]
                 translation_name = translation_names[index]
