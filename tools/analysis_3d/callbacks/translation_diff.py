@@ -253,5 +253,9 @@ class TranslationDiffAnalysisCallback(AnalysisCallbackInterface):
                 dataset_name=dataset_version,
                 category_translation_diffs=category_translation_diffs,
             )
+            self.plot_dataset_translation_diff_hist(
+                dataset_name=dataset_version,
+                category_translation_diffs=category_translation_diffs,
+            )
 
         print_log(f"Done running {self.__class__.__name__}")
