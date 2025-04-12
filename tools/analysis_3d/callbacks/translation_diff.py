@@ -148,8 +148,8 @@ class TranslationDiffAnalysisCallback(AnalysisCallbackInterface):
         """
         :param category_translation_diffs: {category_name: [translation_diff]}.
         """
-        percentiles = [0, 25, 50, 75, 95, 100]
-        colors = ["blue", "orange", "green", "red", "purple", "brown"]
+        percentiles = [0, 25, 50, 75, 95, 98, 99, 100]
+        colors = ["blue", "orange", "green", "red", "purple", "brown", "olive", "pink"]
         translation_names = ["X", "Y", "Z"]
         for category_name, translation_diffs in category_translation_diffs.items():
             # Plot translation differences for each category and differences in translations
