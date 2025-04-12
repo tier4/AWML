@@ -44,6 +44,7 @@ class TranslationDiffAnalysisCallback(AnalysisCallbackInterface):
         self.full_output_path.mkdir(exist_ok=True, parents=True)
 
         self.analysis_file_name = "translation_diff_{}_{}.png"
+        self.analysis_bin_file_name = "translation_diff_bin_{}_{}.png"
         self.y_axis_label = "Frequency"
         self.x_axis_label = "Difference between two frames"
         self.legend_loc = "upper right"
@@ -132,6 +133,51 @@ class TranslationDiffAnalysisCallback(AnalysisCallbackInterface):
 
             # Save the plot
             plot_file_name = self.full_output_path / self.analysis_file_name.format(category_name, dataset_name)
+            fig.suptitle(category_name)
+            plt.tight_layout()
+            plt.savefig(plot_file_name)
+            print_log(f"Saved translation diff plot to {plot_file_name}")
+            plt.close()
+    
+    def plot_dataset_translation_diff_hist(
+        self,
+        dataset_name: str,
+        category_translation_diffs: Dict[str, List[tuple]],
+        figsize: tuple[int, int] = (10, 10),
+    ) -> None:
+        """
+        :param category_translation_diffs: {category_name: [translation_diff]}.
+        """
+        percentiles = [0, 25, 50, 75, 95, 100]
+        colors = ["blue", "orange", "green", "red", "purple", "brown"]
+        translation_names = ["X", "Y", "Z"]
+        for category_name, translation_diffs in category_translation_diffs.items():
+            # Plot translation differences for each category and differences in translations
+            fig, axes = plt.subplots(nrows=1, ncols=3, figsize=figsize)
+            axes = axes.flatten()
+            for index in range(3):
+                translation_diff = [diff[index] for diff in translation_diffs]
+                ax = axes[index]
+                translation_name = translation_names[index]
+
+                p_values = np.percentile(translation_diff, percentiles)
+                mean = np.mean(translation_diff)
+                std = np.std(translation_diff)
+
+                ax.hist(translation_diff, bins=self.bins, log=True)
+                for value, percentile, color in zip(p_values, percentiles, colors):
+                    ax.axvline(value, color=color, linestyle="dashed", linewidth=2, label=f"P{percentile}:{value:.2f}")
+
+                ax.axvline(mean, color="black", linestyle="dashed", linewidth=2, label=f"mean:{mean:.2f} (std:{std:.2f})")
+                ax.set_ylabel("Frequency")
+                ax.set_xlabel("Differences")
+                ax.set_title(translation_name)
+                ax.legend(loc=self.legend_loc)
+                # ax.xaxis.set_major_locator(MaxNLocator(integer=True))
+                # ax.yaxis.set_major_locator(MaxNLocator(integer=True))
+
+            # Save the plot
+            plot_file_name = self.full_output_path / self.analysis_bin_file_name.format(category_name, dataset_name)
             fig.suptitle(category_name)
             plt.tight_layout()
             plt.savefig(plot_file_name)
