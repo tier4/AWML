@@ -71,11 +71,22 @@ class SAM2Wrapper:
             device=self.device,
         )
 
+    def get_best_label(self, sam2_label: str, sam2_classes: List[str]):
+
+        sam2_label_list = sam2_label.split(" ")
+
+        for i in range(len(sam2_label_list)):
+            candidate = " ".join(sam2_label_list[0 : i + 1])
+            if candidate in sam2_classes:
+                return candidate
+
+        return ""
+
     def segment(self, img_path, override):
 
         img_path = Path(img_path)
         seg_img_path = img_path.with_name(img_path.stem + "_seg.png")
-        anno_img_path = img_path.with_name(img_path.stem + "_anno.png")
+        anno_img_path = img_path.with_name(img_path.stem + "_anno.jpg")
 
         if seg_img_path.exists() and not override:
             return None
@@ -129,14 +140,19 @@ class SAM2Wrapper:
             label_to_class_idx[label] = idx
 
         for instance_idx in reversed(range(len(confidences))):
-            instance_label = labels[instance_idx].split(" ")[0]
+            instance_label = self.get_best_label(labels[instance_idx], self.sam2_classes)
 
-            if instance_label not in label_to_class_idx:
-                print(f"Unrecognized label: {instance_label}")
+            if instance_label in label_to_class_idx:
+                class_idx = label_to_class_idx[instance_label]
+            else:
+                print(f"Unrecognized label: {labels[instance_idx]}")
                 continue
 
             mask = masks[instance_idx].squeeze().astype(np.bool_)
-            class_idx = label_to_class_idx[instance_label]
+
+            # if mask[240, 800]:
+            #    x = 0
+
             class_image[mask] = class_idx
 
         cv2.imwrite(str(seg_img_path), class_image)
@@ -165,7 +181,7 @@ class SAM2Wrapper:
 
         mask_annotator = sv.MaskAnnotator()
         annotated_frame = mask_annotator.annotate(scene=annotated_frame, detections=detections)
-        cv2.imwrite(str(anno_img_path), annotated_frame, [cv2.IMWRITE_JPEG_QUALITY, 60])
+        cv2.imwrite(str(anno_img_path), annotated_frame, [cv2.IMWRITE_JPEG_QUALITY, 40])
 
         return annotated_frame
 
@@ -220,7 +236,7 @@ def parse_args():
     )
 
     parser.add_argument(
-        "--sam2_config",
+        "--segmentation_config",
         type=str,
         required=True,
         help="config for sam2 + grounding dino",
@@ -249,7 +265,7 @@ def parse_args():
 
     parser.add_argument(
         "--only_key_frames",
-        type=bool,
+        type=int,
         required=True,
         help="product version",
     )
@@ -272,10 +288,11 @@ def make_video(video_folder, scene_id, cam_name, images):
     fourcc = cv2.VideoWriter_fourcc(*"mp4v")
 
     # Create the video writer
-    video_writer = cv2.VideoWriter(output_file, fourcc, fps, (width, height))
+    video_writer = cv2.VideoWriter(output_file, fourcc, fps, (width // 2, height // 2))
 
     # Write each image to the video
     for image in images:
+        image = cv2.resize(image, (width // 2, height // 2))
         video_writer.write(image)
 
     video_writer.release()
@@ -291,7 +308,7 @@ def main():
     # TODO(knzo25): hack since I only want to test part of the db
     cfg.dataset_version_list = ["db_jpntaxi_v2"]
 
-    model = SAM2Wrapper(args.sam2_config)
+    model = SAM2Wrapper(args.segmentation_config)
 
     for dataset_version in cfg.dataset_version_list:
         dataset_list = osp.join(cfg.dataset_version_config_root, dataset_version + ".yaml")
@@ -322,6 +339,9 @@ def main():
                         continue
 
                     cam_name = sample_data.channel
+
+                    # if cam_name != "CAM_FRONT_LEFT":
+                    #    continue
 
                     seg_img = model.segment(os.path.join(scene_root_dir_path, sample_data.filename), args.override)
 

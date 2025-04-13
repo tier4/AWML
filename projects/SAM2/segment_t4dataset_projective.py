@@ -1,4 +1,5 @@
 import argparse
+import concurrent.futures
 import logging
 import os
 import os.path as osp
@@ -8,27 +9,18 @@ from pathlib import Path
 from typing import Any, Dict, List
 
 import cv2
-import mmengine
 import numpy as np
 import yaml
-from mmdet3d.datasets.utils import convert_quaternion_to_matrix
 from mmengine.config import Config
-from mmengine.logging import print_log
+from skimage.morphology import binary_dilation, square
+from skimage.segmentation import find_boundaries
 from t4_devkit import Tier4
-from t4_devkit.common.timestamp import us2sec
 from t4_devkit.schema import Sample
 from tqdm import tqdm
 
 from tools.detection3d.t4dataset_converters.t4converter import (
     extract_tier4_data,
-    get_annotations,
-    get_ego2global,
-    get_lidar_points_info,
-    get_lidar_sweeps_info,
-    obtain_sensor2top,
-    parse_camera_path,
 )
-from tools.detection3d.t4dataset_converters.update_infos_to_v2 import get_empty_standard_data_info
 
 
 def get_lidar_token(sample_rec: Sample) -> str:
@@ -87,14 +79,10 @@ def segment_pointcloud(
     t4: Tier4,
     sample: Sample,
     i: int,
-    num_consistent_frames: int,
 ):
     lidar_token = get_lidar_token(sample)
     if lidar_token is None:
-        print_log(
-            f"sample {sample['token']} doesn't have lidar",
-            level=logging.WARNING,
-        )
+        logging.warn(f"sample {sample['token']} doesn't have lidar")
         return
     (
         pose_record,
@@ -110,110 +98,128 @@ def segment_pointcloud(
         l2e_t,
     ) = extract_tier4_data(t4, sample, lidar_token)
 
-    sd_record: SampleData = t4.get("sample_data", lidar_token)
+    lidar_l2e_transform = np.eye(4, dtype=np.float32)
+    lidar_l2e_transform[0:3, 0:3] = l2e_r_mat
+    lidar_l2e_transform[0:3, 3] = l2e_t
 
-    info = get_empty_standard_data_info(cfg.camera_types)
-
-    basic_info = dict(
-        sample_idx=i,
-        token=sample.token,
-        timestamp=us2sec(sample.timestamp),
-        scene_token=sample.scene_token,
-        location=log_record.location,
-        scene_name=scene_record.name,
-    )
-
-    for new_info in [
-        basic_info,
-        get_ego2global(pose_record),
-        get_lidar_points_info(lidar_path, cs_record),
-        get_lidar_sweeps_info(
-            t4,
-            cs_record,
-            pose_record,
-            sd_record,
-            1,
-        ),
-        get_annotations(
-            t4,
-            sample.ann_3ds,
-            boxes,
-            e2g_r_mat,
-            l2e_r_mat,
-            cfg.name_mapping,
-            cfg.class_names,
-            cfg.filter_attributes,
-            merge_objects=cfg.merge_objects,
-            merge_type=cfg.merge_type,
-        ),
-    ]:
-        info.update(new_info)
+    lidar_e2g_transform = np.eye(4, dtype=np.float32)
+    lidar_e2g_transform[0:3, 0:3] = e2g_r_mat
+    lidar_e2g_transform[0:3, 3] = e2g_t
 
     camera_types = cfg.camera_types
-    if len(camera_types) > 0:
-        for cam in camera_types:
-            if cam in sample.data:
-                cam_token = sample.data[cam]
-                _, _, cam_intrinsic = t4.get_sample_data(cam_token)
-                cam_info = obtain_sensor2top(
-                    t4,
-                    cam_token,
-                    l2e_t,
-                    l2e_r_mat,
-                    e2g_t,
-                    e2g_r_mat,
-                    cam,
-                )
-                cam_info.update(cam_intrinsic=cam_intrinsic)
+    cam_data: List[str, str, np.ndarray, np.ndarray, np.ndarray] = []
+    assert len(camera_types) > 0
 
-                info["images"][cam]["img_path"] = parse_camera_path(cam_info["data_path"])
-                info["images"][cam]["cam2img"] = cam_info["cam_intrinsic"].tolist()
-                info["images"][cam]["sample_data_token"] = cam_info["sample_data_token"]
-                # bc-breaking: Timestamp has divided 1e6 in pkl infos.
-                info["images"][cam]["timestamp"] = cam_info["timestamp"] / 1e6
-                info["images"][cam]["cam2ego"] = convert_quaternion_to_matrix(
-                    cam_info["sensor2ego_rotation"], cam_info["sensor2ego_translation"]
-                )
-                lidar2sensor = np.eye(4)
-                rot = cam_info["sensor2lidar_rotation"]
-                trans = cam_info["sensor2lidar_translation"]
-                lidar2sensor[:3, :3] = rot.T
-                lidar2sensor[:3, 3:4] = -1 * np.matmul(rot.T, trans.reshape(3, 1))
-                info["images"][cam]["lidar2cam"] = lidar2sensor.astype(np.float32).tolist()
+    projective_segmentation_cfg = segmentation_cfg["projective_segmentation"]
+    num_consistent_frames = projective_segmentation_cfg["num_consistent_frames"]
+
+    for cam in camera_types:
+        if cam not in sample.data:
+            continue
+
+        cam_token = sample.data[cam]
+
+        num_past_frames = num_consistent_frames // 2
+
+        for _ in range(num_past_frames):
+            sd_record: SampleData = t4.get("sample_data", cam_token)
+
+            if sd_record.prev != "":
+                cam_token = sd_record.prev
+
+        for _ in range(num_consistent_frames):
+
+            sd_record: SampleData = t4.get("sample_data", cam_token)
+            cs_record: CalibratedSensor = t4.get("calibrated_sensor", sd_record.calibrated_sensor_token)
+            pose_record: EgoPose = t4.get("ego_pose", sd_record.ego_pose_token)
+
+            cam_path, boxes, cam_intrinsics = t4.get_sample_data(cam_token)
+
+            c2e_t = cs_record.translation
+            e2g_t = pose_record.translation
+            c2e_r = cs_record.rotation
+            e2g_r = pose_record.rotation
+            c2e_r_mat = c2e_r.rotation_matrix
+            e2g_r_mat = e2g_r.rotation_matrix
+
+            c2e_transform = np.eye(4, dtype=np.float32)
+            c2e_transform[0:3, 0:3] = c2e_r_mat
+            c2e_transform[0:3, 3] = c2e_t
+
+            e2g_transform = np.eye(4, dtype=np.float32)
+            e2g_transform[0:3, 0:3] = e2g_r_mat
+            e2g_transform[0:3, 3] = e2g_t
+
+            cam2_img_transform = np.eye(4, dtype=np.float32)
+            cam2_img_transform[0:3, 0:3] = cam_intrinsics
+
+            cam_data.append(
+                [cam, cam_path, np.linalg.inv(e2g_transform), np.linalg.inv(c2e_transform), cam2_img_transform]
+            )
+
+            if sd_record.next == "":
+                break
+
+            cam_token = sd_record.next
 
     # Load points
     points = np.fromfile(str(lidar_path), dtype=np.float32, count=-1).reshape([-1, 5])
     num_points = points.shape[0]
-    points_homog = np.hstack([points[:, 0:3], np.ones((num_points, 1))])
+    points_lcs = np.hstack([points[:, 0:3], np.ones((num_points, 1))])
+
+    points_ecs = points_lcs @ lidar_l2e_transform.T
+    points_gcs = points_ecs @ lidar_e2g_transform.T
 
     # Load segmented images
     seg_pointcloud_list = []
     on_img_mask_list = []
 
-    for cam, cam_info in info["images"].items():
+    background_value = projective_segmentation_cfg["background_value"]
+    invalid_value = projective_segmentation_cfg["invalid_value"]
 
-        if cam_info["img_path"] is None:
-            continue
+    fill_boundaries_with_invalid = projective_segmentation_cfg["fill_boundaries_with_invalid"]
+    fill_boundaries_width = projective_segmentation_cfg["fill_boundaries_width"]
 
-        img_path = Path(root_path) / cam_info["img_path"]
+    mapping_dict = get_class_mapping(segmentation_cfg)
+
+    for cam, img_path, g2e_transform, e2c_transform, cam2img_transform in cam_data:
+
+        img_path = Path(img_path)
         seg_img_path = img_path.with_name(img_path.stem + "_seg.png")
-        seg_image = cv2.imread(str(seg_img_path), cv2.IMREAD_GRAYSCALE)
+        seg_image = cv2.imread(str(seg_img_path), cv2.IMREAD_GRAYSCALE).astype(np.int32)
         h, w = seg_image.shape
 
-        lidar2cam = np.array(info["images"][cam]["lidar2cam"])
-        cam2img = np.eye(4).astype(np.float32)
-        cam2img[:3, :3] = np.array(info["images"][cam]["cam2img"])
+        # Mapping from SAM2 classes to lidar segmentation classes
+        seg_image = np.vectorize(mapping_dict.__getitem__)(seg_image)
 
-        lidar2img = cam2img @ lidar2cam
+        # There are cases where SAM fill the image with one class.
+        # Skip those for now
+        if seg_image.min() == seg_image.max():
+            print(f"class {seg_image.min()} filled the whole image. potential error ({str(img_path)})")
+            continue
 
-        points_ccs = points_homog @ lidar2cam.T
+        if fill_boundaries_with_invalid:
 
-        points_ics = points_ccs @ cam2img.T
+            boundaries = find_boundaries(seg_image, mode="inner", connectivity=1)
+            selem = square(fill_boundaries_width)
+            boundaries = binary_dilation(boundaries, selem)
+            seg_image[boundaries] = background_value
+
+        points_ecs = points_gcs @ g2e_transform.T
+
+        points_ccs = points_ecs @ e2c_transform.T
+
+        points_ics = points_ccs @ cam2img_transform.T
         points_ics[:, 0:2] /= points_ics[:, 2:3]
 
-        on_img_mask = np.logical_and(
-            np.logical_and(points_ics[:, 0] > 0, points_ics[:, 0] <= w),
-            np.logical_and(points_ics[:, 1] > 0, points_ics[:, 1] <= h),
+        on_img_mask = np.logical_and.reduce(
+            (
+                points_ics[:, 0] > 0,
+                points_ics[:, 0] <= w,
+                points_ics[:, 1] > 0,
+                points_ics[:, 1] <= h,
+                points_ics[:, 2] > 0,
+            )
         )
 
         seg_pointcloud = np.full((num_points,), -1, dtype=np.int32)
@@ -226,22 +232,13 @@ def segment_pointcloud(
 
     # Stack all the segmented points and masks
     seg_pointcloud = np.stack(seg_pointcloud_list, axis=0)
+    seg_pointcloud[seg_pointcloud == -1] == invalid_value
     on_img_mask = np.stack(on_img_mask_list, axis=0)
 
-    projective_segmentation_cfg = segmentation_cfg["projective_segmentation"]
-    background_value = projective_segmentation_cfg["background_value"]
-    invalid_value = projective_segmentation_cfg["invalid_value"]
-    mapping_dict = get_class_mapping(segmentation_cfg)
-
-    mapping_dict[-1] = invalid_value
-    seg_pointcloud_mapped = np.vectorize(mapping_dict.__getitem__)(seg_pointcloud)
-
     # Create a masked array
-    ong_img_non_bg_mask = np.logical_and(
-        on_img_mask, seg_pointcloud_mapped != background_value
-    )  # make this a parameter
-    ong_img_bg_mask = np.logical_and(on_img_mask, seg_pointcloud_mapped == background_value).max(axis=0)
-    seg_pointcloud_non_bg_masked = np.ma.masked_array(seg_pointcloud_mapped, mask=~ong_img_non_bg_mask)
+    on_img_non_bg_mask = np.logical_and(on_img_mask, seg_pointcloud != background_value)
+
+    seg_pointcloud_non_bg_masked = np.ma.masked_array(seg_pointcloud, mask=~on_img_non_bg_mask)
 
     # Check consistency checking differency between min and max
     seg_pointcloud_non_bg_masked_min = np.ma.min(seg_pointcloud_non_bg_masked, axis=0)
@@ -251,14 +248,30 @@ def segment_pointcloud(
     seg_pointcloud_non_bg_valid = seg_pointcloud_non_bg_valid.filled()
 
     seg_pointcloud_combined = np.full((num_points,), invalid_value, dtype=np.uint8)
-    seg_pointcloud_combined[ong_img_bg_mask] = background_value
     seg_pointcloud_combined[seg_pointcloud_non_bg_valid] = seg_pointcloud_non_bg_masked_max[
         seg_pointcloud_non_bg_valid
     ]
 
+    # Dummy ground filter to avoid vehicles and other classes to leak into the ground
+    # This may cause small objects to not be classified correctly, but this is just a test
+    ground_value = projective_segmentation_cfg["ground_value"]
+    min_non_ground_z = projective_segmentation_cfg["min_non_ground_z"]
+
+    points_ecs = points_lcs @ lidar_l2e_transform.T
+    update_ground_mask = np.logical_and.reduce(
+        (
+            seg_pointcloud_combined != invalid_value,
+            seg_pointcloud_combined != ground_value,
+            points_ecs[:, 2] <= min_non_ground_z,
+        )
+    )
+
+    seg_pointcloud_combined[update_ground_mask] = invalid_value
+
     lidar_path = Path(lidar_path)
     basename = lidar_path.name.split(".")[0]
     seg_path = lidar_path.parent / f"{basename}_seg.npy"
+
     with open(seg_path, "wb") as f:
         np.save(f, seg_pointcloud_combined)
 
@@ -274,6 +287,7 @@ def get_class_mapping(cfg: Any) -> Dict[int, int]:
     mapping_dict[sam2_cfg["background_value"]] = projective_segmentation_cfg["background_value"]
 
     sam2_class_to_idx = {}
+
     for i, class_name in enumerate(sam2_cfg["sam2_classes"]):
         sam2_class_to_idx[class_name] = i
 
@@ -283,8 +297,27 @@ def get_class_mapping(cfg: Any) -> Dict[int, int]:
     return mapping_dict
 
 
+def segment_scene(args, cfg, segmentation_cfg, dataset_version, scene_id):
+
+    logging.info(f"Segmenting pointclouds from scene: {scene_id}")
+    scene_root_dir_path = get_scene_root_dir_path(
+        args.root_path,
+        dataset_version,
+        scene_id,
+    )
+
+    if not osp.isdir(scene_root_dir_path):
+        raise ValueError(f"{scene_root_dir_path} does not exist.")
+
+    t4 = Tier4(version="annotation", data_root=scene_root_dir_path, verbose=False)
+
+    for i, sample in enumerate(tqdm(t4.sample)):
+        segment_pointcloud(args.root_path, cfg, segmentation_cfg, t4, sample, i)
+
+
 def parse_args():
     parser = argparse.ArgumentParser(description="Create data info for T4dataset")
+
     parser.add_argument(
         "--config",
         type=str,
@@ -300,13 +333,6 @@ def parse_args():
     )
 
     parser.add_argument(
-        "--num_consistent_frames",
-        type=int,
-        required=True,
-        help="number of frames that pointclouds need to be consistent",
-    )
-
-    parser.add_argument(
         "--root_path",
         type=str,
         required=True,
@@ -314,13 +340,17 @@ def parse_args():
     )
 
     args = parser.parse_args()
+
     return args
 
 
 def main():
     args = parse_args()
+
     # load config
     cfg = Config.fromfile(args.config)
+
+    logging.basicConfig(level=logging.INFO)
 
     # TODO(knzo25): hack since I only want to test part of the db
     cfg.dataset_version_list = ["db_jpntaxi_v2"]
@@ -328,28 +358,21 @@ def main():
     with open(args.segmentation_config, "r") as f:
         segmentation_cfg = yaml.safe_load(f)
 
+    num_workers = segmentation_cfg["projective_segmentation"]["num_workers"]
+
     for dataset_version in cfg.dataset_version_list:
         dataset_list = osp.join(cfg.dataset_version_config_root, dataset_version + ".yaml")
         with open(dataset_list, "r") as f:
             dataset_list_dict: Dict[str, List[str]] = yaml.safe_load(f)
 
         for split in ["train", "val", "test"]:
-            print_log(f"Segmenting split: {split}", logger="current")
-            for scene_id in dataset_list_dict.get(split, []):
-                print_log(f"Segmenting pointclouds from scene: {scene_id}")
-                scene_root_dir_path = get_scene_root_dir_path(
-                    args.root_path,
-                    dataset_version,
-                    scene_id,
-                )
+            logging.info(f"Segmenting split: {split}", logger="current")
 
-                if not osp.isdir(scene_root_dir_path):
-                    raise ValueError(f"{scene_root_dir_path} does not exist.")
-                t4 = Tier4(version="annotation", data_root=scene_root_dir_path, verbose=False)
-                for i, sample in enumerate(tqdm(t4.sample)):
-                    segment_pointcloud(
-                        args.root_path, cfg, segmentation_cfg, t4, sample, i, args.num_consistent_frames
-                    )
+            with concurrent.futures.ThreadPoolExecutor(max_workers=num_workers) as executor:
+                executor.map(
+                    lambda scene_id: segment_scene(args, cfg, segmentation_cfg, dataset_version, scene_id),
+                    dataset_list_dict.get(split, []),
+                )
 
 
 if __name__ == "__main__":

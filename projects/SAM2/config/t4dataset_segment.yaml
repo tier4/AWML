@@ -1,6 +1,39 @@
 
 sam2:
-    sam2_classes: ["car", "truck", "bus","trailer", "motorcycle", "bicycle", "pedestrian", "road", "vegetation", "tree", "plant", "grass", "bush", "flowerbed", "greenery","cone", "obstacle"]
+    sam2_classes: [
+        "rider",
+        "pedestrian",
+        "animal",
+        "car",
+        "truck",
+        "bus",
+        "trailer",
+        "motorcycle",
+        "bicycle",
+        "road",
+        "sidewalk",
+        "crosswalk",
+        "lane",
+        "vegetation",
+        "tree",
+        "plant",
+        "grass",
+        "bush",
+        "flowerbed",
+        "flower",
+        "greenery",
+        "cone",
+        "obstacle",
+        "debris",
+        "building",
+        "wall",
+        "fence",
+        "bollard",
+        "pole",
+        "lamp post",
+        "traffic light",
+        "traffic sign",
+        ]
     background_value: 255
     sam2_checkpoint: "checkpoints/sam2.1_hiera_large.pt"
     sam2_cfg: "sam2/configs/sam2.1/sam2.1_hiera_l.yaml"
@@ -9,24 +42,58 @@ sam2:
     box_threshold: 0.30
     text_threshold: 0.25
 projective_segmentation:
+    num_consistent_frames: 5
     invalid_value: 255
-    background_value: 0 # this needs to be zero for now
+    background_value: 255
+    ground_value: 3
+    min_non_ground_z: -0.2
+    fill_boundaries_with_invalid: True
+    fill_boundaries_width: 10
+    num_workers: 24
     classes_map: {
-        "car" : 1,
-        "truck" : 1,
-        "bus" : 1,
-        "trailer" : 1,
-        "motorcycle" : 2,
-        "bicycle" : 2,
-        "pedestrian" : 3,
-        "road" : 4,
-        "vegetation" : 5,
-        "tree" : 5,
-        "plant" : 5,
-        "grass" : 5,
-        "bush" : 5,
-        "flowerbed" : 5,
-        "greenery" : 5,
-        "cone" : 6,
-        "obstacle" : 6
+        "rider": 2,
+        "pedestrian": 2,
+        "animal": 5,
+        "car": 0,
+        "truck": 0,
+        "bus": 0,
+        "trailer": 0,
+        "motorcycle": 1,
+        "bicycle": 1,
+        "road": 3,
+        "sidewalk": 3,
+        "crosswalk": 3,
+        "lane": 3,
+        "vegetation": 4,
+        "tree": 4,
+        "plant": 4,
+        "grass": 4,
+        "bush": 4,
+        "flowerbed": 4,
+        "flower": 4,
+        "greenery": 4,
+        "cone": 5,
+        "obstacle": 5,
+        "debris": 5,
+        "building": 5,
+        "wall": 5,
+        "fence": 5,
+        "bollard": 5,
+        "pole": 5,
+        "lamp post": 5,
+        "traffic light": 5,
+        "traffic sign": 5
     }
+visualization:
+    color_map: {
+        255: [0.85, 0.85, 0.85], # invalid
+        5: [1.0, 0.0, 1.0], # bg
+        0: [0.0, 0.0, 1.0], # vehicle
+        1: [1.0, 0.0, 0.0], # bicycle - motorcycle
+        2: [1.0, 1.0, 0.0], # pedestrian
+        3: [0.4, 0.4, 0.4], # road
+        4: [0.0, 1.0, 0.0], # vegetation
+        6: [0.0, 1.0, 1.0] # cone - obstacle
+    }
+    min_range: -64.0
+    max_range: 64.0
