@@ -221,7 +221,7 @@ model = dict(
             max_num_points=20,
             voxel_size=voxel_size,
             point_cloud_range=point_cloud_range,
-            max_voxels=(32000, 60000),
+            max_voxels=(32000, 64000),
             deterministic=True,
         ),
     ),
