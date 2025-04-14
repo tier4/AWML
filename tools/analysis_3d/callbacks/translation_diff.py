@@ -125,8 +125,8 @@ class TranslationDiffAnalysisCallback(AnalysisCallbackInterface):
                 category_thresholds = iqrs[category_name]
                 instance_row = [scene_token, instance_token, name]
                 for index, (sample_token, translation_diff) in enumerate(instance_data.items()):
-                    x_threshold = category_thresholds[0][0] + category_thresholds[0][1] * 3.0
-                    y_threshold = category_thresholds[1][0] + category_thresholds[1][1] * 3.0
+                    x_threshold = category_thresholds[0][0] + category_thresholds[0][1] * 2.0
+                    y_threshold = category_thresholds[1][0] + category_thresholds[1][1] * 2.0
                     z_threshold = category_thresholds[2][0] + category_thresholds[2][1] * 5.0
                     # Check if the translation difference is greater than the threshold
                     if (
