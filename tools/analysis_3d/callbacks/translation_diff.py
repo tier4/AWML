@@ -357,9 +357,9 @@ class TranslationDiffAnalysisCallback(AnalysisCallbackInterface):
             )
             # Write abnormal instances
             self._write_abnormal_instances(dataset_translation_diffs=scene_trans_diff, iqrs=iqrs)
-            self.plot_dataset_translation_diff_hist(
+            means = self.plot_dataset_translation_diff_hist(
                 dataset_name=dataset_version,
                 category_translation_diffs=category_translation_diffs,
             )
-
+            self._write_abnormal_instances_menas(dataset_translation_diffs=scene_trans_diff, means=means)
         print_log(f"Done running {self.__class__.__name__}")
