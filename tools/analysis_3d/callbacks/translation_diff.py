@@ -102,7 +102,9 @@ class TranslationDiffAnalysisCallback(AnalysisCallbackInterface):
         print_log(f"Saved translation diff plot to {csv_file_name}")
 
     def _write_abnormal_instances(
-        self, dataset_translation_diffs: Dict[str, Dict[str, Dict[str, List[tuple]]]], iqrs: Dict[str, List[float]]
+        self,
+        dataset_translation_diffs: Dict[str, Dict[str, Dict[str, List[tuple]]]],
+        iqrs: Dict[str, List[tuple[float]]],
     ) -> None:
         """ """
         # Move to scene_token: instance: sample: translation_diff
@@ -123,11 +125,14 @@ class TranslationDiffAnalysisCallback(AnalysisCallbackInterface):
                 category_thresholds = iqrs[category_name]
                 instance_row = [scene_token, instance_token, name]
                 for index, (sample_token, translation_diff) in enumerate(instance_data.items()):
+                    x_threshold = category_thresholds[0][0] + category_thresholds[0][1] * 3.0
+                    y_threshold = category_thresholds[1][0] + category_thresholds[1][1] * 3.0
+                    z_threshold = category_thresholds[2][0] + category_thresholds[2][1] * 5.0
                     # Check if the translation difference is greater than the threshold
                     if (
-                        translation_diff[0] > category_thresholds[0] * 3.0
-                        or translation_diff[1] > category_thresholds[1] * 3.0
-                        or translation_diff[2] > category_thresholds[2] * 5.0
+                        translation_diff[0] > x_threshold
+                        or translation_diff[1] > y_threshold
+                        or translation_diff[2] > z_threshold
                     ):
                         # print(translation_diff)
                         # print(category_thresholds)
@@ -169,7 +174,7 @@ class TranslationDiffAnalysisCallback(AnalysisCallbackInterface):
         dataset_name: str,
         category_translation_diffs: Dict[str, List[tuple]],
         figsize: tuple[int, int] = (10, 10),
-    ) -> Dict[str, List[float]]:
+    ) -> Dict[str, List[tuple[float]]]:
         """
         :param category_translation_diffs: {category_name: [translation_diff]}.
         """
@@ -190,7 +195,7 @@ class TranslationDiffAnalysisCallback(AnalysisCallbackInterface):
                 q3 = np.percentile(translation_diff, 75)
                 median = np.percentile(translation_diff, 50)
                 iqr = q3 - q1
-                iqrs[category_name].append(iqr)
+                iqrs[category_name].append((q3, iqr))
                 mean = np.mean(translation_diff)
                 std = np.std(translation_diff)
 
