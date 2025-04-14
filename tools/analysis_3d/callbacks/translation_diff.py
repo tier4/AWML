@@ -74,20 +74,25 @@ class TranslationDiffAnalysisCallback(AnalysisCallbackInterface):
                 category_thresholds = means[category_name]
                 instance_row = [scene_token, instance_token, name]
                 for index, (sample_token, translation_diff) in enumerate(instance_data.items()):
-                    # Check if the translation difference is greater than the threshold
-                    x_threshold = category_thresholds[0][0] + category_thresholds[0][1] * 1.5
-                    y_threshold = category_thresholds[1][0] + category_thresholds[1][1] * 1.5
-                    z_threshold = category_thresholds[2][0] + category_thresholds[2][1] * 1.5
-
-                    if (
-                        translation_diff[0] > x_threshold
-                        or translation_diff[1] > y_threshold
-                        or translation_diff[2] > z_threshold
-                    ):
-                        # print(translation_diff)
-                        # print(category_thresholds)
+                    dist_threshold = category_thresholds[3][0] + category_thresholds[3][1] * 2.0
+                    if translation_diff[-1] > dist_threshold:
                         frames[index] = True
                         frames[index + 1] = True
+                #     # Check if the translation difference is greater than the threshold
+                #     x_threshold = category_thresholds[0][
+                #         0] + category_thresholds[0][1] * 1.5
+                #     y_threshold = category_thresholds[1][
+                #         0] + category_thresholds[1][1] * 1.5
+                #     z_threshold = category_thresholds[2][
+                #         0] + category_thresholds[2][1] * 1.5
+
+                #     if (translation_diff[0] > x_threshold
+                #             or translation_diff[1] > y_threshold
+                #             or translation_diff[2] > z_threshold):
+                #         # print(translation_diff)
+                #         # print(category_thresholds)
+                #         frames[index] = True
+                #         frames[index + 1] = True
 
                 if any(frames):
                     instance_row += frames
@@ -125,19 +130,26 @@ class TranslationDiffAnalysisCallback(AnalysisCallbackInterface):
                 category_thresholds = iqrs[category_name]
                 instance_row = [scene_token, instance_token, name]
                 for index, (sample_token, translation_diff) in enumerate(instance_data.items()):
-                    x_threshold = category_thresholds[0][0] + category_thresholds[0][1] * 2.0
-                    y_threshold = category_thresholds[1][0] + category_thresholds[1][1] * 2.0
-                    z_threshold = category_thresholds[2][0] + category_thresholds[2][1] * 5.0
-                    # Check if the translation difference is greater than the threshold
-                    if (
-                        translation_diff[0] > x_threshold
-                        or translation_diff[1] > y_threshold
-                        or translation_diff[2] > z_threshold
-                    ):
-                        # print(translation_diff)
-                        # print(category_thresholds)
+                    dist_threshold = category_thresholds[3][0] + category_thresholds[3][1] * 3.0
+                    if translation_diff[-1] > dist_threshold:
                         frames[index] = True
                         frames[index + 1] = True
+                # for index, (sample_token, translation_diff) in enumerate(
+                #         instance_data.items()):
+                #     x_threshold = category_thresholds[0][
+                #         0] + category_thresholds[0][1] * 2.0
+                #     y_threshold = category_thresholds[1][
+                #         0] + category_thresholds[1][1] * 2.0
+                #     z_threshold = category_thresholds[2][
+                #         0] + category_thresholds[2][1] * 5.0
+                #     # Check if the translation difference is greater than the threshold
+                #     if (translation_diff[0] > x_threshold
+                #             or translation_diff[1] > y_threshold
+                #             or translation_diff[2] > z_threshold):
+                #         # print(translation_diff)
+                #         # print(category_thresholds)
+                #         frames[index] = True
+                #         frames[index + 1] = True
 
                 if any(frames):
                     instance_row += frames
