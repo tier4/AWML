@@ -52,8 +52,17 @@ class TranslationDiffAnalysisCallback(AnalysisCallbackInterface):
         self.bins = bins
         self.remapping_classes = remapping_classes
 
+    def compute_mapping_sample_to_frame_index(self, scenario_data: ScenarioData) -> Dict[str, Dict[str, tuple]]:
+        """Compute translation difference between two frames."""
+        # {sample_token: index}}
+        sample_data = sorted(scenario_data.sample_data.values(), key=lambda x: x.timestamp)
+        return {sample.sample_token: index for sample, index in enumerate(sample_data)}
+
     def _write_abnormal_instances_menas(
-        self, dataset_translation_diffs: Dict[str, Dict[str, Dict[str, List[tuple]]]], means: Dict[str, List[tuple]]
+        self,
+        dataset_translation_diffs: Dict[str, Dict[str, Dict[str, List[tuple]]]],
+        means: Dict[str, List[tuple]],
+        sample_to_frame_mapping: Dict[str, Dict[str, int]],
     ) -> None:
         """ """
         # Move to scene_token: instance: sample: translation_diff
@@ -73,26 +82,12 @@ class TranslationDiffAnalysisCallback(AnalysisCallbackInterface):
                 category_name, instance_token, name = instance_name.split("/")
                 category_thresholds = means[category_name]
                 instance_row = [scene_token, instance_token, name]
-                for index, (sample_token, translation_diff) in enumerate(instance_data.items()):
-                    dist_threshold = category_thresholds[3][0] + category_thresholds[3][1] * 2.0
+                for sample_token, translation_diff in instance_data.items():
+                    sample_frame_index = sample_to_frame_mapping[scene_token][sample_token]
+                    dist_threshold = category_thresholds[3][0] + category_thresholds[3][1] * 2.5
                     if translation_diff[-1] > dist_threshold:
-                        frames[index] = True
-                        frames[index + 1] = True
-                #     # Check if the translation difference is greater than the threshold
-                #     x_threshold = category_thresholds[0][
-                #         0] + category_thresholds[0][1] * 1.5
-                #     y_threshold = category_thresholds[1][
-                #         0] + category_thresholds[1][1] * 1.5
-                #     z_threshold = category_thresholds[2][
-                #         0] + category_thresholds[2][1] * 1.5
-
-                #     if (translation_diff[0] > x_threshold
-                #             or translation_diff[1] > y_threshold
-                #             or translation_diff[2] > z_threshold):
-                #         # print(translation_diff)
-                #         # print(category_thresholds)
-                #         frames[index] = True
-                #         frames[index + 1] = True
+                        frames[sample_frame_index] = True
+                        frames[sample_frame_index + 1] = True
 
                 if any(frames):
                     instance_row += frames
@@ -110,6 +105,7 @@ class TranslationDiffAnalysisCallback(AnalysisCallbackInterface):
         self,
         dataset_translation_diffs: Dict[str, Dict[str, Dict[str, List[tuple]]]],
         iqrs: Dict[str, List[tuple[float]]],
+        sample_to_frame_mapping: Dict[str, Dict[str, int]],
     ) -> None:
         """ """
         # Move to scene_token: instance: sample: translation_diff
@@ -129,27 +125,12 @@ class TranslationDiffAnalysisCallback(AnalysisCallbackInterface):
                 category_name, instance_token, name = instance_name.split("/")
                 category_thresholds = iqrs[category_name]
                 instance_row = [scene_token, instance_token, name]
-                for index, (sample_token, translation_diff) in enumerate(instance_data.items()):
-                    dist_threshold = category_thresholds[3][0] + category_thresholds[3][1] * 3.0
+                for sample_token, translation_diff in instance_data.items():
+                    dist_threshold = category_thresholds[3][0] + category_thresholds[3][1] * 2.5
+                    sample_frame_index = sample_to_frame_mapping[scene_token][sample_token]
                     if translation_diff[-1] > dist_threshold:
-                        frames[index] = True
-                        frames[index + 1] = True
-                # for index, (sample_token, translation_diff) in enumerate(
-                #         instance_data.items()):
-                #     x_threshold = category_thresholds[0][
-                #         0] + category_thresholds[0][1] * 2.0
-                #     y_threshold = category_thresholds[1][
-                #         0] + category_thresholds[1][1] * 2.0
-                #     z_threshold = category_thresholds[2][
-                #         0] + category_thresholds[2][1] * 5.0
-                #     # Check if the translation difference is greater than the threshold
-                #     if (translation_diff[0] > x_threshold
-                #             or translation_diff[1] > y_threshold
-                #             or translation_diff[2] > z_threshold):
-                #         # print(translation_diff)
-                #         # print(category_thresholds)
-                #         frames[index] = True
-                #         frames[index + 1] = True
+                        frames[sample_frame_index] = True
+                        frames[sample_frame_index + 1] = True
 
                 if any(frames):
                     instance_row += frames
@@ -359,6 +340,7 @@ class TranslationDiffAnalysisCallback(AnalysisCallbackInterface):
 
         for dataset_name, analysis_data in dataset_analysis_data.items():
             scene_trans_diff = defaultdict(lambda: defaultdict(lambda: defaultdict(tuple)))
+            sccene_sampling_to_timestamp_mapping = defaultdict(defaultdict(int))
             for analysis in analysis_data:
                 # scene: sample: instance
                 for scene_token, scenario_data in analysis.scenario_data.items():
@@ -366,6 +348,11 @@ class TranslationDiffAnalysisCallback(AnalysisCallbackInterface):
                         scenario_data=scenario_data,
                     )
                     scene_trans_diff[scene_token] = trans_diff
+                    # Compute mapping sample to frame index
+                    mapping_sample_to_frame_index = self.compute_mapping_sample_to_frame_index(
+                        scenario_data=scenario_data
+                    )
+                    sccene_sampling_to_timestamp_mapping[scene_token] = mapping_sample_to_frame_index
 
             category_translation_diffs = self.gather_dataset_category_translation_diff(scene_trans_diff)
             dataset_version = dataset_split_name.dataset_version
@@ -374,10 +361,18 @@ class TranslationDiffAnalysisCallback(AnalysisCallbackInterface):
                 category_translation_diffs=category_translation_diffs,
             )
             # Write abnormal instances
-            self._write_abnormal_instances(dataset_translation_diffs=scene_trans_diff, iqrs=iqrs)
+            self._write_abnormal_instances(
+                dataset_translation_diffs=scene_trans_diff,
+                iqrs=iqrs,
+                sample_to_frame_mapping=sccene_sampling_to_timestamp_mapping,
+            )
             means = self.plot_dataset_translation_diff_hist(
                 dataset_name=dataset_version,
                 category_translation_diffs=category_translation_diffs,
             )
-            self._write_abnormal_instances_menas(dataset_translation_diffs=scene_trans_diff, means=means)
+            self._write_abnormal_instances_menas(
+                dataset_translation_diffs=scene_trans_diff,
+                means=means,
+                sample_to_frame_mapping=sccene_sampling_to_timestamp_mapping,
+            )
         print_log(f"Done running {self.__class__.__name__}")
