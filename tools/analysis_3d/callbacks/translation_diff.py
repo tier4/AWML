@@ -68,7 +68,7 @@ class TranslationDiffAnalysisCallback(AnalysisCallbackInterface):
         # Gather translation differences for each instance
         for scene_token, scene_data in dataset_instance_sample_diffs.items():
             for instance_name, instance_data in scene_data.items():
-                frames = [30] * False
+                frames = [False] * 30
                 # Extract the category name from the instance name
                 category_name, instance_token, name = instance_name.split("/")
                 category_thresholds = iqrs[category_name]
