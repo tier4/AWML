@@ -56,7 +56,7 @@ class TranslationDiffAnalysisCallback(AnalysisCallbackInterface):
         """Compute translation difference between two frames."""
         # {sample_token: index}}
         sample_data = sorted(scenario_data.sample_data.values(), key=lambda x: x.timestamp)
-        return {sample.sample_token: index for sample, index in enumerate(sample_data)}
+        return {sample.sample_token: index for index, sample in enumerate(sample_data)}
 
     def _write_abnormal_instances_menas(
         self,
