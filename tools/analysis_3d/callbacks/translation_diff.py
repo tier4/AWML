@@ -52,6 +52,55 @@ class TranslationDiffAnalysisCallback(AnalysisCallbackInterface):
         self.bins = bins
         self.remapping_classes = remapping_classes
 
+    def _write_abnormal_instances_menas(
+        self, dataset_translation_diffs: Dict[str, Dict[str, Dict[str, List[tuple]]]], means: Dict[str, List[tuple]]
+    ) -> None:
+        """ """
+        # Move to scene_token: instance: sample: translation_diff
+        dataset_instance_sample_diffs = defaultdict(lambda: defaultdict(lambda: defaultdict(list)))
+        for scene_token, scene_data in dataset_translation_diffs.items():
+            for sample_token, sample_data in scene_data.items():
+                for instance_name, translation_diffs in sample_data.items():
+                    dataset_instance_sample_diffs[scene_token][instance_name][sample_token] = translation_diffs
+
+        columns = ["t4dataset", "instance_token", "instance_name"] + [f"frame_{i+1}" for i in range(30)]
+        data = []
+        # Gather translation differences for each instance
+        for scene_token, scene_data in dataset_instance_sample_diffs.items():
+            for instance_name, instance_data in scene_data.items():
+                frames = [False] * 30
+                # Extract the category name from the instance name
+                category_name, instance_token, name = instance_name.split("/")
+                category_thresholds = means[category_name]
+                instance_row = [scene_token, instance_token, name]
+                for index, (sample_token, translation_diff) in enumerate(instance_data.items()):
+                    # Check if the translation difference is greater than the threshold
+                    x_threshold = category_thresholds[0][0] + category_thresholds[0][1] * 1.5
+                    y_threshold = category_thresholds[1][0] + category_thresholds[1][1] * 1.5
+                    z_threshold = category_thresholds[2][0] + category_thresholds[2][1] * 1.5
+
+                    if (
+                        translation_diff[0] > x_threshold
+                        or translation_diff[1] > y_threshold
+                        or translation_diff[2] > z_threshold
+                    ):
+                        # print(translation_diff)
+                        # print(category_thresholds)
+                        frames[index] = True
+                        frames[index + 1] = True
+
+                if any(frames):
+                    instance_row += frames
+                    data.append(instance_row)
+        # Write to CSV
+        csv_file_name = self.full_output_path / "translation_diff_abnormal_instances_means.csv"
+        with open(csv_file_name, "w", newline="") as csvfile:
+            writer = csv.writer(csvfile)
+            writer.writerow(columns)
+            for row in data:
+                writer.writerow(row)
+        print_log(f"Saved translation diff plot to {csv_file_name}")
+
     def _write_abnormal_instances(
         self, dataset_translation_diffs: Dict[str, Dict[str, Dict[str, List[tuple]]]], iqrs: Dict[str, List[float]]
     ) -> None:
@@ -73,16 +122,17 @@ class TranslationDiffAnalysisCallback(AnalysisCallbackInterface):
                 category_name, instance_token, name = instance_name.split("/")
                 category_thresholds = iqrs[category_name]
                 instance_row = [scene_token, instance_token, name]
-                for sample_token, translation_diffs in instance_data.items():
+                for index, (sample_token, translation_diff) in enumerate(instance_data.items()):
                     # Check if the translation difference is greater than the threshold
-                    for i, translation_diff in enumerate(translation_diffs):
-                        if (
-                            translation_diff[0] > category_thresholds[0] * 2.0
-                            or translation_diff[1] > category_thresholds[1] * 2.0
-                            or translation_diff[2] > category_thresholds[2] * 2.0
-                        ):
-                            frames[i] = True
-                            frames[i + 1] = True
+                    if (
+                        translation_diff[0] > category_thresholds[0] * 3.0
+                        or translation_diff[1] > category_thresholds[1] * 3.0
+                        or translation_diff[2] > category_thresholds[2] * 5.0
+                    ):
+                        # print(translation_diff)
+                        # print(category_thresholds)
+                        frames[index] = True
+                        frames[index + 1] = True
 
                 if any(frames):
                     instance_row += frames
@@ -97,10 +147,10 @@ class TranslationDiffAnalysisCallback(AnalysisCallbackInterface):
         print_log(f"Saved translation diff plot to {csv_file_name}")
 
     def gather_dataset_category_translation_diff(
-        self, dataset_translation_diffs: Dict[str, Dict[str, Dict[str, List[tuple]]]]
+        self, dataset_translation_diffs: Dict[str, Dict[str, Dict[str, tuple]]]
     ) -> Dict[str, List[tuple]]:
         """
-        :param dataset_translation_diffs: {scene: {sample: {instance_name: [translation_diff]}}}.
+        :param dataset_translation_diffs: {scene: {sample: {instance_name: translation_diff}}}.
         :return: {category_name: [translation_diff]}.
         """
         category_translation_diffs = defaultdict(list)
@@ -110,7 +160,7 @@ class TranslationDiffAnalysisCallback(AnalysisCallbackInterface):
                 for instance_name, translation_diffs in sample_data.items():
                     # Extract the category name from the instance name
                     category_name = instance_name.split("/")[0]
-                    category_translation_diffs[category_name] += translation_diffs
+                    category_translation_diffs[category_name].append(translation_diffs)
 
         return category_translation_diffs
 
@@ -191,13 +241,14 @@ class TranslationDiffAnalysisCallback(AnalysisCallbackInterface):
         dataset_name: str,
         category_translation_diffs: Dict[str, List[tuple]],
         figsize: tuple[int, int] = (10, 10),
-    ) -> None:
+    ) -> Dict[str, List[tuple]]:
         """
         :param category_translation_diffs: {category_name: [translation_diff]}.
         """
         percentiles = [0, 25, 50, 75, 95, 98, 99, 100]
         colors = ["blue", "orange", "green", "red", "purple", "brown", "olive", "pink"]
         translation_names = ["X", "Y", "Z"]
+        means = defaultdict(list)
         for category_name, translation_diffs in category_translation_diffs.items():
             # Plot translation differences for each category and differences in translations
             fig, axes = plt.subplots(nrows=1, ncols=3, figsize=figsize)
@@ -210,6 +261,7 @@ class TranslationDiffAnalysisCallback(AnalysisCallbackInterface):
                 p_values = np.percentile(translation_diff, percentiles)
                 mean = np.mean(translation_diff)
                 std = np.std(translation_diff)
+                means[category_name].append((mean, std))
 
                 ax.hist(translation_diff, bins=self.bins, log=True)
                 for value, percentile, color in zip(p_values, percentiles, colors):
@@ -232,11 +284,12 @@ class TranslationDiffAnalysisCallback(AnalysisCallbackInterface):
             plt.savefig(plot_file_name)
             print_log(f"Saved translation diff plot to {plot_file_name}")
             plt.close()
+        return means
 
-    def compute_sceneario_trans_diff(self, scenario_data: ScenarioData) -> Dict[str, Dict[str, List[tuple]]]:
+    def compute_sceneario_trans_diff(self, scenario_data: ScenarioData) -> Dict[str, Dict[str, tuple]]:
         """Compute translation difference between two frames."""
         # sample_token: instance_name: []
-        instance_trans_diffs: Dict[str, Dict[str, List[tuple]]] = defaultdict(lambda: defaultdict(list))
+        instance_trans_diffs: Dict[str, Dict[str, tuple]] = defaultdict(lambda: defaultdict(tuple))
 
         sample_data = sorted(scenario_data.sample_data.values(), key=lambda x: x.timestamp)
 
@@ -274,7 +327,7 @@ class TranslationDiffAnalysisCallback(AnalysisCallbackInterface):
                 next_x, next_y, next_z = next_instance_box.box.position
                 translation_diff = (abs(current_x - next_x), abs(current_y - next_y), abs(current_z - next_z))
 
-                instance_trans_diffs[sample_token][instance_name].append(translation_diff)
+                instance_trans_diffs[sample_token][instance_name] = translation_diff
 
         return instance_trans_diffs
 
@@ -287,7 +340,7 @@ class TranslationDiffAnalysisCallback(AnalysisCallbackInterface):
             dataset_analysis_data[dataset_split_name.dataset_version].append(analysis_data)
 
         for dataset_name, analysis_data in dataset_analysis_data.items():
-            scene_trans_diff = defaultdict(lambda: defaultdict(lambda: defaultdict(list)))
+            scene_trans_diff = defaultdict(lambda: defaultdict(lambda: defaultdict(tuple)))
             for analysis in analysis_data:
                 # scene: sample: instance
                 for scene_token, scenario_data in analysis.scenario_data.items():
