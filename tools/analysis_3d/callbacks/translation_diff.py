@@ -1,3 +1,4 @@
+import csv
 from collections import defaultdict
 from pathlib import Path
 from typing import Dict, List, Optional
@@ -51,6 +52,48 @@ class TranslationDiffAnalysisCallback(AnalysisCallbackInterface):
         self.bins = bins
         self.remapping_classes = remapping_classes
 
+    def _write_abnormal_instances(
+        self, dataset_translation_diffs: Dict[str, Dict[str, Dict[str, List[tuple]]]], iqrs: Dict[str, List[float]]
+    ) -> None:
+        """ """
+        # Move to scene_token: instance: sample: translation_diff
+        dataset_instance_sample_diffs = defaultdict(lambda: defaultdict(lambda: defaultdict(list)))
+        for scene_token, scene_data in dataset_translation_diffs.items():
+            for sample_token, sample_data in scene_data.items():
+                for instance_name, translation_diffs in sample_data.items():
+                    dataset_instance_sample_diffs[scene_token][instance_name][sample_token] = translation_diffs
+
+        columns = ["t4dataset", "instance_token", "instance_name"] + [f"frame_{i}" for i in range(30)]
+        data = []
+        # Gather translation differences for each instance
+        for scene_token, scene_data in dataset_instance_sample_diffs.items():
+            for instance_name, instance_data in scene_data.items():
+                frames = [30] * False
+                # Extract the category name from the instance name
+                category_name, instance_token, name = instance_name.split("/")
+                category_thresholds = iqrs[category_name]
+                instance_row = [scene_token, instance_token, name]
+                for sample_token, translation_diffs in instance_data.items():
+                    # Check if the translation difference is greater than the threshold
+                    for i, translation_diff in enumerate(translation_diffs):
+                        if (
+                            translation_diff[0] > category_thresholds[0] * 1.5
+                            or translation_diff[1] > category_thresholds[1] * 1.5
+                            or translation_diff[2] > category_thresholds[2] * 1.5
+                        ):
+                            frames[i] = True
+                            frames[i + 1] = True
+                instance_row += frames
+                data.append(instance_row)
+        # Write to CSV
+        csv_file_name = self.full_output_path / "translation_diff_abnormal_instances.csv"
+        with open(csv_file_name, "w", newline="") as csvfile:
+            writer = csv.writer(csvfile)
+            writer.writerow(columns)
+            for row in data:
+                writer.writerow(row)
+        print_log(f"Saved translation diff plot to {csv_file_name}")
+
     def gather_dataset_category_translation_diff(
         self, dataset_translation_diffs: Dict[str, Dict[str, Dict[str, List[tuple]]]]
     ) -> Dict[str, List[tuple]]:
@@ -74,11 +117,12 @@ class TranslationDiffAnalysisCallback(AnalysisCallbackInterface):
         dataset_name: str,
         category_translation_diffs: Dict[str, List[tuple]],
         figsize: tuple[int, int] = (10, 10),
-    ) -> None:
+    ) -> Dict[str, List[float]]:
         """
         :param category_translation_diffs: {category_name: [translation_diff]}.
         """
         translation_names = ["X", "Y", "Z"]
+        iqrs = defaultdict(list)
         for category_name, translation_diffs in category_translation_diffs.items():
             # Plot translation differences for each category and differences in translations
             fig, axes = plt.subplots(nrows=1, ncols=3, figsize=figsize)
@@ -94,7 +138,7 @@ class TranslationDiffAnalysisCallback(AnalysisCallbackInterface):
                 q3 = np.percentile(translation_diff, 75)
                 median = np.percentile(translation_diff, 50)
                 iqr = q3 - q1
-
+                iqrs[category_name].append(iqr)
                 mean = np.mean(translation_diff)
                 std = np.std(translation_diff)
 
@@ -138,7 +182,8 @@ class TranslationDiffAnalysisCallback(AnalysisCallbackInterface):
             plt.savefig(plot_file_name)
             print_log(f"Saved translation diff plot to {plot_file_name}")
             plt.close()
-    
+        return iqrs
+
     def plot_dataset_translation_diff_hist(
         self,
         dataset_name: str,
@@ -168,7 +213,9 @@ class TranslationDiffAnalysisCallback(AnalysisCallbackInterface):
                 for value, percentile, color in zip(p_values, percentiles, colors):
                     ax.axvline(value, color=color, linestyle="dashed", linewidth=2, label=f"P{percentile}:{value:.2f}")
 
-                ax.axvline(mean, color="black", linestyle="dashed", linewidth=2, label=f"mean:{mean:.2f} (std:{std:.2f})")
+                ax.axvline(
+                    mean, color="black", linestyle="dashed", linewidth=2, label=f"mean:{mean:.2f} (std:{std:.2f})"
+                )
                 ax.set_ylabel("Frequency")
                 ax.set_xlabel("Differences")
                 ax.set_title(translation_name)
@@ -219,7 +266,7 @@ class TranslationDiffAnalysisCallback(AnalysisCallbackInterface):
                 if next_instance_box is None:
                     continue
 
-                instance_name = f"{box_category_name}/{detection_3d_box.instance_name}"
+                instance_name = f"{box_category_name}/{detection_3d_box.box.uuid}/{detection_3d_box.instance_name}"
                 # Compute translation difference in x, y, z
                 current_x, current_y, current_z = detection_3d_box.box.position
                 next_x, next_y, next_z = next_instance_box.box.position
@@ -249,10 +296,12 @@ class TranslationDiffAnalysisCallback(AnalysisCallbackInterface):
 
             category_translation_diffs = self.gather_dataset_category_translation_diff(scene_trans_diff)
             dataset_version = dataset_split_name.dataset_version
-            self.plot_dataset_translation_diff(
+            iqrs = self.plot_dataset_translation_diff(
                 dataset_name=dataset_version,
                 category_translation_diffs=category_translation_diffs,
             )
+            # Write abnormal instances
+            self._write_abnormal_instances(dataset_translation_diffs=scene_trans_diff, iqrs=iqrs)
             self.plot_dataset_translation_diff_hist(
                 dataset_name=dataset_version,
                 category_translation_diffs=category_translation_diffs,
