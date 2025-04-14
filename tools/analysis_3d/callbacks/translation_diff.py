@@ -173,7 +173,7 @@ class TranslationDiffAnalysisCallback(AnalysisCallbackInterface):
         self,
         dataset_name: str,
         category_translation_diffs: Dict[str, List[tuple]],
-        figsize: tuple[int, int] = (10, 10),
+        figsize: tuple[int, int] = (16, 16),
     ) -> Dict[str, List[tuple[float]]]:
         """
         :param category_translation_diffs: {category_name: [translation_diff]}.
@@ -245,7 +245,7 @@ class TranslationDiffAnalysisCallback(AnalysisCallbackInterface):
         self,
         dataset_name: str,
         category_translation_diffs: Dict[str, List[tuple]],
-        figsize: tuple[int, int] = (10, 10),
+        figsize: tuple[int, int] = (16, 16),
     ) -> Dict[str, List[tuple]]:
         """
         :param category_translation_diffs: {category_name: [translation_diff]}.
@@ -282,7 +282,6 @@ class TranslationDiffAnalysisCallback(AnalysisCallbackInterface):
                 # ax.xaxis.set_major_locator(MaxNLocator(integer=True))
                 # ax.yaxis.set_major_locator(MaxNLocator(integer=True))
 
-            ax.set_title("All translations")
             # Save the plot
             plot_file_name = self.full_output_path / self.analysis_bin_file_name.format(category_name, dataset_name)
             fig.suptitle(category_name)
