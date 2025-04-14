@@ -173,13 +173,13 @@ class TranslationDiffAnalysisCallback(AnalysisCallbackInterface):
         """
         :param category_translation_diffs: {category_name: [translation_diff]}.
         """
-        translation_names = ["X", "Y", "Z"]
+        translation_names = ["X", "Y", "Z", "Dist"]
         iqrs = defaultdict(list)
         for category_name, translation_diffs in category_translation_diffs.items():
             # Plot translation differences for each category and differences in translations
-            fig, axes = plt.subplots(nrows=1, ncols=3, figsize=figsize)
+            fig, axes = plt.subplots(nrows=1, ncols=4, figsize=figsize)
             axes = axes.flatten()
-            for index in range(3):
+            for index in range(4):
                 translation_diff = [diff[index] for diff in translation_diffs]
                 ax = axes[index]
                 translation_name = translation_names[index]
@@ -247,13 +247,13 @@ class TranslationDiffAnalysisCallback(AnalysisCallbackInterface):
         """
         percentiles = [0, 25, 50, 75, 95, 98, 99, 100]
         colors = ["blue", "orange", "green", "red", "purple", "brown", "olive", "pink"]
-        translation_names = ["X", "Y", "Z"]
+        translation_names = ["X", "Y", "Z", "Dist"]
         means = defaultdict(list)
         for category_name, translation_diffs in category_translation_diffs.items():
             # Plot translation differences for each category and differences in translations
-            fig, axes = plt.subplots(nrows=1, ncols=3, figsize=figsize)
+            fig, axes = plt.subplots(nrows=1, ncols=4, figsize=figsize)
             axes = axes.flatten()
-            for index in range(3):
+            for index in range(4):
                 translation_diff = [diff[index] for diff in translation_diffs]
                 ax = axes[index]
                 translation_name = translation_names[index]
@@ -277,6 +277,7 @@ class TranslationDiffAnalysisCallback(AnalysisCallbackInterface):
                 # ax.xaxis.set_major_locator(MaxNLocator(integer=True))
                 # ax.yaxis.set_major_locator(MaxNLocator(integer=True))
 
+            ax.set_title("All translations")
             # Save the plot
             plot_file_name = self.full_output_path / self.analysis_bin_file_name.format(category_name, dataset_name)
             fig.suptitle(category_name)
@@ -325,7 +326,8 @@ class TranslationDiffAnalysisCallback(AnalysisCallbackInterface):
                 # Compute translation difference in x, y, z
                 current_x, current_y, current_z = detection_3d_box.box.position
                 next_x, next_y, next_z = next_instance_box.box.position
-                translation_diff = (abs(current_x - next_x), abs(current_y - next_y), abs(current_z - next_z))
+                dist = np.sqrt((current_x - next_x) ** 2 + (current_y - next_y) ** 2 + (current_z - next_z) ** 2)
+                translation_diff = (abs(current_x - next_x), abs(current_y - next_y), abs(current_z - next_z), dist)
 
                 instance_trans_diffs[sample_token][instance_name] = translation_diff
 
