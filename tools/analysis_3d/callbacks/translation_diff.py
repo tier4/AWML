@@ -340,7 +340,7 @@ class TranslationDiffAnalysisCallback(AnalysisCallbackInterface):
 
         for dataset_name, analysis_data in dataset_analysis_data.items():
             scene_trans_diff = defaultdict(lambda: defaultdict(lambda: defaultdict(tuple)))
-            sccene_sampling_to_timestamp_mapping = defaultdict(defaultdict(int))
+            sccene_sampling_to_timestamp_mapping = defaultdict(lambda: defaultdict(int))
             for analysis in analysis_data:
                 # scene: sample: instance
                 for scene_token, scenario_data in analysis.scenario_data.items():
