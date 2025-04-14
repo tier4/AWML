@@ -63,7 +63,7 @@ class TranslationDiffAnalysisCallback(AnalysisCallbackInterface):
                 for instance_name, translation_diffs in sample_data.items():
                     dataset_instance_sample_diffs[scene_token][instance_name][sample_token] = translation_diffs
 
-        columns = ["t4dataset", "instance_token", "instance_name"] + [f"frame_{i}" for i in range(30)]
+        columns = ["t4dataset", "instance_token", "instance_name"] + [f"frame_{i+1}" for i in range(30)]
         data = []
         # Gather translation differences for each instance
         for scene_token, scene_data in dataset_instance_sample_diffs.items():
