@@ -77,14 +77,16 @@ class TranslationDiffAnalysisCallback(AnalysisCallbackInterface):
                     # Check if the translation difference is greater than the threshold
                     for i, translation_diff in enumerate(translation_diffs):
                         if (
-                            translation_diff[0] > category_thresholds[0] * 1.5
-                            or translation_diff[1] > category_thresholds[1] * 1.5
-                            or translation_diff[2] > category_thresholds[2] * 1.5
+                            translation_diff[0] > category_thresholds[0] * 2.0
+                            or translation_diff[1] > category_thresholds[1] * 2.0
+                            or translation_diff[2] > category_thresholds[2] * 2.0
                         ):
                             frames[i] = True
                             frames[i + 1] = True
-                instance_row += frames
-                data.append(instance_row)
+
+                if any(frames):
+                    instance_row += frames
+                    data.append(instance_row)
         # Write to CSV
         csv_file_name = self.full_output_path / "translation_diff_abnormal_instances.csv"
         with open(csv_file_name, "w", newline="") as csvfile:
