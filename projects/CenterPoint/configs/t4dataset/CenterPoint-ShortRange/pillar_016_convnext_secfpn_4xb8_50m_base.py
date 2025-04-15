@@ -46,7 +46,7 @@ test_batch_size = 2
 num_workers = 32
 val_interval = 5
 max_epochs = 50
-work_dir = "work_dirs/centerpoint/" + _base_.dataset_type + "/pillar_016_convnext_secfpn_4xb8_50m_base/"
+work_dir = "work_dirs/centerpoint/" + _base_.dataset_type + "/short_range_pillar_016_convnext_secfpn_4xb8_50m_base/"
 
 train_pipeline = [
     dict(
