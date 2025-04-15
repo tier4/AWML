@@ -5,6 +5,7 @@ _base_ = [
 ]
 custom_imports = dict(imports=["projects.CenterPoint.models"], allow_failed_imports=False)
 custom_imports["imports"] += _base_.custom_imports["imports"]
+custom_imports["imports"] += ["projects.ConvNeXt_PC"]
 custom_imports["imports"] += ["autoware_ml.detection3d.datasets.transforms"]
 
 # This is a base file for t4dataset, add the dataset config.
@@ -393,4 +394,6 @@ default_hooks = dict(
     checkpoint=dict(type="CheckpointHook", interval=1),
 )
 
-custom_hooks = [dict(type="ExtraRuntimeInfoHook")]
+custom_hooks = [
+    dict(type="MomentumInfoHook"),
+]

@@ -380,4 +380,6 @@ default_hooks = dict(
     checkpoint=dict(type="CheckpointHook", interval=1),
 )
 
-custom_hooks = [dict(type="ExtraRuntimeInfoHook")]
+custom_hooks = [
+    dict(type="MomentumInfoHook"),
+]
