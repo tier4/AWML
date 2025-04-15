@@ -363,7 +363,9 @@ optim_wrapper = dict(
     dtype="float16",
     optimizer=optimizer,
     clip_grad=clip_grad,
-    loss_scale={"growth_interval": 400},
+    loss_scale={
+        "growth_interval": 400
+    },  # Can update it accordingly, 400 is about half of an epoch for this experiment
 )
 
 # Default setting for scaling LR automatically
