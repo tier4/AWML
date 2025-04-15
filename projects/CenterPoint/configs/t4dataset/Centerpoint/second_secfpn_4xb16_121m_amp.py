@@ -221,7 +221,7 @@ model = dict(
             max_num_points=20,
             voxel_size=voxel_size,
             point_cloud_range=point_cloud_range,
-            max_voxels=(32000, 64000),
+            max_voxels=(64000, 64000),
             deterministic=True,
         ),
     ),
@@ -270,6 +270,7 @@ model = dict(
             post_center_range=[-200.0, -200.0, -10.0, 200.0, 200.0, 10.0],
             out_size_factor=out_size_factor,
         ),
+        # sigmoid(-9.2103) = 0.0001 for initial small values
         separate_head=dict(type="CustomSeparateHead", init_bias=-9.2103, final_kernel=1),
         loss_cls=dict(type="mmdet.GaussianFocalLoss", reduction="none", loss_weight=1.0),
         loss_bbox=dict(type="mmdet.L1Loss", reduction="mean", loss_weight=0.25),
@@ -362,7 +363,7 @@ optim_wrapper = dict(
     dtype="float16",
     optimizer=optimizer,
     clip_grad=clip_grad,
-    loss_scale={"init_scale": 2.0**12, "growth_interval": 400},
+    loss_scale={"growth_interval": 400},
 )
 
 # Default setting for scaling LR automatically

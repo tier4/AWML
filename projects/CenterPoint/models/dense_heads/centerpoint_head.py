@@ -46,7 +46,6 @@ class CustomSeparateHead(SeparateHead):
 
     def init_bias_weights(self):
         """Initialize weights."""
-        # super().init_weights()
         for head in self.heads:
             if head == "heatmap":
                 self.__getattr__(head)[-1].bias.data.fill_(self.init_bias)
