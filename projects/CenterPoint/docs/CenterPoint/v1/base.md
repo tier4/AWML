@@ -33,10 +33,10 @@
 ## Release
 
 ### CenterPoint base/1.5
-- This release is based on `base/1.4` by adding AMP (automatic mixed precision) training, and we are able to update the following parameters because of more available memory
-    - Batch size: 64
-		- Number of voxels in training: 64,000
-		- Note that it's common to see `inf` or `nan` during training in `grad_norm` for few iterations since it might get unstable
+- This release is based on `base/1.4` with the addition of AMP (automatic mixed precision) training. With more available memory, we were able to update the following parameters:
+  - Batch size: 64  
+  - Number of voxels in training: 64,000  
+  - *Note*: It's common to observe `inf` or `nan` in `grad_norm` for a few iterations during training, as it may become unstable.
 - It's commonly known that the performance in amp training can be slightly different compared to the fully `fp32` training
 - The total training time in this release is about `62` hours for `50` epochs
 - The training time improvement is about `14%` (62 hours vs 72 hours) compared to `base/1.4`
