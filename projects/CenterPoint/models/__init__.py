@@ -1,5 +1,5 @@
 from .backbones.second import SECOND
-from .dense_heads.centerpoint_head import CenterHead
+from .dense_heads.centerpoint_head import CenterHead, CustomSeparateHead
 from .dense_heads.centerpoint_head_onnx import CenterHeadONNX, SeparateHeadONNX
 from .detectors.centerpoint import CenterPoint
 from .detectors.centerpoint_onnx import CenterPointONNX
@@ -13,6 +13,7 @@ __all__ = [
     "SECONDFPN",
     "CenterPoint",
     "CenterHead",
+    "CustomSeparateHead",
     "BackwardPillarFeatureNet",
     "PillarFeatureNetONNX",
     "BackwardPillarFeatureNetONNX",

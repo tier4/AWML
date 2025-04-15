@@ -9,10 +9,11 @@
   - Dataset: test dataset of db_jpntaxi_v1 + db_jpntaxi_v2 + db_jpntaxi_v4 + db_gsm8_v1 + db_j6_v1 + db_j6_v2 + db_j6_v3 + db_j6_v5 + db_j6gen2_v1 (total frames: 3804)
   - Class mAP for center distance (0.5m, 1.0m, 2.0m, 4.0m):
 
-| eval range: 120m     | mAP  | car <br> (76,513) | truck <br> (10,268) | bus <br> (4,597) | bicycle <br> (3,742) | pedestrian <br> (30,521) |
-| -------------------- | ---- | ----------------- | ------------------- | ---------------- | -------------------- | ------------------------ |
-| CenterPoint base/1.4 | 66.3 | 80.5              | 53.1                | 81.1             | 52.0                 | 64.7                     |
-| CenterPoint base/1.3 | 66.7 | 80.6              | 53.5                | 80.2             | 54.3                 | 64.6                     |
+| eval range: 120m         | mAP  | car <br> (76,513) | truck <br> (10,268) | bus <br> (4,597) | bicycle <br> (3,742) | pedestrian <br> (30,521) |
+| -------------------------| ---- | ----------------- | ------------------- | ---------------- | -------------------- | ------------------------ |
+| CenterPoint base-amp/1.4 | 66.3 | 80.5              | 53.1                | 81.1             | 52.0                 | 64.7                     |
+| CenterPoint base/1.4     | 66.3 | 80.5              | 53.1                | 81.1             | 52.0                 | 64.7                     |
+| CenterPoint base/1.3     | 66.7 | 80.6              | 53.5                | 80.2             | 54.3                 | 64.6                     |
 
 ## Deprecated summary
 <details>
@@ -30,6 +31,15 @@
 </details>
 
 ## Release
+
+### CenterPoint base-amp/1.4
+- This release is based on `base/1.4` by adding AMP (automatic mixed precision) training
+- It's commonly known that the performance in amp training can be slightly different compared to the fully `fp32` training
+- The total training time in this release is about `62` hours for `50` epochs
+- The training time improvement is about `14%` (62 hours vs 72 hours) compared to `base/1.4`
+
+<details>
+<summary> The link of data and evaluation result </summary>
 
 
 ### CenterPoint base/1.4
@@ -70,7 +80,7 @@
     - [logs.zip](https://download.autoware-ml-model-zoo.tier4.jp/autoware-ml/models/centerpoint/centerpoint/t4base/v1.4/logs.zip)
     - [checkpoint_best.pth](https://download.autoware-ml-model-zoo.tier4.jp/autoware-ml/models/centerpoint/centerpoint/t4base/v1.4/best_NuScenes+metric_T4Metric_mAP_epoch_47.pth)
     - [config.py](https://download.autoware-ml-model-zoo.tier4.jp/autoware-ml/models/centerpoint/centerpoint/t4base/v1.4/second_secfpn_4xb8_121m_base.py)
-  - Train time: NVIDIA A100 80GB * 4 * 50 epochs = 3.0 days and 5 hours
+  - Train time: NVIDIA A100 80GB * 4 * 50 epochs = 3.0 days
   - Batch size: 4*8 = 32
 
 - Evaluation result with db_jpntaxi_v1 + db_jpntaxi_v2 + db_jpntaxi_v4 + db_gsm8_v1 + db_j6_v1 + db_j6_v2 + db_j6_v3 + db_j6_v5 + db_j6gen2_v1 (total frames: 3804)
