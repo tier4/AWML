@@ -93,6 +93,18 @@ Limitation of the projective approach:
  - Some parts of the pointcloud will not be classified and will be masked out during pointcloud classification training.
    If this phenomenah is consistent, some objects will never receive labels and have potential errors at test time.
 
+## (Optional) Refine pointcloud segmentation with object detection cuboids
+
+It is possible to refine the segmentation labels using the cuboids from a object detection groundtruth.
+For the `t4dataset`, it can be done using the following command:
+
+```bash
+python projects/SAM2/segment_t4dataset_projective.py \
+    --root_path ./data/t4dataset \
+    --database_config autoware_ml/configs/detection3d/dataset/t4dataset/xx1.py \
+    --segmentation_config projects/SAM2/config/t4dataset_segment.yaml
+```
+
 ## (Optional) Generate BEV videos with the segmentation result
 
 BEV videos of the setmented pointclouds can be generated with the following command:
@@ -104,8 +116,3 @@ python projects/SAM2/generate_segmentation_videos.py \
     --dataset_config autoware_ml/configs/detection3d/dataset/t4dataset/xx1.py \
     --segmentation_config projects/SAM2/config/t4dataset_segment.yaml
 ```
-
-## Future work
-
- - Leverage existing 3d cuboids to segment pointclouds
- - Use segmentation results to generate 3d cuboids

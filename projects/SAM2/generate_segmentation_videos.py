@@ -171,7 +171,7 @@ def generate_bev_segmentation(
 
 def generate_videos_scene(args, cfg, segmentation_cfg, dataset_version, custom_cmap, scene_id):
 
-    logging.info(f"Segmented images from scene: {scene_id}")
+    logging.info(f"Creating video for scene: {scene_id}")
     scene_root_dir_path = get_scene_root_dir_path(
         args.root_path,
         dataset_version,

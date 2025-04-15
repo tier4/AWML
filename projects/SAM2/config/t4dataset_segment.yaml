@@ -84,6 +84,19 @@ projective_segmentation:
         "traffic light": 5,
         "traffic sign": 5
     }
+cuboid_segmentation:
+    invalid_value: 255
+    reset_classes: [0, 1, 2]
+    classes_map: {
+        "car": 0,
+        "truck": 0,
+        "bus": 0,
+        "trailer": 0,
+        "motorcycle": 1,
+        "bicycle": 1,
+        "pedestrian": 2,
+
+    }
 visualization:
     color_map: {
         255: [0.85, 0.85, 0.85], # invalid

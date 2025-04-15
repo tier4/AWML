@@ -366,7 +366,7 @@ def main():
             dataset_list_dict: Dict[str, List[str]] = yaml.safe_load(f)
 
         for split in ["train", "val", "test"]:
-            logging.info(f"Segmenting split: {split}", logger="current")
+            logging.info(f"Segmenting split: {split}")
 
             with concurrent.futures.ThreadPoolExecutor(max_workers=num_workers) as executor:
                 executor.map(
