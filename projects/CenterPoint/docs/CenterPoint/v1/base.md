@@ -65,7 +65,7 @@
 
 - Model
   - Training dataset: DB JPNTAXI v1.0 + DB JPNTAXI v2.0 + DB JPNTAXI v4.0 + DB GSM8 v1.0 + DB J6 v1.0 + DB J6 v2.0 + DB J6 v3.0 + DB J6 v5.0 + DB J6 Gen2 v1.0 (total frames: 49,605)
-  - [Config file path](https://github.com/tier4/AWML/blob/9eae79d9b415738078dca6982cff1bc25fe7530b/autoware_ml/configs/detection3d/dataset/t4dataset/base.py)
+  - [Config file path](https://github.com/tier4/AWML/blob/870a3f31956ebfb52b0acdbb7c63b0c5bfb4e519/autoware_ml/configs/detection3d/dataset/t4dataset/base.py)
   - Deployed onnx model and ROS parameter files [[WebAuto (for internal)]](WIP)
   - Deployed onnx and ROS parameter files [[model-zoo]]
     - [detection_class_remapper.param.yaml](https://download.autoware-ml-model-zoo.tier4.jp/autoware-ml/models/centerpoint/centerpoint/t4base/v1.5/detection_class_remapper.param.yaml)
