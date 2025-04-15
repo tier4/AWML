@@ -78,8 +78,8 @@
     - [logs.zip](https://download.autoware-ml-model-zoo.tier4.jp/autoware-ml/models/centerpoint/centerpoint/t4base/v1.5/logs.zip)
     - [checkpoint_best.pth](https://download.autoware-ml-model-zoo.tier4.jp/autoware-ml/models/centerpoint/centerpoint/t4base/v1.5/best_NuScenes+metric_T4Metric_mAP_epoch_49.pth)
     - [config.py](https://download.autoware-ml-model-zoo.tier4.jp/autoware-ml/models/centerpoint/centerpoint/t4base/v1.5/second_secfpn_4xb16_121m_base_amp.py)
-  - Train time: NVIDIA A100 80GB * 4 * 50 epochs = 3.0 days
-  - Batch size: 4*8 = 32
+  - Train time: NVIDIA A100 80GB * 4 * 50 epochs = 2 days and 14 hours
+  - Batch size: 4*16 = 64
 
 - Evaluation result with db_jpntaxi_v1 + db_jpntaxi_v2 + db_jpntaxi_v4 + db_gsm8_v1 + db_j6_v1 + db_j6_v2 + db_j6_v3 + db_j6_v5 + db_j6gen2_v1 (total frames: 3804)
   - Total mAP (eval range = 120m): 0.667
