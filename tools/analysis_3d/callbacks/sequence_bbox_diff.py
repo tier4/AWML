@@ -296,6 +296,7 @@ class SeuquenceBBoxDiffAnalysisCallback(AnalysisCallbackInterface):
         next_bbox: Detection3DBox,
         current_timstamp: int,
         next_timestamp: int,
+        timestamp_index: int,
     ) -> BBoxPair:
         """ """
         # Compute translation difference in x, y, z
@@ -335,6 +336,7 @@ class SeuquenceBBoxDiffAnalysisCallback(AnalysisCallbackInterface):
             velocity_diff=velocity_diff,
             yaw_diff=yaw_diff,
             timestamp_diff=timestamp_diff,
+            timestamp_index=timestamp_index,
         )
 
     def compute_scenario_bbox_pairs(self, scenario_data: ScenarioData) -> Dict[str, Dict[str, tuple]]:
