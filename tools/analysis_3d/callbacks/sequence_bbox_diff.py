@@ -113,8 +113,8 @@ class SeuquenceBBoxDiffAnalysisCallback(AnalysisCallbackInterface):
                 instance_row = [scene_token, instance_token, name]
                 weight = self.weights.get(category_name, self.default_weight)
                 for sample_token, bbox_pair in instance_data.items():
-                    q3 = category_perceptile.percentiles["q3"]
-                    q1 = category_perceptile.percentiles["q1"]
+                    q3 = category_perceptile.percentiles["Q3"]
+                    q1 = category_perceptile.percentiles["Q1"]
                     iqr = q3 - q1
                     dist_threshold = q3 + iqr * weight
                     value = bbox_pair.__getattribute__(attribute_name)
