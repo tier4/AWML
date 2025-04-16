@@ -94,10 +94,11 @@ class SeuquenceBBoxDiffAnalysisCallback(AnalysisCallbackInterface):
                 writer.writerow(row)
         print_log(f"Saved data plot to {csv_file_name}")
 
-    def _get_abnormal_distance_annotations(
+    def _get_abnormal_annotations(
         self,
         dataset_bbox_pairs: Dict[str, Dict[str, Dict[str, BBoxPair]]],
-        category_percentiles: Dict[str, CategoryPercentiles],
+        category_percentiles: Dict[str, Dict[str, CategoryPercentiles]],
+        attribute_name: str,
     ) -> Tuple[List[str], List[List[Any]]]:
         """ """
         columns = ["t4dataset", "instance_token", "instance_name"] + [f"frame_{i+1}" for i in range(30)]
@@ -108,14 +109,15 @@ class SeuquenceBBoxDiffAnalysisCallback(AnalysisCallbackInterface):
                 frames = [False] * 30
                 # Extract the category name from the instance name
                 category_name, instance_token, name = instance_name.split("/")
-                category_perceptile = category_percentiles[category_name]
+                category_perceptile = category_percentiles[category_name][attribute_name]
                 instance_row = [scene_token, instance_token, name]
                 weight = self.weights.get(category_name, self.default_weight)
                 for sample_token, bbox_pair in instance_data.items():
                     q3 = category_perceptile.percentiles["Q3"]
                     iqr = category_perceptile["Q3"] - category_perceptile["Q1"]
                     dist_threshold = q3 + iqr * weight
-                    if bbox_pair.distance > dist_threshold:
+                    value = bbox_pair.__getattribute__(attribute_name)
+                    if value > dist_threshold:
                         sample_frame_index = bbox_pair.timestamp_index
                         frames[sample_frame_index] = True
                         frames[sample_frame_index + 1] = True
@@ -147,19 +149,20 @@ class SeuquenceBBoxDiffAnalysisCallback(AnalysisCallbackInterface):
         dataset_name: str,
         category_bbox_pairs: Dict[str, List[BBoxPair]],
         figsize: tuple[int, int] = (16, 16),
-    ) -> Dict[str, CategoryPercentiles]:
+    ) -> Dict[str, Dict[str, CategoryPercentiles]]:
         """
         :param category_translation_diffs: {category_name: [BBoxPair]}.
         """
         ax_names = ["X", "Y", "Z", "Distance"]
         attribute_names = ["displacement_x", "displacement_y", "displacement_z", "distance"]
-        category_percentiles = defaultdict(CategoryPercentiles)
+        category_percentiles = defaultdict(lambda: defaultdict(CategoryPercentiles))
         for category_name, bbox_pairs in category_bbox_pairs.items():
             # Plot translation differences for each category and differences in translations
             fig, axes = plt.subplots(nrows=1, ncols=4, figsize=figsize)
             axes = axes.flatten()
             for index in range(4):
-                values = [abs(bbox_pair.__getattribute__(attribute_names[index])) for bbox_pair in bbox_pairs]
+                attribute_name = attribute_names[index]
+                values = [abs(bbox_pair.__getattribute__(attribute_names)) for bbox_pair in bbox_pairs]
                 ax = axes[index]
                 ax_name = ax_names[index]
                 ax.boxplot(values, vert=True, patch_artist=True)
@@ -176,12 +179,14 @@ class SeuquenceBBoxDiffAnalysisCallback(AnalysisCallbackInterface):
                 }
                 mean = np.mean(values)
                 std = np.std(values)
-                category_percentiles[category_name] = CategoryPercentiles(
-                    category_name=category_name,
-                    percentiles=percentiles,
-                    mean=mean,
-                    std=std,
-                )
+                category_percentiles[category_name] = {
+                    attribute_name: CategoryPercentiles(
+                        category_name=category_name,
+                        percentiles=percentiles,
+                        mean=mean,
+                        std=std,
+                    )
+                }
 
                 # Annotate Q1, Q3, and IQR
                 ax.annotate(
@@ -238,14 +243,15 @@ class SeuquenceBBoxDiffAnalysisCallback(AnalysisCallbackInterface):
         colors = ["blue", "orange", "green", "red", "purple", "brown", "olive", "pink"]
         ax_names = ["X", "Y", "Z", "Distance"]
         attribute_names = ["displacement_x", "displacement_y", "displacement_z", "distance"]
-        category_percentiles = defaultdict(CategoryPercentiles)
+        category_percentiles = defaultdict(lambda: defaultdict(CategoryPercentiles))
         means = defaultdict(list)
         for category_name, bbox_pairs in category_bbox_pairs.items():
             # Plot translation differences for each category and differences in translations
             fig, axes = plt.subplots(nrows=1, ncols=4, figsize=figsize)
             axes = axes.flatten()
             for index in range(4):
-                values = [abs(bbox_pair.__getattribute__(attribute_names[index])) for bbox_pair in bbox_pairs]
+                attribute_name = attribute_names[index]
+                values = [abs(bbox_pair.__getattribute__(attribute_name)) for bbox_pair in bbox_pairs]
                 ax = axes[index]
                 ax_name = ax_names[index]
 
@@ -253,12 +259,14 @@ class SeuquenceBBoxDiffAnalysisCallback(AnalysisCallbackInterface):
                 mean = np.mean(values)
                 std = np.std(values)
 
-                category_percentiles[category_name] = CategoryPercentiles(
-                    category_name=category_name,
-                    percentiles={f"P{percentile}": p_value for percentile, p_value in zip(percentiles, p_values)},
-                    mean=mean,
-                    std=std,
-                )
+                category_percentiles[category_name] = {
+                    attribute_name: CategoryPercentiles(
+                        category_name=category_name,
+                        percentiles={f"P{percentile}": p_value for percentile, p_value in zip(percentiles, p_values)},
+                        mean=mean,
+                        std=std,
+                    )
+                }
 
                 ax.hist(values, bins=self.bins, log=True)
                 for value, percentile, color in zip(p_values, percentiles, colors):
@@ -400,9 +408,10 @@ class SeuquenceBBoxDiffAnalysisCallback(AnalysisCallbackInterface):
             )
 
             # Write abnormal instances
-            column, data = self._get_abnormal_distance_annotations(
+            column, data = self._get_abnormal_annotations(
                 dataset_bbox_pairs=scene_bbox_pairs,
                 category_percentiles=category_percentiles,
+                attribute_name="distance",
             )
             self._write_abnormal_instances_to_csv(
                 file_name=f"iqr_abnormal_distance_instances_{dataset_version}.csv",
