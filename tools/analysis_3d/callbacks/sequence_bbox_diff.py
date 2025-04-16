@@ -162,7 +162,7 @@ class SeuquenceBBoxDiffAnalysisCallback(AnalysisCallbackInterface):
             axes = axes.flatten()
             for index in range(4):
                 attribute_name = attribute_names[index]
-                values = [abs(bbox_pair.__getattribute__(attribute_names)) for bbox_pair in bbox_pairs]
+                values = [abs(bbox_pair.__getattribute__(attribute_name)) for bbox_pair in bbox_pairs]
                 ax = axes[index]
                 ax_name = ax_names[index]
                 ax.boxplot(values, vert=True, patch_artist=True)
@@ -322,7 +322,6 @@ class SeuquenceBBoxDiffAnalysisCallback(AnalysisCallbackInterface):
         )
 
         yaw_diff = current_bbox.box.rotation.yaw_pitch_roll[0] - next_bbox.box.rotation.yaw_pitch_roll[0]
-        print(timestamp_diff)
         return BBoxPair(
             instance_name=current_bbox.instance_name,
             instance_token=current_bbox.box.uuid,
