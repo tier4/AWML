@@ -119,9 +119,8 @@ class SeuquenceBBoxDiffAnalysisCallback(AnalysisCallbackInterface):
                     dist_threshold = q3 + iqr * weight
                     value = bbox_pair.__getattribute__(attribute_name)
                     if value > dist_threshold:
-                        sample_frame_index = bbox_pair.timestamp_index
-                        frames[sample_frame_index] = True
-                        frames[sample_frame_index + 1] = True
+                        frames[bbox_pair.timestamp_index] = True
+                        frames[bbox_pair.timestamp_index + 1] = True
 
                 if any(frames):
                     instance_row += frames
