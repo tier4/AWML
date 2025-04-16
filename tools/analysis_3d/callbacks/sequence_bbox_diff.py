@@ -321,6 +321,7 @@ class SeuquenceBBoxDiffAnalysisCallback(AnalysisCallbackInterface):
         )
 
         yaw_diff = current_bbox.box.rotation.yaw_pitch_roll[0] - next_bbox.box.rotation.yaw_pitch_roll[0]
+        print(timestamp_diff)
         return BBoxPair(
             instance_name=current_bbox.instance_name,
             instance_token=current_bbox.box.uuid,
