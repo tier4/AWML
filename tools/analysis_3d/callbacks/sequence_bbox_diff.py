@@ -113,8 +113,9 @@ class SeuquenceBBoxDiffAnalysisCallback(AnalysisCallbackInterface):
                 instance_row = [scene_token, instance_token, name]
                 weight = self.weights.get(category_name, self.default_weight)
                 for sample_token, bbox_pair in instance_data.items():
-                    q3 = category_perceptile.percentiles["Q3"]
-                    iqr = category_perceptile["Q3"] - category_perceptile["Q1"]
+                    q3 = category_perceptile.percentiles["q3"]
+                    q1 = category_perceptile.percentiles["q1"]
+                    iqr = q3 - q1
                     dist_threshold = q3 + iqr * weight
                     value = bbox_pair.__getattribute__(attribute_name)
                     if value > dist_threshold:
@@ -321,11 +322,18 @@ class SeuquenceBBoxDiffAnalysisCallback(AnalysisCallbackInterface):
             else np.nan
         )
 
+        if self.remapping_classes is not None:
+            category_name = self.remapping_classes.get(
+                current_bbox.box.semantic_label.name, current_bbox.box.semantic_label.name
+            )
+        else:
+            category_name - current_bbox.box.semantic_label.name
+
         yaw_diff = current_bbox.box.rotation.yaw_pitch_roll[0] - next_bbox.box.rotation.yaw_pitch_roll[0]
         return BBoxPair(
             instance_name=current_bbox.instance_name,
             instance_token=current_bbox.box.uuid,
-            category_name=current_bbox.box.semantic_label.name,
+            category_name=category_name,
             sample_token=sample_token,
             displacement_x=displacement[0],
             displacement_y=displacement[1],
