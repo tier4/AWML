@@ -390,5 +390,5 @@ default_hooks = dict(
 custom_hooks = [
     dict(type="MomentumInfoHook"),
 ]
-
-load_from = "work_dirs/centerpoint/" + _base_.dataset_type + "/centerpoint_1_0/epoch_47.pth"
+resume = True
+# load_from = "work_dirs/centerpoint/" + _base_.dataset_type + "/centerpoint_1_0/epoch_47.pth"
