@@ -312,7 +312,7 @@ class SeuquenceBBoxDiffAnalysisCallback(AnalysisCallbackInterface):
         angle_deg = np.degrees(angle_rad)
 
         # Convert to seconds
-        timestamp_diff = abs(current_timstamp - next_timestamp) / 1e6
+        timestamp_diff = (abs(current_timstamp - next_timestamp)) / 1e6
 
         velocity_diff = (
             current_bbox.box.velocity - next_bbox.box.velocity
@@ -351,6 +351,9 @@ class SeuquenceBBoxDiffAnalysisCallback(AnalysisCallbackInterface):
             for sample in sample_data
         }
 
+        # {sample_token: timestamp}
+        sample_timestamps: Dict[str, int] = {sample.sample_token: sample.timestamp for sample in sample_data}
+
         for index, sample in enumerate(sample_data):
             sample_token = sample.sample_token
             if sample.next_sample_token is None:
@@ -363,7 +366,7 @@ class SeuquenceBBoxDiffAnalysisCallback(AnalysisCallbackInterface):
                     box_category_name = self.remapping_classes.get(box_category_name, box_category_name)
 
                 # Get the next instance
-                next_sample: Optional[Sample] = sample_instance_box.get(sample.next_sample_token, None)
+                next_sample: Dict[str, Detection3DBox] = sample_instance_box.get(sample.next_sample_token, None)
                 if next_sample is None:
                     continue
 
@@ -372,12 +375,13 @@ class SeuquenceBBoxDiffAnalysisCallback(AnalysisCallbackInterface):
                     continue
 
                 instance_name = f"{box_category_name}/{detection_3d_box.box.uuid}/{detection_3d_box.instance_name}"
+                next_sample_timestamp = sample_timestamps.get(sample.next_sample_token, np.nan)
                 bbox_pairs[instance_name][sample_token] = self._get_bbox_pair(
                     sample_token=sample_token,
                     current_bbox=detection_3d_box,
                     next_bbox=next_instance_box,
                     current_timstamp=sample.timestamp,
-                    next_timestamp=next_sample.timestamp,
+                    next_timestamp=next_sample_timestamp,
                     timestamp_index=index,
                 )
 
