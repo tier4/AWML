@@ -1,13 +1,15 @@
 import csv
 from collections import defaultdict
+from dataclasses import dataclass
 from pathlib import Path
-from typing import Dict, List, Optional
+from typing import Any, Dict, List, Optional, Tuple
 
 import matplotlib.pyplot as plt
 import numpy as np
 import numpy.typing as npt
 from matplotlib.ticker import MaxNLocator
 from mmengine.logging import print_log
+from t4_devkit.schema.tables.sample import Sample
 
 from tools.analysis_3d.callbacks.callback_interface import AnalysisCallbackInterface
 from tools.analysis_3d.data_classes import (
@@ -19,6 +21,34 @@ from tools.analysis_3d.data_classes import (
     ScenarioData,
 )
 from tools.analysis_3d.split_options import SplitOptions
+
+
+@dataclass(frozen=True)
+class CategoryPercentiles:
+    """Class to save percentiles of a category."""
+
+    category_name: str
+    percentiles: Dict[str, float]
+    mean: float
+    std: float
+
+
+@dataclass(frozen=True)
+class BBoxPair:
+
+    instance_name: str
+    instance_token: str
+    sample_token: str
+    category_name: str
+    displacement_x: float
+    displacement_y: float
+    displacement_z: float
+    distance: float
+    timestamp_diff: float
+    yaw_diff: float
+    velocity_diff: float
+    angle: float  # in degree
+    timestamp_index: int
 
 
 class TranslationDiffAnalysisCallback(AnalysisCallbackInterface):
@@ -44,153 +74,114 @@ class TranslationDiffAnalysisCallback(AnalysisCallbackInterface):
         self.full_output_path = self.out_path / self.analysis_dir
         self.full_output_path.mkdir(exist_ok=True, parents=True)
 
-        self.analysis_file_name = "translation_diff_{}_{}.png"
-        self.analysis_bin_file_name = "translation_diff_bin_{}_{}.png"
+        self.analysis_file_name = "distance_{}_{}.png"
+        self.analysis_bin_file_name = "distance_hist_{}_{}.png"
         self.y_axis_label = "Frequency"
         self.x_axis_label = "Difference between two frames"
         self.legend_loc = "upper right"
         self.bins = bins
         self.remapping_classes = remapping_classes
+        self.weights = {"car": 8.0, "pedestrian": 5.0}
+        self.default_weight = 3.0
 
-    def compute_mapping_sample_to_frame_index(self, scenario_data: ScenarioData) -> Dict[str, Dict[str, tuple]]:
-        """Compute translation difference between two frames."""
-        # {sample_token: index}}
-        sample_data = sorted(scenario_data.sample_data.values(), key=lambda x: x.timestamp)
-        return {sample.sample_token: index for index, sample in enumerate(sample_data)}
+    def _write_abnormal_instances_to_csv(self, file_name: str, columns: List[str], data: List[Any]) -> None:
+        """Write abnormal instances to CSV."""
+        csv_file_name = self.full_output_path / file_name
+        with open(csv_file_name, "w", newline="") as csvfile:
+            writer = csv.writer(csvfile)
+            writer.writerow(columns)
+            for row in data:
+                writer.writerow(row)
+        print_log(f"Saved data plot to {csv_file_name}")
 
-    def _write_abnormal_instances_menas(
+    def _get_abnormal_distance_annotations(
         self,
-        dataset_translation_diffs: Dict[str, Dict[str, Dict[str, List[tuple]]]],
-        means: Dict[str, List[tuple]],
-        sample_to_frame_mapping: Dict[str, Dict[str, int]],
-    ) -> None:
+        dataset_bbox_pairs: Dict[str, Dict[str, Dict[str, BBoxPair]]],
+        category_percentiles: Dict[str, CategoryPercentiles],
+    ) -> Tuple[List[str], List[List[Any]]]:
         """ """
-        # Move to scene_token: instance: sample: translation_diff
-        dataset_instance_sample_diffs = defaultdict(lambda: defaultdict(lambda: defaultdict(list)))
-        for scene_token, scene_data in dataset_translation_diffs.items():
-            for sample_token, sample_data in scene_data.items():
-                for instance_name, translation_diffs in sample_data.items():
-                    dataset_instance_sample_diffs[scene_token][instance_name][sample_token] = translation_diffs
-
         columns = ["t4dataset", "instance_token", "instance_name"] + [f"frame_{i+1}" for i in range(30)]
         data = []
         # Gather translation differences for each instance
-        for scene_token, scene_data in dataset_instance_sample_diffs.items():
+        for scene_token, scene_data in dataset_bbox_pairs.items():
             for instance_name, instance_data in scene_data.items():
                 frames = [False] * 30
                 # Extract the category name from the instance name
                 category_name, instance_token, name = instance_name.split("/")
-                category_thresholds = means[category_name]
+                category_perceptile = category_percentiles[category_name]
                 instance_row = [scene_token, instance_token, name]
-                for sample_token, translation_diff in instance_data.items():
-                    sample_frame_index = sample_to_frame_mapping[scene_token][sample_token]
-                    dist_threshold = category_thresholds[3][0] + category_thresholds[3][1] * 2.5
-                    if translation_diff[-1] > dist_threshold:
+                weight = self.weights.get(category_name, self.default_weight)
+                for sample_token, bbox_pair in instance_data.items():
+                    q3 = category_perceptile.percentiles["Q3"]
+                    iqr = category_perceptile["Q3"] - category_perceptile["Q1"]
+                    dist_threshold = q3 + iqr * weight
+                    if bbox_pair.distance > dist_threshold:
+                        sample_frame_index = bbox_pair.timestamp_index
                         frames[sample_frame_index] = True
                         frames[sample_frame_index + 1] = True
 
                 if any(frames):
                     instance_row += frames
                     data.append(instance_row)
-        # Write to CSV
-        csv_file_name = self.full_output_path / "translation_diff_abnormal_instances_means.csv"
-        with open(csv_file_name, "w", newline="") as csvfile:
-            writer = csv.writer(csvfile)
-            writer.writerow(columns)
-            for row in data:
-                writer.writerow(row)
-        print_log(f"Saved translation diff plot to {csv_file_name}")
 
-    def _write_abnormal_instances(
-        self,
-        dataset_translation_diffs: Dict[str, Dict[str, Dict[str, List[tuple]]]],
-        iqrs: Dict[str, List[tuple[float]]],
-        sample_to_frame_mapping: Dict[str, Dict[str, int]],
-    ) -> None:
-        """ """
-        # Move to scene_token: instance: sample: translation_diff
-        dataset_instance_sample_diffs = defaultdict(lambda: defaultdict(lambda: defaultdict(list)))
-        for scene_token, scene_data in dataset_translation_diffs.items():
-            for sample_token, sample_data in scene_data.items():
-                for instance_name, translation_diffs in sample_data.items():
-                    dataset_instance_sample_diffs[scene_token][instance_name][sample_token] = translation_diffs
+        return columns, data
 
-        columns = ["t4dataset", "instance_token", "instance_name"] + [f"frame_{i+1}" for i in range(30)]
-        data = []
-        # Gather translation differences for each instance
-        for scene_token, scene_data in dataset_instance_sample_diffs.items():
-            for instance_name, instance_data in scene_data.items():
-                frames = [False] * 30
-                # Extract the category name from the instance name
-                category_name, instance_token, name = instance_name.split("/")
-                category_thresholds = iqrs[category_name]
-                instance_row = [scene_token, instance_token, name]
-                for sample_token, translation_diff in instance_data.items():
-                    dist_threshold = category_thresholds[3][0] + category_thresholds[3][1] * 2.5
-                    sample_frame_index = sample_to_frame_mapping[scene_token][sample_token]
-                    if translation_diff[-1] > dist_threshold:
-                        frames[sample_frame_index] = True
-                        frames[sample_frame_index + 1] = True
-
-                if any(frames):
-                    instance_row += frames
-                    data.append(instance_row)
-        # Write to CSV
-        csv_file_name = self.full_output_path / "translation_diff_abnormal_instances.csv"
-        with open(csv_file_name, "w", newline="") as csvfile:
-            writer = csv.writer(csvfile)
-            writer.writerow(columns)
-            for row in data:
-                writer.writerow(row)
-        print_log(f"Saved translation diff plot to {csv_file_name}")
-
-    def gather_dataset_category_translation_diff(
-        self, dataset_translation_diffs: Dict[str, Dict[str, Dict[str, tuple]]]
+    def get_category_bbox_pairs(
+        self, dataset_bbox_pairs: Dict[str, Dict[str, Dict[str, BBoxPair]]]
     ) -> Dict[str, List[tuple]]:
         """
-        :param dataset_translation_diffs: {scene: {sample: {instance_name: translation_diff}}}.
+        :param dataset_bbox_pairs: {scene: {instance_name: {sample_token: BboxPair}}}.
         :return: {category_name: [translation_diff]}.
         """
-        category_translation_diffs = defaultdict(list)
+        category_bbox_pairs = defaultdict(list)
         # Gather translation differences for each instance
-        for scene_token, scene_data in dataset_translation_diffs.items():
-            for sample_token, sample_data in scene_data.items():
-                for instance_name, translation_diffs in sample_data.items():
-                    # Extract the category name from the instance name
-                    category_name = instance_name.split("/")[0]
-                    category_translation_diffs[category_name].append(translation_diffs)
+        for scene_token, scene_data in dataset_bbox_pairs.items():
+            for instance_name, sample_data in scene_data.items():
+                for sample_token, bbox_pair in sample_data.items():
+                    category_bbox_pairs[bbox_pair.category_name].append(bbox_pair)
 
-        return category_translation_diffs
+        return category_bbox_pairs
 
-    def plot_dataset_translation_diff(
+    def plot_dataset_distance_boxplot(
         self,
         dataset_name: str,
-        category_translation_diffs: Dict[str, List[tuple]],
+        category_bbox_pairs: Dict[str, List[BBoxPair]],
         figsize: tuple[int, int] = (16, 16),
-    ) -> Dict[str, List[tuple[float]]]:
+    ) -> Dict[str, CategoryPercentiles]:
         """
-        :param category_translation_diffs: {category_name: [translation_diff]}.
+        :param category_translation_diffs: {category_name: [BBoxPair]}.
         """
-        translation_names = ["X", "Y", "Z", "Dist"]
-        iqrs = defaultdict(list)
-        for category_name, translation_diffs in category_translation_diffs.items():
+        ax_names = ["X", "Y", "Z", "Distance"]
+        attribute_names = ["displacement_x", "displacement_y", "displacement_z", "distance"]
+        category_percentiles = defaultdict(CategoryPercentiles)
+        for category_name, bbox_pairs in category_bbox_pairs.items():
             # Plot translation differences for each category and differences in translations
             fig, axes = plt.subplots(nrows=1, ncols=4, figsize=figsize)
             axes = axes.flatten()
             for index in range(4):
-                translation_diff = [diff[index] for diff in translation_diffs]
+                values = [abs(bbox_pair.__getattribute__(attribute_names[index])) for bbox_pair in bbox_pairs]
                 ax = axes[index]
-                translation_name = translation_names[index]
-                ax.boxplot(translation_diff, vert=True, patch_artist=True)
+                ax_name = ax_names[index]
+                ax.boxplot(values, vert=True, patch_artist=True)
 
                 # Compute quartiles and IQR
-                q1 = np.percentile(translation_diff, 25)
-                q3 = np.percentile(translation_diff, 75)
-                median = np.percentile(translation_diff, 50)
+                q1 = np.percentile(values, 25)
+                q3 = np.percentile(values, 75)
+                median = np.percentile(values, 50)
                 iqr = q3 - q1
-                iqrs[category_name].append((q3, iqr))
-                mean = np.mean(translation_diff)
-                std = np.std(translation_diff)
+                percentiles = {
+                    "Q1": q1,
+                    "Q3": q3,
+                    "Median": median,
+                }
+                mean = np.mean(values)
+                std = np.std(values)
+                category_percentiles[category_name] = CategoryPercentiles(
+                    category_name=category_name,
+                    percentiles=percentiles,
+                    mean=mean,
+                    std=std,
+                )
 
                 # Annotate Q1, Q3, and IQR
                 ax.annotate(
@@ -220,9 +211,9 @@ class TranslationDiffAnalysisCallback(AnalysisCallbackInterface):
                 ax.axhline(
                     mean, color="red", linestyle="--", linewidth=1.5, label=f"Mean = {mean:.2f}, std = {std:.2f}"
                 )
-                ax.set_ylabel("Difference")
+                ax.set_ylabel("Distance")
                 ax.set_xticks([1])
-                ax.set_xticklabels([translation_name])
+                ax.set_xticklabels([ax_name])
                 ax.legend()
 
             # Save the plot
@@ -230,38 +221,46 @@ class TranslationDiffAnalysisCallback(AnalysisCallbackInterface):
             fig.suptitle(category_name)
             plt.tight_layout()
             plt.savefig(plot_file_name)
-            print_log(f"Saved translation diff plot to {plot_file_name}")
+            print_log(f"Saved displacement plot to {plot_file_name}")
             plt.close()
-        return iqrs
+        return category_percentiles
 
-    def plot_dataset_translation_diff_hist(
+    def plot_dataset_distance_hist(
         self,
         dataset_name: str,
-        category_translation_diffs: Dict[str, List[tuple]],
+        category_bbox_pairs: Dict[str, List[BBoxPair]],
         figsize: tuple[int, int] = (16, 16),
-    ) -> Dict[str, List[tuple]]:
+    ) -> Dict[str, CategoryPercentiles]:
         """
         :param category_translation_diffs: {category_name: [translation_diff]}.
         """
         percentiles = [0, 25, 50, 75, 95, 98, 99, 100]
         colors = ["blue", "orange", "green", "red", "purple", "brown", "olive", "pink"]
-        translation_names = ["X", "Y", "Z", "Dist"]
+        ax_names = ["X", "Y", "Z", "Distance"]
+        attribute_names = ["displacement_x", "displacement_y", "displacement_z", "distance"]
+        category_percentiles = defaultdict(CategoryPercentiles)
         means = defaultdict(list)
-        for category_name, translation_diffs in category_translation_diffs.items():
+        for category_name, bbox_pairs in category_bbox_pairs.items():
             # Plot translation differences for each category and differences in translations
             fig, axes = plt.subplots(nrows=1, ncols=4, figsize=figsize)
             axes = axes.flatten()
             for index in range(4):
-                translation_diff = [diff[index] for diff in translation_diffs]
+                values = [abs(bbox_pair.__getattribute__(attribute_names[index])) for bbox_pair in bbox_pairs]
                 ax = axes[index]
-                translation_name = translation_names[index]
+                ax_name = ax_names[index]
 
-                p_values = np.percentile(translation_diff, percentiles)
-                mean = np.mean(translation_diff)
-                std = np.std(translation_diff)
-                means[category_name].append((mean, std))
+                p_values = np.percentile(values, percentiles)
+                mean = np.mean(values)
+                std = np.std(values)
 
-                ax.hist(translation_diff, bins=self.bins, log=True)
+                category_percentiles[category_name] = CategoryPercentiles(
+                    category_name=category_name,
+                    percentiles={f"P{percentile}": p_value for percentile, p_value in zip(percentiles, p_values)},
+                    mean=mean,
+                    std=std,
+                )
+
+                ax.hist(values, bins=self.bins, log=True)
                 for value, percentile, color in zip(p_values, percentiles, colors):
                     ax.axvline(value, color=color, linestyle="dashed", linewidth=2, label=f"P{percentile}:{value:.2f}")
 
@@ -269,11 +268,9 @@ class TranslationDiffAnalysisCallback(AnalysisCallbackInterface):
                     mean, color="black", linestyle="dashed", linewidth=2, label=f"mean:{mean:.2f} (std:{std:.2f})"
                 )
                 ax.set_ylabel("Frequency")
-                ax.set_xlabel("Differences")
-                ax.set_title(translation_name)
+                ax.set_xlabel("Distance")
+                ax.set_title(ax_name)
                 ax.legend(loc=self.legend_loc)
-                # ax.xaxis.set_major_locator(MaxNLocator(integer=True))
-                # ax.yaxis.set_major_locator(MaxNLocator(integer=True))
 
             # Save the plot
             plot_file_name = self.full_output_path / self.analysis_bin_file_name.format(category_name, dataset_name)
@@ -284,10 +281,57 @@ class TranslationDiffAnalysisCallback(AnalysisCallbackInterface):
             plt.close()
         return means
 
-    def compute_sceneario_trans_diff(self, scenario_data: ScenarioData) -> Dict[str, Dict[str, tuple]]:
-        """Compute translation difference between two frames."""
-        # sample_token: instance_name: []
-        instance_trans_diffs: Dict[str, Dict[str, tuple]] = defaultdict(lambda: defaultdict(tuple))
+    def _get_bbox_pair(
+        self,
+        sample_token: str,
+        current_bbox: Detection3DBox,
+        next_bbox: Detection3DBox,
+        current_timstamp: int,
+        next_timestamp: int,
+    ) -> BBoxPair:
+        """ """
+        # Compute translation difference in x, y, z
+        current_bbox_position = current_bbox.box.position
+        next_bbox_position = next_bbox.box.position
+
+        displacement = current_bbox_position - next_bbox_position
+        dist = np.linalg.norm(current_bbox_position - next_bbox_position)
+
+        dot = np.dot(current_bbox_position, next_bbox_position)
+        norms = np.linalg.norm(current_bbox_position) * np.linalg.norm(next_bbox_position)
+
+        angle_rad = np.arccos(np.clip(dot / norms, -1.0, 1.0))
+        angle_deg = np.degrees(angle_rad)
+
+        # Convert to seconds
+        timestamp_diff = abs(current_timstamp - next_timestamp) / 1e6
+
+        velocity_diff = (
+            current_bbox.box.velocity - next_bbox.box.velocity
+            if current_bbox.box.velocity is not None or next_bbox.box.velocity
+            else np.nan
+        )
+
+        yaw_diff = current_bbox.box.rotation.yaw_pitch_roll[0] - next_bbox.box.rotation.yaw_pitch_roll[0]
+        return BBoxPair(
+            instance_name=current_bbox.instance_name,
+            instance_token=current_bbox.box.uuid,
+            category_name=current_bbox.box.semantic_label.name,
+            sample_token=sample_token,
+            displacement_x=displacement[0],
+            displacement_y=displacement[1],
+            displacement_z=displacement[2],
+            distance=dist,
+            angle=angle_deg,
+            velocity_diff=velocity_diff,
+            yaw_diff=yaw_diff,
+            timestamp_diff=timestamp_diff,
+        )
+
+    def compute_scenario_bbox_pairs(self, scenario_data: ScenarioData) -> Dict[str, Dict[str, tuple]]:
+        """Compute difference of pair of bbox between two frames."""
+        # instance_name: sample_token: []
+        bbox_pairs: Dict[str, Dict[str, tuple]] = defaultdict(lambda: defaultdict(BBoxPair))
 
         sample_data = sorted(scenario_data.sample_data.values(), key=lambda x: x.timestamp)
 
@@ -299,7 +343,7 @@ class TranslationDiffAnalysisCallback(AnalysisCallbackInterface):
             for sample in sample_data
         }
 
-        for sample in sample_data:
+        for index, sample in enumerate(sample_data):
             sample_token = sample.sample_token
             if sample.next_sample_token is None:
                 continue
@@ -311,7 +355,7 @@ class TranslationDiffAnalysisCallback(AnalysisCallbackInterface):
                     box_category_name = self.remapping_classes.get(box_category_name, box_category_name)
 
                 # Get the next instance
-                next_sample = sample_instance_box.get(sample.next_sample_token, None)
+                next_sample: Optional[Sample] = sample_instance_box.get(sample.next_sample_token, None)
                 if next_sample is None:
                     continue
 
@@ -320,15 +364,16 @@ class TranslationDiffAnalysisCallback(AnalysisCallbackInterface):
                     continue
 
                 instance_name = f"{box_category_name}/{detection_3d_box.box.uuid}/{detection_3d_box.instance_name}"
-                # Compute translation difference in x, y, z
-                current_x, current_y, current_z = detection_3d_box.box.position
-                next_x, next_y, next_z = next_instance_box.box.position
-                dist = np.sqrt((current_x - next_x) ** 2 + (current_y - next_y) ** 2 + (current_z - next_z) ** 2)
-                translation_diff = (abs(current_x - next_x), abs(current_y - next_y), abs(current_z - next_z), dist)
+                bbox_pairs[instance_name][sample_token] = self._get_bbox_pair(
+                    sample_token=sample_token,
+                    current_bbox=detection_3d_box,
+                    next_bbox=next_instance_box,
+                    current_timstamp=sample.timestamp,
+                    next_timestamp=next_sample.timestamp,
+                    timestamp_index=index,
+                )
 
-                instance_trans_diffs[sample_token][instance_name] = translation_diff
-
-        return instance_trans_diffs
+        return bbox_pairs
 
     def run(self, dataset_split_analysis_data: Dict[DatasetSplitName, AnalysisData]) -> None:
         """Inherited, check the superclass."""
@@ -339,40 +384,30 @@ class TranslationDiffAnalysisCallback(AnalysisCallbackInterface):
             dataset_analysis_data[dataset_split_name.dataset_version].append(analysis_data)
 
         for dataset_name, analysis_data in dataset_analysis_data.items():
-            scene_trans_diff = defaultdict(lambda: defaultdict(lambda: defaultdict(tuple)))
-            sccene_sampling_to_timestamp_mapping = defaultdict(lambda: defaultdict(int))
+            scene_bbox_pairs = defaultdict(lambda: defaultdict(lambda: defaultdict(BBoxPair)))
             for analysis in analysis_data:
                 # scene: sample: instance
                 for scene_token, scenario_data in analysis.scenario_data.items():
-                    trans_diff = self.compute_sceneario_trans_diff(
+                    bbox_pairs = self.compute_scenario_bbox_pairs(
                         scenario_data=scenario_data,
                     )
-                    scene_trans_diff[scene_token] = trans_diff
-                    # Compute mapping sample to frame index
-                    mapping_sample_to_frame_index = self.compute_mapping_sample_to_frame_index(
-                        scenario_data=scenario_data
-                    )
-                    sccene_sampling_to_timestamp_mapping[scene_token] = mapping_sample_to_frame_index
+                    scene_bbox_pairs[scene_token] = bbox_pairs
 
-            category_translation_diffs = self.gather_dataset_category_translation_diff(scene_trans_diff)
+            category_bbox_pairs = self.get_category_bbox_pairs(scene_bbox_pairs)
             dataset_version = dataset_split_name.dataset_version
-            iqrs = self.plot_dataset_translation_diff(
-                dataset_name=dataset_version,
-                category_translation_diffs=category_translation_diffs,
+            category_percentiles = self.plot_dataset_distance_boxplot(
+                dataset_name=dataset_version, category_bbox_pairs=category_bbox_pairs
             )
+
             # Write abnormal instances
-            self._write_abnormal_instances(
-                dataset_translation_diffs=scene_trans_diff,
-                iqrs=iqrs,
-                sample_to_frame_mapping=sccene_sampling_to_timestamp_mapping,
+            column, data = self._get_abnormal_distance_annotations(
+                dataset_bbox_pairs=scene_bbox_pairs,
+                category_percentiles=category_percentiles,
             )
-            means = self.plot_dataset_translation_diff_hist(
-                dataset_name=dataset_version,
-                category_translation_diffs=category_translation_diffs,
+            self._write_abnormal_instances_to_csv(
+                file_name=f"iqr_abnormal_distance_instances_{dataset_version}.csv",
+                columns=column,
+                data=data,
             )
-            self._write_abnormal_instances_menas(
-                dataset_translation_diffs=scene_trans_diff,
-                means=means,
-                sample_to_frame_mapping=sccene_sampling_to_timestamp_mapping,
-            )
+            _ = self.plot_dataset_distance_hist(dataset_name=dataset_version, category_bbox_pairs=category_bbox_pairs)
         print_log(f"Done running {self.__class__.__name__}")
