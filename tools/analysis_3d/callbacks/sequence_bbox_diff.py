@@ -51,7 +51,7 @@ class BBoxPair:
     timestamp_index: int
 
 
-class TranslationDiffAnalysisCallback(AnalysisCallbackInterface):
+class SeuquenceBBoxDiffAnalysisCallback(AnalysisCallbackInterface):
     """Compute diffs of translations for every consecutive frame."""
 
     def __init__(

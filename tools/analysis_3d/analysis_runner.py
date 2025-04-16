@@ -10,7 +10,7 @@ from t4_devkit import Tier4
 from tools.analysis_3d.callbacks.callback_interface import AnalysisCallbackInterface
 from tools.analysis_3d.callbacks.category import CategoryAnalysisCallback
 from tools.analysis_3d.callbacks.category_attribute import CategoryAttributeAnalysisCallback
-from tools.analysis_3d.callbacks.translation_diff import TranslationDiffAnalysisCallback
+from tools.analysis_3d.callbacks.sequence_bbox_diff import SeuquenceBBoxDiffAnalysisCallback
 from tools.analysis_3d.callbacks.voxel_num import VoxelNumAnalysisCallback
 from tools.analysis_3d.data_classes import (
     AnalysisData,
@@ -93,7 +93,7 @@ class AnalysisRunner:
             #     analysis_dir="remapping_bicycle_attr",
             #     remapping_classes=self.remapping_classes,
             # ),
-            TranslationDiffAnalysisCallback(
+            SeuquenceBBoxDiffAnalysisCallback(
                 out_path=self.out_path,
                 remapping_classes=self.remapping_classes,
                 analysis_dir="translation_diff",
