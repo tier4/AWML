@@ -51,6 +51,65 @@ class BBoxPair:
     timestamp_index: int
 
 
+@dataclass(frozen=True)
+class TrackBBoxPair:
+
+    bbox_pairs: List[BBoxPair]
+    category_name: str
+    instance_name: str
+    instance_token: str
+    sample_token: str
+    sample_timestamps: List[int]
+
+    def add(self, bbox_pair: BBoxPair, sample_timestamp: int) -> None:
+        """Add bbox pair to the list."""
+        self.bbox_pairs.append(bbox_pair)
+        self.sample_timestamps.append(sample_timestamp)
+
+    def __len__(self) -> int:
+        return len(self.bbox_pairs)
+
+    def compute_percentiles(self) -> Dict[str, Dict[str, CategoryPercentiles]]:
+        """ """
+        attribute_names = [
+            "displacement_x",
+            "displacement_y",
+            "displacement_z",
+            "distance",
+        ]
+        category_percentiles = defaultdict(lambda: defaultdict(CategoryPercentiles))
+
+        for attribute_name in attribute_names:
+            # Get the values for the current attribute
+            values = [abs(bbox_pair.__getattribute__(attribute_name)) for bbox_pair in self.bbox_pairs]
+            # Compute quartiles and IQR
+            q1 = np.percentile(values, 25)
+            q3 = np.percentile(values, 75)
+            median = np.percentile(values, 50)
+            percentiles = {
+                "Q1": q1,
+                "Q3": q3,
+                "Median": median,
+            }
+            mean = np.mean(values)
+            std = np.std(values)
+            category_percentiles[self.category_name][attribute_name] = CategoryPercentiles(
+                category_name=self.category_name,
+                percentiles=percentiles,
+                mean=mean,
+                std=std,
+            )
+        # Compute quartiles and IQR
+        q1 = np.percentile(self.bbox_pairs, 25)
+        q3 = np.percentile(self.bbox_pairs, 75)
+        median = np.percentile(self.bbox_pairs, 50)
+        percentiles = {
+            "Q1": q1,
+            "Q3": q3,
+            "Median": median,
+        }
+
+
 class SeuquenceBBoxDiffAnalysisCallback(AnalysisCallbackInterface):
     """Compute diffs of translations for every consecutive frame."""
 
@@ -58,6 +117,7 @@ class SeuquenceBBoxDiffAnalysisCallback(AnalysisCallbackInterface):
         self,
         data_root_path: Path,
         out_path: Path,
+        minimum_bbox: int = 8,
         bins: int = 100,
         remapping_classes: Optional[Dict[str, str]] = None,
         analysis_dir: str = "translation_diffs",
@@ -83,6 +143,7 @@ class SeuquenceBBoxDiffAnalysisCallback(AnalysisCallbackInterface):
         self.remapping_classes = remapping_classes
         self.weights = {"car": 8.0, "pedestrian": 5.0}
         self.default_weight = 3.0
+        self.minimum_bbox = minimum_bbox
 
     def _write_abnormal_instances_to_csv(self, file_name: str, columns: List[str], data: List[Any]) -> None:
         """Write abnormal instances to CSV."""
@@ -96,7 +157,7 @@ class SeuquenceBBoxDiffAnalysisCallback(AnalysisCallbackInterface):
 
     def _get_abnormal_annotations(
         self,
-        dataset_bbox_pairs: Dict[str, Dict[str, Dict[str, BBoxPair]]],
+        dataset_bbox_pairs: Dict[str, Dict[str, TrackBBoxPair]],
         category_percentiles: Dict[str, Dict[str, CategoryPercentiles]],
         attribute_name: str,
     ) -> Tuple[List[str], List[List[Any]]]:
@@ -105,18 +166,24 @@ class SeuquenceBBoxDiffAnalysisCallback(AnalysisCallbackInterface):
         data = []
         # Gather translation differences for each instance
         for scene_token, scene_data in dataset_bbox_pairs.items():
-            for instance_name, instance_data in scene_data.items():
+            for instance_name, track_bbox_pair in scene_data.items():
                 frames = [False] * 30
                 # Extract the category name from the instance name
                 category_name, instance_token, name = instance_name.split("/")
-                category_perceptile = category_percentiles[category_name][attribute_name]
+                selected_category_percentiles = (
+                    track_bbox_pair.compute_percentiles()
+                    if len(track_bbox_pair) >= self.minimum_bbox
+                    else category_percentiles
+                )
+                category_percentiles_thresholds = selected_category_percentiles[category_name][attribute_name]
                 instance_row = [scene_token, instance_token, name]
                 weight = self.weights.get(category_name, self.default_weight)
-                for sample_token, bbox_pair in instance_data.items():
-                    q3 = category_perceptile.percentiles["Q3"]
-                    q1 = category_perceptile.percentiles["Q1"]
-                    iqr = q3 - q1
-                    dist_threshold = q3 + iqr * weight
+
+                q3 = category_percentiles_thresholds.percentiles["Q3"]
+                q1 = category_percentiles_thresholds.percentiles["Q1"]
+                iqr = q3 - q1
+                dist_threshold = q3 + iqr * weight
+                for bbox_pair in track_bbox_pair.bbox_pairs:
                     value = bbox_pair.__getattribute__(attribute_name)
                     if value > dist_threshold:
                         frames[bbox_pair.timestamp_index] = True
@@ -129,17 +196,17 @@ class SeuquenceBBoxDiffAnalysisCallback(AnalysisCallbackInterface):
         return columns, data
 
     def get_category_bbox_pairs(
-        self, dataset_bbox_pairs: Dict[str, Dict[str, Dict[str, BBoxPair]]]
+        self, dataset_bbox_pairs: Dict[str, Dict[str, TrackBBoxPair]]
     ) -> Dict[str, List[tuple]]:
         """
-        :param dataset_bbox_pairs: {scene: {instance_name: {sample_token: BboxPair}}}.
+        :param dataset_bbox_pairs: {scene: {instance_name: TrackBBoxPair}}.
         :return: {category_name: [translation_diff]}.
         """
         category_bbox_pairs = defaultdict(list)
         # Gather translation differences for each instance
         for scene_token, scene_data in dataset_bbox_pairs.items():
-            for instance_name, sample_data in scene_data.items():
-                for sample_token, bbox_pair in sample_data.items():
+            for instance_name, track_bbox_pair in scene_data.items():
+                for bbox_pair in track_bbox_pair.bbox_pairs:
                     category_bbox_pairs[bbox_pair.category_name].append(bbox_pair)
 
         return category_bbox_pairs
@@ -345,10 +412,10 @@ class SeuquenceBBoxDiffAnalysisCallback(AnalysisCallbackInterface):
             timestamp_index=timestamp_index,
         )
 
-    def compute_scenario_bbox_pairs(self, scenario_data: ScenarioData) -> Dict[str, Dict[str, tuple]]:
+    def compute_scenario_bbox_pairs(self, scenario_data: ScenarioData) -> Dict[str, TrackBBoxPair]:
         """Compute difference of pair of bbox between two frames."""
-        # instance_name: sample_token: []
-        bbox_pairs: Dict[str, Dict[str, tuple]] = defaultdict(lambda: defaultdict(BBoxPair))
+        # instance_name: []
+        track_bbox_pairs: Dict[str, TrackBBoxPair] = defaultdict()
 
         sample_data = sorted(scenario_data.sample_data.values(), key=lambda x: x.timestamp)
 
@@ -385,7 +452,7 @@ class SeuquenceBBoxDiffAnalysisCallback(AnalysisCallbackInterface):
 
                 instance_name = f"{box_category_name}/{detection_3d_box.box.uuid}/{detection_3d_box.instance_name}"
                 next_sample_timestamp = sample_timestamps.get(sample.next_sample_token, np.nan)
-                bbox_pairs[instance_name][sample_token] = self._get_bbox_pair(
+                bbox_pair = self._get_bbox_pair(
                     sample_token=sample_token,
                     current_bbox=detection_3d_box,
                     next_bbox=next_instance_box,
@@ -393,8 +460,19 @@ class SeuquenceBBoxDiffAnalysisCallback(AnalysisCallbackInterface):
                     next_timestamp=next_sample_timestamp,
                     timestamp_index=index,
                 )
+                if instance_name not in track_bbox_pairs:
+                    track_bbox_pairs[instance_name] = TrackBBoxPair(
+                        bbox_pairs=[bbox_pair],
+                        category_name=box_category_name,
+                        instance_name=detection_3d_box.instance_name,
+                        instance_token=detection_3d_box.box.uuid,
+                        sample_token=sample_token,
+                        sample_timestamps=[sample.timestamp],
+                    )
+                else:
+                    track_bbox_pairs[instance_name].add(bbox_pair, sample.timestamp)
 
-        return bbox_pairs
+        return track_bbox_pairs
 
     def run(self, dataset_split_analysis_data: Dict[DatasetSplitName, AnalysisData]) -> None:
         """Inherited, check the superclass."""
@@ -405,14 +483,15 @@ class SeuquenceBBoxDiffAnalysisCallback(AnalysisCallbackInterface):
             dataset_analysis_data[dataset_split_name.dataset_version].append(analysis_data)
 
         for dataset_name, analysis_data in dataset_analysis_data.items():
-            scene_bbox_pairs = defaultdict(lambda: defaultdict(lambda: defaultdict(BBoxPair)))
+            # {Scene: {instance_name: TrackBBoxPair}}
+            scene_bbox_pairs = defaultdict(lambda: defaultdict(TrackBBoxPair))
             for analysis in analysis_data:
                 # scene: sample: instance
                 for scene_token, scenario_data in analysis.scenario_data.items():
-                    bbox_pairs = self.compute_scenario_bbox_pairs(
+                    track_bbox_pairs = self.compute_scenario_bbox_pairs(
                         scenario_data=scenario_data,
                     )
-                    scene_bbox_pairs[scene_token] = bbox_pairs
+                    scene_bbox_pairs[scene_token] = track_bbox_pairs
 
             category_bbox_pairs = self.get_category_bbox_pairs(scene_bbox_pairs)
             dataset_version = dataset_split_name.dataset_version
