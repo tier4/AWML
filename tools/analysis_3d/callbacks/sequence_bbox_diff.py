@@ -133,11 +133,11 @@ class SeuquenceBBoxDiffAnalysisCallback(AnalysisCallbackInterface):
         self.legend_loc = "upper right"
         self.bins = bins
         self.remapping_classes = remapping_classes
-        self.weights = {"car": 10.0, "pedestrian": 8.0}
+        self.weights = {"car": 10.0, "truck": 8.0, "bus": 8.0, "bicycle": 6.0, "pedestrian": 8.0}
         self.default_weight = 5.0
 
-        self.local_weights = {"car": 5.0, "pedestrian": 3.0}
-        self.default_local_weight = 2.0
+        self.local_weights = {"car": 8.0, "truck": 8.0, "bus": 8.0, "bicycle": 6.0, "pedestrian": 5.0}
+        self.default_local_weight = 3.0
         self.minimum_bbox = minimum_bbox
 
     def _write_abnormal_instances_to_csv(self, file_name: str, columns: List[str], data: List[Any]) -> None:
