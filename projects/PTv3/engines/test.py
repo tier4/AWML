@@ -165,6 +165,8 @@ class SemSegTester(TesterBase):
             segment = data_dict.pop("segment")
             data_name = data_dict.pop("name")
             pred_save_path = os.path.join(save_path, "{}_pred.npy".format(data_name))
+            feat_save_path = os.path.join(save_path, "{}_feat.npy".format(data_name))
+            result_save_path = os.path.join(save_path, "{}_{}_pred.npz".format(idx, data_name))
             if os.path.isfile(pred_save_path):
                 logger.info(
                     "{}/{}: {}, loaded pred and label.".format(
@@ -176,6 +178,7 @@ class SemSegTester(TesterBase):
                     segment = data_dict["origin_segment"]
             else:
                 pred = torch.zeros((segment.size, self.cfg.data.num_classes)).cuda()
+                feat = torch.zeros((segment.size, 4)).cuda()
                 for i in range(len(fragment_list)):
                     fragment_batch_size = 1
                     s_i, e_i = i * fragment_batch_size, min(
@@ -194,6 +197,7 @@ class SemSegTester(TesterBase):
                         bs = 0
                         for be in input_dict["offset"]:
                             pred[idx_part[bs:be], :] += pred_part[bs:be]
+                            feat[idx_part[bs:be], :] = input_dict["feat"][bs:be]
                             bs = be
 
                     logger.info(
@@ -212,8 +216,11 @@ class SemSegTester(TesterBase):
                 if "origin_segment" in data_dict.keys():
                     assert "inverse" in data_dict.keys()
                     pred = pred[data_dict["inverse"]]
+                    feat = feat[data_dict["inverse"]]
                     segment = data_dict["origin_segment"]
-                np.save(pred_save_path, pred)
+                #np.save(pred_save_path, pred)
+                #np.save(feat_save_path, feat.cpu().numpy())
+                np.savez_compressed(result_save_path, pred=pred, feat=feat.cpu().numpy())
             if (
                 self.cfg.data.test.type == "ScanNetDataset"
                 or self.cfg.data.test.type == "ScanNet200Dataset"
