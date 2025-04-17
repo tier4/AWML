@@ -99,15 +99,7 @@ class TrackBBoxPair:
                 mean=mean,
                 std=std,
             )
-        # Compute quartiles and IQR
-        q1 = np.percentile(self.bbox_pairs, 25)
-        q3 = np.percentile(self.bbox_pairs, 75)
-        median = np.percentile(self.bbox_pairs, 50)
-        percentiles = {
-            "Q1": q1,
-            "Q3": q3,
-            "Median": median,
-        }
+        return category_percentiles
 
 
 class SeuquenceBBoxDiffAnalysisCallback(AnalysisCallbackInterface):
