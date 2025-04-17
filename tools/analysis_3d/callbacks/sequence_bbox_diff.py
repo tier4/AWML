@@ -133,8 +133,11 @@ class SeuquenceBBoxDiffAnalysisCallback(AnalysisCallbackInterface):
         self.legend_loc = "upper right"
         self.bins = bins
         self.remapping_classes = remapping_classes
-        self.weights = {"car": 12.0, "pedestrian": 8.0}
+        self.weights = {"car": 10.0, "pedestrian": 8.0}
         self.default_weight = 5.0
+
+        self.local_weights = {"car": 5.0, "pedestrian": 3.0}
+        self.default_local_weight = 2.0
         self.minimum_bbox = minimum_bbox
 
     def _write_abnormal_instances_to_csv(self, file_name: str, columns: List[str], data: List[Any]) -> None:
@@ -169,7 +172,11 @@ class SeuquenceBBoxDiffAnalysisCallback(AnalysisCallbackInterface):
                 )
                 category_percentiles_thresholds = selected_category_percentiles[category_name][attribute_name]
                 instance_row = [scene_token, instance_token, name]
-                weight = self.weights.get(category_name, self.default_weight)
+
+                if len(track_bbox_pair) >= self.minimum_bbox:
+                    weight = self.local_weights.get(category_name, self.default_local_weight)
+                else:
+                    weight = self.weights.get(category_name, self.default_weight)
 
                 q3 = category_percentiles_thresholds.percentiles["Q3"]
                 q1 = category_percentiles_thresholds.percentiles["Q1"]
