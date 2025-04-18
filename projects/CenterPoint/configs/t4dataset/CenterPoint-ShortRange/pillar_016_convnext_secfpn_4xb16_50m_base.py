@@ -22,7 +22,7 @@ input_modality = dict(
     use_map=False,
     use_external=False,
 )
-out_size_factor = 1
+out_size_factor = 4
 
 backend_args = None
 # backend_args = dict(backend="disk")
@@ -41,9 +41,9 @@ eval_class_range = {
 
 # user setting
 data_root = "data/t4dataset/"
-info_directory_path = "info/username/"
+info_directory_path = "info/kokseang_1_4/"
 train_gpu_size = 4
-train_batch_size = 8
+train_batch_size = 16
 test_batch_size = 2
 num_workers = 32
 val_interval = 5
@@ -51,7 +51,7 @@ max_epochs = 50
 work_dir = (
     "work_dirs/centerpoint_short_range/"
     + _base_.dataset_type
-    + "/short_range_pillar_016_convnext_secfpn_4xb8_50m_base/"
+    + "/short_range_pillar_016_convnext_secfpn_4xb16_50m_base/"
 )
 
 train_pipeline = [
@@ -254,7 +254,7 @@ model = dict(
         drop_path_rate=0.4,
         layer_scale_init_value=1.0,
         gap_before_final_norm=False,
-        with_cp=True,  # We set with_cp to True for svaing gpu memory
+        with_cp=False,  # We set with_cp to True for svaing gpu memory
         # No loading any pretrained weights
     ),
     pts_neck=dict(
