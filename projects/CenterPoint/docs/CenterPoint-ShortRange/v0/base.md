@@ -50,7 +50,7 @@
   - `AMP` training
   - Use `ConvNeXT-PC` as a stronger backbone  
 - `CenterPoint-ShortRange base/1.0` achieves a significantly higher mean average precision (mAP) by +2.9%, indicating better general detection performance
-  - The biggest gain is in truck detection with a +6.7% boost in AP, which suggests that it handles medium-sized vehicles better, likely due to improved feature resolution or receptive field
+  - The biggest gain is in truck detection with a +6.7% boost in AP, which suggests that it handles medium-sized vehicles better, likely due to more training data
   - Pedestrian detection also improves notably by +3.8%, showing better handling of dense or occluded small objects
   - Gains for bus and bicycle are more modest but still consistent
 	- Both models perform similarly on cars, with `CenterPoint-ShortRange base/1.0` only slightly better (+0.6%). This is expected since cars have the most samples (38,739), and performance is already saturated.
