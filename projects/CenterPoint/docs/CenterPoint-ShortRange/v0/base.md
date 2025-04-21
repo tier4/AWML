@@ -9,8 +9,8 @@
 
 | eval range: 52m                 | mAP  | car <br> (38,739) | truck <br> (4,764) | bus <br> (2,185) | bicycle <br> (2,049) | pedestrian <br> (20,661) |
 | ------------------------------- | ---- | ------------------ | -------------------- | ----------------- | --------------------- | ------------------------- |
+| CenterPoint-ShortRange base/1.0 | 83.6 | 93.8               | 82.5                 | 85.7              | 85.7                  | 70.4                      |
 | CenterPoint-ShortRange base/0.3 | 78.7 | 90.8               | 59.0                 | 90.5              | 80.8                  | 72.5                      |
-| CenterPoint-ShortRange base/0.3 | 83.6 | 93.8               | 82.5                 | 85.7              | 85.7                  | 70.4                      |
 
 ## Deprecated Summary
 <details>
