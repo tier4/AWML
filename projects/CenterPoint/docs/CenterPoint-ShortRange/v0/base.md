@@ -9,7 +9,7 @@
 
 | eval range: 52m                 | mAP  | car <br> (38,739) | truck <br> (4,764) | bus <br> (2,185) | bicycle <br> (2,049) | pedestrian <br> (20,661) |
 | ------------------------------- | ---- | ------------------ | -------------------- | ----------------- | --------------------- | ------------------------- |
-| CenterPoint-ShortRange base/1.0 | 83.6 | 93.8               | 82.5                 | 85.7              | 85.7                  | 70.4                      |
+| CenterPoint-ShortRange base/1.0 | 81.6 | 91.4               | 65.7                 | 92.4              | 82.3                  | 76.3                      |
 | CenterPoint-ShortRange base/0.3 | 78.7 | 90.8               | 59.0                 | 90.5              | 80.8                  | 72.5                      |
 
 ## Deprecated Summary
@@ -49,9 +49,11 @@
   - `PillarFeatureNet` instead of `BackwardPillarFeatureNet` to include distance of z to pillar center
   - `AMP` training
   - Use `ConvNeXT-PC` as a stronger backbone  
-- `CenterPoint-ShortRange base/1.0` offers better overall performance, especially in detecting trucks and bicycles
-- `CenterPoint-ShortRange base/0.3` performs better for buses and pedestrians, suggesting potential robustness in those categories under different data balancing or range settings
-- The largest gap is in truck detection, where `CenterPoint-ShortRange base/0.3` underperforms significantly, which it's expected since `CenterPoint-ShortRange base/1.0` trained with more available data
+- `CenterPoint-ShortRange base/1.0` achieves a significantly higher mean average precision (mAP) by +2.9%, indicating better general detection performance
+  - The biggest gain is in truck detection with a +6.7% boost in AP, which suggests that it handles medium-sized vehicles better, likely due to improved feature resolution or receptive field
+  - Pedestrian detection also improves notably by +3.8%, showing better handling of dense or occluded small objects
+  - Gains for bus and bicycle are more modest but still consistent
+	- Both models perform similarly on cars, with `CenterPoint-ShortRange base/1.0` only slightly better (+0.6%). This is expected since cars have the most samples (38,739), and performance is already saturated.
 
 <details>
 <summary> The link of data and evaluation result </summary>
@@ -60,7 +62,7 @@
 
 | Eval range = 52m    | mAP  | car  | truck | bus  | bicycle | pedestrian |
 | ------------------  | ---- | ---- | ----- | ---- | ------- | ---------- |
-| ShortRange base/1.0  | 83.6 | 93.8 | 82.5  | 85.7 | 85.7    | 70.4       |
+| ShortRange base/1.0  | 81.6 | 91.4 | 65.7  | 92.4 | 82.3    | 76.3       |
 | ShortRange base/0.3  | 78.7 | 90.8 | 59.0  | 90.5 | 80.8    | 72.5       |
 
 - Model
@@ -86,11 +88,11 @@
 
 | class_name | Count    | mAP  | AP@0.5m | AP@1.0m | AP@2.0m | AP@4.0m |
 | -----------| -------  | ---- | ------- | ------- | ------- | ------- |
-| car        |  38,739  | 93.8 | 90.3    | 94.5    | 94.8    | 95.5    |
-| truck      |   4,764  | 82.5 | 70.8    | 84.2    | 87.2    | 87.9    |
-| bus        |   2,185  | 85.7 | 72.0    | 88.2    | 90.7    | 91.7    |
-| bicycle    |   2,049  | 85.7 | 84.7    | 86.0    | 86.0    | 86.0    |
-| pedestrian |  20,661  | 70.4 | 67.9    | 69.8    | 71.2    | 72.9    |
+| car        |  38,739  | 91.4 | 85.7    | 92.4    | 93.5    | 93.7    |
+| truck      |   4,764  | 65.7 | 50.5    | 67.8    | 70.8    | 73.8    |
+| bus        |   2,185  | 92.4 | 84.7    | 92.3    | 95.7    | 95.8    |
+| bicycle    |   2,049  | 82.3 | 81.5    | 82.5    | 82.6    | 82.7    |
+| pedestrian |  20,661  | 76.3 | 73.8    | 75.6    | 77.2    | 78.7    |
 
 </details>
 
