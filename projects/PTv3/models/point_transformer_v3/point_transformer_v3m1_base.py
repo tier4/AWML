@@ -25,6 +25,19 @@ from models.utils.misc import offset2bincount
 from models.utils.structure import Point
 from models.modules import PointModule, PointSequential
 
+#NOTE(knzo25): hack to use exportable spconv when available
+
+try:
+
+    from SparseConvolution.sparse_conv import SparseConv3d, SubMConv3d
+    print("Using spconv2.0 with export support")
+
+except ImportError:
+
+    from spconv.pytorch import (
+        SparseConv3d,
+        SubMConv3d,
+    )
 
 class RPE(torch.nn.Module):
     def __init__(self, patch_size, num_heads):
@@ -275,7 +288,7 @@ class Block(PointModule):
         self.pre_norm = pre_norm
 
         self.cpe = PointSequential(
-            spconv.SubMConv3d(
+            SubMConv3d(
                 channels,
                 channels,
                 kernel_size=3,
@@ -339,22 +352,23 @@ class Block(PointModule):
 
 
 class SerializedPooling(PointModule):
+
     def __init__(
-        self,
-        in_channels,
-        out_channels,
-        stride=2,
-        norm_layer=None,
-        act_layer=None,
-        reduce="max",
-        shuffle_orders=True,
-        traceable=True,  # record parent and cluster
+            self,
+            in_channels,
+            out_channels,
+            stride=2,
+            norm_layer=None,
+            act_layer=None,
+            reduce="max",
+            shuffle_orders=True,
+            traceable=True,  # record parent and cluster
     ):
         super().__init__()
         self.in_channels = in_channels
         self.out_channels = out_channels
 
-        assert stride == 2 ** (math.ceil(stride) - 1).bit_length()  # 2, 4, 8
+        assert stride == 2**(math.ceil(stride) - 1).bit_length()  # 2, 4, 8
         # TODO: add support to grid pool (any stride)
         self.stride = stride
         assert reduce in ["sum", "mean", "min", "max"]
@@ -377,9 +391,8 @@ class SerializedPooling(PointModule):
             "serialized_order",
             "serialized_inverse",
             "serialized_depth",
-        }.issubset(
-            point.keys()
-        ), "Run point.serialization() point cloud before SerializedPooling"
+        }.issubset(point.keys(
+        )), "Run point.serialization() point cloud before SerializedPooling"
 
         code = point.serialized_code >> pooling_depth * 3
         code_, cluster, counts = torch.unique(
@@ -400,9 +413,8 @@ class SerializedPooling(PointModule):
         inverse = torch.zeros_like(order).scatter_(
             dim=1,
             index=order,
-            src=torch.arange(0, code.shape[1], device=order.device).repeat(
-                code.shape[0], 1
-            ),
+            src=torch.arange(0, code.shape[1],
+                             device=order.device).repeat(code.shape[0], 1),
         )
 
         if self.shuffle_orders:
@@ -412,13 +424,46 @@ class SerializedPooling(PointModule):
             inverse = inverse[perm]
 
         # collect information
+        assert self.reduce == "max"
+        diff = idx_ptr[1:] - idx_ptr[0:-1]  # idx_ptr.diff()
+        segment_indices = torch.arange(
+            idx_ptr.size(0) - 1, device=idx_ptr.device).repeat_interleave(diff)
+
+        feat_src = self.proj(point.feat)[indices]
+        feat_max = torch.full((idx_ptr.size(0) - 1, feat_src.size(1)),
+                              torch.finfo(feat_src.dtype).min,
+                              dtype=torch.float32,
+                              device=feat_src.device)
+        feat_max.scatter_reduce_(0,
+                                 segment_indices.unsqueeze(1).expand(
+                                     -1, feat_src.size(1)),
+                                 feat_src,
+                                 reduce='amax',
+                                 include_self=True)
+
+        coord_src = point.coord[indices]
+        coord_mean = torch.full((idx_ptr.size(0) - 1, coord_src.size(1)),
+                                0,
+                                dtype=torch.float32,
+                                device=coord_src.device)
+        coord_mean.scatter_reduce_(0,
+                                   segment_indices.unsqueeze(1).expand(
+                                       -1, coord_src.size(1)),
+                                   coord_src,
+                                   reduce="mean",
+                                   include_self=False)
+
+        #feat_gt = feat=torch_scatter.segment_csr(self.proj(point.feat)[indices], idx_ptr, reduce=self.reduce)
+
         point_dict = Dict(
-            feat=torch_scatter.segment_csr(
-                self.proj(point.feat)[indices], idx_ptr, reduce=self.reduce
-            ),
-            coord=torch_scatter.segment_csr(
-                point.coord[indices], idx_ptr, reduce="mean"
-            ),
+            #feat=torch_scatter.segment_csr(self.proj(point.feat)[indices],
+            #                               idx_ptr,
+            #                               reduce=self.reduce),
+            #coord=torch_scatter.segment_csr(point.coord[indices],
+            #                                idx_ptr,
+            #                                reduce="mean"),
+            feat=feat_max,
+            coord=coord_mean,
             grid_coord=point.grid_coord[head_indices] >> pooling_depth,
             serialized_code=code,
             serialized_order=order,
@@ -496,7 +541,7 @@ class Embedding(PointModule):
 
         # TODO: check remove spconv
         self.stem = PointSequential(
-            conv=spconv.SubMConv3d(
+            conv=SubMConv3d(
                 in_channels,
                 embed_channels,
                 kernel_size=5,
@@ -617,6 +662,7 @@ class PointTransformerV3(PointModule):
                         stride=stride[s - 1],
                         norm_layer=bn_layer,
                         act_layer=act_layer,
+                        shuffle_orders=shuffle_orders,
                     ),
                     name="down",
                 )
@@ -703,6 +749,7 @@ class PointTransformerV3(PointModule):
 
         point = self.embedding(point)
         point = self.enc(point)
+        
         if not self.cls_mode:
             point = self.dec(point)
         # else:
@@ -711,4 +758,22 @@ class PointTransformerV3(PointModule):
         #         indptr=nn.functional.pad(point.offset, (1, 0)),
         #         reduce="mean",
         #     )
+        return point
+
+    def export_forward(self, data_dict):
+        point = Point(data_dict)
+        #point.serialization(order=self.order, shuffle_orders=self.shuffle_orders)
+        point["serialized_depth"] = data_dict["serialized_depth"]
+        point["serialized_code"] = data_dict["serialized_code"]
+        point["serialized_order"] = data_dict["serialized_order"]
+        point["serialized_inverse"] = data_dict["serialized_inverse"]
+        point.sparsify()
+
+        point = self.embedding(point)
+
+        point = self.enc(point)
+
+        if not self.cls_mode:
+            point = self.dec(point)
+
         return point

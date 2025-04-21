@@ -1,14 +1,15 @@
 import torch
 import spconv.pytorch as spconv
 
-try:
-    import ocnn
-except ImportError:
-    ocnn = None
 from addict import Dict
 
 from models.utils.serialization import encode, decode
 from models.utils import offset2batch, batch2offset
+
+def bit_length_tensor(x: torch.Tensor) -> torch.Tensor:
+    # Ensure x is a positive integer tensor
+    x = torch.clamp(x, min=1)
+    return torch.floor(torch.log2(x)).to(torch.int64) + 1
 
 
 class Point(Dict):
@@ -39,8 +40,14 @@ class Point(Dict):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         # If one of "offset" or "batch" do not exist, generate by the existing one
-        if "batch" not in self.keys() and "offset" in self.keys():
+        # If neither of them exist, initialize as batch size is 1
+        if "offset" not in self.keys() and "batch" not in self.keys():
+            self["offset"] = torch.tensor([self["coord"].size(0)],
+                                          device=self["coord"].device,
+                                          dtype=torch.int64)
             self["batch"] = offset2batch(self.offset)
+        elif "batch" not in self.keys() and "offset" in self.keys():
+            self["batch"] = offset2batch(self.offset, self["coord"])
         elif "offset" not in self.keys() and "batch" in self.keys():
             self["offset"] = batch2offset(self.batch)
 
@@ -57,16 +64,19 @@ class Point(Dict):
             # dict(type="Copy", keys_dict={"grid_size": 0.01}),
             # (adjust `grid_size` to what your want)
             assert {"grid_size", "coord"}.issubset(self.keys())
-            self["grid_coord"] = torch.div(
-                self.coord - self.coord.min(0)[0], self.grid_size, rounding_mode="trunc"
-            ).int()
+            self["grid_coord"] = torch.div(self.coord - self.coord.min(0)[0],
+                                           self.grid_size,
+                                           rounding_mode="trunc").int()
 
         if depth is None:
             # Adaptive measure the depth of serialization cube (length = 2 ^ depth)
-            depth = int(self.grid_coord.max()).bit_length()
+            #depth = int(self.grid_coord.max()).bit_length()
+            depth = bit_length_tensor(self.grid_coord.max())
+
         self["serialized_depth"] = depth
         # Maximum bit length for serialization code is 63 (int64)
-        assert depth * 3 + len(self.offset).bit_length() <= 63
+        #assert depth * 3 + len(self.offset).bit_length() <= 63
+        assert depth * 3 + bit_length_tensor(self.offset) <= 63
         # Here we follow OCNN and set the depth limitation to 16 (48bit) for the point position.
         # Although depth is limited to less than 16, we can encode a 655.36^3 (2^16 * 0.01) meter^3
         # cube with a grid size of 0.01 meter. We consider it is enough for the current stage.
@@ -79,16 +89,16 @@ class Point(Dict):
         #   ...
         #  OrderN ([n])] (k, n)
         code = [
-            encode(self.grid_coord, self.batch, depth, order=order_) for order_ in order
+            encode(self.grid_coord, self.batch, depth, order=order_)
+            for order_ in order
         ]
         code = torch.stack(code)
         order = torch.argsort(code)
         inverse = torch.zeros_like(order).scatter_(
             dim=1,
             index=order,
-            src=torch.arange(0, code.shape[1], device=order.device).repeat(
-                code.shape[0], 1
-            ),
+            src=torch.arange(0, code.shape[1],
+                             device=order.device).repeat(code.shape[0], 1),
         )
 
         if shuffle_orders:
@@ -119,62 +129,21 @@ class Point(Dict):
             # dict(type="Copy", keys_dict={"grid_size": 0.01}),
             # (adjust `grid_size` to what your want)
             assert {"grid_size", "coord"}.issubset(self.keys())
-            self["grid_coord"] = torch.div(
-                self.coord - self.coord.min(0)[0], self.grid_size, rounding_mode="trunc"
-            ).int()
+            self["grid_coord"] = torch.div(self.coord - self.coord.min(0)[0],
+                                           self.grid_size,
+                                           rounding_mode="trunc").int()
         if "sparse_shape" in self.keys():
             sparse_shape = self.sparse_shape
         else:
             sparse_shape = torch.add(
-                torch.max(self.grid_coord, dim=0).values, pad
-            ).tolist()
+                torch.max(self.grid_coord, dim=0).values, pad)#.tolist()
         sparse_conv_feat = spconv.SparseConvTensor(
             features=self.feat,
             indices=torch.cat(
-                [self.batch.unsqueeze(-1).int(), self.grid_coord.int()], dim=1
-            ).contiguous(),
+                [self.batch.unsqueeze(-1).int(),
+                 self.grid_coord.int()], dim=1).contiguous(),
             spatial_shape=sparse_shape,
             batch_size=self.batch[-1].tolist() + 1,
         )
         self["sparse_shape"] = sparse_shape
         self["sparse_conv_feat"] = sparse_conv_feat
-
-    def octreetization(self, depth=None, full_depth=None):
-        """
-        Point Cloud Octreelization
-
-        Generate octree with OCNN
-        relay on ["grid_coord", "batch", "feat"]
-        """
-        assert (
-            ocnn is not None
-        ), "Please follow https://github.com/octree-nn/ocnn-pytorch install ocnn."
-        assert {"grid_coord", "feat", "batch"}.issubset(self.keys())
-        # add 1 to make grid space support shift order
-        if depth is None:
-            if "depth" in self.keys():
-                depth = self.depth
-            else:
-                depth = int(self.grid_coord.max() + 1).bit_length()
-        if full_depth is None:
-            full_depth = 2
-        self["depth"] = depth
-        assert depth <= 16  # maximum in ocnn
-
-        # [0, 2**depth] -> [0, 2] -> [-1, 1]
-        coord = self.grid_coord / 2 ** (self.depth - 1) - 1.0
-        point = ocnn.octree.Points(
-            points=coord,
-            features=self.feat,
-            batch_id=self.batch.unsqueeze(-1),
-            batch_size=self.batch[-1] + 1,
-        )
-        octree = ocnn.octree.Octree(
-            depth=depth,
-            full_depth=full_depth,
-            batch_size=self.batch[-1] + 1,
-            device=coord.device,
-        )
-        octree.build_octree(point)
-        octree.construct_all_neigh()
-        self["octree"] = octree

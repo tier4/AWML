@@ -2,6 +2,7 @@ from typing import Any, List, Optional
 
 import numpy as np
 import torch
+import sys
 from cumm import tensorview as tv
 from spconv import constants
 from spconv.algo import CONV_CPP
@@ -11,9 +12,180 @@ from spconv.core_cc.csrc.sparse.all import SpconvOps
 from spconv.core_cc.csrc.sparse.convops.spops import ConvGemmOps
 from spconv.pytorch.core import ThrustSortAllocator
 from spconv.pytorch.cppcore import _TORCH_DTYPE_TO_TV, TorchAllocator, get_arch, get_current_stream, torch_tensor_to_tv
+from spconv.pytorch import ops
 from spconv.tools import CUDAKernelTimer
 from torch.autograd import Function
 from torch.onnx.symbolic_helper import _get_tensor_sizes
+
+
+class GetIndicePairs(Function):
+
+    @staticmethod
+    def symbolic(
+        g,
+        indices: torch.Tensor,
+        batch_size: int,
+        spatial_shape: List[int],
+        algo: ConvAlgo,
+        ksize: List[int],
+        stride: List[int],
+        padding: List[int],
+        dilation: List[int],
+        out_padding: List[int],
+        subm: bool,
+        transpose: bool,
+    ):
+        outputs = g.op(
+            "autoware::GetIndicePairs",
+            indices,
+            batch_size_i=batch_size,
+            spatial_shape_i=spatial_shape,
+            algo_i=algo.value,
+            ksize_i=ksize,
+            stride_i=stride,
+            padding_i=padding,
+            dilation_i=dilation,
+            out_padding_i=out_padding,
+            subm_i=subm,
+            transpose_i=transpose,
+            outputs=3,
+        )
+        indices_shape = _get_tensor_sizes(indices)
+        if indices_shape is not None and hasattr(indices.type(), "with_sizes"):
+            output_type_1 = indices.type().with_sizes([None, indices_shape[1]])
+            output_type_2 = indices.type().with_sizes([2, np.prod(ksize), None])
+            output_type_3 = indices.type().with_sizes([np.prod(ksize)])
+            
+            outputs[0].setType(output_type_1)
+            outputs[1].setType(output_type_2)
+            outputs[2].setType(output_type_3)
+        return outputs
+
+    @staticmethod
+    def forward(
+        ctx,
+        indices: torch.Tensor,
+        batch_size: int,
+        spatial_shape: List[int],
+        algo: ConvAlgo,
+        ksize: List[int],
+        stride: List[int],
+        padding: List[int],
+        dilation: List[int],
+        out_padding: List[int],
+        subm: bool,
+        transpose: bool,
+    ) -> torch.Tensor:
+
+        alloc = TorchAllocator(indices.device)
+        stream = 0
+        if indices.is_cuda:
+            stream = get_current_stream()
+
+        num_act_out = SpconvOps.get_indice_pairs(alloc,
+                                                 torch_tensor_to_tv(indices),
+                                                 batch_size, spatial_shape,
+                                                 algo.value, ksize, stride,
+                                                 padding, dilation,
+                                                 out_padding, subm, transpose,
+                                                 stream)
+        if subm:
+            out_inds = indices
+        else:
+            out_inds = alloc.allocated[AllocKeys.OutIndices]
+
+        pair = alloc.allocated[AllocKeys.PairFwd]
+        indice_num_per_loc = alloc.allocated[AllocKeys.IndiceNumPerLoc]
+
+        return out_inds[:num_act_out], pair, indice_num_per_loc
+
+    @staticmethod
+    def backward(ctx: Any, grad_output: torch.Tensor) -> tuple:
+        return None, None, None, None, None, None, None, None, None, None
+
+
+class SubMConvFunction(Function):
+
+    @staticmethod
+    def symbolic(
+        g,
+        features,
+        filters,
+        indice_pairs,
+        indice_pair_num,
+        num_activate_out,
+        algo,
+        timer: CUDAKernelTimer = CUDAKernelTimer(False),
+        bias: Optional[torch.Tensor] = None,
+        act_alpha: float = 0.0,
+        act_beta: float = 0.0,
+        act_type: tv.gemm.Activation = tv.gemm.Activation.None_
+    ):
+
+        output = g.op(
+            "autoware::IndiceSubMConv",
+            features,
+            filters,
+            indice_pairs,
+            indice_pair_num,
+            num_activate_out,
+            outputs=1,
+        )
+        features_shape = _get_tensor_sizes(features)
+        filters_shape = _get_tensor_sizes(filters)
+        if features_shape is not None and hasattr(features.type(), "with_sizes"):
+            output_type = features.type().with_sizes([features_shape[0], filters_shape[0]])
+            output.setType(output_type)
+
+        return output
+
+    @staticmethod
+    def forward(ctx,
+                features,
+                filters,
+                indice_pairs,
+                indice_pair_num,
+                num_activate_out,
+                algo,
+                timer: CUDAKernelTimer = CUDAKernelTimer(False),
+                bias: Optional[torch.Tensor] = None,
+                act_alpha: float = 0.0,
+                act_beta: float = 0.0,
+                act_type: tv.gemm.Activation = tv.gemm.Activation.None_):
+
+        assert bias is None, "bias is not supported"
+        assert act_alpha == 0.0
+        assert act_beta == 0.0
+        assert act_type == tv.gemm.Activation.None_
+
+
+        ctx.save_for_backward(indice_pairs, indice_pair_num, features, filters)
+        ctx.algo = algo
+        ctx.timer = timer
+        try:
+            return ops.indice_conv(features,
+                                   filters,
+                                   indice_pairs,
+                                   indice_pair_num,
+                                   num_activate_out,
+                                   False,
+                                   True,
+                                   algo=algo,
+                                   timer=timer,
+                                   bias=bias,
+                                   act_alpha=act_alpha,
+                                   act_beta=act_beta,
+                                   act_type=act_type)
+        except Exception as e:
+            msg = "[Exception|indice_conv|subm]"
+            msg += f"feat={features.shape},w={filters.shape},pair={indice_pairs.shape},"
+            msg += f"pairnum={indice_pair_num},act={num_activate_out},algo={algo}"
+            print(msg, file=sys.stderr)
+            raise e
+
+    @staticmethod
+    def backward(ctx: Any, grad_output: torch.Tensor) -> tuple:
+        return None, None, None, None, None, None, None, None, None, None
 
 
 class GetIndicePairsImplicitGemm(Function):
@@ -50,21 +222,19 @@ class GetIndicePairsImplicitGemm(Function):
             subm_i=subm,
             transpose_i=transpose,
             is_train_i=is_train,
-            outputs=5,
+            outputs=4,
         )
         indices_shape = _get_tensor_sizes(indices)
         if indices_shape is not None and hasattr(indices.type(), "with_sizes"):
             output_type_1 = indices.type().with_sizes([None, indices_shape[1]])
             output_type_2 = indices.type().with_sizes([np.prod(ksize), None])
             output_type_3 = indices.type().with_sizes([None, 1])
-            output_type_4 = indices.type().with_sizes([None])
-            output_type_5 = indices.type().with_sizes([])
-
+            output_type_4 = indices.type().with_sizes([None])            
+			
             outputs[0].setType(output_type_1)
             outputs[1].setType(output_type_2)
             outputs[2].setType(output_type_3)
             outputs[3].setType(output_type_4)
-            outputs[4].setType(output_type_5)
         return outputs
 
     @staticmethod
@@ -151,7 +321,7 @@ class GetIndicePairsImplicitGemm(Function):
             pair_mask_in_splits = pair_mask[0]
             mask_argsort_in_splits = mask_argsort[0]
             pair_fwd = pair[0]
-            return (out_inds, pair[0], pair_mask_in_splits, mask_argsort_in_splits, num_act_out)
+            return (out_inds, pair[0], pair_mask_in_splits, mask_argsort_in_splits)
         else:
             pair_fwd = thalloc.allocated[AllocKeys.PairFwd]
             pair_mask_fwd = thalloc.allocated[AllocKeys.PairMask]
@@ -159,7 +329,7 @@ class GetIndicePairsImplicitGemm(Function):
             pair_mask_fwd_splits = pair_mask_fwd[0]
             mask_argsort_fwd_splits = mask_argsort_fwd[0]
 
-            return (out_inds, pair_fwd, pair_mask_fwd_splits, mask_argsort_fwd_splits, num_act_out)
+            return (out_inds, pair_fwd, pair_mask_fwd_splits, mask_argsort_fwd_splits)
 
     @staticmethod
     def backward(ctx: Any, grad_output: torch.Tensor) -> tuple:
@@ -318,6 +488,10 @@ class ImplicitGemm(Function):
             assert mask_output_fwd is not None
 
         return out_features
+
+
+get_indice_pairs = GetIndicePairs.apply
+indice_subm_conv = SubMConvFunction.apply
 
 
 get_indice_pairs_implicit_gemm = GetIndicePairsImplicitGemm.apply
