@@ -4,9 +4,20 @@
 - Main parameter
   - range = 51.20m
 - Performance summary
-  - Dataset: DB JPNTAXI v1.0 + DB JPNTAXI v2.0 + DB JPNTAXI v3.0 + DB GSM8 v1.0 + DB J6 v1.0 (total frames: 35,292)
-  - [Comparisons in details](https://docs.google.com/spreadsheets/d/1cOIwmyiXA4Z0uAEl1mkPoaAjqJJ8Mq1O66tzzAOW15I/edit?gid=980227559#gid=980227559)
+	- Dataset: test dataset of db_jpntaxi_v1 + db_jpntaxi_v2 + db_jpntaxi_v4 + db_gsm8_v1 + db_j6_v1 + db_j6_v2 + db_j6_v3 + db_j6_v5 + db_j6gen2_v1 (total frames: 3804)
   - Class mAP for center distance (0.5m, 1.0m, 2.0m, 4.0m)
+
+| eval range: 52m                 | mAP  | car <br> (38,739) | truck <br> (4,764) | bus <br> (2,185) | bicycle <br> (2,049) | pedestrian <br> (20,661) |
+| ------------------------------- | ---- | ------------------ | -------------------- | ----------------- | --------------------- | ------------------------- |
+| CenterPoint-ShortRange base/0.3 | 78.7 | 90.8               | 59.0                 | 90.5              | 80.8                  | 72.5                      |
+| CenterPoint-ShortRange base/0.3 | 83.6 | 93.8               | 82.5                 | 85.7              | 85.7                  | 70.4                      |
+
+## Deprecated Summary
+<details>
+<summary> Results with previous datasets </summary>
+
+- Dataset: DB JPNTAXI v1.0 + DB JPNTAXI v2.0 + DB JPNTAXI v3.0 + DB GSM8 v1.0 + DB J6 v1.0 (total frames: 35,292)
+- [Comparisons in details](https://docs.google.com/spreadsheets/d/1cOIwmyiXA4Z0uAEl1mkPoaAjqJJ8Mq1O66tzzAOW15I/edit?gid=980227559#gid=980227559)
 
 | eval range: 52m                 | mAP  | car <br> (629,212) | truck <br> (163,402) | bus <br> (39,904) | bicycle <br> (48,043) | pedestrian <br> (383,553) |
 | ------------------------------- | ---- | ------------------ | -------------------- | ----------------- | --------------------- | ------------------------- |
@@ -29,7 +40,52 @@
 | CenterPoint-ShortRange base/0.2 | 4486.06 | 4508.69 | 4521.00 | 4524.44 | 4543.19 | 4633.81 | 4519.30 (+-20.38) |
 | CenterPoint-ShortRange base/0.3 | 3879.88 | 3882.56 | 3884.44 | 4084.62 | 4087.56 | 4218.75 | 3948.19 (+-96.93) |
 
+</details>
+
 ## Release
+### CenterPoint-ShortRange base/1.0
+
+<details>
+<summary> The link of data and evaluation result </summary>
+
+- Evaluation result with db_jpntaxi_v1 + db_jpntaxi_v2 + db_jpntaxi_v4 + db_gsm8_v1 + db_j6_v1 + db_j6_v2 + db_j6_v3 + db_j6_v5 + db_j6gen2_v1 (total frames: 3804):
+
+| Eval range = 52m    | mAP  | car  | truck | bus  | bicycle | pedestrian |
+| ------------------  | ---- | ---- | ----- | ---- | ------- | ---------- |
+| ShorRange base/1.0  | 83.6 | 93.8 | 82.5  | 85.7 | 85.7    | 70.4       |
+| ShorRange base/0.3  | 78.7 | 90.8 | 59.0  | 90.5 | 80.8    | 72.5       |
+
+- Model
+  - Training dataset: DB JPNTAXI v1.0 + DB JPNTAXI v2.0 + DB JPNTAXI v4.0 + DB GSM8 v1.0 + DB J6 v1.0 + DB J6 v2.0 + DB J6 v3.0 + DB J6 v5.0 + DB J6 Gen2 v1.0 (total frames: 49,605)
+  - [Config file path](https://github.com/tier4/AWML/blob/1e76dba5bc26cc664dcaff10b9d407ddd0a0be41/autoware_ml/configs/detection3d/dataset/t4dataset/base.py)
+  - Deployed onnx model and ROS parameter files [[WebAuto (for internal)]]([WIP](https://evaluation.tier4.jp/evaluation/mlpackages/7156b453-2861-4ae9-b135-e24e48cc9029/releases/151db018-8575-4435-b178-bfaf1e5930f6?project_id=zWhWRzei))
+  - Deployed onnx and ROS parameter files [[model-zoo]]
+    - [detection_class_remapper.param.yaml](https://download.autoware-ml-model-zoo.tier4.jp/autoware-ml/models/centerpoint/centerpoint/t4base/v1.5/detection_class_remapper.param.yaml)
+    - [centerpoint_t4base_ml_package.param.yaml](https://download.autoware-ml-model-zoo.tier4.jp/autoware-ml/models/centerpoint/centerpoint/t4base/v1.5/centerpoint_t4base_ml_package.param.yaml)
+    - [deploy_metadata.yaml](https://download.autoware-ml-model-zoo.tier4.jp/autoware-ml/models/centerpoint/centerpoint/t4base/v1.5/deploy_metadata.yaml)
+    - [pts_voxel_encoder_centerpoint_t4base.onnx](https://download.autoware-ml-model-zoo.tier4.jp/autoware-ml/models/centerpoint/centerpoint/t4base/v1.5/pts_voxel_encoder.onnx)
+    - [pts_backbone_neck_head_centerpoint_t4base.onnx](https://download.autoware-ml-model-zoo.tier4.jp/autoware-ml/models/centerpoint/centerpoint/t4base/v1.5/pts_backbone_neck_head.onnx)
+  - Training results [[Google drive (for internal)]](https://drive.google.com/drive/folders/1ToUDUPMLFLiw_lC7MTFLNfVwv-a-U5Tw?usp=drive_link)
+  - Training results [model-zoo]
+    - [logs.zip](https://download.autoware-ml-model-zoo.tier4.jp/autoware-ml/models/centerpoint/centerpoint/t4base/v1.5/logs.zip)
+    - [checkpoint_best.pth](https://download.autoware-ml-model-zoo.tier4.jp/autoware-ml/models/centerpoint/centerpoint/t4base/v1.5/best_NuScenes+metric_T4Metric_mAP_epoch_49.pth)
+    - [config.py](https://download.autoware-ml-model-zoo.tier4.jp/autoware-ml/models/centerpoint/centerpoint/t4base/v1.5/second_secfpn_4xb16_121m_base_amp.py)
+  - Train time: NVIDIA A100 80GB * 4 * 50 epochs = 2 days and 14 hours
+  - Batch size: 4*16 = 64
+
+- Evaluation result with db_jpntaxi_v1 + db_jpntaxi_v2 + db_jpntaxi_v4 + db_gsm8_v1 + db_j6_v1 + db_j6_v2 + db_j6_v3 + db_j6_v5 + db_j6gen2_v1 (total frames: 3804)
+  - Total mAP (eval range = 120m): 0.667
+
+| class_name | Count    | mAP  | AP@0.5m | AP@1.0m | AP@2.0m | AP@4.0m |
+| -----------| -------  | ---- | ------- | ------- | ------- | ------- |
+| car        |  38,739  | 93.8 | 90.3    | 94.5    | 94.8    | 95.5    |
+| truck      |   4,764  | 82.5 | 70.8    | 84.2    | 87.2    | 87.9    |
+| bus        |   2,185  | 85.7 | 72.0    | 88.2    | 90.7    | 91.7    |
+| bicycle    |   2,049  | 85.7 | 84.7    | 86.0    | 86.0    | 86.0    |
+| pedestrian |  20,661  | 70.4 | 67.9    | 69.8    | 71.2    | 72.9    |
+
+</details>
+
 ### CenterPoint-ShortRange base/0.3
 - This is exactly the model [CenterPoint-ConvNeXtPC base/0.2](../../CenterPoint-ConvNeXtPC/v0/base.md) except it evaluates in 50m only
 - The performance of detection is generally better than `CenterPoint-ShortRange base/0.1` (81.5 vs 77.4) since it also has better performance in 120m, especially, vehicle classes:
