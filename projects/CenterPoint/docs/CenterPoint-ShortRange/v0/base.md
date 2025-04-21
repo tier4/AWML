@@ -44,6 +44,14 @@
 
 ## Release
 ### CenterPoint-ShortRange base/1.0
+- This is the first short range model trained with `gen2` data
+- The following changes are made as compared to `CenterPoint-ShortRange base/0.3`:
+  - `PillarFeatureNet` instead of `BackwardPillarFeatureNet` to include distance of z to pillar center
+  - `AMP` training
+  - Use `ConvNeXT-PC` as a stronger backbone  
+- `CenterPoint-ShortRange base/1.0` offers better overall performance, especially in detecting trucks and bicycles
+- `CenterPoint-ShortRange base/0.3` performs better for buses and pedestrians, suggesting potential robustness in those categories under different data balancing or range settings
+- The largest gap is in truck detection, where `CenterPoint-ShortRange base/0.3` underperforms significantly, which it's expected since `CenterPoint-ShortRange base/1.0` trained with more available data
 
 <details>
 <summary> The link of data and evaluation result </summary>
@@ -52,8 +60,8 @@
 
 | Eval range = 52m    | mAP  | car  | truck | bus  | bicycle | pedestrian |
 | ------------------  | ---- | ---- | ----- | ---- | ------- | ---------- |
-| ShorRange base/1.0  | 83.6 | 93.8 | 82.5  | 85.7 | 85.7    | 70.4       |
-| ShorRange base/0.3  | 78.7 | 90.8 | 59.0  | 90.5 | 80.8    | 72.5       |
+| ShortRange base/1.0  | 83.6 | 93.8 | 82.5  | 85.7 | 85.7    | 70.4       |
+| ShortRange base/0.3  | 78.7 | 90.8 | 59.0  | 90.5 | 80.8    | 72.5       |
 
 - Model
   - Training dataset: DB JPNTAXI v1.0 + DB JPNTAXI v2.0 + DB JPNTAXI v4.0 + DB GSM8 v1.0 + DB J6 v1.0 + DB J6 v2.0 + DB J6 v3.0 + DB J6 v5.0 + DB J6 Gen2 v1.0 (total frames: 49,605)
