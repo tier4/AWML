@@ -391,8 +391,11 @@ class SerializedPooling(PointModule):
             "serialized_order",
             "serialized_inverse",
             "serialized_depth",
+            "sparse_shape"
         }.issubset(point.keys(
         )), "Run point.serialization() point cloud before SerializedPooling"
+
+        sparse_shape = point.sparse_shape
 
         code = point.serialized_code >> pooling_depth * 3
         code_, cluster, counts = torch.unique(
@@ -470,6 +473,7 @@ class SerializedPooling(PointModule):
             serialized_inverse=inverse,
             serialized_depth=point.serialized_depth - pooling_depth,
             batch=point.batch[head_indices],
+            sparse_shape=sparse_shape >> pooling_depth,
         )
 
         if "condition" in point.keys():
@@ -562,38 +566,39 @@ class Embedding(PointModule):
 
 @MODELS.register_module("PT-v3m1")
 class PointTransformerV3(PointModule):
+
     def __init__(
-        self,
-        in_channels=6,
-        order=("z", "z-trans"),
-        stride=(2, 2, 2, 2),
-        enc_depths=(2, 2, 2, 6, 2),
-        enc_channels=(32, 64, 128, 256, 512),
-        enc_num_head=(2, 4, 8, 16, 32),
-        enc_patch_size=(48, 48, 48, 48, 48),
-        dec_depths=(2, 2, 2, 2),
-        dec_channels=(64, 64, 128, 256),
-        dec_num_head=(4, 4, 8, 16),
-        dec_patch_size=(48, 48, 48, 48),
-        mlp_ratio=4,
-        qkv_bias=True,
-        qk_scale=None,
-        attn_drop=0.0,
-        proj_drop=0.0,
-        drop_path=0.3,
-        pre_norm=True,
-        shuffle_orders=True,
-        enable_rpe=False,
-        enable_flash=True,
-        upcast_attention=False,
-        upcast_softmax=False,
-        cls_mode=False,
-        pdnorm_bn=False,
-        pdnorm_ln=False,
-        pdnorm_decouple=True,
-        pdnorm_adaptive=False,
-        pdnorm_affine=True,
-        pdnorm_conditions=("ScanNet", "S3DIS", "Structured3D"),
+            self,
+            in_channels=6,
+            order=("z", "z-trans"),
+            stride=(2, 2, 2, 2),
+            enc_depths=(2, 2, 2, 6, 2),
+            enc_channels=(32, 64, 128, 256, 512),
+            enc_num_head=(2, 4, 8, 16, 32),
+            enc_patch_size=(48, 48, 48, 48, 48),
+            dec_depths=(2, 2, 2, 2),
+            dec_channels=(64, 64, 128, 256),
+            dec_num_head=(4, 4, 8, 16),
+            dec_patch_size=(48, 48, 48, 48),
+            mlp_ratio=4,
+            qkv_bias=True,
+            qk_scale=None,
+            attn_drop=0.0,
+            proj_drop=0.0,
+            drop_path=0.3,
+            pre_norm=True,
+            shuffle_orders=True,
+            enable_rpe=False,
+            enable_flash=True,
+            upcast_attention=False,
+            upcast_softmax=False,
+            cls_mode=False,
+            pdnorm_bn=False,
+            pdnorm_ln=False,
+            pdnorm_decouple=True,
+            pdnorm_adaptive=False,
+            pdnorm_affine=True,
+            pdnorm_conditions=("ScanNet", "S3DIS", "Structured3D"),
     ):
         super().__init__()
         self.num_stages = len(enc_depths)
@@ -615,9 +620,10 @@ class PointTransformerV3(PointModule):
         if pdnorm_bn:
             bn_layer = partial(
                 PDNorm,
-                norm_layer=partial(
-                    nn.BatchNorm1d, eps=1e-3, momentum=0.01, affine=pdnorm_affine
-                ),
+                norm_layer=partial(nn.BatchNorm1d,
+                                   eps=1e-3,
+                                   momentum=0.01,
+                                   affine=pdnorm_affine),
                 conditions=pdnorm_conditions,
                 decouple=pdnorm_decouple,
                 adaptive=pdnorm_adaptive,
@@ -627,7 +633,8 @@ class PointTransformerV3(PointModule):
         if pdnorm_ln:
             ln_layer = partial(
                 PDNorm,
-                norm_layer=partial(nn.LayerNorm, elementwise_affine=pdnorm_affine),
+                norm_layer=partial(nn.LayerNorm,
+                                   elementwise_affine=pdnorm_affine),
                 conditions=pdnorm_conditions,
                 decouple=pdnorm_decouple,
                 adaptive=pdnorm_adaptive,
@@ -650,9 +657,8 @@ class PointTransformerV3(PointModule):
         ]
         self.enc = PointSequential()
         for s in range(self.num_stages):
-            enc_drop_path_ = enc_drop_path[
-                sum(enc_depths[:s]) : sum(enc_depths[: s + 1])
-            ]
+            enc_drop_path_ = enc_drop_path[sum(enc_depths[:s]
+                                               ):sum(enc_depths[:s + 1])]
             enc = PointSequential()
             if s > 0:
                 enc.add(
@@ -701,9 +707,8 @@ class PointTransformerV3(PointModule):
             self.dec = PointSequential()
             dec_channels = list(dec_channels) + [enc_channels[-1]]
             for s in reversed(range(self.num_stages - 1)):
-                dec_drop_path_ = dec_drop_path[
-                    sum(dec_depths[:s]) : sum(dec_depths[: s + 1])
-                ]
+                dec_drop_path_ = dec_drop_path[sum(dec_depths[:s]
+                                                   ):sum(dec_depths[:s + 1])]
                 dec_drop_path_.reverse()
                 dec = PointSequential()
                 dec.add(
@@ -744,12 +749,13 @@ class PointTransformerV3(PointModule):
 
     def forward(self, data_dict):
         point = Point(data_dict)
-        point.serialization(order=self.order, shuffle_orders=self.shuffle_orders)
+        point.serialization(order=self.order,
+                            shuffle_orders=self.shuffle_orders)
         point.sparsify()
 
         point = self.embedding(point)
         point = self.enc(point)
-        
+
         if not self.cls_mode:
             point = self.dec(point)
         # else:
@@ -767,6 +773,7 @@ class PointTransformerV3(PointModule):
         point["serialized_code"] = data_dict["serialized_code"]
         point["serialized_order"] = data_dict["serialized_order"]
         point["serialized_inverse"] = data_dict["serialized_inverse"]
+        point["sparse_shape"] = data_dict["sparse_shape"]
         point.sparsify()
 
         point = self.embedding(point)

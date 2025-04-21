@@ -22,13 +22,24 @@ import onnx
 import spconv.pytorch as spconv
 import SparseConvolution
 
+
 class WrappedModel(torch.nn.Module):
 
-    def __init__(self, model):
+    def __init__(self, model, cfg):
         super(WrappedModel, self).__init__()
+        self.cfg = cfg
         self.model = model.cuda()
         #self.model.forward = self.model.export_forward
         self.model.backbone.forward = self.model.backbone.export_forward
+
+        point_cloud_range = torch.tensor(cfg.point_cloud_range, dtype=torch.float32).cuda()
+        voxel_size = cfg.grid_size
+        voxel_size = torch.tensor([voxel_size, voxel_size, voxel_size], dtype=torch.float32).cuda()
+
+        self.sparse_shape = (point_cloud_range[3:] - point_cloud_range[:3]) / voxel_size
+        self.sparse_shape = torch.round(self.sparse_shape).long().cuda()
+
+        #c = floor((points[i][j] - coors_range[j]) / voxel_size[j]);
 
     def forward(
         self,
@@ -51,6 +62,7 @@ class WrappedModel(torch.nn.Module):
             "serialized_code": serialized_code,
             "serialized_order": serialized_order,
             "serialized_inverse": serialized_inverse,
+            "sparse_shape": self.sparse_shape,
         }
 
         output = self.model(input_dict)
@@ -68,6 +80,7 @@ def main():
 
     cfg = default_setup(cfg)
     cfg.num_worker = 1
+    cfg.num_worker_per_gpu = 1
 
     # NOTE(knzo25): hacks to allow onnx export
     cfg.model.backbone.shuffle_orders = False
@@ -77,7 +90,7 @@ def main():
 
     runner.before_train()
 
-    model = WrappedModel(runner.model)
+    model = WrappedModel(runner.model, cfg)
     model.eval()
 
     data_dict = next(iter(runner.val_loader))
@@ -88,13 +101,6 @@ def main():
             input_dict[key] = input_dict[key].cuda(non_blocking=True)
 
     with torch.no_grad():
-
-        model_inputs = (
-            input_dict["coord"],
-            input_dict["grid_coord"],
-            input_dict["offset"],
-            input_dict["feat"],
-        )
 
         point = Point(input_dict)
         point.serialization(order=model.model.backbone.order,
