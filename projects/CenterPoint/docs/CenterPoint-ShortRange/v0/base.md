@@ -82,7 +82,7 @@
   - Batch size: 4*16 = 64
 
 - Evaluation result with db_jpntaxi_v1 + db_jpntaxi_v2 + db_jpntaxi_v4 + db_gsm8_v1 + db_j6_v1 + db_j6_v2 + db_j6_v3 + db_j6_v5 + db_j6gen2_v1 (total frames: 3804)
-  - Total mAP (eval range = 120m): 0.667
+  - Total mAP (eval range = 52m): 0.836
 
 | class_name | Count    | mAP  | AP@0.5m | AP@1.0m | AP@2.0m | AP@4.0m |
 | -----------| -------  | ---- | ------- | ------- | ------- | ------- |
