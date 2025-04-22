@@ -28,7 +28,7 @@ def parse_args() -> argparse.Namespace:
     return parser.parse_args()
 
 
-def filter_results(filter_cfg, predicted_result_info, predicted_result_info_name) -> Dict[str, Any]:
+def filter_results(filter_cfg, predicted_result_info, predicted_result_info_name, logger) -> Dict[str, Any]:
     """
     Args:
         filter_cfg (Dict[str, Any]): config for filter pipeline.
@@ -38,11 +38,12 @@ def filter_results(filter_cfg, predicted_result_info, predicted_result_info_name
     Returns:
         Dict[str, Any]: Filtered info dict
     """
+    filter_cfg['logger'] = logger
     filter_model = TASK_UTILS.build(filter_cfg)
     return filter_model.filter(predicted_result_info, predicted_result_info_name)
 
 
-def ensemble_results(ensemble_cfg: Dict[str, Any]):
+def ensemble_results(ensemble_cfg: Dict[str, Any], logger):
     """
     Args:
         ensemble_cfg (Dict[str, Any]): config for ensemble.
@@ -62,7 +63,7 @@ def ensemble_results(ensemble_cfg: Dict[str, Any]):
 
         # apply filters in pipelines
         for filter_cfg in model_config["filter_pipeline"]:
-            info = filter_results(filter_cfg, info, model_config["info_path"])
+            info = filter_results(filter_cfg, info, model_config["info_path"], logger)
 
         results.append(info)
 
@@ -84,7 +85,7 @@ def main():
     # Apply filtering
     logger.info("Filtering objects...")
     if cfg.filter_pipelines.type == "EnsembleModel":
-        name, output_info = ensemble_results(cfg)
+        name, output_info = ensemble_results(cfg, logger)
     else:
         raise ValueError(f"Unknown filter type: {cfg.filter_pipelines.type}")
 
