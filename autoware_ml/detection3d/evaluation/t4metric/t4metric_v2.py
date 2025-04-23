@@ -11,13 +11,12 @@ from mmdet3d.structures import LiDARInstance3DBoxes
 from mmengine.evaluator import BaseMetric
 from mmengine.logging import MMLogger
 from perception_eval.common.dataset import FrameGroundTruth
-from perception_eval.common.evaluation_task import EvaluationTask
 from perception_eval.common.label import AutowareLabel, Label
 from perception_eval.common.object import DynamicObject
 from perception_eval.common.shape import Shape, ShapeType
 from perception_eval.config.perception_evaluation_config import PerceptionEvaluationConfig
 from perception_eval.evaluation.metrics import MetricsScoreConfig
-from perception_eval.evaluation.result.object_result import DynamicObjectWithPerceptionResult
+from perception_eval.evaluation.result.perception_frame import PerceptionFrame
 from perception_eval.evaluation.result.perception_frame_config import (
     CriticalObjectFilterConfig,
     PerceptionPassFailConfig,
@@ -140,8 +139,8 @@ class T4MetricV2(BaseMetric):
             current_time = data_sample["timestamp"]
             scene_id = self.parse_scene_id(data_sample["lidar_path"])
             frame_ground_truth = self.parse_ground_truth_from_sample(current_time, data_sample)
-            perception_frame_result = self.parse_predictions_from_sample(current_time, data_sample, frame_ground_truth)
-            self.save_perception_results(scene_id, data_sample["sample_idx"], perception_frame_result)
+            perception_frame = self.parse_predictions_from_sample(current_time, data_sample, frame_ground_truth)
+            self.save_perception_frame(scene_id, data_sample["sample_idx"], perception_frame)
 
     # override of BaseMetric.compute_metrics
     def compute_metrics(
@@ -173,19 +172,19 @@ class T4MetricV2(BaseMetric):
         elif self.results_pickle_path:
             self.save_results_to_pickle(self.results_pickle_path)
 
-        evaluator = PerceptionEvaluationManager(evaluation_config=self.perception_evaluator_configs)
+        evaluator = PerceptionEvaluationManager(
+            evaluation_config=self.perception_evaluator_configs, load_ground_truth=False
+        )
 
         scenes, scene_metrics = self.init_scene_metrics_from_results(results)
 
         for scene_id, samples in scenes.items():
-            for sample_id, frame_result in samples.items():
-                object_with_results = frame_result.object_results
-                estimated_objects = [obj.estimated_object for obj in object_with_results]
+            for sample_id, perception_frame in samples.items():
 
                 frame_result: PerceptionFrameResult = evaluator.add_frame_result(
                     unix_time=time.time(),
-                    ground_truth_now_frame=frame_result.frame_ground_truth,
-                    estimated_objects=estimated_objects,
+                    ground_truth_now_frame=perception_frame.ground_truth_objects,
+                    estimated_objects=perception_frame.estimated_objects,
                     critical_object_filter_config=self.critical_object_filter_config,
                     frame_pass_fail_config=self.frame_pass_fail_config,
                 )
@@ -313,18 +312,18 @@ class T4MetricV2(BaseMetric):
         )
 
     def parse_predictions_from_sample(
-        self, time: float, data_sample: Dict[str, Any], frame_ground_truth: FrameGroundTruth
-    ) -> PerceptionFrameResult:
+        self, time: float, data_sample: Dict[str, Any], ground_truth_objects: FrameGroundTruth
+    ) -> PerceptionFrame:
         """
         Parses predicted objects from the data sample and creates a perception frame result.
 
         Args:
             time (float): The timestamp in seconds of the frame (sample).
             data_sample (Dict[str, Any]): A dictionary containing the predicted instances, including 3D bounding boxes, scores, and labels.
-            frame_ground_truth (FrameGroundTruth): The ground truth data corresponding to the current frame.
+            ground_truth_objects (FrameGroundTruth): The ground truth data corresponding to the current frame.
 
         Returns:
-            PerceptionFrameResult: A structured result containing the predicted objects, frame ground truth, and evaluation configurations.
+            PerceptionFrame: A structured result containing the predicted objects and ground truth objects.
         """
         pred_3d: Dict[str, Any] = data_sample.get("pred_instances_3d", {})
 
@@ -337,50 +336,41 @@ class T4MetricV2(BaseMetric):
         scores: torch.Tensor = pred_3d.get("scores_3d", torch.empty(0)).cpu()
         # labels_3d: (N,) Tensor of predicted class indices
         labels: torch.Tensor = pred_3d.get("labels_3d", torch.empty(0)).cpu()
-        dynamic_objects_with_perception = [
-            DynamicObjectWithPerceptionResult(
-                estimated_object=DynamicObject(
-                    unix_time=time,
-                    frame_id=self.perception_evaluator_configs.frame_id,
-                    position=tuple(bbox[:3]),
-                    orientation=Quaternion(np.cos(bbox[6] / 2), 0, 0, np.sin(bbox[6] / 2)),
-                    shape=Shape(shape_type=ShapeType.BOUNDING_BOX, size=tuple(bbox[3:6])),
-                    velocity=(bbox[7], bbox[8], 0.0),
-                    semantic_score=float(score),
-                    semantic_label=self.convert_index_to_label(int(label)),
-                ),
-                ground_truth_object=None,
+        estimated_objects = [
+            DynamicObject(
+                unix_time=time,
+                frame_id=self.perception_evaluator_configs.frame_id,
+                position=tuple(bbox[:3]),
+                orientation=Quaternion(np.cos(bbox[6] / 2), 0, 0, np.sin(bbox[6] / 2)),
+                shape=Shape(shape_type=ShapeType.BOUNDING_BOX, size=tuple(bbox[3:6])),
+                velocity=(bbox[7], bbox[8], 0.0),
+                semantic_score=float(score),
+                semantic_label=self.convert_index_to_label(int(label)),
             )
             for bbox, score, label in zip(bboxes, scores, labels)
             if not (np.isnan(score) or np.isnan(label) or np.any(np.isnan(bbox)))
         ]
 
-        return PerceptionFrameResult(
-            object_results=dynamic_objects_with_perception,
-            frame_ground_truth=frame_ground_truth,
-            metrics_config=self.metrics_config,
-            critical_object_filter_config=self.critical_object_filter_config,
-            frame_pass_fail_config=self.frame_pass_fail_config,
+        return PerceptionFrame(
             unix_time=time,
-            target_labels=self.target_labels,
+            estimated_objects=estimated_objects,
+            ground_truth_objects=ground_truth_objects,
         )
 
-    def save_perception_results(
-        self, scene_id: str, sample_idx: int, perception_frame_result: PerceptionFrameResult
-    ) -> None:
+    def save_perception_frame(self, scene_id: str, sample_idx: int, perception_frame: PerceptionFrame) -> None:
         """
         Stores the processed perceptoin result in self.results following the format.
         [
             {
                 <scence_id>:
-                    {<sample_idx>: <PerceptionFrameResult>},
-                    {<sample_idx>: <PerceptionFrameResult>},
+                    {<sample_idx>: <PerceptionFrame>},
+                    {<sample_idx>: <PerceptionFrame>},
 
             },
             {
                 <scence_id>:
-                    {<sample_idx>: <PerceptionFrameResult>},
-                    {<sample_idx>: <PerceptionFrameResult>},
+                    {<sample_idx>: <PerceptionFrame>},
+                    {<sample_idx>: <PerceptionFrame>},
 
             },
         ]
@@ -388,15 +378,15 @@ class T4MetricV2(BaseMetric):
         Args:
             scene_id (str): The identifier for the scene to which the result belongs.
             sample_idx (int): The index of the sample within the scene.
-            perception_frame_result (PerceptionFrameResult): The processed perception result for the given sample.
+            perception_frame (PerceptionFrame): The processed perception result for the given sample.
         """
 
         index = self.scene_id_to_index_map.get(scene_id, None)
         if index is not None:
-            self.results[index][scene_id][sample_idx] = perception_frame_result
+            self.results[index][scene_id][sample_idx] = perception_frame
         else:
             # New scene: append to results and record its index
-            self.results.append({scene_id: {sample_idx: perception_frame_result}})
+            self.results.append({scene_id: {sample_idx: perception_frame}})
             self.scene_id_to_index_map[scene_id] = len(self.results) - 1
 
     def save_results_to_pickle(self, path: Path) -> None:
@@ -435,10 +425,8 @@ class T4MetricV2(BaseMetric):
         matching_mode = map_instance.matching_mode.value  # e.g., "Center Distance" or "Plane Distance"
 
         for ap in map_instance.aps:
-            # Each Ap instance is configured for a single label and threshold,
-            # so we extract the only elements from target_labels and matching_threshold_list.
             label = ap.target_labels[0].value  # AutowareLabel
-            threshold = ap.matching_threshold_list[0]
+            threshold = ap.matching_threshold
             ap_value = ap.ap
 
             # Construct the metric key
@@ -450,11 +438,11 @@ class T4MetricV2(BaseMetric):
         Flattens scene dictionaries from the results and initializes scene_metrics structure.
 
         Args:
-            results (list): List of dictionaries mapping scene_id to sample_id-frame_result pairs.
+            results (list): List of dictionaries mapping scene_id to sample_id-perception_frame pairs.
 
         Returns:
             tuple:
-                - scenes (dict): Flattened dict of {scene_id: {sample_id: frame_result}}.
+                - scenes (dict): Flattened dict of {scene_id: {sample_id: perception_frame}}.
                 - scene_metrics (dict): Initialized dict of {scene_id: {sample_id: dict}} for metric storage.
         """
         scenes = {scene_id: samples for scene in results for scene_id, samples in scene.items()}
