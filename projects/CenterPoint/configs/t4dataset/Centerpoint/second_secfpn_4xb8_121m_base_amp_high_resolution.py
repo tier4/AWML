@@ -40,14 +40,14 @@ eval_class_range = {
 
 # user setting
 data_root = "data/t4dataset/"
-info_directory_path = "info/user_name/"
+info_directory_path = "info/kokseang_1_4/"
 train_gpu_size = 4
-train_batch_size = 16
+train_batch_size = 8
 test_batch_size = 2
 num_workers = 32
 val_interval = 5
 max_epochs = 50
-work_dir = "work_dirs/centerpoint_high_resolution/" + _base_.dataset_type + "/second_secfpn_4xb16_121m_base_amp/"
+work_dir = "work_dirs/centerpoint_high_resolution/" + _base_.dataset_type + "/second_secfpn_4xb8_121m_base_amp/"
 
 train_pipeline = [
     dict(
@@ -364,7 +364,7 @@ optim_wrapper = dict(
     optimizer=optimizer,
     clip_grad=clip_grad,
     loss_scale={
-        "growth_interval": 400
+        "growth_interval": 1000 
     },  # Can update it accordingly, 400 is about half of an epoch for this experiment
 )
 
