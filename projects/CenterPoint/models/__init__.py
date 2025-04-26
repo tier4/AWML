@@ -7,6 +7,7 @@ from .necks.second_fpn import SECONDFPN
 from .task_modules.coders.centerpoint_bbox_coders import CenterPointBBoxCoder
 from .voxel_encoders.pillar_encoder import BackwardPillarFeatureNet
 from .voxel_encoders.pillar_encoder_onnx import BackwardPillarFeatureNetONNX, PillarFeatureNetONNX
+from .losses.custom_gaussian_focal_loss import CustomGaussianFocalLoss
 
 __all__ = [
     "SECOND",
@@ -21,4 +22,5 @@ __all__ = [
     "CenterHeadONNX",
     "SeparateHeadONNX",
     "CenterPointBBoxCoder",
+    "CustomGaussianFocalLoss"
 ]
