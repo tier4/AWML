@@ -10,6 +10,7 @@ from .voxel_encoders.pillar_encoder_onnx import BackwardPillarFeatureNetONNX, Pi
 from .losses.custom_gaussian_focal_loss import CustomGaussianFocalLoss
 
 __all__ = [
+    "CustomGaussianFocalLoss",
     "SECOND",
     "SECONDFPN",
     "CenterPoint",
@@ -22,5 +23,4 @@ __all__ = [
     "CenterHeadONNX",
     "SeparateHeadONNX",
     "CenterPointBBoxCoder",
-    "CustomGaussianFocalLoss"
 ]
