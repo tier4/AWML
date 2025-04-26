@@ -8,6 +8,7 @@ from mmdet.registry import MODELS
 from mmdet.models.losses.utils import weight_reduce_loss, weighted_loss
 
 
+
 @weighted_loss
 def gaussian_focal_loss(pred: Tensor,
                         gaussian_target: Tensor,
