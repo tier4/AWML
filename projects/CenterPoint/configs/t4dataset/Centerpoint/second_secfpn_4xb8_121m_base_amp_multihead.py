@@ -298,7 +298,7 @@ model = dict(
             voxel_size=voxel_size,
             # No filter by range
             post_center_limit_range=[-200.0, -200.0, -10.0, 200.0, 200.0, 10.0],
-            min_radius=[1.0, 1.0, 1.0, 1.0, 1.0, 1.0],
+            min_radius=[1.0, 1.0, 1.0, 1.0, 1.0],
         ),
     ),
 )
@@ -401,6 +401,7 @@ default_hooks = dict(
 
 custom_hooks = [
     dict(type="MomentumInfoHook"),
+    dict(type="LossScaleInfoHook"),
 ]
 
 activation_checkpointing = ["pts_backbone"]

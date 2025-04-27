@@ -14,7 +14,7 @@ class LossScaleInfoHook(Hook):
 
     priority = "VERY_HIGH"
 
-    def after_train_iter(self, runner, batch_idx: int, data_batch: DATA_BATCH = None) -> None:
+    def after_train_iter(self, runner, batch_idx, data_batch=None, outputs=None):
         """Update current iter and learning rate information before every
         iteration.
 
