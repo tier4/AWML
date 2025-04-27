@@ -8,7 +8,6 @@ from mmdet.registry import MODELS
 from mmdet.models.losses.utils import weight_reduce_loss, weighted_loss
 
 
-
 @weighted_loss
 def gaussian_focal_loss(pred: Tensor,
                         gaussian_target: Tensor,
@@ -30,7 +29,7 @@ def gaussian_focal_loss(pred: Tensor,
         pos_weight(float): Positive sample loss weight. Defaults to 1.0.
         neg_weight(float): Negative sample loss weight. Defaults to 1.0.
     """
-    eps = 1e-4
+    eps = 1e-6
     pos_weights = gaussian_target.eq(1)
     neg_weights = (1 - gaussian_target).pow(gamma)
     pos_loss = -(pred + eps).log() * (1 - pred).pow(alpha) * pos_weights
@@ -76,7 +75,7 @@ def gaussian_focal_loss_with_pos_inds(
         avg_factor (int, float, optional): Average factor that is used to
             average the loss. Defaults to None.
     """
-    eps = 1e-12
+    eps = 1e-6
     neg_weights = (1 - gaussian_target).pow(gamma)
 
     pos_pred_pix = pred[pos_inds]

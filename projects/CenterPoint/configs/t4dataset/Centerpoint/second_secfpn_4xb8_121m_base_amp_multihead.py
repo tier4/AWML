@@ -45,7 +45,7 @@ train_gpu_size = 4
 train_batch_size = 8
 test_batch_size = 2
 num_workers = 32
-val_interval = 10
+val_interval = 5
 max_epochs = 50
 work_dir = "work_dirs/centerpoint_multihead/" + _base_.dataset_type + "/second_secfpn_4xb8_121m_base_amp_multihead/"
 
@@ -275,8 +275,9 @@ model = dict(
             out_size_factor=out_size_factor,
         ),
         # sigmoid(-9.2103) = 0.0001 for initial small values
-        separate_head=dict(type="CustomSeparateHead", init_bias=-9.2103, final_kernel=1),
-        loss_cls=dict(type="CustomGaussianFocalLoss", reduction="mean", loss_weight=1.0),
+        # separate_head=dict(type="CustomSeparateHead", init_bias=-4.5951, final_kernel=1),
+        separate_head=dict(type="CustomSeparateHead", init_bias=-6.9068, final_kernel=1),
+        loss_cls=dict(type="mmdet.CustomGaussianFocalLoss", reduction="mean", loss_weight=1.0),
         # loss_bbox=dict(type="mmdet.L1Loss", reduction="mean", loss_weight=0.25),
         loss_bbox=dict(type="mmdet.SmoothL1Loss", reduction="mean", loss_weight=0.25),
         norm_bbox=True,
@@ -297,6 +298,7 @@ model = dict(
             voxel_size=voxel_size,
             # No filter by range
             post_center_limit_range=[-200.0, -200.0, -10.0, 200.0, 200.0, 10.0],
+            min_radius=[1.0, 1.0, 1.0, 1.0, 1.0, 1.0],
         ),
     ),
 )
@@ -360,7 +362,7 @@ train_cfg = dict(
 val_cfg = dict()
 test_cfg = dict()
 
-optimizer = dict(type="AdamW", lr=lr, weight_decay=0.01)
+optimizer = dict(type="AdamW", lr=lr, weight_decay=0.01, eps=1e-4)
 clip_grad = dict(max_norm=35, norm_type=2)
 
 optim_wrapper = dict(
@@ -369,8 +371,8 @@ optim_wrapper = dict(
     optimizer=optimizer,
     clip_grad=clip_grad,
     loss_scale={
-        "init_scale": 2.0**6,
-        "growth_interval": 2000
+        "init_scale": 2.0,
+        "growth_interval": 800
     },  # Can update it accordingly, 400 is about half of an epoch for this experiment
 )
 
@@ -391,7 +393,7 @@ vis_backends = [
 ]
 visualizer = dict(type="Det3DLocalVisualizer", vis_backends=vis_backends, name="visualizer")
 
-logger_interval = 1
+logger_interval = 50
 default_hooks = dict(
     logger=dict(type="LoggerHook", interval=logger_interval),
     checkpoint=dict(type="CheckpointHook", interval=1, max_keep_ckpts=3, save_best="NuScenes metric/T4Metric/mAP"),

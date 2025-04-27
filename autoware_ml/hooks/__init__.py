@@ -5,6 +5,7 @@ from .pytorch_profiler_hook import (
     PytorchTrainingProfilerHook,
     PytorchValidationProfilerHook,
 )
+from .loss_scale_info_hook import LossScaleInfoHook
 
 __all__ = [
     "MomentumInfoHook",
@@ -12,4 +13,5 @@ __all__ = [
     "PytorchTestingProfilerHook",
     "PytorchValidationProfilerHook",
     "LoggerHook",
+    "LossScaleInfoHook"
 ]
