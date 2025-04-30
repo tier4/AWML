@@ -15,6 +15,7 @@ import pycocotools.mask as mask_util
 import supervision as sv
 import torch
 import yaml
+from collections import defaultdict
 from groundingdino.util.inference import load_image, load_model, predict
 from hydra import compose, initialize
 from mmengine.config import Config
@@ -34,12 +35,9 @@ from tools.detection3d.t4dataset_converters.t4converter import (
 
 class SAM2Wrapper:
 
-    def __init__(self, cfg_path):
+    def __init__(self, cfg):
 
-        # load config
-        with open(cfg_path, "r") as f:
-            self.cfg = yaml.safe_load(f)["sam2"]
-
+        self.cfg = cfg
         self.sam2_classes = self.cfg["sam2_classes"]
         self.text_prompt = ". ".join(self.sam2_classes) + "."
 
@@ -256,20 +254,6 @@ def parse_args():
         help="directory to save segmented videos",
     )
 
-    parser.add_argument(
-        "--override",
-        type=bool,
-        required=True,
-        help="override ",
-    )
-
-    parser.add_argument(
-        "--only_key_frames",
-        type=int,
-        required=True,
-        help="product version",
-    )
-
     args = parser.parse_args()
     return args
 
@@ -301,23 +285,25 @@ def make_video(video_folder, scene_id, cam_name, images):
 
 def main():
     args = parse_args()
+
     # load config
-    cfg = Config.fromfile(args.dataset_config)
+    dataset_cfg = Config.fromfile(args.dataset_config)
     os.makedirs(args.out_videos, exist_ok=True)
 
-    # TODO(knzo25): hack since I only want to test part of the db
-    cfg.dataset_version_list = ["db_jpntaxi_v2"]
+    # load config
+    with open(args.segmentation_config, "r") as f:
+        segmentation_cfg = yaml.safe_load(f)["sam2"]
 
-    model = SAM2Wrapper(args.segmentation_config)
+    model = SAM2Wrapper(segmentation_cfg)
 
-    for dataset_version in cfg.dataset_version_list:
-        dataset_list = osp.join(cfg.dataset_version_config_root, dataset_version + ".yaml")
+    for dataset_version in tqdm(dataset_cfg.dataset_version_list):
+        dataset_list = osp.join(dataset_cfg.dataset_version_config_root, dataset_version + ".yaml")
         with open(dataset_list, "r") as f:
             dataset_list_dict: Dict[str, List[str]] = yaml.safe_load(f)
 
-        for split in ["train", "val", "test"]:
+        for split in tqdm(["train", "val", "test"]):
             print_log(f"Segmenting images from split: {split}", logger="current")
-            for scene_id in dataset_list_dict.get(split, []):
+            for scene_id in tqdm(dataset_list_dict.get(split, [])):
                 print_log(f"Segmented images from scene: {scene_id}")
                 scene_root_dir_path = get_scene_root_dir_path(
                     args.root_path,
@@ -329,21 +315,19 @@ def main():
                     raise ValueError(f"{scene_root_dir_path} does not exist.")
 
                 t4 = Tier4(version="annotation", data_root=scene_root_dir_path, verbose=False)
-                scene_seg_images_dict = {camera_name: [] for camera_name in cfg.camera_types}
+                #scene_seg_images_dict = {camera_name: [] for camera_name in dataset_cfg.camera_types}
+                scene_seg_images_dict = defaultdict(list)
 
                 for i, sample_data in enumerate(tqdm(t4.sample_data)):
 
                     if sample_data.fileformat not in ("jpg", "png") or (
-                        args.only_key_frames and not sample_data.is_key_frame
+                        segmentation_cfg["only_key_frames"] and not sample_data.is_key_frame
                     ):
                         continue
 
                     cam_name = sample_data.channel
 
-                    # if cam_name != "CAM_FRONT_LEFT":
-                    #    continue
-
-                    seg_img = model.segment(os.path.join(scene_root_dir_path, sample_data.filename), args.override)
+                    seg_img = model.segment(os.path.join(scene_root_dir_path, sample_data.filename), segmentation_cfg["override"])
 
                     if seg_img is None:
                         continue

@@ -90,12 +90,12 @@ RUN python -m pip install --upgrade pip setuptools wheel numpy \
 RUN python -m pip install torch==2.3.1 torchvision==0.18.1 torchaudio==2.3.1 --index-url https://download.pytorch.org/whl/cu121
 
 # Install segment_anything package in editable mode
-RUN python -m pip install -e /workspace/projects/SAM2
+RUN python -m pip install -e /workspace/projects/PCSegSAM2
 
 RUN python -m pip install --upgrade typing_extensions
 
 # Install grounding dino
-RUN python -m pip install --no-build-isolation -e /workspace/projects/SAM2/grounding_dino
+RUN python -m pip install --no-build-isolation -e /workspace/projects/PCSegSAM2/grounding_dino
 
 RUN pip install accelerate
 RUN pip install numba==0.61.1rc1

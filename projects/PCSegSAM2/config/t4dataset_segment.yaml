@@ -35,12 +35,14 @@ sam2:
         "traffic sign",
         ]
     background_value: 255
-    sam2_checkpoint: "checkpoints/sam2.1_hiera_large.pt"
+    sam2_checkpoint: "projects/PCSegSAM2/checkpoints/sam2.1_hiera_large.pt"
     sam2_cfg: "sam2/configs/sam2.1/sam2.1_hiera_l.yaml"
-    grounding_dino_checkpoint: "gdino_checkpoints/groundingdino_swint_ogc.pth"
-    grounding_dino_cfg: "projects/SAM2/grounding_dino/groundingdino/config/GroundingDINO_SwinT_OGC.py"
+    grounding_dino_checkpoint: "projects/PCSegSAM2/gdino_checkpoints/groundingdino_swint_ogc.pth"
+    grounding_dino_cfg: "projects/PCSegSAM2/grounding_dino/groundingdino/config/GroundingDINO_SwinT_OGC.py"
     box_threshold: 0.30
     text_threshold: 0.25
+    override: False
+    only_key_frames: False
 projective_segmentation:
     num_consistent_frames: 5
     invalid_value: 255

@@ -1,4 +1,4 @@
-# PointcloudSegmentationSAM2
+# PCSegSAM2
 
 This projects leverages SAM2 and grounding dino to segment pointclouds via intermediate image segmentation and pointcloud projection.
 The process can be divided in two steps:
@@ -19,7 +19,7 @@ Note: due to SAM2 requirements, the image from this projects uses a different ve
 Build the image:
 
 ```bash
-DOCKER_BUILDKIT=1 docker build -t autoware-ml-sam2 -f projects/SAM2/Dockerfile . --progress=plain
+DOCKER_BUILDKIT=1 docker build -t autoware-ml-sam2 -f projects/PCSegSAM2/Dockerfile . --progress=plain
 ```
 
 To execute the container:
@@ -31,21 +31,27 @@ docker run -it --rm --gpus '"device=0"' --shm-size=64g --name awml -p 6006:6006 
 Before following to the next steps, the checkpoints for SAM2 and grounding dino need to be downloaded.
 
 ```bash
-TODO
+cd projects/PCSegSAM2/checkpoints
+bash download_ckpts.sh
+cd ../gdino_checkpoints
+bash download_ckpts.sh
 ```
 
 ## Generate SAM2 segmented images
 
+*NOTE: Although this step should be done only in docker, in the meantime run the following command:
+`python -m pip install --no-build-isolation -e /workspace/projects/PCSegSAM2/grounding_dino`
+
+*NOTE2: Although SAM2 has video segmentation, I did not have enough memory to test it.
+
 To segment the images of a dataset using SAM2, use:
 
 ```bash
-python projects/SAM2/segment_t4dataset_sam2.py \
+python projects/PCSegSAM2/segment_t4dataset_sam2.py \
     --root_path ./data/t4dataset \
     --out_videos ./videos \
-    --dataset_config autoware_ml/configs/detection3d/dataset/t4dataset/xx1.py \
-    --sam2_config projects/SAM2/config/t4dataset_segment.yaml \
-    --override 1 \
-    --only_key_frames 0
+    --dataset_config autoware_ml/configs/detection3d/dataset/t4dataset/base.py \
+    --segmentation_config projects/PCSegSAM2/config/t4dataset_segment.yaml
 ```
 
 The `segmentation_config` specifies the specifics of `SAM2` including the specific model, checkpoints, and thresholds.
@@ -59,7 +65,7 @@ Segmented images will be generated alongside the original images with the `_seg.
 To generate segmented pointclouds use the following command:
 
 ```bash
-python projects/SAM2/segment_t4dataset_projective.py \
+python projects/PCSegSAM2/segment_t4dataset_projective.py \
     --root_path ./data/t4dataset \
     --database_config autoware_ml/configs/detection3d/dataset/t4dataset/xx1.py \
     --segmentation_config projects/SAM2/config/t4dataset_segment.yaml
@@ -99,10 +105,10 @@ It is possible to refine the segmentation labels using the cuboids from a object
 For the `t4dataset`, it can be done using the following command:
 
 ```bash
-python projects/SAM2/segment_t4dataset_projective.py \
+python projects/PCSegSAM2/segment_t4dataset_projective.py \
     --root_path ./data/t4dataset \
     --database_config autoware_ml/configs/detection3d/dataset/t4dataset/xx1.py \
-    --segmentation_config projects/SAM2/config/t4dataset_segment.yaml
+    --segmentation_config projects/PCSegSAM2/config/t4dataset_segment.yaml
 ```
 
 ## (Optional) Generate BEV videos with the segmentation result
@@ -110,9 +116,9 @@ python projects/SAM2/segment_t4dataset_projective.py \
 BEV videos of the setmented pointclouds can be generated with the following command:
 
 ```bash
-python projects/SAM2/generate_segmentation_videos.py \
+python projects/PCSegSAM2/generate_segmentation_videos.py \
     --root_path ./data/t4dataset \
     --out_videos ./videos \
     --dataset_config autoware_ml/configs/detection3d/dataset/t4dataset/xx1.py \
-    --segmentation_config projects/SAM2/config/t4dataset_segment.yaml
+    --segmentation_config projects/PCSegSAM2/config/t4dataset_segment.yaml
 ```
