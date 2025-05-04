@@ -14,6 +14,7 @@
 | CenterPoint base/1.5     | 66.7 | 80.1              | 54.3                | 79.1             | 55.3                 | 64.3                     |
 | CenterPoint base/1.4     | 66.3 | 80.5              | 53.1                | 81.1             | 52.0                 | 64.7                     |
 | CenterPoint base/1.3     | 66.7 | 80.6              | 53.5                | 80.2             | 54.3                 | 64.6                     |
+| CenterPoint base/1.1     | 61.6 | 77.5              | 50.3                | 68.8             | 50.5                 | 60.7                     |
 
 ## Deprecated summary
 <details>
@@ -414,6 +415,17 @@
 
 <details>
 <summary> The link of data and evaluation result </summary>
+
+- Evaluation result with db_jpntaxi_v1 + db_jpntaxi_v2 + db_jpntaxi_v4 + db_gsm8_v1 + db_j6_v1 + db_j6_v2 + db_j6_v3 + db_j6_v5 + db_j6gen2_v1 (total frames: 3804)
+  - Total mAP (eval range = 120m): 0.616
+
+| class_name | mAP  | AP@0.5m | AP@1.0m | AP@2.0m | AP@4.0m |
+| ---------- | ---- | ------- | ------- | ------- | ------- |
+| car        | 77.5 | 69.4    | 78.5    | 80.7    | 81.6    |
+| truck      | 50.3 | 30.4    | 50.2    | 57.5    | 63.2    |
+| bus        | 68.8 | 60.2    | 70.2    | 71.8    | 72.9    |
+| bicycle    | 50.5 | 49.8    | 50.7    | 50.7    | 50.8    |
+| pedestrian | 60.7 | 58.7    | 59.8    | 61.4    | 62.9    |
 
 - Evaluation result with db_jpntaxi_v1 + db_jpntaxi_v2 + db_jpntaxi_v4 + db_gsm8_v1 + db_j6_v1 + db_j6_v2 + db_j6_v3 (total frames: 3026):
 
