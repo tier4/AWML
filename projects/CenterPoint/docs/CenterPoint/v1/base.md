@@ -416,17 +416,6 @@
 <details>
 <summary> The link of data and evaluation result </summary>
 
-- Evaluation result with db_jpntaxi_v1 + db_jpntaxi_v2 + db_jpntaxi_v4 + db_gsm8_v1 + db_j6_v1 + db_j6_v2 + db_j6_v3 + db_j6_v5 + db_j6gen2_v1 (total frames: 3804)
-  - Total mAP (eval range = 120m): 0.616
-
-| class_name | mAP  | AP@0.5m | AP@1.0m | AP@2.0m | AP@4.0m |
-| ---------- | ---- | ------- | ------- | ------- | ------- |
-| car        | 77.5 | 69.4    | 78.5    | 80.7    | 81.6    |
-| truck      | 50.3 | 30.4    | 50.2    | 57.5    | 63.2    |
-| bus        | 68.8 | 60.2    | 70.2    | 71.8    | 72.9    |
-| bicycle    | 50.5 | 49.8    | 50.7    | 50.7    | 50.8    |
-| pedestrian | 60.7 | 58.7    | 59.8    | 61.4    | 62.9    |
-
 - Evaluation result with db_jpntaxi_v1 + db_jpntaxi_v2 + db_jpntaxi_v4 + db_gsm8_v1 + db_j6_v1 + db_j6_v2 + db_j6_v3 (total frames: 3026):
 
 | Eval range = 120m  | mAP  | car  | truck | bus  | bicycle | pedestrian |
@@ -464,6 +453,18 @@
     - [checkpoint_best.pth](https://download.autoware-ml-model-zoo.tier4.jp/autoware-ml/models/centerpoint/centerpoint/t4base/v1.1/epoch_50.pth)
     - [config.py](https://download.autoware-ml-model-zoo.tier4.jp/autoware-ml/models/centerpoint/centerpoint/t4base/v1.1/second_secfpn_121m_2xb8.py)
   - train time: NVIDIA A100 80GB * 2 * 50 epochs = 4.5 days
+
+- Evaluation result with db_jpntaxi_v1 + db_jpntaxi_v2 + db_jpntaxi_v4 + db_gsm8_v1 + db_j6_v1 + db_j6_v2 + db_j6_v3 + db_j6_v5 + db_j6gen2_v1 (total frames: 3804)
+  - Total mAP (eval range = 120m): 0.616
+
+| class_name | mAP  | AP@0.5m | AP@1.0m | AP@2.0m | AP@4.0m |
+| ---------- | ---- | ------- | ------- | ------- | ------- |
+| car        | 77.5 | 69.4    | 78.5    | 80.7    | 81.6    |
+| truck      | 50.3 | 30.4    | 50.2    | 57.5    | 63.2    |
+| bus        | 68.8 | 60.2    | 70.2    | 71.8    | 72.9    |
+| bicycle    | 50.5 | 49.8    | 50.7    | 50.7    | 50.8    |
+| pedestrian | 60.7 | 58.7    | 59.8    | 61.4    | 62.9    |
+
 - Evaluation result with test-dataset: db_jpntaxi_v1 + db_jpntaxi_v2 + db_jpntaxi_v4 + db_gsm8_v1 + db_j6_v1 + db_j6_v2 + db_j6_v3 (total frames: 3026):
   - Total mAP (eval range = 120m): 0.647
 
