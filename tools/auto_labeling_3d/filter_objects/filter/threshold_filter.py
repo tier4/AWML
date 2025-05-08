@@ -1,6 +1,7 @@
 import logging
 from collections import defaultdict
 from typing import Any, Dict, List, Set
+from tools.auto_labeling_3d.utils.type import AWML3DInfo
 
 from mmengine.registry import TASK_UTILS
 
@@ -43,15 +44,15 @@ class ThresholdFilter(BaseFilter):
 
         return False
 
-    def filter(self, predicted_result_info, info_name) -> Dict:
+    def filter(self, predicted_result_info: AWML3DInfo, info_name: str) -> AWML3DInfo:
         """Apply threshold filtering to the pseudo labels.
 
         Args:
-            predicted_result_info (Dict[str, Any]): Info dict that contains predicted result.
-            info_name (str): Name of each info file
+            predicted_result_info (AWML3DInfo): Info dict that contains predicted result.
+            info_name (str): Name of each model used for generating info file.
 
         Returns:
-            Dict: Filtered dataset info with filtering statistics
+            AWML3DInfo: Filtered dataset info with filtering statistics
         """
 
         # Initialize counters
@@ -82,7 +83,7 @@ class ThresholdFilter(BaseFilter):
             filtered_data_list.append(filtered_frame)
 
         # Create output
-        filtered_predicted_result_info = predicted_result_info.copy()
+        filtered_predicted_result_info: AWML3DInfo = predicted_result_info.copy()
         filtered_predicted_result_info["data_list"] = filtered_data_list
         self._report_filter_statistics(total_instances, filtered_instances, info_name)
 

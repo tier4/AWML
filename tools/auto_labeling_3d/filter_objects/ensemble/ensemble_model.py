@@ -1,6 +1,7 @@
 import logging
 import pickle
 from typing import Any, Dict, List, Tuple
+from tools.auto_labeling_3d.utils.type import AWML3DInfo
 
 import numpy as np
 from mmengine.registry import TASK_UTILS
@@ -22,7 +23,7 @@ class EnsembleModel:
         self.settings = ensemble_setting
         self.logger = logger
 
-    def ensemble(self, results) -> Dict:
+    def ensemble(self, results: List[AWML3DInfo]) -> AWML3DInfo:
         """Ensemble and integrate results from all models."""
         if len(results) == 1:
             return results[0]

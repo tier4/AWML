@@ -2,74 +2,77 @@ import argparse
 import logging
 import pickle
 from pathlib import Path
-from typing import Any, Dict, List, NewType
+from typing import Any, Dict, List
 
 from mmengine.config import Config
 from mmengine.registry import TASK_UTILS, init_default_scope
 
 from tools.auto_labeling_3d.utils.logger import setup_logger
+from tools.auto_labeling_3d.utils.type import AWML3DInfo
 
-AWMLInfo = NewType("AWMLInfo", Dict[str, Any])
-
-def apply_filter(filter_cfg, predicted_result_info: AWMLInfo, predicted_result_info_name: str, logger) -> AWMLInfo:
+def apply_filter(filter_cfg: Dict[str, Any], predicted_result_info: AWML3DInfo, predicted_result_info_name: str, logger: logging.Logger) -> AWML3DInfo:
     """
     Args:
         filter_cfg (Dict[str, Any]): config for filter pipeline.
-        predicted_result_info (AWMLInfo): AWMLInfo dict that contains predicted result.
-        predicted_result_info_name (str): Name of AWMLInfo dict.
+        predicted_result_info (AWML3DInfo): AWML3DInfo dict that contains predicted result.
+        predicted_result_info_name (str): Name of AWML3DInfo dict.
+        logger (logging.Logger): Logger instance for output messages.
 
     Returns:
-       AWMLInfo: Filtered info dict
+       AWML3DInfo: Filtered info dict
     """
     filter_cfg['logger'] = logger
     filter_model = TASK_UTILS.build(filter_cfg)
     return filter_model.filter(predicted_result_info, predicted_result_info_name)
 
-def apply_ensemble(ensemble_cfg, predicted_result_infos: List[AWMLInfo], logger) -> AWMLInfo:
+def apply_ensemble(ensemble_cfg: Dict[str, Any], predicted_result_infos: List[AWML3DInfo], logger: logging.Logger) -> AWML3DInfo:
     """
     Args:
         ensemble_cfg (Dict[str, Any]): config for ensemble model.
-        predicted_result_infos (List[AWMLInfo]): List of AWMLInfo dict that contains predicted result.
+        predicted_result_infos (List[AWML3DInfo]): List of AWML3DInfo dict that contains predicted result.
+        logger (logging.Logger): Logger instance for output messages.
 
     Returns:
-        AWMLInfo: Ensembled info dict
+        AWML3DInfo: Ensembled info dict
     """
     ensemble_cfg['logger'] = logger
-    ensemble_model = TASK_UTILS.build(ensemble_cfg)
+    ensemble_model: EnsembleModel = TASK_UTILS.build(ensemble_cfg)
     return ensemble_model.ensemble(predicted_result_infos)
 
-def filter_result(filter_input: Dict[str, Any], logger) -> tuple[str, AWMLInfo]:
+def filter_result(filter_input: Dict[str, Any], logger: logging.Logger) -> tuple[str, AWML3DInfo]:
     """
     Args:
         filter_input (Dict[str, Any]): config of input for filter.
+        logger (logging.Logger): Logger instance for output messages.
 
     Returns:
         str: Name of the model used for input
-        AWMLInfo: Filtered info dict
+        AWML3DInfo: Filtered info dict
     """
     # load info file
     with open(filter_input["info_path"], "rb") as f:
-        info: AWMLInfo = pickle.load(f)
+        info: AWML3DInfo = pickle.load(f)
 
     # apply filters in pipelines
     for filter_cfg in filter_input["filter_pipeline"]:
-        info: AWMLInfo = apply_filter(filter_cfg, info, filter_input["info_path"], logger)
+        info: AWML3DInfo = apply_filter(filter_cfg, info, filter_input["info_path"], logger)
 
     name: str = filter_input["name"]
-    output_info: Dict[str, Any] = info
+    output_info: AWML3DInfo = info
     return name, output_info
 
-def ensemble_results(filter_pipelines: Dict[str, Any], logger) -> tuple[str, AWMLInfo]:
+def ensemble_results(filter_pipelines: Dict[str, Any], logger: logging.Logger) -> tuple[str, AWML3DInfo]:
     """
     Args:
         filter_pipelines (Dict[str, Any]): config for pipelines.
+        logger (logging.Logger): Logger instance for output messages.
 
     Returns:
         str: Name of models ensembled (e.g. "centerpoint+bevfusion")
-        AWMLInfo: Ensembled info dict
+        AWML3DInfo: Ensembled info dict
     """
     names: List[str] = []
-    predicted_results: List[AWMLInfo] = []
+    predicted_results: List[AWML3DInfo] = []
     for filter_input in filter_pipelines.inputs:
         name, info = filter_result(filter_input, logger)
 
@@ -77,7 +80,7 @@ def ensemble_results(filter_pipelines: Dict[str, Any], logger) -> tuple[str, AWM
         predicted_results.append(info)
 
     name: str = "+".join(names)
-    output_info: AWMLInfo = apply_ensemble(filter_pipelines.config, predicted_results, logger)
+    output_info: AWML3DInfo = apply_ensemble(filter_pipelines.config, predicted_results, logger)
     return name, output_info
 
 def parse_args() -> argparse.Namespace:
@@ -98,7 +101,7 @@ def parse_args() -> argparse.Namespace:
     return parser.parse_args()
 
 def main():
-    # init setup
+    # setup
     init_default_scope("mmdet3d")
     args = parse_args()
     logger: logging.Logger = setup_logger(args, name="filter_objects")
