@@ -166,6 +166,7 @@ filter_pipelines = dict(
 ```
 
 - Make the info file to filter the objects which do not use for pseudo T4dataset
+- You can add your own config under [tools/auto_labeling_3d/filter_objects/config/private/](./filter_objects/config/private/)
 
 ```sh
 python tools/auto_labeling_3d/filter_objects/filter_objects.py --config {config_file} --work-dir {path to output}
