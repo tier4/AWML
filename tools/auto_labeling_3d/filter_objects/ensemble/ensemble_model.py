@@ -1,3 +1,4 @@
+import logging
 import pickle
 from typing import Any, Dict, List, Tuple
 
@@ -11,24 +12,22 @@ class EnsembleModel:
 
     Args:
         models (List[Dict]): A list of model configurations.
-        ensemble_config (Dict[str, Any]): Configuration for ensembling (e.g., weights, iou_threshold, skip_box_threshold).
-    """
-
+        ensemble_setting (Dict[str, Any]): Configuration for ensembling (e.g., weights, iou_threshold, skip_box_threshold).
+    """        
     def __init__(
         self,
-        models: List[Dict],
-        ensemble_config: Dict[str, Any],
+        ensemble_setting: Dict[str, Any],
+        logger: logging.Logger,
     ):
-        self.models = models
-        self.settings = ensemble_config
-
-        # Check if the number of weights matches the number of models
-        assert len(self.settings["weights"]) == len(models), "Number of weights must match number of models"
+        self.settings = ensemble_setting
+        self.logger = logger
 
     def ensemble(self, results) -> Dict:
         """Ensemble and integrate results from all models."""
         if len(results) == 1:
             return results[0]
+        # Check if the number of weights matches the number of results
+        assert len(self.settings["weights"]) == len(results), "Number of weights must match number of models"
 
         return self._ensemble(results, ensemble_function=_nms_ensemble)
 
