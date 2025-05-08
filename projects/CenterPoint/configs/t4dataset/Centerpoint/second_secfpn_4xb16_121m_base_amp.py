@@ -41,13 +41,13 @@ eval_class_range = {
 # user setting
 data_root = "data/t4dataset/"
 info_directory_path = "info/user_name/"
-train_gpu_size = 2
-train_batch_size = 8
+train_gpu_size = 4
+train_batch_size = 16
 test_batch_size = 2
 num_workers = 32
-val_interval = 1
+val_interval = 5
 max_epochs = 50
-work_dir = "work_dirs/centerpoint/" + _base_.dataset_type + "/second_secfpn_2xb8_121m_base/"
+work_dir = "work_dirs/centerpoint/" + _base_.dataset_type + "/second_secfpn_4xb16_121m_base_amp/"
 
 train_pipeline = [
     dict(
@@ -221,7 +221,7 @@ model = dict(
             max_num_points=20,
             voxel_size=voxel_size,
             point_cloud_range=point_cloud_range,
-            max_voxels=(32000, 60000),
+            max_voxels=(64000, 64000),
             deterministic=True,
         ),
     ),
@@ -270,6 +270,8 @@ model = dict(
             post_center_range=[-200.0, -200.0, -10.0, 200.0, 200.0, 10.0],
             out_size_factor=out_size_factor,
         ),
+        # sigmoid(-9.2103) = 0.0001 for initial small values
+        separate_head=dict(type="CustomSeparateHead", init_bias=-9.2103, final_kernel=1),
         loss_cls=dict(type="mmdet.GaussianFocalLoss", reduction="none", loss_weight=1.0),
         loss_bbox=dict(type="mmdet.L1Loss", reduction="mean", loss_weight=0.25),
         norm_bbox=True,
@@ -346,14 +348,24 @@ param_scheduler = [
 ]
 
 # runtime settings
-train_cfg = dict(by_epoch=True, max_epochs=max_epochs, val_interval=val_interval)
+# Run validation for every val_interval epochs before max_epochs - 10, and run validation every 2 epoch after max_epochs - 10
+train_cfg = dict(
+    by_epoch=True, max_epochs=max_epochs, val_interval=val_interval, dynamic_intervals=[(max_epochs - 5, 1)]
+)
 val_cfg = dict()
 test_cfg = dict()
 
+optimizer = dict(type="AdamW", lr=lr, weight_decay=0.01)
+clip_grad = dict(max_norm=35, norm_type=2)
+
 optim_wrapper = dict(
-    type="OptimWrapper",
-    optimizer=dict(type="AdamW", lr=lr, weight_decay=0.01),
-    clip_grad=dict(max_norm=35, norm_type=2),
+    type="AmpOptimWrapper",
+    dtype="float16",
+    optimizer=optimizer,
+    clip_grad=clip_grad,
+    loss_scale={
+        "growth_interval": 400
+    },  # Can update it accordingly, 400 is about half of an epoch for this experiment
 )
 
 # Default setting for scaling LR automatically

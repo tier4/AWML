@@ -6,6 +6,7 @@ _base_ = [
 custom_imports = dict(imports=["projects.CenterPoint.models"], allow_failed_imports=False)
 custom_imports["imports"] += _base_.custom_imports["imports"]
 custom_imports["imports"] += ["autoware_ml.detection3d.datasets.transforms"]
+custom_imports["imports"] += ["autoware_ml.hooks"]
 
 # This is a base file for t4dataset, add the dataset config.
 # type, data_root and ann_file of data.train, data.val and data.test
@@ -44,9 +45,9 @@ train_gpu_size = 2
 train_batch_size = 8
 test_batch_size = 2
 num_workers = 32
-val_interval = 2
+val_interval = 5
 max_epochs = 50
-work_dir = "work_dirs/centerpoint/" + _base_.dataset_type + "/pillar_016_second_secfpn_2xb8_50m_base/"
+work_dir = "work_dirs/centerpoint_short_range/" + _base_.dataset_type + "/pillar_016_second_secfpn_2xb8_50m_base/"
 
 train_pipeline = [
     dict(
@@ -345,7 +346,10 @@ param_scheduler = [
 ]
 
 # runtime settings
-train_cfg = dict(by_epoch=True, max_epochs=max_epochs, val_interval=val_interval)
+# Run validation for every val_interval epochs before max_epochs - 10, and run validation every 2 epoch after max_epochs - 10
+train_cfg = dict(
+    by_epoch=True, max_epochs=max_epochs, val_interval=val_interval, dynamic_intervals=[(max_epochs - 10, 2)]
+)
 val_cfg = dict()
 test_cfg = dict()
 
@@ -377,4 +381,6 @@ default_hooks = dict(
     checkpoint=dict(type="CheckpointHook", interval=1),
 )
 
-custom_hooks = [dict(type="ExtraRuntimeInfoHook")]
+custom_hooks = [
+    dict(type="MomentumInfoHook"),
+]

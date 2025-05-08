@@ -4,9 +4,20 @@
 - Main parameter
   - range = 51.20m
 - Performance summary
-  - Dataset: DB JPNTAXI v1.0 + DB JPNTAXI v2.0 + DB JPNTAXI v3.0 + DB GSM8 v1.0 + DB J6 v1.0 (total frames: 35,292)
-  - [Comparisons in details](https://docs.google.com/spreadsheets/d/1cOIwmyiXA4Z0uAEl1mkPoaAjqJJ8Mq1O66tzzAOW15I/edit?gid=980227559#gid=980227559)
+	- Dataset: test dataset of db_jpntaxi_v1 + db_jpntaxi_v2 + db_jpntaxi_v4 + db_gsm8_v1 + db_j6_v1 + db_j6_v2 + db_j6_v3 + db_j6_v5 + db_j6gen2_v1 (total frames: 3804)
   - Class mAP for center distance (0.5m, 1.0m, 2.0m, 4.0m)
+
+| eval range: 52m                 | mAP  | car <br> (38,739) | truck <br> (4,764) | bus <br> (2,185) | bicycle <br> (2,049) | pedestrian <br> (20,661) |
+| ------------------------------- | ---- | ------------------ | -------------------- | ----------------- | --------------------- | ------------------------- |
+| CenterPoint-ShortRange base/1.0 | 81.6 | 91.4               | 65.7                 | 92.4              | 82.3                  | 76.3                      |
+| CenterPoint-ShortRange base/0.3 | 78.7 | 90.8               | 59.0                 | 90.5              | 80.8                  | 72.5                      |
+
+## Deprecated Summary
+<details>
+<summary> Results with previous datasets </summary>
+
+- Dataset: DB JPNTAXI v1.0 + DB JPNTAXI v2.0 + DB JPNTAXI v3.0 + DB GSM8 v1.0 + DB J6 v1.0 (total frames: 35,292)
+- [Comparisons in details](https://docs.google.com/spreadsheets/d/1cOIwmyiXA4Z0uAEl1mkPoaAjqJJ8Mq1O66tzzAOW15I/edit?gid=980227559#gid=980227559)
 
 | eval range: 52m                 | mAP  | car <br> (629,212) | truck <br> (163,402) | bus <br> (39,904) | bicycle <br> (48,043) | pedestrian <br> (383,553) |
 | ------------------------------- | ---- | ------------------ | -------------------- | ----------------- | --------------------- | ------------------------- |
@@ -29,7 +40,62 @@
 | CenterPoint-ShortRange base/0.2 | 4486.06 | 4508.69 | 4521.00 | 4524.44 | 4543.19 | 4633.81 | 4519.30 (+-20.38) |
 | CenterPoint-ShortRange base/0.3 | 3879.88 | 3882.56 | 3884.44 | 4084.62 | 4087.56 | 4218.75 | 3948.19 (+-96.93) |
 
+</details>
+
 ## Release
+### CenterPoint-ShortRange base/1.0
+- This is the first short range model trained with `gen2` data
+- The following changes are made as compared to `CenterPoint-ShortRange base/0.3`:
+  - `PillarFeatureNet` instead of `BackwardPillarFeatureNet` to include distance of z to pillar center
+  - `AMP` training
+  - Use `ConvNeXT-PC` as a stronger backbone  
+- `CenterPoint-ShortRange base/1.0` achieves a significantly higher mean average precision (mAP) by +2.9%, indicating better general detection performance
+  - The biggest gain is in truck detection with a +6.7% boost in AP, which suggests that it handles medium-sized vehicles better, likely due to more training data
+  - Pedestrian detection also improves notably by +3.8%, showing better handling of dense or occluded small objects
+  - Gains for bus and bicycle are more modest but still consistent
+	- Both models perform similarly on cars, with `CenterPoint-ShortRange base/1.0` only slightly better (+0.6%). This is expected since cars have the most samples (38,739), and performance is already saturated
+
+<details>
+<summary> The link of data and evaluation result </summary>
+
+- Evaluation result with db_jpntaxi_v1 + db_jpntaxi_v2 + db_jpntaxi_v4 + db_gsm8_v1 + db_j6_v1 + db_j6_v2 + db_j6_v3 + db_j6_v5 + db_j6gen2_v1 (total frames: 3804):
+
+| Eval range = 52m    | mAP  | car  | truck | bus  | bicycle | pedestrian |
+| ------------------  | ---- | ---- | ----- | ---- | ------- | ---------- |
+| ShortRange base/1.0  | 81.6 | 91.4 | 65.7  | 92.4 | 82.3    | 76.3       |
+| ShortRange base/0.3  | 78.7 | 90.8 | 59.0  | 90.5 | 80.8    | 72.5       |
+
+- Model
+  - Training dataset: DB JPNTAXI v1.0 + DB JPNTAXI v2.0 + DB JPNTAXI v4.0 + DB GSM8 v1.0 + DB J6 v1.0 + DB J6 v2.0 + DB J6 v3.0 + DB J6 v5.0 + DB J6 Gen2 v1.0 (total frames: 49,605)
+  - [Config file path](hhttps://github.com/tier4/AWML/blob/c625cd745e5ea7b46f7f7818266b3901981ba4f6/autoware_ml/configs/detection3d/dataset/t4dataset/base.py)
+  - Deployed onnx model and ROS parameter files [WIP](WIP)
+  - Deployed onnx and ROS parameter files [[model-zoo]]
+    - [detection_class_remapper.param.yaml](WIP)
+    - [centerpoint_t4base_ml_package.param.yaml](WIP)
+    - [deploy_metadata.yaml](WIP)
+    - [pts_voxel_encoder_centerpoint_t4base.onnx](WIP)
+    - [pts_backbone_neck_head_centerpoint_t4base.onnx](WIP)
+  - Training results [[Google drive (for internal)]](https://drive.google.com/drive/folders/18CTOTYICBcL56byyHi1E9bhYLJJh8ElX?usp=drive_link)
+  - Training results [model-zoo]
+    - [logs.zip](https://download.autoware-ml-model-zoo.tier4.jp/autoware-ml/models/centerpoint/centerpoint-shortrange/t4base/v1.0/logs.zip)
+    - [checkpoint_best.pth](https://download.autoware-ml-model-zoo.tier4.jp/autoware-ml/models/centerpoint/centerpoint-shortrange/t4base/v1.0/best_epoch.pth)
+    - [config.py](https://download.autoware-ml-model-zoo.tier4.jp/autoware-ml/models/centerpoint/centerpoint-shortrange/t4base/v1.0/pillar_016_convnext_secfpn_4xb16_50m_base.py)
+  - Train time: NVIDIA A100 80GB * 4 * 50 epochs = 2 days and 14 hours
+  - Batch size: 4*16 = 64
+
+- Evaluation result with db_jpntaxi_v1 + db_jpntaxi_v2 + db_jpntaxi_v4 + db_gsm8_v1 + db_j6_v1 + db_j6_v2 + db_j6_v3 + db_j6_v5 + db_j6gen2_v1 (total frames: 3804)
+  - Total mAP (eval range = 52m): 0.816
+
+| class_name | Count    | mAP  | AP@0.5m | AP@1.0m | AP@2.0m | AP@4.0m |
+| -----------| -------  | ---- | ------- | ------- | ------- | ------- |
+| car        |  38,739  | 91.4 | 85.7    | 92.4    | 93.5    | 93.7    |
+| truck      |   4,764  | 65.7 | 50.5    | 67.8    | 70.8    | 73.8    |
+| bus        |   2,185  | 92.4 | 84.7    | 92.3    | 95.7    | 95.8    |
+| bicycle    |   2,049  | 82.3 | 81.5    | 82.5    | 82.6    | 82.7    |
+| pedestrian |  20,661  | 76.3 | 73.8    | 75.6    | 77.2    | 78.7    |
+
+</details>
+
 ### CenterPoint-ShortRange base/0.3
 - This is exactly the model [CenterPoint-ConvNeXtPC base/0.2](../../CenterPoint-ConvNeXtPC/v0/base.md) except it evaluates in 50m only
 - The performance of detection is generally better than `CenterPoint-ShortRange base/0.1` (81.5 vs 77.4) since it also has better performance in 120m, especially, vehicle classes:
