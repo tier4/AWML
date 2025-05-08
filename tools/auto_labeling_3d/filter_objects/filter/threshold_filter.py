@@ -1,9 +1,10 @@
 import logging
 from collections import defaultdict
 from typing import Any, Dict, List, Set
-from tools.auto_labeling_3d.utils.type import AWML3DInfo
 
 from mmengine.registry import TASK_UTILS
+
+from tools.auto_labeling_3d.utils.type import AWML3DInfo
 
 from .base_filter import BaseFilter
 

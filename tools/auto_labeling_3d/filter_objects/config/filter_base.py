@@ -18,10 +18,10 @@ centerpoint_pipeline = [
 ]
 
 filter_pipelines = dict(
-  type="Filter",
-  input=dict(
-          name="centerpoint",
-          info_path="./data/t4dataset/info/pseudo_infos_raw_centerpoint.pkl",
-          filter_pipeline=centerpoint_pipeline,
-  ),
+    type="Filter",
+    input=dict(
+        name="centerpoint",
+        info_path="./data/t4dataset/info/pseudo_infos_raw_centerpoint.pkl",
+        filter_pipeline=centerpoint_pipeline,
+    ),
 )

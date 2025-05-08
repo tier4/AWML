@@ -1,7 +1,9 @@
 import logging
 from abc import ABC, abstractmethod
 from typing import Any, Dict, NewType
+
 from tools.auto_labeling_3d.utils.type import AWML3DInfo
+
 
 class BaseFilter(ABC):
     def __init__(self, logger: logging.Logger):

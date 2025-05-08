@@ -10,7 +10,13 @@ from mmengine.registry import TASK_UTILS, init_default_scope
 from tools.auto_labeling_3d.utils.logger import setup_logger
 from tools.auto_labeling_3d.utils.type import AWML3DInfo
 
-def apply_filter(filter_cfg: Dict[str, Any], predicted_result_info: AWML3DInfo, predicted_result_info_name: str, logger: logging.Logger) -> AWML3DInfo:
+
+def apply_filter(
+    filter_cfg: Dict[str, Any],
+    predicted_result_info: AWML3DInfo,
+    predicted_result_info_name: str,
+    logger: logging.Logger,
+) -> AWML3DInfo:
     """
     Args:
         filter_cfg (Dict[str, Any]): config for filter pipeline.
@@ -21,11 +27,14 @@ def apply_filter(filter_cfg: Dict[str, Any], predicted_result_info: AWML3DInfo, 
     Returns:
        AWML3DInfo: Filtered info dict
     """
-    filter_cfg['logger'] = logger
+    filter_cfg["logger"] = logger
     filter_model = TASK_UTILS.build(filter_cfg)
     return filter_model.filter(predicted_result_info, predicted_result_info_name)
 
-def apply_ensemble(ensemble_cfg: Dict[str, Any], predicted_result_infos: List[AWML3DInfo], logger: logging.Logger) -> AWML3DInfo:
+
+def apply_ensemble(
+    ensemble_cfg: Dict[str, Any], predicted_result_infos: List[AWML3DInfo], logger: logging.Logger
+) -> AWML3DInfo:
     """
     Args:
         ensemble_cfg (Dict[str, Any]): config for ensemble model.
@@ -35,9 +44,10 @@ def apply_ensemble(ensemble_cfg: Dict[str, Any], predicted_result_infos: List[AW
     Returns:
         AWML3DInfo: Ensembled info dict
     """
-    ensemble_cfg['logger'] = logger
+    ensemble_cfg["logger"] = logger
     ensemble_model: EnsembleModel = TASK_UTILS.build(ensemble_cfg)
     return ensemble_model.ensemble(predicted_result_infos)
+
 
 def filter_result(filter_input: Dict[str, Any], logger: logging.Logger) -> tuple[str, AWML3DInfo]:
     """
@@ -61,6 +71,7 @@ def filter_result(filter_input: Dict[str, Any], logger: logging.Logger) -> tuple
     output_info: AWML3DInfo = info
     return name, output_info
 
+
 def ensemble_results(filter_pipelines: Dict[str, Any], logger: logging.Logger) -> tuple[str, AWML3DInfo]:
     """
     Args:
@@ -83,6 +94,7 @@ def ensemble_results(filter_pipelines: Dict[str, Any], logger: logging.Logger) -
     output_info: AWML3DInfo = apply_ensemble(filter_pipelines.config, predicted_results, logger)
     return name, output_info
 
+
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
         description="Filter objects which do not use for pseudo T4dataset from pseudo labeled info file"
@@ -99,6 +111,7 @@ def parse_args() -> argparse.Namespace:
         choices=list(logging._nameToLevel.keys()),
     )
     return parser.parse_args()
+
 
 def main():
     # setup
@@ -125,6 +138,7 @@ def main():
     with open(output_path, "wb") as f:
         pickle.dump(output_info, f)
     logger.info("Finish filtering")
+
 
 if __name__ == "__main__":
     main()
