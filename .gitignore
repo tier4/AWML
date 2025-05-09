@@ -6,6 +6,10 @@ tests/samplefiles/data
 *.onnx
 *.engine
 
+# autoware-ml/tools/auto_labeling_3d
+tools/auto_labeling_3d/filter_objects/config/private/*
+!/tools/auto_labeling_3d/filter_objects/config/private/.gitkeep
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
