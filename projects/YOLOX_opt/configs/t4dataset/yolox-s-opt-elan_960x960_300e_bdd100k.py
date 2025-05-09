@@ -82,9 +82,7 @@ train_pipeline = [
         # img_scale is (width, height)
         border=(-img_scale[0] // 2, -img_scale[1] // 2),
     ),
-    dict(
-        type="MixUp", img_scale=img_scale, ratio_range=(0.8, 1.6), pad_val=114.0
-    ),
+    dict(type="MixUp", img_scale=img_scale, ratio_range=(0.8, 1.6), pad_val=114.0),
     dict(type="YOLOXHSVRandomAug"),
     dict(type="RandomFlip", prob=0.5),
     # According to the official implementation, multi-scale
@@ -124,9 +122,7 @@ train_dataset = dict(
 test_pipeline = [
     dict(type="LoadImageFromFile", backend_args=backend_args),
     dict(type="Resize", scale=img_scale, keep_ratio=True),
-    dict(
-        type="Pad", pad_to_square=True, pad_val=dict(img=(114.0, 114.0, 114.0))
-    ),
+    dict(type="Pad", pad_to_square=True, pad_val=dict(img=(114.0, 114.0, 114.0))),
     dict(type="LoadAnnotations", with_bbox=True),
     dict(
         type="PackDetInputs",
@@ -190,9 +186,7 @@ train_cfg = dict(max_epochs=max_epochs, val_interval=interval)
 
 optim_wrapper = dict(
     type="OptimWrapper",
-    optimizer=dict(
-        type="SGD", lr=base_lr, momentum=0.9, weight_decay=5e-4, nesterov=True
-    ),
+    optimizer=dict(type="SGD", lr=base_lr, momentum=0.9, weight_decay=5e-4, nesterov=True),
     paramwise_cfg=dict(norm_decay_mult=0.0, bias_decay_mult=0.0),
 )
 
@@ -235,14 +229,10 @@ log_config = dict(
     hooks=[dict(type="TextLoggerHook"), dict(type="TensorboardLoggerHook")],
 )
 
-default_hooks = dict(
-    checkpoint=dict(interval=interval, max_keep_ckpts=3)
-)  # only keep latest 3 checkpoints
+default_hooks = dict(checkpoint=dict(interval=interval, max_keep_ckpts=3))  # only keep latest 3 checkpoints
 
 custom_hooks = [
-    dict(
-        type="YOLOXModeSwitchHook", num_last_epochs=num_last_epochs, priority=48
-    ),
+    dict(type="YOLOXModeSwitchHook", num_last_epochs=num_last_epochs, priority=48),
     dict(type="SyncNormHook", priority=48),
     dict(
         type="EMAHook",
@@ -261,6 +251,4 @@ vis_backends = [
     dict(type="TensorboardVisBackend"),
 ]
 
-visualizer = dict(
-    type="DetLocalVisualizer", vis_backends=vis_backends, name="visualizer"
-)
+visualizer = dict(type="DetLocalVisualizer", vis_backends=vis_backends, name="visualizer")

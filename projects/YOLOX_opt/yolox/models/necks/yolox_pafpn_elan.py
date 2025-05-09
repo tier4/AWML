@@ -4,9 +4,10 @@ from typing import List
 import torch
 import torch.nn as nn
 from mmcv.cnn import ConvModule, DepthwiseSeparableConvModule
-from mmengine.model import BaseModule
-#from mmdet.models.builder import NECKS
+
+# from mmdet.models.builder import NECKS
 from mmdet.registry import MODELS
+from mmengine.model import BaseModule
 
 from ..layers import ELAN
 

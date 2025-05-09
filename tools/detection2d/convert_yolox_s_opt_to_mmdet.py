@@ -2,8 +2,8 @@
 
 import argparse
 import os
-import sys
 import re
+import sys
 from collections import OrderedDict
 from subprocess import call
 from urllib import request
@@ -15,6 +15,7 @@ import torch
 
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 from utils import yolox_s_opt_to_mmdet_key
+
 
 def yolox_to_mmdet_key(key):
     x = key
@@ -70,6 +71,7 @@ def create_yolox_checkpoint(yolox_ml_ckpt: str, modified_official_ckpt_path):
         model (str): yolox model name
         work_dir (str): path to save the modified yolox checkpoint
     """
+
     def get_class_num(mmdet_ckpt):
         cls_tensor = mmdet_ckpt["bbox_head.multi_level_conv_cls.0.weight"]
         return cls_tensor.shape[0]
@@ -87,8 +89,8 @@ def create_yolox_checkpoint(yolox_ml_ckpt: str, modified_official_ckpt_path):
         #     assert False
         mmdet_key = yolox_to_mmdet_key(yolox_key)
         if mmdet_key in new_state_dict["state_dict"]:
-            print (f"duplicate keys:{mmdet_key}")
-            assert(False)
+            print(f"duplicate keys:{mmdet_key}")
+            assert False
         new_state_dict["state_dict"][mmdet_key] = official_ckpt["model"][yolox_key]
 
     torch.save(new_state_dict, modified_official_ckpt_path)

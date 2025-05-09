@@ -3,10 +3,11 @@ from typing import Optional
 
 import torch.nn as nn
 from mmcv.cnn import ConvModule, DepthwiseSeparableConvModule
-from mmengine.model import BaseModule
-#from mmdet.models import BACKBONES
-#from mmdet.models.builder import BACKBONES 
+
+# from mmdet.models import BACKBONES
+# from mmdet.models.builder import BACKBONES
 from mmdet.registry import MODELS
+from mmengine.model import BaseModule
 from torch.nn.modules.batchnorm import _BatchNorm
 
 from ..layers import ASPP, CSPLayerOpt
@@ -178,7 +179,9 @@ class CSPDarknetOpt(BaseModule):
         )
         self.layers = ["stem"]
 
-        for i, (in_channels, out_channels, num_blocks, expand_ratio, add_identity, use_aspp) in enumerate(arch_setting):
+        for i, (in_channels, out_channels, num_blocks, expand_ratio, add_identity, use_aspp) in enumerate(
+            arch_setting
+        ):
             in_channels = int(in_channels * widen_factor)
             out_channels = int(out_channels * widen_factor)
             num_blocks = max(round(num_blocks * deepen_factor), 1)

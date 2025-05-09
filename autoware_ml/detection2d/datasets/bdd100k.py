@@ -3,11 +3,11 @@ import os.path as osp
 from typing import Dict, List, Optional
 
 import numpy as np
+from mmdet.datasets import BaseDetDataset, CocoDataset
+from mmdet.datasets.api_wrappers import COCO
+from mmdet.registry import DATASETS
 from mmengine.fileio import load
 from mmengine.utils import track_iter_progress
-from mmdet.datasets import CocoDataset, BaseDetDataset
-from mmdet.registry import DATASETS
-from mmdet.datasets.api_wrappers import COCO
 
 
 @DATASETS.register_module()
@@ -32,9 +32,7 @@ class BDD100kDataset(CocoDataset):
 
     def load_data_list(self) -> List[dict]:
         self.coco = COCO()
-        categories: List[dict] = [
-            dict(id=i, name=cat_name) for i, cat_name in enumerate(self.CLASSES)
-        ]
+        categories: List[dict] = [dict(id=i, name=cat_name) for i, cat_name in enumerate(self.CLASSES)]
         self.coco.dataset["categories"] = categories
         self.coco.dataset["images"] = []
         self.coco.dataset["annotations"] = []
@@ -118,9 +116,7 @@ class BDD100kDataset(CocoDataset):
             raw_ann_info = self.coco.load_anns(ann_ids)
             total_ann_ids.extend(ann_ids)
 
-            parsed_data_info = self.parse_data_info(
-                {"raw_ann_info": raw_ann_info, "raw_img_info": raw_img_info}
-            )
+            parsed_data_info = self.parse_data_info({"raw_ann_info": raw_ann_info, "raw_img_info": raw_img_info})
             data_list.append(parsed_data_info)
         if self.ANN_ID_UNIQUE:
             assert len(set(total_ann_ids)) == len(
