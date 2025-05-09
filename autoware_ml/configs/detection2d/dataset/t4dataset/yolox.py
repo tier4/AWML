@@ -10,8 +10,8 @@ classes = (
     "bus",
     "trailer",
     "motorcycle",
-    "bicycle",
     "pedestrian",
+    "bicycle",
 )
 
 class_mappings = {

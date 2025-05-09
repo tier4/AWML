@@ -14,11 +14,11 @@ custom_imports = dict(
     allow_failed_imports=False,
 )
 
-# dataset type setting
-dataset_type = "T4Dataset"
-info_train_file_name = "t4dataset_base_infos_train.pkl"
-info_val_file_name = "t4dataset_base_infos_val.pkl"
-info_test_file_name = "t4dataset_base_infos_test.pkl"
+# # dataset type setting
+# dataset_type = "T4Dataset"
+# info_train_file_name = "t4dataset_base_infos_train.pkl"
+# info_val_file_name = "t4dataset_base_infos_val.pkl"
+# info_test_file_name = "t4dataset_base_infos_test.pkl"
 
 IMG_SCALE = (960, 960)
 # IMG_SCALE = (1280, 960)
@@ -29,12 +29,12 @@ max_epochs = 300
 num_last_epochs = 15
 resume_from = None
 interval = 1
-batch_size = 12
+batch_size = 4
 activation = "ReLU6"
 num_workers = 4
 
 base_lr = 0.001
-num_classes = 10
+# num_classes = 8
 
 # model settings
 model = dict(
@@ -98,11 +98,11 @@ train_pipeline = [
     ),
     dict(type="MixUp", img_scale=IMG_SCALE, ratio_range=(0.8, 1.6), pad_val=114.0),
     dict(type="YOLOXHSVRandomAug"),
-    dict(type="RandomFlip", flip_ratio=0.5),
+    dict(type="RandomFlip", prob=0.5),
     # According to the official implementation, multi-scale
     # training is not considered here but in the
     # 'mmdet/models/detectors/yolox.py'.
-    dict(type="Resize", img_scale=IMG_SCALE, keep_ratio=True),
+    dict(type="Resize", scale=IMG_SCALE, keep_ratio=True),
     dict(
         type="Pad",
         pad_to_square=True,
@@ -121,11 +121,11 @@ train_dataset = dict(
     dataset=dict(
         type=dataset_type,
         data_root=data_root,
-        ann_file=anno_file_root + "tlr_infos_train.json",
+        ann_file=anno_file_root + "yolox_infos_train.json",
         pipeline=[
             dict(type="LoadImageFromFile", backend_args=backend_args),
             dict(type="LoadAnnotations", with_bbox=True),
-            dict(type="RandomCropWithROI", crop_size=(1.0, 20.0)),
+            # dict(type="RandomCropWithROI", crop_size=(1.0, 20.0)),
         ],
         filter_cfg=dict(filter_empty_gt=False, min_size=8),
         backend_args=backend_args,
@@ -192,7 +192,7 @@ val_dataloader = dict(
     dataset=dict(
         type=dataset_type,
         data_root=data_root,
-        ann_file=anno_file_root + "yolox_infos_val.json",
+        ann_file=anno_file_root + "yolox_infos_train.json",
         # Needs to be updated to tlr_infos_test.json once the dataset gets larger, and validation split is also added.
         # The splits were not modified so that we could compare them to previous models.
         test_mode=True,
@@ -210,12 +210,19 @@ test_dataloader = dict(
     dataset=dict(
         type=dataset_type,
         data_root=data_root,
-        ann_file=anno_file_root + "yolox_infos_val.json",
+        ann_file=anno_file_root + "yolox_infos_train.json",
         test_mode=True,
         pipeline=test_pipeline,
         backend_args=backend_args,
     ),
 )
+
+# val_evaluator = [
+#     dict(type="VOCMetric", metric="mAP"),
+# ]
+
+# test_evaluator = val_evaluator
+
 
 val_evaluator = [
     dict(type="VOCMetric", metric="mAP"),
