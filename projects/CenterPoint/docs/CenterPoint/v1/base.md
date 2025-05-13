@@ -14,6 +14,7 @@
 | CenterPoint base/1.5     | 66.7 | 80.1              | 54.3                | 79.1             | 55.3                 | 64.3                     |
 | CenterPoint base/1.4     | 66.3 | 80.5              | 53.1                | 81.1             | 52.0                 | 64.7                     |
 | CenterPoint base/1.3     | 66.7 | 80.6              | 53.5                | 80.2             | 54.3                 | 64.6                     |
+| CenterPoint base/1.1     | 63.5 | 77.7              | 50.3                | 76.5             | 51.9                 | 60.8                     |
 
 ## Deprecated summary
 <details>
@@ -452,6 +453,18 @@
     - [checkpoint_best.pth](https://download.autoware-ml-model-zoo.tier4.jp/autoware-ml/models/centerpoint/centerpoint/t4base/v1.1/epoch_50.pth)
     - [config.py](https://download.autoware-ml-model-zoo.tier4.jp/autoware-ml/models/centerpoint/centerpoint/t4base/v1.1/second_secfpn_121m_2xb8.py)
   - train time: NVIDIA A100 80GB * 2 * 50 epochs = 4.5 days
+
+- Evaluation result with db_jpntaxi_v1 + db_jpntaxi_v2 + db_jpntaxi_v4 + db_gsm8_v1 + db_j6_v1 + db_j6_v2 + db_j6_v3 + db_j6_v5 + db_j6gen2_v1 (total frames: 3804)
+  - Total mAP (eval range = 120m): 0.635
+
+| class_name | mAP  | AP@0.5m | AP@1.0m | AP@2.0m | AP@4.0m |
+| ---------- | ---- | ------- | ------- | ------- | ------- |
+| car        | 77.7 | 69.6    | 78.7    | 80.9    | 81.8    |
+| truck      | 50.3 | 30.3    | 49.8    | 57.0    | 63.9    |
+| bus        | 76.5 | 65.2    | 78.5    | 80.9    | 81.5    |
+| bicycle    | 51.9 | 51.0    | 52.0    | 52.1    | 52.6    |
+| pedestrian | 60.8 | 58.8    | 60.0    | 61.4    | 63.2    |
+
 - Evaluation result with test-dataset: db_jpntaxi_v1 + db_jpntaxi_v2 + db_jpntaxi_v4 + db_gsm8_v1 + db_j6_v1 + db_j6_v2 + db_j6_v3 (total frames: 3026):
   - Total mAP (eval range = 120m): 0.647
 
