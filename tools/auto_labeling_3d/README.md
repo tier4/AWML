@@ -84,6 +84,8 @@ TBD
 
 ## 3. Filter objects which do not use for pseudo T4dataset
 
+### Filter
+
 - Set a config to decide what you want to filter
   - Set threshold to filter objects with low confidence
 
@@ -111,6 +113,14 @@ filter_pipelines = dict(
   ),
 )
 ```
+
+- Make the info file to filter the objects which do not use for pseudo T4dataset
+
+```sh
+python tools/auto_labeling_3d/filter_objects/filter_objects.py --config {config_file} --work-dir {path to output}
+```
+
+### Ensemble
 
 - If you want to ensemble model, you set a config as below.
 
@@ -165,10 +175,10 @@ filter_pipelines = dict(
 )
 ```
 
-- Make the info file to filter the objects which do not use for pseudo T4dataset
+- Make the info file to filter the objects which do not use for pseudo T4dataset and ensemble filtered results.
 
 ```sh
-python tools/auto_labeling_3d/filter_objects/filter_objects.py --config {config_file} --work-dir {path to output}
+python tools/auto_labeling_3d/filter_objects/ensemble_infos.py --config {config_file} --work-dir {path to output}
 ```
 
 - As a result, the data is as below

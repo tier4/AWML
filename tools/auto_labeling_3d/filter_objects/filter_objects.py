@@ -31,23 +31,6 @@ def apply_filter(
     return filter_model.filter(predicted_result_info, predicted_result_info_name)
 
 
-def apply_ensemble(
-    ensemble_cfg: Dict[str, Any], predicted_result_infos: List[Dict[str, Any]], logger: logging.Logger
-) -> Dict[str, Any]:
-    """
-    Args:
-        ensemble_cfg (Dict[str, Any]): config for ensemble model.
-        predicted_result_infos (List[Dict[str, Any]]): List of info dict that contains predicted result.
-        logger (logging.Logger): Logger instance for output messages.
-
-    Returns:
-        Dict[str, Any]: Ensembled info dict
-    """
-    ensemble_cfg["logger"] = logger
-    ensemble_model: EnsembleModel = TASK_UTILS.build(ensemble_cfg)
-    return ensemble_model.ensemble(predicted_result_infos)
-
-
 def filter_result(filter_input: Dict[str, Any], logger: logging.Logger) -> tuple[str, Dict[str, Any]]:
     """
     Args:
@@ -68,29 +51,6 @@ def filter_result(filter_input: Dict[str, Any], logger: logging.Logger) -> tuple
 
     name: str = filter_input["name"]
     output_info: Dict[str, Any] = info
-    return name, output_info
-
-
-def ensemble_results(filter_pipelines: Dict[str, Any], logger: logging.Logger) -> tuple[str, Dict[str, Any]]:
-    """
-    Args:
-        filter_pipelines (Dict[str, Any]): config for pipelines.
-        logger (logging.Logger): Logger instance for output messages.
-
-    Returns:
-        str: Name of models ensembled (e.g. "centerpoint+bevfusion")
-        Dict[str, Any]: Ensembled info dict
-    """
-    names: List[str] = []
-    predicted_results: List[Dict[str, Any]] = []
-    for filter_input in filter_pipelines.inputs:
-        name, info = filter_result(filter_input, logger)
-
-        names.append(name)
-        predicted_results.append(info)
-
-    name: str = "+".join(names)
-    output_info: Dict[str, Any] = apply_ensemble(filter_pipelines.config, predicted_results, logger)
     return name, output_info
 
 
@@ -123,13 +83,10 @@ def main():
 
     # Filter objects
     logger.info("Filtering objects...")
-    match cfg.filter_pipelines.type:
-        case "Ensemble":
-            name, output_info = ensemble_results(cfg.filter_pipelines, logger)
-        case "Filter":
-            name, output_info = filter_result(cfg.filter_pipelines.input, logger)
-        case _:
-            raise ValueError(f"Unknown filter type: {cfg.filter_pipelines.type}")
+    if cfg.filter_pipelines.type == "Filter":
+        name, output_info = filter_result(cfg.filter_pipelines.input, logger)
+    else:
+        raise ValueError(f"You cannot use {cfg.filter_pipelines.type} type. Please use Filter type instead.")
 
     # Save filtered results
     output_path = Path(args.work_dir) / f"pseudo_infos_{name}_filtered.pkl"
