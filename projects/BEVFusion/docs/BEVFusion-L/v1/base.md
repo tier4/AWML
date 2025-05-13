@@ -1,4 +1,4 @@
-# Deployed model for BEVFusion-L base/0.X
+# Deployed model for BEVFusion-L base/1.X
 ## Summary
 
 |                       | mAP  | car  | truck | bus  | bicycle | pedestrian |

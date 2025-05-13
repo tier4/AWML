@@ -1,9 +1,9 @@
-# Deployed model for BEVFusion-CL base/0.X
+# Deployed model for BEVFusion-CL base/1.X
 ## Summary
 
 |                       | mAP  | car  | truck | bus  | bicycle | pedestrian |
 | --------------------- | ---- | ---- | ----- | ---- | ------- | ---------- |
-| BEVFusion-L base/1.0 | 66.9 |  80.6 | 65.65 | 59.7 | 68.8    | 60.2       |
+| BEVFusion-CL base/1.0 | 66.9 |  80.6 | 65.65 | 59.7 | 68.8    | 60.2       |
 
 ## Release
 ### BEVFusion-CL base/1.0
