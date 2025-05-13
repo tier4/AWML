@@ -1,9 +1,10 @@
 import re
+
 import mlflow
+from mmengine.config import Config, ConfigDict
 from mmengine.registry import VISBACKENDS
 from mmengine.visualization import MLflowVisBackend
 from mmengine.visualization.vis_backend import force_init_env
-from mmengine.config import Config, ConfigDict
 
 
 def sanitize_mlflow_key(key: str) -> str:
@@ -27,7 +28,7 @@ def sanitize_mlflow_key(key: str) -> str:
     Returns:
         str: The sanitized key name.
     """
-    return re.sub(r'[^a-zA-Z0-9_\-.:/ ]', '_', key)
+    return re.sub(r"[^a-zA-Z0-9_\-.:/ ]", "_", key)
 
 
 @VISBACKENDS.register_module()
@@ -57,4 +58,4 @@ class SafeMLflowVisBackend(MLflowVisBackend):
             sanitized_params[safe_key] = value
 
         self._mlflow.log_params(sanitized_params)
-        self._mlflow.log_text(self.cfg.pretty_text, 'config.py')
+        self._mlflow.log_text(self.cfg.pretty_text, "config.py")
