@@ -5,9 +5,6 @@ from typing import Any, Dict, List, Tuple
 import numpy as np
 from mmengine.registry import TASK_UTILS
 
-from tools.auto_labeling_3d.utils.type import AWML3DInfo
-
-
 @TASK_UTILS.register_module()
 class EnsembleModel:
     """A class to ensemble the results of multiple detection models.
@@ -25,13 +22,13 @@ class EnsembleModel:
         self.settings = ensemble_setting
         self.logger = logger
 
-    def ensemble(self, results: List[AWML3DInfo]) -> AWML3DInfo:
+    def ensemble(self, results: List[Dict[str, Any]]) -> Dict[str, Any]:
         """Ensemble results from all model outputs.
         Args:
-            results (List[AWML3DInfo]): List of AWML3DInfo dicts containing predicted results.
+            results (List[Dict[str, Any]]): List of info dicts containing predicted results.
 
         Returns:
-            AWML3DInfo: Ensembled dataset info.
+            Dict[str, Any]: Ensembled dataset info.
         """
 
         raise NotImplementedError("EnsembleModel is not implemented.")

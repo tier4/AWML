@@ -2,9 +2,6 @@ import logging
 from abc import ABC, abstractmethod
 from typing import Any, Dict, NewType
 
-from tools.auto_labeling_3d.utils.type import AWML3DInfo
-
-
 class BaseFilter(ABC):
     def __init__(self, logger: logging.Logger):
         self.settings = {}
@@ -26,17 +23,17 @@ class BaseFilter(ABC):
         pass
 
     @abstractmethod
-    def filter(self, predicted_result_info: AWML3DInfo, info_name: str) -> Dict:
+    def filter(self, predicted_result_info: Dict[str, Any], info_name: str) -> Dict:
         """
         Apply filtering to the pseudo labels.
         This is an abstract method that must be implemented in derived classes.
 
         Args:
-            predicted_result_info (AWML3DInfo): Info dict that contains predicted result.
+            predicted_result_info (Dict[str, Any]): Info dict that contains predicted result.
             info_name (str): Name of each model used for generating info file.
 
         Returns:
-            AWML3DInfo: Filtered dataset info
+            Dict[str, Any]: Filtered dataset info
         """
         pass
 
