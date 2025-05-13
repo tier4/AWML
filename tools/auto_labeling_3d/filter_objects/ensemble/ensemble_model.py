@@ -5,6 +5,7 @@ from typing import Any, Dict, List, Tuple
 import numpy as np
 from mmengine.registry import TASK_UTILS
 
+
 @TASK_UTILS.register_module()
 class EnsembleModel:
     """A class to ensemble the results of multiple detection models.

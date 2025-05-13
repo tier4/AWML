@@ -9,6 +9,7 @@ from mmengine.registry import TASK_UTILS, init_default_scope
 
 from tools.auto_labeling_3d.utils.logger import setup_logger
 
+
 def apply_filter(
     filter_cfg: Dict[str, Any],
     predicted_result_info: Dict[str, Any],

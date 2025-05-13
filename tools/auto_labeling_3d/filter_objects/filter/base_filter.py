@@ -2,6 +2,7 @@ import logging
 from abc import ABC, abstractmethod
 from typing import Any, Dict, NewType
 
+
 class BaseFilter(ABC):
     def __init__(self, logger: logging.Logger):
         self.settings = {}
