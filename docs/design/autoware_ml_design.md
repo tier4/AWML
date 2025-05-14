@@ -4,7 +4,7 @@
 
 `AWML` is designed for deployment from training and evaluation with Autoware and active learning framework.
 
-![](/docs/fig/autoware-ml.drawio.svg)
+![](/docs/fig/AWML.drawio.svg)
 
 ### The pipeline design of `AWML`
 

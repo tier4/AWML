@@ -14,6 +14,7 @@ info_test_file_name = "t4dataset_base_infos_test.pkl"
 # dataset scene setting
 dataset_version_config_root = "autoware_ml/configs/t4dataset/"
 dataset_version_list = [
+    "db_j6gen2_v1",
     "db_jpntaxi_v1",
     "db_jpntaxi_v2",
     "db_jpntaxi_v4",
@@ -42,7 +43,7 @@ name_mapping = {
     "vehicle.construction": "truck",
     "vehicle.emergency (ambulance & police)": "car",
     "vehicle.motorcycle": "bicycle",
-    "vehicle.trailer": "truck",
+    "vehicle.trailer": "trailer",
     "vehicle.truck": "truck",
     "vehicle.bicycle": "bicycle",
     "vehicle.bus (bendy & rigid)": "bus",
@@ -64,7 +65,7 @@ name_mapping = {
     "car": "car",
     "truck": "truck",
     "bus": "bus",
-    "trailer": "truck",
+    "trailer": "trailer",
     "motorcycle": "bicycle",
     "bicycle": "bicycle",
     "police_car": "car",
@@ -87,7 +88,7 @@ name_mapping = {
     "pedestrian.wheelchair": "pedestrian",
     "static_object.bicycle rack": "bicycle rack",
     "static_object.bollard": "bollard",
-    "vehicle.ambulance": "truck",
+    "vehicle.ambulance": "car",  # Define vehicle.ambulance as car since vehicle.emergency (ambulance & police) is defined as car
     "vehicle.bicycle": "bicycle",
     "vehicle.bus": "bus",
     "vehicle.car": "car",
@@ -95,9 +96,18 @@ name_mapping = {
     "vehicle.fire": "truck",
     "vehicle.motorcycle": "bicycle",
     "vehicle.police": "car",
-    "vehicle.trailer": "truck",
+    "vehicle.trailer": "trailer",
     "vehicle.truck": "truck",
+    # DBv1.3
+    "ambulance": "car",
+    "kart": "car",
+    "wheelchair": "pedestrian",
+    "personal_mobility": "pedestrian",
+    "fire_truck": "truck",
+    "semi_trailer": "trailer",
+    "tractor_unit": "truck",
 }
+
 class_names = [
     "car",
     "truck",

@@ -17,9 +17,7 @@
 ## Results and models
 
 - TransFusion-L
-  - v1
-    - [TransFusion-L base/1.X](./docs/TransFusion-L/v0/base.md)
-  - v0 (90m range, grid size = 768)
+  - v0
     - [TransFusion-L base/0.X](./docs/TransFusion-L/v0/base.md)
 - TransFusion-L-offline
   - v0

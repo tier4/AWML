@@ -45,7 +45,10 @@ If you want to know about `AWML`, you should read following pages.
 
 - [Tips for config files](/docs/tips/config.md)
 - [Tips for remote development](/docs/tips/remote_development.md)
-- [Note for next release](/docs/tips/release_note.md)
+
+### Release note
+
+- [Release note](/docs/release_note/release_note.md)
 
 ## Supported tools
 
@@ -91,7 +94,7 @@ If you want to know about `AWML`, you should read following pages.
 
 - Model for Autoware
   - [YOLOX](/projects/YOLOX/)
-  - [YOLOX-opt](/projects/YOLOX-opt/)
+  - [YOLOX_opt](/projects/YOLOX_opt/)
 - Model for ML tools
   - [GLIP](/projects/GLIP/)
   - [SwinTransformer](/projects/SwinTransformer/)
