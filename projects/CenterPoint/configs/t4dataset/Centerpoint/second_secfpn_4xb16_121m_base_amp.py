@@ -271,8 +271,10 @@ model = dict(
             out_size_factor=out_size_factor,
         ),
         # sigmoid(-9.2103) = 0.0001 for initial small values
-        separate_head=dict(type="CustomSeparateHead", init_bias=-9.2103, final_kernel=1),
-        loss_cls=dict(type="mmdet.GaussianFocalLoss", reduction="none", loss_weight=1.0),
+        # separate_head=dict(type="CustomSeparateHead", init_bias=-9.2103, final_kernel=1),
+        separate_head=dict(type="CustomSeparateHead", init_bias=-4.595, final_kernel=1),
+        # loss_cls=dict(type="mmdet.GaussianFocalLoss", reduction="none", loss_weight=1.0),
+        loss_cls=dict(type="mmdet.AmpGaussianFocalLoss", reduction="none", loss_weight=1.0),
         loss_bbox=dict(type="mmdet.L1Loss", reduction="mean", loss_weight=0.25),
         norm_bbox=True,
     ),
@@ -356,7 +358,7 @@ val_cfg = dict()
 test_cfg = dict()
 
 optimizer = dict(type="AdamW", lr=lr, weight_decay=0.01)
-clip_grad = dict(max_norm=35, norm_type=2)
+clip_grad = dict(max_norm=10, norm_type=2)
 
 optim_wrapper = dict(
     type="AmpOptimWrapper",
@@ -364,7 +366,7 @@ optim_wrapper = dict(
     optimizer=optimizer,
     clip_grad=clip_grad,
     loss_scale={
-        "growth_interval": 400
+        "growth_interval": 800
     },  # Can update it accordingly, 400 is about half of an epoch for this experiment
 )
 
@@ -393,4 +395,5 @@ default_hooks = dict(
 
 custom_hooks = [
     dict(type="MomentumInfoHook"),
+    dict(type="LossScaleInfoHook"),
 ]
