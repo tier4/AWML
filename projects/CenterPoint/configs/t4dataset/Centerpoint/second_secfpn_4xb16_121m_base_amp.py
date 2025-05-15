@@ -358,7 +358,7 @@ val_cfg = dict()
 test_cfg = dict()
 
 optimizer = dict(type="AdamW", lr=lr, weight_decay=0.01)
-clip_grad = dict(max_norm=10, norm_type=2)
+clip_grad = dict(max_norm=10, norm_type=2)  # max norm of gradients upper bound to be 10 since amp is used
 
 optim_wrapper = dict(
     type="AmpOptimWrapper",
