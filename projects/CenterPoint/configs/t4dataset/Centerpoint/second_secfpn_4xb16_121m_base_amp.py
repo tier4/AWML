@@ -366,7 +366,8 @@ optim_wrapper = dict(
     optimizer=optimizer,
     clip_grad=clip_grad,
     loss_scale={
-        "growth_interval": 800
+        "init_scale": 2.0**8,  # intial_scale: 256
+        "growth_interval": 2000,
     },  # Can update it accordingly, 400 is about half of an epoch for this experiment
 )
 
