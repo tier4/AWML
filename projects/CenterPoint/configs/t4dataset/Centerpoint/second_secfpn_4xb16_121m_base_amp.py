@@ -40,14 +40,14 @@ eval_class_range = {
 
 # user setting
 data_root = "data/t4dataset/"
-info_directory_path = "info/user_name/"
+info_directory_path = "info/kokseang_1_6/"
 train_gpu_size = 4
 train_batch_size = 16
 test_batch_size = 2
 num_workers = 32
 val_interval = 5
 max_epochs = 50
-work_dir = "work_dirs/centerpoint/" + _base_.dataset_type + "/second_secfpn_4xb16_121m_base_amp/"
+work_dir = "work_dirs/centerpoint_1_6/" + _base_.dataset_type + "/second_secfpn_4xb16_121m_base_amp/"
 
 train_pipeline = [
     dict(
@@ -218,7 +218,7 @@ model = dict(
         type="Det3DDataPreprocessor",
         voxel=True,
         voxel_layer=dict(
-            max_num_points=20,
+            max_num_points=32,
             voxel_size=voxel_size,
             point_cloud_range=point_cloud_range,
             max_voxels=(64000, 64000),
@@ -271,8 +271,10 @@ model = dict(
             out_size_factor=out_size_factor,
         ),
         # sigmoid(-9.2103) = 0.0001 for initial small values
-        separate_head=dict(type="CustomSeparateHead", init_bias=-9.2103, final_kernel=1),
-        loss_cls=dict(type="mmdet.GaussianFocalLoss", reduction="none", loss_weight=1.0),
+        # separate_head=dict(type="CustomSeparateHead", init_bias=-9.2103, final_kernel=1),
+        separate_head=dict(type="CustomSeparateHead", init_bias=-4.595, final_kernel=1),
+        # loss_cls=dict(type="mmdet.GaussianFocalLoss", reduction="none", loss_weight=1.0),
+        loss_cls=dict(type="mmdet.AmpGaussianFocalLoss", reduction="none", loss_weight=1.0),
         loss_bbox=dict(type="mmdet.L1Loss", reduction="mean", loss_weight=0.25),
         norm_bbox=True,
     ),
@@ -356,7 +358,7 @@ val_cfg = dict()
 test_cfg = dict()
 
 optimizer = dict(type="AdamW", lr=lr, weight_decay=0.01)
-clip_grad = dict(max_norm=35, norm_type=2)
+clip_grad = dict(max_norm=15, norm_type=2)  # max norm of gradients upper bound to be 15 since amp is used
 
 optim_wrapper = dict(
     type="AmpOptimWrapper",
@@ -364,7 +366,8 @@ optim_wrapper = dict(
     optimizer=optimizer,
     clip_grad=clip_grad,
     loss_scale={
-        "growth_interval": 400
+        "init_scale": 2.0**8,  # intial_scale: 256
+        "growth_interval": 2000,
     },  # Can update it accordingly, 400 is about half of an epoch for this experiment
 )
 
@@ -393,4 +396,5 @@ default_hooks = dict(
 
 custom_hooks = [
     dict(type="MomentumInfoHook"),
+    dict(type="LossScaleInfoHook"),
 ]
