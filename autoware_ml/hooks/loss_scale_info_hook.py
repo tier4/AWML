@@ -24,5 +24,5 @@ class LossScaleInfoHook(Hook):
             data_batch (Sequence[dict], optional): Data from dataloader.
                 Defaults to None.
         """
-        if hasattr(runner.optim_wrapper, "scaler"):
-            runner.message_hub.update_scalar(f"train/loss_scaler", runner.optim_wrapper.scaler.get_scale())
+        if hasattr(runner.optim_wrapper, "loss_scaler"):
+            runner.message_hub.update_scalar(f"train/loss_scaler", runner.optim_wrapper.loss_scaler.get_scale())
