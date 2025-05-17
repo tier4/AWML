@@ -218,7 +218,7 @@ model = dict(
         type="Det3DDataPreprocessor",
         voxel=True,
         voxel_layer=dict(
-            max_num_points=20,
+            max_num_points=32,
             voxel_size=voxel_size,
             point_cloud_range=point_cloud_range,
             max_voxels=(64000, 64000),
@@ -358,7 +358,7 @@ val_cfg = dict()
 test_cfg = dict()
 
 optimizer = dict(type="AdamW", lr=lr, weight_decay=0.01)
-clip_grad = dict(max_norm=10, norm_type=2)  # max norm of gradients upper bound to be 10 since amp is used
+clip_grad = dict(max_norm=15, norm_type=2)  # max norm of gradients upper bound to be 15 since amp is used
 
 optim_wrapper = dict(
     type="AmpOptimWrapper",
