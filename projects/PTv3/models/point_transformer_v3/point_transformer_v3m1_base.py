@@ -24,6 +24,7 @@ from models.builder import MODELS
 from models.utils.misc import offset2bincount
 from models.utils.structure import Point
 from models.modules import PointModule, PointSequential
+from models.scatter.functional import segment_csr, argsort, unique
 
 #NOTE(knzo25): hack to use exportable spconv when available
 
@@ -76,6 +77,7 @@ class SerializedAttention(PointModule):
         enable_flash=True,
         upcast_attention=True,
         upcast_softmax=True,
+        export_mode=False
     ):
         super().__init__()
         assert channels % num_heads == 0
@@ -86,8 +88,9 @@ class SerializedAttention(PointModule):
         self.upcast_attention = upcast_attention
         self.upcast_softmax = upcast_softmax
         self.enable_rpe = enable_rpe
-        self.enable_flash = enable_flash
-        if enable_flash:
+        self.enable_flash = enable_flash and not export_mode
+        self.export_mode = export_mode
+        if self.enable_flash:
             assert (
                 enable_rpe is False
             ), "Set enable_rpe to False when enable Flash Attention"
@@ -137,56 +140,97 @@ class SerializedAttention(PointModule):
             offset = point.offset
             bincount = offset2bincount(offset)
             bincount_pad = (
-                torch.div(
+                torch.maximum(torch.div(
                     bincount + self.patch_size - 1,
                     self.patch_size,
                     rounding_mode="trunc",
-                )
+                ), torch.tensor(1, device=bincount.device))
                 * self.patch_size
             )
             # only pad point when num of points larger than patch_size
             mask_pad = bincount > self.patch_size
-            bincount_pad = ~mask_pad * bincount + mask_pad * bincount_pad
-            _offset = nn.functional.pad(offset, (1, 0))
-            _offset_pad = nn.functional.pad(torch.cumsum(bincount_pad, dim=0), (1, 0))
-            pad = torch.arange(_offset_pad[-1], device=offset.device)
-            unpad = torch.arange(_offset[-1], device=offset.device)
-            cu_seqlens = []
-            for i in range(len(offset)):
-                unpad[_offset[i] : _offset[i + 1]] += _offset_pad[i] - _offset[i]
-                if bincount[i] != bincount_pad[i]:
-                    pad[
-                        _offset_pad[i + 1]
-                        - self.patch_size
-                        + (bincount[i] % self.patch_size) : _offset_pad[i + 1]
-                    ] = pad[
-                        _offset_pad[i + 1]
-                        - 2 * self.patch_size
-                        + (bincount[i] % self.patch_size) : _offset_pad[i + 1]
-                        - self.patch_size
-                    ]
-                pad[_offset_pad[i] : _offset_pad[i + 1]] -= _offset_pad[i] - _offset[i]
+            bincount_pad = (1 - mask_pad.int()) * bincount + mask_pad.int() * bincount_pad
+            
+            if not self.export_mode:
+                _offset = nn.functional.pad(offset, (1, 0))
+                _offset_pad = nn.functional.pad(torch.cumsum(bincount_pad, dim=0), (1, 0))
+
+                pad = torch.arange(_offset_pad[-1], device=offset.device)
+                unpad = torch.arange(_offset[-1], device=offset.device)
+                cu_seqlens = []
+                for i in range(len(offset)):
+                    unpad[_offset[i] : _offset[i + 1]] += _offset_pad[i] - _offset[i]
+                    if bincount[i] != bincount_pad[i]:
+                        pad[
+                            _offset_pad[i + 1]
+                            - self.patch_size
+                            + (bincount[i] % self.patch_size) : _offset_pad[i + 1]
+                        ] = pad[
+                            _offset_pad[i + 1]
+                            - 2 * self.patch_size
+                            + (bincount[i] % self.patch_size) : _offset_pad[i + 1]
+                            - self.patch_size
+                        ]
+                    pad[_offset_pad[i] : _offset_pad[i + 1]] -= _offset_pad[i] - _offset[i]
+                    cu_seqlens.append(
+                        torch.arange(
+                            _offset_pad[i],
+                            _offset_pad[i + 1],
+                            step=self.patch_size,
+                            dtype=torch.int32,
+                            device=offset.device,
+                        )
+                    )
+                point[pad_key] = pad
+                point[unpad_key] = unpad
+                point[cu_seqlens_key] = nn.functional.pad(
+                    torch.concat(cu_seqlens), (0, 1), value=_offset_pad[-1]
+                )
+            else:
+                #NOTE(knzo25): needed due to tensorrt reasons
+                assert len(offset) == 1
+
+                #pad_orig = pad
+                #unpad_orig = unpad
+
+                pad = torch.arange(bincount_pad[0], device=offset.device)
+                unpad = torch.arange(offset[0], device=offset.device)
+                cu_seqlens = []
+
+                pad[
+                    bincount_pad[0]
+                    - self.patch_size
+                    + (bincount[0] % self.patch_size) : bincount_pad[0]
+                ] = pad[
+                    bincount_pad[0]
+                    - 2 * self.patch_size
+                    + (bincount[0] % self.patch_size) : bincount_pad[0]
+                    - self.patch_size
+                ]
+
                 cu_seqlens.append(
                     torch.arange(
-                        _offset_pad[i],
-                        _offset_pad[i + 1],
+                        0,
+                        bincount_pad[0],
                         step=self.patch_size,
                         dtype=torch.int32,
                         device=offset.device,
                     )
                 )
-            point[pad_key] = pad
-            point[unpad_key] = unpad
-            point[cu_seqlens_key] = nn.functional.pad(
-                torch.concat(cu_seqlens), (0, 1), value=_offset_pad[-1]
-            )
+
+                point[pad_key] = pad
+                point[unpad_key] = unpad
+                point[cu_seqlens_key] = nn.functional.pad(
+                    torch.concat(cu_seqlens), (0, 1), value=bincount_pad[0]
+                )
+            
+            
         return point[pad_key], point[unpad_key], point[cu_seqlens_key]
 
     def forward(self, point):
         if not self.enable_flash:
-            self.patch_size = min(
-                offset2bincount(point.offset).min().tolist(), self.patch_size_max
-            )
+            assert offset2bincount(point.offset).min() >= self.patch_size_max # NOTE(knzo25): assumed for deployment
+            self.patch_size = self.patch_size_max
 
         H = self.num_heads
         K = self.patch_size
@@ -282,10 +326,12 @@ class Block(PointModule):
         enable_flash=True,
         upcast_attention=True,
         upcast_softmax=True,
+        export_mode=False,
     ):
         super().__init__()
         self.channels = channels
         self.pre_norm = pre_norm
+        self.export_mode = export_mode
 
         self.cpe = PointSequential(
             SubMConv3d(
@@ -313,6 +359,7 @@ class Block(PointModule):
             enable_flash=enable_flash,
             upcast_attention=upcast_attention,
             upcast_softmax=upcast_softmax,
+            export_mode=self.export_mode,
         )
         self.norm2 = PointSequential(norm_layer(channels))
         self.mlp = PointSequential(
@@ -363,10 +410,12 @@ class SerializedPooling(PointModule):
             reduce="max",
             shuffle_orders=True,
             traceable=True,  # record parent and cluster
+            export_mode=False
     ):
         super().__init__()
         self.in_channels = in_channels
         self.out_channels = out_channels
+        self.export_mode = export_mode
 
         assert stride == 2**(math.ceil(stride) - 1).bit_length()  # 2, 4, 8
         # TODO: add support to grid pool (any stride)
@@ -398,21 +447,35 @@ class SerializedPooling(PointModule):
         sparse_shape = point.sparse_shape
 
         code = point.serialized_code >> pooling_depth * 3
-        code_, cluster, counts = torch.unique(
-            code[0],
-            sorted=True,
-            return_inverse=True,
-            return_counts=True,
-        )
+
+        if not self.export_mode:
+            code_, cluster, counts = torch.unique(
+                code[0],
+                sorted=True,
+                return_inverse=True,
+                return_counts=True,
+            )
+
+            _, indices = torch.sort(cluster)
+        else:
+            code_, cluster, counts, num_unique = unique(code[0])
+            indices = argsort(cluster)
+
         # indices of point sorted by cluster, for torch_scatter.segment_csr
-        _, indices = torch.sort(cluster)
+        
         # index pointer for sorted point, for torch_scatter.segment_csr
         idx_ptr = torch.cat([counts.new_zeros(1), torch.cumsum(counts, dim=0)])
         # head_indices of each cluster, for reduce attr e.g. code, batch
         head_indices = indices[idx_ptr[:-1]]
         # generate down code, order, inverse
         code = code[:, head_indices]
-        order = torch.argsort(code)
+
+        if not self.export_mode:
+            order = torch.argsort(code)
+        else:
+            order = torch.stack(
+                [argsort(code[i]) for i in range(len(code))], dim=0
+            ) 
         inverse = torch.zeros_like(order).scatter_(
             dim=1,
             index=order,
@@ -427,46 +490,27 @@ class SerializedPooling(PointModule):
             inverse = inverse[perm]
 
         # collect information
-        assert self.reduce == "max"
-        diff = idx_ptr[1:] - idx_ptr[0:-1]  # idx_ptr.diff()
-        segment_indices = torch.arange(
-            idx_ptr.size(0) - 1, device=idx_ptr.device).repeat_interleave(diff)
 
-        feat_src = self.proj(point.feat)[indices]
-        feat_max = torch.full((idx_ptr.size(0) - 1, feat_src.size(1)),
-                              torch.finfo(feat_src.dtype).min,
-                              dtype=torch.float32,
-                              device=feat_src.device)
-        feat_max.scatter_reduce_(0,
-                                 segment_indices.unsqueeze(1).expand(
-                                     -1, feat_src.size(1)),
-                                 feat_src,
-                                 reduce='amax',
-                                 include_self=True)
 
-        coord_src = point.coord[indices]
-        coord_mean = torch.full((idx_ptr.size(0) - 1, coord_src.size(1)),
-                                0,
-                                dtype=torch.float32,
-                                device=coord_src.device)
-        coord_mean.scatter_reduce_(0,
-                                   segment_indices.unsqueeze(1).expand(
-                                       -1, coord_src.size(1)),
-                                   coord_src,
-                                   reduce="mean",
-                                   include_self=False)
+        if not self.export_mode:
+            scatter_feat = torch_scatter.segment_csr(self.proj(point.feat)[indices],
+                                           idx_ptr,
+                                           reduce=self.reduce)
+            scatter_coord = torch_scatter.segment_csr(point.coord[indices],
+                                            idx_ptr,
+                                            reduce="mean")
+        else:
+            scatter_feat = segment_csr(self.proj(point.feat)[indices],
+                                           idx_ptr,
+                                           self.reduce)
+            scatter_coord = segment_csr(point.coord[indices],
+                                            idx_ptr,
+                                            "mean")
 
-        #feat_gt = feat=torch_scatter.segment_csr(self.proj(point.feat)[indices], idx_ptr, reduce=self.reduce)
 
         point_dict = Dict(
-            #feat=torch_scatter.segment_csr(self.proj(point.feat)[indices],
-            #                               idx_ptr,
-            #                               reduce=self.reduce),
-            #coord=torch_scatter.segment_csr(point.coord[indices],
-            #                                idx_ptr,
-            #                                reduce="mean"),
-            feat=feat_max,
-            coord=coord_mean,
+            feat=scatter_feat,
+            coord=scatter_coord,
             grid_coord=point.grid_coord[head_indices] >> pooling_depth,
             serialized_code=code,
             serialized_order=order,
@@ -599,12 +643,14 @@ class PointTransformerV3(PointModule):
             pdnorm_adaptive=False,
             pdnorm_affine=True,
             pdnorm_conditions=("ScanNet", "S3DIS", "Structured3D"),
+            export_mode=False
     ):
         super().__init__()
         self.num_stages = len(enc_depths)
         self.order = [order] if isinstance(order, str) else order
         self.cls_mode = cls_mode
         self.shuffle_orders = shuffle_orders
+        self.export_mode = export_mode
 
         assert self.num_stages == len(stride) + 1
         assert self.num_stages == len(enc_depths)
@@ -669,10 +715,11 @@ class PointTransformerV3(PointModule):
                         norm_layer=bn_layer,
                         act_layer=act_layer,
                         shuffle_orders=shuffle_orders,
+                        export_mode=self.export_mode,
                     ),
                     name="down",
                 )
-            for i in range(enc_depths[s]):
+            for i in range(enc_depths[s]): 
                 enc.add(
                     Block(
                         channels=enc_channels[s],
@@ -693,6 +740,7 @@ class PointTransformerV3(PointModule):
                         enable_flash=enable_flash,
                         upcast_attention=upcast_attention,
                         upcast_softmax=upcast_softmax,
+                        export_mode=export_mode,
                     ),
                     name=f"block{i}",
                 )

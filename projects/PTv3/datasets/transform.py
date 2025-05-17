@@ -806,7 +806,7 @@ class GridSample(object):
 
     def __call__(self, data_dict):
         assert "coord" in data_dict.keys()
-        scaled_coord = data_dict["coord"] / np.array(self.grid_size)
+        scaled_coord = data_dict["coord"].astype(np.float32) / np.array(self.grid_size).astype(np.float32)
         grid_coord = np.floor(scaled_coord).astype(int)
         min_coord = grid_coord.min(0)
         grid_coord -= min_coord

@@ -151,7 +151,7 @@ class SparseConvolution(SparseConvolutionBase):
                                 self.dilation, self.output_padding, self.subm,
                                 self.transposed)"""
 
-                            outids, indice_pairs, indice_pair_num = Fsp_custom.get_indice_pairs(
+                            outids, indice_pairs, indice_pair_num, num_act_out = Fsp_custom.get_indice_pairs(
                                 indices,
                                 batch_size,
                                 spatial_shape,
@@ -202,30 +202,15 @@ class SparseConvolution(SparseConvolutionBase):
                 indice_pairs_calc = indice_pairs
                 if indice_pairs.device != features.device:
                     indice_pairs_calc = indice_pairs.to(features.device)
-                if self.subm:
-                    """out_features = Fsp.indice_subm_conv(
-                        features, weight, indice_pairs_calc, indice_pair_num,
-                        outids.shape[0], algo, input._timer, bias_for_infer,
-                        act_alpha, act_beta, act_type)"""
 
-                    out_features = Fsp_custom.indice_subm_conv(
+                assert not self.inverse, "We are unlikely to ever use this"
+                assert not training, "This code is for inference only"
+
+                out_features = Fsp_custom.indice_conv(
                         features, weight, indice_pairs_calc, indice_pair_num,
-                        outids.shape[0], algo, input._timer, bias_for_infer,
+                        num_act_out, algo, training, self.subm, input._timer, bias_for_infer,
                         act_alpha, act_beta, act_type)
 
-                else:
-                    if self.inverse:
-                        out_features = Fsp.indice_inverse_conv(
-                            features, weight, indice_pairs_calc,
-                            indice_pair_num, outids.shape[0], algo,
-                            input._timer, bias_for_infer, act_alpha, act_beta,
-                            act_type)
-                    else:
-                        out_features = Fsp.indice_conv(
-                            features, weight, indice_pairs_calc,
-                            indice_pair_num, outids.shape[0], algo,
-                            input._timer, bias_for_infer, act_type, act_beta,
-                            act_type)
             else:
                 data = input.find_indice_pair(self.indice_key)
                 if data is not None:
@@ -256,6 +241,7 @@ class SparseConvolution(SparseConvolutionBase):
                         mask_argsort_fwd_splits = data.mask_argsort_fwd_splits
                         mask_argsort_bwd_splits = data.mask_argsort_bwd_splits
                         masks = data.masks
+                        num_act_out = data.out_voxel_num
                         assert self.subm, "only support reuse subm indices"
                         self._check_subm_reuse_valid(input, spatial_shape,
                                                      data)
@@ -267,7 +253,7 @@ class SparseConvolution(SparseConvolutionBase):
                             # we need to gen bwd indices for regular conv
                             # because it may be inversed.
                             try:
-                                outids, pair_fwd, pair_mask_fwd_splits, mask_argsort_fwd_splits = Fsp_custom.get_indice_pairs_implicit_gemm(
+                                outids, pair_fwd, pair_mask_fwd_splits, mask_argsort_fwd_splits, num_act_out = Fsp_custom.get_indice_pairs_implicit_gemm(
                                     indices,
                                     batch_size,
                                     spatial_shape,
@@ -321,6 +307,7 @@ class SparseConvolution(SparseConvolutionBase):
                                 stride=self.stride,
                                 padding=self.padding,
                                 dilation=self.dilation,
+                                out_voxel_num=num_act_out
                             )
                             msg = f"your indice key {self.indice_key} " "already exists in this sparse tensor."
                             assert self.indice_key not in indice_dict, msg
@@ -328,8 +315,8 @@ class SparseConvolution(SparseConvolutionBase):
                 if input.benchmark:
                     torch.cuda.synchronize()
                     t = time.time()
-                num_activate_out = outids.shape[
-                    0]  # TODO(knzo25): should use the output of res to force the graph
+                #num_activate_out = outids.shape[
+                #    0]  # TODO(knzo25): should use the output of res to force the graph
                 weight_cur = weight
                 bias_cur = bias_for_infer
                 # if self.enable_int8_test_mode:
@@ -349,7 +336,7 @@ class SparseConvolution(SparseConvolutionBase):
                         pair_fwd,
                         pair_mask_fwd_splits,
                         mask_argsort_fwd_splits,
-                        num_activate_out,
+                        num_act_out,
                         masks,
                         training,
                         self.subm,

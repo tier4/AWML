@@ -8,7 +8,7 @@ Please cite our work if the code is helpful to you.
 import numpy as np
 import torch
 import torch.distributed as dist
-import pointops
+#import pointops
 from uuid import uuid4
 
 import utils.comm as comm

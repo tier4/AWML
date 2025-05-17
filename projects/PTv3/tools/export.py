@@ -1,4 +1,4 @@
-from datasets import collate_fn
+#from datasets import collate_fn
 
 from engines.defaults import (
     default_argument_parser,
@@ -22,6 +22,8 @@ import onnx
 import spconv.pytorch as spconv
 import SparseConvolution
 
+from models.scatter.functional import argsort
+from models.utils.structure import bit_length_tensor
 
 class WrappedModel(torch.nn.Module):
 
@@ -43,20 +45,26 @@ class WrappedModel(torch.nn.Module):
 
     def forward(
         self,
-        coord,
         grid_coord,
-        offset,
         feat,
         serialized_depth,
         serialized_code,
-        serialized_order,
-        serialized_inverse,
     ):
 
+        shape = torch._shape_as_tensor(grid_coord).to(grid_coord.device)
+
+        serialized_order = torch.stack([argsort(code) for code in serialized_code], dim=0)
+        serialized_inverse = torch.zeros_like(serialized_order).scatter_(
+            dim=1,
+            index=serialized_order,
+            src=torch.arange(0, serialized_code.shape[1],
+                             device=serialized_order.device).repeat(serialized_code.shape[0], 1),
+        )
+
         input_dict = {
-            "coord": coord,
+            "coord": feat[:, :3],
             "grid_coord": grid_coord,
-            "offset": offset,
+            "offset": shape[:1],
             "feat": feat,
             "serialized_depth": serialized_depth,
             "serialized_code": serialized_code,
@@ -67,11 +75,12 @@ class WrappedModel(torch.nn.Module):
 
         output = self.model(input_dict)
 
-        pred_part = output["seg_logits"]  # (n, k)
-        pred_part = F.softmax(pred_part, -1)
-        pred_part = pred_part.argmax(-1)
 
-        return pred_part
+        pred_logits = output["seg_logits"]  # (n, k)
+        pred_probs = F.softmax(pred_logits, -1)
+        pred_label = pred_probs.argmax(-1)
+
+        return pred_label, pred_probs
 
 
 def main():
@@ -85,6 +94,7 @@ def main():
     # NOTE(knzo25): hacks to allow onnx export
     cfg.model.backbone.shuffle_orders = False
     cfg.model.backbone.order = ["z", "z-trans"]
+    cfg.model.backbone.export_mode = True
 
     runner = TRAINERS.build(dict(type=cfg.train.type, cfg=cfg))
 
@@ -93,6 +103,7 @@ def main():
     model = WrappedModel(runner.model, cfg)
     model.eval()
 
+    runner.val_loader.prefetch_factor = 1
     data_dict = next(iter(runner.val_loader))
 
     input_dict = data_dict
@@ -102,20 +113,22 @@ def main():
 
     with torch.no_grad():
 
+        depth = bit_length_tensor(torch.tensor([(max(cfg.point_cloud_range) - min(cfg.point_cloud_range)) / cfg.grid_size])).cuda()
         point = Point(input_dict)
         point.serialization(order=model.model.backbone.order,
-                            shuffle_orders=model.model.backbone.shuffle_orders)
+                            shuffle_orders=model.model.backbone.shuffle_orders,
+                            depth=depth)
 
         input_dict["serialized_depth"] = point["serialized_depth"]
         input_dict["serialized_code"] = point["serialized_code"]
-        input_dict["serialized_order"] = point["serialized_order"]
-        input_dict["serialized_inverse"] = point["serialized_inverse"]
         input_dict.pop("segment")
+        input_dict.pop("offset")
+        input_dict.pop("coord")
 
-        pred = model(**input_dict)
+        pred_labels, pred_probs = model(**input_dict)
 
         np.savez_compressed("test.npz",
-                            pred=pred.cpu().numpy(),
+                            pred=pred_labels.cpu().numpy(),
                             feat=input_dict["feat"].cpu().numpy())
 
         output_path = "test.onnx"
@@ -124,14 +137,11 @@ def main():
         keep_initializers_as_inputs = False
         opset_version = 17
         input_names = [
-            "coord", "grid_coord", "offset", "feat", "serialized_depth",
-            "serialized_code", "serialized_order", "serialized_inverse"
+            "grid_coord", "feat", "serialized_depth",
+            "serialized_code"
         ]
-        output_names = ["seg"]
+        output_names = ["pred_labels", "pred_probs"]
         dynamic_axes = {
-            "coord": {
-                0: "voxels_num",
-            },
             "grid_coord": {
                 0: "voxels_num",
             },
@@ -141,14 +151,7 @@ def main():
             "serialized_code": {
                 1: "voxels_num",
             },
-            "serialized_order": {
-                1: "voxels_num",
-            },
-            "serialized_inverse": {
-                1: "voxels_num",
-            },
         }
-
         torch.onnx.export(
             model,
             input_dict,
@@ -172,15 +175,21 @@ def main():
     graph = gs.import_onnx(model)
 
     # Fix TopK
-    """ topk_nodes = [node for node in graph.nodes if node.op == "TopK"]
-    assert len(topk_nodes) == 1
+    topk_nodes = [node for node in graph.nodes if node.op == "TopK"]
+    """assert len(topk_nodes) == 1
     topk = topk_nodes[0]
     k = model_cfg.num_proposals
     topk.inputs[1] = gs.Constant("K", values=np.array([k], dtype=np.int64))
     topk.outputs[0].shape = [1, k]
     topk.outputs[0].dtype = topk.inputs[0].dtype if topk.inputs[0].dtype else np.float32
     topk.outputs[1].shape = [1, k]
-    topk.outputs[1].dtype = np.int64 """
+    topk.outputs[1].dtype = np.int64"""
+    #get_indice_nodes = [node for node in graph.nodes if node.op == "GetIndicePairs"]
+    #for node in get_indice_nodes:
+    #    outputs = node.outputs
+    #    last_output = outputs[-1]
+    #    #new_output = gs.ir.tensor.Variable("asdasd", dtype=last_output.dtype, [1])
+    #    x = 0
 
     graph.cleanup().toposort()
     output_path = output_path.replace(".onnx", "_fixed.onnx")

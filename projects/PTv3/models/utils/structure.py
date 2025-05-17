@@ -47,7 +47,7 @@ class Point(Dict):
                                           dtype=torch.int64)
             self["batch"] = offset2batch(self.offset)
         elif "batch" not in self.keys() and "offset" in self.keys():
-            self["batch"] = offset2batch(self.offset, self["coord"])
+            self["batch"] = offset2batch(self.offset, self["grid_coord"])
         elif "offset" not in self.keys() and "batch" in self.keys():
             self["offset"] = batch2offset(self.batch)
 
