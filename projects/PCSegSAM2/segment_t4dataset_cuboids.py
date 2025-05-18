@@ -109,7 +109,7 @@ def segment_pointcloud(
     num_points = points.shape[0]
     points_lcs = np.hstack([points[:, 0:3], np.ones((num_points, 1))])
     points_ecs = points_lcs @ lidar_l2e_transform.T
-    
+
     lidar_path = Path(lidar_path)
     basename = lidar_path.name.split(".")[0]
     seg_path = lidar_path.parent / f"{basename}_seg.npy"
@@ -125,7 +125,7 @@ def segment_pointcloud(
 
     # NOTE(knzo25): if the segmentation is slow, this can be easily parallelized
     for box in boxes:
-        
+
         center = box.position
         rotation = box.rotation.rotation_matrix
 
@@ -139,9 +139,9 @@ def segment_pointcloud(
 
         mask = np.logical_and.reduce(
             (
-                np.abs(points_box[:, 0]) <= 0.5*shape[1],
-                np.abs(points_box[:, 1]) <= 0.5*shape[0],
-                np.abs(points_box[:, 2]) <= 0.5*shape[2],
+                np.abs(points_box[:, 0]) <= 0.5 * shape[1],
+                np.abs(points_box[:, 1]) <= 0.5 * shape[0],
+                np.abs(points_box[:, 2]) <= 0.5 * shape[2],
             )
         )
 
@@ -155,6 +155,7 @@ def segment_pointcloud(
         logging.error(f"Failed to save segmentation file {str(seg_path)}: {e}")
 
     return
+
 
 def segment_scene(args, cfg, segmentation_cfg, dataset_version, scene_id):
 

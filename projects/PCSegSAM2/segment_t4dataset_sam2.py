@@ -3,6 +3,7 @@ import os
 import os.path as osp
 import re
 import warnings
+from collections import defaultdict
 from pathlib import Path
 from typing import Dict, List
 
@@ -12,7 +13,6 @@ import numpy as np
 import supervision as sv
 import torch
 import yaml
-from collections import defaultdict
 from groundingdino.util.inference import load_image, load_model, predict
 from hydra import initialize
 from mmengine.config import Config
@@ -306,7 +306,7 @@ def main():
                     raise ValueError(f"{scene_root_dir_path} does not exist.")
 
                 t4 = Tier4(version="annotation", data_root=scene_root_dir_path, verbose=False)
-                #scene_seg_images_dict = {camera_name: [] for camera_name in dataset_cfg.camera_types}
+                # scene_seg_images_dict = {camera_name: [] for camera_name in dataset_cfg.camera_types}
                 scene_seg_images_dict = defaultdict(list)
 
                 for i, sample_data in enumerate(tqdm(t4.sample_data)):
@@ -318,7 +318,9 @@ def main():
 
                     cam_name = sample_data.channel
 
-                    seg_img = model.segment(os.path.join(scene_root_dir_path, sample_data.filename), segmentation_cfg["override"])
+                    seg_img = model.segment(
+                        os.path.join(scene_root_dir_path, sample_data.filename), segmentation_cfg["override"]
+                    )
 
                     if seg_img is None:
                         continue
