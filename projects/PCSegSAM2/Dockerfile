@@ -1,6 +1,6 @@
-ARG PYTORCH="2.3.1"
-ARG CUDA="12.1"
-ARG CUDNN="8"
+ARG PYTORCH="2.3.1" # NOTE(knzo25): use 2.7.0 for blackwell
+ARG CUDA="12.1" # NOTE(knzo25): use 2.8.0 for blackwell
+ARG CUDNN="8" # NOTE(knzo25): use 9 for blackwell
 FROM pytorch/pytorch:${PYTORCH}-cuda${CUDA}-cudnn${CUDNN}-devel
 
 ARG MMCV="2.1.0"
@@ -80,22 +80,16 @@ COPY README.md README.md
 
 RUN pip install --no-cache-dir -e .
 
-# SAM SPECIFIC !
+# SAM SPECIFIC ! (SAM2 uses torch >=2.3.1)
+RUN python -m pip install torch==2.3.1 torchvision==0.18.1 torchaudio==2.3.1 --index-url https://download.pytorch.org/whl/cu121
 
 # Install essential Python packages
 RUN python -m pip install --upgrade pip setuptools wheel numpy \
-    opencv-python transformers supervision pycocotools addict yapf timm
-
-# SAM2 uses torch 2.3.1
-RUN python -m pip install torch==2.3.1 torchvision==0.18.1 torchaudio==2.3.1 --index-url https://download.pytorch.org/whl/cu121
+    opencv-python transformers supervision pycocotools addict yapf timm \
+    typing_extensions accelerate numba==0.61.1rc1
 
 # Install segment_anything package in editable mode
 RUN python -m pip install -e /workspace/projects/PCSegSAM2
 
-RUN python -m pip install --upgrade typing_extensions
-
 # Install grounding dino
 RUN python -m pip install --no-build-isolation -e /workspace/projects/PCSegSAM2/grounding_dino
-
-RUN pip install accelerate
-RUN pip install numba==0.61.1rc1

@@ -39,10 +39,7 @@ bash download_ckpts.sh
 
 ## Generate SAM2 segmented images
 
-*NOTE: Although this step should be done only in docker, in the meantime run the following command:
-`python -m pip install --no-build-isolation -e /workspace/projects/PCSegSAM2/grounding_dino`
-
-*NOTE2: Although SAM2 has video segmentation, I did not have enough memory to test it.
+*NOTE: Although SAM2 has video segmentation, I did not have enough memory to test it.
 
 To segment the images of a dataset using SAM2, use:
 

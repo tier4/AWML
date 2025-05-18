@@ -96,6 +96,9 @@ def get_extensions():
             "-gencode=arch=compute_75,code=sm_75",
             "-gencode=arch=compute_80,code=sm_80",
             "-gencode=arch=compute_86,code=sm_86",
+            "-gencode=arch=compute_89,code=sm_89",
+            "-gencode arch=compute_89,code=compute_89"
+            #"-gencode=arch=compute_120,code=sm_120", #TODO(knzo25): uncomment when CUDA 12.8 is available for native support for blackwell
         ]
     else:
         print("Compiling without CUDA")
