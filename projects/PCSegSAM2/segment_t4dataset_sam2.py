@@ -1,36 +1,27 @@
 import argparse
-import json
-import logging
 import os
 import os.path as osp
 import re
 import warnings
 from pathlib import Path
-from typing import Any, Dict, List
+from typing import Dict, List
 
 import cv2
 import hydra
 import numpy as np
-import pycocotools.mask as mask_util
 import supervision as sv
 import torch
 import yaml
 from collections import defaultdict
 from groundingdino.util.inference import load_image, load_model, predict
-from hydra import compose, initialize
+from hydra import initialize
 from mmengine.config import Config
 from mmengine.logging import print_log
 from sam2.build_sam import build_sam2
 from sam2.sam2_image_predictor import SAM2ImagePredictor
 from t4_devkit import Tier4
-from t4_devkit.schema import Sample
 from torchvision.ops import box_convert
 from tqdm import tqdm
-
-from tools.detection3d.t4dataset_converters.t4converter import (
-    extract_tier4_data,
-    obtain_sensor2top,
-)
 
 
 class SAM2Wrapper:

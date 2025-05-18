@@ -8,12 +8,9 @@ import warnings
 from pathlib import Path
 from typing import Any, Dict, List
 
-import cv2
 import numpy as np
 import yaml
 from mmengine.config import Config
-from skimage.morphology import binary_dilation, square
-from skimage.segmentation import find_boundaries
 from t4_devkit import Tier4
 from t4_devkit.schema import Sample
 from tqdm import tqdm

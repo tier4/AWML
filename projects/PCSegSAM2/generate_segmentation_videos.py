@@ -1,6 +1,5 @@
 import argparse
 import logging
-import multiprocessing as mp
 import os
 import os.path as osp
 import re
