@@ -39,6 +39,7 @@ filter_pipelines = dict(
             weights=[1.0, 1.0],
             iou_threshold=0.55,
             skip_box_threshold=0.0,
+            label=["car", "truck", "bus", "bicycle", "pedestrian"],
         ),
     ),
     inputs=[

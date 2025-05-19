@@ -84,6 +84,9 @@ class EnsembleModel:
         self.settings = ensemble_setting
         self.logger = logger
 
+        # labels for mmdet3d, e.g, [0, 1, 2, 3, 4]
+        self.all_labels = [i for i, label in enumerate(self.settings["label"])]
+
     def ensemble(self, results: List[Dict[str, Any]]) -> Dict[str, Any]:
         """Ensemble and integrate results from all models."""
         if len(results) == 1:
@@ -91,61 +94,61 @@ class EnsembleModel:
         # Check if the number of weights matches the number of results
         assert len(self.settings["weights"]) == len(results), "Number of weights must match number of models"
 
-        # Obtain the union of all detected labels
-        all_labels = set()
-        for result in results:
-            for data_info in result.get("data_list", []):
-                for instance in data_info.get("pred_instances_3d", []):
-                    bbox_label = instance.get("bbox_label_3d")
-                    if bbox_label is not None:
-                        all_labels.add(bbox_label)
-
-        return self._ensemble(results, ensemble_function=_nms_ensemble, all_labels=all_labels)
-
-    # TODO(Shin-kyoto): _ensembleは，どんな手法でも呼び出して使えるようにしたい．ensemble_functionに渡す引数はself.settingsとすることで抽象化したい．
-    def _ensemble(self, results, ensemble_function, all_labels):
-        # Initialize merged results
-        merged_results = {}
+        merged_results = []
         # Process each frame
-        for frame_idx, frame_results in enumerate(zip(*[r["data_list"] for r in results])):
-            # Copy metadata from the first result
-            # TODO(Shin-kyoto): 最初のresultから，frameに関するmetadataを取得する．
-            merged_frame = frame_results[0].copy()
-            merged_instances = []
+        for frame_results in zip(*[r["data_list"] for r in results]):
+            # Process single frame
+            merged_frame = self._ensemble_frame(frame_results, _nms_ensemble, self.all_labels)
+            merged_results.append(merged_frame)
 
-            # Group instances by label and ensemble
-            for label in all_labels:
-                # Collect instances from each model for this label
-                model_instances_list = []
-                for model_idx, frame in enumerate(frame_results):
-                    instances = frame.get("pred_instances_3d", [])
+        return {"metainfo": results[0]["metainfo"], "data_list": merged_results}
 
-                    model_instances_list.append(
-                        ModelInstances(
-                            model_id=model_idx,
-                            instances=instances,
-                            weight=self.settings["weights"][model_idx],
-                            skip_box_threshold=self.settings["skip_box_threshold"],
-                        )
+    def _ensemble_frame(self, frame_results, ensemble_function, all_labels):
+        """Process a single frame's ensemble.
+
+        Args:
+            frame_results: List of results for a single frame from different models
+            ensemble_function: Function to use for ensembling
+            all_labels: Set of all labels across all models
+
+        Returns:
+            Merged frame data
+        """
+        # Copy metadata from the first result
+        merged_frame = frame_results[0].copy()
+        merged_instances = []
+
+        # Group instances by label and ensemble
+        for label in all_labels:
+            # Collect instances from each model for this label
+            model_instances_list = []
+            for model_idx, frame in enumerate(frame_results):
+                instances = frame.get("pred_instances_3d", [])
+
+                model_instances_list.append(
+                    ModelInstances(
+                        model_id=model_idx,
+                        instances=instances,
+                        weight=self.settings["weights"][model_idx],
+                        skip_box_threshold=self.settings["skip_box_threshold"],
                     )
-
-                if len(model_instances_list) == 0:
-                    raise ValueError("model_instances_list is empty")
-
-                # Call ensemble function with instances by model
-                merged_instances_by_label = ensemble_function(
-                    model_instances_list,
-                    label,
-                    self.settings["iou_threshold"],
                 )
 
-                # All instances already have the label
-                merged_instances.extend(merged_instances_by_label)
+            if len(model_instances_list) == 0:
+                raise ValueError("model_instances_list is empty")
 
-            merged_frame["pred_instances_3d"] = merged_instances
-            merged_results[f"frame_{frame_idx}"] = merged_frame
+            # Call ensemble function with instances by model
+            merged_instances_by_label = ensemble_function(
+                model_instances_list,
+                label,
+                self.settings["iou_threshold"],
+            )
 
-        return {"metainfo": results[0]["metainfo"], "data_list": list(merged_results.values())}
+            # All instances already have the label
+            merged_instances.extend(merged_instances_by_label)
+
+        merged_frame["pred_instances_3d"] = merged_instances
+        return merged_frame
 
 
 def _nms_ensemble(
@@ -173,10 +176,8 @@ def _nms_ensemble(
         instances, boxes, scores = model_instances.filter_and_weight_instances(target_label=label)
 
         # Add results to our collections
-        all_instances.extend(instances)
-
-        # Only add boxes and scores if they exist
-        if len(boxes) > 0:
+        if len(instances) > 0:
+            all_instances.extend(instances)
             all_boxes.append(boxes)
             all_scores.append(scores)
 

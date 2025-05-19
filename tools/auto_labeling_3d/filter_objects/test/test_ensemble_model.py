@@ -32,6 +32,7 @@ def ensemble_model():
         "weights": [0.7, 0.3],
         "iou_threshold": 0.5,
         "skip_box_threshold": 0.2,
+        "label": ["car", "truck", "bus", "bicycle", "pedestrian"],
     }
     logger = logging.getLogger("test_ensemble")
     return EnsembleModel(
