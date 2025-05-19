@@ -33,59 +33,6 @@ def _lovasz_grad(gt_sorted):
     return jaccard
 
 
-def _lovasz_hinge(logits, labels, per_image=True, ignore=None):
-    """
-    Binary Lovasz hinge loss
-        logits: [B, H, W] Logits at each pixel (between -infinity and +infinity)
-        labels: [B, H, W] Tensor, binary ground truth masks (0 or 1)
-        per_image: compute the loss per image instead of per batch
-        ignore: void class id
-    """
-    if per_image:
-        loss = mean(
-            _lovasz_hinge_flat(
-                *_flatten_binary_scores(log.unsqueeze(0), lab.unsqueeze(0), ignore)
-            )
-            for log, lab in zip(logits, labels)
-        )
-    else:
-        loss = _lovasz_hinge_flat(*_flatten_binary_scores(logits, labels, ignore))
-    return loss
-
-
-def _lovasz_hinge_flat(logits, labels):
-    """Binary Lovasz hinge loss
-    Args:
-        logits: [P] Logits at each prediction (between -infinity and +infinity)
-        labels: [P] Tensor, binary ground truth labels (0 or 1)
-    """
-    if len(labels) == 0:
-        # only void pixels, the gradients should be 0
-        return logits.sum() * 0.0
-    signs = 2.0 * labels.float() - 1.0
-    errors = 1.0 - logits * signs
-    errors_sorted, perm = torch.sort(errors, dim=0, descending=True)
-    perm = perm.data
-    gt_sorted = labels[perm]
-    grad = _lovasz_grad(gt_sorted)
-    loss = torch.dot(F.relu(errors_sorted), grad)
-    return loss
-
-
-def _flatten_binary_scores(scores, labels, ignore=None):
-    """Flattens predictions in the batch (binary case)
-    Remove labels equal to 'ignore'
-    """
-    scores = scores.view(-1)
-    labels = labels.view(-1)
-    if ignore is None:
-        return scores, labels
-    valid = labels != ignore
-    vscores = scores[valid]
-    vlabels = labels[valid]
-    return vscores, vlabels
-
-
 def _lovasz_softmax(
     probas, labels, classes="present", class_seen=None, per_image=False, ignore=None
 ):
@@ -183,9 +130,6 @@ def _flatten_probas(probas, labels, ignore=None):
     vlabels = labels[valid]
     return vprobas, vlabels
 
-
-def isnan(x):
-    return x != x
 
 
 def mean(values, ignore_nan=False, empty=0):

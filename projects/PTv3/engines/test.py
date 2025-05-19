@@ -66,7 +66,7 @@ class TesterBase:
         )
         if os.path.isfile(self.cfg.weight):
             self.logger.info(f"Loading weight at: {self.cfg.weight}")
-            checkpoint = torch.load(self.cfg.weight)
+            checkpoint = torch.load(self.cfg.weight, weights_only=False)
             weight = OrderedDict()
             for key, value in checkpoint["state_dict"].items():
                 if key.startswith("module."):
@@ -127,17 +127,7 @@ class SemSegTester(TesterBase):
         save_path = os.path.join(self.cfg.save_path, "result")
         make_dirs(save_path)
         # create submit folder only on main process
-        if (
-            self.cfg.data.test.type == "ScanNetDataset"
-            or self.cfg.data.test.type == "ScanNet200Dataset"
-            or self.cfg.data.test.type == "ScanNetPPDataset"
-        ) and comm.is_main_process():
-            make_dirs(os.path.join(save_path, "submit"))
-        elif (
-            self.cfg.data.test.type == "SemanticKITTIDataset" and comm.is_main_process()
-        ):
-            make_dirs(os.path.join(save_path, "submit"))
-        elif self.cfg.data.test.type == "NuScenesDataset" and comm.is_main_process():
+        if self.cfg.data.test.type == "NuScenesDataset" and comm.is_main_process():
             import json
 
             make_dirs(os.path.join(save_path, "submit", "lidarseg", "test"))
@@ -209,10 +199,8 @@ class SemSegTester(TesterBase):
                             batch_num=len(fragment_list),
                         )
                     )
-                if self.cfg.data.test.type == "ScanNetPPDataset":
-                    pred = pred.topk(3, dim=1)[1].data.cpu().numpy()
-                else:
-                    pred = pred.max(1)[1].data.cpu().numpy()
+                pred = pred.max(1)[1].data.cpu().numpy()
+                
                 if "origin_segment" in data_dict.keys():
                     assert "inverse" in data_dict.keys()
                     pred = pred[data_dict["inverse"]]
@@ -221,47 +209,7 @@ class SemSegTester(TesterBase):
                 #np.save(pred_save_path, pred)
                 #np.save(feat_save_path, feat.cpu().numpy())
                 np.savez_compressed(result_save_path, pred=pred, feat=feat.cpu().numpy())
-            if (
-                self.cfg.data.test.type == "ScanNetDataset"
-                or self.cfg.data.test.type == "ScanNet200Dataset"
-            ):
-                np.savetxt(
-                    os.path.join(save_path, "submit", "{}.txt".format(data_name)),
-                    self.test_loader.dataset.class2id[pred].reshape([-1, 1]),
-                    fmt="%d",
-                )
-            elif self.cfg.data.test.type == "ScanNetPPDataset":
-                np.savetxt(
-                    os.path.join(save_path, "submit", "{}.txt".format(data_name)),
-                    pred.astype(np.int32),
-                    delimiter=",",
-                    fmt="%d",
-                )
-                pred = pred[:, 0]  # for mIoU, TODO: support top3 mIoU
-            elif self.cfg.data.test.type == "SemanticKITTIDataset":
-                # 00_000000 -> 00, 000000
-                sequence_name, frame_name = data_name.split("_")
-                os.makedirs(
-                    os.path.join(
-                        save_path, "submit", "sequences", sequence_name, "predictions"
-                    ),
-                    exist_ok=True,
-                )
-                submit = pred.astype(np.uint32)
-                submit = np.vectorize(
-                    self.test_loader.dataset.learning_map_inv.__getitem__
-                )(submit).astype(np.uint32)
-                submit.tofile(
-                    os.path.join(
-                        save_path,
-                        "submit",
-                        "sequences",
-                        sequence_name,
-                        "predictions",
-                        f"{frame_name}.label",
-                    )
-                )
-            elif self.cfg.data.test.type == "NuScenesDataset":
+            if self.cfg.data.test.type == "NuScenesDataset":
                 np.array(pred + 1).astype(np.uint8).tofile(
                     os.path.join(
                         save_path,

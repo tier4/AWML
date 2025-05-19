@@ -1,4 +1,4 @@
 from .builder import build_criteria
 
-from .misc import CrossEntropyLoss, SmoothCELoss, DiceLoss, FocalLoss, BinaryFocalLoss
+from .misc import CrossEntropyLoss
 from .lovasz import LovaszLoss
