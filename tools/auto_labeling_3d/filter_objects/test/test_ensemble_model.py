@@ -11,7 +11,7 @@ from tools.auto_labeling_3d.filter_objects.ensemble.ensemble_model import Ensemb
 
 @define
 class PredInstance3D:
-    """3D予測インスタンスのデータクラス。"""
+    """Data class for 3D predicted instance."""
 
     bbox_3d: List[float]
     velocity: List[float]
@@ -20,14 +20,14 @@ class PredInstance3D:
     bbox_score_3d: float
 
     def asdict(self) -> Dict:
-        """オブジェクトを辞書に変換します。"""
+        """Convert object to dictionary."""
         return asdict(self)
 
 
-# テスト用のフィクスチャ
+# Test fixtures
 @pytest.fixture
 def ensemble_model():
-    """テスト用のEnsembleModelインスタンスを返します。"""
+    """Return an EnsembleModel instance for testing."""
     ensemble_setting = {
         "weights": [0.7, 0.3],
         "iou_threshold": 0.5,
@@ -42,7 +42,7 @@ def ensemble_model():
 
 @pytest.fixture
 def pred_instances():
-    """テスト用の予測インスタンスのリストを返します。"""
+    """Return a list of predicted instances for testing."""
     return [
         PredInstance3D(
             bbox_3d=[1.0, 2.0, 3.0, 2.0, 2.0, 2.0, 0.0],
@@ -77,10 +77,10 @@ def pred_instances():
 
 @pytest.fixture
 def create_result_with_instances():
-    """指定したインスタンスでテスト結果を作成する関数を返します。"""
+    """Return a function that creates predicted results with specified instances."""
 
     def _create_result(instances: List[PredInstance3D], metainfo: Optional[Dict] = None) -> Dict:
-        """指定したインスタンスでテスト結果を作成します。"""
+        """Create test predicted results with specified instances."""
         return {
             "metainfo": metainfo or {"test": "data"},
             "data_list": [
@@ -95,35 +95,35 @@ def create_result_with_instances():
 
 
 def test_ensemble_single_result(ensemble_model, pred_instances, create_result_with_instances):
-    """単一結果のアンサンブルをテストします。"""
-    # 単一の結果を作成
+    """Test ensembling a single result."""
+    # Create a single result
     result = create_result_with_instances([pred_instances[0]])
-    # アンサンブルは入力結果を変更せずに返すはず
+    # Ensemble should return the input result unchanged
     assert ensemble_model.ensemble([result]) == result
 
 
 def test_ensemble_multiple_results(ensemble_model, pred_instances, create_result_with_instances):
-    """複数結果のアンサンブルをテストします。"""
-    # テストデータを作成
+    """Test ensembling multiple results."""
+    # Create test data
     results = [
         create_result_with_instances([pred_instances[0]]),
         create_result_with_instances([pred_instances[1]], metainfo={"test": "data2"}),
     ]
 
-    # アンサンブルメソッドを呼び出す
+    # Call the ensemble method
     result = ensemble_model.ensemble(results)
     pred_instances_result = result["data_list"][0]["pred_instances_3d"]
 
-    # metainfoは変更しない
+    # metainfo should not be changed
     assert result["metainfo"] == results[0]["metainfo"]
     assert len(result["data_list"]) == 1
     assert "pred_instances_3d" in result["data_list"][0]
 
-    # NMS後は1つのボックスのみ残るはず
+    # After NMS, only one box should remain
     assert len(pred_instances_result) == 1
 
-    # 最も高い重み付きスコアのボックスが保持されるはず
-    # モデル1: 0.9 * 0.7 = 0.63
-    # モデル2: 0.8 * 0.3 = 0.24
-    # モデル1のほうが高い重み付きスコアを持つので、そのボックスが保持されるはず
+    # The box with the highest weighted score should be kept
+    # Model 1: 0.9 * 0.7 = 0.63
+    # Model 2: 0.8 * 0.3 = 0.24
+    # Model 1 has a higher weighted score, so its box should be kept
     assert pytest.approx(pred_instances_result[0]["bbox_score_3d"], abs=1e-5) == 0.63
