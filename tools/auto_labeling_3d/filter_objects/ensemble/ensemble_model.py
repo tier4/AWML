@@ -30,10 +30,6 @@ class EnsembleModel:
         # Check if the number of weights matches the number of results
         assert len(self.settings["weights"]) == len(results), "Number of weights must match number of models"
 
-        return self._ensemble(results, ensemble_function=_nms_ensemble)
-
-    # TODO(Shin-kyoto): _ensembleは，どんな手法でも呼び出して使えるようにしたい．ensemble_functionに渡す引数はself.settingsとすることで抽象化したい．
-    def _ensemble(self, results, ensemble_function):
         # Obtain the union of all detected labels
         all_labels = set()
         for result in results:
@@ -43,6 +39,10 @@ class EnsembleModel:
                     if bbox_label is not None:
                         all_labels.add(bbox_label)
 
+        return self._ensemble(results, ensemble_function=_nms_ensemble, all_labels=all_labels)
+
+    # TODO(Shin-kyoto): _ensembleは，どんな手法でも呼び出して使えるようにしたい．ensemble_functionに渡す引数はself.settingsとすることで抽象化したい．
+    def _ensemble(self, results, ensemble_function, all_labels):
         # Initialize merged results
         merged_results = {}
         # Process each frame
