@@ -1,9 +1,70 @@
 import logging
 import pickle
-from typing import Any, Dict, List, Tuple
+from dataclasses import dataclass, field
+from typing import Any, Dict, List, Optional, Tuple
 
 import numpy as np
 from mmengine.registry import TASK_UTILS
+
+
+@dataclass
+class ModelInstances:
+    """Dataclass for all instances from a specific model."""
+
+    model_id: int
+    instances: List[Dict[str, Any]]
+    weight: float
+    skip_box_threshold: float
+
+    def filter_and_weight_instances(
+        self, target_label: Optional[Any] = None
+    ) -> Tuple[List[Dict[str, Any]], np.ndarray, np.ndarray]:
+        """Filter instances by label and score, and apply weight.
+
+        Args:
+            target_label: If provided, only return instances with this label.
+
+        Returns:
+            Tuple containing:
+                - instances: List of instances that pass the filtering, with weighted scores.
+                - boxes: Array of bounding boxes.
+                - scores: Array of weighted scores.
+        """
+        filtered_instances = []
+        boxes = []
+        scores = []
+
+        for instance in self.instances:
+            # Filter by label if provided
+            if target_label is not None and instance["bbox_label_3d"] != target_label:
+                continue
+
+            # Filter by score threshold
+            score = instance["bbox_score_3d"]
+            if score <= self.skip_box_threshold:
+                continue
+
+            # Apply weight to score
+            weighted_score = float(score * self.weight)
+
+            # Create weighted instance
+            weighted_instance = instance.copy()
+            weighted_instance["bbox_score_3d"] = weighted_score
+
+            # Store instance, box and score
+            filtered_instances.append(weighted_instance)
+            boxes.append(np.array(instance["bbox_3d"]))
+            scores.append(weighted_score)
+
+        # Convert to numpy arrays if not empty
+        if boxes:
+            boxes = np.array(boxes)
+            scores = np.array(scores)
+        else:
+            boxes = np.array([])
+            scores = np.array([])
+
+        return filtered_instances, boxes, scores
 
 
 @TASK_UTILS.register_module()
@@ -54,54 +115,32 @@ class EnsembleModel:
 
             # Group instances by label and ensemble
             for label in all_labels:
-                boxes_list = []
-                scores_list = []
+                # Collect instances from each model for this label
+                model_instances_list = []
                 for model_idx, frame in enumerate(frame_results):
                     instances = frame.get("pred_instances_3d", [])
-                    model_boxes = []
-                    model_scores = []
 
-                    for instance in instances:
-                        if instance["bbox_label_3d"] == label:
-                            model_boxes.append(instance["bbox_3d"])
-                            model_scores.append(instance["bbox_score_3d"])
-
-                    if model_boxes:
-                        boxes_list.append(np.array(model_boxes))
-                        scores_list.append(np.array(model_scores))
-
-                if boxes_list:
-                    merged_boxes, merged_scores = ensemble_function(
-                        boxes_list,
-                        scores_list,
-                        self.settings["weights"],
-                        self.settings["iou_threshold"],
-                        self.settings["skip_box_threshold"],
+                    model_instances_list.append(
+                        ModelInstances(
+                            model_id=model_idx,
+                            instances=instances,
+                            weight=self.settings["weights"][model_idx],
+                            skip_box_threshold=self.settings["skip_box_threshold"],
+                        )
                     )
 
-                    # Restore the original instance information (e.g., velocity)
-                    # TODO(Shin-kyoto): original boxを選ぶだけなのに，わざわざ，「一番近いものを探すためにfor文を回す」という処理を入れたくない．ensemble_functionで選んだbboxの速度を使うようにしたい．
-                    for box, score in zip(merged_boxes, merged_scores):
-                        original_instance = None
-                        for frame in frame_results:
-                            for instance in frame.get("pred_instances_3d", []):
-                                if instance["bbox_label_3d"] == label and np.allclose(
-                                    instance["bbox_3d"], box[:7], atol=1e-5
-                                ):
-                                    original_instance = instance
-                                    break
-                            if original_instance is not None:
-                                break
+                if len(model_instances_list) == 0:
+                    raise ValueError("model_instances_list is empty")
 
-                        merged_instances.append(
-                            {
-                                "bbox_3d": box[:7].tolist(),
-                                "velocity": original_instance["velocity"] if original_instance else [0.0, 0.0],
-                                "instance_id_3d": original_instance["instance_id_3d"] if original_instance else "",
-                                "bbox_label_3d": label,
-                                "bbox_score_3d": float(score),
-                            }
-                        )
+                # Call ensemble function with instances by model
+                merged_instances_by_label = ensemble_function(
+                    model_instances_list,
+                    label,
+                    self.settings["iou_threshold"],
+                )
+
+                # All instances already have the label
+                merged_instances.extend(merged_instances_by_label)
 
             merged_frame["pred_instances_3d"] = merged_instances
             merged_results[f"frame_{frame_idx}"] = merged_frame
@@ -110,45 +149,49 @@ class EnsembleModel:
 
 
 def _nms_ensemble(
-    boxes_list: List[np.ndarray],
-    scores_list: List[np.ndarray],
-    weights: List[float],
+    model_instances_list: List[ModelInstances],
+    label: Any,
     iou_threshold: float,
-    skip_box_threshold: float,
-) -> Tuple[np.ndarray, np.ndarray]:
+) -> List[Dict]:
     """NMS-based ensemble for 3D bounding boxes.
 
     Args:
-        boxes_list: List of arrays containing bounding boxes from each model.
-        scores_list: List of arrays containing scores from each model.
-        weights: List of weights for each model.
+        model_instances_list: List of ModelInstances containing instances from each model.
+        label: The label for filtering.
         iou_threshold: IoU threshold for suppression.
-        skip_box_threshold: Minimum score to consider a box.
 
     Returns:
-        A tuple of arrays containing merged boxes and scores.
+        A list of kept instances after NMS.
     """
+    # Collect all filtered and weighted instances, boxes, and scores across models
+    all_instances = []
     all_boxes = []
     all_scores = []
-    # Combine the detection results from all models using weighted scores
-    for model_idx, (boxes, scores) in enumerate(zip(boxes_list, scores_list)):
-        for box, score in zip(boxes, scores):
-            if score > skip_box_threshold:
-                all_boxes.append(box)
-                all_scores.append(score * weights[model_idx])
 
-    if not all_boxes:
-        return np.array([]), np.array([])
+    for model_instances in model_instances_list:
+        # Apply filtering and weighting with label filter
+        instances, boxes, scores = model_instances.filter_and_weight_instances(target_label=label)
 
-    all_boxes = np.array(all_boxes)
-    all_scores = np.array(all_scores)
+        # Add results to our collections
+        all_instances.extend(instances)
 
-    # NMS
-    keep_indices = _nms_indices(all_boxes, all_scores, iou_threshold)
-    keep_boxes = all_boxes[keep_indices]
-    keep_scores = all_scores[keep_indices]
+        # Only add boxes and scores if they exist
+        if len(boxes) > 0:
+            all_boxes.append(boxes)
+            all_scores.append(scores)
 
-    return keep_boxes, keep_scores
+    if not all_instances or not all_boxes:
+        return []
+
+    # Combine all boxes and scores
+    boxes = np.vstack(all_boxes)
+    scores = np.concatenate(all_scores)
+
+    # Apply NMS
+    keep_indices = _nms_indices(boxes, scores, iou_threshold)
+    keep_instances = [all_instances[i] for i in keep_indices]
+
+    return keep_instances
 
 
 def _nms_indices(boxes: np.ndarray, scores: np.ndarray, iou_threshold: float) -> List[int]:
@@ -163,11 +206,11 @@ def _nms_indices(boxes: np.ndarray, scores: np.ndarray, iou_threshold: float) ->
         List of indices for boxes to keep.
     """
     order = scores.argsort()[::-1]
-    keep = []
+    keep_indices = []
 
     while order.size > 0:
         i = order[0]
-        keep.append(i)
+        keep_indices.append(i)
         if order.size == 1:
             break
         remaining_boxes = boxes[order[1:]]
@@ -175,7 +218,7 @@ def _nms_indices(boxes: np.ndarray, scores: np.ndarray, iou_threshold: float) ->
         inds = np.where(ious <= iou_threshold)[0]
         order = order[inds + 1]
 
-    return keep
+    return keep_indices
 
 
 def _calculate_iou(box: np.ndarray, boxes: np.ndarray) -> np.ndarray:
