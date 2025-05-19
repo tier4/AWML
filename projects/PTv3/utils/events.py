@@ -11,15 +11,15 @@ import datetime
 import json
 import logging
 import os
-import time
-import torch
-import numpy as np
-import traceback
 import sys
-
-from typing import List, Optional, Tuple
+import time
+import traceback
 from collections import defaultdict
 from contextlib import contextmanager
+from typing import List, Optional, Tuple
+
+import numpy as np
+import torch
 
 __all__ = [
     "EventStorage",
@@ -27,7 +27,6 @@ __all__ = [
 ]
 
 _CURRENT_STORAGE_STACK = []
-
 
 
 class EventWriter:
@@ -40,8 +39,6 @@ class EventWriter:
 
     def close(self):
         pass
-
-
 
 
 class EventStorage:
@@ -95,9 +92,7 @@ class EventStorage:
 
         existing_hint = self._smoothing_hints.get(name)
         if existing_hint is not None:
-            assert (
-                existing_hint == smoothing_hint
-            ), "Scalar {} was put with a different smoothing_hint!".format(name)
+            assert existing_hint == smoothing_hint, "Scalar {} was put with a different smoothing_hint!".format(name)
         else:
             self._smoothing_hints[name] = smoothing_hint
 
@@ -279,7 +274,6 @@ class AverageMeter:
         self.total += val * n
         self.count += n
         self.avg = self.total / self.count
-
 
 
 class ExceptionWriter:

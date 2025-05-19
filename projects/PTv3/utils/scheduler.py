@@ -6,6 +6,7 @@ Please cite our work if the code is helpful to you.
 """
 
 import torch.optim.lr_scheduler as lr_scheduler
+
 from .registry import Registry
 
 SCHEDULERS = Registry("schedulers")
@@ -54,9 +55,7 @@ class MultiStepWithWarmupLR(lr_scheduler.LambdaLR):
                 factor *= gamma
 
             if s <= warmup_rate * total_steps:
-                warmup_coefficient = 1 - (1 - s / warmup_rate / total_steps) * (
-                    1 - warmup_scale
-                )
+                warmup_coefficient = 1 - (1 - s / warmup_rate / total_steps) * (1 - warmup_scale)
             else:
                 warmup_coefficient = 1.0
             return warmup_coefficient * factor

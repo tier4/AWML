@@ -7,17 +7,17 @@ Author: Xiaoyang Wu (xiaoyang.wu.cs@gmail.com)
 Please cite our work if the code is helpful to you.
 """
 
-import random
-import numbers
-import scipy
-import scipy.ndimage
-import scipy.interpolate
-import scipy.stats
-import numpy as np
-import torch
 import copy
-from collections.abc import Sequence, Mapping
+import numbers
+import random
+from collections.abc import Mapping, Sequence
 
+import numpy as np
+import scipy
+import scipy.interpolate
+import scipy.ndimage
+import scipy.stats
+import torch
 from utils.registry import Registry
 
 TRANSFORMS = Registry("transforms")
@@ -94,7 +94,6 @@ class ToTensor(object):
             return result
         else:
             raise TypeError(f"type {type(data)} cannot be converted to tensor.")
-
 
 
 @TRANSFORMS.register_module()
@@ -183,7 +182,6 @@ class RandomRotate(object):
         return data_dict
 
 
-
 @TRANSFORMS.register_module()
 class RandomScale(object):
     def __init__(self, scale=None, anisotropic=False):
@@ -192,9 +190,7 @@ class RandomScale(object):
 
     def __call__(self, data_dict):
         if "coord" in data_dict.keys():
-            scale = np.random.uniform(
-                self.scale[0], self.scale[1], 3 if self.anisotropic else 1
-            )
+            scale = np.random.uniform(self.scale[0], self.scale[1], 3 if self.anisotropic else 1)
             data_dict["coord"] *= scale
         return data_dict
 
@@ -235,6 +231,7 @@ class RandomJitter(object):
             data_dict["coord"] += jitter
         return data_dict
 
+
 @TRANSFORMS.register_module()
 class GridSample(object):
     def __init__(
@@ -274,15 +271,12 @@ class GridSample(object):
         _, inverse, count = np.unique(key_sort, return_inverse=True, return_counts=True)
         if self.mode == "train":  # train mode
             idx_select = (
-                np.cumsum(np.insert(count, 0, 0)[0:-1])
-                + np.random.randint(0, count.max(), count.size) % count
+                np.cumsum(np.insert(count, 0, 0)[0:-1]) + np.random.randint(0, count.max(), count.size) % count
             )
             idx_unique = idx_sort[idx_select]
             if "sampled_index" in data_dict:
                 # for ScanNet data efficient, we need to make sure labeled point is sampled.
-                idx_unique = np.unique(
-                    np.append(idx_unique, data_dict["sampled_index"])
-                )
+                idx_unique = np.unique(np.append(idx_unique, data_dict["sampled_index"]))
                 mask = np.zeros_like(data_dict["segment"]).astype(bool)
                 mask[data_dict["sampled_index"]] = True
                 data_dict["sampled_index"] = np.where(mask[idx_unique])[0]
@@ -294,13 +288,9 @@ class GridSample(object):
             if self.return_min_coord:
                 data_dict["min_coord"] = min_coord.reshape([1, 3])
             if self.return_displacement:
-                displacement = (
-                    scaled_coord - grid_coord - 0.5
-                )  # [0, 1] -> [-0.5, 0.5] displacement to center
+                displacement = scaled_coord - grid_coord - 0.5  # [0, 1] -> [-0.5, 0.5] displacement to center
                 if self.project_displacement:
-                    displacement = np.sum(
-                        displacement * data_dict["normal"], axis=-1, keepdims=True
-                    )
+                    displacement = np.sum(displacement * data_dict["normal"], axis=-1, keepdims=True)
                 data_dict["displacement"] = displacement[idx_unique]
             for key in self.keys:
                 data_dict[key] = data_dict[key][idx_unique]
@@ -320,13 +310,9 @@ class GridSample(object):
                 if self.return_min_coord:
                     data_part["min_coord"] = min_coord.reshape([1, 3])
                 if self.return_displacement:
-                    displacement = (
-                        scaled_coord - grid_coord - 0.5
-                    )  # [0, 1] -> [-0.5, 0.5] displacement to center
+                    displacement = scaled_coord - grid_coord - 0.5  # [0, 1] -> [-0.5, 0.5] displacement to center
                     if self.project_displacement:
-                        displacement = np.sum(
-                            displacement * data_dict["normal"], axis=-1, keepdims=True
-                        )
+                        displacement = np.sum(displacement * data_dict["normal"], axis=-1, keepdims=True)
                     data_dict["displacement"] = displacement[idx_part]
                 for key in data_dict.keys():
                     if key in self.keys:
@@ -366,9 +352,7 @@ class GridSample(object):
         # Floor first for negative coordinates
         arr = arr.copy()
         arr = arr.astype(np.uint64, copy=False)
-        hashed_arr = np.uint64(14695981039346656037) * np.ones(
-            arr.shape[0], dtype=np.uint64
-        )
+        hashed_arr = np.uint64(14695981039346656037) * np.ones(arr.shape[0], dtype=np.uint64)
         for j in range(arr.shape[1]):
             hashed_arr *= np.uint64(1099511628211)
             hashed_arr = np.bitwise_xor(hashed_arr, arr[:, j])
@@ -385,9 +369,7 @@ class SphereCrop(object):
 
     def __call__(self, data_dict):
         point_max = (
-            int(self.sample_rate * data_dict["coord"].shape[0])
-            if self.sample_rate is not None
-            else self.point_max
+            int(self.sample_rate * data_dict["coord"].shape[0]) if self.sample_rate is not None else self.point_max
         )
 
         assert "coord" in data_dict.keys()
@@ -398,9 +380,7 @@ class SphereCrop(object):
             data_part_list = []
             # coord_list, color_list, dist2_list, idx_list, offset_list = [], [], [], [], []
             if data_dict["coord"].shape[0] > point_max:
-                coord_p, idx_uni = np.random.rand(
-                    data_dict["coord"].shape[0]
-                ) * 1e-3, np.array([])
+                coord_p, idx_uni = np.random.rand(data_dict["coord"].shape[0]) * 1e-3, np.array([])
                 while idx_uni.size != data_dict["index"].shape[0]:
                     init_idx = np.argmin(coord_p)
                     dist2 = np.sum(
@@ -419,22 +399,16 @@ class SphereCrop(object):
                     if "color" in data_dict.keys():
                         data_crop_dict["color"] = data_dict["color"][idx_crop]
                     if "displacement" in data_dict.keys():
-                        data_crop_dict["displacement"] = data_dict["displacement"][
-                            idx_crop
-                        ]
+                        data_crop_dict["displacement"] = data_dict["displacement"][idx_crop]
                     if "strength" in data_dict.keys():
                         data_crop_dict["strength"] = data_dict["strength"][idx_crop]
                     data_crop_dict["weight"] = dist2[idx_crop]
                     data_crop_dict["index"] = data_dict["index"][idx_crop]
                     data_part_list.append(data_crop_dict)
 
-                    delta = np.square(
-                        1 - data_crop_dict["weight"] / np.max(data_crop_dict["weight"])
-                    )
+                    delta = np.square(1 - data_crop_dict["weight"] / np.max(data_crop_dict["weight"]))
                     coord_p[idx_crop] += delta
-                    idx_uni = np.unique(
-                        np.concatenate((idx_uni, data_crop_dict["index"]))
-                    )
+                    idx_uni = np.unique(np.concatenate((idx_uni, data_crop_dict["index"])))
             else:
                 data_crop_dict = data_dict.copy()
                 data_crop_dict["weight"] = np.zeros(data_dict["coord"].shape[0])
@@ -444,16 +418,12 @@ class SphereCrop(object):
         # mode is "random" or "center"
         elif data_dict["coord"].shape[0] > point_max:
             if self.mode == "random":
-                center = data_dict["coord"][
-                    np.random.randint(data_dict["coord"].shape[0])
-                ]
+                center = data_dict["coord"][np.random.randint(data_dict["coord"].shape[0])]
             elif self.mode == "center":
                 center = data_dict["coord"][data_dict["coord"].shape[0] // 2]
             else:
                 raise NotImplementedError
-            idx_crop = np.argsort(np.sum(np.square(data_dict["coord"] - center), 1))[
-                :point_max
-            ]
+            idx_crop = np.argsort(np.sum(np.square(data_dict["coord"] - center), 1))[:point_max]
             if "coord" in data_dict.keys():
                 data_dict["coord"] = data_dict["coord"][idx_crop]
             if "origin_coord" in data_dict.keys():
@@ -496,8 +466,6 @@ class ShufflePoint(object):
         if "instance" in data_dict.keys():
             data_dict["instance"] = data_dict["instance"][shuffle_index]
         return data_dict
-
-
 
 
 class Compose(object):

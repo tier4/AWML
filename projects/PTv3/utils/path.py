@@ -60,11 +60,7 @@ def scandir(dir_path, suffix=None, recursive=False, case_sensitive=True):
         raise TypeError('"suffix" must be a string or tuple of strings')
 
     if suffix is not None and not case_sensitive:
-        suffix = (
-            suffix.lower()
-            if isinstance(suffix, str)
-            else tuple(item.lower() for item in suffix)
-        )
+        suffix = suffix.lower() if isinstance(suffix, str) else tuple(item.lower() for item in suffix)
 
     root = dir_path
 

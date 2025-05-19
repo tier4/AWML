@@ -10,8 +10,8 @@ from engines.defaults import (
     default_config_parser,
     default_setup,
 )
-from engines.train import TRAINERS
 from engines.launch import launch
+from engines.train import TRAINERS
 
 
 def main_worker(cfg):

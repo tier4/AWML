@@ -10,8 +10,8 @@ from engines.defaults import (
     default_config_parser,
     default_setup,
 )
-from engines.test import TESTERS
 from engines.launch import launch
+from engines.test import TESTERS
 
 
 def main_worker(cfg):

@@ -1,27 +1,22 @@
+from typing import Any, Dict, List
+
+import numpy as np
+import onnx
+import SparseConvolution
+import spconv.pytorch as spconv
+import torch
 from engines.defaults import (
     default_argument_parser,
     default_config_parser,
     default_setup,
 )
-from engines.train import TRAINERS
-from engines.test import TESTERS
 from engines.launch import launch
-
-from models.utils.structure import Point
-
-import torch
-from torch.nn import functional as F
-import numpy as np
-
-from typing import List, Dict, Any
-
-import onnx
-
-import spconv.pytorch as spconv
-import SparseConvolution
-
+from engines.test import TESTERS
+from engines.train import TRAINERS
 from models.scatter.functional import argsort
-from models.utils.structure import bit_length_tensor
+from models.utils.structure import Point, bit_length_tensor
+from torch.nn import functional as F
+
 
 class WrappedModel(torch.nn.Module):
 
@@ -52,8 +47,9 @@ class WrappedModel(torch.nn.Module):
         serialized_inverse = torch.zeros_like(serialized_order).scatter_(
             dim=1,
             index=serialized_order,
-            src=torch.arange(0, serialized_code.shape[1],
-                             device=serialized_order.device).repeat(serialized_code.shape[0], 1),
+            src=torch.arange(0, serialized_code.shape[1], device=serialized_order.device).repeat(
+                serialized_code.shape[0], 1
+            ),
         )
 
         input_dict = {
@@ -69,7 +65,6 @@ class WrappedModel(torch.nn.Module):
         }
 
         output = self.model(input_dict)
-
 
         pred_logits = output["seg_logits"]  # (n, k)
         pred_probs = F.softmax(pred_logits, -1)
@@ -108,11 +103,13 @@ def main():
 
     with torch.no_grad():
 
-        depth = bit_length_tensor(torch.tensor([(max(cfg.point_cloud_range) - min(cfg.point_cloud_range)) / cfg.grid_size])).cuda()
+        depth = bit_length_tensor(
+            torch.tensor([(max(cfg.point_cloud_range) - min(cfg.point_cloud_range)) / cfg.grid_size])
+        ).cuda()
         point = Point(input_dict)
-        point.serialization(order=model.model.backbone.order,
-                            shuffle_orders=model.model.backbone.shuffle_orders,
-                            depth=depth)
+        point.serialization(
+            order=model.model.backbone.order, shuffle_orders=model.model.backbone.shuffle_orders, depth=depth
+        )
 
         input_dict["serialized_depth"] = point["serialized_depth"]
         input_dict["serialized_code"] = point["serialized_code"]
@@ -122,17 +119,12 @@ def main():
 
         pred_labels, pred_probs = model(**input_dict)
 
-        np.savez_compressed("ptv3_sample.npz",
-                            pred=pred_labels.cpu().numpy(),
-                            feat=input_dict["feat"].cpu().numpy())
+        np.savez_compressed("ptv3_sample.npz", pred=pred_labels.cpu().numpy(), feat=input_dict["feat"].cpu().numpy())
 
-        export_params = True,
+        export_params = (True,)
         keep_initializers_as_inputs = False
         opset_version = 17
-        input_names = [
-            "grid_coord", "feat", "serialized_depth",
-            "serialized_code"
-        ]
+        input_names = ["grid_coord", "feat", "serialized_depth", "serialized_code"]
         output_names = ["pred_labels", "pred_probs"]
         dynamic_axes = {
             "grid_coord": {
@@ -156,10 +148,10 @@ def main():
             dynamic_axes=dynamic_axes,
             keep_initializers_as_inputs=keep_initializers_as_inputs,
             verbose=False,
-            do_constant_folding=False)
+            do_constant_folding=False,
+        )
 
     print("Exported to ONNX format successfully.")
-
 
 
 if __name__ == "__main__":

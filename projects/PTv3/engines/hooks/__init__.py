@@ -1,5 +1,4 @@
-from .default import HookBase
-from .misc import *
-from .evaluator import *
-
 from .builder import build_hooks
+from .default import HookBase
+from .evaluator import *
+from .misc import *

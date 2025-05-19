@@ -1,10 +1,9 @@
-import torch
 import spconv.pytorch as spconv
-
+import torch
 from addict import Dict
+from models.utils import batch2offset, offset2batch
+from models.utils.serialization import decode, encode
 
-from models.utils.serialization import encode, decode
-from models.utils import offset2batch, batch2offset
 
 def bit_length_tensor(x: torch.Tensor) -> torch.Tensor:
     # Ensure x is a positive integer tensor
@@ -42,9 +41,7 @@ class Point(Dict):
         # If one of "offset" or "batch" do not exist, generate by the existing one
         # If neither of them exist, initialize as batch size is 1
         if "offset" not in self.keys() and "batch" not in self.keys():
-            self["offset"] = torch.tensor([self["coord"].size(0)],
-                                          device=self["coord"].device,
-                                          dtype=torch.int64)
+            self["offset"] = torch.tensor([self["coord"].size(0)], device=self["coord"].device, dtype=torch.int64)
             self["batch"] = offset2batch(self.offset)
         elif "batch" not in self.keys() and "offset" in self.keys():
             self["batch"] = offset2batch(self.offset, self["grid_coord"])
@@ -64,18 +61,18 @@ class Point(Dict):
             # dict(type="Copy", keys_dict={"grid_size": 0.01}),
             # (adjust `grid_size` to what your want)
             assert {"grid_size", "coord"}.issubset(self.keys())
-            self["grid_coord"] = torch.div(self.coord - self.coord.min(0)[0],
-                                           self.grid_size,
-                                           rounding_mode="trunc").int()
+            self["grid_coord"] = torch.div(
+                self.coord - self.coord.min(0)[0], self.grid_size, rounding_mode="trunc"
+            ).int()
 
         if depth is None:
             # Adaptive measure the depth of serialization cube (length = 2 ^ depth)
-            #depth = int(self.grid_coord.max()).bit_length()
+            # depth = int(self.grid_coord.max()).bit_length()
             depth = bit_length_tensor(self.grid_coord.max())
 
         self["serialized_depth"] = depth
         # Maximum bit length for serialization code is 63 (int64)
-        #assert depth * 3 + len(self.offset).bit_length() <= 63
+        # assert depth * 3 + len(self.offset).bit_length() <= 63
         assert depth * 3 + bit_length_tensor(self.offset) <= 63
         # Here we follow OCNN and set the depth limitation to 16 (48bit) for the point position.
         # Although depth is limited to less than 16, we can encode a 655.36^3 (2^16 * 0.01) meter^3
@@ -88,17 +85,13 @@ class Point(Dict):
         #  Order2 ([n]),
         #   ...
         #  OrderN ([n])] (k, n)
-        code = [
-            encode(self.grid_coord, self.batch, depth, order=order_)
-            for order_ in order
-        ]
+        code = [encode(self.grid_coord, self.batch, depth, order=order_) for order_ in order]
         code = torch.stack(code)
         order = torch.argsort(code)
         inverse = torch.zeros_like(order).scatter_(
             dim=1,
             index=order,
-            src=torch.arange(0, code.shape[1],
-                             device=order.device).repeat(code.shape[0], 1),
+            src=torch.arange(0, code.shape[1], device=order.device).repeat(code.shape[0], 1),
         )
 
         if shuffle_orders:
@@ -129,19 +122,16 @@ class Point(Dict):
             # dict(type="Copy", keys_dict={"grid_size": 0.01}),
             # (adjust `grid_size` to what your want)
             assert {"grid_size", "coord"}.issubset(self.keys())
-            self["grid_coord"] = torch.div(self.coord - self.coord.min(0)[0],
-                                           self.grid_size,
-                                           rounding_mode="trunc").int()
+            self["grid_coord"] = torch.div(
+                self.coord - self.coord.min(0)[0], self.grid_size, rounding_mode="trunc"
+            ).int()
         if "sparse_shape" in self.keys():
             sparse_shape = self.sparse_shape
         else:
-            sparse_shape = torch.add(
-                torch.max(self.grid_coord, dim=0).values, pad)#.tolist()
+            sparse_shape = torch.add(torch.max(self.grid_coord, dim=0).values, pad)  # .tolist()
         sparse_conv_feat = spconv.SparseConvTensor(
             features=self.feat,
-            indices=torch.cat(
-                [self.batch.unsqueeze(-1).int(),
-                 self.grid_coord.int()], dim=1).contiguous(),
+            indices=torch.cat([self.batch.unsqueeze(-1).int(), self.grid_coord.int()], dim=1).contiguous(),
             spatial_shape=sparse_shape,
             batch_size=self.batch[-1].tolist() + 1,
         )

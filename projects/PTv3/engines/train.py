@@ -8,28 +8,29 @@ Please cite our work if the code is helpful to you.
 import os
 import sys
 import weakref
+from functools import partial
+
 import torch
 import torch.nn as nn
 import torch.utils.data
-from functools import partial
 
 if sys.version_info >= (3, 10):
     from collections.abc import Iterator
 else:
     from collections import Iterator
+
+import utils.comm as comm
+from datasets import build_dataset, collate_fn, point_collate_fn
+from models import build_model
 from tensorboardX import SummaryWriter
+from utils.events import EventStorage, ExceptionWriter
+from utils.logger import get_root_logger
+from utils.optimizer import build_optimizer
+from utils.registry import Registry
+from utils.scheduler import build_scheduler
 
 from .defaults import create_ddp_model, worker_init_fn
 from .hooks import HookBase, build_hooks
-import utils.comm as comm
-from datasets import build_dataset, point_collate_fn, collate_fn
-from models import build_model
-from utils.logger import get_root_logger
-from utils.optimizer import build_optimizer
-from utils.scheduler import build_scheduler
-from utils.events import EventStorage, ExceptionWriter
-from utils.registry import Registry
-
 
 TRAINERS = Registry("trainers")
 
@@ -186,9 +187,7 @@ class Trainer(TrainerBase):
             self.scaler.scale(loss).backward()
             self.scaler.unscale_(self.optimizer)
             if self.cfg.clip_grad is not None:
-                torch.nn.utils.clip_grad_norm_(
-                    self.model.parameters(), self.cfg.clip_grad
-                )
+                torch.nn.utils.clip_grad_norm_(self.model.parameters(), self.cfg.clip_grad)
             self.scaler.step(self.optimizer)
 
             # When enable amp, optimizer.step call are skipped if the loss scaling factor is too large.
@@ -200,9 +199,7 @@ class Trainer(TrainerBase):
         else:
             loss.backward()
             if self.cfg.clip_grad is not None:
-                torch.nn.utils.clip_grad_norm_(
-                    self.model.parameters(), self.cfg.clip_grad
-                )
+                torch.nn.utils.clip_grad_norm_(self.model.parameters(), self.cfg.clip_grad)
             self.optimizer.step()
             self.scheduler.step()
         if self.cfg.empty_cache:

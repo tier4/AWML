@@ -8,9 +8,9 @@ Please cite our work if the code is helpful to you.
 """
 
 import logging
+
 import torch
 import torch.distributed as dist
-
 from termcolor import colored
 
 logger_initialized = {}
@@ -135,8 +135,7 @@ def print_log(msg, logger=None, level=logging.INFO):
         _logger.log(level, msg)
     else:
         raise TypeError(
-            "logger should be either a logging.Logger object, str, "
-            f'"silent" or None, but got {type(logger)}'
+            "logger should be either a logging.Logger object, str, " f'"silent" or None, but got {type(logger)}'
         )
 
 
@@ -158,9 +157,7 @@ def get_root_logger(log_file=None, log_level=logging.INFO, file_mode="a"):
     Returns:
         logging.Logger: The root logger.
     """
-    logger = get_logger(
-        name="pointcept", log_file=log_file, log_level=log_level, file_mode=file_mode
-    )
+    logger = get_logger(name="pointcept", log_file=log_file, log_level=log_level, file_mode=file_mode)
     return logger
 
 

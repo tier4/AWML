@@ -1,11 +1,11 @@
-from functools import partial
 import weakref
+from functools import partial
+
 import torch
 import torch.utils.data
-
 import utils.comm as comm
-from datasets.utils import point_collate_fn
 from datasets import ConcatDataset
+from datasets.utils import point_collate_fn
 from utils.env import set_seed
 
 
@@ -96,17 +96,9 @@ class MultiDatasetDataloader:
 
     def __len__(self):
         main_data_loader_length = len(self.dataloaders[0])
-        return (
-            main_data_loader_length // self.ratios[0] * sum(self.ratios)
-            + main_data_loader_length % self.ratios[0]
-        )
+        return main_data_loader_length // self.ratios[0] * sum(self.ratios) + main_data_loader_length % self.ratios[0]
 
     @staticmethod
     def _worker_init_fn(worker_id, num_workers, dataset_id, num_datasets, rank, seed):
-        worker_seed = (
-            num_workers * num_datasets * rank
-            + num_workers * dataset_id
-            + worker_id
-            + seed
-        )
+        worker_seed = num_workers * num_datasets * rank + num_workers * dataset_id + worker_id + seed
         set_seed(worker_seed)

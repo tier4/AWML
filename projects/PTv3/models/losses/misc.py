@@ -8,6 +8,7 @@ Please cite our work if the code is helpful to you.
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+
 from .builder import LOSSES
 
 
@@ -37,5 +38,3 @@ class CrossEntropyLoss(nn.Module):
 
     def forward(self, pred, target):
         return self.loss(pred, target) * self.loss_weight
-
-

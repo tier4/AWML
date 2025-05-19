@@ -9,6 +9,7 @@ Please cite our work if you use any part of the code.
 """
 
 import functools
+
 import numpy as np
 import torch
 import torch.distributed as dist
@@ -113,9 +114,7 @@ def all_gather(data, group=None):
     if get_world_size() == 1:
         return [data]
     if group is None:
-        group = (
-            _get_global_gloo_group()
-        )  # use CPU group by default, to reduce GPU RAM usage.
+        group = _get_global_gloo_group()  # use CPU group by default, to reduce GPU RAM usage.
     world_size = dist.get_world_size(group)
     if world_size == 1:
         return [data]

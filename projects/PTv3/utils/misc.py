@@ -8,9 +8,10 @@ Please cite our work if the code is helpful to you.
 import os
 import warnings
 from collections import abc
+from importlib import import_module
+
 import numpy as np
 import torch
-from importlib import import_module
 
 
 class AverageMeter(object):

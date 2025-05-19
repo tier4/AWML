@@ -1,8 +1,8 @@
+import sys
 from typing import Any, List, Optional
 
 import numpy as np
 import torch
-import sys
 from cumm import tensorview as tv
 from spconv import constants
 from spconv.algo import CONV_CPP
@@ -10,9 +10,9 @@ from spconv.constants import SPCONV_DO_SORT, SPCONV_USE_DIRECT_TABLE, AllocKeys
 from spconv.core import ConvAlgo
 from spconv.core_cc.csrc.sparse.all import SpconvOps
 from spconv.core_cc.csrc.sparse.convops.spops import ConvGemmOps
+from spconv.pytorch import ops
 from spconv.pytorch.core import ThrustSortAllocator
 from spconv.pytorch.cppcore import _TORCH_DTYPE_TO_TV, TorchAllocator, get_arch, get_current_stream, torch_tensor_to_tv
-from spconv.pytorch import ops
 from spconv.tools import CUDAKernelTimer
 from torch.autograd import Function
 from torch.onnx.symbolic_helper import _get_tensor_sizes
@@ -56,7 +56,7 @@ class GetIndicePairs(Function):
             output_type_2 = indices.type().with_sizes([2, np.prod(ksize), None])
             output_type_3 = indices.type().with_sizes([np.prod(ksize)])
             output_type_4 = indices.type().with_sizes([])
-            
+
             outputs[0].setType(output_type_1)
             outputs[1].setType(output_type_2)
             outputs[2].setType(output_type_3)
@@ -84,13 +84,21 @@ class GetIndicePairs(Function):
         if indices.is_cuda:
             stream = get_current_stream()
 
-        num_act_out = SpconvOps.get_indice_pairs(alloc,
-                                                 torch_tensor_to_tv(indices),
-                                                 batch_size, spatial_shape,
-                                                 algo.value, ksize, stride,
-                                                 padding, dilation,
-                                                 out_padding, subm, transpose,
-                                                 stream)
+        num_act_out = SpconvOps.get_indice_pairs(
+            alloc,
+            torch_tensor_to_tv(indices),
+            batch_size,
+            spatial_shape,
+            algo.value,
+            ksize,
+            stride,
+            padding,
+            dilation,
+            out_padding,
+            subm,
+            transpose,
+            stream,
+        )
         if subm:
             out_inds = indices
         else:
@@ -125,7 +133,7 @@ class IndiceConvFunction(Function):
         bias: Optional[torch.Tensor] = None,
         act_alpha: float = 0.0,
         act_beta: float = 0.0,
-        act_type: tv.gemm.Activation = tv.gemm.Activation.None_
+        act_type: tv.gemm.Activation = tv.gemm.Activation.None_,
     ):
 
         output = g.op(
@@ -148,44 +156,47 @@ class IndiceConvFunction(Function):
         return output
 
     @staticmethod
-    def forward(ctx,
-                features,
-                filters,
-                indice_pairs,
-                indice_pair_num,
-                num_activate_out,
-                algo,
-                is_train: False,
-                is_subm: True,
-                timer: CUDAKernelTimer = CUDAKernelTimer(False),
-                bias: Optional[torch.Tensor] = None,
-                act_alpha: float = 0.0,
-                act_beta: float = 0.0,
-                act_type: tv.gemm.Activation = tv.gemm.Activation.None_):
+    def forward(
+        ctx,
+        features,
+        filters,
+        indice_pairs,
+        indice_pair_num,
+        num_activate_out,
+        algo,
+        is_train: False,
+        is_subm: True,
+        timer: CUDAKernelTimer = CUDAKernelTimer(False),
+        bias: Optional[torch.Tensor] = None,
+        act_alpha: float = 0.0,
+        act_beta: float = 0.0,
+        act_type: tv.gemm.Activation = tv.gemm.Activation.None_,
+    ):
 
         assert bias is None, "bias is not supported"
         assert act_alpha == 0.0
         assert act_beta == 0.0
         assert act_type == tv.gemm.Activation.None_
 
-
         ctx.save_for_backward(indice_pairs, indice_pair_num, features, filters)
         ctx.algo = algo
         ctx.timer = timer
         try:
-            out = ops.indice_conv(features,
-                                   filters,
-                                   indice_pairs,
-                                   indice_pair_num,
-                                   num_activate_out,
-                                   is_train,
-                                   is_subm,
-                                   algo=algo,
-                                   timer=timer,
-                                   bias=bias,
-                                   act_alpha=act_alpha,
-                                   act_beta=act_beta,
-                                   act_type=act_type)
+            out = ops.indice_conv(
+                features,
+                filters,
+                indice_pairs,
+                indice_pair_num,
+                num_activate_out,
+                is_train,
+                is_subm,
+                algo=algo,
+                timer=timer,
+                bias=bias,
+                act_alpha=act_alpha,
+                act_beta=act_beta,
+                act_type=act_type,
+            )
 
             return out
         except Exception as e:
@@ -241,7 +252,7 @@ class GetIndicePairsImplicitGemm(Function):
             output_type_1 = indices.type().with_sizes([None, indices_shape[1]])
             output_type_2 = indices.type().with_sizes([np.prod(ksize), None])
             output_type_3 = indices.type().with_sizes([None, 1])
-            output_type_4 = indices.type().with_sizes([None])            
+            output_type_4 = indices.type().with_sizes([None])
             output_type_5 = indices.type().with_sizes([])
 
             outputs[0].setType(output_type_1)

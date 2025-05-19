@@ -7,19 +7,15 @@ Please cite our work if the code is helpful to you.
 
 import os
 import random
+from datetime import datetime
+
 import numpy as np
 import torch
 import torch.backends.cudnn as cudnn
 
-from datetime import datetime
-
 
 def get_random_seed():
-    seed = (
-        os.getpid()
-        + int(datetime.now().strftime("%S%f"))
-        + int.from_bytes(os.urandom(2), "big")
-    )
+    seed = os.getpid() + int(datetime.now().strftime("%S%f")) + int.from_bytes(os.urandom(2), "big")
     return seed
 
 

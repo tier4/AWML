@@ -6,6 +6,7 @@ Please cite our work if the code is helpful to you.
 """
 
 import os
+
 import SharedArray
 
 try:

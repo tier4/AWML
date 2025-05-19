@@ -20,14 +20,14 @@ import torch
 from cumm import tensorview as tv
 from spconv.core import ConvAlgo
 from spconv.debug_utils import spconv_save_debug_data
+from spconv.pytorch import functional as Fsp
 from spconv.pytorch import ops
 from spconv.pytorch.conv import SparseConvolution as SparseConvolutionBase
-from spconv.pytorch.core import IndiceData, ImplicitGemmIndiceData, SparseConvTensor
+from spconv.pytorch.core import ImplicitGemmIndiceData, IndiceData, SparseConvTensor
 from spconv.utils import nullcontext
 from torch.nn import functional as F
 
 from . import sparse_functional as Fsp_custom
-from spconv.pytorch import functional as Fsp
 
 _MAX_NUM_VOXELS_DURING_TRAINING = "max_num_voxels_during_training"
 
@@ -67,8 +67,7 @@ class SparseConvolution(SparseConvolutionBase):
         if is_int8:
             raise NotImplementedError
 
-        assert input.features.shape[
-            1] == self.in_channels, "channel size mismatch"
+        assert input.features.shape[1] == self.in_channels, "channel size mismatch"
         features = input.features
         indices = input.indices
         spatial_shape = input.spatial_shape
@@ -84,12 +83,12 @@ class SparseConvolution(SparseConvolutionBase):
         if not self.subm:
             if self.transposed:
                 out_spatial_shape = ops.get_deconv_output_size(
-                    spatial_shape, self.kernel_size, self.stride, self.padding,
-                    self.dilation, self.output_padding)
+                    spatial_shape, self.kernel_size, self.stride, self.padding, self.dilation, self.output_padding
+                )
             else:
                 out_spatial_shape = ops.get_conv_output_size(
-                    spatial_shape, self.kernel_size, self.stride, self.padding,
-                    self.dilation)
+                    spatial_shape, self.kernel_size, self.stride, self.padding, self.dilation
+                )
         else:
             out_spatial_shape = spatial_shape
         # print(self._sparse_unique_name, spatial_shape, out_spatial_shape)
@@ -130,26 +129,24 @@ class SparseConvolution(SparseConvolutionBase):
                     indice_pairs = datas.indice_pairs
                     indice_pair_num = datas.indice_pair_num
                     out_spatial_shape = datas.spatial_shape
-                    self._check_inverse_reuse_valid(input, spatial_shape,
-                                                    datas)
+                    self._check_inverse_reuse_valid(input, spatial_shape, datas)
                 else:
                     if self.indice_key is not None and datas is not None:
                         outids = datas.out_indices
                         indice_pairs = datas.indice_pairs
                         indice_pair_num = datas.indice_pair_num
                         assert self.subm, "only support reuse subm indices"
-                        self._check_subm_reuse_valid(input, spatial_shape,
-                                                     datas)
+                        self._check_subm_reuse_valid(input, spatial_shape, datas)
                     else:
                         if input.benchmark:
                             torch.cuda.synchronize()
                             t = time.time()
                         try:
                             """outids, indice_pairs, indice_pair_num = ops.get_indice_pairs(
-                                indices, batch_size, spatial_shape, algo,
-                                self.kernel_size, self.stride, self.padding,
-                                self.dilation, self.output_padding, self.subm,
-                                self.transposed)"""
+                            indices, batch_size, spatial_shape, algo,
+                            self.kernel_size, self.stride, self.padding,
+                            self.dilation, self.output_padding, self.subm,
+                            self.transposed)"""
 
                             outids, indice_pairs, indice_pair_num, num_act_out = Fsp_custom.get_indice_pairs(
                                 indices,
@@ -177,21 +174,22 @@ class SparseConvolution(SparseConvolutionBase):
                         if input.benchmark:
                             torch.cuda.synchronize()
                             interval = time.time() - t
-                            out_tensor.benchmark_record[name][
-                                "indice_gen_time"].append(interval)
+                            out_tensor.benchmark_record[name]["indice_gen_time"].append(interval)
 
-                        indice_data = IndiceData(outids,
-                                                 indices,
-                                                 indice_pairs,
-                                                 indice_pair_num,
-                                                 spatial_shape,
-                                                 out_spatial_shape,
-                                                 is_subm=self.subm,
-                                                 algo=algo,
-                                                 ksize=self.kernel_size,
-                                                 stride=self.stride,
-                                                 padding=self.padding,
-                                                 dilation=self.dilation)
+                        indice_data = IndiceData(
+                            outids,
+                            indices,
+                            indice_pairs,
+                            indice_pair_num,
+                            spatial_shape,
+                            out_spatial_shape,
+                            is_subm=self.subm,
+                            algo=algo,
+                            ksize=self.kernel_size,
+                            stride=self.stride,
+                            padding=self.padding,
+                            dilation=self.dilation,
+                        )
                         if self.indice_key is not None:
                             msg = f"your indice key {self.indice_key} already exists in this sparse tensor."
                             assert self.indice_key not in indice_dict, msg
@@ -207,9 +205,20 @@ class SparseConvolution(SparseConvolutionBase):
                 assert not training, "This code is for inference only"
 
                 out_features = Fsp_custom.indice_conv(
-                        features, weight, indice_pairs_calc, indice_pair_num,
-                        num_act_out, algo, training, self.subm, input._timer, bias_for_infer,
-                        act_alpha, act_beta, act_type)
+                    features,
+                    weight,
+                    indice_pairs_calc,
+                    indice_pair_num,
+                    num_act_out,
+                    algo,
+                    training,
+                    self.subm,
+                    input._timer,
+                    bias_for_infer,
+                    act_alpha,
+                    act_beta,
+                    act_type,
+                )
 
             else:
                 data = input.find_indice_pair(self.indice_key)
@@ -217,9 +226,9 @@ class SparseConvolution(SparseConvolutionBase):
                     assert isinstance(data, ImplicitGemmIndiceData)
                 if self.inverse:
                     assert data is not None and self.indice_key is not None
-                    assert data.is_subm is False, ("inverse conv can only "
-                                                   "be used with standard "
-                                                   "conv and pool ops.")
+                    assert data.is_subm is False, (
+                        "inverse conv can only " "be used with standard " "conv and pool ops."
+                    )
                     outids = data.indices
                     pair_fwd = data.pair_bwd
                     pair_bwd = data.pair_fwd
@@ -243,8 +252,7 @@ class SparseConvolution(SparseConvolutionBase):
                         masks = data.masks
                         num_act_out = data.out_voxel_num
                         assert self.subm, "only support reuse subm indices"
-                        self._check_subm_reuse_valid(input, spatial_shape,
-                                                     data)
+                        self._check_subm_reuse_valid(input, spatial_shape, data)
                     else:
                         if input.benchmark:
                             torch.cuda.synchronize()
@@ -253,21 +261,23 @@ class SparseConvolution(SparseConvolutionBase):
                             # we need to gen bwd indices for regular conv
                             # because it may be inversed.
                             try:
-                                outids, pair_fwd, pair_mask_fwd_splits, mask_argsort_fwd_splits, num_act_out = Fsp_custom.get_indice_pairs_implicit_gemm(
-                                    indices,
-                                    batch_size,
-                                    spatial_shape,
-                                    algo,
-                                    self.kernel_size,
-                                    self.stride,
-                                    self.padding,
-                                    self.dilation,
-                                    self.output_padding,
-                                    self.subm,
-                                    self.transposed,
-                                    (not self.subm) or training,
-                                    input.thrust_allocator,
-                                    input._timer,
+                                outids, pair_fwd, pair_mask_fwd_splits, mask_argsort_fwd_splits, num_act_out = (
+                                    Fsp_custom.get_indice_pairs_implicit_gemm(
+                                        indices,
+                                        batch_size,
+                                        spatial_shape,
+                                        algo,
+                                        self.kernel_size,
+                                        self.stride,
+                                        self.padding,
+                                        self.dilation,
+                                        self.output_padding,
+                                        self.subm,
+                                        self.transposed,
+                                        (not self.subm) or training,
+                                        input.thrust_allocator,
+                                        input._timer,
+                                    )
                                 )
                             except Exception as e:
                                 msg = "[Exception|implicit_gemm_pair]"
@@ -281,8 +291,7 @@ class SparseConvolution(SparseConvolutionBase):
                         if input.benchmark:
                             torch.cuda.synchronize()
                             interval = time.time() - t
-                            out_tensor.benchmark_record[name][
-                                "indice_gen_time"].append(interval)
+                            out_tensor.benchmark_record[name]["indice_gen_time"].append(interval)
                         pair_bwd = None  # res[3]
                         pair_mask_bwd_splits = None  # res[5]
                         mask_argsort_bwd_splits = None  # res[7]
@@ -307,7 +316,7 @@ class SparseConvolution(SparseConvolutionBase):
                                 stride=self.stride,
                                 padding=self.padding,
                                 dilation=self.dilation,
-                                out_voxel_num=num_act_out
+                                out_voxel_num=num_act_out,
                             )
                             msg = f"your indice key {self.indice_key} " "already exists in this sparse tensor."
                             assert self.indice_key not in indice_dict, msg
@@ -315,7 +324,7 @@ class SparseConvolution(SparseConvolutionBase):
                 if input.benchmark:
                     torch.cuda.synchronize()
                     t = time.time()
-                #num_activate_out = outids.shape[
+                # num_activate_out = outids.shape[
                 #    0]  # TODO(knzo25): should use the output of res to force the graph
                 weight_cur = weight
                 bias_cur = bias_for_infer
@@ -348,8 +357,7 @@ class SparseConvolution(SparseConvolutionBase):
                         act_type,
                         # TODO do we really need output scale to
                         # scale bias in kernel?
-                        1.0 if output_scale is None else
-                        output_scale,  # output_scale
+                        1.0 if output_scale is None else output_scale,  # output_scale
                         channel_scale,  # scale
                         add_input.features if add_input is not None else None,
                         output_add_scale,
@@ -365,15 +373,11 @@ class SparseConvolution(SparseConvolutionBase):
             torch.cuda.synchronize()
             interval = time.time() - t
             out_tensor.benchmark_record[name]["time"].append(interval)
-            out_tensor.benchmark_record[name]["num_points"].append(
-                features.shape[0])
-            out_tensor.benchmark_record[name]["num_out_points"].append(
-                out_features.shape[0])
+            out_tensor.benchmark_record[name]["num_points"].append(features.shape[0])
+            out_tensor.benchmark_record[name]["num_out_points"].append(out_features.shape[0])
         if not self.subm and not self.inverse and self.record_voxel_count:
             if hasattr(self, _MAX_NUM_VOXELS_DURING_TRAINING):
-                ops.maximum_value_int_(
-                    getattr(self, _MAX_NUM_VOXELS_DURING_TRAINING),
-                    outids.shape[0])
+                ops.maximum_value_int_(getattr(self, _MAX_NUM_VOXELS_DURING_TRAINING), outids.shape[0])
         out_tensor = out_tensor.replace_feature(out_features)
         out_tensor.indices = outids
         out_tensor.indice_dict = indice_dict
@@ -381,8 +385,8 @@ class SparseConvolution(SparseConvolutionBase):
         if add_input is not None and not is_int8:
             # in int8, we apply add + act in kernel.
             out_tensor = out_tensor.replace_feature(
-                _apply_act(out_tensor.features + add_input.features,
-                           self.act_type, self.act_alpha, self.act_beta))
+                _apply_act(out_tensor.features + add_input.features, self.act_type, self.act_alpha, self.act_beta)
+            )
 
         return out_tensor
 

@@ -5,16 +5,16 @@ Author: Xiaoyang Wu (xiaoyang.wu.cs@gmail.com)
 Please cite our work if the code is helpful to you.
 """
 
+from uuid import uuid4
+
 import numpy as np
 import torch
 import torch.distributed as dist
-from uuid import uuid4
-
 import utils.comm as comm
 from utils.misc import intersection_and_union_gpu
 
-from .default import HookBase
 from .builder import HOOKS
+from .default import HookBase
 
 
 @HOOKS.register_module()
@@ -43,9 +43,7 @@ class SemSegEvaluator(HookBase):
                 self.trainer.cfg.data.ignore_index,
             )
             if comm.get_world_size() > 1:
-                dist.all_reduce(intersection), dist.all_reduce(union), dist.all_reduce(
-                    target
-                )
+                dist.all_reduce(intersection), dist.all_reduce(union), dist.all_reduce(target)
             intersection, union, target = (
                 intersection.cpu().numpy(),
                 union.cpu().numpy(),
@@ -56,16 +54,11 @@ class SemSegEvaluator(HookBase):
             self.trainer.storage.put_scalar("val_union", union)
             self.trainer.storage.put_scalar("val_target", target)
             self.trainer.storage.put_scalar("val_loss", loss.item())
-            info = "Test: [{iter}/{max_iter}] ".format(
-                iter=i + 1, max_iter=len(self.trainer.val_loader)
-            )
+            info = "Test: [{iter}/{max_iter}] ".format(iter=i + 1, max_iter=len(self.trainer.val_loader))
             if "origin_coord" in input_dict.keys():
                 info = "Interp. " + info
             self.trainer.logger.info(
-                info
-                + "Loss {loss:.4f} ".format(
-                    iter=i + 1, max_iter=len(self.trainer.val_loader), loss=loss.item()
-                )
+                info + "Loss {loss:.4f} ".format(iter=i + 1, max_iter=len(self.trainer.val_loader), loss=loss.item())
             )
         loss_avg = self.trainer.storage.history("val_loss").avg
         intersection = self.trainer.storage.history("val_intersection").total
@@ -76,11 +69,7 @@ class SemSegEvaluator(HookBase):
         m_iou = np.mean(iou_class)
         m_acc = np.mean(acc_class)
         all_acc = sum(intersection) / (sum(target) + 1e-10)
-        self.trainer.logger.info(
-            "Val result: mIoU/mAcc/allAcc {:.4f}/{:.4f}/{:.4f}.".format(
-                m_iou, m_acc, all_acc
-            )
-        )
+        self.trainer.logger.info("Val result: mIoU/mAcc/allAcc {:.4f}/{:.4f}/{:.4f}.".format(m_iou, m_acc, all_acc))
         for i in range(self.trainer.cfg.data.num_classes):
             self.trainer.logger.info(
                 "Class_{idx}-{name} Result: iou/accuracy {iou:.4f}/{accuracy:.4f}".format(
@@ -101,8 +90,4 @@ class SemSegEvaluator(HookBase):
         self.trainer.comm_info["current_metric_name"] = "mIoU"  # save for saver
 
     def after_train(self):
-        self.trainer.logger.info(
-            "Best {}: {:.4f}".format("mIoU", self.trainer.best_metric_value)
-        )
-
-
+        self.trainer.logger.info("Best {}: {:.4f}".format("mIoU", self.trainer.best_metric_value))

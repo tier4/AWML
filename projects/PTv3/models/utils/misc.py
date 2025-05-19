@@ -13,22 +13,18 @@ def offset2bincount(offset):
     # NOTE(knzo25): hack to avoid unsupported ops in export mode
     if len(offset) == 1:
         return offset
-    return torch.diff(offset,
-                      prepend=torch.tensor([0],
-                                           device=offset.device,
-                                           dtype=torch.long))
+    return torch.diff(offset, prepend=torch.tensor([0], device=offset.device, dtype=torch.long))
 
 
 @torch.inference_mode()
 def offset2batch(offset, coords=None):
 
-	# NOTE(knzo25): hack to avoid unsupported ops in export mode
+    # NOTE(knzo25): hack to avoid unsupported ops in export mode
     if offset.size(0) == 1 and coords is not None:
         return torch.zeros((coords.shape[0]), device=coords.device, dtype=torch.long)
 
     bincount = offset2bincount(offset)
-    return torch.arange(len(bincount), device=offset.device,
-                        dtype=torch.long).repeat_interleave(bincount)
+    return torch.arange(len(bincount), device=offset.device, dtype=torch.long).repeat_interleave(bincount)
 
 
 @torch.inference_mode()

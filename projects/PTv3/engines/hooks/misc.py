@@ -5,27 +5,29 @@ Author: Xiaoyang Wu (xiaoyang.wu.cs@gmail.com)
 Please cite our work if the code is helpful to you.
 """
 
-import sys
 import glob
 import os
 import shutil
+import sys
 import time
+from collections import OrderedDict
+
 import torch
 import torch.utils.data
-from collections import OrderedDict
 
 if sys.version_info >= (3, 10):
     from collections.abc import Sequence
 else:
     from collections import Sequence
-from utils.timer import Timer
-from utils.comm import is_main_process, synchronize, get_world_size
-from utils.cache import shared_dict
+
 import utils.comm as comm
 from engines.test import TESTERS
+from utils.cache import shared_dict
+from utils.comm import get_world_size, is_main_process, synchronize
+from utils.timer import Timer
 
-from .default import HookBase
 from .builder import HOOKS
+from .default import HookBase
 
 
 @HOOKS.register_module()
@@ -129,9 +131,7 @@ class InformationWriter(HookBase):
     def after_epoch(self):
         epoch_info = "Train result: "
         for key in self.model_output_keys:
-            epoch_info += "{key}: {value:.4f} ".format(
-                key=key, value=self.trainer.storage.history(key).avg
-            )
+            epoch_info += "{key}: {value:.4f} ".format(key=key, value=self.trainer.storage.history(key).avg)
         self.trainer.logger.info(epoch_info)
         if self.trainer.writer is not None:
             for key in self.model_output_keys:
@@ -157,19 +157,13 @@ class CheckpointSaver(HookBase):
                     self.trainer.best_metric_value = current_metric_value
                     is_best = True
                     self.trainer.logger.info(
-                        "Best validation {} updated to: {:.4f}".format(
-                            current_metric_name, current_metric_value
-                        )
+                        "Best validation {} updated to: {:.4f}".format(current_metric_name, current_metric_value)
                     )
                 self.trainer.logger.info(
-                    "Currently Best {}: {:.4f}".format(
-                        current_metric_name, self.trainer.best_metric_value
-                    )
+                    "Currently Best {}: {:.4f}".format(current_metric_name, self.trainer.best_metric_value)
                 )
 
-            filename = os.path.join(
-                self.trainer.cfg.save_path, "model", "model_last.pth"
-            )
+            filename = os.path.join(self.trainer.cfg.save_path, "model", "model_last.pth")
             self.trainer.logger.info("Saving checkpoint to: " + filename)
             torch.save(
                 {
@@ -177,11 +171,7 @@ class CheckpointSaver(HookBase):
                     "state_dict": self.trainer.model.state_dict(),
                     "optimizer": self.trainer.optimizer.state_dict(),
                     "scheduler": self.trainer.scheduler.state_dict(),
-                    "scaler": (
-                        self.trainer.scaler.state_dict()
-                        if self.trainer.cfg.enable_amp
-                        else None
-                    ),
+                    "scaler": (self.trainer.scaler.state_dict() if self.trainer.cfg.enable_amp else None),
                     "best_metric_value": self.trainer.best_metric_value,
                 },
                 filename + ".tmp",
@@ -220,8 +210,7 @@ class CheckpointLoader(HookBase):
                 weights_only=False,
             )
             self.trainer.logger.info(
-                f"Loading layer weights with keyword: {self.keywords}, "
-                f"replace keyword with: {self.replacement}"
+                f"Loading layer weights with keyword: {self.keywords}, " f"replace keyword with: {self.replacement}"
             )
             weight = OrderedDict()
             for key, value in checkpoint["state_dict"].items():
@@ -233,14 +222,10 @@ class CheckpointLoader(HookBase):
                 if comm.get_world_size() == 1:
                     key = key[7:]  # module.xxx.xxx -> xxx.xxx
                 weight[key] = value
-            load_state_info = self.trainer.model.load_state_dict(
-                weight, strict=self.strict
-            )
+            load_state_info = self.trainer.model.load_state_dict(weight, strict=self.strict)
             self.trainer.logger.info(f"Missing keys: {load_state_info[0]}")
             if self.trainer.cfg.resume:
-                self.trainer.logger.info(
-                    f"Resuming train at eval epoch: {checkpoint['epoch']}"
-                )
+                self.trainer.logger.info(f"Resuming train at eval epoch: {checkpoint['epoch']}")
                 self.trainer.start_epoch = checkpoint["epoch"]
                 self.trainer.best_metric_value = checkpoint["best_metric_value"]
                 self.trainer.optimizer.load_state_dict(checkpoint["optimizer"])
@@ -257,24 +242,16 @@ class PreciseEvaluator(HookBase):
         self.test_last = test_last
 
     def after_train(self):
-        self.trainer.logger.info(
-            ">>>>>>>>>>>>>>>> Start Precise Evaluation >>>>>>>>>>>>>>>>"
-        )
+        self.trainer.logger.info(">>>>>>>>>>>>>>>> Start Precise Evaluation >>>>>>>>>>>>>>>>")
         torch.cuda.empty_cache()
         cfg = self.trainer.cfg
-        tester = TESTERS.build(
-            dict(type=cfg.test.type, cfg=cfg, model=self.trainer.model)
-        )
+        tester = TESTERS.build(dict(type=cfg.test.type, cfg=cfg, model=self.trainer.model))
         if self.test_last:
             self.trainer.logger.info("=> Testing on model_last ...")
         else:
             self.trainer.logger.info("=> Testing on model_best ...")
-            best_path = os.path.join(
-                self.trainer.cfg.save_path, "model", "model_best.pth"
-            )
+            best_path = os.path.join(self.trainer.cfg.save_path, "model", "model_best.pth")
             checkpoint = torch.load(best_path)
             state_dict = checkpoint["state_dict"]
             tester.model.load_state_dict(state_dict, strict=True, weights_only=False)
         tester.test()
-
-

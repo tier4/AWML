@@ -1,7 +1,6 @@
 import torch.nn as nn
-
-from models.modules import PointModule, PointSequential
 from models.builder import MODULES
+from models.modules import PointModule, PointSequential
 
 
 @MODULES.register_module()
@@ -24,9 +23,7 @@ class PDNorm(PointModule):
         else:
             self.norm = norm_layer
         if self.adaptive:
-            self.modulation = nn.Sequential(
-                nn.SiLU(), nn.Linear(context_channels, 2 * num_features, bias=True)
-            )
+            self.modulation = nn.Sequential(nn.SiLU(), nn.Linear(context_channels, 2 * num_features, bias=True))
 
     def forward(self, point):
         assert {"feat", "condition"}.issubset(point.keys())

@@ -7,26 +7,26 @@ Please cite our work if the code is helpful to you.
 
 import os
 import time
-import numpy as np
 from collections import OrderedDict
+
+import numpy as np
 import torch
 import torch.distributed as dist
 import torch.nn.functional as F
 import torch.utils.data
-
-from .defaults import create_ddp_model
 import utils.comm as comm
 from datasets import build_dataset, collate_fn
 from models import build_model
 from utils.logger import get_root_logger
-from utils.registry import Registry
 from utils.misc import (
     AverageMeter,
     intersection_and_union,
     intersection_and_union_gpu,
     make_dirs,
 )
+from utils.registry import Registry
 
+from .defaults import create_ddp_model
 
 TESTERS = Registry("testers")
 
@@ -77,11 +77,7 @@ class TesterBase:
                         key = "module." + key  # xxx.xxx -> module.xxx.xxx
                 weight[key] = value
             model.load_state_dict(weight, strict=True)
-            self.logger.info(
-                "=> Loaded weight '{}' (epoch {})".format(
-                    self.cfg.weight, checkpoint["epoch"]
-                )
-            )
+            self.logger.info("=> Loaded weight '{}' (epoch {})".format(self.cfg.weight, checkpoint["epoch"]))
         else:
             raise RuntimeError("=> No checkpoint found at '{}'".format(self.cfg.weight))
         return model
@@ -141,9 +137,7 @@ class SemSegTester(TesterBase):
                     use_external=False,
                 )
             )
-            with open(
-                os.path.join(save_path, "submit", "test", "submission.json"), "w"
-            ) as f:
+            with open(os.path.join(save_path, "submit", "test", "submission.json"), "w") as f:
                 json.dump(submission, f, indent=4)
         comm.synchronize()
         record = {}
@@ -158,11 +152,7 @@ class SemSegTester(TesterBase):
             feat_save_path = os.path.join(save_path, "{}_feat.npy".format(data_name))
             result_save_path = os.path.join(save_path, "{}_{}_pred.npz".format(idx, data_name))
             if os.path.isfile(pred_save_path):
-                logger.info(
-                    "{}/{}: {}, loaded pred and label.".format(
-                        idx + 1, len(self.test_loader), data_name
-                    )
-                )
+                logger.info("{}/{}: {}, loaded pred and label.".format(idx + 1, len(self.test_loader), data_name))
                 pred = np.load(pred_save_path)
                 if "origin_segment" in data_dict.keys():
                     segment = data_dict["origin_segment"]
@@ -171,9 +161,7 @@ class SemSegTester(TesterBase):
                 feat = torch.zeros((segment.size, 4)).cuda()
                 for i in range(len(fragment_list)):
                     fragment_batch_size = 1
-                    s_i, e_i = i * fragment_batch_size, min(
-                        (i + 1) * fragment_batch_size, len(fragment_list)
-                    )
+                    s_i, e_i = i * fragment_batch_size, min((i + 1) * fragment_batch_size, len(fragment_list))
                     input_dict = collate_fn(fragment_list[s_i:e_i])
                     for key in input_dict.keys():
                         if isinstance(input_dict[key], torch.Tensor):
@@ -200,14 +188,14 @@ class SemSegTester(TesterBase):
                         )
                     )
                 pred = pred.max(1)[1].data.cpu().numpy()
-                
+
                 if "origin_segment" in data_dict.keys():
                     assert "inverse" in data_dict.keys()
                     pred = pred[data_dict["inverse"]]
                     feat = feat[data_dict["inverse"]]
                     segment = data_dict["origin_segment"]
-                #np.save(pred_save_path, pred)
-                #np.save(feat_save_path, feat.cpu().numpy())
+                # np.save(pred_save_path, pred)
+                # np.save(feat_save_path, feat.cpu().numpy())
                 np.savez_compressed(result_save_path, pred=pred, feat=feat.cpu().numpy())
             if self.cfg.data.test.type == "NuScenesDataset":
                 np.array(pred + 1).astype(np.uint8).tofile(
@@ -226,9 +214,7 @@ class SemSegTester(TesterBase):
             intersection_meter.update(intersection)
             union_meter.update(union)
             target_meter.update(target)
-            record[data_name] = dict(
-                intersection=intersection, union=union, target=target
-            )
+            record[data_name] = dict(intersection=intersection, union=union, target=target)
 
             mask = union != 0
             iou_class = intersection / (union + 1e-10)
@@ -266,9 +252,7 @@ class SemSegTester(TesterBase):
                 r = record_sync.pop()
                 record.update(r)
                 del r
-            intersection = np.sum(
-                [meters["intersection"] for _, meters in record.items()], axis=0
-            )
+            intersection = np.sum([meters["intersection"] for _, meters in record.items()], axis=0)
             union = np.sum([meters["union"] for _, meters in record.items()], axis=0)
             target = np.sum([meters["target"] for _, meters in record.items()], axis=0)
 
@@ -284,11 +268,7 @@ class SemSegTester(TesterBase):
             mAcc = np.mean(accuracy_class)
             allAcc = sum(intersection) / (sum(target) + 1e-10)
 
-            logger.info(
-                "Val result: mIoU/mAcc/allAcc {:.4f}/{:.4f}/{:.4f}".format(
-                    mIoU, mAcc, allAcc
-                )
-            )
+            logger.info("Val result: mIoU/mAcc/allAcc {:.4f}/{:.4f}/{:.4f}".format(mIoU, mAcc, allAcc))
             for i in range(self.cfg.data.num_classes):
                 logger.info(
                     "Class_{idx} - {name} Result: iou/accuracy {iou:.4f}/{accuracy:.4f}".format(
@@ -303,4 +283,3 @@ class SemSegTester(TesterBase):
     @staticmethod
     def collate_fn(batch):
         return batch
-

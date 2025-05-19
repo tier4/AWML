@@ -1,8 +1,8 @@
 import torch.nn as nn
 import torch_scatter
-
 from models.losses import build_criteria
 from models.utils.structure import Point
+
 from .builder import MODELS, build_model
 
 
@@ -16,11 +16,7 @@ class DefaultSegmentorV2(nn.Module):
         criteria=None,
     ):
         super().__init__()
-        self.seg_head = (
-            nn.Linear(backbone_out_channels, num_classes)
-            if num_classes > 0
-            else nn.Identity()
-        )
+        self.seg_head = nn.Linear(backbone_out_channels, num_classes) if num_classes > 0 else nn.Identity()
         self.backbone = build_model(backbone)
         self.criteria = build_criteria(criteria)
 
@@ -45,5 +41,3 @@ class DefaultSegmentorV2(nn.Module):
         # test
         else:
             return dict(seg_logits=seg_logits)
-
-

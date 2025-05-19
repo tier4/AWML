@@ -21,18 +21,11 @@ def build_from_cfg(cfg, registry, default_args=None):
         raise TypeError(f"cfg must be a dict, but got {type(cfg)}")
     if "type" not in cfg:
         if default_args is None or "type" not in default_args:
-            raise KeyError(
-                '`cfg` or `default_args` must contain the key "type", '
-                f"but got {cfg}\n{default_args}"
-            )
+            raise KeyError('`cfg` or `default_args` must contain the key "type", ' f"but got {cfg}\n{default_args}")
     if not isinstance(registry, Registry):
-        raise TypeError(
-            "registry must be an mmcv.Registry object, " f"but got {type(registry)}"
-        )
+        raise TypeError("registry must be an mmcv.Registry object, " f"but got {type(registry)}")
     if not (isinstance(default_args, dict) or default_args is None):
-        raise TypeError(
-            "default_args must be a dict or None, " f"but got {type(default_args)}"
-        )
+        raise TypeError("default_args must be a dict or None, " f"but got {type(default_args)}")
 
     args = cfg.copy()
 
@@ -117,10 +110,7 @@ class Registry:
         return self.get(key) is not None
 
     def __repr__(self):
-        format_str = (
-            self.__class__.__name__ + f"(name={self._name}, "
-            f"items={self._module_dict})"
-        )
+        format_str = self.__class__.__name__ + f"(name={self._name}, " f"items={self._module_dict})"
         return format_str
 
     @staticmethod
@@ -230,9 +220,7 @@ class Registry:
 
         assert isinstance(registry, Registry)
         assert registry.scope is not None
-        assert (
-            registry.scope not in self.children
-        ), f"scope {registry.scope} exists in {self.name} registry"
+        assert registry.scope not in self.children, f"scope {registry.scope} exists in {self.name} registry"
         self.children[registry.scope] = registry
 
     def _register_module(self, module_class, module_name=None, force=False):
@@ -299,8 +287,7 @@ class Registry:
         # raise the error ahead of time
         if not (name is None or isinstance(name, str) or is_seq_of(name, str)):
             raise TypeError(
-                "name must be either of None, an instance of str or a sequence"
-                f"  of str, but got {type(name)}"
+                "name must be either of None, an instance of str or a sequence" f"  of str, but got {type(name)}"
             )
 
         # use it as a normal method: x.register_module(module=SomeClass)

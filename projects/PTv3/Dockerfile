@@ -19,7 +19,7 @@ RUN conda install h5py pyyaml -c anaconda -y
 RUN conda install sharedarray tensorboard tensorboardx yapf addict einops scipy plyfile termcolor -c conda-forge -y
 RUN conda install pytorch-cluster pytorch-scatter pytorch-sparse -c pyg -y
 
-RUN python3 -m pip --no-cache-dir install --force-reinstall \ 
+RUN python3 -m pip --no-cache-dir install --force-reinstall \
     yapf==0.40.1
 
 # For Blackwell, as of 2025/05, some packages need to be compiled or use nightly versions

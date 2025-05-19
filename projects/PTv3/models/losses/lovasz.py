@@ -6,8 +6,9 @@ Author: Xiaoyang Wu (xiaoyang.wu.cs@gmail.com)
 Please cite our work if the code is helpful to you.
 """
 
-from typing import Optional
 from itertools import filterfalse
+from typing import Optional
+
 import torch
 import torch.nn.functional as F
 from torch.nn.modules.loss import _Loss
@@ -33,9 +34,7 @@ def _lovasz_grad(gt_sorted):
     return jaccard
 
 
-def _lovasz_softmax(
-    probas, labels, classes="present", class_seen=None, per_image=False, ignore=None
-):
+def _lovasz_softmax(probas, labels, classes="present", class_seen=None, per_image=False, ignore=None):
     """Multi-class Lovasz-Softmax loss
     Args:
         @param probas: [B, C, H, W] Class probabilities at each prediction (between 0 and 1).
@@ -47,18 +46,11 @@ def _lovasz_softmax(
     """
     if per_image:
         loss = mean(
-            _lovasz_softmax_flat(
-                *_flatten_probas(prob.unsqueeze(0), lab.unsqueeze(0), ignore),
-                classes=classes
-            )
+            _lovasz_softmax_flat(*_flatten_probas(prob.unsqueeze(0), lab.unsqueeze(0), ignore), classes=classes)
             for prob, lab in zip(probas, labels)
         )
     else:
-        loss = _lovasz_softmax_flat(
-            *_flatten_probas(probas, labels, ignore),
-            classes=classes,
-            class_seen=class_seen
-        )
+        loss = _lovasz_softmax_flat(*_flatten_probas(probas, labels, ignore), classes=classes, class_seen=class_seen)
     return loss
 
 
@@ -131,7 +123,6 @@ def _flatten_probas(probas, labels, ignore=None):
     return vprobas, vlabels
 
 
-
 def mean(values, ignore_nan=False, empty=0):
     """Nan-mean compatible with generators."""
     values = iter(values)
@@ -184,9 +175,7 @@ class LovaszLoss(_Loss):
 
     def forward(self, y_pred, y_true):
         if self.mode in {BINARY_MODE, MULTILABEL_MODE}:
-            loss = _lovasz_hinge(
-                y_pred, y_true, per_image=self.per_image, ignore=self.ignore_index
-            )
+            loss = _lovasz_hinge(y_pred, y_true, per_image=self.per_image, ignore=self.ignore_index)
         elif self.mode == MULTICLASS_MODE:
             y_pred = y_pred.softmax(dim=1)
             loss = _lovasz_softmax(
