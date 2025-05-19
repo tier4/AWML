@@ -1,5 +1,5 @@
 version: 1
-dataset_version: db-j6gen2-v2.0
+dataset_version: db-largebus-v1.0
 
 train:
   - 6185e885-0a1b-45f6-b72e-65713fba738d
