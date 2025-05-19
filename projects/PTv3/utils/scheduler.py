@@ -123,7 +123,6 @@ class OneCycleLR(lr_scheduler.OneCycleLR):
         final_div_factor=1e4,
         three_phase=False,
         last_epoch=-1,
-        verbose=False,
     ):
         super().__init__(
             optimizer=optimizer,
@@ -138,7 +137,6 @@ class OneCycleLR(lr_scheduler.OneCycleLR):
             final_div_factor=final_div_factor,
             three_phase=three_phase,
             last_epoch=last_epoch,
-            verbose=verbose,
         )
 
 

@@ -1,5 +1,3 @@
-#from datasets import collate_fn
-
 from engines.defaults import (
     default_argument_parser,
     default_config_parser,
@@ -31,7 +29,6 @@ class WrappedModel(torch.nn.Module):
         super(WrappedModel, self).__init__()
         self.cfg = cfg
         self.model = model.cuda()
-        #self.model.forward = self.model.export_forward
         self.model.backbone.forward = self.model.backbone.export_forward
 
         point_cloud_range = torch.tensor(cfg.point_cloud_range, dtype=torch.float32).cuda()
@@ -40,8 +37,6 @@ class WrappedModel(torch.nn.Module):
 
         self.sparse_shape = (point_cloud_range[3:] - point_cloud_range[:3]) / voxel_size
         self.sparse_shape = torch.round(self.sparse_shape).long().cuda()
-
-        #c = floor((points[i][j] - coors_range[j]) / voxel_size[j]);
 
     def forward(
         self,
@@ -127,11 +122,9 @@ def main():
 
         pred_labels, pred_probs = model(**input_dict)
 
-        np.savez_compressed("test.npz",
+        np.savez_compressed("ptv3_sample.npz",
                             pred=pred_labels.cpu().numpy(),
                             feat=input_dict["feat"].cpu().numpy())
-
-        output_path = "test.onnx"
 
         export_params = True,
         keep_initializers_as_inputs = False
@@ -155,47 +148,18 @@ def main():
         torch.onnx.export(
             model,
             input_dict,
-            output_path,
+            "ptv3.onnx",
             export_params=export_params,
             input_names=input_names,
             output_names=output_names,
             opset_version=opset_version,
             dynamic_axes=dynamic_axes,
             keep_initializers_as_inputs=keep_initializers_as_inputs,
-            verbose=True,
+            verbose=False,
             do_constant_folding=False)
 
     print("Exported to ONNX format successfully.")
 
-    print("Attempting to fix the graph (TopK's K becoming a tensor)")
-
-    import onnx_graphsurgeon as gs
-
-    model = onnx.load(output_path)
-    graph = gs.import_onnx(model)
-
-    # Fix TopK
-    topk_nodes = [node for node in graph.nodes if node.op == "TopK"]
-    """assert len(topk_nodes) == 1
-    topk = topk_nodes[0]
-    k = model_cfg.num_proposals
-    topk.inputs[1] = gs.Constant("K", values=np.array([k], dtype=np.int64))
-    topk.outputs[0].shape = [1, k]
-    topk.outputs[0].dtype = topk.inputs[0].dtype if topk.inputs[0].dtype else np.float32
-    topk.outputs[1].shape = [1, k]
-    topk.outputs[1].dtype = np.int64"""
-    #get_indice_nodes = [node for node in graph.nodes if node.op == "GetIndicePairs"]
-    #for node in get_indice_nodes:
-    #    outputs = node.outputs
-    #    last_output = outputs[-1]
-    #    #new_output = gs.ir.tensor.Variable("asdasd", dtype=last_output.dtype, [1])
-    #    x = 0
-
-    graph.cleanup().toposort()
-    output_path = output_path.replace(".onnx", "_fixed.onnx")
-    onnx.save_model(gs.export_onnx(graph), output_path)
-
-    print(f"(Fixed) ONNX exported to {output_path}", flush=True)
 
 
 if __name__ == "__main__":
