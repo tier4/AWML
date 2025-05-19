@@ -11,7 +11,6 @@ from collections import OrderedDict
 
 import numpy as np
 import torch
-import torch.distributed as dist
 import torch.nn.functional as F
 import torch.utils.data
 import utils.comm as comm
@@ -21,7 +20,6 @@ from utils.logger import get_root_logger
 from utils.misc import (
     AverageMeter,
     intersection_and_union,
-    intersection_and_union_gpu,
     make_dirs,
 )
 from utils.registry import Registry

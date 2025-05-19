@@ -1,8 +1,5 @@
-from typing import Any, Dict, List
-
 import numpy as np
-import onnx
-import SparseConvolution
+import SparseConvolution  # NOTE(knzo25): do not remove this import, it is needed for onnx export
 import spconv.pytorch as spconv
 import torch
 from engines.defaults import (
@@ -10,8 +7,6 @@ from engines.defaults import (
     default_config_parser,
     default_setup,
 )
-from engines.launch import launch
-from engines.test import TESTERS
 from engines.train import TRAINERS
 from models.scatter.functional import argsort
 from models.utils.structure import Point, bit_length_tensor

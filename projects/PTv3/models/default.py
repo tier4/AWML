@@ -1,5 +1,4 @@
 import torch.nn as nn
-import torch_scatter
 from models.losses import build_criteria
 from models.utils.structure import Point
 

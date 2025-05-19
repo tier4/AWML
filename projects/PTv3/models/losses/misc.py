@@ -7,7 +7,6 @@ Please cite our work if the code is helpful to you.
 
 import torch
 import torch.nn as nn
-import torch.nn.functional as F
 
 from .builder import LOSSES
 

@@ -5,7 +5,6 @@ Author: Xiaoyang Wu (xiaoyang.wu.cs@gmail.com)
 Please cite our work if the code is helpful to you.
 """
 
-import glob
 import os
 import shutil
 import sys
@@ -13,17 +12,9 @@ import time
 from collections import OrderedDict
 
 import torch
-import torch.utils.data
-
-if sys.version_info >= (3, 10):
-    from collections.abc import Sequence
-else:
-    from collections import Sequence
-
 import utils.comm as comm
 from engines.test import TESTERS
-from utils.cache import shared_dict
-from utils.comm import get_world_size, is_main_process, synchronize
+from utils.comm import is_main_process
 from utils.timer import Timer
 
 from .builder import HOOKS

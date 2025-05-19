@@ -1,6 +1,6 @@
 import torch.nn as nn
 from models.builder import MODULES
-from models.modules import PointModule, PointSequential
+from models.modules import PointModule
 
 
 @MODULES.register_module()

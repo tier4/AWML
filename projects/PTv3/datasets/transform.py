@@ -13,10 +13,6 @@ import random
 from collections.abc import Mapping, Sequence
 
 import numpy as np
-import scipy
-import scipy.interpolate
-import scipy.ndimage
-import scipy.stats
 import torch
 from utils.registry import Registry
 

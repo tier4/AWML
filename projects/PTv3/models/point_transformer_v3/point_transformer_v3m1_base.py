@@ -8,7 +8,6 @@ Please cite our work if the code is helpful to you.
 import math
 from functools import partial
 
-import spconv.pytorch as spconv
 import torch
 import torch.nn as nn
 import torch_scatter
@@ -30,16 +29,13 @@ from models.utils.structure import Point
 
 try:
 
-    from SparseConvolution.sparse_conv import SparseConv3d, SubMConv3d
+    from SparseConvolution.sparse_conv import SubMConv3d
 
     print("Using spconv2.0 with export support")
 
 except ImportError:
 
-    from spconv.pytorch import (
-        SparseConv3d,
-        SubMConv3d,
-    )
+    from spconv.pytorch import SubMConv3d
 
 
 class DropPath(nn.Module):

@@ -10,7 +10,6 @@ from itertools import filterfalse
 from typing import Optional
 
 import torch
-import torch.nn.functional as F
 from torch.nn.modules.loss import _Loss
 
 from .builder import LOSSES

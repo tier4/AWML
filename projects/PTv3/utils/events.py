@@ -7,19 +7,11 @@ Author: Xiaoyang Wu (xiaoyang.wu.cs@gmail.com)
 Please cite our work if the code is helpful to you.
 """
 
-import datetime
-import json
 import logging
-import os
 import sys
-import time
 import traceback
 from collections import defaultdict
 from contextlib import contextmanager
-from typing import List, Optional, Tuple
-
-import numpy as np
-import torch
 
 __all__ = [
     "EventStorage",
