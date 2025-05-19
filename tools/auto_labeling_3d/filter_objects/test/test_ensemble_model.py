@@ -6,9 +6,7 @@ import pytest
 from attr import asdict
 from attrs import define, field
 
-from tools.auto_labeling_3d.filter_objects.ensemble.ensemble_model import (
-    EnsembleModel,
-)
+from tools.auto_labeling_3d.filter_objects.ensemble.ensemble_model import EnsembleModel
 
 
 @define
