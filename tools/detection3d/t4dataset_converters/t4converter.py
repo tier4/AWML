@@ -560,7 +560,7 @@ def _velocity_clip(velocity: NDArray, max_speed: float = 50.0) -> NDArray:
     """
     speed = np.linalg.norm(velocity)
     if speed > max_speed:
-        velocity = velocity / speed * max_speed
+        velocity = velocity * (max_speed / speed)
     return velocity
 
 
