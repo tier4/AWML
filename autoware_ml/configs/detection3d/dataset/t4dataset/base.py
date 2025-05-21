@@ -147,3 +147,5 @@ camera_panels = [
     "data/CAM_BACK",
     "data/CAM_BACK_RIGHT",
 ]
+
+filter_attributes = []
