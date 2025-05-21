@@ -581,7 +581,7 @@ def get_annotations(
     locs = np.array([b.position for b in boxes]).reshape(-1, 3)
     dims = np.array([b.size for b in boxes]).reshape(-1, 3)
     rots = np.array([b.rotation.yaw_pitch_roll[0] for b in boxes]).reshape(-1, 1)
-    velocity = np.array([b.velocity[:2] for b in boxes])
+    velocity = np.array([_velocity_clip(b.velocity[:2]) for b in boxes])
 
     valid_flag = np.array([anno.num_lidar_pts > 0 for anno in annotations], dtype=bool).reshape(-1)
 
@@ -596,7 +596,6 @@ def get_annotations(
     assert len(gt_boxes) == len(instance_tokens)
     if len(gt_boxes):
         assert velocity.shape == (len(gt_boxes), 2)
-        velocity = _velocity_clip(velocity)
 
     matched_object_idx = None
     if merge_objects:
