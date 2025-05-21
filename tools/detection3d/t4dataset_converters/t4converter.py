@@ -549,6 +549,21 @@ def get_instances(
     return instances
 
 
+def _velocity_clip(velocity: NDArray, max_speed: float = 50.0) -> NDArray:
+    """
+    Normalize the velocity of the boxes.
+    Args:
+        velocity (NDArray): Velocity of the boxes.
+        boxes (NDArray): Boxes to normalize.
+    Returns:
+        NDArray: Normalized velocity.
+    """
+    speed = np.linalg.norm(velocity)
+    if speed > max_speed:
+        velocity = velocity / speed * max_speed
+    return velocity
+
+
 def get_annotations(
     t4: Tier4,
     anns: list[str],
@@ -579,7 +594,9 @@ def get_annotations(
     gt_attrs = get_gt_attrs(t4, annotations)
     assert len(names) == len(gt_attrs), f"{len(names)}, {len(gt_attrs)}"
     assert len(gt_boxes) == len(instance_tokens)
-    assert velocity.shape == (len(gt_boxes), 2)
+    if len(gt_boxes):
+        assert velocity.shape == (len(gt_boxes), 2)
+        velocity = _velocity_clip(velocity)
 
     matched_object_idx = None
     if merge_objects:
