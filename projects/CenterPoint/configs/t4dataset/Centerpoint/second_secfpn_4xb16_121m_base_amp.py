@@ -271,7 +271,7 @@ model = dict(
             post_center_range=[-200.0, -200.0, -10.0, 200.0, 200.0, 10.0],
             out_size_factor=out_size_factor,
         ),
-        # sigmoid(-9.2103) = 0.0001 for initial small values
+        # sigmoid(-4.595) = 0.01 for initial small values
         separate_head=dict(type="CustomSeparateHead", init_bias=-4.595, final_kernel=1),
         loss_cls=dict(type="mmdet.AmpGaussianFocalLoss", reduction="none", loss_weight=1.0),
         loss_bbox=dict(type="mmdet.L1Loss", reduction="mean", loss_weight=0.25),
