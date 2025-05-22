@@ -86,35 +86,40 @@
 ## Release
 
 ### CenterPoint base/1.6
-- This release add more training data to `db_j6_v3` and `db_j6gen2_v1`
-- It also introduces new data for `db_largebus_v1`
-- It updates number of points per pillar from `20` to `32`
-- It further stabilize AMP training by:
-    - Introduces `AMPGaussianFocalLoss` to prevent underflow addition in FP16 for `1e-12`
-		- Reduce `grad_clip` from `35` to `15`
-		- Adjust `init_scale` and `growth_interval` for `loss_scaler`
-		- Adjust init values for hetmap bias to `-4.595`
-- Introduces `LossScaleInfoHook` to monitor `loss_scaler`
-- Add `SafeMLflowVisBackend` for support MLflow
+- Changes:
+  - This release add more training data to `db_j6_v3` and `db_j6gen2_v1`
+  - It also introduces new data for `db_largebus_v1`
+  - It updates number of points per pillar from `20` to `32`
+  - It further stabilize AMP training by:
+      - Introduces `AMPGaussianFocalLoss` to prevent underflow addition in FP16 for `1e-12`
+		  - Reduce `grad_clip` from `35` to `15`
+		  - Adjust `init_scale` and `growth_interval` for `loss_scaler`
+		  - Adjust init values for hetmap bias to `-4.595`
+  - Introduces `LossScaleInfoHook` to monitor `loss_scaler`
+  - Add `SafeMLflowVisBackend` for support MLflow
+- Overall:
+  - `base/1.6` consistently outperforms `base/1.5` across most datasets and object classes
+  - The largest mAP gain is seen in the `LargeBus` dataset (`+5.3 mAP`), followed by modest improvements in `JPNTaxi` and `J6Gen2`
+  - `Bus` and `Truck` detection benefit most from the upgrade to `base/1.6`
 
 <details>
 <summary> The link of data and evaluation result </summary>
 
 - Model
-  - Training dataset: DB JPNTAXI v1.0 + DB JPNTAXI v2.0 + DB JPNTAXI v4.0 + DB GSM8 v1.0 + DB J6 v1.0 + DB J6 v2.0 + DB J6 v3.0 + DB J6 v5.0 + DB J6 Gen2 v1.0 (total frames: 49,605)
-  - [Config file path](https://github.com/tier4/AWML/blob/1e76dba5bc26cc664dcaff10b9d407ddd0a0be41/autoware_ml/configs/detection3d/dataset/t4dataset/base.py)
-  - Deployed onnx model and ROS parameter files [[WebAuto (for internal)]]([WIP](https://evaluation.tier4.jp/evaluation/mlpackages/7156b453-2861-4ae9-b135-e24e48cc9029/releases/151db018-8575-4435-b178-bfaf1e5930f6?project_id=zWhWRzei))
+  - Training dataset: DB JPNTAXI v1.0 + DB JPNTAXI v2.0 + DB JPNTAXI v4.0 + DB GSM8 v1.0 + DB J6 v1.0 + DB J6 v2.0 + DB J6 v3.0 + DB J6 v5.0 + DB J6 Gen2 v1.0 + DB LargeBus v1.0 (total frames: 57,168)
+  - [Config file path](https://github.com/tier4/AWML/blob/60b71e8245d0f7ad147534acedb410c323f6ef8e/autoware_ml/configs/detection3d/dataset/t4dataset/base.py)
+  - Deployed onnx model and ROS parameter files [[WebAuto (for internal)]](https://evaluation.tier4.jp/evaluation/mlpackages/7156b453-2861-4ae9-b135-e24e48cc9029/releases/0f412fbf-4908-4d79-91f2-0e7054990b86?project_id=zWhWRzei)
   - Deployed onnx and ROS parameter files [[model-zoo]]
-    - [detection_class_remapper.param.yaml](https://download.autoware-ml-model-zoo.tier4.jp/autoware-ml/models/centerpoint/centerpoint/t4base/v1.5/detection_class_remapper.param.yaml)
-    - [centerpoint_t4base_ml_package.param.yaml](https://download.autoware-ml-model-zoo.tier4.jp/autoware-ml/models/centerpoint/centerpoint/t4base/v1.5/centerpoint_t4base_ml_package.param.yaml)
-    - [deploy_metadata.yaml](https://download.autoware-ml-model-zoo.tier4.jp/autoware-ml/models/centerpoint/centerpoint/t4base/v1.5/deploy_metadata.yaml)
-    - [pts_voxel_encoder_centerpoint_t4base.onnx](https://download.autoware-ml-model-zoo.tier4.jp/autoware-ml/models/centerpoint/centerpoint/t4base/v1.5/pts_voxel_encoder.onnx)
-    - [pts_backbone_neck_head_centerpoint_t4base.onnx](https://download.autoware-ml-model-zoo.tier4.jp/autoware-ml/models/centerpoint/centerpoint/t4base/v1.5/pts_backbone_neck_head.onnx)
-  - Training results [[Google drive (for internal)]](https://drive.google.com/drive/folders/1ToUDUPMLFLiw_lC7MTFLNfVwv-a-U5Tw?usp=drive_link)
+    - [detection_class_remapper.param.yaml](https://download.autoware-ml-model-zoo.tier4.jp/autoware-ml/models/centerpoint/centerpoint/t4base/v1.6/detection_class_remapper.param.yaml)
+    - [centerpoint_t4base_ml_package.param.yaml](https://download.autoware-ml-model-zoo.tier4.jp/autoware-ml/models/centerpoint/centerpoint/t4base/v1.6/centerpoint_t4base_ml_package.param.yaml)
+    - [deploy_metadata.yaml](https://download.autoware-ml-model-zoo.tier4.jp/autoware-ml/models/centerpoint/centerpoint/t4base/v1.6/deploy_metadata.yaml)
+    - [pts_voxel_encoder_centerpoint_t4base.onnx](https://download.autoware-ml-model-zoo.tier4.jp/autoware-ml/models/centerpoint/centerpoint/t4base/v1.6/pts_voxel_encoder.onnx)
+    - [pts_backbone_neck_head_centerpoint_t4base.onnx](https://download.autoware-ml-model-zoo.tier4.jp/autoware-ml/models/centerpoint/centerpoint/t4base/v1.6/pts_backbone_neck_head.onnx)
+  - Training results [[Google drive (for internal)]](https://drive.google.com/drive/folders/1dVri0Jq9_yobzed0T2Rno-mfChbjPesn?usp=drive_link)
   - Training results [model-zoo]
-    - [logs.zip](https://download.autoware-ml-model-zoo.tier4.jp/autoware-ml/models/centerpoint/centerpoint/t4base/v1.5/logs.zip)
-    - [checkpoint_best.pth](https://download.autoware-ml-model-zoo.tier4.jp/autoware-ml/models/centerpoint/centerpoint/t4base/v1.5/best_NuScenes+metric_T4Metric_mAP_epoch_49.pth)
-    - [config.py](https://download.autoware-ml-model-zoo.tier4.jp/autoware-ml/models/centerpoint/centerpoint/t4base/v1.5/second_secfpn_4xb16_121m_base_amp.py)
+    - [logs.zip](https://download.autoware-ml-model-zoo.tier4.jp/autoware-ml/models/centerpoint/centerpoint/t4base/v1.6/logs.zip)
+    - [checkpoint_best.pth](https://download.autoware-ml-model-zoo.tier4.jp/autoware-ml/models/centerpoint/centerpoint/t4base/v1.6/best_epoch_48.pth)
+    - [config.py](https://download.autoware-ml-model-zoo.tier4.jp/autoware-ml/models/centerpoint/centerpoint/t4base/v1.6/second_secfpn_4xb16_121m_base_amp.py)
   - Train time: NVIDIA A100 80GB * 4 * 50 epochs = 3 days and 5 hours
   - Batch size: 4*16 = 64
 
@@ -188,7 +193,7 @@
 - Model
   - Training dataset: DB JPNTAXI v1.0 + DB JPNTAXI v2.0 + DB JPNTAXI v4.0 + DB GSM8 v1.0 + DB J6 v1.0 + DB J6 v2.0 + DB J6 v3.0 + DB J6 v5.0 + DB J6 Gen2 v1.0 (total frames: 49,605)
   - [Config file path](https://github.com/tier4/AWML/blob/1e76dba5bc26cc664dcaff10b9d407ddd0a0be41/autoware_ml/configs/detection3d/dataset/t4dataset/base.py)
-  - Deployed onnx model and ROS parameter files [[WebAuto (for internal)]]([WIP](https://evaluation.tier4.jp/evaluation/mlpackages/7156b453-2861-4ae9-b135-e24e48cc9029/releases/151db018-8575-4435-b178-bfaf1e5930f6?project_id=zWhWRzei))
+  - Deployed onnx model and ROS parameter files [[WebAuto (for internal)]](https://evaluation.tier4.jp/evaluation/mlpackages/7156b453-2861-4ae9-b135-e24e48cc9029/releases/151db018-8575-4435-b178-bfaf1e5930f6?project_id=zWhWRzei)
   - Deployed onnx and ROS parameter files [[model-zoo]]
     - [detection_class_remapper.param.yaml](https://download.autoware-ml-model-zoo.tier4.jp/autoware-ml/models/centerpoint/centerpoint/t4base/v1.5/detection_class_remapper.param.yaml)
     - [centerpoint_t4base_ml_package.param.yaml](https://download.autoware-ml-model-zoo.tier4.jp/autoware-ml/models/centerpoint/centerpoint/t4base/v1.5/centerpoint_t4base_ml_package.param.yaml)
