@@ -96,7 +96,7 @@
 		  - Adjust `init_scale` and `growth_interval` for `loss_scaler`
 		  - Adjust init values for hetmap bias to `-4.595`
   - Introduces `LossScaleInfoHook` to monitor `loss_scaler`
-  - Add `SafeMLflowVisBackend` for support MLflow
+  - Enable `SafeMLflowVisBackend` for support MLflow
 - Overall:
   - `base/1.6` consistently outperforms `base/1.5` across most datasets and object classes
   - The largest mAP gain is seen in the `LargeBus` dataset (`+5.3 mAP`), followed by modest improvements in `JPNTaxi` and `J6Gen2`
