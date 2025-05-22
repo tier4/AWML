@@ -32,7 +32,6 @@
 
 </details>
 
-
 <details>
 <summary> J6Gen2 </summary>
 
