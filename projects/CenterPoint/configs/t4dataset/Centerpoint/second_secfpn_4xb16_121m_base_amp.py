@@ -272,9 +272,7 @@ model = dict(
             out_size_factor=out_size_factor,
         ),
         # sigmoid(-9.2103) = 0.0001 for initial small values
-        # separate_head=dict(type="CustomSeparateHead", init_bias=-9.2103, final_kernel=1),
         separate_head=dict(type="CustomSeparateHead", init_bias=-4.595, final_kernel=1),
-        # loss_cls=dict(type="mmdet.GaussianFocalLoss", reduction="none", loss_weight=1.0),
         loss_cls=dict(type="mmdet.AmpGaussianFocalLoss", reduction="none", loss_weight=1.0),
         loss_bbox=dict(type="mmdet.L1Loss", reduction="mean", loss_weight=0.25),
         norm_bbox=True,
@@ -401,7 +399,7 @@ visualizer = dict(type="Det3DLocalVisualizer", vis_backends=vis_backends, name="
 logger_interval = 50
 default_hooks = dict(
     logger=dict(type="LoggerHook", interval=logger_interval),
-    checkpoint=dict(type="CheckpointHook", interval=1, max_keep_ckpts=10, save_best="NuScenes metric/T4Metric/mAP"),
+    checkpoint=dict(type="CheckpointHook", interval=1, max_keep_ckpts=3, save_best="NuScenes metric/T4Metric/mAP"),
 )
 
 custom_hooks = [
