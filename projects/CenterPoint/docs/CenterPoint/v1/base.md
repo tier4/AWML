@@ -6,6 +6,8 @@
   - range = 121.60m
   - voxel_size = [0.32, 0.32, 8.0]
   - grid_size = [760, 760, 1]
+- Detailed comparison
+  - [Internal Link](https://docs.google.com/spreadsheets/d/1jkadazpbA2BUYEUdVV8Rpe54-snH1cbdJbbHsuK04-U/edit?usp=sharing)
 - Performance summary
   - Dataset: test dataset of db_jpntaxi_v1 + db_jpntaxi_v2 + db_jpntaxi_v4 + db_gsm8_v1 + db_j6_v1 + db_j6_v2 + db_j6_v3 + db_j6_v5 + db_j6gen2_v1 + db_largebus_v1 (total frames: 4,119)
   - Class mAP for center distance (0.5m, 1.0m, 2.0m, 4.0m):
