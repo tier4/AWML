@@ -35,7 +35,7 @@
 <details>
 <summary> J6Gen2 </summary>
 
-- Test datases: db_j6gen2_v1 (total frames: 721)
+- Test datases: db_j6gen2_v1 + db_j6gen2_v2 (total frames: 721)
 
 | eval range: 120m         | mAP  | car <br> (26,990) | truck <br> (779) | bus <br> (1,203) | bicycle <br> (8) | pedestrian <br> (3,743) |
 | -------------------------| ---- | ----------------- | ------------------- | ---------------- | -------------------- | ------------------------ |
@@ -88,7 +88,8 @@
 
 ### CenterPoint base/1.6
 - Changes:
-  - This release add more training data to `db_j6_v3` and `db_j6gen2_v1`
+  - This release add more training data to `db_j6_v3`
+  - Update `db_j6gen2_v1` with the new data `db_j6gen2_v2`
   - It also introduces new data for `db_largebus_v1`
   - It updates number of points per pillar from `20` to `32`
   - It further stabilize AMP training by:
@@ -107,7 +108,7 @@
 <summary> The link of data and evaluation result </summary>
 
 - Model
-  - Training dataset: DB JPNTAXI v1.0 + DB JPNTAXI v2.0 + DB JPNTAXI v4.0 + DB GSM8 v1.0 + DB J6 v1.0 + DB J6 v2.0 + DB J6 v3.0 + DB J6 v5.0 + DB J6 Gen2 v1.0 + DB LargeBus v1.0 (total frames: 57,168)
+  - Training dataset: DB JPNTAXI v1.0 + DB JPNTAXI v2.0 + DB JPNTAXI v4.0 + DB GSM8 v1.0 + DB J6 v1.0 + DB J6 v2.0 + DB J6 v3.0 + DB J6 v5.0 + DB J6 Gen2 v1.0 + DB J6 Gen2 v2.0 + DB LargeBus v1.0 (total frames: 57,168)
   - [Config file path](https://github.com/tier4/AWML/blob/60b71e8245d0f7ad147534acedb410c323f6ef8e/autoware_ml/configs/detection3d/dataset/t4dataset/base.py)
   - Deployed onnx model and ROS parameter files [[WebAuto (for internal)]](https://evaluation.tier4.jp/evaluation/mlpackages/7156b453-2861-4ae9-b135-e24e48cc9029/releases/0f412fbf-4908-4d79-91f2-0e7054990b86?project_id=zWhWRzei)
   - Deployed onnx and ROS parameter files [[model-zoo]]
@@ -147,7 +148,7 @@
 | bicycle    |    504   | 65.0 | 60.4    | 65.3    | 67.2    | 67.2    |
 | pedestrian |  2,782  | 62.4 | 60.3    | 61.9    | 62.9    | 64.5    |
 
-- db_j6gen2_v1 (total frames: 721):
+- db_j6gen2_v1 + db_j6gen2_v2 (total frames: 721):
   - Total mAP (eval range = 120m): 0.566
 
 | class_name  | Count   | mAP  | AP@0.5m | AP@1.0m | AP@2.0m | AP@4.0m |
