@@ -3,7 +3,6 @@
 import argparse
 import base64
 import json
-import yaml
 import os
 import re
 import warnings
@@ -15,6 +14,7 @@ from typing import List, Tuple, Union
 import mmcv
 import mmengine
 import numpy as np
+import yaml
 from nuimages import NuImages
 from nuimages.utils.utils import mask_decode, name_to_index_mapping
 from nuscenes.nuscenes import NuScenes
@@ -180,8 +180,7 @@ def parse_args():
     return args
 
 
-def export_t4_to_coco(data_root, version, mode, split, nproc,
- create_empty_object_ann: bool, occlusion_states=[]):
+def export_t4_to_coco(data_root, version, mode, split, nproc, create_empty_object_ann: bool, occlusion_states=[]):
     """Export 2d annotation from the info file and raw data.
     Args:
         data_root (str): Root path of the raw data.
@@ -201,7 +200,7 @@ def export_t4_to_coco(data_root, version, mode, split, nproc,
     max_cls_ids = []
     seg_root = None
     for s in splits:
-        print (s)
+        print(s)
         split_root = search_version_if_exists(os.path.join(data_root, s))
         assert osp.exists(split_root), f"T4Dataset Not Found: {split_root}"
         obj_ann_file = osp.join(split_root, "annotation", "object_ann.json")
@@ -228,7 +227,7 @@ def export_t4_to_coco(data_root, version, mode, split, nproc,
                             nuim=nuim,
                             cat2id=cat2id,
                             seg_root=seg_root,
-                            occlusion_states=occlusion_states
+                            occlusion_states=occlusion_states,
                         )
                     )
         end_idx = len(images)
@@ -254,24 +253,29 @@ def export_t4_to_coco(data_root, version, mode, split, nproc,
     img_id_map = {}
     new_id = 1
     for ann in annotations:
-        if ann['image_id'] not in img_id_map:
-            img_id_map[ann['image_id']] = new_id
-            ann['image_id'] = new_id
+        if ann["image_id"] not in img_id_map:
+            img_id_map[ann["image_id"]] = new_id
+            ann["image_id"] = new_id
             new_id += 1
         else:
-            ann['image_id'] = img_id_map[ann['image_id']]
+            ann["image_id"] = img_id_map[ann["image_id"]]
 
     new_images = []
     for img in images:
-        if img['id'] in img_id_map:
-            img['id'] = img_id_map[img['id']]
+        if img["id"] in img_id_map:
+            img["id"] = img_id_map[img["id"]]
             new_images.append(img)
 
     coco_format_json = dict(images=new_images, annotations=annotations, categories=categories)
 
     mmengine.dump(
         coco_format_json,
-        os.path.join(data_root, version, "_".join(occlusion_states), "coco_annotations_" + os.path.basename(split).replace(".yaml", ".json")),
+        os.path.join(
+            data_root,
+            version,
+            "_".join(occlusion_states),
+            "coco_annotations_" + os.path.basename(split).replace(".yaml", ".json"),
+        ),
     )
 
 
@@ -503,7 +507,7 @@ def get_img_annos(img_info, nuim, cat2id, seg_root, occlusion_states):
     Returns:
         np.ndarray: Semantic segmentation map of the image
     """
-    #print (img_info)
+    # print (img_info)
     sd_token = img_info["token"]
     image_id = img_info["id"]
 
@@ -601,13 +605,19 @@ def get_img_annos(img_info, nuim, cat2id, seg_root, occlusion_states):
 
 def main():
     args = parse_args()
-    
+
     occlusion_states = [f"occlusion_state.{name}" for name in args.occlusion_list]
 
     for version in args.version:
-        export_t4_to_coco(args.root_path, version, args.mode,
-        args.splits, args.n_proc, args.create_empty_object_ann,
-        occlusion_states)
+        export_t4_to_coco(
+            args.root_path,
+            version,
+            args.mode,
+            args.splits,
+            args.n_proc,
+            args.create_empty_object_ann,
+            occlusion_states,
+        )
 
 
 if __name__ == "__main__":

@@ -24,17 +24,17 @@ class Exp(MyExp):
         self.act = "relu6"
 
         self.num_classes = 8
-        #self.warmup_epochs = 0
-        #self.enable_mixup = False
+        # self.warmup_epochs = 0
+        # self.enable_mixup = False
         self.elan = True
-        #self.no_aug_epochs = 300
+        # self.no_aug_epochs = 300
         self.eval_interval = 1
         self.warmup_epochs = 50
         self.no_aug_epochs = 50
-        #self.basic_lr_per_img = 0.0001 / 64.0
-        #self.basic_lr_per_img = 0.00001 / 64.0
+        # self.basic_lr_per_img = 0.0001 / 64.0
+        # self.basic_lr_per_img = 0.00001 / 64.0
         self.basic_lr_per_img = 0.001 / 64.0
-        #epoch125
-        #self.basic_lr_per_img = 0.001 / 64.0
-        #0.0
+        # epoch125
+        # self.basic_lr_per_img = 0.001 / 64.0
+        # 0.0
         self.train_ann = "t4_dataset_v1_2_train_cleaned.json"
