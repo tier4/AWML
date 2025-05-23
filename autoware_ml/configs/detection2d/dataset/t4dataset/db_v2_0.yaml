@@ -8,36 +8,36 @@ docs: |
   Annotation: No information available regarding annotation frequency
 
 train:
- - 61d0171c-43b4-4c64-a63b-3a8c1eea0661 # DBv2.0_nishi_shinjuku_1-2, 60f7722bf6222f002586e76e
- - a708539b-899d-4e40-95a0-5edf75a865dc # DBv2.0_nishi_shinjuku_1-4, 60f7722daa9f58003ad8c174
- - fa48f0f1-3592-4aae-abd0-c2254cd4ac03 # DBv2.0_nishi_shinjuku_1-6, 60f77664cc9a38001fe942b8
- - d4261650-ab4e-4215-bd01-c5a74938e048 # DBv2.0_nishi_shinjuku_2-1, 60f776664118a80017d27a6a
- - 675bfd01-a211-416e-82fa-d19fc7715108 # DBv2.0_nishi_shinjuku_2-2, 60f77667ad8142003ae0fb80
- - c91ce3e0-2f11-419d-9dc9-7a67ac168e39 # DBv2.0_nishi_shinjuku_2-3, 60f776688903bd00190dd580
- - 9f247dac-a1f4-490f-bb9a-7cd455c94f42 # DBv2.0_nishi_shinjuku_2-5, 60f7766dd5d3b80012c98d03
- - 18e3d181-4132-4998-bee1-02a8e7b66ca3 # DBv2.0_nishi_shinjuku_2-7, 60f776702c1cee00111672cc
- - 786a6bd6-43b8-4dbe-880a-5c2c8c7cd46e # DBv2.0_nishi_shinjuku_2-9, 60f77674b719cd0011cbc070
- - 72c85592-d0b2-40f1-aa9c-2bbd30851f17 # DBv2.0_nishi_shinjuku_4-1, 60f77675bdbe58003372b9d5
- - dbb98b1b-14ac-4cb3-a463-0aece630d867 # DBv2.0_nishi_shinjuku_4-2, 60f7767ad5d3b80012c98d10
- - 9488f1ae-9e7e-40ca-83eb-f3c1e79829c0 # DBv2.0_nishi_shinjuku_4-3, 60f7767c8903bd00190dd588
- - 7676141c-c926-4a95-9c61-62e36fca5d77 # DBv2.0_nishi_shinjuku_4-3-2, 60f7767efa8e28001ed2dda2
- - 119f47b8-437e-4260-8c2a-29d0cbe0a0d4 # DBv2.0_nishi_shinjuku_4-5, 60f776814118a80017d27a7a
- - 0446f5e5-d1e2-4f91-89b8-8c560e0cdde2 # DBv2.0_nishi_shinjuku_4-6, 60f776839d7adc003ae922fb
- - 5ed60909-6523-428a-9f97-4d5845615945 # DBv2.0_nishi_shinjuku_5-1-2, 60f77688d5d3b80012c98d1d
- - 9076b1e1-93c3-404a-a232-8d2bbb3c44b4 # DBv2.0_nishi_shinjuku_5-2, 60f776899d7adc003ae9230d
- - ceb8655a-c1e1-48a8-b8ff-72a9dfff9710 # DBv2.0_nishi_shinjuku_5-3, 60f7768bd5d3b80012c98d25
- - af948725-4876-461b-85d2-bb26aa070119 # DBv2.0_nishi_shinjuku_5-5, 60f7768e709730003384fe20
- - 50b953c3-96ab-4bb6-8a72-e194dd5cfcec # DBv2.0_nishi_shinjuku_5-6, 60f7768f9d7adc003ae92323
- - 9d847f22-a8e4-430c-918e-102341f01311 # DBv2.0_nishi_shinjuku_6-3, 60f776919d7adc003ae9232c
+ - 61d0171c-43b4-4c64-a63b-3a8c1eea0661
+ - a708539b-899d-4e40-95a0-5edf75a865dc
+ - fa48f0f1-3592-4aae-abd0-c2254cd4ac03
+ - d4261650-ab4e-4215-bd01-c5a74938e048
+ - 675bfd01-a211-416e-82fa-d19fc7715108
+ - c91ce3e0-2f11-419d-9dc9-7a67ac168e39
+ - 9f247dac-a1f4-490f-bb9a-7cd455c94f42
+ - 18e3d181-4132-4998-bee1-02a8e7b66ca3
+ - 786a6bd6-43b8-4dbe-880a-5c2c8c7cd46e
+ - 72c85592-d0b2-40f1-aa9c-2bbd30851f17
+ - dbb98b1b-14ac-4cb3-a463-0aece630d867
+ - 9488f1ae-9e7e-40ca-83eb-f3c1e79829c0
+ - 7676141c-c926-4a95-9c61-62e36fca5d77
+ - 119f47b8-437e-4260-8c2a-29d0cbe0a0d4
+ - 0446f5e5-d1e2-4f91-89b8-8c560e0cdde2
+ - 5ed60909-6523-428a-9f97-4d5845615945
+ - 9076b1e1-93c3-404a-a232-8d2bbb3c44b4
+ - ceb8655a-c1e1-48a8-b8ff-72a9dfff9710
+ - af948725-4876-461b-85d2-bb26aa070119
+ - 50b953c3-96ab-4bb6-8a72-e194dd5cfcec
+ - 9d847f22-a8e4-430c-918e-102341f01311
 # unused in cleaned
- - b19347d1-6ddd-4311-a4b8-79eb44266617 # DBv2.0_nishi_shinjuku_1-5, 60f776629d7adc003ae922e6
- - 2266e687-0b87-4a1d-9a80-1b8ba3bd1c92 # DBv2.0_nishi_shinjuku_2-8, 60f77672cc9a38001fe942c5
- - e7e0be44-e8c6-4e9e-b46e-6174d14dbff3 # DBv2.0_nishi_shinjuku_4-4, 60f7767ff267d7003b5aca02
- - c4b27f54-4121-4ea5-b43a-bbc7f2a20f43 # DBv2.0_nishi_shinjuku_4-4-2, 60f77680b719cd0011cbc079
- - c30db7b3-a257-4d00-bba6-6c45ff357bbe # DBv2.0_nishi_shinjuku_5-1, 60f77686fa8e28001ed2ddaa
- - dab557ae-3434-4aec-b74c-8ef2e65dced1 # DBv2.0_nishi_shinjuku_5-4, 60f7768d9d7adc003ae9231b
+ - b19347d1-6ddd-4311-a4b8-79eb44266617
+ - 2266e687-0b87-4a1d-9a80-1b8ba3bd1c92
+ - e7e0be44-e8c6-4e9e-b46e-6174d14dbff3
+ - c4b27f54-4121-4ea5-b43a-bbc7f2a20f43
+ - c30db7b3-a257-4d00-bba6-6c45ff357bbe
+ - dab557ae-3434-4aec-b74c-8ef2e65dced1
 
 val:
- - dab557ae-3434-4aec-b74c-8ef2e65dced1 # DBv2.0_nishi_shinjuku_5-4, 60f7768d9d7adc003ae9231b
+ - dab557ae-3434-4aec-b74c-8ef2e65dced1
 
 test: []
