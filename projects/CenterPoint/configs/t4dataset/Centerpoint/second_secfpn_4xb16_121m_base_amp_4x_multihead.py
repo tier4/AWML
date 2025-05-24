@@ -48,7 +48,7 @@ test_batch_size = 2
 num_workers = 32
 val_interval = 5
 max_epochs = 50
-work_dir = "work_dirs/centerpoint_1_6_multihead/" + _base_.dataset_type + "/second_secfpn_4xb16_121m_multihead_amp/"
+work_dir = "work_dirs/centerpoint_1_7_multihead/" + _base_.dataset_type + "/second_secfpn_4xb16_121m_base_amp_4x_multihead/"
 
 train_pipeline = [
     dict(
