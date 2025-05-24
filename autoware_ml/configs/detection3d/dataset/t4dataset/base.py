@@ -15,6 +15,7 @@ info_test_file_name = "t4dataset_base_infos_test.pkl"
 dataset_version_config_root = "autoware_ml/configs/t4dataset/"
 dataset_version_list = [
     "db_j6gen2_v1",
+    "db_j6gen2_v1_1",
     "db_j6gen2_v2",
     "db_largebus_v1",
     "db_jpntaxi_v1",
@@ -108,6 +109,7 @@ name_mapping = {
     "fire_truck": "truck",
     "semi_trailer": "trailer",
     "tractor_unit": "truck",
+    "construction_vehicle": "truck",
 }
 
 class_names = [
@@ -147,18 +149,4 @@ camera_panels = [
     "data/CAM_BACK_RIGHT",
 ]
 
-# Add filter attributes
-filter_attributes = [
-    ("vehicle.bicycle", "vehicle_state.parked"),
-    ("vehicle.bicycle", "cycle_state.without_rider"),
-    ("vehicle.bicycle", "motorcycle_state.without_rider"),
-    ("vehicle.motorcycle", "vehicle_state.parked"),
-    ("vehicle.motorcycle", "cycle_state.without_rider"),
-    ("vehicle.motorcycle", "motorcycle_state.without_rider"),
-    ("bicycle", "vehicle_state.parked"),
-    ("bicycle", "cycle_state.without_rider"),
-    ("bicycle", "motorcycle_state.without_rider"),
-    ("motorcycle", "vehicle_state.parked"),
-    ("motorcycle", "cycle_state.without_rider"),
-    ("motorcycle", "motorcycle_state.without_rider"),
-]
+filter_attributes = []
