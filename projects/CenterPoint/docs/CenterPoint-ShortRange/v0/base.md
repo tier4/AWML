@@ -69,7 +69,7 @@
   - Training dataset: DB JPNTAXI v1.0 + DB JPNTAXI v2.0 + DB JPNTAXI v4.0 + DB GSM8 v1.0 + DB J6 v1.0 + DB J6 v2.0 + DB J6 v3.0 + DB J6 v5.0 + DB J6 Gen2 v1.0 (total frames: 49,605)
   - [Config file path](hhttps://github.com/tier4/AWML/blob/c625cd745e5ea7b46f7f7818266b3901981ba4f6/autoware_ml/configs/detection3d/dataset/t4dataset/base.py)
   - Deployed onnx model and ROS parameter files [[WebAuto (for internal)]](https://evaluation.tier4.jp/evaluation/mlpackages/7156b453-2861-4ae9-b135-e24e48cc9029/releases/96f8e314-cbbc-47ca-9bc0-b73fc48377f3?project_id=zWhWRzei)
-  - Deployed onnx and ROS parameter files [[model-zoo]]
+  - Deployed onnx and ROS parameter files [model-zoo]
     - [detection_class_remapper.param.yaml](https://download.autoware-ml-model-zoo.tier4.jp/autoware-ml/models/centerpoint/centerpoint-shortrange/t4base/v1.0/detection_class_remapper.param.yaml)
     - [centerpoint_t4base_ml_package.param.yaml](https://download.autoware-ml-model-zoo.tier4.jp/autoware-ml/models/centerpoint/centerpoint-shortrange/t4base/v1.0/centerpoint_t4base_ml_package.yaml)
     - [deploy_metadata.yaml](https://download.autoware-ml-model-zoo.tier4.jp/autoware-ml/models/centerpoint/centerpoint-shortrange/t4base/v1.0/deploy_metadata.yaml)
