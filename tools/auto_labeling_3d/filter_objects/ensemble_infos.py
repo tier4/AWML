@@ -7,7 +7,6 @@ from typing import Any, Dict, List
 from mmengine.config import Config
 from mmengine.registry import TASK_UTILS, init_default_scope
 
-from tools.auto_labeling_3d.filter_objects.ensemble.ensemble_model import EnsembleModel
 from tools.auto_labeling_3d.filter_objects.filter_objects import filter_result
 from tools.auto_labeling_3d.utils.logger import setup_logger
 
@@ -35,7 +34,7 @@ def apply_ensemble(
         logger.info(f"  - {group}")
 
     ensemble_cfg["logger"] = logger
-    ensemble_model: EnsembleModel = TASK_UTILS.build(ensemble_cfg)
+    ensemble_model = TASK_UTILS.build(ensemble_cfg)
     return ensemble_model.ensemble(predicted_result_infos)
 
 
