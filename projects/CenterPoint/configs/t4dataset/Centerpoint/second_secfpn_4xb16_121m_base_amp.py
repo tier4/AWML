@@ -7,6 +7,7 @@ custom_imports = dict(imports=["projects.CenterPoint.models"], allow_failed_impo
 custom_imports["imports"] += _base_.custom_imports["imports"]
 custom_imports["imports"] += ["autoware_ml.detection3d.datasets.transforms"]
 custom_imports["imports"] += ["autoware_ml.hooks"]
+custom_imports["imports"] += ["autoware_ml.backends.mlflowbackend"]
 
 # This is a base file for t4dataset, add the dataset config.
 # type, data_root and ann_file of data.train, data.val and data.test
@@ -218,7 +219,7 @@ model = dict(
         type="Det3DDataPreprocessor",
         voxel=True,
         voxel_layer=dict(
-            max_num_points=20,
+            max_num_points=32,
             voxel_size=voxel_size,
             point_cloud_range=point_cloud_range,
             max_voxels=(64000, 64000),
@@ -270,9 +271,9 @@ model = dict(
             post_center_range=[-200.0, -200.0, -10.0, 200.0, 200.0, 10.0],
             out_size_factor=out_size_factor,
         ),
-        # sigmoid(-9.2103) = 0.0001 for initial small values
-        separate_head=dict(type="CustomSeparateHead", init_bias=-9.2103, final_kernel=1),
-        loss_cls=dict(type="mmdet.GaussianFocalLoss", reduction="none", loss_weight=1.0),
+        # sigmoid(-4.595) = 0.01 for initial small values
+        separate_head=dict(type="CustomSeparateHead", init_bias=-4.595, final_kernel=1),
+        loss_cls=dict(type="mmdet.AmpGaussianFocalLoss", reduction="none", loss_weight=1.0),
         loss_bbox=dict(type="mmdet.L1Loss", reduction="mean", loss_weight=0.25),
         norm_bbox=True,
     ),
@@ -356,16 +357,18 @@ val_cfg = dict()
 test_cfg = dict()
 
 optimizer = dict(type="AdamW", lr=lr, weight_decay=0.01)
-clip_grad = dict(max_norm=35, norm_type=2)
+clip_grad = dict(max_norm=15, norm_type=2)  # max norm of gradients upper bound to be 15 since amp is used
 
 optim_wrapper = dict(
     type="AmpOptimWrapper",
     dtype="float16",
     optimizer=optimizer,
     clip_grad=clip_grad,
+    # Update it accordingly
     loss_scale={
-        "growth_interval": 400
-    },  # Can update it accordingly, 400 is about half of an epoch for this experiment
+        "init_scale": 2.0**8,  # intial_scale: 256
+        "growth_interval": 2000,
+    },
 )
 
 # Default setting for scaling LR automatically
@@ -382,6 +385,14 @@ if train_gpu_size > 1:
 vis_backends = [
     dict(type="LocalVisBackend"),
     dict(type="TensorboardVisBackend"),
+    # Update info accordingly
+    dict(
+        type="SafeMLflowVisBackend",
+        exp_name="(UserName) CenterPoint",
+        run_name="CenterPoint base",
+        tracking_uri="http://localhost:5000",
+        artifact_suffix=(),
+    ),
 ]
 visualizer = dict(type="Det3DLocalVisualizer", vis_backends=vis_backends, name="visualizer")
 
@@ -393,4 +404,5 @@ default_hooks = dict(
 
 custom_hooks = [
     dict(type="MomentumInfoHook"),
+    dict(type="LossScaleInfoHook"),
 ]
