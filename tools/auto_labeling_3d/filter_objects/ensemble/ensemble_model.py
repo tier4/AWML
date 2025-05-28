@@ -112,7 +112,7 @@ class EnsembleModel:
         for frame_data in zip(*all_data_list):
             merged_frame = self._ensemble_frame(
                 frame_data,
-                _nms_ensemble,
+                ensemble_function=_nms_ensemble,
                 ensemble_label_groups=self.settings["ensemble_label_groups"],
                 class_name_to_id=class_name_to_id,
             )
