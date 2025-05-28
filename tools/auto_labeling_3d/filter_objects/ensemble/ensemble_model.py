@@ -15,14 +15,16 @@ class ModelInstances:
     instances: List[Dict[str, Any]]
     weight: float
     skip_box_threshold: float
+    class_name_to_id: Dict[str, int]
 
     def filter_and_weight_instances(
-        self, target_label: Optional[Any] = None
+        self,
+        target_label_names: List[str],
     ) -> Tuple[List[Dict[str, Any]], np.ndarray, np.ndarray]:
         """Filter instances by label and score, and apply weight.
 
         Args:
-            target_label: If provided, only return instances with this label.
+            target_label_names: List of target label names.
 
         Returns:
             Tuple containing:
@@ -36,7 +38,10 @@ class ModelInstances:
 
         for instance in self.instances:
             # Filter by label if provided
-            if target_label is not None and instance["bbox_label_3d"] != target_label:
+            target_label_ids: List[int] = [
+                self.class_name_to_id[target_label_name] for target_label_name in target_label_names
+            ]
+            if instance["bbox_label_3d"] not in target_label_ids:
                 continue
 
             # Filter by score threshold
@@ -84,9 +89,6 @@ class EnsembleModel:
         self.settings = ensemble_setting
         self.logger = logger
 
-        # labels for mmdet3d, e.g, [0, 1, 2, 3, 4]
-        self.all_labels = [i for i, label in enumerate(self.settings["label"])]
-
     def ensemble(self, results: List[Dict[str, Any]]) -> Dict[str, Any]:
         """Ensemble and integrate results from all models."""
         if len(results) == 1:
@@ -94,54 +96,70 @@ class EnsembleModel:
         # Check if the number of weights matches the number of results
         assert len(self.settings["weights"]) == len(results), "Number of weights must match number of models"
 
-        merged_results = []
-        # Process each frame
-        for frame_results in zip(*[r["data_list"] for r in results]):
-            # Process single frame
-            merged_frame = self._ensemble_frame(frame_results, _nms_ensemble, self.all_labels)
-            merged_results.append(merged_frame)
+        # Merge class metainfo from all models
+        all_metainfo = [r["metainfo"] for r in results]
+        merged_metainfo = _merge_class_metainfo(all_metainfo)
 
-        return {"metainfo": results[0]["metainfo"], "data_list": merged_results}
+        # Create mapping from class name to class id
+        class_name_to_id = {class_name: class_id for class_id, class_name in enumerate(merged_metainfo["classes"])}
 
-    def _ensemble_frame(self, frame_results, ensemble_function, all_labels):
+        # Merge data_list from all models
+        all_data_list = [r["data_list"] for r in results]
+        merged_data_list = []
+        for frame_data in zip(*all_data_list):
+            merged_frame = self._ensemble_frame(
+                frame_data,
+                _nms_ensemble,
+                ensemble_label_groups=self.settings["ensemble_label_groups"],
+                class_name_to_id=class_name_to_id,
+            )
+            merged_data_list.append(merged_frame)
+
+        return {"metainfo": merged_metainfo, "data_list": merged_data_list}
+
+    def _ensemble_frame(
+        self, frame_results, ensemble_function, ensemble_label_groups, class_name_to_id
+    ) -> Dict[str, Any]:
         """Process a single frame's ensemble.
 
         Args:
             frame_results: List of results for a single frame from different models
             ensemble_function: Function to use for ensembling
-            all_labels: Set of all labels across all models
+            ensemble_label_groups: List of label name groups. Each group is processed as one ensemble unit.
+                e.g. [["car", "truck", "bus"], ["pedestrian", "bicycle"]]
+            class_name_to_id: Dictionary mapping class names to their corresponding class IDs.
 
         Returns:
-            Merged frame data
+            Merged frame result.
         """
         # Copy metadata from the first result
-        merged_frame = frame_results[0].copy()
-        merged_instances = []
+        merged_frame: Dict[str, Any] = frame_results[0].copy()
+        merged_frame["instances"] = {}
+        merged_instances: List[Dict[str, Any]] = []
+
+        model_instances_list: List[ModelInstances] = []
+        for model_idx, frame in enumerate(frame_results):
+            instances: List[Dict[str, Any]] = frame.get("pred_instances_3d", [])
+
+            model_instances_list.append(
+                ModelInstances(
+                    model_id=model_idx,
+                    instances=instances,
+                    weight=self.settings["weights"][model_idx],
+                    skip_box_threshold=self.settings["skip_box_threshold"],
+                    class_name_to_id=class_name_to_id,
+                )
+            )
+        if len(model_instances_list) == 0:
+            raise ValueError("model_instances_list is empty")
 
         # Group instances by label and ensemble
-        for label in all_labels:
-            # Collect instances from each model for this label
-            model_instances_list = []
-            for model_idx, frame in enumerate(frame_results):
-                instances = frame.get("pred_instances_3d", [])
-
-                model_instances_list.append(
-                    ModelInstances(
-                        model_id=model_idx,
-                        instances=instances,
-                        weight=self.settings["weights"][model_idx],
-                        skip_box_threshold=self.settings["skip_box_threshold"],
-                    )
-                )
-
-            if len(model_instances_list) == 0:
-                raise ValueError("model_instances_list is empty")
-
+        for label_group in ensemble_label_groups:
             # Call ensemble function with instances by model
-            merged_instances_by_label = ensemble_function(
+            merged_instances_by_label: List[Dict[str, Any]] = ensemble_function(
                 model_instances_list,
-                label,
-                self.settings["iou_threshold"],
+                target_label_names=label_group,
+                iou_threshold=self.settings["iou_threshold"],
             )
 
             # All instances already have the label
@@ -151,16 +169,62 @@ class EnsembleModel:
         return merged_frame
 
 
+def _merge_class_metainfo(metainfo_list: List[Dict[str, Any]]) -> Dict[str, Any]:
+    """Merge class metainfo from multiple models.
+
+    Args:
+        metainfo_list: List of metainfo dictionaries from multiple models.
+            Each dictionary should contain 'classes' key with a list of class names
+            and optionally a 'version' key.
+
+    Returns:
+        Dict[str, Any]: Merged metainfo containing combined classes and version.
+            The 'classes' key contains a list of unique class names.
+            The 'version' key is taken from the first metainfo if available.
+
+    Example:
+        >>> metainfo_list = [
+        ...     {
+        ...         'classes': ['car', 'truck', 'bus', 'bicycle', 'pedestrian'],
+        ...         'version': 't4x2_pseudo'
+        ...     },
+        ...     {
+        ...         'classes': ['cone'],
+        ...         'version': 't4x2_pseudo'
+        ...     }
+        ... ]
+        >>> _merge_class_metainfo(metainfo_list)
+        {
+            'classes': ['car', 'truck', 'bus', 'bicycle', 'pedestrian', 'cone'],
+            'version': 't4x2_pseudo'
+        }
+    """
+    merged_metainfo: Dict[str, Any] = {}
+
+    # Combine all classes using set for efficient duplicate removal
+    all_classes: set[str] = set()
+    for metainfo in metainfo_list:
+        if "classes" in metainfo:
+            all_classes.update(metainfo["classes"])
+    merged_metainfo["classes"] = list(all_classes)
+
+    # Use version from the first metainfo
+    if metainfo_list and "version" in metainfo_list[0]:
+        merged_metainfo["version"] = metainfo_list[0]["version"]
+
+    return merged_metainfo
+
+
 def _nms_ensemble(
     model_instances_list: List[ModelInstances],
-    label: Any,
+    target_label_names: List[str],
     iou_threshold: float,
 ) -> List[Dict]:
     """NMS-based ensemble for 3D bounding boxes.
 
     Args:
         model_instances_list: List of ModelInstances containing instances from each model.
-        label: The label for filtering.
+        target_label_names: List of target label names.
         iou_threshold: IoU threshold for suppression.
 
     Returns:
@@ -173,7 +237,7 @@ def _nms_ensemble(
 
     for model_instances in model_instances_list:
         # Apply filtering and weighting with label filter
-        instances, boxes, scores = model_instances.filter_and_weight_instances(target_label=label)
+        instances, boxes, scores = model_instances.filter_and_weight_instances(target_label_names=target_label_names)
 
         # Add results to our collections
         if len(instances) > 0:
@@ -185,8 +249,8 @@ def _nms_ensemble(
         return []
 
     # Combine all boxes and scores
-    boxes = np.vstack(all_boxes)
-    scores = np.concatenate(all_scores)
+    boxes: np.ndarray = np.vstack(all_boxes)
+    scores: np.ndarray = np.concatenate(all_scores)
 
     # Apply NMS
     keep_indices = _nms_indices(boxes, scores, iou_threshold)
@@ -206,18 +270,18 @@ def _nms_indices(boxes: np.ndarray, scores: np.ndarray, iou_threshold: float) ->
     Returns:
         List of indices for boxes to keep.
     """
-    order = scores.argsort()[::-1]
-    keep_indices = []
+    order: np.ndarray = scores.argsort()[::-1]
+    keep_indices: List[int] = []
 
     while order.size > 0:
         i = order[0]
         keep_indices.append(i)
         if order.size == 1:
             break
-        remaining_boxes = boxes[order[1:]]
-        ious = _calculate_iou(boxes[i], remaining_boxes)
-        inds = np.where(ious <= iou_threshold)[0]
-        order = order[inds + 1]
+        remaining_boxes: np.ndarray = boxes[order[1:]]
+        ious: np.ndarray = _calculate_iou(boxes[i], remaining_boxes)
+        inds: np.ndarray = np.where(ious <= iou_threshold)[0]
+        order: np.ndarray = order[inds + 1]
 
     return keep_indices
 
@@ -233,7 +297,7 @@ def _calculate_iou(box: np.ndarray, boxes: np.ndarray) -> np.ndarray:
         Array of IoU values.
     """
 
-    def calculate_bev_iou(box1, box2):
+    def calculate_bev_iou(box1: np.ndarray, box2: np.ndarray) -> float:
         x1, y1 = box1[0], box1[1]
         dx1, dy1 = box1[3], box1[4]
 
@@ -256,7 +320,7 @@ def _calculate_iou(box: np.ndarray, boxes: np.ndarray) -> np.ndarray:
 
         return intersection / union
 
-    ious = np.zeros(len(boxes))
+    ious: np.ndarray = np.zeros(len(boxes))
     for i, other_box in enumerate(boxes):
         ious[i] = calculate_bev_iou(box, other_box)
 
