@@ -97,15 +97,18 @@ class EnsembleModel:
         assert len(self.settings["weights"]) == len(results), "Number of weights must match number of models"
 
         # Merge class metainfo from all models
-        all_metainfo = [r["metainfo"] for r in results]
-        merged_metainfo = _merge_class_metainfo(all_metainfo)
+        all_metainfo: List[Dict[str, Any]] = [r["metainfo"] for r in results]
+        merged_metainfo: Dict[str, Any] = _merge_class_metainfo(all_metainfo)
 
         # Create mapping from class name to class id
         class_name_to_id = {class_name: class_id for class_id, class_name in enumerate(merged_metainfo["classes"])}
 
+        # Remap class IDs in all results
+        remapped_results: List[Dict[str, Any]] = _remap_class_ids(results, class_name_to_id)
+
         # Merge data_list from all models
-        all_data_list = [r["data_list"] for r in results]
-        merged_data_list = []
+        all_data_list: List[List[Dict[str, Any]]] = [r["data_list"] for r in remapped_results]
+        merged_data_list: List[Dict[str, Any]] = []
         for frame_data in zip(*all_data_list):
             merged_frame = self._ensemble_frame(
                 frame_data,
@@ -213,6 +216,71 @@ def _merge_class_metainfo(metainfo_list: List[Dict[str, Any]]) -> Dict[str, Any]
         merged_metainfo["version"] = metainfo_list[0]["version"]
 
     return merged_metainfo
+
+
+def _remap_class_ids(results: List[Dict[str, Any]], new_name_to_id: Dict[str, int]) -> List[Dict[str, Any]]:
+    """Remap class IDs of instances using new class name to ID mapping.
+
+    Args:
+        results: List of result dictionaries, each containing metainfo and data_list.
+        new_name_to_id: Dictionary mapping class names to their corresponding class IDs.
+
+    Returns:
+        List[Dict[str, Any]]: Updated results with remapped class IDs.
+    """
+
+    def _remap_class_id_in_instance(
+        instance: Dict[str, Any], old_id_to_name: Dict[int, str], new_name_to_id: Dict[str, int]
+    ) -> Dict[str, Any]:
+        """Remap class ID in a single instance using the new mapping.
+
+        Args:
+            instance: Instance dictionary containing bbox_label_3d.
+            old_id_to_name: Dictionary mapping old class IDs to class names.
+
+        Returns:
+            Dict[str, Any]: Updated instance with remapped class ID.
+        """
+        converted = instance.copy()
+        old_class_id = converted["bbox_label_3d"]
+        class_name = old_id_to_name[old_class_id]
+        converted["bbox_label_3d"] = new_name_to_id[class_name]
+        return converted
+
+    def _remap_class_ids_in_result(result: Dict[str, Any], new_name_to_id: Dict[str, int]) -> Dict[str, Any]:
+        """Remap class IDs in a single result.
+
+        Args:
+            result: Result dictionary containing metainfo and data_list.
+
+        Returns:
+            Dict[str, Any]: Updated result with remapped class IDs.
+        """
+        # Create reverse mapping (old_id -> class_name) from result's metainfo
+        old_classes: List[str] = result["metainfo"]["classes"]
+        old_id_to_name: Dict[int, str] = {i: class_name for i, class_name in enumerate(old_classes)}
+
+        updated_result = result.copy()
+        updated_data_list = []
+
+        for frame_data in result["data_list"]:
+            updated_frame = frame_data.copy()
+            old_instances = updated_frame.get("pred_instances_3d", [])
+
+            # Create new instances with updated class IDs
+            updated_instances = [
+                _remap_class_id_in_instance(instance, old_id_to_name, new_name_to_id) for instance in old_instances
+            ]
+
+            updated_frame["pred_instances_3d"] = updated_instances
+            updated_data_list.append(updated_frame)
+
+        updated_result["metainfo"]["classes"] = list(new_name_to_id.keys())
+        updated_result["data_list"] = updated_data_list
+        return updated_result
+
+    # Update class IDs in each result
+    return [_remap_class_ids_in_result(result, new_name_to_id) for result in results]
 
 
 def _nms_ensemble(
