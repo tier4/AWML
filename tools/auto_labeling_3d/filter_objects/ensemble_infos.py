@@ -17,14 +17,24 @@ def apply_ensemble(
     """
     Args:
         ensemble_cfg (Dict[str, Any]): config for ensemble model.
+            Must contain ensemble_label_groups in ensemble_setting.
         predicted_result_infos (List[Dict[str, Any]]): List of info dict that contains predicted result.
         logger (logging.Logger): Logger instance for output messages.
 
     Returns:
         Dict[str, Any]: Ensembled info dict
     """
+    # Validate ensemble_label_groups configuration
+    if "ensemble_setting" not in ensemble_cfg or "ensemble_label_groups" not in ensemble_cfg["ensemble_setting"]:
+        raise ValueError("ensemble_label_groups must be specified in ensemble_setting")
+
+    # Log ensemble groups for debugging
+    logger.info("Ensemble label groups:")
+    for group in ensemble_cfg["ensemble_setting"]["ensemble_label_groups"]:
+        logger.info(f"  - {group}")
+
     ensemble_cfg["logger"] = logger
-    ensemble_model: EnsembleModel = TASK_UTILS.build(ensemble_cfg)
+    ensemble_model = TASK_UTILS.build(ensemble_cfg)
     return ensemble_model.ensemble(predicted_result_infos)
 
 

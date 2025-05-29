@@ -1,3 +1,3 @@
-from .ensemble_model import EnsembleModel
+from .nms_ensemble_model import NMSEnsembleModel
 
-__all__ = ["EnsembleModel"]
+__all__ = ["NMSEnsembleModel"]

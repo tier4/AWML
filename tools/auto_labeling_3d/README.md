@@ -153,11 +153,10 @@ bevfusion_pipeline = [
 filter_pipelines = dict(
     type="Ensemble",
     config=dict(
-        type="EnsembleModel",
+        type="NMSEnsembleModel",
         ensemble_setting=dict(
             weights=[1.0, 1.0],
             iou_threshold=0.55,
-            skip_box_threshold=0.0,
         ),
     ),
     inputs=[
