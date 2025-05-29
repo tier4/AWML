@@ -82,18 +82,14 @@ class BaseEnsembleModel(ABC):
         # Check if the number of weights matches the number of results
         assert len(self.settings["weights"]) == len(results), "Number of weights must match number of models"
 
-        # Merge class metainfo from all models
-        all_metainfo: List[Dict[str, Any]] = [r["metainfo"] for r in results]
-        merged_metainfo: Dict[str, Any] = _merge_class_metainfo(all_metainfo)
-
-        # Create mapping from class name to class id
-        class_name_to_id = {class_name: class_id for class_id, class_name in enumerate(merged_metainfo["classes"])}
-
-        # Remap class IDs in all results
-        remapped_results: List[Dict[str, Any]] = _remap_class_ids(results, class_name_to_id)
+        # Align label spaces across multiple models
+        aligned_results = align_label_spaces(results)
 
         # Merge data_list from all models
-        all_data_list: List[List[Dict[str, Any]]] = [r["data_list"] for r in remapped_results]
+        all_data_list: List[List[Dict[str, Any]]] = [r["data_list"] for r in aligned_results]
+        class_name_to_id: Dict[str, int] = {
+            class_name: class_id for class_id, class_name in enumerate(aligned_results[0]["metainfo"]["classes"])
+        }
         merged_data_list: List[Dict[str, Any]] = []
         for frame_data in zip(*all_data_list):
             merged_frame = self._ensemble_frame(
@@ -104,7 +100,7 @@ class BaseEnsembleModel(ABC):
             )
             merged_data_list.append(merged_frame)
 
-        return {"metainfo": merged_metainfo, "data_list": merged_data_list}
+        return {"metainfo": aligned_results[0]["metainfo"], "data_list": merged_data_list}
 
     def _ensemble_frame(
         self, frame_results, ensemble_function, ensemble_label_groups, class_name_to_id
@@ -156,6 +152,35 @@ class BaseEnsembleModel(ABC):
 
         merged_frame["pred_instances_3d"] = merged_instances
         return merged_frame
+
+
+def align_label_spaces(results: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+    """Align label spaces across multiple models.
+
+    Each model has its own label space (class definitions and IDs),
+    so we need to align them into a common space before ensemble.
+
+    Args:
+        results: List of results from each model.
+
+    Returns:
+        List[Dict[str, Any]]: Results with aligned label spaces.
+    """
+    # Merge metainfo from all models to create unified label space
+    all_metainfo = [r["metainfo"] for r in results]
+    merged_metainfo = _merge_class_metainfo(all_metainfo)
+
+    # Create mapping in the unified label space
+    class_name_to_id = {class_name: class_id for class_id, class_name in enumerate(merged_metainfo["classes"])}
+
+    # Convert results to the unified label space
+    aligned_results = _remap_class_ids(results, class_name_to_id)
+
+    # Update metainfo
+    for result in aligned_results:
+        result["metainfo"] = merged_metainfo
+
+    return aligned_results
 
 
 def _merge_class_metainfo(metainfo_list: List[Dict[str, Any]]) -> Dict[str, Any]:
