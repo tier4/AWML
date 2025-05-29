@@ -4,18 +4,17 @@
 
 ### Design
 
-- 新しいensemble modelを追加する場合は，[How to add new ensemble model](#how-to-add-new-ensemble-model)に書かれている通り，EnsembleModelとModelInstancesを実装すれば良い．
-- 複数のmodelから作成された複数のinfosを取り扱うために，label spaceをalignしている．align方法は[The way to align label space](#the-way-to-align-label-space)を参照．
-- ensembleをlabel groupごとに行っている．label groupの指定方法については[ensemble_label_groups](#ensemble_label_groups)を参照．
+- To add a new ensemble model, implement `EnsembleModel` and `ModelInstances` as described in [How to add new ensemble model](#how-to-add-new-ensemble-model).
+- Label spaces are aligned to handle multiple outputs from different models. For details, refer to [The way to align label space](#the-way-to-align-label-space).
+- Ensemble operations are executed per label group. For label group configuration, see [ensemble_label_groups](#ensemble_label_groups).
 
 ### How to add new ensemble model
 
-- EnsembleModelを実装
-  - BaseEnsembleModelを継承
-  - ensemble_functionを実装
-  - model_instances_typeを変更
-- ModelInstancesを実装
-  - BaseModelInstancesを継承
+- Implement `EnsembleModel`
+  - Inherit from `BaseEnsembleModel`
+  - Implement `ensemble_function()`
+- Implement `ModelInstances`
+  - Inherit from `BaseModelInstances`
 
 ```mermaid
 classDiagram
@@ -36,19 +35,19 @@ classDiagram
 
 #### ensemble_function
 
-- ensembleの方法を含む関数．
-- testしやすいように，純粋関数で実装する．
+- Function containing the ensemble logic
+- Implement as a pure function for better testability
 
 #### ModelInstances
 
-- 各modelの推論結果であるinstancesを管理するclass.
-  - ensemble前に，各instanceのconfidenceを，wight * confidenceにしたい場合や，label_groupに応じてinstanceをfilter場合がある．全instanceに対するfor文での処理を行いたいときには，ModelInstancesにメンバ関数を実装する．
-　- 「modelごとに，confidence scoreにかけるweightが違う」という状況に対応するため，modelごとにinstancesを管理させる．
-- modelごとの情報を基に，instanceを処理したい場合は，ModelIntancesにメンバ関数を実装し，ensemble_functionでそのメンバ関数を呼び出す．これにより，model出力ごとのparameteに応じてinstances全体を処理できる．
-  - e.g. intsanceのconfidence scoreにweightをかけていく．weightはmodelごとに異なる．
+- Class managing inference results (instances) from each model
+  - Handles pre-ensemble processing such as applying weights to confidence scores and filtering instances based on label groups
+  - Manages instances per model to support model-specific weights
+- Model-specific instance processing should be implemented as `ModelInstances` member functions and called from `ensemble_function()`
+  - Example: Applying model-specific weights to instance confidence scores
 
 ```python
-# ModelInstancesの使用例
+# Example usage of ModelInstances
 def _nms_ensemble(
     model_instances_list: List[NMSModelInstances],
     target_label_names: List[str],
@@ -57,7 +56,7 @@ def _nms_ensemble(
     ...
 
     for model_instances in model_instances_list:
-        # instanceごとに，scoreにweightをかけ，label_groupに応じてinstanceをfilterする．
+        # Apply weights to scores and filter instances based on label group
         instances, boxes, scores = model_instances.filter_and_weight_instances(target_label_names=target_label_names)
 
     ...
@@ -67,13 +66,13 @@ def _nms_ensemble(
 
 ### How to set label group
 
-- 同じlabel groupに属する物体は，ensembleのアルゴリズムにおいてmergeされうる．
+- Objects in the same label group may be merged by the ensemble algorithm
 
 #### example 1
 
-- 以下のようにlabel groupを指定すると，car, truck, busを同じlabel groupとしてensembleし，pedestrian, bicycleを同じlabel groupとしてensembleする．
-- 同じ物体に対し，car, truck, busの３つのbboxが検出され，ensembleのアルゴリズムにおいてmergeすべきと判定された場合，このbboxは一つにまとめられる．
-- carとbicycleは別のlabel groupに属するので，mergeされない．
+- With the label group configuration outlined below, 'car', 'truck', and 'bus' are ensembled into one group, while 'pedestrian' and 'bicycle' form another.
+- If an object is detected with three distinct bounding boxes—for example, one for 'car', one for 'truck', and one for 'bus'—and the ensemble algorithm determines these should be merged, they are consolidated into a single bounding box.
+- 'Car' and 'bicycle' belong to different label groups and are therefore not merged.
 
 ```python
 ensemble_label_groups = [
@@ -84,8 +83,8 @@ ensemble_label_groups = [
 
 #### example 2
 
-- 以下のようにlabel groupを指定すると，car, truck, bus，pedestrian, bicycleを別々にensembleする．
-- carとtruckは別々のlabel groupに属するので，mergeされない．
+- With the label group configuration outlined below, 'car', 'truck', 'bus', 'pedestrian', and 'bicycle' are each ensembled separately.
+- 'Car' and 'truck' belong to different label groups and are therefore not merged.
 
 ```python
 ensemble_label_groups=[
@@ -99,14 +98,14 @@ ensemble_label_groups=[
 
 ### The way to align label space
 
-- 各model出力のinfoは，それぞれのmodelのlabel空間に準拠して作成されている．
-  - そのため，model 1は，推論結果のidが0の場合はcarを表すが，model 2の場合，推論結果のidが0の場合はpedestrianを表す，というようなことが発生する．
-  - よって，複数のmodel出力をalignする必要がある．
-- 以下のような手順で，label空間をalignしている．
-  - Step1. 各model出力metainfoをマージして，共通のlabel spaceを作成
-  - Step2. 各model出力の結果を共通のlabel spaceに準拠させる
-    - e.g. model 2はpedestrianのidが0であったとする．共通のlabel spaceではpedestrianのidが3になった場合，model 2のinfoのpedestrianのidを3に変更する．
-    - e.g. model 3はconeのidが0であったとする．共通のlabel spaceではconeのidが5になった場合，model 3のinfoのconeのidを5に変更する．
+- Each model's output follows its own label space
+  - For example, in model 1, ID 0 might represent car but in model 2, ID 0 might represent pedestrian
+  - Therefore, we need to align outputs from multiple models to a common label space
+- Label space alignment follows these steps:
+  - Step 1: Merge metainfo from all models to create a common label space
+  - Step 2: Convert each model's output to conform to the common label space
+    - Example: Change pedestrian ID from 0 to 3 in model 2's output
+    - Example: Change cone ID from 0 to 5 in model 3's output
 
 ```mermaid
 graph TD
