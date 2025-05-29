@@ -16,14 +16,12 @@ class NMSModelInstances(BaseModelInstances):
         model_id (int): Identifier for the model.
         instances (List[Dict[str, Any]]): List of instance predictions from the model.
         weight (float): Weight for this model's predictions.
-        skip_box_threshold (float): Confidence threshold for filtering.
         class_name_to_id (Dict[str, int]): Mapping from class names to class IDs.
     """
 
     model_id: int
     instances: List[Dict[str, Any]]
     weight: float
-    skip_box_threshold: float
     class_name_to_id: Dict[str, int]
 
     def filter_and_weight_instances(
@@ -53,13 +51,8 @@ class NMSModelInstances(BaseModelInstances):
             if instance["bbox_label_3d"] not in target_label_ids:
                 continue
 
-            # Filter by score threshold
-            score = instance["bbox_score_3d"]
-            if score <= self.skip_box_threshold:
-                continue
-
             # Apply weight to score
-            weighted_score = float(score * self.weight)
+            weighted_score = float(instance["bbox_score_3d"] * self.weight)
 
             # Create weighted instance
             weighted_instance = instance.copy()
@@ -89,7 +82,6 @@ class NMSEnsembleModel(BaseEnsembleModel):
         ensemble_setting (Dict[str, Any]): Configuration for ensembling with:
             - weights (List[float]): Weight for each model's predictions
             - iou_threshold (float): IoU threshold for NMS
-            - skip_box_threshold (float): Confidence threshold for filtering
             - ensemble_label_groups (List[List[str]]): Groups of labels to ensemble
         logger (logging.Logger): Logger instance.
     """

@@ -131,7 +131,6 @@ class BaseEnsembleModel(ABC):
                     model_id=model_idx,
                     instances=instances,
                     weight=self.settings["weights"][model_idx],
-                    skip_box_threshold=self.settings["skip_box_threshold"],
                     class_name_to_id=class_name_to_id,
                 )
             )
