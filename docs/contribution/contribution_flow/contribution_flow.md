@@ -69,7 +69,6 @@ So you should write "how we should do" for documents assuming that users do not 
 ## 5. Test by CI/CD
 
 For now, integration test is done on local environment.
-See [test_integration](/tools/test_integration) for internal user.
 
 ## 6. Make PR
 

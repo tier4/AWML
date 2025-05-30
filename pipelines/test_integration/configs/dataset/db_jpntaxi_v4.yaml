@@ -1,7 +1,0 @@
-version: 1
-dataset_version: db-jpntaxi-3.0
-
-train: []
-val: []
-test:
-  - d7b73bd6-5b73-4511-8c8a-2dfe58ffcc86
