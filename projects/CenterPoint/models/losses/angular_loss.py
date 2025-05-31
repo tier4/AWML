@@ -27,7 +27,7 @@ def angular_loss(pred, target):
     gt_vec = F.normalize(target, dim=-1)
     
     # Cosine similarity
-    loss = torch.sum(pred_vec * gt_vec, dim=-1, keepdim=True) 
+    loss = 1 - torch.sum(pred_vec * gt_vec, dim=-1, keepdim=True) 
     return loss
 
 

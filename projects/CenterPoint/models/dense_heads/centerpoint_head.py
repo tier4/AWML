@@ -66,7 +66,7 @@ class CenterHead(_CenterHead):
         self,
         freeze_shared_conv: bool = False,
         freeze_task_heads: bool = False,
-        angular_loss = None
+        angular_loss = None,
         **kwargs,
     ):
         super(CenterHead, self).__init__(**kwargs)
