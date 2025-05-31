@@ -165,9 +165,9 @@ class CenterHead(_CenterHead):
             if self.angular_loss:
                 # [cos(theta), sin(theta)
                 # [B, max_objs, 2]
-                angular_pred = torch.cat([pred[:, :, 7], pred[:, :, 6]], dim=-1)
+                angular_pred = pred[:, :, [7, 6]]
                 # [B, max_objs, 2]
-                anguar_gt = torch.cat([target_box[:, :, 7], target_box[:, :, 6]], dim=-1)
+                angular_gt = target_box[:, :, [7, 6]]
                 
                 angular_mask = masks[task_id].unsqueeze(2).expand_as(angular_gt).float()
                 angular_weights = [1.0, 1.0]
