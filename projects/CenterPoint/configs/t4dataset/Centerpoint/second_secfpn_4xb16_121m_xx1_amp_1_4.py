@@ -1,6 +1,6 @@
 _base_ = [
     "../../../../../autoware_ml/configs/detection3d/default_runtime.py",
-    "../../../../../autoware_ml/configs/detection3d/dataset/t4dataset/base.py",
+    "../../../../../autoware_ml/configs/detection3d/dataset/t4dataset/xx1.py",
     "../../default/second_secfpn_base.py",
 ]
 custom_imports = dict(imports=["projects.CenterPoint.models"], allow_failed_imports=False)
@@ -12,8 +12,8 @@ custom_imports["imports"] += ["autoware_ml.backends.mlflowbackend"]
 # This is a base file for t4dataset, add the dataset config.
 # type, data_root and ann_file of data.train, data.val and data.test
 point_cloud_range = [-121.60, -121.60, -3.0, 121.60, 121.60, 5.0]
-voxel_size = [0.20, 0.20, 8.0]
-grid_size = [1216, 1216, 1]  # (121.60 / 0.32 == 380, 380 * 2 == 760)
+voxel_size = [0.32, 0.32, 8.0]
+grid_size = [760, 760, 1]  # (121.60 / 0.32 == 380, 380 * 2 == 760)
 sweeps_num = 1
 input_modality = dict(
     use_lidar=True,
@@ -22,7 +22,7 @@ input_modality = dict(
     use_map=False,
     use_external=False,
 )
-out_size_factor = 4
+out_size_factor = 1
 
 backend_args = None
 # backend_args = dict(backend="disk")
@@ -41,14 +41,14 @@ eval_class_range = {
 
 # user setting
 data_root = "data/t4dataset/"
-info_directory_path = "info/kokseang_1_7/"
+info_directory_path = "info/kokseang_1_6/"
 train_gpu_size = 4
 train_batch_size = 16
 test_batch_size = 2
 num_workers = 32
 val_interval = 5
 max_epochs = 50
-work_dir = "work_dirs/centerpoint_1_7_multihead/" + _base_.dataset_type + "/second_secfpn_4xb16_121m_base_amp_4x_multihead/"
+work_dir = "work_dirs/centerpoint_1_4/" + _base_.dataset_type + "/second_secfpn_4xb16_121m_xx1_amp/"
 
 train_pipeline = [
     dict(
@@ -219,7 +219,7 @@ model = dict(
         type="Det3DDataPreprocessor",
         voxel=True,
         voxel_layer=dict(
-            max_num_points=32,
+            max_num_points=20,
             voxel_size=voxel_size,
             point_cloud_range=point_cloud_range,
             max_voxels=(64000, 64000),
@@ -245,7 +245,7 @@ model = dict(
         in_channels=32,
         out_channels=[64, 128, 256],
         layer_nums=[3, 5, 5],
-        layer_strides=[2, 2, 2],
+        layer_strides=[1, 2, 2],
         norm_cfg=dict(type="BN", eps=1e-3, momentum=0.01),
         conv_cfg=dict(type="Conv2d", bias=False),
     ),
@@ -253,7 +253,7 @@ model = dict(
         type="SECONDFPN",
         in_channels=[64, 128, 256],
         out_channels=[128, 128, 128],
-        upsample_strides=[0.5, 1, 2],
+        upsample_strides=[1, 2, 4],
         norm_cfg=dict(type="BN", eps=0.001, momentum=0.01),
         upsample_cfg=dict(type="deconv", bias=False),
         use_conv_for_no_stride=True,
@@ -262,11 +262,7 @@ model = dict(
         type="CenterHead",
         in_channels=sum([128, 128, 128]),
         tasks=[
-            dict(num_class=1, class_names=["car"]),
-            dict(num_class=1, class_names=["truck"]),
-            dict(num_class=1, class_names=["bus"]),
-            dict(num_class=1, class_names=["bicycle"]),
-            dict(num_class=1, class_names=["pedestrian"]),
+            dict(num_class=5, class_names=["car", "truck", "bus", "bicycle", "pedestrian"]),
         ],
         bbox_coder=dict(
             voxel_size=voxel_size,
@@ -275,8 +271,10 @@ model = dict(
             post_center_range=[-200.0, -200.0, -10.0, 200.0, 200.0, 10.0],
             out_size_factor=out_size_factor,
         ),
-        # sigmoid(-4.595) = 0.01 for initial small values
+        # sigmoid(-9.2103) = 0.0001 for initial small values
+        # separate_head=dict(type="CustomSeparateHead", init_bias=-9.2103, final_kernel=1),
         separate_head=dict(type="CustomSeparateHead", init_bias=-4.595, final_kernel=1),
+        # loss_cls=dict(type="mmdet.GaussianFocalLoss", reduction="none", loss_weight=1.0),
         loss_cls=dict(type="mmdet.AmpGaussianFocalLoss", reduction="none", loss_weight=1.0),
         loss_bbox=dict(type="mmdet.L1Loss", reduction="mean", loss_weight=0.25),
         norm_bbox=True,
@@ -297,7 +295,6 @@ model = dict(
             voxel_size=voxel_size,
             # No filter by range
             post_center_limit_range=[-200.0, -200.0, -10.0, 200.0, 200.0, 10.0],
-            min_radius=[1.0, 1.0, 1.0, 1.0, 1.0],
         ),
     ),
 )
@@ -306,7 +303,7 @@ randomness = dict(seed=0, diff_rank_seed=False, deterministic=True)
 
 # learning rate
 # Since mmengine doesn't support OneCycleMomentum yet, we use CosineAnnealing from the default configs
-lr = 0.0001
+lr = 0.0003
 param_scheduler = [
     # learning rate scheduler
     # During the first (max_epochs * 0.3) epochs, learning rate increases from 0 to lr * 10
@@ -362,18 +359,17 @@ val_cfg = dict()
 test_cfg = dict()
 
 optimizer = dict(type="AdamW", lr=lr, weight_decay=0.01)
-clip_grad = dict(max_norm=5, norm_type=2)  # max norm of gradients upper bound to be 15 since amp is used
+clip_grad = dict(max_norm=15, norm_type=2)  # max norm of gradients upper bound to be 15 since amp is used
 
 optim_wrapper = dict(
     type="AmpOptimWrapper",
     dtype="float16",
     optimizer=optimizer,
     clip_grad=clip_grad,
-    # Update it accordingly
     loss_scale={
         "init_scale": 2.0**8,  # intial_scale: 256
         "growth_interval": 2000,
-    },
+    },  # Can update it accordingly, 400 is about half of an epoch for this experiment
 )
 
 # Default setting for scaling LR automatically
@@ -390,11 +386,10 @@ if train_gpu_size > 1:
 vis_backends = [
     dict(type="LocalVisBackend"),
     dict(type="TensorboardVisBackend"),
-    # Update info accordingly
     dict(
         type="SafeMLflowVisBackend",
-        exp_name="(KokSeangTan) CenterPoint 1.7 multihead",
-        run_name="CenterPoint 1.7 4x down with 1.7 dataset",
+        exp_name="(KokSeangTan) CenterPoint 1.4",
+        run_name="CenterPoint 1.4 xx1 with 1.6 dataset",
         tracking_uri="http://10.0.6.142:5000/",
         artifact_suffix=(),
     ),

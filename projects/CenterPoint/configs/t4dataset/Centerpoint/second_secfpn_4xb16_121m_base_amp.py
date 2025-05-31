@@ -41,14 +41,14 @@ eval_class_range = {
 
 # user setting
 data_root = "data/t4dataset/"
-info_directory_path = "info/user_name/"
+info_directory_path = "info/kokseang_1_7/"
 train_gpu_size = 4
 train_batch_size = 16
 test_batch_size = 2
 num_workers = 32
 val_interval = 5
 max_epochs = 50
-work_dir = "work_dirs/centerpoint/" + _base_.dataset_type + "/second_secfpn_4xb16_121m_base_amp/"
+work_dir = "work_dirs/centerpoint_1_7/" + _base_.dataset_type + "/second_secfpn_4xb16_121m_base_amp/"
 
 train_pipeline = [
     dict(
@@ -388,9 +388,9 @@ vis_backends = [
     # Update info accordingly
     dict(
         type="SafeMLflowVisBackend",
-        exp_name="(UserName) CenterPoint",
-        run_name="CenterPoint base",
-        tracking_uri="http://localhost:5000",
+        exp_name="(KokSeangTan) CenterPoint 1.7",
+        run_name="CenterPoint 1.7 first run",
+        tracking_uri="http://10.0.6.142:5000/",
         artifact_suffix=(),
     ),
 ]
