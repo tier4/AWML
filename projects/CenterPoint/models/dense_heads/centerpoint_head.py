@@ -66,7 +66,7 @@ class CenterHead(_CenterHead):
         self,
         freeze_shared_conv: bool = False,
         freeze_task_heads: bool = False,
-        use_angular_loss: bool = False
+        angular_loss = None
         **kwargs,
     ):
         super(CenterHead, self).__init__(**kwargs)
@@ -77,6 +77,12 @@ class CenterHead(_CenterHead):
 
         self.freeze_shared_conv = freeze_shared_conv
         self.freeze_task_heads = freeze_task_heads
+        if angular_loss is not None:
+            self.angular_loss = MODELS.build(angular_loss)
+        else:
+            self.angular_loss = None 
+
+        self._use_angular_loss = use_angular_loss
         self._freeze_parameters()
 
     def _freeze_parameters(self) -> None:
@@ -155,4 +161,19 @@ class CenterHead(_CenterHead):
             bbox_weights = mask * mask.new_tensor(code_weights)
             loss_bbox = self.loss_bbox(pred, target_box, bbox_weights, avg_factor=(num + 1e-4))
             loss_dict[f"task{task_id}.loss_bbox"] = loss_bbox
+
+            if self.angular_loss:
+                # [cos(theta), sin(theta)
+                # [B, max_objs, 2]
+                angular_pred = torch.cat([pred[:, :, 7], pred[:, :, 6]], dim=-1)
+                # [B, max_objs, 2]
+                anguar_gt = torch.cat([target_box[:, :, 7], target_box[:, :, 6]], dim=-1)
+                
+                angular_mask = masks[task_id].unsqueeze(2).expand_as(angular_gt).float()
+                angular_weights = [1.0, 1.0]
+
+                bbox_angular_weights = angular_mask * angular_mask.new_tensor(angular_weights) 
+                loss_angular = self.angular_loss(angular_pred, angular_gt, bbox_angular_weights, avg_factor=(num+1e-4))
+                loss_dict[f"task{task_id}.loss_angular"] = loss_angular
+
         return loss_dict
