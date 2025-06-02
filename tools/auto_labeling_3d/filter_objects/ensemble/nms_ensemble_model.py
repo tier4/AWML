@@ -54,12 +54,8 @@ class NMSModelInstances(BaseModelInstances):
             # Apply weight to score
             weighted_score = float(instance["bbox_score_3d"] * self.weight)
 
-            # Create weighted instance
-            weighted_instance = instance.copy()
-            weighted_instance["bbox_score_3d"] = weighted_score
-
             # Store instance, box and score
-            filtered_instances.append(weighted_instance)
+            filtered_instances.append(instance.copy())
             boxes.append(np.array(instance["bbox_3d"]))
             scores.append(weighted_score)
 
