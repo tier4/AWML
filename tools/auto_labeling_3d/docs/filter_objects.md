@@ -99,20 +99,20 @@ ensemble_label_groups=[
 ### The way to align label space
 
 - Each model's output follows its own label space
-  - For example, in model 1, ID 0 might represent car but in model 2, ID 0 might represent pedestrian
+  - For example, in model A, ID 0 might represent car but in model B, ID 0 might represent pedestrian
   - Therefore, we need to align outputs from multiple models to a common label space
 - Label space alignment follows these steps:
   - Step 1: Merge metainfo from all models to create a common label space
   - Step 2: Convert each model's output to conform to the common label space
-    - Example: Change pedestrian ID from 0 to 3 in model 2's output
+    - Example: Change pedestrian ID from 0 to 3 in model B's output
     - Example: Change cone ID from 0 to 5 in model 3's output
 
 ```mermaid
 graph TD
     subgraph Label spaces of infos from multiple models
-        A["<b>info 1</b><br>- car : 0<br>- truck : 1<br>- bus : 2<br>- pedestrian : 3<br>- bicycle : 4"]
-        B["<b>info 2</b><br>- pedestrian : 0"]
-        C["<b>info 3</b><br>- cone : 0"]
+        A["<b>info A</b><br>- car : 0<br>- truck : 1<br>- bus : 2<br>- pedestrian : 3<br>- bicycle : 4"]
+        B["<b>info B</b><br>- pedestrian : 0"]
+        C["<b>info C</b><br>- cone : 0"]
     end
 
     P["align label spaces"]
