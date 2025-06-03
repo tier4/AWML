@@ -226,3 +226,24 @@ Breaking changes are acceptable.
 The strategy provides a maintenance branch for existing model and a development branch for new algorithm.
 The maintenance branch aims to provide a stable model for operation engineers.
 The development branch aims to create new models with high performance.
+
+### The strategy for release model
+
+![](/docs/fig/model_release_2.drawio.svg)
+
+- AWML introduces an option for generating product-level models, called the `product-release model`.
+  - (step 1) Fine-tuning a base model using only the training dataset to create a product model.
+  - (step 2) Evaluating the product model using standard validation and/or test data.
+  - (step 3) Fine-tuning a new product-release model from the original base model using the full dataset (including train, val, and test splits), based on the best-performing configuration found in step 2.
+  - As `product-release model`, we call `{algorithm-name} {product-name}/X.Y.Z-release`.
+    - For example, we call "CenterPoint bus/1.1.1-release" for the product-release model of "CenterPoint bus/1.1.1".
+- Design
+  - In typical machine learning workflows, datasets are divided into train, validation, and test splits.
+    - This separation is essential to detect overfitting, assess generalization performance (i.e., performance on unseen data), and provide a reliable basis for tuning and comparison.
+    - Accordingly, only the training dataset is used for model training.
+  - However, in product-level deployment, especially in domains like autonomous driving, the goal shifts toward maximizing performance in real-world environments.
+    - In such contexts, data collection and annotation are often costly and time-consuming, and acquiring additional labeled data can be challenging.
+  - Therefore, there is a strong motivation to utilize as much available data as possible for model training.
+    - In particular, during early industrial phases where labeled data is few, if generalization performance has already been sufficiently evaluated, or if visual validation without labels is considered, it can be a viable strategy to train on the entire dataset to prioritize final model accuracy.
+  - Importantly, AWML does not provide release models for the base model.
+    - This is a deliberate design choice: in our fine-tuning strategy, the base model serves as the source for all downstream fine-tuning, and using a release model at this stage would risk data leakage.
