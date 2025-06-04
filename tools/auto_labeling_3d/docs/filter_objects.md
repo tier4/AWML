@@ -105,7 +105,7 @@ ensemble_label_groups=[
   - Step 1: Merge metainfo from all models to create a common label space
   - Step 2: Convert each model's output to conform to the common label space
     - Example: Change pedestrian ID from 0 to 3 in model B's output
-    - Example: Change cone ID from 0 to 5 in model 3's output
+    - Example: Change cone ID from 0 to 5 in model C's output
 
 ```mermaid
 graph TD
