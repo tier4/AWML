@@ -110,6 +110,8 @@ class BaseViewTransform(nn.Module):
         Nprime = B * N * D * H * W
         assert C == 3
 
+        """ frustrum_numpy = geom_feats.cpu().numpy() """
+
         # flatten indices
         geom_feats = ((geom_feats - (self.bx - self.dx / 2.0)) / self.dx).long()
         geom_feats = geom_feats.view(Nprime, 3)
@@ -129,6 +131,16 @@ class BaseViewTransform(nn.Module):
         )
 
         geom_feats = geom_feats[kept]
+
+        """ data = {}
+        data["frustum"] = frustrum_numpy
+        data["kept"] = kept.cpu().numpy()
+        import pickle
+        with open("frustum.pkl", "wb") as f:
+            pickle.dump(data, f) """
+
+        # TODO(knzo25): make this more elegant
+        D, H, W = self.nx[2], self.nx[0], self.nx[1]
 
         ranks = geom_feats[:, 0] * (W * D * B) + geom_feats[:, 1] * (D * B) + geom_feats[:, 2] * B + geom_feats[:, 3]
         indices = ranks.argsort()
@@ -152,7 +164,11 @@ class BaseViewTransform(nn.Module):
 
         assert x.shape[0] == geom_feats.shape[0]
 
-        x, geom_feats, ranks = x[indices], geom_feats[indices], ranks[indices]
+        x = x[indices]
+
+        """ import pickle
+        with open("precomputed_features.pkl", "rb") as f:
+            data = pickle.load(f) """
 
         x = bev_pool(x, geom_feats, ranks, B, self.nx[2], self.nx[0], self.nx[1], self.training)
 
@@ -318,16 +334,6 @@ class BaseDepthTransform(BaseViewTransform):
         camera2lidar_rots = camera2lidar[..., :3, :3]
         camera2lidar_trans = camera2lidar[..., :3, 3]
 
-        if camera_intrinsics_inverse is None:
-            intrins_inverse = torch.inverse(cam_intrinsic)[..., :3, :3]
-        else:
-            intrins_inverse = camera_intrinsics_inverse[..., :3, :3]
-
-        if img_aug_matrix_inverse is None:
-            post_rots_inverse = torch.inverse(img_aug_matrix)[..., :3, :3]
-        else:
-            img_aug_matrix_inverse = img_aug_matrix_inverse[..., :3, :3]
-
         if lidar_aug_matrix_inverse is None:
             lidar_aug_matrix_inverse = torch.inverse(lidar_aug_matrix)
 
@@ -401,11 +407,25 @@ class BaseDepthTransform(BaseViewTransform):
 
         if geom_feats_precomputed is not None:
             # In inference, the geom_feats are precomputed
-            geom_feats, kept, ranks, indices = geom_feats_precomputed
-            x = self.get_cam_feats(img, depth)
+            geom_feats, kept, ranks, indices, camera_mask = geom_feats_precomputed
+            x, est_depth_distr, gt_depth_distr, counts_3d = self.get_cam_feats(img, depth)
 
-            x = self.bev_pool_precomputed(x, geom_feats, kept, ranks, indices)
+            """ data = {}
+            data["img"] = img.cpu()
+            data["depth"] = depth.cpu()
+            data["x"] = x.cpu()
+            import pickle
+            with open("depth_deploy.pkl", "wb") as f:
+                pickle.dump(data, f) """
+
+            # At inference, if a camera is missing, we just mask the features
+            camera_mask = camera_mask.view(1, -1, 1, 1, 1, 1)
+
+            x = self.bev_pool_precomputed(x * camera_mask, geom_feats, kept, ranks, indices)
         else:
+            intrins_inverse = torch.inverse(cam_intrinsic)[..., :3, :3]
+            post_rots_inverse = torch.inverse(img_aug_matrix)[..., :3, :3]
+
             geom = self.get_geometry(
                 camera2lidar_rots,
                 camera2lidar_trans,
@@ -416,10 +436,61 @@ class BaseDepthTransform(BaseViewTransform):
                 extra_trans=extra_trans,
             )
 
-            x = self.get_cam_feats(img, depth)
+            # Load from the pkl
+            """ import pickle
+            with open("precomputed_features.pkl", "rb") as f:
+                data = pickle.load(f) """
+
+            x, est_depth_distr, gt_depth_distr, counts_3d = self.get_cam_feats(img, depth)
+
+            """ import pickle
+            with open("depth_deploy.pkl", "rb") as f:
+                data = pickle.load(f) """
+
             x = self.bev_pool(x, geom)
 
-        return x
+        if self.training:
+            """counts_3d_aux = counts_3d.permute(0,1,4,2,3).unsqueeze(-1)
+            gt_feats = gt_depth_distr.permute(0,1,4,2,3).unsqueeze(-1) * (counts_3d_aux > 0).float()
+            est_feats = est_depth_distr.permute(0,1,4,2,3).unsqueeze(-1)
+
+            num_cameras = gt_feats.shape[1]
+
+            gt_bev_feats = self.bev_pool_precomputed(gt_feats, geom_feats, kept, ranks, indices)
+            est_bev_feats = self.bev_pool_precomputed(est_feats, geom_feats, kept, ranks, indices)
+
+            import pickle
+            data = {}
+            data["gt_bev_feats"] = gt_bev_feats.cpu().numpy()
+            data["est_bev_feats"] = est_bev_feats.cpu().numpy()
+
+            for i in range(num_cameras):
+                gt_feats_aux = torch.zeros_like(gt_feats)
+                gt_feats_aux[:,i] = gt_feats[:,i]
+                gt_bev_feats_aux = self.bev_pool_precomputed(gt_feats_aux, geom_feats, kept, ranks, indices)
+
+                est_feats_aux = torch.zeros_like(est_feats)
+                est_feats_aux[:,i] = est_feats[:,i]
+                est_bev_feats_aux = self.bev_pool_precomputed(est_feats_aux, geom_feats, kept, ranks, indices)
+
+                data[f"gt_bev_feats_{i}"] = gt_bev_feats_aux.cpu().numpy()
+                data[f"est_bev_feats_{i}"] = est_bev_feats_aux.cpu().numpy()
+
+            with open("bev_features.pkl", "wb") as f:
+                pickle.dump(data, f)"""
+
+            mask_flat = counts_3d.sum(dim=-1).view(-1) > 0
+
+            gt_depth_distr_flat = gt_depth_distr.view(-1, self.D)
+            est_depth_distr_flat = est_depth_distr.reshape(-1, self.D)
+
+            cross_ent = -torch.sum(gt_depth_distr_flat * torch.log(est_depth_distr_flat + 1e-8), dim=-1)
+            cross_ent_masked = cross_ent * mask_flat.float()
+            depth_loss = torch.sum(cross_ent_masked) / (mask_flat.sum() + 1e-8)
+        else:
+            depth_loss = 0.0
+
+        return x, depth_loss
 
 
 @MODELS.register_module()
@@ -494,22 +565,83 @@ class DepthLSSTransform(BaseDepthTransform):
 
     def get_cam_feats(self, x, d):
         B, N, C, fH, fW = x.shape
+        h, w = self.image_size
+        BN = B * N
 
-        d = d.view(B * N, *d.shape[2:])
-        x = x.view(B * N, C, fH, fW)
+        d = d.view(BN, *d.shape[2:])
+        x = x.view(BN, C, fH, fW)
+
+        # =================== TEST
+        if self.training or True:
+            camera_id = torch.arange(BN).view(-1, 1, 1).expand(BN, h, w)
+            rows = torch.arange(h).view(1, -1, 1).expand(BN, h, w)
+            cols = torch.arange(w).view(1, 1, -1).expand(BN, h, w)
+
+            cell_j = rows // (h // fH)
+            cell_i = cols // (w // fW)
+
+            cell_id = camera_id * fH * fW + cell_j * fW + cell_i
+            cell_id = cell_id.to(device=d.device)
+
+            dist_bins = (
+                d.clamp(min=self.dbound[0], max=self.dbound[1] - 0.5 * self.dbound[2])
+                + 0.5 * self.dbound[2]
+                - self.dbound[0]
+            ) / self.dbound[2]
+            dist_bins = dist_bins.long()
+
+            flat_cell_id = cell_id.view(-1)
+            flat_dist_bin = dist_bins.view(-1)
+
+            flat_index = flat_cell_id * self.D + flat_dist_bin
+
+            counts_flat = torch.zeros(BN * fH * fW * self.D, dtype=torch.float, device=d.device)
+            counts_flat.scatter_add_(
+                0, flat_index, torch.ones_like(flat_index, dtype=torch.float, device=flat_index.device)
+            )
+
+            counts_3d = counts_flat.view(B, N, fH, fW, self.D)
+            counts_3d[..., 0] = 0.0
+
+            # mask_flat = counts_3d.sum(dim=-1).view(-1) > 0
+
+            # gt_depth_distr = torch.softmax(counts_3d, dim=-1)
+            gt_depth_distr = counts_3d / (counts_3d.sum(dim=-1, keepdim=True) + 1e-8)
+            # gt_depth_distr_flat = gt_depth_distr.view(-1, self.D)
+            # =================== TEST
+        else:
+            gt_depth_distr = None
+            counts_3d = None
 
         d = self.dtransform(d)
         x = torch.cat([d, x], dim=1)
         x = self.depthnet(x)
 
         depth = x[:, : self.D].softmax(dim=1)
+        est_depth_distr = depth.permute(0, 2, 3, 1).reshape(B, N, fH, fW, self.D)
+
+        if self.training:
+            depth_aux = gt_depth_distr.view(B * N, fH, fW, self.D).permute(0, 3, 1, 2)
+            depth = depth + (torch.maximum(depth_aux, depth) - depth).detach()
+        # Need to match the (B, N, H, W, D) order
+
+        # est_depth_distr_flat = est_depth_distr.reshape(-1, self.D)
+
+        """ import pickle
+        data = {}
+        data["gt_depth"] = gt_depth_distr.cpu().numpy()
+        data["estimated_depth"] = est_depth_distr.cpu().numpy()
+        data["counts"] = counts_3d.cpu().numpy()
+        with open("estimated_depth.pkl", "wb") as f:
+            pickle.dump(data, f) """
+
         x = depth.unsqueeze(1) * x[:, self.D : (self.D + self.C)].unsqueeze(2)
 
         x = x.view(B, N, self.C, self.D, fH, fW)
         x = x.permute(0, 1, 3, 4, 5, 2)
-        return x
+        return x, est_depth_distr, gt_depth_distr, counts_3d
 
     def forward(self, *args, **kwargs):
-        x = super().forward(*args, **kwargs)
+        x, depth_loss = super().forward(*args, **kwargs)
         x = self.downsample(x)
-        return x
+        return x, depth_loss
