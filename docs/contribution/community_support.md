@@ -13,13 +13,13 @@ The arXiv paper of AWML is [here](https://arxiv.org/abs/2506.00645).
 
 ```
 @misc{tanaka2025awmlopensourcemlbasedrobotics,
-      title={AWML: An Open-Source ML-based Robotics Perception Framework to Deploy for ROS-based Autonomous Driving Software}, 
+      title={AWML: An Open-Source ML-based Robotics Perception Framework to Deploy for ROS-based Autonomous Driving Software},
       author={Satoshi Tanaka and Samrat Thapa and Kok Seang Tan and Amadeusz Szymko and Lobos Kenzo and Koji Minoda and Shintaro Tomie and Kotaro Uetake and Guolong Zhang and Isamu Yamashita and Takamasa Horibe},
       year={2025},
       eprint={2506.00645},
       archivePrefix={arXiv},
       primaryClass={cs.RO},
-      url={https://arxiv.org/abs/2506.00645}, 
+      url={https://arxiv.org/abs/2506.00645},
 }
 ```
 
