@@ -1,12 +1,5 @@
 version: 1
 
-docs:
-  Product: XX1
-  Place: Odaiba
-  Amount: 10581 annotated images
-  Sensor: C1, C2 Camera
-  Annotation: No information available regarding annotation frequency
-
 train:
   - e6d0237c-274c-4872-acc9-dc7ea2b77943
   - 80b37b8c-ae9d-4641-a921-0b0c2012eee8
