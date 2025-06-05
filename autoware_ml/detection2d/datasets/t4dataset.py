@@ -1,10 +1,11 @@
-import yaml
 import json
 import os
 from typing import Dict, List, Optional, Sequence, Tuple
 
+import yaml
 from mmdet.datasets import BaseDetDataset, CocoDataset
 from mmdet.registry import DATASETS
+
 
 def read_json_file(file_path):
     """
@@ -31,6 +32,7 @@ def read_json_file(file_path):
 
     return {}
 
+
 @DATASETS.register_module()
 class T4Dataset(BaseDetDataset):
 
@@ -40,7 +42,7 @@ class T4Dataset(BaseDetDataset):
         *args,
         **kwargs,
     ) -> None:
-        
+
         self.test_mode = test_mode
         super().__init__(test_mode=test_mode, *args, **kwargs)
 
@@ -52,7 +54,7 @@ class T4Dataset(BaseDetDataset):
             return data_list
 
         img_id = 0
-        for data_info in data_list:           
+        for data_info in data_list:
             data_info["img_id"] = img_id
             img_id += 1
 

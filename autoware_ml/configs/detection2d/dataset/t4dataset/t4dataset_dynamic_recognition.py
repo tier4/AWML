@@ -30,7 +30,6 @@ class_mappings = {
     # 'movable_object.trafficcone': 'traffic_cone',
     "vehicle.trailer": "trailer",
     "vehicle.truck": "truck",
-
     # DBv1.0
     "vehicle.car": "car",
     "vehicle.construction": "truck",
