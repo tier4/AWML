@@ -72,7 +72,6 @@ If you want to know about `AWML`, you should read following pages.
 
 ## Supported pipelines
 
-- [Integration test for training and deployment](/pipelines/test_integration/)
 - [Use AWML with WebAuto](/pipelines/webauto/)
 - (TBD) [Project adaptation](/pipelines/project_adaptation/)
 
