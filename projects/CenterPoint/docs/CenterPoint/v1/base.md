@@ -88,14 +88,14 @@
 
 ### CenterPoint base/1.7
 - Changes:
-	- This releases add a new dataset `db_j6gen2_v1_1`
-	- Use `PillarFeatureNet` instead `BackwardPillarFeatureNet`
-	- Add new label mapping: `construction_vehicle: truck`
-	- Clip velocity in data when it exceeds a threshold, where the velocity can be abnormal
+  - This releases add a new dataset `db_j6gen2_v1_1`
+  - Use `PillarFeatureNet` instead `BackwardPillarFeatureNet`
+  - Add new label mapping: `construction_vehicle: truck`
+  - Clip velocity in data when it exceeds a threshold, where the velocity can be abnormal
 
 - Overall:
   - Slightly better overall (+0.25 mAP)
-	- Car: Almost unchanged
+  - Car: Almost unchanged
   - Truck: Slight improvement in 1.7
   - Bus: Small gain in 1.7
   - Bicycle: Minor improvement
@@ -166,9 +166,9 @@
   - It updates number of points per pillar from `20` to `32`
   - It further stabilize AMP training by:
       - Introduces `AMPGaussianFocalLoss` to prevent underflow addition in FP16 for `1e-12`
-		  - Reduce `grad_clip` from `35` to `15`
-		  - Adjust `init_scale` and `growth_interval` for `loss_scaler`
-		  - Adjust init values for hetmap bias to `-4.595`
+      - Reduce `grad_clip` from `35` to `15`
+      - Adjust `init_scale` and `growth_interval` for `loss_scaler`
+      - Adjust init values for hetmap bias to `-4.595`
   - Introduces `LossScaleInfoHook` to monitor `loss_scaler`
   - Enable `SafeMLflowVisBackend` for support MLflow
 - Overall:
