@@ -231,7 +231,6 @@ model = dict(
             deterministic=True,
         ),
     ),
-    # Use BackwardPillarFeatureNet without computing voxel center for z-dimensionality
     pts_voxel_encoder=dict(
         type="PillarFeatureNet",
         in_channels=5,
@@ -391,13 +390,13 @@ vis_backends = [
     dict(type="LocalVisBackend"),
     dict(type="TensorboardVisBackend"),
     # Update info accordingly
-    # dict(
-    #     type="SafeMLflowVisBackend",
-    #     exp_name="(UserName) CenterPoint",
-    #     run_name="CenterPoint base",
-    #     tracking_uri="http://localhost:5000",
-    #     artifact_suffix=(),
-    # ),
+    dict(
+        type="SafeMLflowVisBackend",
+        exp_name="(UserName) CenterPoint",
+        run_name="CenterPoint base",
+        tracking_uri="http://localhost:5000",
+        artifact_suffix=(),
+    ),
 ]
 visualizer = dict(type="Det3DLocalVisualizer", vis_backends=vis_backends, name="visualizer")
 

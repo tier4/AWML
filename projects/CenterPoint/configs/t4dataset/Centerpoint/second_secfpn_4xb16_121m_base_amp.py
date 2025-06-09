@@ -226,9 +226,8 @@ model = dict(
             deterministic=True,
         ),
     ),
-    # Use BackwardPillarFeatureNet without computing voxel center for z-dimensionality
     pts_voxel_encoder=dict(
-        type="BackwardPillarFeatureNet",
+        type="PillarFeatureNet",
         in_channels=4,
         feat_channels=[32, 32],
         with_distance=False,
