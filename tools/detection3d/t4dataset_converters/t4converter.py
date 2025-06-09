@@ -58,6 +58,21 @@ def get_lidar_points_info(
     )
 
 
+def _velocity_clip(velocity: NDArray, max_speed: float = 50.0) -> NDArray:
+    """
+    Normalize the velocity of the boxes.
+    Args:
+        velocity (NDArray): Velocity of the boxes.
+        boxes (NDArray): Boxes to normalize.
+    Returns:
+        NDArray: Normalized velocity.
+    """
+    speed = np.linalg.norm(velocity)
+    if speed > max_speed:
+        velocity = velocity * (max_speed / speed)
+    return velocity
+
+
 def get_lidar_sweeps_info(
     t4: Tier4,
     cs_record: CalibratedSensor,
@@ -566,7 +581,7 @@ def get_annotations(
     locs = np.array([b.position for b in boxes]).reshape(-1, 3)
     dims = np.array([b.size for b in boxes]).reshape(-1, 3)
     rots = np.array([b.rotation.yaw_pitch_roll[0] for b in boxes]).reshape(-1, 1)
-    velocity = np.array([b.velocity[:2] for b in boxes])
+    velocity = np.array([_velocity_clip(b.velocity[:2]) for b in boxes])
 
     valid_flag = np.array([anno.num_lidar_pts > 0 for anno in annotations], dtype=bool).reshape(-1)
 
