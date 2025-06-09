@@ -1,69 +1,82 @@
-# Model name
+# CenterPoint
 ## Summary
 
-- [Support priority](https://github.com/tier4/autoware-ml/blob/main/docs/design/autoware_ml_design.md#support-priority): Tier B
-- ROS package: [package_name](https://github.com/autowarefoundation/autoware.universe/tree/main/perception/)
+- [Support priority](https://github.com/tier4/AWML/blob/main/docs/design/autoware_ml_design.md#support-priority): Tier A
+- ROS package: [TODO]()
 - Supported dataset
-  - [ ] NuScenes
-  - [ ] T4dataset
+  - [x] T4dataset
+  - [x] NuScenes
 - Supported model
+  - [x] Camera-only model
 - Other supported feature
-  - [ ] Add script to make .onnx file and deploy to Autoware
-  - [ ] Add unit test
-- Limited feature
+  - [x] Add script to make .onnx file and deploy to Autoware
+  - [x] Visualization of detection results
+  - [ ] Add unit tests
 
 ## Results and models
 
-- [Deployed model](docs/deployed_model.md)
-- [Archived model](docs/archived_model.md)
-
+- StreamPetr
+  - TODO
 ## Get started
 ### 1. Setup
 
-TBD
+- [Run setup environment](../../tools/setting_environment/README.md)
+- Run docker
 
-### 2. config
+```sh
+docker run -it --rm --gpus all --shm-size=64g --name awml -v $PWD/:/workspace -v $PWD/data:/workspace/data autoware-ml
+```
+- Run setup script
 
-### 3. Train
-
-
-### 4. Evaluation
-
-```bash
-
-python3 tools/detection3d/test.py /workspace/projects/StreamPETR/configs/t4dataset/t4_xx1_vov_flash_320x800_baseline.py "/workspace/work_dirs/t4_xx1_vov_flash_320x800_baseline/best_NuScenes metric_T4Metric_mAP_epoch_33.pth"
-
+```sh
+cd projects/StreamPETR && pip install -e .
 ```
 
+### 2. Train
+
+- Run training on T4 dataset with appropriate configs
+
+```sh
+# Single GPU training
+python tools/detection3d/train.py projects/StreamPETR/configs/t4dataset/t4_base_vov_flash_480x640_baseline.py
+```
+
+```sh
+# Multi GPU training
+
+bash tools/detection3d/dist_train.sh projects/StreamPETR/configs/t4dataset/t4_base_vov_flash_480x640_baseline.py 2
+```
+
+### 3. Evaluation
+
+- Run evaluation on a test set, please select experiment config accordingly
+
+```sh
+# Evaluation for t4dataset
+python tools/detection3d/test.py projects/StreamPETR/configs/t4dataset/t4_base_vov_flash_480x640_baseline.py work_dirs/t4_base_vov_flash_480x640_baseline/epoch_35.pth
+```
+
+### 4. Visualization
+
+- Run inference and visualize bounding boxes.
+
+```sh
+# Inference for t4dataset
+python tools/detection3d/visualize_bboxes_cameraonly.py projects/StreamPETR/configs/t4dataset/t4_base_vov_flash_480x640_baseline.py work_dirs/t4_base_vov_flash_480x640_baseline/epoch_35.pth
+```
 ### 5. Deploy
 
-```bash
-python3 projects/StreamPETR/deploy/torch2onnx.py /workspace/projects/StreamPETR/configs/t4dataset/t4_xx1_vov_flash_320x800_baseline.py --section extract_img_feat --checkpoint "/workspace/work_dirs/t4_xx1_vov_flash_320x800_baseline/best_NuScenes metric_T4Metric_mAP_epoch_33.pth" 
+- Make an onnx file for a CenterPoint model
 
-python3 projects/StreamPETR/deploy/torch2onnx.py /workspace/projects/StreamPETR/configs/t4dataset/t4_xx1_vov_flash_320x800_baseline.py --section pts_head_memory --checkpoint "/workspace/work_dirs/t4_xx1_vov_flash_320x800_baseline/best_NuScenes metric_T4Metric_mAP_epoch_33.pth" 
-
-python3 projects/StreamPETR/deploy/torch2onnx.py /workspace/projects/StreamPETR/configs/t4dataset/t4_xx1_vov_flash_320x800_baseline.py --section position_embedding --checkpoint "/workspace/work_dirs/t4_xx1_vov_flash_320x800_baseline/best_NuScenes metric_T4Metric_mAP_epoch_33.pth" 
-
-
+```sh
+CONFIG_PATH=/path/to/config
+CHECKPOINT_PATH=/path/to/checkpoint
+python3 projects/StreamPETR/deploy/torch2onnx.py $CONFIG_PATH --section extract_img_feat --checkpoint $CHECKPOINT_PATH
+python3 projects/StreamPETR/deploy/torch2onnx.py $CONFIG_PATH --section pts_head_memory --checkpoint $CHECKPOINT_PATH
+python3 projects/StreamPETR/deploy/torch2onnx.py $CONFIG_PATH --section position_embedding --checkpoint $CHECKPOINT_PATH
 ```
-## Troubleshooting
 
 ## Reference
 
-# NOTES!!!
-Currently distortion is not accounted for.
-FOr the boundary of sequences, padded using first frame of the minibatch
-Since this is camera-only. We need to assert that all data comes from the same sensor suite?
-Also, Camera should be in the same order. Or maybe order should not matter, and maybe some cameras can be non-functional too, should I add that as augmentation?
-GlobalRotScaleTransImage augmentation removed for now. Cannot understand the logic behind it
-Maybe in ROSNode it is good to add a service to reset the memory at times
-Input image muse be rectified beforehand. StreamPETR node, or training pipeline wont rectify.
-# THINGS TODO
-
-- Experiment with different training strategies (in order of priority)
-  - Train with denoising
-  - Temporal training with different temporal and losses frame count
-  - Image order shuffle augmentation
-  - Larger image backbone
-  - Larger and smaller image sizes
-  
+- [StreamPETR Official](https://github.com/exiawsh/StreamPETR/tree/main)
+- [NVIDIDA DL4AGX TensorRT](https://github.com/NVIDIA/DL4AGX/tree/master/AV-Solutions/streampetr-trt)

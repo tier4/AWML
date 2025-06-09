@@ -16,7 +16,7 @@ def parse_args():
     parser.add_argument('config', help='Path to config file')
     parser.add_argument('checkpoint', help='Path to checkpoint file')
     parser.add_argument('--threshold', type=float, default=0.3, help='Score threshold for predictions')
-    parser.add_argument('--step', type=int, default=-1, help='Number of steps to visualize')
+    parser.add_argument('--step', type=int, default=120, help='Number of steps to visualize')
     parser.add_argument('--cam_order', type=list, default=[2,0,4,3,1,5], help='Camera order')
     return parser.parse_args()
 
