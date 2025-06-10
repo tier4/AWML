@@ -1,6 +1,6 @@
 _base_ = [
     "../../../../../autoware_ml/configs/detection3d/default_runtime.py",
-    "../../../../../autoware_ml/configs/detection3d/dataset/t4dataset/base.py",
+    "../../../../../autoware_ml/configs/detection3d/dataset/t4dataset/gen2_base.py",
     "../../default/second_secfpn_base.py",
 ]
 custom_imports = dict(imports=["projects.CenterPoint.models"], allow_failed_imports=False)
@@ -47,8 +47,8 @@ train_batch_size = 16
 test_batch_size = 2
 num_workers = 32
 val_interval = 5
-max_epochs = 50
-work_dir = "work_dirs/centerpoint_1_7/" + _base_.dataset_type + "/second_secfpn_4xb16_121m_base_amp/"
+max_epochs = 30
+work_dir = "work_dirs/centerpoint_1_7_1/" + _base_.dataset_type + "/second_secfpn_4xb16_121m_gen2_base_amp_z/"
 
 train_pipeline = [
     dict(
@@ -229,7 +229,8 @@ model = dict(
     ),
     # Use BackwardPillarFeatureNet without computing voxel center for z-dimensionality
     pts_voxel_encoder=dict(
-        type="BackwardPillarFeatureNet",
+        # type="BackwardPillarFeatureNet",
+        type="PillarFeatureNet",
         in_channels=4,
         feat_channels=[32, 32],
         with_distance=False,

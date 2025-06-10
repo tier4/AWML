@@ -48,7 +48,7 @@ test_batch_size = 2
 num_workers = 32
 val_interval = 5
 max_epochs = 50
-work_dir = "work_dirs/centerpoint_1_7/" + _base_.dataset_type + "/second_secfpn_4xb16_121m_base_amp/"
+work_dir = "work_dirs/centerpoint_1_7/" + _base_.dataset_type + "/second_secfpn_4xb16_121m_base_amp_z_diff/"
 
 train_pipeline = [
     dict(
@@ -229,7 +229,7 @@ model = dict(
     ),
     # Use BackwardPillarFeatureNet without computing voxel center for z-dimensionality
     pts_voxel_encoder=dict(
-        type="BackwardPillarFeatureNet",
+        type="PillarFeatureNet",
         in_channels=4,
         feat_channels=[32, 32],
         with_distance=False,
@@ -300,7 +300,7 @@ model = dict(
     ),
 )
 
-randomness = dict(seed=0, diff_rank_seed=False, deterministic=True)
+randomness = dict(seed=0, diff_rank_seed=True, deterministic=True)
 
 # learning rate
 # Since mmengine doesn't support OneCycleMomentum yet, we use CosineAnnealing from the default configs

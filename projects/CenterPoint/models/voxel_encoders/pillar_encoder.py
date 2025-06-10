@@ -2,9 +2,81 @@ from typing import List, Optional, Tuple
 
 import torch
 from mmdet3d.models.voxel_encoders.utils import PFNLayer, get_paddings_indicator
+from mmdet3d.models.voxel_encoders.pillar_encoder import PillarFeatureNet
 from mmdet3d.registry import MODELS
 from mmengine.logging import print_log
 from torch import Tensor, nn
+
+
+@MODELS.register_module()
+class CustomPillarFeatureNet(PillarFeatureNet):
+    """Pillar Feature Net.
+
+    The backward-compatible network prepares the pillar features and performs forward pass
+    through PFNLayers without features from Z-distance. Use this to load models trained
+    from older mmdet versions.
+
+    Args:
+        in_channels (int, optional): Number of input features,
+            either x, y, z or x, y, z, r. Defaults to 4.
+        feat_channels (tuple, optional): Number of features in each of the
+            N PFNLayers. Defaults to (64, ).
+        with_distance (bool, optional): Whether to include Euclidean distance
+            to points. Defaults to False.
+        with_cluster_center (bool, optional): [description]. Defaults to True.
+        with_voxel_center (bool, optional): [description]. Defaults to True.
+        voxel_size (tuple[float], optional): Size of voxels, only utilize x
+            and y size. Defaults to (0.2, 0.2, 4).
+        point_cloud_range (tuple[float], optional): Point cloud range, only
+            utilizes x and y min. Defaults to (0, -40, -3, 70.4, 40, 1).
+        norm_cfg ([type], optional): [description].
+            Defaults to dict(type='BN1d', eps=1e-3, momentum=0.01).
+        mode (str, optional): The mode to gather point features. Options are
+            'max' or 'avg'. Defaults to 'max'.
+        legacy (bool, optional): Whether to use the new behavior or
+            the original behavior. Defaults to True.
+    """
+
+    def __init__(
+        self,
+        in_channels: Optional[int] = 4,
+        feat_channels: Optional[tuple] = (64,),
+        with_distance: Optional[bool] = False,
+        with_cluster_center: Optional[bool] = True,
+        with_voxel_center: Optional[bool] = True,
+        voxel_size: Optional[Tuple[float]] = (0.2, 0.2, 4),
+        point_cloud_range: Optional[Tuple[float]] = (0, -40, -3, 70.4, 40, 1),
+        norm_cfg: Optional[dict] = dict(type="BN1d", eps=1e-3, momentum=0.01),
+        mode: Optional[str] = "max",
+        legacy: Optional[bool] = True,
+        frozen_stages: Optional[List[int]] = None,
+    ):
+
+        super(CustomPillarFeatureNet, self).__init__(
+            in_channels=in_channels,
+            feat_channels=feat_channels,
+            with_distance=with_distance,
+            with_cluster_center=with_cluster_center,
+            with_voxel_center=with_voxel_center,
+            voxel_size=voxel_size,
+            point_cloud_range=point_cloud_range,
+            norm_cfg=norm_cfg,
+            mode=mode,
+            legacy=legacy
+        )
+
+        self._frozen_stages = frozen_stages
+        self._freeze_stages()
+
+    def _freeze_stages(self):
+        """Freeze parameters in every layer/stage."""
+        if self._frozen_stages is None:
+            return
+
+        for i in self._frozen_stages:
+            for params in self.pfn_layers[i].parameters():
+                params.requires_grad = False
+            print_log(f"Freeze PillarFeatureNet stage {i}.")
 
 
 @MODELS.register_module()

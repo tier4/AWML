@@ -48,7 +48,7 @@ test_batch_size = 2
 num_workers = 32
 val_interval = 5
 max_epochs = 50
-work_dir = "work_dirs/centerpoint_1_7/" + _base_.dataset_type + "/second_secfpn_4xb16_121m_base_amp/"
+work_dir = "work_dirs/centerpoint_1_7/" + _base_.dataset_type + "/second_secfpn_4xb16_121m_base_amp_z/"
 
 train_pipeline = [
     dict(
@@ -170,6 +170,7 @@ val_dataloader = dict(
         backend_args=backend_args,
     ),
 )
+
 test_dataloader = dict(
     batch_size=test_batch_size,
     num_workers=num_workers,
@@ -229,7 +230,7 @@ model = dict(
     ),
     # Use BackwardPillarFeatureNet without computing voxel center for z-dimensionality
     pts_voxel_encoder=dict(
-        type="BackwardPillarFeatureNet",
+        type="PillarFeatureNet",
         in_channels=4,
         feat_channels=[32, 32],
         with_distance=False,

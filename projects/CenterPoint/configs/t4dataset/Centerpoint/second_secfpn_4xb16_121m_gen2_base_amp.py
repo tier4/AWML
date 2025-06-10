@@ -1,6 +1,6 @@
 _base_ = [
     "../../../../../autoware_ml/configs/detection3d/default_runtime.py",
-    "../../../../../autoware_ml/configs/detection3d/dataset/t4dataset/base.py",
+    "../../../../../autoware_ml/configs/detection3d/dataset/t4dataset/gen2_base.py",
     "../../default/second_secfpn_base.py",
 ]
 custom_imports = dict(imports=["projects.CenterPoint.models"], allow_failed_imports=False)
@@ -28,7 +28,7 @@ backend_args = None
 # backend_args = dict(backend="disk")
 point_load_dim = 5  # x, y, z, intensity, ring_id
 point_use_dim = 3  # x, y, z
-lidar_sweep_dims = [0, 1, 2, 4]
+lidar_sweep_dims = [0, 1, 2, 3, 4]
 
 # eval parameter
 eval_class_range = {
@@ -46,9 +46,9 @@ train_gpu_size = 4
 train_batch_size = 16
 test_batch_size = 2
 num_workers = 32
-val_interval = 5
-max_epochs = 50
-work_dir = "work_dirs/centerpoint_1_7/" + _base_.dataset_type + "/second_secfpn_4xb16_121m_base_amp/"
+val_interval = 1
+max_epochs = 20
+work_dir = "work_dirs/centerpoint_1_7_1/" + _base_.dataset_type + "/second_secfpn_4xb16_121m_gen2_base_amp/"
 
 train_pipeline = [
     dict(
@@ -57,6 +57,7 @@ train_pipeline = [
         load_dim=point_load_dim,
         use_dim=point_load_dim,
         backend_args=backend_args,
+        norm_intensity=True
     ),
     dict(
         type="LoadPointsFromMultiSweeps",
@@ -95,6 +96,7 @@ test_pipeline = [
         load_dim=point_load_dim,
         use_dim=point_load_dim,
         backend_args=backend_args,
+        norm_intensity=True
     ),
     dict(
         type="LoadPointsFromMultiSweeps",
@@ -118,6 +120,7 @@ eval_pipeline = [
         load_dim=point_load_dim,
         use_dim=point_load_dim,
         backend_args=backend_args,
+        norm_intensity=True
     ),
     dict(
         type="LoadPointsFromMultiSweeps",
@@ -230,7 +233,7 @@ model = dict(
     # Use BackwardPillarFeatureNet without computing voxel center for z-dimensionality
     pts_voxel_encoder=dict(
         type="BackwardPillarFeatureNet",
-        in_channels=4,
+        in_channels=5,
         feat_channels=[32, 32],
         with_distance=False,
         with_cluster_center=True,
@@ -302,9 +305,7 @@ model = dict(
 
 randomness = dict(seed=0, diff_rank_seed=False, deterministic=True)
 
-# learning rate
-# Since mmengine doesn't support OneCycleMomentum yet, we use CosineAnnealing from the default configs
-lr = 0.0003
+lr = 1e-4
 param_scheduler = [
     # learning rate scheduler
     # During the first (max_epochs * 0.3) epochs, learning rate increases from 0 to lr * 10
@@ -312,18 +313,18 @@ param_scheduler = [
     # lr * 1e-4
     dict(
         type="CosineAnnealingLR",
-        T_max=int(max_epochs * 0.3),
+        T_max=8,
         eta_min=lr * 10,
         begin=0,
-        end=int(max_epochs * 0.3),
+        end=8,
         by_epoch=True,
         convert_to_iter_based=True,
     ),
     dict(
         type="CosineAnnealingLR",
-        T_max=max_epochs - int(max_epochs * 0.3),
+        T_max=12,
         eta_min=lr * 1e-4,
-        begin=int(max_epochs * 0.3),
+        begin=8,
         end=max_epochs,
         by_epoch=True,
         convert_to_iter_based=True,
@@ -333,18 +334,18 @@ param_scheduler = [
     # during the next epochs, momentum increases from 0.85 / 0.95 to 1
     dict(
         type="CosineAnnealingMomentum",
-        T_max=int(max_epochs * 0.3),
+        T_max=8,
         eta_min=0.85 / 0.95,
         begin=0,
-        end=int(max_epochs * 0.3),
+        end=8,
         by_epoch=True,
         convert_to_iter_based=True,
     ),
     dict(
         type="CosineAnnealingMomentum",
-        T_max=max_epochs - int(max_epochs * 0.3),
+        T_max=12,
         eta_min=1,
-        begin=int(max_epochs * 0.3),
+        begin=8,
         end=max_epochs,
         by_epoch=True,
         convert_to_iter_based=True,
@@ -369,8 +370,8 @@ optim_wrapper = dict(
     clip_grad=clip_grad,
     # Update it accordingly
     loss_scale={
-        "init_scale": 2.0**8,  # intial_scale: 256
-        "growth_interval": 2000,
+        "init_scale": 2.0**14,  # intial_scale: 256
+        "growth_interval": 600,
     },
 )
 
@@ -409,3 +410,5 @@ custom_hooks = [
     dict(type="MomentumInfoHook"),
     dict(type="LossScaleInfoHook"),
 ]
+
+# load_from = "work_dirs/centerpoint_1_7/T4Dataset/second_secfpn_4xb16_121m_base_amp/epoch_50.pth"

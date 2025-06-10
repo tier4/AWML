@@ -43,12 +43,12 @@ eval_class_range = {
 data_root = "data/tier4_dataset/"
 info_directory_path = "info/kokseang_1_7/"
 train_gpu_size = 4
-train_batch_size = 16
+train_batch_size = 8
 test_batch_size = 2
 num_workers = 32
 val_interval = 5
 max_epochs = 50
-work_dir = "work_dirs/centerpoint_1_7/" + _base_.dataset_type + "/second_secfpn_4xb16_121m_base_amp/"
+work_dir = "work_dirs/centerpoint_multihead_1_7/" + _base_.dataset_type + "/second_secfpn_4xb8_121m_base_amp_z_multihead/"
 
 train_pipeline = [
     dict(
@@ -212,7 +212,7 @@ test_evaluator = dict(
     name_mapping={{_base_.name_mapping}},
     eval_class_range=eval_class_range,
     filter_attributes=_base_.filter_attributes,
-		save_csv=True
+    save_csv=True
 )
 
 model = dict(
@@ -229,7 +229,7 @@ model = dict(
     ),
     # Use BackwardPillarFeatureNet without computing voxel center for z-dimensionality
     pts_voxel_encoder=dict(
-        type="BackwardPillarFeatureNet",
+        type="PillarFeatureNet",
         in_channels=4,
         feat_channels=[32, 32],
         with_distance=False,
@@ -263,7 +263,11 @@ model = dict(
         type="CenterHead",
         in_channels=sum([128, 128, 128]),
         tasks=[
-            dict(num_class=5, class_names=["car", "truck", "bus", "bicycle", "pedestrian"]),
+            dict(num_class=1, class_names=["car"]),
+            dict(num_class=1, class_names=["truck"]),
+            dict(num_class=1, class_names=["bus"]),
+            dict(num_class=1, class_names=["bicycle"]),
+            dict(num_class=1, class_names=["pedestrian"]),
         ],
         bbox_coder=dict(
             voxel_size=voxel_size,
@@ -276,7 +280,7 @@ model = dict(
         # separate_head=dict(type="CustomSeparateHead", init_bias=-9.2103, final_kernel=1),
         separate_head=dict(type="CustomSeparateHead", init_bias=-4.595, final_kernel=1),
         # loss_cls=dict(type="mmdet.GaussianFocalLoss", reduction="none", loss_weight=1.0),
-        loss_cls=dict(type="mmdet.AmpGaussianFocalLoss", reduction="none", loss_weight=1.0),
+        loss_cls=dict(type="mmdet.AmpGaussianFocalLoss", reduction="mean", loss_weight=1.0),
         loss_bbox=dict(type="mmdet.L1Loss", reduction="mean", loss_weight=0.25),
         norm_bbox=True,
     ),
@@ -296,6 +300,7 @@ model = dict(
             voxel_size=voxel_size,
             # No filter by range
             post_center_limit_range=[-200.0, -200.0, -10.0, 200.0, 200.0, 10.0],
+            min_radius=[1.0, 1.0, 1.0, 1.0, 1.0],
         ),
     ),
 )
@@ -304,7 +309,7 @@ randomness = dict(seed=0, diff_rank_seed=False, deterministic=True)
 
 # learning rate
 # Since mmengine doesn't support OneCycleMomentum yet, we use CosineAnnealing from the default configs
-lr = 0.0003
+lr = 0.0001
 param_scheduler = [
     # learning rate scheduler
     # During the first (max_epochs * 0.3) epochs, learning rate increases from 0 to lr * 10
@@ -359,8 +364,8 @@ train_cfg = dict(
 val_cfg = dict()
 test_cfg = dict()
 
-optimizer = dict(type="AdamW", lr=lr, weight_decay=0.01)
-clip_grad = dict(max_norm=15, norm_type=2)  # max norm of gradients upper bound to be 15 since amp is used
+optimizer = dict(type="AdamW", lr=lr, weight_decay=0.01, eps=1e-4)
+clip_grad = dict(max_norm=2.0, norm_type=2)  # max norm of gradients upper bound to be 15 since amp is used
 
 optim_wrapper = dict(
     type="AmpOptimWrapper",
@@ -369,7 +374,7 @@ optim_wrapper = dict(
     clip_grad=clip_grad,
     # Update it accordingly
     loss_scale={
-        "init_scale": 2.0**8,  # intial_scale: 256
+        "init_scale": 2.0**6,  # intial_scale: 256
         "growth_interval": 2000,
     },
 )
@@ -409,3 +414,5 @@ custom_hooks = [
     dict(type="MomentumInfoHook"),
     dict(type="LossScaleInfoHook"),
 ]
+
+activation_checkpointing = ["pts_backbone"]

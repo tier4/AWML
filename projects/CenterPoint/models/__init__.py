@@ -6,7 +6,7 @@ from .detectors.centerpoint_onnx import CenterPointONNX
 from .losses.amp_gaussian_focal_loss import AmpGaussianFocalLoss
 from .necks.second_fpn import SECONDFPN
 from .task_modules.coders.centerpoint_bbox_coders import CenterPointBBoxCoder
-from .voxel_encoders.pillar_encoder import BackwardPillarFeatureNet
+from .voxel_encoders.pillar_encoder import BackwardPillarFeatureNet, CustomPillarFeatureNet
 from .voxel_encoders.pillar_encoder_onnx import BackwardPillarFeatureNetONNX, PillarFeatureNetONNX
 
 __all__ = [
@@ -16,6 +16,7 @@ __all__ = [
     "CenterHead",
     "CustomSeparateHead",
     "BackwardPillarFeatureNet",
+    "CustomPillarFeatureNet",
     "PillarFeatureNetONNX",
     "BackwardPillarFeatureNetONNX",
     "CenterPointONNX",

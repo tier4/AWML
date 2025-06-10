@@ -1,6 +1,6 @@
 _base_ = [
     "../../../../../autoware_ml/configs/detection3d/default_runtime.py",
-    "../../../../../autoware_ml/configs/detection3d/dataset/t4dataset/base.py",
+    "../../../../../autoware_ml/configs/detection3d/dataset/t4dataset/gen2_base.py",
     "../../default/second_secfpn_base.py",
 ]
 custom_imports = dict(imports=["projects.CenterPoint.models"], allow_failed_imports=False)
@@ -47,8 +47,8 @@ train_batch_size = 16
 test_batch_size = 2
 num_workers = 32
 val_interval = 5
-max_epochs = 50
-work_dir = "work_dirs/centerpoint_1_7/" + _base_.dataset_type + "/second_secfpn_4xb16_121m_base_amp/"
+max_epochs = 30
+work_dir = "work_dirs/centerpoint_1_7_1/" + _base_.dataset_type + "/second_secfpn_4xb16_121m_gen2_base_amp_z_backbone_neck_1e-4/"
 
 train_pipeline = [
     dict(
@@ -229,7 +229,7 @@ model = dict(
     ),
     # Use BackwardPillarFeatureNet without computing voxel center for z-dimensionality
     pts_voxel_encoder=dict(
-        type="BackwardPillarFeatureNet",
+        type="CustomPillarFeatureNet",
         in_channels=4,
         feat_channels=[32, 32],
         with_distance=False,
@@ -239,6 +239,7 @@ model = dict(
         voxel_size=voxel_size,
         norm_cfg=dict(type="BN1d", eps=1e-3, momentum=0.01),
         legacy=False,
+        frozen_stages=[0, 1],
     ),
     pts_middle_encoder=dict(type="PointPillarsScatter", in_channels=32, output_shape=(grid_size[0], grid_size[1])),
     pts_backbone=dict(
@@ -279,6 +280,8 @@ model = dict(
         loss_cls=dict(type="mmdet.AmpGaussianFocalLoss", reduction="none", loss_weight=1.0),
         loss_bbox=dict(type="mmdet.L1Loss", reduction="mean", loss_weight=0.25),
         norm_bbox=True,
+        freeze_shared_conv=True,
+        freeze_task_heads=True,
     ),
     train_cfg=dict(
         pts=dict(
@@ -302,9 +305,7 @@ model = dict(
 
 randomness = dict(seed=0, diff_rank_seed=False, deterministic=True)
 
-# learning rate
-# Since mmengine doesn't support OneCycleMomentum yet, we use CosineAnnealing from the default configs
-lr = 0.0003
+lr = 1e-4
 param_scheduler = [
     # learning rate scheduler
     # During the first (max_epochs * 0.3) epochs, learning rate increases from 0 to lr * 10
@@ -312,18 +313,18 @@ param_scheduler = [
     # lr * 1e-4
     dict(
         type="CosineAnnealingLR",
-        T_max=int(max_epochs * 0.3),
+        T_max=8,
         eta_min=lr * 10,
         begin=0,
-        end=int(max_epochs * 0.3),
+        end=8,
         by_epoch=True,
         convert_to_iter_based=True,
     ),
     dict(
         type="CosineAnnealingLR",
-        T_max=max_epochs - int(max_epochs * 0.3),
+        T_max=22,
         eta_min=lr * 1e-4,
-        begin=int(max_epochs * 0.3),
+        begin=8,
         end=max_epochs,
         by_epoch=True,
         convert_to_iter_based=True,
@@ -333,18 +334,18 @@ param_scheduler = [
     # during the next epochs, momentum increases from 0.85 / 0.95 to 1
     dict(
         type="CosineAnnealingMomentum",
-        T_max=int(max_epochs * 0.3),
+        T_max=8,
         eta_min=0.85 / 0.95,
         begin=0,
-        end=int(max_epochs * 0.3),
+        end=8,
         by_epoch=True,
         convert_to_iter_based=True,
     ),
     dict(
         type="CosineAnnealingMomentum",
-        T_max=max_epochs - int(max_epochs * 0.3),
+        T_max=22,
         eta_min=1,
-        begin=int(max_epochs * 0.3),
+        begin=8,
         end=max_epochs,
         by_epoch=True,
         convert_to_iter_based=True,
@@ -369,8 +370,8 @@ optim_wrapper = dict(
     clip_grad=clip_grad,
     # Update it accordingly
     loss_scale={
-        "init_scale": 2.0**8,  # intial_scale: 256
-        "growth_interval": 2000,
+        "init_scale": 2.0**12,  # intial_scale: 256
+        "growth_interval": 600,
     },
 )
 
@@ -409,3 +410,5 @@ custom_hooks = [
     dict(type="MomentumInfoHook"),
     dict(type="LossScaleInfoHook"),
 ]
+
+load_from = "work_dirs/centerpoint_1_7/T4Dataset/second_secfpn_4xb16_121m_base_amp_z/epoch_49.pth"

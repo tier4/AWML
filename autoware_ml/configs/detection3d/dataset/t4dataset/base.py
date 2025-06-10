@@ -28,6 +28,13 @@ dataset_version_list = [
     "db_j6_v5",
 ]
 
+dataset_test_groups = {
+		"db_j6gen2": "t4dataset_j6gen2_infos_test.pkl",
+		"db_largebus": "t4dataset_largebus_infos_test.pkl",
+		"db_jpntaxi": "t4dataset_xx1_infos_test.pkl",
+		"db_j6": "t4dataset_x2_infos_test.pkl",
+		"db_base": "t4dataset_base_infos_test.pkl",
+}
 # dataset format setting
 data_prefix = dict(pts="", sweeps="")
 camera_types = {
@@ -149,4 +156,17 @@ camera_panels = [
     "data/CAM_BACK_RIGHT",
 ]
 
-filter_attributes = []
+filter_attributes = [
+    ("vehicle.bicycle", "vehicle_state.parked"),
+    ("vehicle.bicycle", "cycle_state.without_rider"),
+    ("vehicle.bicycle", "motorcycle_state.without_rider"),
+    ("vehicle.motorcycle", "vehicle_state.parked"),
+    ("vehicle.motorcycle", "cycle_state.without_rider"),
+    ("vehicle.motorcycle", "motorcycle_state.without_rider"),
+    ("bicycle", "vehicle_state.parked"),
+    ("bicycle", "cycle_state.without_rider"),
+    ("bicycle", "motorcycle_state.without_rider"),
+    ("motorcycle", "vehicle_state.parked"),
+    ("motorcycle", "cycle_state.without_rider"),
+    ("motorcycle", "motorcycle_state.without_rider"),
+]

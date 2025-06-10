@@ -7,9 +7,9 @@ custom_imports = dict(
 
 # dataset type setting
 dataset_type = "T4Dataset"
-info_train_file_name = "t4dataset_xx1_infos_train.pkl"
-info_val_file_name = "t4dataset_xx1_infos_val.pkl"
-info_test_file_name = "t4dataset_xx1_infos_test.pkl"
+info_train_file_name = "t4dataset_gen1_base_infos_train.pkl"
+info_val_file_name = "t4dataset_gen1_base_infos_val.pkl"
+info_test_file_name = "t4dataset_gen1_base_infos_test.pkl"
 
 # dataset scene setting
 dataset_version_config_root = "autoware_ml/configs/t4dataset/"
@@ -17,19 +17,15 @@ dataset_version_list = [
     "db_jpntaxi_v1",
     "db_jpntaxi_v2",
     "db_jpntaxi_v4",
+    "db_gsm8_v1",
+    "db_j6_v1",
+    "db_j6_v2",
+    "db_j6_v3",
+    "db_j6_v5",
 ]
 
 # dataset format setting
-data_prefix = dict(
-    pts="",
-    sweeps="",
-    CAM_FRONT="",
-    CAM_FRONT_LEFT="",
-    CAM_FRONT_RIGHT="",
-    CAM_BACK="",
-    CAM_BACK_RIGHT="",
-    CAM_BACK_LEFT="",
-)
+data_prefix = dict(pts="", sweeps="")
 camera_types = {
     "CAM_FRONT",
     "CAM_FRONT_RIGHT",
@@ -77,13 +73,41 @@ name_mapping = {
     "forklift": "car",
     "construction_worker": "pedestrian",
     "stroller": "pedestrian",
+    # DBv2.0 and DBv3.0
+    "animal": "animal",
+    "movable_object.barrier": "barrier",
+    "movable_object.pushable_pullable": "pushable_pullable",
+    "movable_object.traffic_cone": "traffic_cone",
+    "pedestrian.adult": "pedestrian",
+    "pedestrian.child": "pedestrian",
+    "pedestrian.construction_worker": "pedestrian",
+    "pedestrian.personal_mobility": "pedestrian",
+    "pedestrian.police_officer": "pedestrian",
+    "pedestrian.stroller": "pedestrian",
+    "pedestrian.wheelchair": "pedestrian",
+    "static_object.bicycle rack": "bicycle rack",
+    "static_object.bollard": "bollard",
+    "vehicle.ambulance": "car",  # Define vehicle.ambulance as car since vehicle.emergency (ambulance & police) is defined as car
+    "vehicle.bicycle": "bicycle",
+    "vehicle.bus": "bus",
+    "vehicle.car": "car",
+    "vehicle.construction": "truck",
+    "vehicle.fire": "truck",
+    "vehicle.motorcycle": "bicycle",
+    "vehicle.police": "car",
+    "vehicle.trailer": "trailer",
+    "vehicle.truck": "truck",
     # DBv1.3
+    "ambulance": "car",
+    "kart": "car",
+    "wheelchair": "pedestrian",
+    "personal_mobility": "pedestrian",
+    "fire_truck": "truck",
     "semi_trailer": "trailer",
     "tractor_unit": "truck",
-    "kart": "car",
-    "unknown": "unknown",
     "construction_vehicle": "truck",
 }
+
 class_names = [
     "car",
     "truck",
@@ -121,7 +145,6 @@ camera_panels = [
     "data/CAM_BACK_RIGHT",
 ]
 
-# Add filter attributes
 filter_attributes = [
     ("vehicle.bicycle", "vehicle_state.parked"),
     ("vehicle.bicycle", "cycle_state.without_rider"),
