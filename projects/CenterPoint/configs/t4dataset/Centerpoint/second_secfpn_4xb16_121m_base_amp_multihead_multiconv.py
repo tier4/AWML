@@ -333,13 +333,9 @@ model = dict(
             score_threshold=0.1,
             out_size_factor=out_size_factor,
             code_size=9,
-        ),
-        bbox_coder=dict(
             voxel_size=voxel_size,
-            pc_range=point_cloud_range,
-            # No filter by range
             post_center_range=[-200.0, -200.0, -10.0, 200.0, 200.0, 10.0],
-            out_size_factor=out_size_factor,
+            pc_range=point_cloud_range,
         ),
         # sigmoid(-4.595) = 0.01 for initial small values
         separate_head=dict(type="MultiHeadSeparateHead", init_bias=-4.595),
@@ -361,6 +357,7 @@ model = dict(
             out_size_factor=out_size_factor,
             pc_range=point_cloud_range,
             voxel_size=voxel_size,
+            min_radius=[1.0, 1.0, 1.0, 1.0, 1.0],
             # No filter by range
             post_center_limit_range=[-200.0, -200.0, -10.0, 200.0, 200.0, 10.0],
         ),
