@@ -490,3 +490,5 @@ custom_hooks = [
     dict(type="MomentumInfoHook"),
     dict(type="LossScaleInfoHook"),
 ]
+
+activation_checkpointing = ["pts_backbone"]
