@@ -45,7 +45,6 @@ from projects.StreamPETR.deploy.containers import (
 # torch.backends.cudnn.deterministic = True
 
 
-
 def parse_args():
     parser = argparse.ArgumentParser(description="MMDet benchmark a model")
     parser.add_argument("config", help="test config file path")
