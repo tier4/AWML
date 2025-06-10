@@ -9,11 +9,10 @@ custom_imports = dict(
     allow_failed_imports=False,
 )
 custom_imports["imports"] += _base_.custom_imports["imports"]
-custom_imports["imports"] += ["autoware_ml.backends.mlflowbackend"]
 
 backbone_norm_cfg = dict(type="LN", requires_grad=True)
 
-info_directory_path = "info/samrat/base_jpntaxi/"
+info_directory_path = "info/cameraonly/baseline/"
 data_root = "data/"
 
 
@@ -54,11 +53,11 @@ collect_keys = [
 ]
 
 eval_class_range = {
-    "car": 75,
-    "truck": 75,
-    "bus": 75,
-    "bicycle": 75,
-    "pedestrian": 75,
+    "car": 51.2,
+    "truck": 51.2,
+    "bus": 51.2,
+    "bicycle": 51.2,
+    "pedestrian": 51.2,
 }
 
 input_modality = dict(
@@ -403,7 +402,7 @@ env_cfg = dict(
 
 sync_bn = "torch"
 
-load_from = "/workspace/work_dirs/ckpts/epoch_30.pth"
+# load_from = "/workspace/work_dirs/ckpts/nuscenes_baseline.pth"
 
 auto_scale_lr = dict(base_batch_size=8,enable=True)
 

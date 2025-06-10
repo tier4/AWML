@@ -369,10 +369,8 @@ param_scheduler = [
     ),
 ]
 
-mlflow_uri = "http://10.0.6.142:5000/"
 vis_backends = [
     dict(type="LocalVisBackend"),
-    dict(type="MLflowVisBackend", exp_name="(samrat) streamPETR nuscenes", run_name="streamPETR nuscenes baseline", tracking_uri=mlflow_uri,artifact_suffix=(".pth",)),
 ]
 visualizer = dict(type="Det3DLocalVisualizer", vis_backends=vis_backends, name="visualizer")
     

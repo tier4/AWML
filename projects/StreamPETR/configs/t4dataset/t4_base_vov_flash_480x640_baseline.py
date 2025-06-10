@@ -9,7 +9,7 @@ custom_imports = dict(
     allow_failed_imports=False,
 )
 custom_imports["imports"] += _base_.custom_imports["imports"]
-custom_imports["imports"] += ["autoware_ml.backends.mlflowbackend"]
+
 
 backbone_norm_cfg = dict(type="LN", requires_grad=True)
 

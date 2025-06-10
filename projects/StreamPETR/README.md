@@ -32,6 +32,11 @@ docker run -it --rm --gpus all --shm-size=64g --name awml -v $PWD/:/workspace -v
 cd projects/StreamPETR && pip install -e .
 ```
 
+- Create info files for training
+
+```sh
+python tools/detection3d/create_data_t4dataset.py --root_path ./data --config /workspace/autoware_ml/configs/detection3d/dataset/t4dataset/base.py --version base --max_sweeps 1 --out_dir ./data/info/cameraonly/baseline
+```
 ### 2. Train
 
 - Run training on T4 dataset with appropriate configs
