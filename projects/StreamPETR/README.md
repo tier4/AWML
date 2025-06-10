@@ -1,4 +1,4 @@
-# CenterPoint
+# StreamPETR
 ## Summary
 
 - [Support priority](https://github.com/tier4/AWML/blob/main/docs/design/autoware_ml_design.md#support-priority): Tier A
