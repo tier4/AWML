@@ -7,15 +7,16 @@
 # Copyright (c) Youngwan Lee (ETRI) All Rights Reserved.
 # Copyright 2021 Toyota Research Institute.  All rights reserved.
 # ------------------------------------------------------------------------
+import warnings
 from collections import OrderedDict
-from mmengine.model import BaseModule
-from mmdet3d.registry import MODELS
+
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from torch.nn.modules.batchnorm import _BatchNorm
-import warnings
 import torch.utils.checkpoint as cp
+from mmdet3d.registry import MODELS
+from mmengine.model import BaseModule
+from torch.nn.modules.batchnorm import _BatchNorm
 
 VoVNet19_slim_dw_eSE = {
     "stem": [64, 64, 64],

@@ -1,9 +1,10 @@
 # Copyright (c) OpenMMLab. All rights reserved.
-from contextlib import contextmanager
-import torch.nn as nn
-import torch
 import datetime
 import os
+from contextlib import contextmanager
+
+import torch
+import torch.nn as nn
 from mmengine.optim.optimizer.amp_optimizer_wrapper import AmpOptimWrapper, OptimWrapper
 from mmengine.registry import OPTIM_WRAPPERS
 

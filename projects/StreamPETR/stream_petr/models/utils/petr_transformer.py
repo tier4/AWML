@@ -9,26 +9,28 @@
 # ------------------------------------------------------------------------
 #  Modified by Shihao Wang
 # ------------------------------------------------------------------------
+import copy
 import warnings
+
 import torch
 import torch.nn as nn
+import torch.utils.checkpoint as cp
+from mmcv.cnn import build_norm_layer
+from mmcv.cnn.bricks.drop import build_dropout
 from mmcv.cnn.bricks.transformer import (
     BaseTransformerLayer,
     TransformerLayerSequence,
-    build_transformer_layer_sequence,
     build_attention,
     build_feedforward_network,
+    build_transformer_layer_sequence,
 )
-from mmcv.cnn.bricks.drop import build_dropout
-from mmcv.cnn import build_norm_layer
-from mmengine.model import xavier_init, BaseModule
+from mmengine.config.config import ConfigDict
+from mmengine.model import BaseModule, xavier_init
 from mmengine.registry import MODELS
 from mmengine.utils import deprecated_api_warning
-from mmengine.config.config import ConfigDict
-import copy
 from torch.nn import ModuleList
+
 from .attention import FlashMHA
-import torch.utils.checkpoint as cp
 
 
 @MODELS.register_module()

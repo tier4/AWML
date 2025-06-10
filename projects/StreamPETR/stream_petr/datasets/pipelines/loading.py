@@ -1,7 +1,6 @@
-from mmdet3d.registry import TRANSFORMS
-from mmcv.transforms import BaseTransform
-
 import numpy as np
+from mmcv.transforms import BaseTransform
+from mmdet3d.registry import TRANSFORMS
 
 
 def project_to_image(points, lidar2cam, cam2img):
@@ -91,7 +90,6 @@ def compute_bbox_and_centers(lidar2cam, cam2img, bboxes, labels, img_shape):
     return bboxes_2d, projected_centers, object_depth, valid_labels
 
 
-
 def check_bbox_visibility_in_image(lidar2cam, cam2img, bboxes, labels, img_shape, visibility=0.1):
     """
     Projects 3D bounding boxes into the image plane and determines visibility.
@@ -145,12 +143,11 @@ def check_bbox_visibility_in_image(lidar2cam, cam2img, bboxes, labels, img_shape
     return is_visible
 
 
-
 @TRANSFORMS.register_module()
 class StreamPETRLoadAnnotations2D(BaseTransform):
 
     def transform(self, results):
-        
+
         all_bboxes_2d, all_centers_2d, all_depths, all_labels = [], [], [], []
 
         for i, k in enumerate(results["images"]):
@@ -191,5 +188,5 @@ class Filter3DBoxesinBlindSpot(BaseTransform):
             )
             visibility_mask.append(is_visible)
         visibility_mask = np.stack(visibility_mask).mean(0)
-        
+
         return results

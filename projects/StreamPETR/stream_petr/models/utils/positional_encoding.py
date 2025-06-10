@@ -7,15 +7,17 @@
 #  Modified by Shihao Wang
 # ------------------------------------------------------------------------
 import math
-import torch
-import torch.nn as nn 
+
 import numpy as np
+import torch
+import torch.nn as nn
+
 
 def pos2posemb3d(pos, num_pos_feats=128, temperature=10000):
     scale = 2 * math.pi
     pos = pos * scale
     dim_t = torch.arange(num_pos_feats, dtype=torch.float32, device=pos.device)
-    dim_t = temperature ** (2 * torch.div(dim_t, 2, rounding_mode='floor') / num_pos_feats)
+    dim_t = temperature ** (2 * torch.div(dim_t, 2, rounding_mode="floor") / num_pos_feats)
     pos_x = pos[..., 0, None] / dim_t
     pos_y = pos[..., 1, None] / dim_t
     pos_z = pos[..., 2, None] / dim_t
@@ -25,20 +27,20 @@ def pos2posemb3d(pos, num_pos_feats=128, temperature=10000):
     posemb = torch.cat((pos_y, pos_x, pos_z), dim=-1)
     return posemb
 
+
 def pos2posemb1d(pos, num_pos_feats=256, temperature=10000):
     scale = 2 * math.pi
     pos = pos * scale
     dim_t = torch.arange(num_pos_feats, dtype=torch.float32, device=pos.device)
-    dim_t = temperature ** (2 * torch.div(dim_t, 2, rounding_mode='floor') / num_pos_feats)
+    dim_t = temperature ** (2 * torch.div(dim_t, 2, rounding_mode="floor") / num_pos_feats)
     pos_x = pos[..., 0, None] / dim_t
 
     pos_x = torch.stack((pos_x[..., 0::2].sin(), pos_x[..., 1::2].cos()), dim=-1).flatten(-2)
 
     return pos_x
 
-def nerf_positional_encoding(
-    tensor, num_encoding_functions=6, include_input=False, log_sampling=True
-) -> torch.Tensor:
+
+def nerf_positional_encoding(tensor, num_encoding_functions=6, include_input=False, log_sampling=True) -> torch.Tensor:
     r"""Apply positional encoding to the input.
     Args:
         tensor (torch.Tensor): Input tensor to be positionally encoded.
@@ -63,7 +65,7 @@ def nerf_positional_encoding(
         )
     else:
         frequency_bands = torch.linspace(
-            2.0 ** 0.0,
+            2.0**0.0,
             2.0 ** (num_encoding_functions - 1),
             num_encoding_functions,
             dtype=tensor.dtype,

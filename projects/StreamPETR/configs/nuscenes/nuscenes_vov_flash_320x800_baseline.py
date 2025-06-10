@@ -94,27 +94,25 @@ model = dict(
     ),
     img_neck=dict(type="CPFPN", in_channels=[768, 1024], out_channels=256, num_outs=2),  ###remove unused parameters
     img_roi_head=dict(
-        type='mmdet.FocalHead',
+        type="mmdet.FocalHead",
         num_classes=len(class_names),
         in_channels=256,
-        bbox_coder = dict(type='mmdet.DistancePointBBoxCoder'),
-        loss_cls2d=dict(
-            type='mmdet.QualityFocalLoss',
-            use_sigmoid=True,
-            beta=2.0,
-            loss_weight=2.0),
-        loss_centerness=dict(type='mmdet.GaussianFocalLoss', reduction='mean', loss_weight=1.0),
-        loss_bbox2d=dict(type='mmdet.L1Loss', loss_weight=5.0),
-        loss_iou2d=dict(type='mmdet.GIoULoss', loss_weight=2.0),
-        loss_centers2d=dict(type='mmdet.L1Loss', loss_weight=10.0),
+        bbox_coder=dict(type="mmdet.DistancePointBBoxCoder"),
+        loss_cls2d=dict(type="mmdet.QualityFocalLoss", use_sigmoid=True, beta=2.0, loss_weight=2.0),
+        loss_centerness=dict(type="mmdet.GaussianFocalLoss", reduction="mean", loss_weight=1.0),
+        loss_bbox2d=dict(type="mmdet.L1Loss", loss_weight=5.0),
+        loss_iou2d=dict(type="mmdet.GIoULoss", loss_weight=2.0),
+        loss_centers2d=dict(type="mmdet.L1Loss", loss_weight=10.0),
         train_cfg=dict(
             assigner2d=dict(
-                type='mmdet.HungarianAssigner2D',
-                cls_cost=dict(type='mmdet.FocalLossCostAssigner', weight=2),
-                reg_cost=dict(type='mmdet.BBoxL1CostAssigner', weight=5.0, box_format='xywh'),
-                iou_cost=dict(type='mmdet.IoUCostAssigner', iou_mode='giou', weight=2.0),
-                centers2d_cost=dict(type='mmdet.BBox3DL1CostAssigner', weight=10.0)))
+                type="mmdet.HungarianAssigner2D",
+                cls_cost=dict(type="mmdet.FocalLossCostAssigner", weight=2),
+                reg_cost=dict(type="mmdet.BBoxL1CostAssigner", weight=5.0, box_format="xywh"),
+                iou_cost=dict(type="mmdet.IoUCostAssigner", iou_mode="giou", weight=2.0),
+                centers2d_cost=dict(type="mmdet.BBox3DL1CostAssigner", weight=10.0),
+            )
         ),
+    ),
     pts_bbox_head=dict(
         type="StreamPETRHead",
         num_classes=len(class_names),
@@ -135,7 +133,18 @@ model = dict(
         with_position=True,
         use_gravity_center=True,
         position_range=[-61.2, -61.2, -10.0, 61.2, 61.2, 10.0],
-        code_weights=[2.0, 2.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0],  # you can set the last two to zero will disable optimization for velocity
+        code_weights=[
+            2.0,
+            2.0,
+            1.0,
+            1.0,
+            1.0,
+            1.0,
+            1.0,
+            1.0,
+            1.0,
+            1.0,
+        ],  # you can set the last two to zero will disable optimization for velocity
         transformer=dict(
             type="PETRTemporalTransformer",
             decoder=dict(
@@ -146,7 +155,7 @@ model = dict(
                 transformerlayers=dict(
                     type="PETRTemporalDecoderLayer",
                     attn_cfgs=[
-                        dict(type="MultiheadAttention", embed_dims=256, num_heads=8,dropout=0.1),
+                        dict(type="MultiheadAttention", embed_dims=256, num_heads=8, dropout=0.1),
                         dict(type="PETRMultiheadFlashAttention", embed_dims=256, num_heads=8, dropout=0.1),
                     ],
                     feedforward_channels=2048,
@@ -228,13 +237,14 @@ train_pipeline = [
     dict(type="ObjectNameFilter", classes=class_names),
     # dict(type="mmdet.Filter2DByRange", range_2d=61.2),
     dict(type="mmdet.ResizeCropFlipRotImage", data_aug_conf=ida_aug_conf, training=True, with_2d=True),
-    dict(type='mmdet.GlobalRotScaleTransImage',
-            rot_range=[-0.3925, 0.3925],
-            translation_std=[0, 0, 0],
-            scale_ratio_range=[0.95, 1.05],
-            reverse_angle=True,
-            training=True,
-            ),
+    dict(
+        type="mmdet.GlobalRotScaleTransImage",
+        rot_range=[-0.3925, 0.3925],
+        translation_std=[0, 0, 0],
+        scale_ratio_range=[0.95, 1.05],
+        reverse_angle=True,
+        training=True,
+    ),
     dict(type="mmdet.PadMultiViewImage", size_divisor=32),
     # dict(type="mmdet.ImageAugmentation", transforms=augmementations, p=0.75),
     dict(type="mmdet.NormalizeMultiviewImage", **img_norm_cfg),
@@ -255,7 +265,7 @@ test_pipeline = [
     dict(type="mmdet.PadMultiViewImage", size_divisor=32),
     dict(type="mmdet.NormalizeMultiviewImage", **img_norm_cfg),
     # dict(type="StreamPETRLoadAnnotations2D"),
-    dict(type="PETRFormatBundle3D", class_names=class_names, collect_keys=collect_keys + ["prev_exists"])
+    dict(type="PETRFormatBundle3D", class_names=class_names, collect_keys=collect_keys + ["prev_exists"]),
 ]
 
 train_dataloader = dict(
@@ -350,15 +360,27 @@ val_evaluator = dict(
 test_evaluator = val_evaluator
 
 
-train_cfg = dict(by_epoch=True, max_epochs=num_epochs, val_interval=val_interval, dynamic_intervals=[(num_epochs - 5, 1)])
+train_cfg = dict(
+    by_epoch=True, max_epochs=num_epochs, val_interval=val_interval, dynamic_intervals=[(num_epochs - 5, 1)]
+)
 # train_cfg = dict(type='IterBasedTrainLoop', max_iters=1000, val_interval=10)
 val_cfg = dict()
 test_cfg = dict()
 
 lr = 4e-4
-optimizer = dict(type="AdamW", lr=lr,weight_decay=0.01)  # bs 8: 2e-4 || bs 16: 4e-4,
+optimizer = dict(type="AdamW", lr=lr, weight_decay=0.01)  # bs 8: 2e-4 || bs 16: 4e-4,
 
-optim_wrapper = dict(type="NoCacheAmpOptimWrapper", optimizer=optimizer, paramwise_cfg=dict(custom_keys={'img_backbone': dict(lr_mult=0.1),}), loss_scale="dynamic",clip_grad=dict(max_norm=35, norm_type=2))
+optim_wrapper = dict(
+    type="NoCacheAmpOptimWrapper",
+    optimizer=optimizer,
+    paramwise_cfg=dict(
+        custom_keys={
+            "img_backbone": dict(lr_mult=0.1),
+        }
+    ),
+    loss_scale="dynamic",
+    clip_grad=dict(max_norm=35, norm_type=2),
+)
 # lrg policy
 param_scheduler = [
     dict(type="LinearLR", start_factor=1.0 / 3, begin=0, end=500, by_epoch=False),
@@ -373,7 +395,7 @@ vis_backends = [
     dict(type="LocalVisBackend"),
 ]
 visualizer = dict(type="Det3DLocalVisualizer", vis_backends=vis_backends, name="visualizer")
-    
+
 
 default_hooks = dict(
     logger=dict(type="LoggerHook", interval=50),
@@ -382,13 +404,13 @@ default_hooks = dict(
         max_keep_ckpts=5,
         by_epoch=True,
         type="CheckpointHook",
-    ), 
+    ),
 )
 
 env_cfg = dict(
     cudnn_benchmark=False,
     mp_cfg=dict(mp_start_method="fork", opencv_num_threads=0),
-    dist_cfg=dict(backend='nccl', timeout=3600)
+    dist_cfg=dict(backend="nccl", timeout=3600),
 )  # Since we are doing inference with batch_size=1, it can be slow so timeout needs to be increased
 
 load_from = "/workspace/work_dirs/ckpts/fcos3d_vovnet_imgbackbone-remapped.pth"

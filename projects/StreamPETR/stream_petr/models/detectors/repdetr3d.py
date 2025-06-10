@@ -10,43 +10,58 @@
 #  Modified by Shihao Wang
 # ------------------------------------------------------------------------
 import torch
+from mmdet3d.models.detectors.mvx_two_stage import MVXTwoStageDetector
 from mmdet3d.registry import MODELS
 from mmdet3d.structures.ops.transforms import bbox3d2result
-from mmdet3d.models.detectors.mvx_two_stage import MVXTwoStageDetector
+
 from projects.StreamPETR.stream_petr.models.utils.grid_mask import GridMask
+
 
 @MODELS.register_module()
 class RepDetr3D(MVXTwoStageDetector):
     """RepDetr3D."""
 
-    def __init__(self,
-                 use_grid_mask=False,
-                 pts_voxel_layer=None,
-                 pts_voxel_encoder=None,
-                 pts_middle_encoder=None,
-                 pts_fusion_layer=None,
-                 img_backbone=None,
-                 pts_backbone=None,
-                 img_neck=None,
-                 pts_neck=None,
-                 pts_bbox_head=None,
-                 img_roi_head=None,
-                 img_rpn_head=None,
-                 train_cfg=None,
-                 test_cfg=None,
-                 num_frame_head_grads=2,
-                 num_frame_backbone_grads=2,
-                 num_frame_losses=2,
-                 stride=[16],
-                 position_level=[0],
-                 aux_2d_only=True,
-                 single_test=False,
-                 pretrained=None):
-        super(RepDetr3D, self).__init__(pts_voxel_layer, pts_voxel_encoder,
-                             pts_middle_encoder, pts_fusion_layer,
-                             img_backbone, pts_backbone, img_neck, pts_neck,
-                             pts_bbox_head, img_roi_head, img_rpn_head,
-                             train_cfg, test_cfg, pretrained)
+    def __init__(
+        self,
+        use_grid_mask=False,
+        pts_voxel_layer=None,
+        pts_voxel_encoder=None,
+        pts_middle_encoder=None,
+        pts_fusion_layer=None,
+        img_backbone=None,
+        pts_backbone=None,
+        img_neck=None,
+        pts_neck=None,
+        pts_bbox_head=None,
+        img_roi_head=None,
+        img_rpn_head=None,
+        train_cfg=None,
+        test_cfg=None,
+        num_frame_head_grads=2,
+        num_frame_backbone_grads=2,
+        num_frame_losses=2,
+        stride=[16],
+        position_level=[0],
+        aux_2d_only=True,
+        single_test=False,
+        pretrained=None,
+    ):
+        super(RepDetr3D, self).__init__(
+            pts_voxel_layer,
+            pts_voxel_encoder,
+            pts_middle_encoder,
+            pts_fusion_layer,
+            img_backbone,
+            pts_backbone,
+            img_neck,
+            pts_neck,
+            pts_bbox_head,
+            img_roi_head,
+            img_rpn_head,
+            train_cfg,
+            test_cfg,
+            pretrained,
+        )
         self.grid_mask = GridMask(True, True, rotate=1, offset=False, ratio=0.5, mode=1, prob=0.7)
         self.use_grid_mask = use_grid_mask
         self.prev_scene_token = None
@@ -58,7 +73,6 @@ class RepDetr3D(MVXTwoStageDetector):
         self.position_level = position_level
         self.aux_2d_only = aux_2d_only
         self.test_flag = False
-   
 
     def extract_img_feat(self, img, len_queue=1, training_mode=False):
         """Extract features of images."""
@@ -82,40 +96,41 @@ class RepDetr3D(MVXTwoStageDetector):
             return None
         if self.with_img_neck:
             img_feats = self.img_neck(img_feats)
-        
+
         img_feats_reshaped = []
 
         if self.training or training_mode:
             for i in self.position_level:
                 BN, C, H, W = img_feats[i].size()
-                img_feat_reshaped = img_feats[i].view(B, len_queue, int(BN/B / len_queue), C, H, W)
+                img_feat_reshaped = img_feats[i].view(B, len_queue, int(BN / B / len_queue), C, H, W)
                 img_feats_reshaped.append(img_feat_reshaped)
         else:
             for i in self.position_level:
                 BN, C, H, W = img_feats[i].size()
-                img_feat_reshaped = img_feats[i].view(B, int(BN/B/len_queue), C, H, W)
+                img_feat_reshaped = img_feats[i].view(B, int(BN / B / len_queue), C, H, W)
                 img_feats_reshaped.append(img_feat_reshaped)
 
         return img_feats_reshaped
-
 
     def extract_feat(self, img, T, training_mode=False):
         """Extract features from images and points."""
         img_feats = self.extract_img_feat(img, T, training_mode)
         return img_feats
 
-    def obtain_history_memory(self,
-                            gt_bboxes_3d=None,
-                            gt_labels_3d=None,
-                            gt_bboxes=None,
-                            gt_labels=None,
-                            img_metas=None,
-                            centers2d=None,
-                            depths=None,
-                            gt_bboxes_ignore=None,
-                            **data):
+    def obtain_history_memory(
+        self,
+        gt_bboxes_3d=None,
+        gt_labels_3d=None,
+        gt_bboxes=None,
+        gt_labels=None,
+        img_metas=None,
+        centers2d=None,
+        depths=None,
+        gt_bboxes_ignore=None,
+        **data
+    ):
         losses = dict()
-        T = data['img'].size(1)
+        T = data["img"].size(1)
         num_nograd_frames = T - self.num_frame_head_grads
         num_grad_losses = T - self.num_frame_losses
         for i in range(T):
@@ -123,43 +138,53 @@ class RepDetr3D(MVXTwoStageDetector):
             return_losses = False
             data_t = dict()
             for key in data:
-                if key == 'img_feats':
+                if key == "img_feats":
                     data_t[key] = [feat[:, i] for feat in data[key]]
                 else:
-                    data_t[key] = data[key][:, i] 
+                    data_t[key] = data[key][:, i]
 
-            data_t['img_feats'] = data_t['img_feats']
+            data_t["img_feats"] = data_t["img_feats"]
             if i >= num_nograd_frames:
                 requires_grad = True
             if i >= num_grad_losses:
                 return_losses = True
-            loss = self.forward_pts_train(gt_bboxes_3d[i],
-                                        gt_labels_3d[i], gt_bboxes[i],
-                                        gt_labels[i], img_metas[i], centers2d[i], depths[i], requires_grad=requires_grad,return_losses=return_losses,**data_t)
+            loss = self.forward_pts_train(
+                gt_bboxes_3d[i],
+                gt_labels_3d[i],
+                gt_bboxes[i],
+                gt_labels[i],
+                img_metas[i],
+                centers2d[i],
+                depths[i],
+                requires_grad=requires_grad,
+                return_losses=return_losses,
+                **data_t
+            )
             if loss is not None:
                 for key, value in loss.items():
-                    losses['frame_'+str(i)+"_"+key] = value
+                    losses["frame_" + str(i) + "_" + key] = value
         return losses
 
     def forward_roi_head(self, **data):
         if (self.aux_2d_only and not self.training) or not self.with_img_roi_head:
-            return {'topk_indexes':None}
+            return {"topk_indexes": None}
         else:
             outs_roi = self.img_roi_head(**data)
             return outs_roi
 
-
-    def forward_pts_train(self,
-                          gt_bboxes_3d,
-                          gt_labels_3d,
-                          gt_bboxes,
-                          gt_labels,
-                          img_metas,
-                          centers2d,
-                          depths,
-                          requires_grad=True,
-                          return_losses=False,
-                          **data):
+    def forward_pts_train(
+        self,
+        gt_bboxes_3d,
+        gt_labels_3d,
+        gt_bboxes,
+        gt_labels,
+        img_metas,
+        centers2d,
+        depths,
+        requires_grad=True,
+        return_losses=False,
+        **data
+    ):
         """Forward function for point cloud branch.
         Args:
             pts_feats (list[torch.Tensor]): Features of point cloud branch
@@ -190,7 +215,7 @@ class RepDetr3D(MVXTwoStageDetector):
             if self.with_img_roi_head:
                 loss2d_inputs = [gt_bboxes, gt_labels, centers2d, outs_roi, depths, img_metas]
                 losses2d = self.img_roi_head.loss(*loss2d_inputs)
-                losses.update(losses2d) 
+                losses.update(losses2d)
 
             return losses
         else:
@@ -207,22 +232,24 @@ class RepDetr3D(MVXTwoStageDetector):
         augmentations.
         """
         if return_loss:
-            for key in ['gt_bboxes_3d', 'gt_labels_3d', 'gt_bboxes', 'gt_labels', 'centers_2d', 'depths', 'img_metas']:
+            for key in ["gt_bboxes_3d", "gt_labels_3d", "gt_bboxes", "gt_labels", "centers_2d", "depths", "img_metas"]:
                 data[key] = list(zip(*data[key]))
             return self.forward_train(**data)
         else:
             return self.forward_test(**data)
 
-    def forward_train(self,
-                      img_metas=None,
-                      gt_bboxes_3d=None,
-                      gt_labels_3d=None,
-                      gt_labels=None,
-                      gt_bboxes=None,
-                      gt_bboxes_ignore=None,
-                      depths=None,
-                      centers2d=None,
-                      **data):
+    def forward_train(
+        self,
+        img_metas=None,
+        gt_bboxes_3d=None,
+        gt_labels_3d=None,
+        gt_labels=None,
+        gt_bboxes=None,
+        gt_bboxes_ignore=None,
+        depths=None,
+        centers2d=None,
+        **data
+    ):
         """Forward training function.
         Args:
             points (list[torch.Tensor], optional): Points of each sample.
@@ -244,40 +271,40 @@ class RepDetr3D(MVXTwoStageDetector):
         Returns:
             dict: Losses of different branches.
         """
-        if self.test_flag: #for interval evaluation
+        if self.test_flag:  # for interval evaluation
             self.pts_bbox_head.reset_memory()
             self.test_flag = False
 
-        T = data['img'].size(1)
+        T = data["img"].size(1)
 
-        prev_img = data['img'][:, :-self.num_frame_backbone_grads]
-        rec_img = data['img'][:, -self.num_frame_backbone_grads:]
+        prev_img = data["img"][:, : -self.num_frame_backbone_grads]
+        rec_img = data["img"][:, -self.num_frame_backbone_grads :]
         rec_img_feats = self.extract_feat(rec_img, self.num_frame_backbone_grads)
 
-        if T-self.num_frame_backbone_grads > 0:
+        if T - self.num_frame_backbone_grads > 0:
             self.eval()
             with torch.no_grad():
-                prev_img_feats = self.extract_feat(prev_img, T-self.num_frame_backbone_grads, True)
+                prev_img_feats = self.extract_feat(prev_img, T - self.num_frame_backbone_grads, True)
             self.train()
-            data['img_feats'] = [torch.cat([prev_img_feats[i], rec_img_feats[i]], dim=1) for i in range(len(self.position_level))]
+            data["img_feats"] = [
+                torch.cat([prev_img_feats[i], rec_img_feats[i]], dim=1) for i in range(len(self.position_level))
+            ]
         else:
-            data['img_feats'] = rec_img_feats
+            data["img_feats"] = rec_img_feats
 
-        losses = self.obtain_history_memory(gt_bboxes_3d,
-                        gt_labels_3d, gt_bboxes,
-                        gt_labels, img_metas, centers2d, depths, gt_bboxes_ignore, **data)
+        losses = self.obtain_history_memory(
+            gt_bboxes_3d, gt_labels_3d, gt_bboxes, gt_labels, img_metas, centers2d, depths, gt_bboxes_ignore, **data
+        )
 
         return losses
-  
-  
+
     def forward_test(self, img_metas, rescale, **data):
         self.test_flag = True
-        for var, name in [(img_metas, 'img_metas')]:
+        for var, name in [(img_metas, "img_metas")]:
             if not isinstance(var, list):
-                raise TypeError('{} must be a list, but got {}'.format(
-                    name, type(var)))
+                raise TypeError("{} must be a list, but got {}".format(name, type(var)))
         for key in data:
-            if key != 'img':
+            if key != "img":
                 data[key] = data[key][0][0].unsqueeze(0)
             else:
                 data[key] = data[key][0]
@@ -287,31 +314,24 @@ class RepDetr3D(MVXTwoStageDetector):
         """Test function of point cloud branch."""
         outs_roi = self.forward_roi_head(**data)
 
-        if img_metas[0]['scene_token'] != self.prev_scene_token:
-            self.prev_scene_token = img_metas[0]['scene_token']
-            data['prev_exists'] = data['img'].new_zeros(1)
+        if img_metas[0]["scene_token"] != self.prev_scene_token:
+            self.prev_scene_token = img_metas[0]["scene_token"]
+            data["prev_exists"] = data["img"].new_zeros(1)
             self.pts_bbox_head.reset_memory()
         else:
-            data['prev_exists'] = data['img'].new_ones(1)
+            data["prev_exists"] = data["img"].new_ones(1)
 
         outs = self.pts_bbox_head(img_metas, **data)
-        bbox_list = self.pts_bbox_head.get_bboxes(
-            outs, img_metas)
-        bbox_results = [
-            bbox3d2result(bboxes, scores, labels)
-            for bboxes, scores, labels in bbox_list
-        ]
+        bbox_list = self.pts_bbox_head.get_bboxes(outs, img_metas)
+        bbox_results = [bbox3d2result(bboxes, scores, labels) for bboxes, scores, labels in bbox_list]
         return bbox_results
-    
+
     def simple_test(self, img_metas, **data):
         """Test function without augmentaiton."""
-        data['img_feats'] = self.extract_img_feat(data['img'], 1)
+        data["img_feats"] = self.extract_img_feat(data["img"], 1)
 
         bbox_list = [dict() for i in range(len(img_metas))]
-        bbox_pts = self.simple_test_pts(
-            img_metas, **data)
+        bbox_pts = self.simple_test_pts(img_metas, **data)
         for result_dict, pts_bbox in zip(bbox_list, bbox_pts):
-            result_dict['pts_bbox'] = pts_bbox
+            result_dict["pts_bbox"] = pts_bbox
         return bbox_list
-
-    

@@ -346,7 +346,7 @@ class T4Metric(NuScenesMetric):
             self.eval_detection_configs.max_boxes_per_sample,
             verbose=True,
         )
-        
+
         gt_boxes = t4metric_load_gt(
             nusc,
             self.eval_detection_configs,

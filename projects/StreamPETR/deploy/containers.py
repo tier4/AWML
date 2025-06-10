@@ -1,8 +1,9 @@
 import torch
+
+from projects.StreamPETR.stream_petr.models.utils.misc import inverse_sigmoid, topk_gather, transform_reference_points
 from projects.StreamPETR.stream_petr.models.utils.positional_encoding import (
     pos2posemb3d,
 )
-from projects.StreamPETR.stream_petr.models.utils.misc import topk_gather, transform_reference_points, inverse_sigmoid
 
 # Wrapper Classes for onnx conversion
 

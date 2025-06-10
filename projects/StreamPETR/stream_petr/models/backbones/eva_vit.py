@@ -1,18 +1,20 @@
+import logging
+import math
+import warnings
+from functools import partial
+from math import pi
+
 import fvcore.nn.weight_init as weight_init
+import numpy as np
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-import math
-import numpy as np
-import logging
-from functools import partial
-from scipy import interpolate
-from math import pi
-from einops import rearrange, repeat
-import warnings
 import torch.utils.checkpoint as cp
-from ..utils.attention import FlashAttention, FlashMHA
+from einops import rearrange, repeat
 from mmdet3d.registry import MODELS
+from scipy import interpolate
+
+from ..utils.attention import FlashAttention, FlashMHA
 
 logger = logging.getLogger(__name__)
 BatchNorm2d = torch.nn.BatchNorm2d

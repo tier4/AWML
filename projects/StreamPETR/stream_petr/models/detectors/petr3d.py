@@ -10,14 +10,15 @@
 #  Modified by Shihao Wang
 # ------------------------------------------------------------------------
 import torch
-from mmdet3d.registry import MODELS
-
-from mmdet3d.structures.ops.transforms import bbox3d2result
 from mmdet3d.models.detectors.mvx_two_stage import MVXTwoStageDetector
+from mmdet3d.registry import MODELS
+from mmdet3d.structures import CameraInstance3DBoxes, LiDARInstance3DBoxes
+from mmdet3d.structures.ops.transforms import bbox3d2result
+from mmengine.runner.amp import autocast
+
 from projects.StreamPETR.stream_petr.models.utils.grid_mask import GridMask
 from projects.StreamPETR.stream_petr.models.utils.misc import locations
-from mmdet3d.structures import CameraInstance3DBoxes, LiDARInstance3DBoxes
-from mmengine.runner.amp import autocast
+
 
 @MODELS.register_module()
 class Petr3D(MVXTwoStageDetector):
@@ -58,7 +59,7 @@ class Petr3D(MVXTwoStageDetector):
         stride=16,
         position_level=0,
         aux_2d_only=True,
-        **kwargs
+        **kwargs,
     ):
         super(Petr3D, self).__init__(
             pts_voxel_encoder=pts_voxel_encoder,
@@ -85,6 +86,7 @@ class Petr3D(MVXTwoStageDetector):
         self.aux_2d_only = aux_2d_only
         self.test_flag = False
         self.previous_order_idx = None
+
     def extract_img_feat(self, img, len_queue=1):
         """Extract features of images."""
         B = img.size(0)
@@ -127,7 +129,7 @@ class Petr3D(MVXTwoStageDetector):
         img_metas=None,
         centers_2d=None,
         depths=None,
-        **data
+        **data,
     ):
         losses = dict()
         T = data["img"].size(1)
@@ -153,7 +155,7 @@ class Petr3D(MVXTwoStageDetector):
                 depths[i],
                 requires_grad=requires_grad,
                 return_losses=return_losses,
-                **data_t
+                **data_t,
             )
             if loss is not None:
                 for key, value in loss.items():
@@ -185,7 +187,7 @@ class Petr3D(MVXTwoStageDetector):
         depths,
         requires_grad=True,
         return_losses=False,
-        **data
+        **data,
     ):
         """Forward function for point cloud branch.
         Args:
@@ -239,12 +241,16 @@ class Petr3D(MVXTwoStageDetector):
         augmentations.
         """
         self.stack_tensors(data)
-        
+
         # For debugging if the ordering of data is correct
-        prev_sample =  data["prev_exists"].cpu().reshape(-1)
+        prev_sample = data["prev_exists"].cpu().reshape(-1)
         order_idx = torch.tensor(data["img_metas"][0]["order_index"])
         if self.previous_order_idx is not None:
-            assert (prev_sample*order_idx == (self.previous_order_idx +1)* prev_sample).all(), f"prev_sample: {prev_sample}, order_idx: {order_idx}, previous_order_idx: {self.previous_order_idx}"
+            assert (
+                prev_sample * order_idx == (self.previous_order_idx + 1) * prev_sample
+            ).all(), (
+                f"prev_sample: {prev_sample}, order_idx: {order_idx}, previous_order_idx: {self.previous_order_idx}"
+            )
         self.previous_order_idx = order_idx
         if mode == "loss":
             return self.forward_train(**data)
@@ -264,7 +270,7 @@ class Petr3D(MVXTwoStageDetector):
         gt_bboxes_ignore=None,
         depths=None,
         centers_2d=None,
-        **data
+        **data,
     ):
         """Forward training function.
         Args:
@@ -289,7 +295,7 @@ class Petr3D(MVXTwoStageDetector):
         Returns:
             dict: Losses of different branches.
         """
-        if self.test_flag: #for interval evaluation
+        if self.test_flag:  # for interval evaluation
             self.pts_bbox_head.reset_memory()
             self.test_flag = False
         T = data["img"].size(1)
@@ -317,7 +323,7 @@ class Petr3D(MVXTwoStageDetector):
         location = self.prepare_location([x[0] for x in img_metas["pad_shape"]], **data)
         outs_roi = self.forward_roi_head(location, **data)
         topk_indexes = outs_roi["topk_indexes"]
-        
+
         # Confirm if this logic works for t4 dataset
         if img_metas["scene_token"][0] and img_metas["scene_token"] != self.prev_scene_token:
             print("Test: Resetting memory due to new scene token")
@@ -349,9 +355,9 @@ class Petr3D(MVXTwoStageDetector):
             )
 
         return predictions
-    
+
     def train(self, mode: bool = True):
-        if self.training!=mode:
+        if self.training != mode:
             self.pts_bbox_head.reset_memory()
             print("Cleared memory due to change in mode. Train mode: ", mode)
             super().train(mode)

@@ -10,14 +10,15 @@
 #  Modified by Shihao Wang
 # ------------------------------------------------------------------------
 
-import numpy as np
 import mmcv
-from mmdet.registry import TRANSFORMS
-import torch
-from PIL import Image
+import numpy as np
 import pyquaternion
-from mmpretrain.registry import TRANSFORMS as TRANSFORMS_MMPRETRAIN
+import torch
 from mmcv.transforms import Compose
+from mmdet.registry import TRANSFORMS
+from mmpretrain.registry import TRANSFORMS as TRANSFORMS_MMPRETRAIN
+from PIL import Image
+
 
 @TRANSFORMS.register_module()
 class PadMultiViewImage:
@@ -284,10 +285,10 @@ class ResizeCropFlipRotImage:
     def _sample_augmentation(self, H, W):
         fH, fW = self.data_aug_conf["final_dim"]
         if self.training:
-            # resize = max(fH / H, fW / W) 
+            # resize = max(fH / H, fW / W)
             # resize = min(np.random.uniform(resize+self.data_aug_conf["resize_lim"][0], resize+self.data_aug_conf["resize_lim"][1]),1)
             resize = np.random.uniform(*self.data_aug_conf["resize_lim"])
-            
+
             resize_dims = (int(W * resize), int(H * resize))
             newW, newH = resize_dims
             crop_h = int((1 - np.random.uniform(*self.data_aug_conf["bot_pct_lim"])) * newH) - fH
@@ -418,9 +419,10 @@ class ConvertTo3dGlobal:
 
         return results
 
+
 @TRANSFORMS.register_module()
 class Filter2DByRange:
-    def __init__(self, range_2d: float= 61.2):
+    def __init__(self, range_2d: float = 61.2):
         self.range_2d = range_2d
 
     def __call__(self, results):
@@ -432,6 +434,7 @@ class Filter2DByRange:
             results["gt_bboxes"][i] = results["gt_bboxes"][i][mask]
             results["depths"][i] = results["depths"][i][mask]
         return results
+
 
 @TRANSFORMS.register_module()
 class ImageAugmentation:
@@ -494,7 +497,7 @@ class ImageAugmentation:
 
     def __call__(self, results):
         if self.transforms:
-            for i,image in enumerate(results["img"]):
+            for i, image in enumerate(results["img"]):
                 if np.random.rand() < self.p:
                     results["img"][i] = self.transforms({"img": image.astype(np.uint8)})["img"]
         return results

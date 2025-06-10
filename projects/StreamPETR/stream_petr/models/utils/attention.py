@@ -5,15 +5,14 @@
 # ------------------------------------------------------------------------
 # flash-attention
 import math
+
 import torch
 import torch.nn as nn
-from torch.nn.init import xavier_uniform_, constant_, xavier_normal_
-from torch.nn.functional import linear
-
 from einops import rearrange
-
-from flash_attn.flash_attn_interface import flash_attn_varlen_kvpacked_func
 from flash_attn.bert_padding import unpad_input
+from flash_attn.flash_attn_interface import flash_attn_varlen_kvpacked_func
+from torch.nn.functional import linear
+from torch.nn.init import constant_, xavier_normal_, xavier_uniform_
 
 
 def _in_projection_packed(q, k, v, w, b=None):

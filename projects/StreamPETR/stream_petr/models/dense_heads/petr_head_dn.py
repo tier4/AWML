@@ -12,19 +12,18 @@
 import torch
 import torch.nn as nn
 from mmcv.cnn import Linear
-from mmengine.model import bias_init_with_prob
-from mmdet.utils.dist_utils import reduce_mean
-from mmdet.models.task_modules.builder import build_assigner, build_sampler
-from mmdet.models.utils import multi_apply
+from mmdet3d.models.task_modules.builder import build_bbox_coder
 from mmdet3d.registry import MODELS
 from mmdet.models.dense_heads.anchor_free_head import AnchorFreeHead
-from projects.StreamPETR.stream_petr.models.utils.misc import inverse_sigmoid
-from mmdet3d.models.task_modules.builder import build_bbox_coder
-from projects.StreamPETR.stream_petr.core.bbox.util import normalize_bbox
-
 from mmdet.models.layers.normed_predictor import NormedLinear
+from mmdet.models.task_modules.builder import build_assigner, build_sampler
+from mmdet.models.utils import multi_apply
+from mmdet.utils.dist_utils import reduce_mean
+from mmengine.model import bias_init_with_prob
+
+from projects.StreamPETR.stream_petr.core.bbox.util import normalize_bbox
+from projects.StreamPETR.stream_petr.models.utils.misc import MLN, SELayer_Linear, inverse_sigmoid, topk_gather
 from projects.StreamPETR.stream_petr.models.utils.positional_encoding import pos2posemb3d
-from projects.StreamPETR.stream_petr.models.utils.misc import MLN, topk_gather, SELayer_Linear
 
 
 @MODELS.register_module()

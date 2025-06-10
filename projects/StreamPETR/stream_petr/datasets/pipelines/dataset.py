@@ -1,15 +1,16 @@
-import numpy as np
-
-from mmdet3d.registry import DATASETS
-from autoware_ml.detection3d.datasets.t4dataset import T4Dataset
+import gc
+import math
+import os
+import pickle
+import random
 from typing import Tuple
 
+import numpy as np
 import torch
-import random
-import pickle
-import gc
-import os
-import math
+from mmdet3d.registry import DATASETS
+
+from autoware_ml.detection3d.datasets.t4dataset import T4Dataset
+
 
 def convert_to_torch(data):
     """
@@ -82,14 +83,13 @@ class StreamPETRDataset(T4Dataset):
         if self.reset_origin:
             print(f"Reset origin: {self.reset_origin}")
         print(f"Camera corder: {self.camera_order} test_mode: {self.test_mode}")
+
     def _validate_entry(self, info) -> bool:
         """
         Validate the necessary entries in the data info dict
         """
         if not all([x["img_path"] and os.path.exists(x["img_path"]) for x in info["images"].values()]):
-            print(
-                f"Found frame  {(info['sample_idx'])} without any image in it, not using it for training"
-            )
+            print(f"Found frame  {(info['sample_idx'])} without any image in it, not using it for training")
             return False
         return True
 
@@ -100,9 +100,9 @@ class StreamPETRDataset(T4Dataset):
             if idx == 0:
                 res.append(curr_sequence)
                 continue
-            info_m1 = self.get_data_info(idx-1)
+            info_m1 = self.get_data_info(idx - 1)
             info = self.get_data_info(idx)
-            if info_m1["scene_token"] != info["scene_token"] or info_m1["sorted_index"] != info["sorted_index"]-1:
+            if info_m1["scene_token"] != info["scene_token"] or info_m1["sorted_index"] != info["sorted_index"] - 1:
                 curr_sequence += 1
             res.append(curr_sequence)
         flag = np.array(res, dtype=np.int64)
@@ -111,31 +111,30 @@ class StreamPETRDataset(T4Dataset):
         curr_new_flag = 0
         for curr_flag in range(len(bin_counts)):
             curr_sequence_length = np.array(
-                list(range(0, 
-                        bin_counts[curr_flag], 
-                        math.ceil(bin_counts[curr_flag] / self.seq_split_num)))
-                + [bin_counts[curr_flag]])
+                list(range(0, bin_counts[curr_flag], math.ceil(bin_counts[curr_flag] / self.seq_split_num)))
+                + [bin_counts[curr_flag]]
+            )
 
-            for sub_seq_idx in (curr_sequence_length[1:] - curr_sequence_length[:-1]):
+            for sub_seq_idx in curr_sequence_length[1:] - curr_sequence_length[:-1]:
                 for _ in range(sub_seq_idx):
                     new_flags.append(curr_new_flag)
                 curr_new_flag += 1
         assert len(new_flags) == len(flag)
         self.flag = np.array(new_flags, dtype=np.int64)
-        self.origin = [np.array([0,0,0]) for _ in range(len(self))]
-        
+        self.origin = [np.array([0, 0, 0]) for _ in range(len(self))]
+
         if self.reset_origin:
-            idx=0
+            idx = 0
             flag = self.flag[0]
             current_origin = np.array(self.get_data_info(idx)["ego2global"])[:3, 3]
-            for idx,value in enumerate(self.flag):
+            for idx, value in enumerate(self.flag):
                 if value == flag:
                     self.origin[idx] = current_origin
                 else:
                     current_origin = np.array(self.get_data_info(idx)["ego2global"])[:3, 3]
                     flag = value
                     self.origin[idx] = current_origin
-                    
+
     def _serialize_data(self) -> Tuple[np.ndarray, np.ndarray]:
         """Serialize ``self.data_list`` to save memory when launching multiple
         workers in data loading. This function will be called in ``full_init``.
@@ -151,6 +150,7 @@ class StreamPETRDataset(T4Dataset):
         def _serialize(data):
             buffer = pickle.dumps(data, protocol=4)
             return np.frombuffer(buffer, dtype=np.uint8)
+
         # Serialize data information list avoid making multiple copies of
         # `self.data_list` when iterate `import torch.utils.data.dataloader`
         # with multiple workers.
@@ -162,7 +162,7 @@ class StreamPETRDataset(T4Dataset):
         argsorted_indices = sorted(list(range(len(sort_items))), key=lambda i: sort_items[i])
         for i, idx in enumerate(argsorted_indices):
             self.data_list[idx]["sorted_index"] = i
-            
+
         self.data_list = [self.data_list[i] for i in argsorted_indices if self._validate_entry(self.data_list[i])]
         data_list = [_serialize(x) for x in self.data_list]
         address_list = np.asarray([len(x) for x in data_list], dtype=np.int64)
@@ -187,9 +187,9 @@ class StreamPETRDataset(T4Dataset):
             dict: Training data dict of the corresponding index.
         """
         input_dict = self.get_annot_info(index)
-        if self.seq_mode:  
-            input_dict.update(dict(prev_exists=self.flag[index-1]==self.flag[index]))
-        else: 
+        if self.seq_mode:
+            input_dict.update(dict(prev_exists=self.flag[index - 1] == self.flag[index]))
+        else:
             raise NotImplementedError("Sliding window is not implemented for nuscenes")
         example = self.pipeline(input_dict)
 
@@ -211,7 +211,14 @@ class StreamPETRDataset(T4Dataset):
             else:
                 updated[key] = [each[key] for each in queue]
 
-        for key in ["gt_bboxes_3d", "gt_labels_3d", "gt_bboxes", "gt_bboxes_labels", "centers_2d", "depths"] : #, "gt_bboxes_gen", "gt_bboxes_labels_gen", "centers_2d_gen", "depths_gen"]:
+        for key in [
+            "gt_bboxes_3d",
+            "gt_labels_3d",
+            "gt_bboxes",
+            "gt_bboxes_labels",
+            "centers_2d",
+            "depths",
+        ]:  # , "gt_bboxes_gen", "gt_bboxes_labels_gen", "centers_2d_gen", "depths_gen"]:
             if key == "gt_bboxes_3d":
                 updated[key] = [each[key] for each in queue]
             else:
@@ -240,7 +247,7 @@ class StreamPETRDataset(T4Dataset):
 
         e2g_matrix = np.array(info["ego2global"])
         e2g_matrix[:3, 3] -= self.origin[index]
-        
+
         l2e_matrix = np.array(info["lidar_points"]["lidar2ego"])
         ego_pose = e2g_matrix @ l2e_matrix  # lidar2global
         ego_pose_inv = invert_matrix_egopose_numpy(ego_pose)
@@ -264,17 +271,17 @@ class StreamPETRDataset(T4Dataset):
             intrinsics = []
             extrinsics = []
             img_timestamp = []
-            
+
             if self.camera_order:
                 camera_order = self.camera_order
             else:
                 camera_order = list(info["images"].keys())
                 if not self.test_mode:
                     random.shuffle(camera_order)
-            
-            info["images"] = {x:info["images"][x] for x in camera_order}
 
-            for cam_type in info["images"] :
+            info["images"] = {x: info["images"][x] for x in camera_order}
+
+            for cam_type in info["images"]:
                 cam_info = info["images"][cam_type]
                 img_timestamp.append(cam_info["timestamp"])
                 image_paths.append(cam_info["img_path"])

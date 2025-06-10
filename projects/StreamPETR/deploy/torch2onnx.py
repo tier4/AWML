@@ -23,25 +23,27 @@
 #  Modified by Zhiqi Li
 # ---------------------------------------------
 
+import argparse
+import os
+
+import numpy as np
+import onnx
 import torch
+from mmengine import Config
+from mmengine.registry import RUNNERS
+from mmengine.runner import load_checkpoint
+from onnxsim import simplify
+
+from projects.StreamPETR.deploy.containers import (
+    TrtEncoderContainer,
+    TrtPositionEmbeddingContainer,
+    TrtPtsHeadContainer,
+)
 
 # torch.manual_seed(0)
 # torch.use_deterministic_algorithms(True)
 # torch.backends.cudnn.deterministic = True
 
-import argparse
-import os
-import numpy as np
-from mmengine import Config
-from mmengine.registry import RUNNERS
-import onnx
-from onnxsim import simplify
-from projects.StreamPETR.deploy.containers import (
-    TrtPtsHeadContainer,
-    TrtEncoderContainer,
-    TrtPositionEmbeddingContainer,
-)
-from mmengine.runner import load_checkpoint
 
 
 def parse_args():

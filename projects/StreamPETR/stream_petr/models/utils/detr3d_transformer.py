@@ -1,22 +1,21 @@
+import copy
+import warnings
+
 import torch
 import torch.nn as nn
+import torch.utils.checkpoint as cp
 from mmcv.cnn import build_norm_layer
-from mmengine.model import xavier_init, constant_init
 from mmcv.cnn.bricks.transformer import (
     TransformerLayerSequence,
-    build_transformer_layer_sequence,
     build_attention,
     build_feedforward_network,
+    build_transformer_layer_sequence,
 )
 from mmcv.ops.multi_scale_deform_attn import MultiScaleDeformableAttnFunction
-from mmengine.model import BaseModule
-
-from mmengine.registry import MODELS
 from mmengine.config.config import ConfigDict
-import warnings
-import copy
+from mmengine.model import BaseModule, constant_init, xavier_init
+from mmengine.registry import MODELS
 from torch.nn import ModuleList
-import torch.utils.checkpoint as cp
 
 # Disable warnings
 warnings.filterwarnings("ignore")

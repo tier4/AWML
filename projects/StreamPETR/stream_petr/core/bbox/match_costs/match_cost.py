@@ -1,16 +1,16 @@
 import torch
 from mmdet.models.task_modules import MATCH_COSTS
-from mmdet.structures.bbox import bbox_overlaps
-from mmdet.structures.bbox import ( bbox_cxcywh_to_xyxy, bbox_xyxy_to_cxcywh)
+from mmdet.structures.bbox import bbox_cxcywh_to_xyxy, bbox_overlaps, bbox_xyxy_to_cxcywh
+
 
 @MATCH_COSTS.register_module()
 class BBox3DL1CostAssigner(object):
     """BBox3DL1Cost.
-     Args:
-         weight (int | float, optional): loss_weight
+    Args:
+        weight (int | float, optional): loss_weight
     """
 
-    def __init__(self, weight=1.):
+    def __init__(self, weight=1.0):
         self.weight = weight
 
     def __call__(self, bbox_pred, gt_bboxes):
@@ -32,24 +32,24 @@ class BBox3DL1CostAssigner(object):
 class BBoxL1CostAssigner:
     """BBoxL1Cost.
 
-     Args:
-         weight (int | float, optional): loss_weight
-         box_format (str, optional): 'xyxy' for DETR, 'xywh' for Sparse_RCNN
+    Args:
+        weight (int | float, optional): loss_weight
+        box_format (str, optional): 'xyxy' for DETR, 'xywh' for Sparse_RCNN
 
-     Examples:
-         >>> from mmdet.core.bbox.match_costs.match_cost import BBoxL1Cost
-         >>> import torch
-         >>> self = BBoxL1Cost()
-         >>> bbox_pred = torch.rand(1, 4)
-         >>> gt_bboxes= torch.FloatTensor([[0, 0, 2, 4], [1, 2, 3, 4]])
-         >>> factor = torch.tensor([10, 8, 10, 8])
-         >>> self(bbox_pred, gt_bboxes, factor)
-         tensor([[1.6172, 1.6422]])
+    Examples:
+        >>> from mmdet.core.bbox.match_costs.match_cost import BBoxL1Cost
+        >>> import torch
+        >>> self = BBoxL1Cost()
+        >>> bbox_pred = torch.rand(1, 4)
+        >>> gt_bboxes= torch.FloatTensor([[0, 0, 2, 4], [1, 2, 3, 4]])
+        >>> factor = torch.tensor([10, 8, 10, 8])
+        >>> self(bbox_pred, gt_bboxes, factor)
+        tensor([[1.6172, 1.6422]])
     """
 
-    def __init__(self, weight=1., box_format='xyxy'):
+    def __init__(self, weight=1.0, box_format="xyxy"):
         self.weight = weight
-        assert box_format in ['xyxy', 'xywh']
+        assert box_format in ["xyxy", "xywh"]
         self.box_format = box_format
 
     def __call__(self, bbox_pred, gt_bboxes):
@@ -64,45 +64,41 @@ class BBoxL1CostAssigner:
         Returns:
             torch.Tensor: bbox_cost value with weight
         """
-        if self.box_format == 'xywh':
+        if self.box_format == "xywh":
             gt_bboxes = bbox_xyxy_to_cxcywh(gt_bboxes)
-        elif self.box_format == 'xyxy':
+        elif self.box_format == "xyxy":
             bbox_pred = bbox_cxcywh_to_xyxy(bbox_pred)
         bbox_cost = torch.cdist(bbox_pred.float(), gt_bboxes.float(), p=1)
         return bbox_cost * self.weight
+
 
 @MATCH_COSTS.register_module()
 class FocalLossCostAssigner:
     """FocalLossCost.
 
-     Args:
-         weight (int | float, optional): loss_weight
-         alpha (int | float, optional): focal_loss alpha
-         gamma (int | float, optional): focal_loss gamma
-         eps (float, optional): default 1e-12
-         binary_input (bool, optional): Whether the input is binary,
-            default False.
+    Args:
+        weight (int | float, optional): loss_weight
+        alpha (int | float, optional): focal_loss alpha
+        gamma (int | float, optional): focal_loss gamma
+        eps (float, optional): default 1e-12
+        binary_input (bool, optional): Whether the input is binary,
+           default False.
 
-     Examples:
-         >>> from mmdet.core.bbox.match_costs.match_cost import FocalLossCost
-         >>> import torch
-         >>> self = FocalLossCost()
-         >>> cls_pred = torch.rand(4, 3)
-         >>> gt_labels = torch.tensor([0, 1, 2])
-         >>> factor = torch.tensor([10, 8, 10, 8])
-         >>> self(cls_pred, gt_labels)
-         tensor([[-0.3236, -0.3364, -0.2699],
-                [-0.3439, -0.3209, -0.4807],
-                [-0.4099, -0.3795, -0.2929],
-                [-0.1950, -0.1207, -0.2626]])
+    Examples:
+        >>> from mmdet.core.bbox.match_costs.match_cost import FocalLossCost
+        >>> import torch
+        >>> self = FocalLossCost()
+        >>> cls_pred = torch.rand(4, 3)
+        >>> gt_labels = torch.tensor([0, 1, 2])
+        >>> factor = torch.tensor([10, 8, 10, 8])
+        >>> self(cls_pred, gt_labels)
+        tensor([[-0.3236, -0.3364, -0.2699],
+               [-0.3439, -0.3209, -0.4807],
+               [-0.4099, -0.3795, -0.2929],
+               [-0.1950, -0.1207, -0.2626]])
     """
 
-    def __init__(self,
-                 weight=1.,
-                 alpha=0.25,
-                 gamma=2,
-                 eps=1e-12,
-                 binary_input=False):
+    def __init__(self, weight=1.0, alpha=0.25, gamma=2, eps=1e-12, binary_input=False):
         self.weight = weight
         self.alpha = alpha
         self.gamma = gamma
@@ -120,10 +116,8 @@ class FocalLossCostAssigner:
             torch.Tensor: cls_cost value with weight
         """
         cls_pred = cls_pred.sigmoid()
-        neg_cost = -(1 - cls_pred + self.eps).log() * (
-            1 - self.alpha) * cls_pred.pow(self.gamma)
-        pos_cost = -(cls_pred + self.eps).log() * self.alpha * (
-            1 - cls_pred).pow(self.gamma)
+        neg_cost = -(1 - cls_pred + self.eps).log() * (1 - self.alpha) * cls_pred.pow(self.gamma)
+        pos_cost = -(cls_pred + self.eps).log() * self.alpha * (1 - cls_pred).pow(self.gamma)
 
         cls_cost = pos_cost[:, gt_labels] - neg_cost[:, gt_labels]
         return cls_cost * self.weight
@@ -144,13 +138,12 @@ class FocalLossCostAssigner:
         gt_labels = gt_labels.flatten(1).float()
         n = cls_pred.shape[1]
         cls_pred = cls_pred.sigmoid()
-        neg_cost = -(1 - cls_pred + self.eps).log() * (
-            1 - self.alpha) * cls_pred.pow(self.gamma)
-        pos_cost = -(cls_pred + self.eps).log() * self.alpha * (
-            1 - cls_pred).pow(self.gamma)
+        neg_cost = -(1 - cls_pred + self.eps).log() * (1 - self.alpha) * cls_pred.pow(self.gamma)
+        pos_cost = -(cls_pred + self.eps).log() * self.alpha * (1 - cls_pred).pow(self.gamma)
 
-        cls_cost = torch.einsum('nc,mc->nm', pos_cost, gt_labels) + \
-            torch.einsum('nc,mc->nm', neg_cost, (1 - gt_labels))
+        cls_cost = torch.einsum("nc,mc->nm", pos_cost, gt_labels) + torch.einsum(
+            "nc,mc->nm", neg_cost, (1 - gt_labels)
+        )
         return cls_cost / n * self.weight
 
     def __call__(self, cls_pred, gt_labels):
@@ -169,27 +162,26 @@ class FocalLossCostAssigner:
             return self._focal_loss_cost(cls_pred, gt_labels)
 
 
-
 @MATCH_COSTS.register_module()
 class IoUCostAssigner:
     """IoUCost.
 
-     Args:
-         iou_mode (str, optional): iou mode such as 'iou' | 'giou'
-         weight (int | float, optional): loss weight
+    Args:
+        iou_mode (str, optional): iou mode such as 'iou' | 'giou'
+        weight (int | float, optional): loss weight
 
-     Examples:
-         >>> from mmdet.core.bbox.match_costs.match_cost import IoUCost
-         >>> import torch
-         >>> self = IoUCost()
-         >>> bboxes = torch.FloatTensor([[1,1, 2, 2], [2, 2, 3, 4]])
-         >>> gt_bboxes = torch.FloatTensor([[0, 0, 2, 4], [1, 2, 3, 4]])
-         >>> self(bboxes, gt_bboxes)
-         tensor([[-0.1250,  0.1667],
-                [ 0.1667, -0.5000]])
+    Examples:
+        >>> from mmdet.core.bbox.match_costs.match_cost import IoUCost
+        >>> import torch
+        >>> self = IoUCost()
+        >>> bboxes = torch.FloatTensor([[1,1, 2, 2], [2, 2, 3, 4]])
+        >>> gt_bboxes = torch.FloatTensor([[0, 0, 2, 4], [1, 2, 3, 4]])
+        >>> self(bboxes, gt_bboxes)
+        tensor([[-0.1250,  0.1667],
+               [ 0.1667, -0.5000]])
     """
 
-    def __init__(self, iou_mode='giou', weight=1.):
+    def __init__(self, iou_mode="giou", weight=1.0):
         self.weight = weight
         self.iou_mode = iou_mode
 
@@ -205,8 +197,7 @@ class IoUCostAssigner:
             torch.Tensor: iou_cost value with weight
         """
         # overlaps: [num_bboxes, num_gt]
-        overlaps = bbox_overlaps(
-            bboxes, gt_bboxes, mode=self.iou_mode, is_aligned=False)
+        overlaps = bbox_overlaps(bboxes, gt_bboxes, mode=self.iou_mode, is_aligned=False)
         # The 1 is a constant that doesn't change the matching, so omitted.
         iou_cost = -overlaps
         return iou_cost * self.weight

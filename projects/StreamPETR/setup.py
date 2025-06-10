@@ -1,5 +1,6 @@
 import os
-from setuptools import setup, find_packages
+
+from setuptools import find_packages, setup
 
 setup(
     name="streampetr",
@@ -16,4 +17,4 @@ setup(
     description="StreamPETR: 3D Object Detection from Streaming Perception",
     long_description=open("README.md").read() if os.path.exists("README.md") else "",
     long_description_content_type="text/markdown",
-) 
+)

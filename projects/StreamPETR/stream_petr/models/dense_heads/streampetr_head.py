@@ -12,30 +12,30 @@
 import torch
 import torch.nn as nn
 from mmcv.cnn import Linear
-from mmengine.model import bias_init_with_prob
-from mmdet.utils.dist_utils import reduce_mean
-from mmdet.models.task_modules.builder import build_assigner, build_sampler
-from mmdet.models.utils import multi_apply
+from mmdet3d.models.task_modules.builder import build_bbox_coder
 from mmdet3d.registry import MODELS
 from mmdet.models.dense_heads.anchor_free_head import AnchorFreeHead
-from mmdet3d.models.task_modules.builder import build_bbox_coder
-from projects.StreamPETR.stream_petr.core.bbox.util import normalize_bbox
-
 from mmdet.models.layers.normed_predictor import NormedLinear
-from projects.StreamPETR.stream_petr.models.utils.positional_encoding import (
-    pos2posemb3d,
-    pos2posemb1d,
-    nerf_positional_encoding,
-)
+from mmdet.models.task_modules import BaseSampler, SamplingResult
+from mmdet.models.task_modules.builder import build_assigner, build_sampler
+from mmdet.models.utils import multi_apply
+from mmdet.utils.dist_utils import reduce_mean
+from mmengine.model import bias_init_with_prob
+
+from projects.StreamPETR.stream_petr.core.bbox.util import normalize_bbox
 from projects.StreamPETR.stream_petr.models.utils.misc import (
     MLN,
+    SELayer_Linear,
+    inverse_sigmoid,
+    memory_refresh,
     topk_gather,
     transform_reference_points,
-    memory_refresh,
-    SELayer_Linear,
 )
-from mmdet.models.task_modules import BaseSampler, SamplingResult
-from projects.StreamPETR.stream_petr.models.utils.misc import inverse_sigmoid
+from projects.StreamPETR.stream_petr.models.utils.positional_encoding import (
+    nerf_positional_encoding,
+    pos2posemb1d,
+    pos2posemb3d,
+)
 
 
 @MODELS.register_module()
@@ -237,7 +237,7 @@ class StreamPETRHead(AnchorFreeHead):
         self._init_layers()
         self.reset_memory()
         self.use_gravity_center = use_gravity_center
-        
+
     def _init_layers(self):
         """Initialize layers of the transformer head."""
 
@@ -280,17 +280,17 @@ class StreamPETRHead(AnchorFreeHead):
         self.reference_points = nn.Embedding(self.num_query, 3)
         if self.num_propagated > 0:
             # Suppose self.num_propagated is defined
-            num_divisions = round(self.num_propagated ** (1/3)+1)
+            num_divisions = round(self.num_propagated ** (1 / 3) + 1)
 
             # Create coordinates along each axis (centered in each mini-cube)
             linspace = torch.linspace(0, 1, steps=num_divisions + 1)
             centers = (linspace[:-1] + linspace[1:]) / 2  # midpoints between edges
 
             # Create a grid
-            meshgrid = torch.meshgrid(centers, centers, centers, indexing='ij')
+            meshgrid = torch.meshgrid(centers, centers, centers, indexing="ij")
             grid_points = torch.stack(meshgrid, dim=-1).reshape(-1, 3)
             # Adjust in case number of points is larger than needed
-            grid_points = grid_points[:self.num_propagated]
+            grid_points = grid_points[: self.num_propagated]
 
             self.pseudo_reference_points = nn.Parameter(grid_points, requires_grad=False)
         self.query_embedding = nn.Sequential(
@@ -411,6 +411,7 @@ class StreamPETRHead(AnchorFreeHead):
         )
         self.memory_timestamp -= data["timestamp"].unsqueeze(-1).unsqueeze(-1)
         self.memory_egopose = data["ego_pose"].unsqueeze(1) @ self.memory_egopose
+
     def position_embeding(self, data, memory_centers, topk_indexes, pad_shape):
         eps = 1e-5
         BN, H, W, _ = memory_centers.shape
@@ -1087,7 +1088,7 @@ class StreamPETRHead(AnchorFreeHead):
             preds = preds_dicts[i]
             bboxes = preds["bboxes"]
             if self.use_gravity_center:
-                bboxes[:, 2] = bboxes[:, 2] - bboxes[:, 5] * 0.5   # This returns the gravity centers
+                bboxes[:, 2] = bboxes[:, 2] - bboxes[:, 5] * 0.5  # This returns the gravity centers
             scores = preds["scores"]
             labels = preds["labels"]
 
