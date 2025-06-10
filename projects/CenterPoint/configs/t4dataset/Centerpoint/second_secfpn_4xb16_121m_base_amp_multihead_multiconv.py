@@ -215,6 +215,8 @@ test_evaluator = dict(
     filter_attributes=_base_.filter_attributes,
 )
 
+# sigmoid(-6.906) = 0.001 for initial small values
+heatmap_init_bias = -6.906
 model = dict(
     data_preprocessor=dict(
         type="Det3DDataPreprocessor",
@@ -259,7 +261,7 @@ model = dict(
         use_conv_for_no_stride=True,
     ),
     pts_bbox_head=dict(
-        type="CenterHead",
+        type="MultiHeadCenterHead",
         in_channels=sum([128, 128, 128]),
         tasks=[
             dict(num_class=1, class_names=["car"]),
@@ -268,12 +270,21 @@ model = dict(
             dict(num_class=1, class_names=["bicycle"]),
             dict(num_class=1, class_names=["pedestrian"]),
         ],
+        common_heads=dict(
+            reg=(2, 2),
+            height=(1, 2),
+            dim=(3, 2),
+            rot=(2, 2),
+            vel=(2, 2),
+        ),
+        share_conv_channel=64,
         #  Car, Truck, Bus, Bicycle, Pedestrian
-        # (output_channel_size, [stride, padding, kernel_size])
-        common_heads=[
+        detection_heads=[
             # Car
             # Kernel size of 3x3
             dict(
+                separate_head=dict(type="MultiHeadSeparateHead", init_bias=heatmap_init_bias),
+                # (output_channel_size, [stride, padding, kernel_size])
                 # Downsample factor by 2 and 2, and then 1x1
                 reg=(2, [(2, 1, 3), (2, 1, 3), (1, 0, 1)]),
                 height=(1, [(2, 1, 3), (2, 1, 3), (1, 0, 1)]),
@@ -285,6 +296,8 @@ model = dict(
             # Truck
             # Kernel size of 3x3
             dict(
+                separate_head=dict(type="MultiHeadSeparateHead", init_bias=heatmap_init_bias),
+                # (output_channel_size, [stride, padding, kernel_size])
                 # Downsample factor by 2 and 2, and then 1x1
                 reg=(2, [(2, 1, 3), (2, 1, 3), (1, 0, 1)]),
                 height=(1, [(2, 1, 3), (2, 1, 3), (1, 0, 1)]),
@@ -296,6 +309,8 @@ model = dict(
             # Bus
             # Kernel size of 5x5
             dict(
+                separate_head=dict(type="MultiHeadSeparateHead", init_bias=heatmap_init_bias),
+                # (output_channel_size, [stride, padding, kernel_size])
                 # Downsample factor by 2 and 4, and then 1x1
                 reg=(2, [(2, 2, 5), (4, 2, 5), (1, 0, 1)]),
                 height=(1, [(2, 2, 5), (4, 2, 5), (1, 0, 1)]),
@@ -307,6 +322,8 @@ model = dict(
             # Bike
             # Kernel size of 1x1
             dict(
+                separate_head=dict(type="MultiHeadSeparateHead", init_bias=heatmap_init_bias),
+                # (output_channel_size, [stride, padding, kernel_size])
                 # No Downsample
                 reg=(2, [(1, 0, 1), (1, 0, 1)]),
                 height=(1, [(1, 0, 1), (1, 0, 1)]),
@@ -318,6 +335,8 @@ model = dict(
             # Pedestrian
             # Kernel size of 1x1
             dict(
+                separate_head=dict(type="MultiHeadSeparateHead", init_bias=heatmap_init_bias),
+                # (output_channel_size, [stride, padding, kernel_size])
                 # No Downsample
                 reg=(2, [(1, 0, 1), (1, 0, 1)]),
                 height=(1, [(1, 0, 1), (1, 0, 1)]),
@@ -337,9 +356,7 @@ model = dict(
             post_center_range=[-200.0, -200.0, -10.0, 200.0, 200.0, 10.0],
             pc_range=point_cloud_range,
         ),
-        # sigmoid(-4.595) = 0.01 for initial small values
-        separate_head=dict(type="MultiHeadSeparateHead", init_bias=-4.595),
-        loss_cls=dict(type="mmdet.AmpGaussianFocalLoss", reduction="none", loss_weight=1.0),
+        loss_cls=dict(type="mmdet.AmpGaussianFocalLoss", reduction="mean", loss_weight=1.0),
         loss_bbox=dict(type="mmdet.L1Loss", reduction="mean", loss_weight=0.25),
         norm_bbox=True,
     ),
