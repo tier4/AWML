@@ -9,7 +9,7 @@
 - Detailed comparison
   - [Internal Link](https://docs.google.com/spreadsheets/d/1jkadazpbA2BUYEUdVV8Rpe54-snH1cbdJbbHsuK04-U/edit?usp=sharing)
 - Performance summary
-  - Dataset: test dataset of db_jpntaxi_v1 + db_jpntaxi_v2 + db_jpntaxi_v4 + db_gsm8_v1 + db_j6_v1 + db_j6_v2 + db_j6_v3 + db_j6_v5 + db_j6gen2_v1 + db_j6gen2_v1_1 + db_largebus_v1 (total frames: 4,199)
+  - Dataset: test dataset of db_jpntaxi_v1 + db_jpntaxi_v2 + db_jpntaxi_v4 + db_gsm8_v1 + db_j6_v1 + db_j6_v2 + db_j6_v3 + db_j6_v5 + db_j6gen2_v1 + db_largebus_v1 (total frames: 4,199)
   - Class mAP for center distance (0.5m, 1.0m, 2.0m, 4.0m):
 
 | eval range: 120m         | mAP  | car <br> (90,242) | truck <br> (14,910) | bus <br> (4,992) | bicycle <br> (4,666) | pedestrian <br> (36,690) |
@@ -88,7 +88,7 @@
 
 ### CenterPoint base/1.7
 - Changes:
-  - This releases add a new dataset `db_j6gen2_v1_1`
+  - This releases add more data to `db_j6gen2_v1`
   - Use `PillarFeatureNet` instead `BackwardPillarFeatureNet`
   - Add new label mapping: `construction_vehicle: truck`
   - Clip velocity in data when it exceeds a threshold, where the velocity can be abnormal
