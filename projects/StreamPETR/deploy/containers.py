@@ -179,8 +179,8 @@ class TrtPtsHeadContainer(torch.nn.Module):
         self._post_update_memory(data_ego_pose, data_timestamp, rec_ego_pose, all_cls_scores, all_bbox_preds, outs_dec)
 
         return (
-            all_cls_scores,
-            all_bbox_preds,
+            all_cls_scores.flatten(0, 2).unsqueeze(0).transpose(2,1), # This is to make the tensors easier to handle in cpp
+            all_bbox_preds.flatten(0, 2).unsqueeze(0).transpose(2,1), # This is to make the tensors easier to handle in cpp
             head.memory_embedding,
             head.memory_reference_point,
             head.memory_timestamp,

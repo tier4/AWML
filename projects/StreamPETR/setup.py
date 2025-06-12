@@ -11,6 +11,7 @@ setup(
         "ninja==1.11.1.3",
         "fvcore>=0.1.5.post20221221",
         "flash-attn==2.7.3",
+        "onnxsim==0.4.36",
     ],
     python_requires=">=3.7",
     author="GitHub: SamratThapa120",
