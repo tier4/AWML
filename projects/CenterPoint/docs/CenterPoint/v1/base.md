@@ -35,7 +35,7 @@
 <details>
 <summary> J6Gen2 </summary>
 
-- Test datases: db_j6gen2_v1 + db_j6gen2_v1_1 + db_j6gen2_v2 (total frames: 801)
+- Test datases: db_j6gen2_v1 + db_j6gen2_v2 (total frames: 801)
 
 | eval range: 120m         | mAP  | car <br> (28,002) | truck <br> (1,123) | bus <br> (1,203) | bicycle <br> (223) | pedestrian <br> (4,007) |
 | -------------------------| ---- | ----------------- | ------------------- | ---------------- | -------------------- | ------------------------ |
@@ -123,7 +123,7 @@
   - Batch size: 4*16 = 64
 
 - Evaluation
-  - db_jpntaxi_v1 + db_jpntaxi_v2 + db_jpntaxi_v4 + db_gsm8_v1 + db_j6_v1 + db_j6_v2 + db_j6_v3 + db_j6_v5 + db_j6gen2_v1 + db_j6gen2_v1_1 + db_largebus_v1 (total frames: 4,199):
+  - db_jpntaxi_v1 + db_jpntaxi_v2 + db_jpntaxi_v4 + db_gsm8_v1 + db_j6_v1 + db_j6_v2 + db_j6_v3 + db_j6_v5 + db_j6gen2_v1 + db_largebus_v1 (total frames: 4,199):
   - Total mAP (eval range = 120m): 0.6821
 
 | class_name | Count    | mAP  | AP@0.5m | AP@1.0m | AP@2.0m | AP@4.0m |
@@ -145,7 +145,7 @@
 | bicycle    |    504   | 62.59  | 58.57  | 62.58  | 64.61  | 64.61  |
 | pedestrian |  2,782   | 63.25  | 61.53  | 62.71  | 63.67  | 65.11  |
 
-- db_j6gen2_v1 + db_j6gen2_v1_1 + db_j6gen2_v2 (total frames: 801):
+- db_j6gen2_v1 + db_j6gen2_v2 (total frames: 801):
   - Total mAP (eval range = 120m): 0.7228
 
 | class_name  | Count   | mAP  | AP@0.5m | AP@1.0m | AP@2.0m | AP@4.0m |

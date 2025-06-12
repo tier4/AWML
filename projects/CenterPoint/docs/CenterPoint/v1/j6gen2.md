@@ -10,7 +10,7 @@
 - Detailed comparison
   - [Internal Link](https://docs.google.com/spreadsheets/d/1jkadazpbA2BUYEUdVV8Rpe54-snH1cbdJbbHsuK04-U/edit?usp=sharing)
 - Performance summary
-  - Dataset: test dataset of db_j6gen2_v1 + db_j6gen2_v1_1 + db_largebus_v1 (total frames: 1,116)
+  - Dataset: test dataset of db_j6gen2_v1 + db_largebus_v1 (total frames: 1,116)
   - Class mAP for center distance (0.5m, 1.0m, 2.0m, 4.0m):
 
 | eval range: 120m             | mAP  | car <br> (33,716) | truck <br> (1,583) | bus <br> (1,254) | bicycle <br> (727) | pedestrian <br> (6,789) |
@@ -34,7 +34,7 @@
 <details>
 <summary> J6Gen2 </summary>
 
-- Test datases: db_j6gen2_v1 + db_j6gen2_v1_1 + db_j6gen2_v2 (total frames: 801)
+- Test datases: db_j6gen2_v1 + db_j6gen2_v2 (total frames: 801)
 
 | eval range: 120m         | mAP  | car <br> (28,002) | truck <br> (1,123) | bus <br> (1,203) | bicycle <br> (223) | pedestrian <br> (4,007) |
 | -------------------------| ---- | ----------------- | ------------------- | ---------------- | -------------------- | ------------------------ |
@@ -75,7 +75,7 @@
   - Batch size: 4*16 = 64
 
 - Evaluation
-  - db_j6gen2_v1 + db_j6gen2_v1_1 + db_largebus_v1 (total frames: 1,116):
+  - db_j6gen2_v1 + db_largebus_v1 (total frames: 1,116):
   - Total mAP (eval range = 120m): 0.7420
 
 | class_name | Count    | mAP  | AP@0.5m | AP@1.0m | AP@2.0m | AP@4.0m |
@@ -97,7 +97,7 @@
 | bicycle    |    504   | 64.71  | 69.69  | 71.75  | 71.83  |
 | pedestrian |  2,782   | 64.96  | 66.14  | 67.12  | 68.79  |
 
-- db_j6gen2_v1 + db_j6gen2_v1_1 + db_j6gen2_v2 (total frames: 801):
+- db_j6gen2_v1 + db_j6gen2_v2 (total frames: 801):
   - Total mAP (eval range = 120m): 0.7464
 
 | class_name  | Count   | mAP  | AP@0.5m | AP@1.0m | AP@2.0m | AP@4.0m |
