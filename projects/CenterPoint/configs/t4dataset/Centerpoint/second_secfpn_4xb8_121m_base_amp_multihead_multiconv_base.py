@@ -23,8 +23,8 @@ input_modality = dict(
     use_external=False,
 )
 # Car, Truck, Bus, Bicycle, Pedestrian
-# out_size_factor = [4, 4, 8, 1, 1]
-out_size_factor = [4, 4, 8, 1, 1]
+out_size_factor = [1, 1, 1, 1, 1]
+out_size_factor = 1
 
 backend_args = None
 # backend_args = dict(backend="disk")
@@ -45,12 +45,12 @@ eval_class_range = {
 data_root = "data/tier4_dataset/"
 info_directory_path = "info/kokseang_1_7/"
 train_gpu_size = 4
-train_batch_size = 16
+train_batch_size = 8
 test_batch_size = 2
 num_workers = 32
 val_interval = 5
 max_epochs = 50
-work_dir = "work_dirs/centerpoint/" + _base_.dataset_type + "/second_secfpn_4xb16_121m_base_amp_multihead_multiconv/"
+work_dir = "work_dirs/centerpoint/" + _base_.dataset_type + "/second_secfpn_4xb8_121m_base_amp_multihead_multiconv_base/"
 
 train_pipeline = [
     dict(
@@ -217,7 +217,7 @@ test_evaluator = dict(
 )
 
 # sigmoid(-6.906) = 0.001 for initial small values
-heatmap_init_bias = -6.906
+heatmap_init_bias = -4.595
 model = dict(
     data_preprocessor=dict(
         type="Det3DDataPreprocessor",
@@ -280,73 +280,6 @@ model = dict(
         ),
         share_conv_channel=64,
         #  Car, Truck, Bus, Bicycle, Pedestrian
-        # detection_heads=[
-        #     # Car
-        #     # Kernel size of 3x3
-        #     dict(
-        #         separate_head=dict(type="MultiHeadSeparateHead", init_bias=heatmap_init_bias),
-        #         # (output_channel_size, [stride, padding, kernel_size])
-        #         # Downsample factor by 2 and 2, and then 1x1
-        #         reg=(2, [(2, 1, 3), (2, 1, 3), (1, 0, 1)]),
-        #         height=(1, [(2, 1, 3), (2, 1, 3), (1, 0, 1)]),
-        #         dim=(3, [(2, 1, 3), (2, 1, 3), (1, 0, 1)]),
-        #         rot=(2, [(2, 1, 3), (2, 1, 3), (1, 0, 1)]),
-        #         vel=(2, [(2, 1, 3), (2, 1, 3), (1, 0, 1)]),
-        #         heatmap=(1, [(2, 1, 3), (2, 1, 3), (1, 0, 1)]),
-        #     ),
-        #     # Truck
-        #     # Kernel size of 3x3
-        #     dict(
-        #         separate_head=dict(type="MultiHeadSeparateHead", init_bias=heatmap_init_bias),
-        #         # (output_channel_size, [stride, padding, kernel_size])
-        #         # Downsample factor by 2 and 2, and then 1x1
-        #         reg=(2, [(2, 1, 3), (2, 1, 3), (1, 0, 1)]),
-        #         height=(1, [(2, 1, 3), (2, 1, 3), (1, 0, 1)]),
-        #         dim=(3, [(2, 1, 3), (2, 1, 3), (1, 0, 1)]),
-        #         rot=(2, [(2, 1, 3), (2, 1, 3), (1, 0, 1)]),
-        #         vel=(2, [(2, 1, 3), (2, 1, 3), (1, 0, 1)]),
-        #         heatmap=(1, [(2, 1, 3), (2, 1, 3), (1, 0, 1)]),
-        #     ),
-        #     # Bus
-        #     # Kernel size of 5x5
-        #     dict(
-        #         separate_head=dict(type="MultiHeadSeparateHead", init_bias=heatmap_init_bias),
-        #         # (output_channel_size, [stride, padding, kernel_size])
-        #         # Downsample factor by 2 and 4, and then 1x1
-        #         reg=(2, [(2, 2, 5), (4, 2, 5), (1, 0, 1)]),
-        #         height=(1, [(2, 2, 5), (4, 2, 5), (1, 0, 1)]),
-        #         dim=(3, [(2, 2, 5), (4, 2, 5), (1, 0, 1)]),
-        #         rot=(2, [(2, 2, 5), (4, 2, 5), (1, 0, 1)]),
-        #         vel=(2, [(2, 2, 5), (4, 2, 5), (1, 0, 1)]),
-        #         heatmap=(1, [(2, 2, 5), (4, 2, 5), (1, 0, 1)]),
-        #     ),
-        #     # Bike
-        #     # Kernel size of 1x1
-        #     dict(
-        #         separate_head=dict(type="MultiHeadSeparateHead", init_bias=heatmap_init_bias),
-        #         # (output_channel_size, [stride, padding, kernel_size])
-        #         # No Downsample
-        #         reg=(2, [(1, 0, 1), (1, 0, 1)]),
-        #         height=(1, [(1, 0, 1), (1, 0, 1)]),
-        #         dim=(3, [(1, 0, 1), (1, 0, 1)]),
-        #         rot=(2, [(1, 0, 1), (1, 0, 1)]),
-        #         vel=(2, [(1, 0, 1), (1, 0, 1)]),
-        #         heatmap=(1, [(1, 0, 1), (1, 0, 1)]),
-        #     ),
-        #     # Pedestrian
-        #     # Kernel size of 1x1
-        #     dict(
-        #         separate_head=dict(type="MultiHeadSeparateHead", init_bias=heatmap_init_bias),
-        #         # (output_channel_size, [stride, padding, kernel_size])
-        #         # No Downsample
-        #         reg=(2, [(1, 0, 1), (1, 0, 1)]),
-        #         height=(1, [(1, 0, 1), (1, 0, 1)]),
-        #         dim=(3, [(1, 0, 1), (1, 0, 1)]),
-        #         rot=(2, [(1, 0, 1), (1, 0, 1)]),
-        #         vel=(2, [(1, 0, 1), (1, 0, 1)]),
-        #         heatmap=(1, [(1, 0, 1), (1, 0, 1)]),
-        #     ),
-        # ],
         detection_heads=[
             # Car
             # Kernel size of 3x3
@@ -354,12 +287,12 @@ model = dict(
                 separate_head=dict(type="MultiHeadSeparateHead", init_bias=heatmap_init_bias),
                 # (output_channel_size, [stride, padding, kernel_size])
                 # Downsample factor by 2 and 2, and then 1x1
-                reg=(2, [(2, 1, 3), (2, 1, 3), (1, 0, 1)]),
-                height=(1, [(2, 1, 3), (2, 1, 3), (1, 0, 1)]),
-                dim=(3, [(2, 1, 3), (2, 1, 3), (1, 0, 1)]),
-                rot=(2, [(2, 1, 3), (2, 1, 3), (1, 0, 1)]),
-                vel=(2, [(2, 1, 3), (2, 1, 3), (1, 0, 1)]),
-                heatmap=(1, [(2, 1, 3), (2, 1, 3), (1, 0, 1)]),
+                reg=(2, [(1, 1, 3), (1, 0, 1)]),
+                height=(1, [(1, 1, 3), (1, 0, 1)]),
+                dim=(3, [(1, 1, 3), (1, 0, 1)]),
+                rot=(2, [(1, 1, 3), (1, 0, 1)]),
+                vel=(2, [(1, 1, 3), (1, 0, 1)]),
+                heatmap=(1, [(1, 1, 3), (1, 0, 1)]),
             ),
             # Truck
             # Kernel size of 3x3
@@ -367,12 +300,12 @@ model = dict(
                 separate_head=dict(type="MultiHeadSeparateHead", init_bias=heatmap_init_bias),
                 # (output_channel_size, [stride, padding, kernel_size])
                 # Downsample factor by 2 and 2, and then 1x1
-                reg=(2, [(2, 1, 3), (2, 1, 3), (1, 0, 1)]),
-                height=(1, [(2, 1, 3), (2, 1, 3), (1, 0, 1)]),
-                dim=(3, [(2, 1, 3), (2, 1, 3), (1, 0, 1)]),
-                rot=(2, [(2, 1, 3), (2, 1, 3), (1, 0, 1)]),
-                vel=(2, [(2, 1, 3), (2, 1, 3), (1, 0, 1)]),
-                heatmap=(1, [(2, 1, 3), (2, 1, 3), (1, 0, 1)]),
+                reg=(2, [(1, 1, 3), (1, 0, 1)]),
+                height=(1, [(1, 1, 3), (1, 0, 1)]),
+                dim=(3, [(1, 1, 3), (1, 0, 1)]),
+                rot=(2, [(1, 1, 3), (1, 0, 1)]),
+                vel=(2, [(1, 1, 3), (1, 0, 1)]),
+                heatmap=(1, [(1, 1, 3), (1, 0, 1)]),
             ),
             # Bus
             # Kernel size of 5x5
@@ -380,12 +313,12 @@ model = dict(
                 separate_head=dict(type="MultiHeadSeparateHead", init_bias=heatmap_init_bias),
                 # (output_channel_size, [stride, padding, kernel_size])
                 # Downsample factor by 2 and 4, and then 1x1
-                reg=(2, [(2, 2, 5), (4, 2, 5), (1, 0, 1)]),
-                height=(1, [(2, 2, 5), (4, 2, 5), (1, 0, 1)]),
-                dim=(3, [(2, 2, 5), (4, 2, 5), (1, 0, 1)]),
-                rot=(2, [(2, 2, 5), (4, 2, 5), (1, 0, 1)]),
-                vel=(2, [(2, 2, 5), (4, 2, 5), (1, 0, 1)]),
-                heatmap=(1, [(2, 2, 5), (4, 2, 5), (1, 0, 1)]),
+                reg=(2, [(1, 2, 5), (1, 0, 1)]),
+                height=(1, [(1, 2, 5), (1, 0, 1)]),
+                dim=(3, [(1, 2, 5), (1, 0, 1)]),
+                rot=(2, [(1, 2, 5), (1, 0, 1)]),
+                vel=(2, [(1, 2, 5), (1, 0, 1)]),
+                heatmap=(1, [(1, 2, 5), (1, 0, 1)]),
             ),
             # Bike
             # Kernel size of 1x1
@@ -414,6 +347,73 @@ model = dict(
                 heatmap=(1, [(1, 0, 1), (1, 0, 1)]),
             ),
         ],
+        # detection_heads=[
+        #     # Car
+        #     # Kernel size of 3x3
+        #     dict(
+        #         separate_head=dict(type="MultiHeadSeparateHead", init_bias=heatmap_init_bias),
+        #         # (output_channel_size, [stride, padding, kernel_size])
+        #         # Downsample factor by 2 and 2, and then 1x1
+        #         reg=(2, [(1, 0, 1), (1, 0, 1)]),
+        #         height=(1, [(1, 0, 1), (1, 0, 1)]),
+        #         dim=(3, [(1, 0, 1), (1, 0, 1)]),
+        #         rot=(2, [(1, 0, 1), (1, 0, 1)]),
+        #         vel=(2, [(1, 0, 1), (1, 0, 1)]),
+        #         heatmap=(1, [(1, 0, 1), (1, 0, 1)]),
+        #     ),
+        #     # Truck
+        #     # Kernel size of 3x3
+        #     dict(
+        #         separate_head=dict(type="MultiHeadSeparateHead", init_bias=heatmap_init_bias),
+        #         # (output_channel_size, [stride, padding, kernel_size])
+        #         # Downsample factor by 2 and 2, and then 1x1
+        #         reg=(2, [(1, 0, 1), (1, 0, 1)]),
+        #         height=(1, [(1, 0, 1), (1, 0, 1)]),
+        #         dim=(3, [(1, 0, 1), (1, 0, 1)]),
+        #         rot=(2, [(1, 0, 1), (1, 0, 1)]),
+        #         vel=(2, [(1, 0, 1), (1, 0, 1)]),
+        #         heatmap=(1, [(1, 0, 1), (1, 0, 1)]),
+        #     ),
+        #     # Bus
+        #     # Kernel size of 5x5
+        #     dict(
+        #         separate_head=dict(type="MultiHeadSeparateHead", init_bias=heatmap_init_bias),
+        #         # (output_channel_size, [stride, padding, kernel_size])
+        #         # Downsample factor by 2 and 4, and then 1x1
+        #         reg=(2, [(1, 0, 1), (1, 0, 1)]),
+        #         height=(1, [(1, 0, 1), (1, 0, 1)]),
+        #         dim=(3, [(1, 0, 1), (1, 0, 1)]),
+        #         rot=(2, [(1, 0, 1), (1, 0, 1)]),
+        #         vel=(2, [(1, 0, 1), (1, 0, 1)]),
+        #         heatmap=(1, [(1, 0, 1), (1, 0, 1)]),
+        #     ),
+        #     # Bike
+        #     # Kernel size of 1x1
+        #     dict(
+        #         separate_head=dict(type="MultiHeadSeparateHead", init_bias=heatmap_init_bias),
+        #         # (output_channel_size, [stride, padding, kernel_size])
+        #         # No Downsample
+        #         reg=(2, [(1, 0, 1), (1, 0, 1)]),
+        #         height=(1, [(1, 0, 1), (1, 0, 1)]),
+        #         dim=(3, [(1, 0, 1), (1, 0, 1)]),
+        #         rot=(2, [(1, 0, 1), (1, 0, 1)]),
+        #         vel=(2, [(1, 0, 1), (1, 0, 1)]),
+        #         heatmap=(1, [(1, 0, 1), (1, 0, 1)]),
+        #     ),
+        #     # Pedestrian
+        #     # Kernel size of 1x1
+        #     dict(
+        #         separate_head=dict(type="MultiHeadSeparateHead", init_bias=heatmap_init_bias),
+        #         # (output_channel_size, [stride, padding, kernel_size])
+        #         # No Downsample
+        #         reg=(2, [(1, 0, 1), (1, 0, 1)]),
+        #         height=(1, [(1, 0, 1), (1, 0, 1)]),
+        #         dim=(3, [(1, 0, 1), (1, 0, 1)]),
+        #         rot=(2, [(1, 0, 1), (1, 0, 1)]),
+        #         vel=(2, [(1, 0, 1), (1, 0, 1)]),
+        #         heatmap=(1, [(1, 0, 1), (1, 0, 1)]),
+        #     ),
+        # ],
         bbox_coder=dict(
             type="MultiHeadCenterPointBBoxCoder",
             max_num=500,
@@ -453,7 +453,7 @@ randomness = dict(seed=0, diff_rank_seed=False, deterministic=True)
 
 # learning rate
 # Since mmengine doesn't support OneCycleMomentum yet, we use CosineAnnealing from the default configs
-lr = 0.0003
+lr = 0.0001
 param_scheduler = [
     # learning rate scheduler
     # During the first (max_epochs * 0.3) epochs, learning rate increases from 0 to lr * 10
@@ -518,7 +518,7 @@ optim_wrapper = dict(
     clip_grad=clip_grad,
     # Update it accordingly
     loss_scale={
-        "init_scale": 1.0,  # intial_scale: 256
+        "init_scale": 2.0**4,  # intial_scale: 256
         "growth_interval": 2000,
     },
 )
@@ -560,5 +560,3 @@ custom_hooks = [
 ]
 
 activation_checkpointing = ["pts_backbone"]
-
-resume = True

@@ -88,7 +88,13 @@ class MultiHeadSeparateHead(BaseModule):
             if init_cfg is None:
                 self.init_cfg = dict(type="Kaiming", layer="Conv2d")
 
-        self.init_weights()
+        self.init_bias_weights()
+
+    def init_bias_weights(self):
+        """Initialize weights."""
+        for head in self.heads:
+            if head == "heatmap":
+                self.__getattr__(head)[-1].bias.data.fill_(self.init_bias)
 
     def init_weights(self):
         """Initialize weights."""
