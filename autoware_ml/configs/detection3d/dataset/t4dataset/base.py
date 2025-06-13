@@ -108,6 +108,7 @@ name_mapping = {
     "fire_truck": "truck",
     "semi_trailer": "trailer",
     "tractor_unit": "truck",
+    "construction_vehicle": "truck",
 }
 
 class_names = [
