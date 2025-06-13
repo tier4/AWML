@@ -6,14 +6,14 @@ _base_ = [
 custom_imports = dict(imports=["projects.CenterPoint.models"], allow_failed_imports=False)
 custom_imports["imports"] += _base_.custom_imports["imports"]
 custom_imports["imports"] += ["autoware_ml.detection3d.datasets.transforms"]
-custom_imports["imports"] += ["projects.ConvNeXt_PC"]
 custom_imports["imports"] += ["autoware_ml.hooks"]
+custom_imports["imports"] += ["autoware_ml.backends.mlflowbackend"]
 
 # This is a base file for t4dataset, add the dataset config.
 # type, data_root and ann_file of data.train, data.val and data.test
 point_cloud_range = [-121.60, -121.60, -3.0, 121.60, 121.60, 5.0]
-voxel_size = [0.20, 0.20, 8.0]
-grid_size = [1216, 1216, 1]  # (121.60 / 0.32 == 380, 380 * 2 == 760)
+voxel_size = [0.32, 0.32, 8.0]
+grid_size = [760, 760, 1]  # (121.60 / 0.32 == 380, 380 * 2 == 760)
 sweeps_num = 1
 input_modality = dict(
     use_lidar=True,
@@ -22,7 +22,7 @@ input_modality = dict(
     use_map=False,
     use_external=False,
 )
-out_size_factor = 4
+out_size_factor = 1
 
 backend_args = None
 # backend_args = dict(backend="disk")
@@ -43,12 +43,12 @@ eval_class_range = {
 data_root = "data/t4dataset/"
 info_directory_path = "info/user_name/"
 train_gpu_size = 4
-train_batch_size = 8
+train_batch_size = 16
 test_batch_size = 2
 num_workers = 32
 val_interval = 5
-max_epochs = 30
-work_dir = "work_dirs/centerpoint/" + _base_.dataset_type + "/pillar_020_convnext_small_secfpn_4xb8_121m_base"
+max_epochs = 50
+work_dir = "work_dirs/centerpoint/" + _base_.dataset_type + "/second_secfpn_4xb16_121m_base_amp/"
 
 train_pipeline = [
     dict(
@@ -104,7 +104,6 @@ test_pipeline = [
         pad_empty_sweeps=True,
         remove_close=True,
         backend_args=backend_args,
-        test_mode=True,
     ),
     dict(type="PointsRangeFilter", point_cloud_range=point_cloud_range),
     dict(type="Pack3DDetInputs", keys=["points", "gt_bboxes_3d", "gt_labels_3d"]),
@@ -128,7 +127,6 @@ eval_pipeline = [
         pad_empty_sweeps=True,
         remove_close=True,
         backend_args=backend_args,
-        test_mode=True,
     ),
     dict(type="PointsRangeFilter", point_cloud_range=point_cloud_range),
     dict(type="Pack3DDetInputs", keys=["points", "gt_bboxes_3d", "gt_labels_3d"]),
@@ -224,13 +222,12 @@ model = dict(
             max_num_points=32,
             voxel_size=voxel_size,
             point_cloud_range=point_cloud_range,
-            max_voxels=(48000, 60000),
+            max_voxels=(64000, 64000),
             deterministic=True,
         ),
     ),
-    # Use BackwardPillarFeatureNet without computing voxel center for z-dimensionality
     pts_voxel_encoder=dict(
-        type="BackwardPillarFeatureNet",
+        type="PillarFeatureNet",
         in_channels=4,
         feat_channels=[32, 32],
         with_distance=False,
@@ -243,24 +240,20 @@ model = dict(
     ),
     pts_middle_encoder=dict(type="PointPillarsScatter", in_channels=32, output_shape=(grid_size[0], grid_size[1])),
     pts_backbone=dict(
-        _delete_=True,
-        type="ConvNeXt_PC",
+        type="SECOND",
         in_channels=32,
-        out_channels=[32, 64, 128, 128, 128],
-        depths=[3, 2, 1, 1, 1],
-        out_indices=[2, 3, 4],
-        drop_path_rate=0.0,  # No drop path
-        layer_scale_init_value=1.0,
-        gap_before_final_norm=False,
-        with_cp=True,  # We set with_cp to True for svaing gpu memory
-        # No loading any pretrained weights
+        out_channels=[64, 128, 256],
+        layer_nums=[3, 5, 5],
+        layer_strides=[1, 2, 2],
+        norm_cfg=dict(type="BN", eps=1e-3, momentum=0.01),
+        conv_cfg=dict(type="Conv2d", bias=False),
     ),
     pts_neck=dict(
         type="SECONDFPN",
-        in_channels=[128, 128, 128],
+        in_channels=[64, 128, 256],
         out_channels=[128, 128, 128],
         upsample_strides=[1, 2, 4],
-        norm_cfg=dict(type="BN", eps=1e-3, momentum=0.01),
+        norm_cfg=dict(type="BN", eps=0.001, momentum=0.01),
         upsample_cfg=dict(type="deconv", bias=False),
         use_conv_for_no_stride=True,
     ),
@@ -277,7 +270,9 @@ model = dict(
             post_center_range=[-200.0, -200.0, -10.0, 200.0, 200.0, 10.0],
             out_size_factor=out_size_factor,
         ),
-        loss_cls=dict(type="mmdet.GaussianFocalLoss", reduction="none", loss_weight=1.0),
+        # sigmoid(-4.595) = 0.01 for initial small values
+        separate_head=dict(type="CustomSeparateHead", init_bias=-4.595, final_kernel=1),
+        loss_cls=dict(type="mmdet.AmpGaussianFocalLoss", reduction="none", loss_weight=1.0),
         loss_bbox=dict(type="mmdet.L1Loss", reduction="mean", loss_weight=0.25),
         norm_bbox=True,
     ),
@@ -306,7 +301,6 @@ randomness = dict(seed=0, diff_rank_seed=False, deterministic=True)
 # learning rate
 # Since mmengine doesn't support OneCycleMomentum yet, we use CosineAnnealing from the default configs
 lr = 0.0003
-t_max_ratio = 0.20
 param_scheduler = [
     # learning rate scheduler
     # During the first (max_epochs * 0.3) epochs, learning rate increases from 0 to lr * 10
@@ -314,19 +308,19 @@ param_scheduler = [
     # lr * 1e-4
     dict(
         type="CosineAnnealingLR",
-        T_max=8,
+        T_max=int(max_epochs * 0.3),
         eta_min=lr * 10,
         begin=0,
-        end=8,
+        end=int(max_epochs * 0.3),
         by_epoch=True,
         convert_to_iter_based=True,
     ),
     dict(
         type="CosineAnnealingLR",
-        T_max=22,
+        T_max=max_epochs - int(max_epochs * 0.3),
         eta_min=lr * 1e-4,
-        begin=8,
-        end=30,
+        begin=int(max_epochs * 0.3),
+        end=max_epochs,
         by_epoch=True,
         convert_to_iter_based=True,
     ),
@@ -335,18 +329,18 @@ param_scheduler = [
     # during the next epochs, momentum increases from 0.85 / 0.95 to 1
     dict(
         type="CosineAnnealingMomentum",
-        T_max=8,
+        T_max=int(max_epochs * 0.3),
         eta_min=0.85 / 0.95,
         begin=0,
-        end=8,
+        end=int(max_epochs * 0.3),
         by_epoch=True,
         convert_to_iter_based=True,
     ),
     dict(
         type="CosineAnnealingMomentum",
-        T_max=22,
+        T_max=max_epochs - int(max_epochs * 0.3),
         eta_min=1,
-        begin=8,
+        begin=int(max_epochs * 0.3),
         end=max_epochs,
         by_epoch=True,
         convert_to_iter_based=True,
@@ -356,15 +350,24 @@ param_scheduler = [
 # runtime settings
 # Run validation for every val_interval epochs before max_epochs - 10, and run validation every 2 epoch after max_epochs - 10
 train_cfg = dict(
-    by_epoch=True, max_epochs=max_epochs, val_interval=val_interval, dynamic_intervals=[(max_epochs - 10, 2)]
+    by_epoch=True, max_epochs=max_epochs, val_interval=val_interval, dynamic_intervals=[(max_epochs - 5, 1)]
 )
 val_cfg = dict()
 test_cfg = dict()
 
+optimizer = dict(type="AdamW", lr=lr, weight_decay=0.01)
+clip_grad = dict(max_norm=15, norm_type=2)  # max norm of gradients upper bound to be 15 since amp is used
+
 optim_wrapper = dict(
-    type="OptimWrapper",
-    optimizer=dict(type="AdamW", lr=lr, weight_decay=0.01),
-    clip_grad=dict(max_norm=35, norm_type=2),
+    type="AmpOptimWrapper",
+    dtype="float16",
+    optimizer=optimizer,
+    clip_grad=clip_grad,
+    # Update it accordingly
+    loss_scale={
+        "init_scale": 2.0**8,  # intial_scale: 256
+        "growth_interval": 2000,
+    },
 )
 
 # Default setting for scaling LR automatically
@@ -381,6 +384,14 @@ if train_gpu_size > 1:
 vis_backends = [
     dict(type="LocalVisBackend"),
     dict(type="TensorboardVisBackend"),
+    # Update info accordingly
+    dict(
+        type="SafeMLflowVisBackend",
+        exp_name="(UserName) CenterPoint",
+        run_name="CenterPoint base",
+        tracking_uri="http://localhost:5000",
+        artifact_suffix=(),
+    ),
 ]
 visualizer = dict(type="Det3DLocalVisualizer", vis_backends=vis_backends, name="visualizer")
 
@@ -392,4 +403,5 @@ default_hooks = dict(
 
 custom_hooks = [
     dict(type="MomentumInfoHook"),
+    dict(type="LossScaleInfoHook"),
 ]

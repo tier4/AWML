@@ -390,4 +390,6 @@ default_hooks = dict(
     checkpoint=dict(type="CheckpointHook", interval=1, max_keep_ckpts=3, save_best="NuScenes metric/T4Metric/mAP"),
 )
 
-custom_hooks = [dict(type="MomentumInfoHook")]
+custom_hooks = [
+    dict(type="MomentumInfoHook"),
+]

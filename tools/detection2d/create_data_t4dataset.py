@@ -168,12 +168,15 @@ def main() -> None:
 
                 data_list: Dict[str, DataEntry] = {}
                 for tmp in t4.sample_data:
-                    data_entry = DataEntry(
-                        img_path=os.path.abspath(os.path.join(t4.data_root, tmp.filename)),
-                        width=tmp.width,
-                        height=tmp.height,
-                    )
-                    data_list[tmp.token] = data_entry
+                    if not tmp.is_key_frame:
+                        continue
+                    if not os.path.basename(tmp.filename)[-3:] == "bin":
+                        data_entry = DataEntry(
+                            img_path=os.path.abspath(os.path.join(t4.data_root, tmp.filename)),
+                            width=tmp.width,
+                            height=tmp.height,
+                        )
+                        data_list[tmp.token] = data_entry
 
                 attributes = {tmp.token: tmp.name for tmp in t4.attribute}
                 categories = {tmp.token: tmp.name for tmp in t4.category}
