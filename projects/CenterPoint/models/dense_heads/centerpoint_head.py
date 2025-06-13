@@ -1,60 +1,54 @@
 from typing import List, Tuple
 
-import numpy as np
 import torch
 from mmdet3d.models import CenterHead as _CenterHead
+from mmdet3d.models.dense_heads.centerpoint_head import SeparateHead
 from mmdet3d.models.utils import clip_sigmoid
 from mmdet3d.registry import MODELS
-from mmdet3d.structures.bbox_3d.utils import limit_period
 from mmengine import print_log
 from mmengine.structures import InstanceData
 
 
-def get_rotation_bin(rot, dir_offset=0, num_bins=2, one_hot=True):
-    """Encode rotation to 0 ~ num_bins-1.
+@MODELS.register_module(force=True)
+class CustomSeparateHead(SeparateHead):
 
-    Args:
-        rot (torch.Tensor): The rotation to encode.
-        dir_offset (int): Direction offset.
-        num_bins (int): Number of bins to divide 2*PI.
-        one_hot (bool): Whether to encode as one hot.
-
-    Returns:
-        torch.Tensor: Encoded rotation bin.
-    """
-    offset_rot = limit_period(rot - dir_offset, 0, np.pi)
-    bin_cls_targets = torch.floor(offset_rot / (np.pi / num_bins)).long()
-    bin_cls_targets = torch.clamp(bin_cls_targets, min=0, max=num_bins - 1)
-    if one_hot:
-        bin_targets = torch.zeros(
-            *list(bin_cls_targets.shape), num_bins, dtype=rot.dtype, device=bin_cls_targets.device
+    def __init__(
+        self,
+        in_channels,
+        heads,
+        head_conv=64,
+        final_kernel=1,
+        init_bias=-2.19,
+        conv_cfg=dict(type="Conv2d"),
+        norm_cfg=dict(type="BN2d"),
+        bias="auto",
+        init_cfg=None,
+        **kwargs,
+    ):
+        """Overwritten class of SeparateHead to fix the initialization of bias weights."""
+        assert init_cfg is None, "To prevent abnormal initialization " "behavior, init_cfg is not allowed to be set"
+        super(CustomSeparateHead, self).__init__(
+            in_channels=in_channels,
+            heads=heads,
+            head_conv=head_conv,
+            final_kernel=final_kernel,
+            init_bias=init_bias,
+            conv_cfg=conv_cfg,
+            norm_cfg=norm_cfg,
+            bias=bias,
+            init_cfg=init_cfg,
+            **kwargs,
         )
-        scatter_dim = len(bin_cls_targets.shape)
-        bin_targets.scatter_(scatter_dim, bin_cls_targets.unsqueeze(dim=-1).long(), 1.0)
-        bin_cls_targets = bin_targets
-    return bin_cls_targets
+        if init_cfg is None:
+            self.init_cfg = dict(type="Kaiming", layer="Conv2d")
 
+        self.init_bias_weights()
 
-def get_direction_bin(rot, dir_offset=0, one_hot=True):
-    """Encode direction to 2 bins.
-
-    Args:
-        rot (torch.Tensor): The rotation to encode.
-        dir_offset (int): Direction offset..
-        one_hot (bool): Whether to encode as one hot.
-
-    Returns:
-        torch.Tensor: Encoded direction targets.
-    """
-    offset_rot = limit_period(rot - dir_offset, 0, 2 * np.pi)
-    dir_cls_targets = torch.floor(offset_rot / (2 * np.pi / 2)).long()
-    dir_cls_targets = torch.clamp(dir_cls_targets, min=0, max=2 - 1)
-    if one_hot:
-        dir_targets = torch.zeros(*list(dir_cls_targets.shape), 2, dtype=rot.dtype, device=dir_cls_targets.device)
-        scatter_dim = len(dir_cls_targets.shape)
-        dir_targets.scatter_(scatter_dim, dir_cls_targets.unsqueeze(dim=-1).long(), 1.0)
-        dir_cls_targets = dir_targets
-    return dir_cls_targets
+    def init_bias_weights(self):
+        """Initialize weights."""
+        for head in self.heads:
+            if head == "heatmap":
+                self.__getattr__(head)[-1].bias.data.fill_(self.init_bias)
 
 
 @MODELS.register_module(force=True)
