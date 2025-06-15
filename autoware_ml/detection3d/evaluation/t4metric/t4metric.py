@@ -339,19 +339,21 @@ class T4Metric(NuScenesMetric):
         output_dir = os.path.join(*os.path.split(result_path)[:-1])
         nusc = self.loaded_scenes[scene_token]
 
-        gt_boxes = t4metric_load_gt(
-            nusc,
-            self.eval_detection_configs,
-            scene_token,
-            post_mapping_dict=self.name_mapping,
-            filter_attributions=self.filter_attributes,
-        )
         preds, _ = t4metric_load_prediction(
             nusc,
             self.eval_detection_configs,
             result_path,
             self.eval_detection_configs.max_boxes_per_sample,
             verbose=True,
+        )
+
+        gt_boxes = t4metric_load_gt(
+            nusc,
+            self.eval_detection_configs,
+            scene_token,
+            post_mapping_dict=self.name_mapping,
+            filter_attributions=self.filter_attributes,
+            predicted_tokens=preds.sample_tokens,
         )
 
         evaluator = T4DetectionEvaluation(

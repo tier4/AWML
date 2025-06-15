@@ -56,6 +56,7 @@ def t4metric_load_gt(
     filter_attributions: Optional[Tuple[str, str]],
     verbose: bool = False,
     post_mapping_dict: Optional[Dict[str, str]] = None,
+    predicted_tokens: Optional[List[str]] = None,
 ) -> EvalBoxes:
     """
     Loads ground truth boxes from DB.
@@ -76,6 +77,10 @@ def t4metric_load_gt(
 
     # Load annotations and filter predictions and annotations.
     for sample_token in tqdm.tqdm(sample_tokens_all, leave=verbose):
+        # Sometimes models (like StreamPETR) skip prediction for the frames that have missing sensor data.
+        if predicted_tokens and sample_token not in predicted_tokens:
+            print(f"Skipping sample {sample_token} because it was not found in the predictions")
+            continue
         sample = nusc.get("sample", sample_token)
         sample_annotation_tokens = sample["anns"]
 
