@@ -58,6 +58,7 @@ If you want to search the OSS tools around `AWML`, you should read following pag
 
 If you want to know about `AWML`, you should read following pages.
 
+- [Tips for how to follow development on AWML](/docs/tips/how_to_follow.md)
 - [Tips for config files](/docs/tips/config.md)
 - [Tips for remote development](/docs/tips/remote_development.md)
 
