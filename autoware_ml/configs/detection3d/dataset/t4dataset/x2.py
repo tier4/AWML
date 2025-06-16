@@ -66,6 +66,7 @@ name_mapping = {
     "vehicle.police": "car",
     "vehicle.trailer": "truck",
     "vehicle.truck": "truck",
+    "construction_vehicle": "truck",
 }
 
 class_names = [
