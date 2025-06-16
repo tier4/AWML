@@ -9,10 +9,9 @@ custom_imports = dict(
 )
 custom_imports["imports"] += _base_.custom_imports["imports"]
 
-
 backbone_norm_cfg = dict(type="LN", requires_grad=True)
 
-info_directory_path = "info/samrat/base_jpntaxi/"
+info_directory_path = "info/cameraonly/baseline/"
 data_root = "data/"
 
 
@@ -86,6 +85,26 @@ model = dict(
         ),
     ),
     img_neck=dict(type="CPFPN", in_channels=[768, 1024], out_channels=256, num_outs=2),  ###remove unused parameters
+    img_roi_head=dict(
+        type="mmdet.FocalHead",
+        num_classes=len(class_names),
+        in_channels=256,
+        bbox_coder=dict(type="mmdet.DistancePointBBoxCoder"),
+        loss_cls2d=dict(type="mmdet.QualityFocalLoss", use_sigmoid=True, beta=2.0, loss_weight=2.0),
+        loss_centerness=dict(type="mmdet.GaussianFocalLoss", reduction="mean", loss_weight=1.0),
+        loss_bbox2d=dict(type="mmdet.L1Loss", loss_weight=5.0),
+        loss_iou2d=dict(type="mmdet.GIoULoss", loss_weight=2.0),
+        loss_centers2d=dict(type="mmdet.L1Loss", loss_weight=10.0),
+        train_cfg=dict(
+            assigner2d=dict(
+                type="mmdet.HungarianAssigner2D",
+                cls_cost=dict(type="mmdet.FocalLossCostAssigner", weight=2),
+                reg_cost=dict(type="mmdet.BBoxL1CostAssigner", weight=5.0, box_format="xywh"),
+                iou_cost=dict(type="mmdet.IoUCostAssigner", iou_mode="giou", weight=2.0),
+                centers2d_cost=dict(type="mmdet.BBox3DL1CostAssigner", weight=10.0),
+            )
+        ),
+    ),
     pts_bbox_head=dict(
         type="StreamPETRHead",
         num_classes=len(class_names),
@@ -404,8 +423,6 @@ env_cfg = dict(
 
 sync_bn = "torch"
 
-load_from = "/workspace/work_dirs/ckpts/epoch_30.pth"
+# load_from = "/workspace/work_dirs/ckpts/nuscenes_baseline.pth"
 
 auto_scale_lr = dict(base_batch_size=8, enable=True)
-
-work_dir = "/workspace/work_dirs/t4_xx1_vov_flash_480x640_baseline_no2dloss"

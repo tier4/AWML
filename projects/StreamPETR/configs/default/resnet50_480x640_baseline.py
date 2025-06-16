@@ -9,10 +9,9 @@ custom_imports = dict(
 )
 custom_imports["imports"] += _base_.custom_imports["imports"]
 
-
 backbone_norm_cfg = dict(type="LN", requires_grad=True)
 
-info_directory_path = "info/samrat/base_jpntaxi/"
+info_directory_path = "info/cameraonly/baseline/"
 data_root = "data/"
 
 
@@ -75,17 +74,21 @@ model = dict(
     num_frame_losses=num_frame_losses,
     use_grid_mask=True,
     img_backbone=dict(
-        type="VoVNet",  ###use checkpoint to save memory
-        spec_name="V-99-eSE",
-        norm_eval=True,  # TODO: make true by default
+        pretrained='torchvision://resnet50',
+        type='ResNet',
+        depth=50,
+        num_stages=4,
+        out_indices=(2, 3),
         frozen_stages=-1,
-        input_ch=3,
-        out_features=(
-            "stage4",
-            "stage5",
-        ),
-    ),
-    img_neck=dict(type="CPFPN", in_channels=[768, 1024], out_channels=256, num_outs=2),  ###remove unused parameters
+        norm_cfg=dict(type='BN2d', requires_grad=False),
+        norm_eval=True,
+        with_cp=False,
+        style='pytorch'),
+    img_neck=dict(
+        type='CPFPN',  ###remove unused parameters 
+        in_channels=[1024, 2048],
+        out_channels=256,
+        num_outs=2),
     img_roi_head=dict(
         type="mmdet.FocalHead",
         num_classes=len(class_names),
@@ -190,8 +193,8 @@ model = dict(
 file_client_args = dict(backend="disk")
 
 ida_aug_conf = {
-    "resize_lim": (0.64, 0.69),
-    "final_dim": (720, 960),
+    "resize_lim": (0.42, 0.46),
+    "final_dim": (480, 640),
     "bot_pct_lim": (0.0, 0.0),
     "rot_lim": (0.0, 0.0),
     "H": 1080,
@@ -200,8 +203,8 @@ ida_aug_conf = {
 }
 
 ida_aug_conf_test = {
-    "resize_lim": (0.64, 0.69),
-    "final_dim": (720, 960),
+    "resize_lim": (0.42, 0.46),
+    "final_dim": (480, 640),
     "bot_pct_lim": (0.0, 0.0),
     "rot_lim": (0.0, 0.0),
     "H": 1080,
@@ -373,7 +376,7 @@ train_cfg = dict(
 val_cfg = dict()
 test_cfg = dict()
 
-lr = 5e-5
+lr = 1e-4
 optimizer = dict(type="AdamW", lr=lr, weight_decay=0.01)  # bs 8: 2e-4 || bs 16: 4e-4,
 
 # optim_wrapper = dict(type="OptimWrapper", optimizer=optimizer, paramwise_cfg=dict(custom_keys={'img_backbone': dict(lr_mult=0.1),}))
@@ -424,6 +427,6 @@ env_cfg = dict(
 
 sync_bn = "torch"
 
-load_from = "/workspace/work_dirs/ckpts/epoch_30.pth"
+# load_from = "/workspace/work_dirs/ckpts/nuscenes_baseline.pth"
 
 auto_scale_lr = dict(base_batch_size=8, enable=True)
