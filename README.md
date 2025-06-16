@@ -74,7 +74,6 @@ If you want to know about `AWML`, you should read following pages.
 ## Supported pipelines
 
 - [Use AWML with WebAuto](/pipelines/webauto/)
-- (TBD) [Project adaptation](/pipelines/project_adaptation/)
 
 ## Supported model
 ### 3D detection
@@ -102,7 +101,7 @@ If you want to know about `AWML`, you should read following pages.
 ### 2D segmentation
 
 - Model for ML tools
-  - (TBD) [SegmentAnything](/projects/SegmentAnything/)
+  - TBD
 
 ### 2D classification
 
