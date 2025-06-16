@@ -12,9 +12,21 @@ num_workers = 16
 num_epochs = 35
 val_interval = 5
 
-train_dataloader = dict(batch_size=batch_size, num_workers=num_workers, dataset=dict(ann_file=info_directory_path + _base_.info_train_file_name, data_root=data_root))
-val_dataloader = dict(batch_size=batch_size, num_workers=num_workers, dataset=dict(ann_file=info_directory_path + _base_.info_val_file_name, data_root=data_root))
-test_dataloader = dict(batch_size=batch_size, num_workers=num_workers, dataset=dict(ann_file=info_directory_path + _base_.info_test_file_name, data_root=data_root))
+train_dataloader = dict(
+    batch_size=batch_size,
+    num_workers=num_workers,
+    dataset=dict(ann_file=info_directory_path + _base_.info_train_file_name, data_root=data_root),
+)
+val_dataloader = dict(
+    batch_size=batch_size,
+    num_workers=num_workers,
+    dataset=dict(ann_file=info_directory_path + _base_.info_val_file_name, data_root=data_root),
+)
+test_dataloader = dict(
+    batch_size=batch_size,
+    num_workers=num_workers,
+    dataset=dict(ann_file=info_directory_path + _base_.info_test_file_name, data_root=data_root),
+)
 
 
 val_evaluator = dict(data_root=data_root, ann_file=data_root + info_directory_path + _base_.info_val_file_name)
