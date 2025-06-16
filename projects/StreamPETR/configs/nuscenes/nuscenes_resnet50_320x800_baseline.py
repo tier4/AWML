@@ -82,23 +82,18 @@ model = dict(
     num_frame_losses=num_frame_losses,
     use_grid_mask=True,
     img_backbone=dict(
-        init_cfg=dict(
-            checkpoint='torchvision://resnet50',
-            type='Pretrained'),
-        type='mmpretrain.ResNet',
+        init_cfg=dict(checkpoint="torchvision://resnet50", type="Pretrained"),
+        type="mmpretrain.ResNet",
         depth=50,
         num_stages=4,
         out_indices=(2, 3),
         frozen_stages=-1,
-        norm_cfg=dict(type='BN2d', requires_grad=False),
+        norm_cfg=dict(type="BN2d", requires_grad=False),
         norm_eval=True,
         with_cp=False,
-        style='pytorch'),
-    img_neck=dict(
-        type='CPFPN',  ###remove unused parameters 
-        in_channels=[1024, 2048],
-        out_channels=256,
-        num_outs=2),
+        style="pytorch",
+    ),
+    img_neck=dict(type="CPFPN", in_channels=[1024, 2048], out_channels=256, num_outs=2),  ###remove unused parameters
     img_roi_head=dict(
         type="mmdet.FocalHead",
         num_classes=len(class_names),
