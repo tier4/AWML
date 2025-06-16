@@ -3,7 +3,7 @@ _base_ = [
     "../default/vov_flash_480x640_baseline.py",
 ]
 
-info_directory_path = "info/samrat/base_model1.0.0/"
+info_directory_path = "info/user/base_model1.0.0/"
 data_root = "data/"
 
 batch_size = 1
