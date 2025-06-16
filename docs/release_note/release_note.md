@@ -12,6 +12,8 @@ https://arxiv.org/abs/2506.00645
 We are glad to announce publishing the arXiv paper.
 If you are interested in the paper, please read and share it!
 
+![Screenshot from 2025-06-16 14-59-26](https://github.com/user-attachments/assets/3e92f640-7ccc-42d8-810b-db60727417a4)
+
 - Update CenterPoint model from base/1.3 to base/1.7 and fine-tuning for x2/1.7.1
   - Result for J6Gen2
   - CenterPoint base/1.7 (A)  Without feature of distance between of each pointcloud to center of pillar in Z
