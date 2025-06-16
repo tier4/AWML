@@ -71,7 +71,7 @@ python tools/detection3d/visualize_bboxes_cameraonly.py projects/StreamPETR/conf
 ```
 ### 5. Deploy
 
-- Make an onnx file for a CenterPoint model
+- Make onnx files for a StreamPETR model
 
 ```sh
 CONFIG_PATH=/path/to/config
