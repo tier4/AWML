@@ -50,7 +50,7 @@ test_batch_size = 2
 num_workers = 32
 val_interval = 5
 max_epochs = 50
-work_dir = "work_dirs/centerpoint/" + _base_.dataset_type + "/second_secfpn_4xb8_121m_base_amp_multihead_multiconv_base/"
+work_dir = "work_dirs/centerpoint_multihead_multiconv/" + _base_.dataset_type + "/second_secfpn_4xb8_121m_base_amp_multihead_multiconv_base/"
 
 train_pipeline = [
     dict(
@@ -509,7 +509,7 @@ val_cfg = dict()
 test_cfg = dict()
 
 optimizer = dict(type="AdamW", lr=lr, weight_decay=0.01, eps=1e-4)
-clip_grad = dict(max_norm=3.0, norm_type=2)  # max norm of gradients upper bound to be 15 since amp is used
+clip_grad = dict(max_norm=2.0, norm_type=2)  # max norm of gradients upper bound to be 15 since amp is used
 
 optim_wrapper = dict(
     type="AmpOptimWrapper",
