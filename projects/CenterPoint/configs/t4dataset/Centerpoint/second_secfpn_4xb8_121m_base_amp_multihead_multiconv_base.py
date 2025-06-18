@@ -24,7 +24,7 @@ input_modality = dict(
 )
 # Car, Truck, Bus, Bicycle, Pedestrian
 out_size_factor = [1, 1, 1, 1, 1]
-out_size_factor = 1
+# out_size_factor = 1
 
 backend_args = None
 # backend_args = dict(backend="disk")
@@ -560,3 +560,4 @@ custom_hooks = [
 ]
 
 activation_checkpointing = ["pts_backbone"]
+resume = True
