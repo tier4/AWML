@@ -1,0 +1,19 @@
+version: 1
+dataset_version: db-j6gen2-v3.0
+
+train:
+  - e4359aff-ea82-4ff0-860b-9ad24808cfd2
+  - 2408cdde-ff85-4feb-96e0-2e1b44e6feda
+  - f7e9bcbf-f9f8-4c7b-9042-80e8f9c5fb3c
+  - f01e1aaa-3cc8-401f-97f0-b4c96a1c1b5b
+  - 381f6bfc-8082-4a96-abbd-3e882c7ebb8c
+  - 90002649-efcb-40aa-bd1d-89a7834c0562
+  - 7a50e2b0-e4b0-44bb-b978-f4b1113275ca
+  - ea4ea9c1-d3c7-44b7-b4db-c91bfbbb5de3
+  - de9ad1f3-d651-45b7-a378-247b2add3a25
+  - c722439d-7a46-4a23-9aa8-abebb99d430d
+
+val: []
+
+test:
+  - 104113be-6d9f-40dc-bbbf-1be9f772ccac
