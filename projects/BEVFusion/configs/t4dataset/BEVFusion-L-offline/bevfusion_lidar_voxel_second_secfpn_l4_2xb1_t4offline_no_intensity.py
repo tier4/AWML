@@ -1,6 +1,6 @@
 _base_ = [
     "../default/bevfusion_lidar_voxel_second_secfpn_1xb1_t4base.py",
-    "../../../../../autoware_ml/configs/detection3d/dataset/t4dataset/xx1.py",
+    "../../../../../autoware_ml/configs/detection3d/dataset/t4dataset/base.py",
 ]
 
 custom_imports = dict(imports=["projects.BEVFusion.bevfusion"], allow_failed_imports=False)
@@ -9,16 +9,16 @@ custom_imports["imports"] += _base_.custom_imports["imports"]
 # user setting
 data_root = "data/t4dataset/"
 info_directory_path = "info/user_name/"
-train_gpu_size = 1
+train_gpu_size = 2
 train_batch_size = 1
-val_interval = 5
+val_interval = 2
 max_epochs = 30
 backend_args = None
 
 # range setting
 point_cloud_range = [-122.4, -122.4, -3.0, 122.4, 122.4, 5.0]
-voxel_size = [0.17, 0.17, 0.2]
-grid_size = [1440, 1440, 41]
+voxel_size = [0.075, 0.075, 0.2]
+grid_size = [3264, 3264, 41]
 eval_class_range = {
     "car": 121,
     "truck": 121,
@@ -35,6 +35,9 @@ point_intensity_dim = 3
 max_num_points = 10
 max_voxels = [120000, 160000]
 num_proposals = 500
+lidar_sweep_dims = [0, 1, 2, 4]  # Load only x, y, z and ring_id
+sweeps_num = 1
+num_workers = 32
 
 model = dict(
     type="BEVFusion",
@@ -46,7 +49,22 @@ model = dict(
             max_voxels=max_voxels,
         ),
     ),
-    pts_middle_encoder=dict(sparse_shape=grid_size),
+    pts_voxel_encoder=dict(type="HardSimpleVFE", num_features=4),
+    pts_middle_encoder=dict(
+        type="BEVFusionSparseEncoder",
+        in_channels=4,
+        aug_features=True,
+        aug_features_min_values=[-122.4, -122.4, -3.0, 0.0],
+        aug_features_max_values=[122.4, 122.4, 5.0, 0.2],
+        num_aug_features=4,
+        sparse_shape=grid_size,
+        order=("conv", "norm", "act"),
+        norm_cfg=dict(type="BN1d", eps=0.001, momentum=0.01),
+        base_channels=32,
+        encoder_channels=((32, 32, 32), (32, 32, 64), (64, 64, 128), (128, 128)),
+        encoder_paddings=((0, 0, 1), (0, 0, 1), (0, 0, (1, 1, 0)), (0, 0)),
+        block_type="basicblock",
+    ),
     bbox_head=dict(
         num_proposals=num_proposals,
         num_classes=_base_.num_class,
@@ -122,9 +140,9 @@ train_pipeline = [
     # ),
     dict(
         type="LoadPointsFromMultiSweeps",
-        sweeps_num=9,
+        sweeps_num=sweeps_num,
         load_dim=5,
-        use_dim=5,
+        use_dim=lidar_sweep_dims,
         pad_empty_sweeps=True,
         remove_close=True,
         backend_args=backend_args,
@@ -192,9 +210,9 @@ test_pipeline = [
     ),
     dict(
         type="LoadPointsFromMultiSweeps",
-        sweeps_num=1,
+        sweeps_num=sweeps_num,
         load_dim=5,
-        use_dim=5,
+        use_dim=lidar_sweep_dims,
         pad_empty_sweeps=True,
         remove_close=True,
         backend_args=backend_args,
@@ -223,29 +241,26 @@ test_pipeline = [
 
 train_dataloader = dict(
     batch_size=train_batch_size,
-    num_workers=train_batch_size,
+    num_workers=num_workers,
     persistent_workers=True,
     sampler=dict(type="DefaultSampler", shuffle=True),
     dataset=dict(
-        type="CBGSDataset",
-        dataset=dict(
-            type=_base_.dataset_type,
-            data_root=data_root,
-            ann_file=info_directory_path + _base_.info_train_file_name,
-            pipeline=train_pipeline,
-            metainfo=_base_.metainfo,
-            class_names=_base_.class_names,
-            modality=input_modality,
-            test_mode=False,
-            data_prefix=_base_.data_prefix,
-            box_type_3d="LiDAR",
-            backend_args=backend_args,
-        ),
+        type=_base_.dataset_type,
+        pipeline=train_pipeline,
+        modality=input_modality,
+        backend_args=backend_args,
+        data_root=data_root,
+        ann_file=info_directory_path + _base_.info_train_file_name,
+        metainfo=_base_.metainfo,
+        class_names=_base_.class_names,
+        test_mode=False,
+        data_prefix=_base_.data_prefix,
+        box_type_3d="LiDAR",
     ),
 )
 val_dataloader = dict(
     batch_size=2,
-    num_workers=2,
+    num_workers=num_workers,
     persistent_workers=True,
     sampler=dict(type="DefaultSampler", shuffle=False),
     dataset=dict(
@@ -264,7 +279,7 @@ val_dataloader = dict(
 )
 test_dataloader = dict(
     batch_size=2,
-    num_workers=2,
+    num_workers=num_workers,
     persistent_workers=True,
     sampler=dict(type="DefaultSampler", shuffle=False),
     dataset=dict(
@@ -291,6 +306,7 @@ val_evaluator = dict(
     class_names=_base_.class_names,
     name_mapping=_base_.name_mapping,
     eval_class_range=eval_class_range,
+    filter_attributes=_base_.filter_attributes,
 )
 test_evaluator = dict(
     type="T4Metric",
@@ -301,7 +317,14 @@ test_evaluator = dict(
     class_names=_base_.class_names,
     name_mapping=_base_.name_mapping,
     eval_class_range=eval_class_range,
+    filter_attributes=_base_.filter_attributes,
 )
+
+vis_backends = [
+    dict(type="LocalVisBackend"),
+    dict(type="TensorboardVisBackend"),
+]
+visualizer = dict(type="Det3DLocalVisualizer", vis_backends=vis_backends, name="visualizer")
 
 # learning rate
 lr = 0.0001
@@ -352,10 +375,7 @@ param_scheduler = [
 ]
 
 # runtime settings
-# Run validation for every val_interval epochs before max_epochs - 10, and run validation every 2 epoch after max_epochs - 10
-train_cfg = dict(
-    by_epoch=True, max_epochs=max_epochs, val_interval=val_interval, dynamic_intervals=[(max_epochs - 10, 2)]
-)
+train_cfg = dict(by_epoch=True, max_epochs=max_epochs, val_interval=val_interval)
 val_cfg = dict()
 test_cfg = dict()
 
@@ -371,3 +391,6 @@ optim_wrapper = dict(
 #   - `base_batch_size` = (8 GPUs) x (4 samples per GPU).
 # auto_scale_lr = dict(enable=False, base_batch_size=32)
 auto_scale_lr = dict(enable=False, base_batch_size=train_gpu_size * train_batch_size)
+
+if train_gpu_size > 1:
+    sync_bn = "torch"
