@@ -217,7 +217,7 @@ test_evaluator = dict(
 )
 
 # sigmoid(-6.906) = 0.001 for initial small values
-heatmap_init_bias = -6.906
+heatmap_init_bias = -4.595
 model = dict(
     data_preprocessor=dict(
         type="Det3DDataPreprocessor",
@@ -509,7 +509,7 @@ val_cfg = dict()
 test_cfg = dict()
 
 optimizer = dict(type="AdamW", lr=lr, weight_decay=0.01, eps=1e-4)
-clip_grad = dict(max_norm=3.0, norm_type=2)  # max norm of gradients upper bound to be 15 since amp is used
+clip_grad = dict(max_norm=0.5, norm_type=2)  # max norm of gradients upper bound to be 15 since amp is used
 
 optim_wrapper = dict(
     type="AmpOptimWrapper",
