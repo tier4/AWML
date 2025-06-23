@@ -1,5 +1,5 @@
 version: 1
-dataset_version: db-j6gen2-v1.0
+dataset_version: db-j6gen2-v1.1
 
 train:
   - c4edef0a-1d00-4f0d-9e08-65ba8b0692ff
