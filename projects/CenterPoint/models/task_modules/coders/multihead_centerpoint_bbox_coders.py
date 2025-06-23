@@ -164,7 +164,7 @@ class MultiHeadCenterPointBBoxCoder(_CenterPointBBoxCoder):
         Returns:
             list[dict]: Decoded boxes.
         """
-        if not isinstance(self.out_size_factor):
+        if not isinstance(self.out_size_factor, list):
             predictions_dicts = super().decode(
                 heat=heat,
                 rot_sine=rot_sine,
