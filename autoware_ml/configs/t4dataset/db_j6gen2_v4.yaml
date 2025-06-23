@@ -2,13 +2,13 @@ version: 1
 dataset_version: db-j6gen2-v4.0
 
 train:
-- b03101ae-03bc-45f9-b630-1c86308bfe15
-- d28f24dd-8f43-412f-a36e-1216c8b1297e
-- 8b4bdd68-be62-41ee-b7c2-1a4c7370aebe
-- 43861e83-a227-4574-82c6-29e189feeb17
-- 45d59901-c8f7-4361-9c0a-6aa4d09e4425
-- 475cdbe2-6bfc-4b35-a022-2650caef7613
-- 0d7e043f-de0e-44a0-8ad1-63125f55d5da
+  - b03101ae-03bc-45f9-b630-1c86308bfe15
+  - d28f24dd-8f43-412f-a36e-1216c8b1297e
+  - 8b4bdd68-be62-41ee-b7c2-1a4c7370aebe
+  - 43861e83-a227-4574-82c6-29e189feeb17
+  - 45d59901-c8f7-4361-9c0a-6aa4d09e4425
+  - 475cdbe2-6bfc-4b35-a022-2650caef7613
+  - 0d7e043f-de0e-44a0-8ad1-63125f55d5da
 
 val: []
 
