@@ -50,7 +50,11 @@ test_batch_size = 2
 num_workers = 32
 val_interval = 5
 max_epochs = 50
-work_dir = "work_dirs/centerpoint_multihead_multiconv/" + _base_.dataset_type + "/second_secfpn_4xb8_121m_base_amp_multihead_multiconv_base/"
+work_dir = (
+    "work_dirs/centerpoint_multihead_multiconv/"
+    + _base_.dataset_type
+    + "/second_secfpn_4xb8_121m_base_amp_multihead_multiconv_base/"
+)
 
 train_pipeline = [
     dict(
@@ -518,7 +522,7 @@ optim_wrapper = dict(
     clip_grad=clip_grad,
     # Update it accordingly
     loss_scale={
-        "init_scale": 2.0**4,  # intial_scale: 256
+        "init_scale": 4.0,  # intial_scale: 256
         "growth_interval": 2000,
     },
 )
