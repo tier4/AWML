@@ -153,7 +153,7 @@ def main():
 
         tm = TrtPositionEmbeddingContainer(model)
         arrs = [
-            torch.from_numpy(np.array([height, width, 3])).int(),
+            torch.from_numpy(np.array([height, width, 3])).float(),
             torch.from_numpy(np.random.uniform(-0.5, 0.5, size=(1, cfg.num_cameras, c, feat_h, feat_w))).float(),
             torch.from_numpy(np.random.uniform(-0.5, 0.5, size=(1, cfg.num_cameras, 4, 4))).float(),
             torch.from_numpy(np.random.uniform(-0.5, 0.5, size=(1, cfg.num_cameras, 4, 4))).float(),

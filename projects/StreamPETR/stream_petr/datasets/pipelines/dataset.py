@@ -62,6 +62,7 @@ class StreamPETRDataset(T4Dataset):
         metainfo={},
         filter_empty_gt=False,
         reset_origin=False,
+        anchor_camera="CAM_FRONT",
         *args,
         **kwargs,
     ):
@@ -80,6 +81,7 @@ class StreamPETRDataset(T4Dataset):
             self.random_length = 0
             self._set_group_indices()
         self.camera_order = camera_order
+        self.anchor_camera = anchor_camera
         if self.reset_origin:
             print(f"Reset origin: {self.reset_origin}")
         print(f"Camera corder: {self.camera_order} test_mode: {self.test_mode}")
@@ -122,7 +124,6 @@ class StreamPETRDataset(T4Dataset):
         assert len(new_flags) == len(flag)
         self.flag = np.array(new_flags, dtype=np.int64)
         self.origin = [np.array([0, 0, 0]) for _ in range(len(self))]
-
         if self.reset_origin:
             idx = 0
             flag = self.flag[0]
@@ -134,7 +135,6 @@ class StreamPETRDataset(T4Dataset):
                     current_origin = np.array(self.get_data_info(idx)["ego2global"])[:3, 3]
                     flag = value
                     self.origin[idx] = current_origin
-
     def _serialize_data(self) -> Tuple[np.ndarray, np.ndarray]:
         """Serialize ``self.data_list`` to save memory when launching multiple
         workers in data loading. This function will be called in ``full_init``.
@@ -188,16 +188,17 @@ class StreamPETRDataset(T4Dataset):
         """
         input_dict = self.get_annot_info(index)
         if self.seq_mode:
-            input_dict.update(dict(prev_exists=self.flag[index - 1] == self.flag[index]))
+            input_dict.update(dict(prev_exists=-1))
+            # input_dict.update(dict(prev_exists=self.flag[index - 1] == self.flag[index]))    # TODO: handle when no labels exist.
         else:
             raise NotImplementedError("Sliding window is not implemented for nuscenes")
         example = self.pipeline(input_dict)
 
         queue = [example]
 
-        for k in range(self.num_frame_losses):
-            if self.filter_empty_gt and (queue[-k - 1] is None or ~(queue[-k - 1]["gt_labels_3d"] != -1).any()):
-                return None
+        # for k in range(self.num_frame_losses):
+        #     if self.filter_empty_gt and (queue[-k - 1] is None or ~(queue[-k - 1]["gt_labels_3d"] != -1).any()):
+        #         return None
 
         self._validate_data(queue)
 
@@ -260,7 +261,7 @@ class StreamPETRDataset(T4Dataset):
             next_idx=info.get("next", None),
             scene_token=info["scene_token"],
             frame_idx=info["token"],
-            timestamp=info["timestamp"],
+            timestamp=info["images"][self.anchor_camera]["timestamp"],
             l2e_matrix=l2e_matrix,
             e2g_matrix=e2g_matrix,
         )
@@ -283,7 +284,7 @@ class StreamPETRDataset(T4Dataset):
 
             for cam_type in info["images"]:
                 cam_info = info["images"][cam_type]
-                img_timestamp.append(cam_info["timestamp"])
+                img_timestamp.append(info["images"][self.anchor_camera]["timestamp"]-cam_info["timestamp"])
                 image_paths.append(cam_info["img_path"])
                 intrinsic_mat = np.array(cam_info["cam2img"])
                 extrinsic_mat = np.array(cam_info["lidar2cam"])
@@ -305,6 +306,7 @@ class StreamPETRDataset(T4Dataset):
                         order_index=info["sorted_index"],
                         sample_token=info["token"],
                         filenames=image_paths,
+                        flag_index=self.flag[index],
                     ),
                 )
             )
