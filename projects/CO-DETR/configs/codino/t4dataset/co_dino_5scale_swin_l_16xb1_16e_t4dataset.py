@@ -32,8 +32,6 @@ model = dict(
         transformer=dict(encoder=dict(with_cp=6))))
 
 train_pipeline = [
-    # dict(type='LoadImageFromFile'),
-    # dict(type='LoadAnnotations', with_bbox=True),
     dict(type='RandomFlip', prob=0.5),
     dict(
         type='RandomChoice',
@@ -82,25 +80,6 @@ train_pipeline = [
         ]),
     dict(type='PackDetInputs')
 ]
-
-# train_dataset = dict(
-#     type="MultiImageMixDataset",
-#     dataset=dict(
-#         _delete_=True,
-#         type=_base_.dataset_type,
-#         data_root=_base_.data_root,
-#         ann_file=_base_.anno_file_root + "yolox_infos_train.json",
-#         pipeline=[
-#             dict(type='LoadImageFromFile', backend_args=_base_.backend_args),
-#             dict(type='LoadAnnotations', with_bbox=True),
-#         ],
-#         filter_cfg=dict(filter_empty_gt=False, min_size=32),
-#         backend_args=_base_.backend_args,
-#     ),
-#     pipeline=train_pipeline,
-# )
-
-# train_dataloader = dict(dataset=train_dataset)
 
 train_dataloader = dict(
     batch_size=1, num_workers=1, dataset=dict(pipeline=train_pipeline))
