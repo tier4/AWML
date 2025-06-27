@@ -368,5 +368,7 @@ class Petr3D(MVXTwoStageDetector):
     def train(self, mode: bool = True):
         if self.training != mode:
             self.pts_bbox_head.reset_memory()
+            self.previous_flag_idx = None
+            self.previous_timestamp = None
             print("Cleared memory due to change in mode. Train mode: ", mode)
             super().train(mode)
