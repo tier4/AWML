@@ -41,7 +41,7 @@ eval_class_range = {
 
 # user setting
 data_root = "data/t4dataset/"
-info_directory_path = "info/username/"
+info_directory_path = "info/user_name/"
 train_gpu_size = 4
 train_batch_size = 16
 test_batch_size = 2
@@ -280,7 +280,7 @@ model = dict(
             out_size_factor=out_size_factor,
         ),
         # sigmoid(-9.2103) = 0.0001 for initial small values
-        separate_head=dict(type="CustomSeparateHead", init_bias=-9.2103, final_kernel=1),
+        separate_head=dict(type="CustomSeparateHead", init_bias=-4.595, final_kernel=1),
         loss_cls=dict(type="mmdet.GaussianFocalLoss", reduction="none", loss_weight=1.0),
         loss_bbox=dict(type="mmdet.L1Loss", reduction="mean", loss_weight=0.25),
         norm_bbox=True,
@@ -365,16 +365,18 @@ val_cfg = dict()
 test_cfg = dict()
 
 optimizer = dict(type="AdamW", lr=lr, weight_decay=0.01)
+clip_grad = dict(max_norm=15, norm_type=2)  # max norm of gradients upper bound to be 15 since amp is used
 
-clip_grad = dict(max_norm=35, norm_type=2)
 optim_wrapper = dict(
     type="AmpOptimWrapper",
     dtype="float16",
     optimizer=optimizer,
     clip_grad=clip_grad,
+    # Update it accordingly
     loss_scale={
-        "growth_interval": 400
-    },  # Can update it accordingly, 400 is about half of an epoch for this experiment
+        "init_scale": 2.0**12,  # intial_scale: 256
+        "growth_interval": 600,
+    },
 )
 
 # Default setting for scaling LR automatically
@@ -394,11 +396,13 @@ vis_backends = [
 ]
 visualizer = dict(type="Det3DLocalVisualizer", vis_backends=vis_backends, name="visualizer")
 
+logger_interval = 50
 default_hooks = dict(
-    logger=dict(type="LoggerHook", interval=50),
-    checkpoint=dict(type="CheckpointHook", interval=1),
+    logger=dict(type="LoggerHook", interval=logger_interval),
+    checkpoint=dict(type="CheckpointHook", interval=1, max_keep_ckpts=3, save_best="NuScenes metric/T4Metric/mAP"),
 )
 
 custom_hooks = [
     dict(type="MomentumInfoHook"),
+    dict(type="LossScaleInfoHook"),
 ]
