@@ -74,7 +74,7 @@
     - [logs.zip](https://download.autoware-ml-model-zoo.tier4.jp/autoware-ml/models/centerpoint/centerpoint/j6gen2/v2.0.1/logs.zip)
     - [checkpoint_best.pth](https://download.autoware-ml-model-zoo.tier4.jp/autoware-ml/models/centerpoint/centerpoint/j6gen2/v2.0.1/best_NuScenes_metric_T4Metric_mAP_epoch_28.pth)
     - [config.py](https://download.autoware-ml-model-zoo.tier4.jp/autoware-ml/models/centerpoint/centerpoint/j6gen2/v2.0.1/second_secfpn_4xb16_121m_j6gen2.py)
-  - Train time: NVIDIA H100 80GB * 4 * 50 epochs = 9 hours
+  - Train time: NVIDIA H100 80GB * 4 * 30 epochs = 12 hours
   - Batch size: 4*16 = 64
 
 - Evaluation
