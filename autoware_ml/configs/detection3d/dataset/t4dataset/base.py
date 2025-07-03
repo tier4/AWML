@@ -15,6 +15,8 @@ info_test_file_name = "t4dataset_base_infos_test.pkl"
 dataset_version_config_root = "autoware_ml/configs/t4dataset/"
 dataset_version_list = [
     "db_j6gen2_v1",
+    "db_j6gen2_v2",
+    "db_largebus_v1",
     "db_jpntaxi_v1",
     "db_jpntaxi_v2",
     "db_jpntaxi_v4",
@@ -26,7 +28,16 @@ dataset_version_list = [
 ]
 
 # dataset format setting
-data_prefix = dict(pts="", sweeps="")
+data_prefix = dict(
+    pts="",
+    CAM_FRONT="",
+    CAM_FRONT_LEFT="",
+    CAM_FRONT_RIGHT="",
+    CAM_BACK="",
+    CAM_BACK_RIGHT="",
+    CAM_BACK_LEFT="",
+    sweeps="",
+)
 camera_types = {
     "CAM_FRONT",
     "CAM_FRONT_RIGHT",
@@ -106,6 +117,7 @@ name_mapping = {
     "fire_truck": "truck",
     "semi_trailer": "trailer",
     "tractor_unit": "truck",
+    "construction_vehicle": "truck",
 }
 
 class_names = [

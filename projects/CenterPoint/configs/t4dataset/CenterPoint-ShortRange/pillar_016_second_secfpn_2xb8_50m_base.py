@@ -6,6 +6,7 @@ _base_ = [
 custom_imports = dict(imports=["projects.CenterPoint.models"], allow_failed_imports=False)
 custom_imports["imports"] += _base_.custom_imports["imports"]
 custom_imports["imports"] += ["autoware_ml.detection3d.datasets.transforms"]
+custom_imports["imports"] += ["autoware_ml.hooks"]
 
 # This is a base file for t4dataset, add the dataset config.
 # type, data_root and ann_file of data.train, data.val and data.test
@@ -46,7 +47,7 @@ test_batch_size = 2
 num_workers = 32
 val_interval = 5
 max_epochs = 50
-work_dir = "work_dirs/centerpoint/" + _base_.dataset_type + "/pillar_016_second_secfpn_2xb8_50m_base/"
+work_dir = "work_dirs/centerpoint_short_range/" + _base_.dataset_type + "/pillar_016_second_secfpn_2xb8_50m_base/"
 
 train_pipeline = [
     dict(
@@ -380,4 +381,6 @@ default_hooks = dict(
     checkpoint=dict(type="CheckpointHook", interval=1),
 )
 
-custom_hooks = [dict(type="ExtraRuntimeInfoHook")]
+custom_hooks = [
+    dict(type="MomentumInfoHook"),
+]

@@ -5,20 +5,22 @@ from argparse import ArgumentParser
 import git
 import onnx
 
-DOMAINS = ["3D object detection", "3D object semantic segmentation"]
 
-
-def parse_args() -> ArgumentParser:
+def get_parser() -> ArgumentParser:
     parser = ArgumentParser()
     parser.add_argument("onnx_path", type=str, help="Path to input ONNX model file.")
-    parser.add_argument("--domain", type=str, choices=DOMAINS, help="Model domain.")
+    parser.add_argument(
+        "--domain",
+        choices=["ai.onnx"],
+        default="ai.onnx",
+        help="Namespace identifying the operator set used in the ONNX model.",
+    )
     parser.add_argument("--version", type=int, help="Model version.")
     parser.add_argument("--doc_string", type=str, help="Model description.")
     parser.add_argument("--output", type=str, help="Path to save updated ONNX file.")
     parser.add_argument("--use_hash", action="store_true", help="Use git hash as version instead of tag.")
 
-    args = parser.parse_args()
-    return args
+    return parser
 
 
 def log_meta_info(model: onnx.ModelProto, title: str = "") -> None:
@@ -42,7 +44,7 @@ def update_meta_info(
     if doc_string:
         model.doc_string = doc_string
 
-    model.producer_name = "autoware-ml"
+    model.producer_name = "AWML"
     model.producer_version = git.Repo(search_parent_directories=False).head.object.hexsha
 
     if use_hash:
@@ -60,7 +62,8 @@ def save_onnx_model(model: onnx.ModelProto, output_path: str) -> None:
 
 
 def main():
-    args = parse_args()
+    parser = get_parser()
+    args = parser.parse_args()
 
     model = onnx.load(args.onnx_path)
 

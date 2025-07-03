@@ -9,7 +9,7 @@ This script injects extra meta information.
 - Run
 
 ```sh
-python tools/deploy_to_autoware/update_onnx_metadata.py {path to onnx file} --domain "3D object detection" --version "CenterPoint base/1.0"
+python tools/deploy_to_autoware/update_onnx_metadata.py {path to onnx file} --version 1 --doc_string "Example additional description"
 ```
 
 By this update, logs in Autoware log files or /rosout topic can have model metadata.
@@ -18,11 +18,11 @@ By this update, logs in Autoware log files or /rosout topic can have model metad
 [autoware_lidar_centerpoint_node-1] [I] [TRT] Input filename:   /home/autoware/autoware_data/lidar_centerpoint/pts_backbone_neck_head_centerpoint_tiny.onnx
 [autoware_lidar_centerpoint_node-1] [I] [TRT] ONNX IR version:  0.0.6
 [autoware_lidar_centerpoint_node-1] [I] [TRT] Opset version:    11
-[autoware_lidar_centerpoint_node-1] [I] [TRT] Producer name:    autoware-ml
-[autoware_lidar_centerpoint_node-1] [I] [TRT] Producer version: v0.7.1
-[autoware_lidar_centerpoint_node-1] [I] [TRT] Domain:           3D object detection
-[autoware_lidar_centerpoint_node-1] [I] [TRT] Model version:    7
-[autoware_lidar_centerpoint_node-1] [I] [TRT] Doc string:       v3.2.3
+[autoware_lidar_centerpoint_node-1] [I] [TRT] Producer name:    AWML
+[autoware_lidar_centerpoint_node-1] [I] [TRT] Producer version: v1.0.0
+[autoware_lidar_centerpoint_node-1] [I] [TRT] Domain:           ai.onnx
+[autoware_lidar_centerpoint_node-1] [I] [TRT] Model version:    1
+[autoware_lidar_centerpoint_node-1] [I] [TRT] Doc string:       Example additional description
 ```
 
 ## [TBD] Generate ROS parameter
