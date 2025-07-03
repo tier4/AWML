@@ -58,7 +58,7 @@
   - The largest improvement is in truck detection (`+5.93 AP`)
   - Pedestrian and car detection also see solid gains.
   - Bicycle detection slightly drops in 2.0.1 but by a negligible margin (`−0.21 AP`).
-  - `J6Gen2/2.0.1` is a clear upgrade over `1.7.1` in terms of detection accuracy, especially for trucks and pedestrians, with only a very minor tradeoff in bicycle detection
+  - `J6Gen2/2.0.1` is a clear upgrade over `J6Gen2/1.7.1` in terms of detection accuracy, especially for trucks and pedestrians, with only a very minor tradeoff in bicycle detection
 
 <details>
 <summary> The link of data and evaluation result </summary>
