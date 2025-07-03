@@ -72,72 +72,68 @@
 
 ### CenterPoint base/2.0
 - Changes:
-  - This releases add more data to `db_j6gen2_v1`
-  - Use `PillarFeatureNet` instead `BackwardPillarFeatureNet`
-  - Add new label mapping: `construction_vehicle: truck`
-  - Clip velocity in data when it exceeds a threshold, where the velocity can be abnormal
+  - Add new dataset `db_j6gen2_v4`
+  - Add more data to `db_j6_v3`, `db_j6_v5`, `db_j6gen2_v1`, `db_j6gen2_v2`, `db_largebus_v1`  
 
 - Overall:
-  - Slightly better overall (+0.25 mAP)
-  - Car: Almost unchanged
-  - Truck: Slight improvement in 1.7
-  - Bus: Small gain in 1.7
-  - Bicycle: Minor improvement
-  - Pedestrian: Slight increase
+  - Slightly better overall (+0.52 mAP)
+  - Car and pedestrian detection remain fairly stable, with small improvements in `base/2.0`.
+  - Truck detection shows the largest improvement (+3.84) in `base/2.0`.
+  - Bus and bicycle performance slightly drops in `base/2.0`.
 
 <details>
 <summary> The link of data and evaluation result </summary>
 
 - Model
-  - Training dataset: DB JPNTAXI v1.0 + DB JPNTAXI v2.0 + DB JPNTAXI v4.0 + DB GSM8 v1.0 + DB J6 v1.0 + DB J6 v2.0 + DB J6 v3.0 + DB J6 v5.0 + DB J6 Gen2 v1.0 + DB J6 Gen2 v1.1 + DB J6 Gen2 v2.0 + DB LargeBus v1.0 (total frames: 58,323)
-  - [Config file path](https://github.com/tier4/AWML/blob/6db4a553d15b18ac6471d228a236c014f55c8307/autoware_ml/configs/detection3d/dataset/t4dataset/base.py)
-  - Deployed onnx model and ROS parameter files [[WebAuto (for internal)]](https://evaluation.tier4.jp/evaluation/mlpackages/7156b453-2861-4ae9-b135-e24e48cc9029/releases/41d44753-739c-430e-b0c3-c6c707b22ad2?project_id=zWhWRzei)
+  - Training dataset: DB JPNTAXI v1.0 + DB JPNTAXI v2.0 + DB JPNTAXI v4.0 + DB GSM8 v1.0 + DB J6 v1.0 + DB J6 v2.0 + DB J6 v3.0 + DB J6 v5.0 + DB J6 Gen2 v1.0 + DB J6 Gen2 v2.0 + DB J6 Gen2 v4.0 + DB LargeBus v1.0 (total frames: 71,633)
+  - [Config file path](https://github.com/tier4/AWML/blob/c50daa0f941da334a2167a4aa587589f6ab76a85/autoware_ml/configs/detection3d/dataset/t4dataset/base.py)
+  - Deployed onnx model and ROS parameter files [[WebAuto (for internal)]](https://evaluation.tier4.jp/evaluation/mlpackages/7156b453-2861-4ae9-b135-e24e48cc9029/releases/4489a6b0-e8f4-4204-a217-2889f18d3b66?project_id=zWhWRzei)
   - Deployed onnx and ROS parameter files [[model-zoo]]
-    - [detection_class_remapper.param.yaml](https://download.autoware-ml-model-zoo.tier4.jp/autoware-ml/models/centerpoint/centerpoint/t4base/v1.7/detection_class_remapper.param.yaml)
-    - [centerpoint_t4base_ml_package.param.yaml](https://download.autoware-ml-model-zoo.tier4.jp/autoware-ml/models/centerpoint/centerpoint/t4base/v1.7/centerpoint_t4base_ml_package.param.yaml)
-    - [deploy_metadata.yaml](https://download.autoware-ml-model-zoo.tier4.jp/autoware-ml/models/centerpoint/centerpoint/t4base/v1.7/deploy_metadata.yaml)
-    - [pts_voxel_encoder_centerpoint_t4base.onnx](https://download.autoware-ml-model-zoo.tier4.jp/autoware-ml/models/centerpoint/centerpoint/t4base/v1.7/pts_voxel_encoder.onnx)
-    - [pts_backbone_neck_head_centerpoint_t4base.onnx](https://download.autoware-ml-model-zoo.tier4.jp/autoware-ml/models/centerpoint/centerpoint/t4base/v1.7/pts_backbone_neck_head.onnx)
-  - Training results [[Google drive (for internal)]](https://drive.google.com/drive/folders/1dVri0Jq9_yobzed0T2Rno-mfChbjPesn?usp=drive_link)
+    - [detection_class_remapper.param.yaml](https://download.autoware-ml-model-zoo.tier4.jp/autoware-ml/models/centerpoint/centerpoint/t4base/v2.0.0/detection_class_remapper.param.yaml)
+    - [centerpoint_ml_package.param.yaml](https://download.autoware-ml-model-zoo.tier4.jp/autoware-ml/models/centerpoint/centerpoint/t4base/v2.0.0/centerpoint_ml_package.param.yaml)
+    - [deploy_metadata.yaml](https://download.autoware-ml-model-zoo.tier4.jp/autoware-ml/models/centerpoint/centerpoint/t4base/v2.0.0/deploy_metadata.yaml)
+    - [pts_voxel_encoder_centerpoint.onnx](https://download.autoware-ml-model-zoo.tier4.jp/autoware-ml/models/centerpoint/centerpoint/t4base/v2.0.0/pts_voxel_encoder.onnx)
+    - [pts_backbone_neck_head_centerpoint.onnx](https://download.autoware-ml-model-zoo.tier4.jp/autoware-ml/models/centerpoint/centerpoint/t4base/v2.0.0/pts_backbone_neck_head.onnx)
+  - Training results [[Google drive (for internal)]](https://drive.google.com/drive/folders/1QspUscYcPbWPGAkC321L_s7W70gsZ2Ad?usp=drive_link)
   - Training results [model-zoo]
-    - [logs.zip](https://download.autoware-ml-model-zoo.tier4.jp/autoware-ml/models/centerpoint/centerpoint/t4base/v1.7/logs.zip)
-    - [checkpoint_best.pth](https://download.autoware-ml-model-zoo.tier4.jp/autoware-ml/models/centerpoint/centerpoint/t4base/v1.7/best_NuScenes_metric_T4Metric_mAP_epoch_49.pth)
-    - [config.py](https://download.autoware-ml-model-zoo.tier4.jp/autoware-ml/models/centerpoint/centerpoint/t4base/v1.7/second_secfpn_4xb16_121m_base_amp.py)
-  - Train time: NVIDIA H100 80GB * 4 * 50 epochs = 2 days and 5 hours
+    - [logs.zip](https://download.autoware-ml-model-zoo.tier4.jp/autoware-ml/models/centerpoint/centerpoint/t4base/v2.0.0/logs.zip)
+    - [checkpoint_best.pth](https://download.autoware-ml-model-zoo.tier4.jp/autoware-ml/models/centerpoint/centerpoint/t4base/v2.0.0/best_NuScenes_metric_T4Metric_mAP_epoch_49.pth)
+    - [config.py](https://download.autoware-ml-model-zoo.tier4.jp/autoware-ml/models/centerpoint/centerpoint/t4base/v2.0.0/second_secfpn_4xb16_121m_base_amp.py)
+  - Train time: NVIDIA H100 80GB * 4 * 50 epochs = 2 days and 20 hours
   - Batch size: 4*16 = 64
 
 - Evaluation
-  - db_jpntaxi_v1 + db_jpntaxi_v2 + db_jpntaxi_v4 + db_gsm8_v1 + db_j6_v1 + db_j6_v2 + db_j6_v3 + db_j6_v5 + db_j6gen2_v1 + db_largebus_v1 (total frames: 4,199):
+  - db_jpntaxi_v1 + db_jpntaxi_v2 + db_jpntaxi_v4 + db_gsm8_v1 + db_j6_v1 + db_j6_v2 + db_j6_v3 + db_j6_v5 + db_j6gen2_v1 + db_j6gen2_v1 + db_j6gen2_v4 + db_largebus_v1 (total frames: 5,703):
   - Total mAP (eval range = 120m): 0.6821
 
 | class_name | Count    | mAP  | AP@0.5m | AP@1.0m | AP@2.0m | AP@4.0m |
 | -----------| -------  | ----  | ------- | ------- | ------- | ------- |
-| car        |  90,242  | 81.13 | 73.12  | 82.26  | 84.41  | 84.75  |
-| truck      |  14,910  | 53.95 | 35.21  | 54.71  | 60.02  | 65.86  |
-| bus        |   4,992  | 80.97 | 73.91  | 81.00  | 83.87  | 85.14  |
-| bicycle    |   4,666  | 59.19 | 73.91  | 81.00  | 83.87  | 85.14  |
-| pedestrian |  36,690  | 65.79 | 63.84  | 65.09  | 66.38  | 67.86  |
+| car        |  144,001  | 82.19 | 75.15    | 83.01    | 85.17    | 85.45    |
+| truck      |  20,823  | 55.44 | 40.06    | 56.20    | 60.07    | 65.44    |
+| bus        |   5,691  | 79.30 | 71.94    | 79.83    | 82.51    | 82.96    |
+| bicycle    |   5,007  | 57.62 | 55.87    | 58.15    | 58.21    | 58.28    |
+| pedestrian |  42,034  | 65.74 | 63.60    | 64.92    | 66.32    | 68.10    |
 
-- db_largebus_v1 (total frames: 315):
+- db_largebus_v1 (total frames: 604):
   - Total mAP (eval range = 120m): 0.7414
 
 | class_name | Count    | mAP    | AP@0.5m | AP@1.0m | AP@2.0m | AP@4.0m |
 | -----------| -------  | -----  | ------- | ------- | ------- | ------- |
-| car        |  5,714   | 87.69  | 81.25  | 88.85  | 90.21  | 90.46  |
-| truck      |  1,123   | 59.49  | 51.25  | 59.61  | 63.12  | 64.00  |
-| bus        |     51   | 97.70  | 95.04  | 98.51  | 98.65  | 98.65  |
-| bicycle    |    504   | 62.59  | 58.57  | 62.58  | 64.61  | 64.61  |
-| pedestrian |  2,782   | 63.25  | 61.53  | 62.71  | 63.67  | 65.11  |
+| car        |  13,831   | 89.01  | 83.62    | 89.78    | 90.98    | 91.70    |
+| truck      |  2,137   | 64.11  | 51.19    | 65.25    | 68.75    | 71.25    |
+| bus        |     95   | 77.75  | 71.04    | 79.99    | 79.99    | 79.99    |
+| bicycle    |    724   | 61.04  | 55.98    | 62.13    | 63.04    | 63.04    |
+| pedestrian |  3,916   | 63.56  | 61.90    | 63.03    | 63.78    | 65.55    |
 
-- db_j6gen2_v1 + db_j6gen2_v2 (total frames: 801):
+- db_j6gen2_v1 + db_j6gen2_v2 + db_j6gen2_v2 (total frames: 1,157):
   - Total mAP (eval range = 120m): 0.7228
 
 | class_name  | Count   | mAP  | AP@0.5m | AP@1.0m | AP@2.0m | AP@4.0m |
 | ----------  | ------  | ---- | ------- | ------- | ------- | ------- |
-| car         | 28,002  | 85.96 | 80.38  | 85.95  | 88.26  | 89.26  |
-| truck       |  1,123  | 53.52 | 47.83  | 54.24  | 55.64  | 56.38  |
-| bus         |  1,203  | 84.21 | 80.39  | 82.48  | 86.97  | 87.00  |
-| bicycle     |    223  | 74.96 |  73.43  | 75.21  | 75.21  | 75.99  |
-| pedestrian  |   4,407 | 62.78 | 61.46  | 62.05  | 63.12  | 64.52  |
+| car         | 44,008  | 83.56 | 77.31    | 83.73    | 86.11    | 87.12    |
+| truck       |  2,471  | 53.08 | 43.13    | 52.46    | 54.80    | 61.93    |
+| bus         |  1,464  | 85.06 | 79.26    | 83.83    | 88.56    | 88.60    |
+| bicycle     |    333  | 68.54 | 67.73    | 68.82    | 68.82    | 68.82    |
+| pedestrian  |  6,459  | 64.97 | 63.12    | 64.26    | 65.41    | 67.10    |
 
 </details>
