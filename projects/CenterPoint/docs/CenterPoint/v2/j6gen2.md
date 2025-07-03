@@ -28,8 +28,8 @@
 
 | eval range: 120m         | mAP  | car <br> (13,831)     | truck <br> (2,137) | bus <br> (95) | bicycle <br> (724) | pedestrian <br> (3,916) |
 | -------------------------| ---- | -------------------- | ------------------- | ---------------- | ------------ | ------------------------ |
-| CenterPoint base/2.0.1   | 74.73   | 90.53   | 69.55   | 80.06 | 65.72       | 67.82       |
-| CenterPoint base/1.7.1   | 72.17   | 89.36   | 60.87   | 78.40   | 67.71     | 64.84       |
+| CenterPoint J6Gen2/2.0.1   | 74.73   | 90.53   | 69.55   | 80.06 | 65.72       | 67.82       |
+| CenterPoint J6Gen2/1.7.1   | 72.17   | 89.36   | 60.87   | 78.40   | 67.71     | 64.84       |
 
 </details>
 
@@ -40,8 +40,8 @@
 
 | eval range: 120m         | mAP  | car <br> (44,008) | truck <br> (2,471) | bus <br> (1,464) | bicycle <br> (333) | pedestrian <br> (6,459) |
 | -------------------------| ---- | ----------------- | ------------------- | ---------------- | -------------------- | ---------------------|
-| CenterPoint base/2.0.1   | 74.60   | 84.83   | 56.48   | 83.70 | 81.06       | 66.91       |
-| CenterPoint base/1.7.1   | 72.35   | 83.34   | 53.26   | 82.13 | 79.10     | 63.92       |
+| CenterPoint J6Gen2/2.0.1   | 74.60   | 84.83   | 56.48   | 83.70 | 81.06       | 66.91       |
+| CenterPoint J6Gen2/1.7.1   | 72.35   | 83.34   | 53.26   | 82.13 | 79.10     | 63.92       |
 
 </details>
 
@@ -53,9 +53,12 @@
 	- Include intensity as an extra feature
 
 - Overall:
-  - Better than `CenterPoint/v2.0.0` even when finetuning from `J6Gen2`
-
-	- It shows consistent improvement in `LargeBus` across all classes except for a minor trade-off in bus AP, which still remains very high (`97.36`).
+  - Better than `CenterPoint/v2.0.1` even when finetuning from `J6Gen2`
+  - `CenterPoint J6Gen2/2.0.1` performs better overall, with improvements across most classes
+  - The largest improvement is in truck detection (`+5.93 AP`)
+  - Pedestrian and car detection also see solid gains.
+  - Bicycle detection slightly drops in 2.0.1 but by a negligible margin (`−0.21 AP`).
+  - `J6Gen2/2.0.1` is a clear upgrade over `1.7.1` in terms of detection accuracy, especially for trucks and pedestrians, with only a very minor tradeoff in bicycle detection
 
 <details>
 <summary> The link of data and evaluation result </summary>
