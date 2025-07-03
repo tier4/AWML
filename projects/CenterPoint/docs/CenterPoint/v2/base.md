@@ -104,7 +104,7 @@
 
 - Evaluation
   - db_jpntaxi_v1 + db_jpntaxi_v2 + db_jpntaxi_v4 + db_gsm8_v1 + db_j6_v1 + db_j6_v2 + db_j6_v3 + db_j6_v5 + db_j6gen2_v1 + db_j6gen2_v1 + db_j6gen2_v4 + db_largebus_v1 (total frames: 5,703):
-  - Total mAP (eval range = 120m): 0.6821
+  - Total mAP (eval range = 120m): 0.6806
 
 | class_name | Count    | mAP  | AP@0.5m | AP@1.0m | AP@2.0m | AP@4.0m |
 | -----------| -------  | ----  | ------- | ------- | ------- | ------- |
@@ -115,7 +115,7 @@
 | pedestrian |  42,034  | 65.74 | 63.60    | 64.92    | 66.32    | 68.10    |
 
 - db_largebus_v1 (total frames: 604):
-  - Total mAP (eval range = 120m): 0.7414
+  - Total mAP (eval range = 120m): 0.7109
 
 | class_name | Count    | mAP    | AP@0.5m | AP@1.0m | AP@2.0m | AP@4.0m |
 | -----------| -------  | -----  | ------- | ------- | ------- | ------- |
@@ -126,7 +126,7 @@
 | pedestrian |  3,916   | 63.56  | 61.90    | 63.03    | 63.78    | 65.55    |
 
 - db_j6gen2_v1 + db_j6gen2_v2 + db_j6gen2_v2 (total frames: 1,157):
-  - Total mAP (eval range = 120m): 0.7228
+  - Total mAP (eval range = 120m): 0.7104
 
 | class_name  | Count   | mAP  | AP@0.5m | AP@1.0m | AP@2.0m | AP@4.0m |
 | ----------  | ------  | ---- | ------- | ------- | ------- | ------- |
