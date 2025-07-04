@@ -3,13 +3,13 @@ from typing import Dict, List, Optional, Tuple
 
 import numpy as np
 import tqdm
+from numpy.typing import NDArray
 from nuscenes import NuScenes
 from nuscenes.eval.common.data_classes import EvalBox, EvalBoxes
 from nuscenes.eval.detection.data_classes import DetectionBox, DetectionConfig
 from nuscenes.nuscenes import Box
 from nuscenes.utils.geometry_utils import points_in_box
 from pyquaternion import Quaternion
-from numpy.typing import NDArray
 
 
 class T4Box(DetectionBox):
@@ -127,7 +127,7 @@ def t4metric_load_gt(
 
             if detection_name not in config.class_names:
                 continue
-            
+
             velocity = _velocity_clip(nusc.box_velocity(sample_annotation["token"])[:2])
             sample_boxes.append(
                 T4Box(
