@@ -53,7 +53,7 @@
 	- Include intensity as an extra feature
 
 - Overall:
-  - Better than `CenterPoint/v2.0.1` even when finetuning from `J6Gen2`
+  - Better than `CenterPoint base/v2.0.0` even when finetuning from `J6Gen2`
   - `CenterPoint J6Gen2/2.0.1` performs better overall, with improvements across most classes
   - The largest improvement is in truck detection (`+5.93 AP`)
   - Pedestrian and car detection also see solid gains.
