@@ -26,6 +26,12 @@ camera_types = {
     "CAM_BACK_RIGHT",
 }
 
+dataset_test_groups = {
+	"db_j6gen2": "t4dataset_j6gen2_infos_test.pkl",
+	"db_largebus": "t4dataset_largebus_infos_test.pkl",
+    "db_gen2_base": "t4dataset_gen2_base_infos_test.pkl",
+}
+
 # class setting
 name_mapping = {
     # DBv1.0
