@@ -63,10 +63,6 @@ def _velocity_clip(velocity: NDArray, max_speed: float = 50.0) -> NDArray:
         velocity = velocity * (max_speed / speed)
     return velocity
 
-<<<<<<< HEAD
-=======
-
->>>>>>> 20353b92e2fa8790fcb7e3780dc52fdc177038fe
 # modified version from https://github.com/nutonomy/nuscenes-devkit/blob/9b165b1018a64623b65c17b64f3c9dd746040f36/python-sdk/nuscenes/eval/common/loaders.py#L53
 # adds name mapping capabilities
 def t4metric_load_gt(

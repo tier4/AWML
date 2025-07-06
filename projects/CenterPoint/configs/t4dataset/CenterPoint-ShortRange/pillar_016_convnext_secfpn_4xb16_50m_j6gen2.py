@@ -1,6 +1,6 @@
 _base_ = [
     "../../../../../autoware_ml/configs/detection3d/default_runtime.py",
-    "../../../../../autoware_ml/configs/detection3d/dataset/t4dataset/base.py",
+    "../../../../../autoware_ml/configs/detection3d/dataset/t4dataset/gen2_base.py",
     "../../default/second_secfpn_base.py",
 ]
 custom_imports = dict(imports=["projects.CenterPoint.models"], allow_failed_imports=False)
@@ -28,7 +28,7 @@ backend_args = None
 # backend_args = dict(backend="disk")
 point_load_dim = 5  # x, y, z, intensity, ring_id
 point_use_dim = 3  # x, y, z
-lidar_sweep_dims = [0, 1, 2, 4]
+lidar_sweep_dims = [0, 1, 2, 3, 4]
 
 # eval parameter
 eval_class_range = {
@@ -41,17 +41,17 @@ eval_class_range = {
 
 # user setting
 data_root = "data/t4dataset/"
-info_directory_path = "info/user_name/"
+info_directory_path = "info/kokseang_1_8/"
 train_gpu_size = 4
 train_batch_size = 16
 test_batch_size = 2
 num_workers = 32
 val_interval = 5
-max_epochs = 50
+max_epochs = 30
 work_dir = (
-    "work_dirs/centerpoint_short_range-1_2/"
+    "work_dirs/centerpoint_short_range_1_2/"
     + _base_.dataset_type
-    + "/short_range_pillar_016_convnext_secfpn_4xb16_50m_base/"
+    + "/short_range_pillar_016_convnext_secfpn_4xb16_50m_j6gen2/"
 )
 
 train_pipeline = [
@@ -234,7 +234,7 @@ model = dict(
     # Use PillarFeatureNet for z-aware when computing distance of z to pillar center
     pts_voxel_encoder=dict(
         type="PillarFeatureNet",
-        in_channels=4,
+        in_channels=5,
         feat_channels=[32, 32],
         with_distance=False,
         with_cluster_center=True,
@@ -318,18 +318,18 @@ param_scheduler = [
     # lr * 1e-4
     dict(
         type="CosineAnnealingLR",
-        T_max=int(max_epochs * 0.3),
+        T_max=8,
         eta_min=lr * 10,
         begin=0,
-        end=int(max_epochs * 0.3),
+        end=8,
         by_epoch=True,
         convert_to_iter_based=True,
     ),
     dict(
         type="CosineAnnealingLR",
-        T_max=max_epochs - int(max_epochs * 0.3),
+        T_max=22,
         eta_min=lr * 1e-4,
-        begin=int(max_epochs * 0.3),
+        begin=8,
         end=max_epochs,
         by_epoch=True,
         convert_to_iter_based=True,
@@ -339,18 +339,18 @@ param_scheduler = [
     # during the next epochs, momentum increases from 0.85 / 0.95 to 1
     dict(
         type="CosineAnnealingMomentum",
-        T_max=int(max_epochs * 0.3),
+        T_max=8,
         eta_min=0.85 / 0.95,
         begin=0,
-        end=int(max_epochs * 0.3),
+        end=8,
         by_epoch=True,
         convert_to_iter_based=True,
     ),
     dict(
         type="CosineAnnealingMomentum",
-        T_max=max_epochs - int(max_epochs * 0.3),
+        T_max=22,
         eta_min=1,
-        begin=int(max_epochs * 0.3),
+        begin=8,
         end=max_epochs,
         by_epoch=True,
         convert_to_iter_based=True,
@@ -375,7 +375,7 @@ optim_wrapper = dict(
     clip_grad=clip_grad,
     # Update it accordingly
     loss_scale={
-        "init_scale": 2.0**12,  # intial_scale: 256
+        "init_scale": 2.0**10,  # intial_scale: 256
         "growth_interval": 600,
     },
 )
@@ -407,3 +407,5 @@ custom_hooks = [
     dict(type="MomentumInfoHook"),
     dict(type="LossScaleInfoHook"),
 ]
+
+load_from = "work_dirs/centerpoint_short_range-1_2/T4Dataset/short_range_pillar_016_convnext_secfpn_4xb16_50m_base/epoch_48.pth"

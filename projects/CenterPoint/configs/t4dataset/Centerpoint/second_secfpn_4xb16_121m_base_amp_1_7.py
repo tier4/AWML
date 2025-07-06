@@ -5,15 +5,15 @@ _base_ = [
 ]
 custom_imports = dict(imports=["projects.CenterPoint.models"], allow_failed_imports=False)
 custom_imports["imports"] += _base_.custom_imports["imports"]
-custom_imports["imports"] += ["projects.ConvNeXt_PC"]
 custom_imports["imports"] += ["autoware_ml.detection3d.datasets.transforms"]
 custom_imports["imports"] += ["autoware_ml.hooks"]
+custom_imports["imports"] += ["autoware_ml.backends.mlflowbackend"]
 
 # This is a base file for t4dataset, add the dataset config.
 # type, data_root and ann_file of data.train, data.val and data.test
-point_cloud_range = [-51.20, -51.20, -3.0, 51.20, 51.20, 5.0]
-voxel_size = [0.16, 0.16, 8.0]
-grid_size = [640, 640, 1]  # (51.20 / 0.16 == 380, 380 * 2 == 760)
+point_cloud_range = [-121.60, -121.60, -3.0, 121.60, 121.60, 5.0]
+voxel_size = [0.32, 0.32, 8.0]
+grid_size = [760, 760, 1]  # (121.60 / 0.32 == 380, 380 * 2 == 760)
 sweeps_num = 1
 input_modality = dict(
     use_lidar=True,
@@ -22,7 +22,7 @@ input_modality = dict(
     use_map=False,
     use_external=False,
 )
-out_size_factor = 4
+out_size_factor = 1
 
 backend_args = None
 # backend_args = dict(backend="disk")
@@ -32,27 +32,23 @@ lidar_sweep_dims = [0, 1, 2, 4]
 
 # eval parameter
 eval_class_range = {
-    "car": 52,
-    "truck": 52,
-    "bus": 52,
-    "bicycle": 52,
-    "pedestrian": 52,
+    "car": 121,
+    "truck": 121,
+    "bus": 121,
+    "bicycle": 121,
+    "pedestrian": 121,
 }
 
 # user setting
 data_root = "data/t4dataset/"
-info_directory_path = "info/user_name/"
+info_directory_path = "info/kokseang_1_8/"
 train_gpu_size = 4
 train_batch_size = 16
 test_batch_size = 2
 num_workers = 32
 val_interval = 5
 max_epochs = 50
-work_dir = (
-    "work_dirs/centerpoint_short_range-1_2/"
-    + _base_.dataset_type
-    + "/short_range_pillar_016_convnext_secfpn_4xb16_50m_base/"
-)
+work_dir = "work_dirs/centerpoint_1_8/" + _base_.dataset_type + "/second_secfpn_4xb16_121m_base_amp_1_7/"
 
 train_pipeline = [
     dict(
@@ -231,7 +227,6 @@ model = dict(
             deterministic=True,
         ),
     ),
-    # Use PillarFeatureNet for z-aware when computing distance of z to pillar center
     pts_voxel_encoder=dict(
         type="PillarFeatureNet",
         in_channels=4,
@@ -246,24 +241,20 @@ model = dict(
     ),
     pts_middle_encoder=dict(type="PointPillarsScatter", in_channels=32, output_shape=(grid_size[0], grid_size[1])),
     pts_backbone=dict(
-        _delete_=True,
-        type="ConvNeXt_PC",
+        type="SECOND",
         in_channels=32,
-        out_channels=[32, 192, 192, 192, 192],
-        depths=[3, 3, 2, 1, 1],
-        out_indices=[2, 3, 4],
-        drop_path_rate=0.4,
-        layer_scale_init_value=1.0,
-        gap_before_final_norm=False,
-        with_cp=False,  # We set with_cp to True for svaing gpu memory
-        # No loading any pretrained weights
+        out_channels=[64, 128, 256],
+        layer_nums=[3, 5, 5],
+        layer_strides=[1, 2, 2],
+        norm_cfg=dict(type="BN", eps=1e-3, momentum=0.01),
+        conv_cfg=dict(type="Conv2d", bias=False),
     ),
     pts_neck=dict(
         type="SECONDFPN",
-        in_channels=[192, 192, 192],
+        in_channels=[64, 128, 256],
         out_channels=[128, 128, 128],
         upsample_strides=[1, 2, 4],
-        norm_cfg=dict(type="BN", eps=1e-3, momentum=0.01),
+        norm_cfg=dict(type="BN", eps=0.001, momentum=0.01),
         upsample_cfg=dict(type="deconv", bias=False),
         use_conv_for_no_stride=True,
     ),
@@ -280,9 +271,9 @@ model = dict(
             post_center_range=[-200.0, -200.0, -10.0, 200.0, 200.0, 10.0],
             out_size_factor=out_size_factor,
         ),
-        # sigmoid(-9.2103) = 0.0001 for initial small values
+        # sigmoid(-4.595) = 0.01 for initial small values
         separate_head=dict(type="CustomSeparateHead", init_bias=-4.595, final_kernel=1),
-        loss_cls=dict(type="mmdet.GaussianFocalLoss", reduction="none", loss_weight=1.0),
+        loss_cls=dict(type="mmdet.AmpGaussianFocalLoss", reduction="none", loss_weight=1.0),
         loss_bbox=dict(type="mmdet.L1Loss", reduction="mean", loss_weight=0.25),
         norm_bbox=True,
     ),
@@ -375,8 +366,8 @@ optim_wrapper = dict(
     clip_grad=clip_grad,
     # Update it accordingly
     loss_scale={
-        "init_scale": 2.0**12,  # intial_scale: 256
-        "growth_interval": 600,
+        "init_scale": 2.0**8,  # intial_scale: 256
+        "growth_interval": 2000,
     },
 )
 
@@ -394,6 +385,14 @@ if train_gpu_size > 1:
 vis_backends = [
     dict(type="LocalVisBackend"),
     dict(type="TensorboardVisBackend"),
+    # Update info accordingly
+    # dict(
+    #     type="SafeMLflowVisBackend",
+    #     exp_name="(UserName) CenterPoint",
+    #     run_name="CenterPoint base",
+    #     tracking_uri="http://localhost:5000",
+    #     artifact_suffix=(),
+    # ),
 ]
 visualizer = dict(type="Det3DLocalVisualizer", vis_backends=vis_backends, name="visualizer")
 
