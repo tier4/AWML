@@ -13,7 +13,11 @@ info_test_file_name = "t4dataset_gen2_base_infos_test.pkl"
 
 # dataset scene setting
 dataset_version_config_root = "autoware_ml/configs/t4dataset/"
+<<<<<<< HEAD
 dataset_version_list = ["db_j6gen2_v1", "db_j6gen2_v2", "db_largebus_v1"]
+=======
+dataset_version_list = ["db_j6gen2_v1", "db_j6gen2_v2", "db_j6gen2_v4", "db_largebus_v1"]
+>>>>>>> feat/release_centerpoint_1_8
 
 # dataset format setting
 data_prefix = dict(pts="", sweeps="")
@@ -26,6 +30,15 @@ camera_types = {
     "CAM_BACK_RIGHT",
 }
 
+<<<<<<< HEAD
+=======
+dataset_test_groups = {
+	"db_j6gen2": "t4dataset_j6gen2_infos_test.pkl",
+	"db_largebus": "t4dataset_largebus_infos_test.pkl",
+    "db_gen2_base": "t4dataset_gen2_base_infos_test.pkl",
+}
+
+>>>>>>> feat/release_centerpoint_1_8
 # class setting
 name_mapping = {
     # DBv1.0

@@ -10,7 +10,7 @@
 - Detailed comparison
   - [Internal Link](https://docs.google.com/spreadsheets/d/1jkadazpbA2BUYEUdVV8Rpe54-snH1cbdJbbHsuK04-U/edit?usp=sharing)
 - Performance summary
-  - Dataset: test dataset of db_j6gen2_v1 + db_j6gen2_v1_1 + db_largebus_v1 (total frames: 1,116)
+  - Dataset: test dataset of db_j6gen2_v1 + db_largebus_v1 (total frames: 1,116)
   - Class mAP for center distance (0.5m, 1.0m, 2.0m, 4.0m):
 
 | eval range: 120m             | mAP  | car <br> (33,716) | truck <br> (1,583) | bus <br> (1,254) | bicycle <br> (727) | pedestrian <br> (6,789) |
@@ -34,7 +34,7 @@
 <details>
 <summary> J6Gen2 </summary>
 
-- Test datases: db_j6gen2_v1 + db_j6gen2_v1_1 + db_j6gen2_v2 (total frames: 801)
+- Test datases: db_j6gen2_v1 + db_j6gen2_v2 (total frames: 801)
 
 | eval range: 120m         | mAP  | car <br> (28,002) | truck <br> (1,123) | bus <br> (1,203) | bicycle <br> (223) | pedestrian <br> (4,007) |
 | -------------------------| ---- | ----------------- | ------------------- | ---------------- | -------------------- | ------------------------ |
@@ -59,23 +59,23 @@
 - Model
   - Training dataset: DB J6 Gen2 v1.0 + DB J6 Gen2 v1.1 + DB J6 Gen2 v2.0 + DB LargeBus v1.0 (total frames: 13,332)
   - [Config file path](https://github.com/tier4/AWML/blob/6db4a553d15b18ac6471d228a236c014f55c8307/autoware_ml/configs/detection3d/dataset/t4dataset/base.py)
-  - Deployed onnx model and ROS parameter files [[WebAuto (for internal)]](WIP)
+  - Deployed onnx model and ROS parameter files [[WebAuto (for internal)]](https://evaluation.tier4.jp/evaluation/mlpackages/7156b453-2861-4ae9-b135-e24e48cc9029/releases/6c0d67d1-a759-4c0b-9724-1f6fdcd67a12?project_id=zWhWRzei)
   - Deployed onnx and ROS parameter files [[model-zoo]]
-    - [detection_class_remapper.param.yaml](WIP)
-    - [centerpoint_t4base_ml_package.param.yaml](WIP)
-    - [deploy_metadata.yaml](WIP)
-    - [pts_voxel_encoder_centerpoint_t4base.onnx](WIP)
-    - [pts_backbone_neck_head_centerpoint_t4base.onnx](WIP)
-  - Training results [[Google drive (for internal)]](WIP)
+    - [detection_class_remapper.param.yaml](https://download.autoware-ml-model-zoo.tier4.jp/autoware-ml/models/centerpoint/centerpoint/j6gen2/v1.7.1/detection_class_remapper.param.yaml)
+    - [centerpoint_ml_package.param.yaml](https://download.autoware-ml-model-zoo.tier4.jp/autoware-ml/models/centerpoint/centerpoint/j6gen2/v1.7.1/centerpoint_ml_package.param.yaml)
+    - [deploy_metadata.yaml](https://download.autoware-ml-model-zoo.tier4.jp/autoware-ml/models/centerpoint/centerpoint/j6gen2/v1.7.1/deploy_metadata.yaml)
+    - [pts_voxel_encoder_centerpoint.onnx](https://download.autoware-ml-model-zoo.tier4.jp/autoware-ml/models/centerpoint/centerpoint/j6gen2/v1.7.1/pts_voxel_encoder.onnx)
+    - [pts_backbone_neck_head_centerpoint.onnx](https://download.autoware-ml-model-zoo.tier4.jp/autoware-ml/models/centerpoint/centerpoint/j6gen2/v1.7.1/pts_backbone_neck_head.onnx)
+  - Training results [[Google drive (for internal)]](https://drive.google.com/drive/folders/14ekM6jJSBQN5gCa2cMLtfx7MxWo7osX6?usp=drive_link)
   - Training results [model-zoo]
-    - [logs.zip](WIP)
-    - [checkpoint_best.pth](WIP)
-    - [config.py](WIP)
-  - Train time: NVIDIA H100 80GB * 4 * 50 epochs = 9 hours
+    - [logs.zip](https://download.autoware-ml-model-zoo.tier4.jp/autoware-ml/models/centerpoint/centerpoint/j6gen2/v1.7.1/logs.zip)
+    - [checkpoint_best.pth](https://download.autoware-ml-model-zoo.tier4.jp/autoware-ml/models/centerpoint/centerpoint/j6gen2/v1.7.1/best_NuScenes_metric_T4Metric_mAP_epoch_30.pth)
+    - [config.py](https://download.autoware-ml-model-zoo.tier4.jp/autoware-ml/models/centerpoint/centerpoint/j6gen2/v1.7.1/second_secfpn_4xb16_121m_j6gen2.py)
+  - Train time: NVIDIA H100 80GB * 4 * 30 epochs = 9 hours
   - Batch size: 4*16 = 64
 
 - Evaluation
-  - db_j6gen2_v1 + db_j6gen2_v1_1 + db_largebus_v1 (total frames: 1,116):
+  - db_j6gen2_v1 + db_largebus_v1 (total frames: 1,116):
   - Total mAP (eval range = 120m): 0.7420
 
 | class_name | Count    | mAP  | AP@0.5m | AP@1.0m | AP@2.0m | AP@4.0m |
@@ -97,7 +97,7 @@
 | bicycle    |    504   | 64.71  | 69.69  | 71.75  | 71.83  |
 | pedestrian |  2,782   | 64.96  | 66.14  | 67.12  | 68.79  |
 
-- db_j6gen2_v1 + db_j6gen2_v1_1 + db_j6gen2_v2 (total frames: 801):
+- db_j6gen2_v1 + db_j6gen2_v2 (total frames: 801):
   - Total mAP (eval range = 120m): 0.7464
 
 | class_name  | Count   | mAP  | AP@0.5m | AP@1.0m | AP@2.0m | AP@4.0m |

@@ -19,6 +19,21 @@ In addition to ML model deployment, `AWML` supports active learning framework in
 - NVIDIA dependency: CUDA 12.1 + cuDNN 8
   - Need > 530.xx.xx NVIDIA device driver
 
+The arXiv paper is [here](https://arxiv.org/abs/2506.00645).
+If you use this project in your research, please consider cite.
+
+```
+@misc{tanaka2025awmlopensourcemlbasedrobotics,
+      title={AWML: An Open-Source ML-based Robotics Perception Framework to Deploy for ROS-based Autonomous Driving Software},
+      author={Satoshi Tanaka and Samrat Thapa and Kok Seang Tan and Amadeusz Szymko and Lobos Kenzo and Koji Minoda and Shintaro Tomie and Kotaro Uetake and Guolong Zhang and Isamu Yamashita and Takamasa Horibe},
+      year={2025},
+      eprint={2506.00645},
+      archivePrefix={arXiv},
+      primaryClass={cs.RO},
+      url={https://arxiv.org/abs/2506.00645},
+}
+```
+
 ## Docs
 ### Design documents
 
@@ -43,6 +58,7 @@ If you want to search the OSS tools around `AWML`, you should read following pag
 
 If you want to know about `AWML`, you should read following pages.
 
+- [Tips for how to follow development on AWML](/docs/tips/how_to_follow.md)
 - [Tips for config files](/docs/tips/config.md)
 - [Tips for remote development](/docs/tips/remote_development.md)
 
@@ -73,7 +89,6 @@ If you want to know about `AWML`, you should read following pages.
 ## Supported pipelines
 
 - [Use AWML with WebAuto](/pipelines/webauto/)
-- (TBD) [Project adaptation](/pipelines/project_adaptation/)
 
 ## Supported model
 ### 3D detection
@@ -101,7 +116,7 @@ If you want to know about `AWML`, you should read following pages.
 ### 2D segmentation
 
 - Model for ML tools
-  - (TBD) [SegmentAnything](/projects/SegmentAnything/)
+  - TBD
 
 ### 2D classification
 

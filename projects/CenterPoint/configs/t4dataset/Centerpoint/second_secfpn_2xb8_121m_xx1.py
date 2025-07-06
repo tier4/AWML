@@ -40,14 +40,14 @@ eval_class_range = {
 
 # user setting
 data_root = "data/t4dataset/"
-info_directory_path = "info/user_name/"
-train_gpu_size = 2
-train_batch_size = 8
+info_directory_path = "info/kokseang_1_8/"
+train_gpu_size = 4
+train_batch_size = 16
 test_batch_size = 2
 num_workers = 32
 val_interval = 5
-max_epochs = 50
-work_dir = "work_dirs/centerpoint/" + _base_.dataset_type + "/second_secfpn_2xb8_121m_xx1/"
+max_epochs = 20
+work_dir = "work_dirs/centerpoint_1_8_1/" + _base_.dataset_type + "/second_secfpn_2xb8_121m_xx1/"
 
 train_pipeline = [
     dict(
@@ -218,16 +218,16 @@ model = dict(
         type="Det3DDataPreprocessor",
         voxel=True,
         voxel_layer=dict(
-            max_num_points=20,
+            max_num_points=32,
             voxel_size=voxel_size,
             point_cloud_range=point_cloud_range,
-            max_voxels=(32000, 60000),
+            max_voxels=(64000, 60000),
             deterministic=True,
         ),
     ),
     # Use BackwardPillarFeatureNet without computing voxel center for z-dimensionality
     pts_voxel_encoder=dict(
-        type="BackwardPillarFeatureNet",
+        type="PillarFeatureNet",
         in_channels=4,
         feat_channels=[32, 32],
         with_distance=False,
@@ -306,10 +306,10 @@ param_scheduler = [
     # lr * 1e-4
     dict(
         type="CosineAnnealingLR",
-        T_max=int(max_epochs * 0.3),
+        T_max=8,
         eta_min=lr * 10,
         begin=0,
-        end=int(max_epochs * 0.3),
+        end=,
         by_epoch=True,
         convert_to_iter_based=True,
     ),
