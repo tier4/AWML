@@ -564,4 +564,4 @@ custom_hooks = [
 ]
 
 activation_checkpointing = ["pts_backbone"]
-resume = True
+# resume = True
