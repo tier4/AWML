@@ -2,9 +2,12 @@ from __future__ import annotations
 
 from collections import defaultdict
 from dataclasses import dataclass, field
-from typing import Dict, List, NamedTuple, Optional
+from typing import Any, Dict, List, NamedTuple, Optional
 
+import numpy as np
+import numpy.typing as npt
 from mmengine.logging import print_log
+from t4_devkit import Tier4 as t4
 from t4_devkit.dataclass import Box3D
 
 
@@ -24,11 +27,26 @@ class Detection3DBox:
 
 
 @dataclass(frozen=True)
+class LidarPoint:
+    num_pts_feats: int
+    lidar_path: str
+    lidar2ego: npt.NDArray[np.float64]
+
+
+@dataclass(frozen=True)
+class LidarSweep:
+    num_pts_feats: int
+    lidar_path: str
+
+
+@dataclass(frozen=True)
 class SampleData:
     """Dataclass to save data for a sample, for example, 3D bounding boxes."""
 
     sample_token: str
     detection_3d_boxes: List[Detection3DBox]
+    lidar_point: Optional[LidarPoint] = None  # Path to the lidar file
+    lidar_sweeps: Optional[List[LidarSweep]] = None  # List of lidar sweeps
 
     def get_category_attr_counts(
         self,
@@ -79,6 +97,8 @@ class SampleData:
         cls,
         sample_token: str,
         boxes: List[Box3D],
+        lidar_point: Optional[LidarPoint] = None,
+        lidar_sweeps: Optional[List[LidarSweep]] = None,
     ) -> SampleData:
         """
         Create a SampleData given the params.
@@ -87,7 +107,12 @@ class SampleData:
         """
         detection_3d_boxes = [Detection3DBox(box=box, attrs=box.semantic_label.attributes) for box in boxes]
 
-        return SampleData(sample_token=sample_token, detection_3d_boxes=detection_3d_boxes)
+        return SampleData(
+            sample_token=sample_token,
+            detection_3d_boxes=detection_3d_boxes,
+            lidar_sweeps=lidar_sweeps,
+            lidar_point=lidar_point,
+        )
 
 
 @dataclass

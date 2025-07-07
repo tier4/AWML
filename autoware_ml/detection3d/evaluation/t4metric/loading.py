@@ -3,6 +3,7 @@ from typing import Dict, List, Optional, Tuple
 
 import numpy as np
 import tqdm
+from numpy.typing import NDArray
 from nuscenes import NuScenes
 from nuscenes.eval.common.data_classes import EvalBox, EvalBoxes
 from nuscenes.eval.detection.data_classes import DetectionBox, DetectionConfig
@@ -47,6 +48,21 @@ class T4Box(DetectionBox):
         self.attribute_name = attribute_name
 
 
+def _velocity_clip(velocity: NDArray, max_speed: float = 50.0) -> NDArray:
+    """
+    Normalize the velocity of the boxes.
+    Args:
+        velocity (NDArray): Velocity of the boxes.
+        boxes (NDArray): Boxes to normalize.
+    Returns:
+        NDArray: Normalized velocity.
+    """
+    speed = np.linalg.norm(velocity)
+    if speed > max_speed:
+        velocity = velocity * (max_speed / speed)
+    return velocity
+
+
 # modified version from https://github.com/nutonomy/nuscenes-devkit/blob/9b165b1018a64623b65c17b64f3c9dd746040f36/python-sdk/nuscenes/eval/common/loaders.py#L53
 # adds name mapping capabilities
 def t4metric_load_gt(
@@ -56,6 +72,7 @@ def t4metric_load_gt(
     filter_attributions: Optional[Tuple[str, str]],
     verbose: bool = False,
     post_mapping_dict: Optional[Dict[str, str]] = None,
+    predicted_tokens: Optional[List[str]] = None,
 ) -> EvalBoxes:
     """
     Loads ground truth boxes from DB.
@@ -76,6 +93,10 @@ def t4metric_load_gt(
 
     # Load annotations and filter predictions and annotations.
     for sample_token in tqdm.tqdm(sample_tokens_all, leave=verbose):
+        # Sometimes models (like StreamPETR) skip prediction for the frames that have missing sensor data.
+        if predicted_tokens and sample_token not in predicted_tokens:
+            print(f"Skipping sample {sample_token} because it was not found in the predictions")
+            continue
         sample = nusc.get("sample", sample_token)
         sample_annotation_tokens = sample["anns"]
 
@@ -107,13 +128,14 @@ def t4metric_load_gt(
             if detection_name not in config.class_names:
                 continue
 
+            velocity = _velocity_clip(nusc.box_velocity(sample_annotation["token"])[:2])
             sample_boxes.append(
                 T4Box(
                     sample_token=sample_token,
                     translation=sample_annotation["translation"],
                     size=sample_annotation["size"],
                     rotation=sample_annotation["rotation"],
-                    velocity=nusc.box_velocity(sample_annotation["token"])[:2],
+                    velocity=velocity,
                     num_pts=sample_annotation["num_lidar_pts"] + sample_annotation["num_radar_pts"],
                     detection_name=detection_name,
                     detection_score=-1.0,  # GT samples do not have a score.
