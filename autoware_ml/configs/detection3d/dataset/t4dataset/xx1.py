@@ -83,6 +83,7 @@ name_mapping = {
     "tractor_unit": "truck",
     "kart": "car",
     "unknown": "unknown",
+    "construction_vehicle": "truck",
 }
 class_names = [
     "car",

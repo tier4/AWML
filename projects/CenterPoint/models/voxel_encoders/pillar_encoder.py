@@ -1,8 +1,9 @@
-from typing import Optional, Tuple
+from typing import List, Optional, Tuple
 
 import torch
 from mmdet3d.models.voxel_encoders.utils import PFNLayer, get_paddings_indicator
 from mmdet3d.registry import MODELS
+from mmengine.logging import print_log
 from torch import Tensor, nn
 
 
@@ -37,6 +38,7 @@ class BackwardPillarFeatureNet(nn.Module):
 
     def __init__(
         self,
+        frozen_stages: Optional[List[int]] = None,
         in_channels: Optional[int] = 4,
         feat_channels: Optional[tuple] = (64,),
         with_distance: Optional[bool] = False,
@@ -80,6 +82,18 @@ class BackwardPillarFeatureNet(nn.Module):
         self.x_offset = self.vx / 2 + point_cloud_range[0]
         self.y_offset = self.vy / 2 + point_cloud_range[1]
         self.point_cloud_range = point_cloud_range
+        self._frozen_stages = frozen_stages
+        self._freeze_stages()
+
+    def _freeze_stages(self):
+        """Freeze parameters in every layer/stage."""
+        if self._frozen_stages is None:
+            return
+
+        for i in self._frozen_stages:
+            for params in self.pfn_layers[i].parameters():
+                params.requires_grad = False
+            print_log(f"Freeze PillarFeatureNet stage {i}.")
 
     def forward(self, features: Tensor, num_points: Tensor, coors: Tensor, *args, **kwargs) -> Tensor:
         """Forward function.
