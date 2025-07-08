@@ -38,7 +38,6 @@ model = dict(
     pts_middle_encoder=dict(
         type="BEVFusionSparseEncoder",
         in_channels=5,
-        aug_features=False,
         aug_features_min_values=[],
         aug_features_max_values=[],
         num_aug_features=0,
