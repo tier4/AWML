@@ -21,7 +21,7 @@ class T4Dataset(NuScenesDataset):
         use_valid_flag (bool, optional): Whether to use validity flags for filtering
             annotations. Defaults to False.
         filter_frames_with_missing_image (bool, optional): Whether to filter out
-            frames that have missing image data. Defaults to False. Used for trianing models that use
+            frames that have missing image data. Defaults to False. Used for training models that use
             images.
         **kwargs: Additional keyword arguments passed to the parent NuScenesDataset.
     """
@@ -72,8 +72,9 @@ class T4Dataset(NuScenesDataset):
         # with multiple workers.
         serialized_data_list = [_serialize(entry) for entry in self.data_list if _validate_entry(entry)]
         if len(serialized_data_list) != len(self.data_list):
-            print(
-                f"Filtered {len(self.data_list)-len(serialized_data_list)}/{len(self.data_list)} frames without images."
+            print_log(
+                f"Filtered {len(self.data_list)-len(serialized_data_list)}/{len(self.data_list)} frames without images.",
+                logger="current"
             )
         address_list = np.asarray([len(x) for x in serialized_data_list], dtype=np.int64)
         data_address: np.ndarray = np.cumsum(address_list)
