@@ -81,7 +81,7 @@ class BEVFusionSparseEncoder(SparseEncoder):
 
         if aug_features:
             self.in_channels = in_channels * num_aug_features * 2
-            self.exponents = 2 ** torch.arange(0, num_aug_features).to(torch.device("cuda")).float()
+            self.register_buffer("exponents", (2 ** torch.arange(0, num_aug_features).float()))
 
         assert isinstance(order, tuple) and len(order) == 3
         assert set(order) == {"conv", "norm", "act"}
