@@ -74,7 +74,7 @@ class T4Dataset(NuScenesDataset):
         if len(serialized_data_list) != len(self.data_list):
             print_log(
                 f"Filtered {len(self.data_list)-len(serialized_data_list)}/{len(self.data_list)} frames without images.",
-                logger="current"
+                logger="current",
             )
         address_list = np.asarray([len(x) for x in serialized_data_list], dtype=np.int64)
         data_address: np.ndarray = np.cumsum(address_list)
