@@ -9,6 +9,9 @@ if IS_SPCONV2_AVAILABLE:
 else:
     from mmcv.ops import SparseConvTensor
 
+import numpy as np
+import torch
+
 
 @MODELS.register_module()
 class BEVFusionSparseEncoder(SparseEncoder):
@@ -44,6 +47,10 @@ class BEVFusionSparseEncoder(SparseEncoder):
     def __init__(
         self,
         in_channels,
+        aug_features,
+        aug_features_min_values,
+        aug_features_max_values,
+        num_aug_features,
         sparse_shape,
         order=("conv", "norm", "act"),
         norm_cfg=dict(type="BN1d", eps=1e-3, momentum=0.01),
@@ -58,6 +65,10 @@ class BEVFusionSparseEncoder(SparseEncoder):
         assert block_type in ["conv_module", "basicblock"]
         self.sparse_shape = sparse_shape
         self.in_channels = in_channels
+        self.aug_features = aug_features
+        self.aug_features_min_values = torch.tensor(aug_features_min_values).cuda()
+        self.aug_features_max_values = torch.tensor(aug_features_max_values).cuda()
+        self.num_aug_features = num_aug_features
         self.order = order
         self.base_channels = base_channels
         self.output_channels = output_channels
@@ -68,12 +79,16 @@ class BEVFusionSparseEncoder(SparseEncoder):
         self.return_middle_feats = return_middle_feats
         # Spconv init all weight on its own
 
+        if aug_features:
+            self.in_channels = in_channels * num_aug_features * 2
+            self.exponents = 2 ** torch.arange(0, num_aug_features).to(torch.device("cuda")).float()
+
         assert isinstance(order, tuple) and len(order) == 3
         assert set(order) == {"conv", "norm", "act"}
 
         if self.order[0] != "conv":  # pre activate
             self.conv_input = make_sparse_convmodule(
-                in_channels,
+                self.in_channels,
                 self.base_channels,
                 3,
                 norm_cfg=norm_cfg,
@@ -84,7 +99,7 @@ class BEVFusionSparseEncoder(SparseEncoder):
             )
         else:  # post activate
             self.conv_input = make_sparse_convmodule(
-                in_channels,
+                self.in_channels,
                 self.base_channels,
                 3,
                 norm_cfg=norm_cfg,
@@ -127,6 +142,16 @@ class BEVFusionSparseEncoder(SparseEncoder):
                 output features. When self.return_middle_feats is True, the
                 module returns middle features.
         """
+
+        if self.aug_features:
+            num_points = voxel_features.shape[0]
+            x = (voxel_features - self.aug_features_min_values.view(1, -1)) / (
+                self.aug_features_max_values - self.aug_features_min_values
+            ).view(1, -1)
+            y = x.reshape(-1, 1) * np.pi * self.exponents.reshape(1, -1)
+            y = y.reshape(num_points, -1)
+            voxel_features = torch.cat([torch.cos(y), torch.sin(y)], dim=1)
+
         coors = coors.int()
         input_sp_tensor = SparseConvTensor(voxel_features, coors, self.sparse_shape, batch_size)
         x = self.conv_input(input_sp_tensor)
