@@ -66,8 +66,8 @@ class BEVFusionSparseEncoder(SparseEncoder):
         self.sparse_shape = sparse_shape
         self.in_channels = in_channels
         self.aug_features = aug_features
-        self.aug_features_min_values = torch.tensor(aug_features_min_values).cuda()
-        self.aug_features_max_values = torch.tensor(aug_features_max_values).cuda()
+        self.register_buffer("aug_features_min_values", torch.tensor(aug_features_min_values))
+        self.register_buffer("aug_features_max_values", torch.tensor(aug_features_max_values))
         self.num_aug_features = num_aug_features
         self.order = order
         self.base_channels = base_channels
