@@ -1,7 +1,7 @@
-from os import path as osp
-
 import gc
 import pickle
+from os import path as osp
+
 import numpy as np
 from mmdet3d.datasets import NuScenesDataset
 from mmengine.logging import print_log
@@ -11,17 +11,17 @@ from mmengine.registry import DATASETS
 @DATASETS.register_module()
 class T4Dataset(NuScenesDataset):
     """T4Dataset Dataset base class
-    
+
     This dataset class extends NuScenesDataset to provide specialized functionality
     for T4 dataset processing with additional filtering and validation capabilities.
-    
+
     Args:
         metainfo: Metadata information for the dataset.
         class_names: List of class names for object detection/classification.
-        use_valid_flag (bool, optional): Whether to use validity flags for filtering 
+        use_valid_flag (bool, optional): Whether to use validity flags for filtering
             annotations. Defaults to False.
-        filter_frames_with_missing_image (bool, optional): Whether to filter out 
-            frames that have missing image data. Defaults to False. Used for trianing models that use 
+        filter_frames_with_missing_image (bool, optional): Whether to filter out
+            frames that have missing image data. Defaults to False. Used for trianing models that use
             images.
         **kwargs: Additional keyword arguments passed to the parent NuScenesDataset.
     """
@@ -37,12 +37,12 @@ class T4Dataset(NuScenesDataset):
         T4Dataset.METAINFO = metainfo
         self.valid_class_name_ins = {class_name: 0 for class_name in class_names}
         self.class_names = class_names
-        self.filter_frames_with_missing_image = filter_frames_with_missing_image 
+        self.filter_frames_with_missing_image = filter_frames_with_missing_image
         super().__init__(use_valid_flag=use_valid_flag, **kwargs)
         print_log(f"Valid dataset instances: {self.valid_class_name_ins}", logger="current")
 
     def _serialize_data(self):
-        """ 
+        """
         Overriding from superclass.
 
         Serialize ``self.data_list`` to save memory when launching multiple
@@ -61,7 +61,9 @@ class T4Dataset(NuScenesDataset):
             return np.frombuffer(buffer, dtype=np.uint8)
 
         def _validate_entry(info):
-            if self.filter_frames_with_missing_image and not all([x["img_path"] and osp.exists(x["img_path"]) for x in info["images"].values()]):
+            if self.filter_frames_with_missing_image and not all(
+                [x["img_path"] and osp.exists(x["img_path"]) for x in info["images"].values()]
+            ):
                 return False
             return True
 
@@ -69,8 +71,10 @@ class T4Dataset(NuScenesDataset):
         # `self.data_list` when iterate `import torch.utils.data.dataloader`
         # with multiple workers.
         serialized_data_list = [_serialize(entry) for entry in self.data_list if _validate_entry(entry)]
-        if len(serialized_data_list)!=len(self.data_list):
-            print(f"Filtered {len(self.data_list)-len(serialized_data_list)}/{len(self.data_list)} frames without images.")
+        if len(serialized_data_list) != len(self.data_list):
+            print(
+                f"Filtered {len(self.data_list)-len(serialized_data_list)}/{len(self.data_list)} frames without images."
+            )
         address_list = np.asarray([len(x) for x in serialized_data_list], dtype=np.int64)
         data_address: np.ndarray = np.cumsum(address_list)
         data_bytes = np.concatenate(serialized_data_list)
@@ -80,7 +84,7 @@ class T4Dataset(NuScenesDataset):
         self.data_list.clear()
         gc.collect()
         return data_bytes, data_address
-        
+
     def _filter_with_mask(self, ann_info: dict) -> dict:
         """Remove annotations that do not need to be cared.
 
