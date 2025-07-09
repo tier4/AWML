@@ -1,12 +1,13 @@
 import gc
 import pickle
 from os import path as osp
+from typing import List
 
 import numpy as np
 from mmdet3d.datasets import NuScenesDataset
 from mmengine.logging import print_log
 from mmengine.registry import DATASETS
-from typing import List
+
 
 @DATASETS.register_module()
 class T4Dataset(NuScenesDataset):
@@ -54,7 +55,7 @@ class T4Dataset(NuScenesDataset):
             return self.data_list
         filtered_data_list = []
         for entry in self.data_list:
-            if self.filter_cfg.get("filter_frames_with_missing_image",False) and not all(
+            if self.filter_cfg.get("filter_frames_with_missing_image", False) and not all(
                 [x["img_path"] and osp.exists(x["img_path"]) for x in entry["images"].values()]
             ):
                 continue
