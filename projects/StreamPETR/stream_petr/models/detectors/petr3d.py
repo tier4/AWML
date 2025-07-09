@@ -88,7 +88,6 @@ class Petr3D(MVXTwoStageDetector):
         self.previous_flag_idx = None
         self.previous_timestamp = None
 
-
     def extract_img_feat(self, img, len_queue=1):
         """Extract features of images."""
         B = img.size(0)
@@ -244,14 +243,16 @@ class Petr3D(MVXTwoStageDetector):
         """
         self.stack_tensors(data)
         # For debugging if the ordering of data is correct
-        flag_idx = torch.tensor(data["img_metas"][0]["flag_index"],device=data["prev_exists"].device).reshape(-1,1)
+        flag_idx = torch.tensor(data["img_metas"][0]["flag_index"], device=data["prev_exists"].device).reshape(-1, 1)
         timestamp = data["timestamp"].detach()
         if self.previous_flag_idx is None:
             data["prev_exists"] = torch.zeros_like(data["prev_exists"]).float()
             data["timestamp"] = torch.zeros_like(data["timestamp"]).float()
         else:
-            data["prev_exists"] = ((flag_idx == self.previous_flag_idx) & (timestamp>self.previous_timestamp)).float()
-            data["timestamp"] = data["prev_exists"]* (timestamp-self.previous_timestamp).float()
+            data["prev_exists"] = (
+                (flag_idx == self.previous_flag_idx) & (timestamp > self.previous_timestamp)
+            ).float()
+            data["timestamp"] = data["prev_exists"] * (timestamp - self.previous_timestamp).float()
         # if self.previous_order_idx is not None:
         #     assert (
         #         prev_sample * order_idx == (self.previous_order_idx + 1) * prev_sample

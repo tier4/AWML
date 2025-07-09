@@ -135,6 +135,7 @@ class StreamPETRDataset(T4Dataset):
                     current_origin = np.array(self.get_data_info(idx)["ego2global"])[:3, 3]
                     flag = value
                     self.origin[idx] = current_origin
+
     def _serialize_data(self) -> Tuple[np.ndarray, np.ndarray]:
         """Serialize ``self.data_list`` to save memory when launching multiple
         workers in data loading. This function will be called in ``full_init``.
@@ -284,7 +285,7 @@ class StreamPETRDataset(T4Dataset):
 
             for cam_type in info["images"]:
                 cam_info = info["images"][cam_type]
-                img_timestamp.append(info["images"][self.anchor_camera]["timestamp"]-cam_info["timestamp"])
+                img_timestamp.append(info["images"][self.anchor_camera]["timestamp"] - cam_info["timestamp"])
                 image_paths.append(cam_info["img_path"])
                 intrinsic_mat = np.array(cam_info["cam2img"])
                 extrinsic_mat = np.array(cam_info["lidar2cam"])

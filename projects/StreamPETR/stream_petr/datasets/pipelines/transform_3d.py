@@ -289,7 +289,9 @@ class ResizeCropFlipRotImage:
             # resize = min(np.random.uniform(resize+self.data_aug_conf["resize_lim"][0], resize+self.data_aug_conf["resize_lim"][1]),1)
             if isinstance(self.data_aug_conf["resize_lim"], (int, float)):
                 aspect_ratio = max(fH / H, fW / W)
-                resize = np.random.uniform(aspect_ratio-self.data_aug_conf["resize_lim"], aspect_ratio+self.data_aug_conf["resize_lim"])
+                resize = np.random.uniform(
+                    aspect_ratio - self.data_aug_conf["resize_lim"], aspect_ratio + self.data_aug_conf["resize_lim"]
+                )
             else:
                 resize = np.random.uniform(*self.data_aug_conf["resize_lim"])
 

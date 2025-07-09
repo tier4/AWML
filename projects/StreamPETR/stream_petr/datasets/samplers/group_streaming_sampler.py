@@ -71,7 +71,9 @@ class GroupStreamingSampler(Sampler):
             batch_groups = [[] for _ in range(self.batch_size)]
             for i, group in enumerate(selected_groups):
                 # Randomly drop some elements from the group based on the random_drop_probability, to simulate camera drop
-                batch_groups[i % self.batch_size].extend([x for x in group if np.random.rand() > self.random_drop_probability])
+                batch_groups[i % self.batch_size].extend(
+                    [x for x in group if np.random.rand() > self.random_drop_probability]
+                )
             indices = []
             while all(len(batch_groups[i]) > 0 for i in range(self.batch_size)):
                 for i in range(self.batch_size):
