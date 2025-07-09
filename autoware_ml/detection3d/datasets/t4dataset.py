@@ -34,7 +34,6 @@ class T4Dataset(NuScenesDataset):
         T4Dataset.METAINFO = metainfo
         self.valid_class_name_ins = {class_name: 0 for class_name in class_names}
         self.class_names = class_names
-        self.filter_frames_with_missing_image = filter_frames_with_missing_image
         super().__init__(use_valid_flag=use_valid_flag, **kwargs)
         print_log(f"Valid dataset instances: {self.valid_class_name_ins}", logger="current")
 
