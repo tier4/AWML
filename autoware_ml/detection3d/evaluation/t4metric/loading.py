@@ -3,6 +3,7 @@ from typing import Dict, List, Optional, Tuple
 
 import numpy as np
 import tqdm
+from numpy.typing import NDArray
 from nuscenes import NuScenes
 from nuscenes.eval.common.data_classes import EvalBox, EvalBoxes
 from nuscenes.eval.detection.data_classes import DetectionBox, DetectionConfig
@@ -45,6 +46,21 @@ class T4Box(DetectionBox):
         self.detection_name = detection_name
         self.detection_score = detection_score
         self.attribute_name = attribute_name
+
+
+def _velocity_clip(velocity: NDArray, max_speed: float = 50.0) -> NDArray:
+    """
+    Normalize the velocity of the boxes.
+    Args:
+        velocity (NDArray): Velocity of the boxes.
+        boxes (NDArray): Boxes to normalize.
+    Returns:
+        NDArray: Normalized velocity.
+    """
+    speed = np.linalg.norm(velocity)
+    if speed > max_speed:
+        velocity = velocity * (max_speed / speed)
+    return velocity
 
 
 # modified version from https://github.com/nutonomy/nuscenes-devkit/blob/9b165b1018a64623b65c17b64f3c9dd746040f36/python-sdk/nuscenes/eval/common/loaders.py#L53
@@ -112,13 +128,14 @@ def t4metric_load_gt(
             if detection_name not in config.class_names:
                 continue
 
+            velocity = _velocity_clip(nusc.box_velocity(sample_annotation["token"])[:2])
             sample_boxes.append(
                 T4Box(
                     sample_token=sample_token,
                     translation=sample_annotation["translation"],
                     size=sample_annotation["size"],
                     rotation=sample_annotation["rotation"],
-                    velocity=nusc.box_velocity(sample_annotation["token"])[:2],
+                    velocity=velocity,
                     num_pts=sample_annotation["num_lidar_pts"] + sample_annotation["num_radar_pts"],
                     detection_name=detection_name,
                     detection_score=-1.0,  # GT samples do not have a score.
