@@ -6,7 +6,7 @@ import numpy as np
 from mmdet3d.datasets import NuScenesDataset
 from mmengine.logging import print_log
 from mmengine.registry import DATASETS
-
+from typing import List
 
 @DATASETS.register_module()
 class T4Dataset(NuScenesDataset):
@@ -20,9 +20,6 @@ class T4Dataset(NuScenesDataset):
         class_names: List of class names for object detection/classification.
         use_valid_flag (bool, optional): Whether to use validity flags for filtering
             annotations. Defaults to False.
-        filter_frames_with_missing_image (bool, optional): Whether to filter out
-            frames that have missing image data. Defaults to False. Used for training models that use
-            images.
         **kwargs: Additional keyword arguments passed to the parent NuScenesDataset.
     """
 
@@ -31,7 +28,6 @@ class T4Dataset(NuScenesDataset):
         metainfo,
         class_names,
         use_valid_flag: bool = False,
-        filter_frames_with_missing_image: bool = False,
         **kwargs,
     ):
         T4Dataset.METAINFO = metainfo
@@ -41,50 +37,36 @@ class T4Dataset(NuScenesDataset):
         super().__init__(use_valid_flag=use_valid_flag, **kwargs)
         print_log(f"Valid dataset instances: {self.valid_class_name_ins}", logger="current")
 
-    def _serialize_data(self):
+    def filter_data(self) -> List[dict]:
         """
         Overriding from superclass.
 
-        Serialize ``self.data_list`` to save memory when launching multiple
-        workers in data loading. This function will be called in ``full_init``.
+        Filter annotations according to filter_cfg. Defaults return all
+        ``data_list``in Superclass.
 
-        Hold memory using serialized objects, and data loader workers can use
-        shared RAM from master process instead of making a copy.
+        If some ``data_list`` could be filtered according to specific logic,
+        the subclass should override this method.
 
         Returns:
-            Tuple[np.ndarray, np.ndarray]: Serialized result and corresponding
-            address.
+            List[dict]: Filtered results.
         """
-
-        def _serialize(data):
-            buffer = pickle.dumps(data, protocol=4)
-            return np.frombuffer(buffer, dtype=np.uint8)
-
-        def _validate_entry(info):
-            if self.filter_frames_with_missing_image and not all(
-                [x["img_path"] and osp.exists(x["img_path"]) for x in info["images"].values()]
+        if not self.filter_cfg:
+            return self.data_list
+        filtered_data_list = []
+        for entry in self.data_list:
+            if self.filter_cfg.get("filter_frames_with_missing_image",False) and not all(
+                [x["img_path"] and osp.exists(x["img_path"]) for x in entry["images"].values()]
             ):
-                return False
-            return True
+                continue
+            filtered_data_list.append(entry)
 
-        # Serialize data information list avoid making multiple copies of
-        # `self.data_list` when iterate `import torch.utils.data.dataloader`
-        # with multiple workers.
-        serialized_data_list = [_serialize(entry) for entry in self.data_list if _validate_entry(entry)]
-        if len(serialized_data_list) != len(self.data_list):
+        if len(filtered_data_list) != len(self.data_list):
             print_log(
-                f"Filtered {len(self.data_list)-len(serialized_data_list)}/{len(self.data_list)} frames without images.",
+                f"Filtered {len(self.data_list)-len(filtered_data_list)}/{len(self.data_list)} frames without images.",
                 logger="current",
             )
-        address_list = np.asarray([len(x) for x in serialized_data_list], dtype=np.int64)
-        data_address: np.ndarray = np.cumsum(address_list)
-        data_bytes = np.concatenate(serialized_data_list)
 
-        # Empty cache for preventing making multiple copies of
-        # `self.data_info` when loading data multi-processes.
-        self.data_list.clear()
-        gc.collect()
-        return data_bytes, data_address
+        return filtered_data_list
 
     def _filter_with_mask(self, ann_info: dict) -> dict:
         """Remove annotations that do not need to be cared.
