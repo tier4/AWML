@@ -43,21 +43,21 @@ lidar_feature_dims = 4
 model = dict(
     type="BEVFusion",
     data_preprocessor=dict(
-        _delete_=True,
         type="Det3DDataPreprocessor",
-        voxel=True,
-        voxel_layer=dict(
+        pad_size_divisor=32,
+        voxelize_cfg=dict(
             max_num_points=max_num_points,
             voxel_size=voxel_size,
             point_cloud_range=point_cloud_range,
             max_voxels=max_voxels,
             deterministic=True,
+            voxelize_reduce=True,
         ),
         mean=[123.675, 116.28, 103.53],
         std=[58.395, 57.12, 57.375],
         bgr_to_rgb=False,
     ),
-    pts_middle_encoder=dict(sparse_shape=grid_size),
+    pts_middle_encoder=dict(sparse_shape=grid_size, in_channels=lidar_feature_dims),
     img_backbone=dict(
         type="mmdet.SwinTransformer",
         embed_dims=96,
@@ -125,11 +125,7 @@ model = dict(
         ),
     ),
     # Lidar pipeline
-    pts_voxel_encoder=dict(type="HardSimpleVFE", num_features=lidar_feature_dims),
-    pts_middle_encoder=dict(
-        type="BEVFusionSparseEncoder",
-        in_channels=lidar_feature_dims,
-    ),
+    pts_voxel_encoder=dict(num_features=lidar_feature_dims),
 )
 
 train_pipeline = [
