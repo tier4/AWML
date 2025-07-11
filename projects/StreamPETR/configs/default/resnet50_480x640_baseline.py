@@ -428,4 +428,4 @@ sync_bn = "torch"
 
 auto_scale_lr = dict(base_batch_size=8, enable=True)
 
-randomness = dict(seed=0, diff_rank_seed=False, deterministic=True) 
+randomness = dict(seed=0, diff_rank_seed=False, deterministic=True)
