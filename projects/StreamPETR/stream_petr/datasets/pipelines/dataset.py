@@ -58,11 +58,12 @@ class StreamPETRDataset(T4Dataset):
         num_frame_losses=1,
         queue_length=8,
         random_length=0,
-        camera_order=None,
+        camera_order=["CAM_FRONT", "CAM_BACK", "CAM_FRONT_LEFT", "CAM_BACK_LEFT", "CAM_FRONT_RIGHT", "CAM_BACK_RIGHT"],
         metainfo={},
         filter_empty_gt=False,
         reset_origin=False,
         anchor_camera="CAM_FRONT",
+        shuffle_cameras=True,
         *args,
         **kwargs,
     ):
@@ -82,6 +83,8 @@ class StreamPETRDataset(T4Dataset):
             self._set_group_indices()
         self.camera_order = camera_order
         self.anchor_camera = anchor_camera
+        self.shuffle_cameras = shuffle_cameras
+
         if self.reset_origin:
             print(f"Reset origin: {self.reset_origin}")
         print(f"Camera corder: {self.camera_order} test_mode: {self.test_mode}")
@@ -140,6 +143,7 @@ class StreamPETRDataset(T4Dataset):
                 "pre_sample_idx"
             ] = i  # This is necessary to match gts and predictions for frames in testing
         argsorted_indices = sorted(list(range(len(sort_items))), key=lambda i: sort_items[i])
+
         for i, idx in enumerate(argsorted_indices):
             self.data_list[idx]["sorted_index"] = i
 
@@ -241,12 +245,9 @@ class StreamPETRDataset(T4Dataset):
             extrinsics = []
             img_timestamp = []
 
-            if self.camera_order:
-                camera_order = self.camera_order
-            else:
-                camera_order = list(info["images"].keys())
-                if not self.test_mode:
-                    random.shuffle(camera_order)
+            camera_order = self.camera_order.copy()
+            if self.shuffle_cameras and not self.test_mode:
+                random.shuffle(camera_order)
 
             info["images"] = {x: info["images"][x] for x in camera_order}
 
