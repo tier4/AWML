@@ -43,13 +43,16 @@ lidar_feature_dims = 4
 model = dict(
     type="BEVFusion",
     data_preprocessor=dict(
-        voxelize_cfg=dict(
-            max_num_points=max_num_points,
-            point_cloud_range=point_cloud_range,
-            voxel_size=voxel_size,
-            max_voxels=max_voxels,
-        ),
+        _delete_=True,
         type="Det3DDataPreprocessor",
+        voxel=True,
+        voxel_layer=dict(
+            max_num_points=max_num_points,
+            voxel_size=voxel_size,
+            point_cloud_range=point_cloud_range,
+            max_voxels=max_voxels,
+            deterministic=True,
+        ),
         mean=[123.675, 116.28, 103.53],
         std=[58.395, 57.12, 57.375],
         bgr_to_rgb=False,
