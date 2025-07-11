@@ -51,7 +51,7 @@ model = dict(
             point_cloud_range=point_cloud_range,
             max_voxels=max_voxels,
             deterministic=True,
-						voxelize_reduce=True,
+            voxelize_reduce=True,
         ),
         mean=[123.675, 116.28, 103.53],
         std=[58.395, 57.12, 57.375],
