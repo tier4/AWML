@@ -67,6 +67,7 @@ class StreamPETRDataset(T4Dataset):
         *args,
         **kwargs,
     ):
+        assert anchor_camera in camera_order, f"Anchor camera {anchor_camera} not in camera order {camera_order}"
         self.reset_origin = reset_origin
         super().__init__(metainfo=metainfo, filter_empty_gt=filter_empty_gt, *args, **kwargs)
         assert seq_mode, "Only supported seq_mode training at the moment"
