@@ -8,7 +8,7 @@ custom_imports["imports"] += _base_.custom_imports["imports"]
 
 # user setting
 data_root = "data/t4dataset/"
-info_directory_path = "info/kokseang_1_8/"
+info_directory_path = "info/user_name/"
 train_gpu_size = 4
 train_batch_size = 8
 test_batch_size = 2
@@ -44,7 +44,7 @@ model = dict(
     type="BEVFusion",
     data_preprocessor=dict(
         type="Det3DDataPreprocessor",
-				pad_size_divisor=32,
+        pad_size_divisor=32,
         voxelize_cfg=dict(
             max_num_points=max_num_points,
             voxel_size=voxel_size,
@@ -76,7 +76,7 @@ model = dict(
         convert_weights=True,
         init_cfg=dict(
             type="Pretrained",
-            checkpoint="work_dirs/bevfusion/pretrain//swin_tiny_patch4_window7_224.pth",  # noqa: E251  # noqa: E501
+            checkpoint="https://github.com/SwinTransformer/storage/releases/download/v1.0.0/swin_tiny_patch4_window7_224.pth",  # noqa: E251  # noqa: E501
         ),
     ),
     img_neck=dict(
