@@ -86,15 +86,6 @@ class StreamPETRDataset(T4Dataset):
             print(f"Reset origin: {self.reset_origin}")
         print(f"Camera corder: {self.camera_order} test_mode: {self.test_mode}")
 
-    def _validate_entry(self, info) -> bool:
-        """
-        Validate the necessary entries in the data info dict
-        """
-        if not all([x["img_path"] and os.path.exists(x["img_path"]) for x in info["images"].values()]):
-            print(f"Found frame  {(info['sample_idx'])} without any image in it, not using it for training")
-            return False
-        return True
-
     def _set_group_indices(self):
         res = []
         curr_sequence = 0
@@ -136,25 +127,14 @@ class StreamPETRDataset(T4Dataset):
                     flag = value
                     self.origin[idx] = current_origin
 
-    def _serialize_data(self) -> Tuple[np.ndarray, np.ndarray]:
-        """Serialize ``self.data_list`` to save memory when launching multiple
-        workers in data loading. This function will be called in ``full_init``.
+    def filter_data(self):
 
-        Hold memory using serialized objects, and data loader workers can use
-        shared RAM from master process instead of making a copy.
+        def validate_entry(info) -> bool:
+            if not all([x["img_path"] and os.path.exists(x["img_path"]) for x in info["images"].values()]):
+                print(f"Found frame  {(info['sample_idx'])} without any image in it, not using it for training")
+                return False
+            return True
 
-        Returns:
-            Tuple[np.ndarray, np.ndarray]: Serialized result and corresponding
-            address.
-        """
-
-        def _serialize(data):
-            buffer = pickle.dumps(data, protocol=4)
-            return np.frombuffer(buffer, dtype=np.uint8)
-
-        # Serialize data information list avoid making multiple copies of
-        # `self.data_list` when iterate `import torch.utils.data.dataloader`
-        # with multiple workers.
         sort_items = [(x["scene_token"], x["timestamp"]) for x in self.data_list]
         for i in range(len(self.data_list)):
             self.data_list[i][
@@ -164,17 +144,9 @@ class StreamPETRDataset(T4Dataset):
         for i, idx in enumerate(argsorted_indices):
             self.data_list[idx]["sorted_index"] = i
 
-        self.data_list = [self.data_list[i] for i in argsorted_indices if self._validate_entry(self.data_list[i])]
-        data_list = [_serialize(x) for x in self.data_list]
-        address_list = np.asarray([len(x) for x in data_list], dtype=np.int64)
-        data_address: np.ndarray = np.cumsum(address_list)
-        # TODO Check if np.concatenate is necessary
-        data_bytes = np.concatenate(data_list)
-        # Empty cache for preventing making multiple copies of
-        # `self.data_info` when loading data multi-processes.
-        self.data_list.clear()
-        gc.collect()
-        return data_bytes, data_address
+        self.data_list = [self.data_list[i] for i in argsorted_indices if validate_entry(self.data_list[i])]
+
+        return self.data_list
 
     def _validate_data(self, queue):
         assert all(x["scene_token"] == queue[0]["scene_token"] for x in queue), "All frames must be from same scene"
@@ -196,10 +168,6 @@ class StreamPETRDataset(T4Dataset):
         example = self.pipeline(input_dict)
 
         queue = [example]
-
-        # for k in range(self.num_frame_losses):
-        #     if self.filter_empty_gt and (queue[-k - 1] is None or ~(queue[-k - 1]["gt_labels_3d"] != -1).any()):
-        #         return None
 
         self._validate_data(queue)
 

@@ -426,3 +426,5 @@ sync_bn = "torch"
 # load_from = "/workspace/work_dirs/ckpts/nuscenes_baseline.pth"
 
 auto_scale_lr = dict(base_batch_size=8, enable=True)
+
+randomness = dict(seed=0, diff_rank_seed=False, deterministic=True) 

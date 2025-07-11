@@ -253,13 +253,6 @@ class Petr3D(MVXTwoStageDetector):
                 (flag_idx == self.previous_flag_idx) & (timestamp > self.previous_timestamp)
             ).float()
             data["timestamp"] = data["prev_exists"] * (timestamp - self.previous_timestamp).float()
-        # if self.previous_order_idx is not None:
-        #     assert (
-        #         prev_sample * order_idx == (self.previous_order_idx + 1) * prev_sample
-        #     ).all(), (
-        #         f"prev_sample: {prev_sample}, order_idx: {order_idx}, previous_order_idx: {self.previous_order_idx}"
-        #     )
-        # print(data["prev_exists"].reshape(-1),flag_idx.reshape(-1), data["img_metas"][0]["order_index"], data["timestamp"].reshape(-1))
         self.previous_flag_idx = flag_idx
         self.previous_timestamp = timestamp
         if mode == "loss":
