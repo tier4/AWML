@@ -21,6 +21,7 @@ def make_cuda_ext(name, module, sources, sources_cuda=[], extra_args=[], extra_i
             "-gencode=arch=compute_75,code=sm_75",
             "-gencode=arch=compute_80,code=sm_80",
             "-gencode=arch=compute_86,code=sm_86",
+            "-gencode=arch=compute_90,code=sm_90",
         ]
         sources += sources_cuda
     else:

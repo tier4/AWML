@@ -8,7 +8,7 @@ custom_imports["imports"] += _base_.custom_imports["imports"]
 
 # user setting
 data_root = "data/t4dataset/"
-info_directory_path = "info/user_name/"
+info_directory_path = "info/kokseang_1_8/"
 train_gpu_size = 4
 train_batch_size = 8
 test_batch_size = 2
@@ -43,21 +43,21 @@ lidar_feature_dims = 4
 model = dict(
     type="BEVFusion",
     data_preprocessor=dict(
-        _delete_=True,
         type="Det3DDataPreprocessor",
-        voxel=True,
-        voxel_layer=dict(
+				pad_size_divisor=32,
+        voxelize_cfg=dict(
             max_num_points=max_num_points,
             voxel_size=voxel_size,
             point_cloud_range=point_cloud_range,
             max_voxels=max_voxels,
             deterministic=True,
+						voxelize_reduce=True,
         ),
         mean=[123.675, 116.28, 103.53],
         std=[58.395, 57.12, 57.375],
         bgr_to_rgb=False,
     ),
-    pts_middle_encoder=dict(sparse_shape=grid_size),
+    pts_middle_encoder=dict(sparse_shape=grid_size, in_channels=lidar_feature_dims),
     img_backbone=dict(
         type="mmdet.SwinTransformer",
         embed_dims=96,
@@ -76,7 +76,7 @@ model = dict(
         convert_weights=True,
         init_cfg=dict(
             type="Pretrained",
-            checkpoint="https://github.com/SwinTransformer/storage/releases/download/v1.0.0/swin_tiny_patch4_window7_224.pth",  # noqa: E251  # noqa: E501
+            checkpoint="work_dirs/bevfusion/pretrain//swin_tiny_patch4_window7_224.pth",  # noqa: E251  # noqa: E501
         ),
     ),
     img_neck=dict(
@@ -125,11 +125,7 @@ model = dict(
         ),
     ),
     # Lidar pipeline
-    pts_voxel_encoder=dict(type="HardSimpleVFE", num_features=lidar_feature_dims),
-    pts_middle_encoder=dict(
-        type="BEVFusionSparseEncoder",
-        in_channels=lidar_feature_dims,
-    ),
+    pts_voxel_encoder=dict(num_features=lidar_feature_dims),
 )
 
 train_pipeline = [
@@ -155,7 +151,7 @@ train_pipeline = [
         pad_empty_sweeps=True,
         remove_close=True,
         backend_args=backend_args,
-        test_moode=False,
+        test_mode=False,
     ),
     dict(type="LoadAnnotations3D", with_bbox_3d=True, with_label_3d=True, with_attr_label=False),
     dict(
@@ -240,7 +236,7 @@ test_pipeline = [
         pad_empty_sweeps=True,
         remove_close=True,
         backend_args=backend_args,
-        test_moode=True,
+        test_mode=True,
     ),
     dict(
         type="ImageAug3D",
