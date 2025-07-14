@@ -52,19 +52,19 @@
 
 - Model
   - Training dataset: DB J6 Gen2 v1.0 + DB J6 Gen2 v2.0 + DB J6 Gen2 V4.0 + DB LargeBus v1.0 (total frames: 20,777)
-  - [Config file path](https://github.com/tier4/AWML/blob/b1f498a6802f68c36a1d02b9780f72e25a413ee3/autoware_ml/configs/detection3d/dataset/t4dataset/gen2_base.py)
-  - Deployed onnx model and ROS parameter files [[WebAuto (for internal)]](https://evaluation.tier4.jp/evaluation/mlpackages/7156b453-2861-4ae9-b135-e24e48cc9029/releases/2ea64514-ad8b-4943-830f-5bd570988828?project_id=zWhWRzei)
+  - [Config file path](https://github.com/tier4/AWML/blob/32c7a3d4d7c6b2e6fd6ef56cfc7d305486c5ec1d/projects/CenterPoint/configs/t4dataset/CenterPoint-ShortRange/pillar_016_convnext_secfpn_4xb16_50m_j6gen2.py)
+  - Deployed onnx model and ROS parameter files [[WebAuto (for internal)]](https://evaluation.tier4.jp/evaluation/mlpackages/7156b453-2861-4ae9-b135-e24e48cc9029/releases/c74579f9-e7b3-4956-93a1-af90cc41171a?project_id=zWhWRzei)
   - Deployed onnx and ROS parameter files [[model-zoo]]
-    - [detection_class_remapper.param.yaml](https://download.autoware-ml-model-zoo.tier4.jp/autoware-ml/models/centerpoint/centerpoint/j6gen2/v2.0.1/detection_class_remapper.param.yaml)
-    - [centerpoint_ml_package.param.yaml](https://download.autoware-ml-model-zoo.tier4.jp/autoware-ml/models/centerpoint/centerpoint/j6gen2/v2.0.1/centerpoint_ml_package.param.yaml)
-    - [deploy_metadata.yaml](https://download.autoware-ml-model-zoo.tier4.jp/autoware-ml/models/centerpoint/centerpoint/j6gen2/v2.0.1/deploy_metadata.yaml)
-    - [pts_voxel_encoder_centerpoint.onnx](https://download.autoware-ml-model-zoo.tier4.jp/autoware-ml/models/centerpoint/centerpoint/j6gen2/v2.0.1/pts_voxel_encoder.onnx)
-    - [pts_backbone_neck_head_centerpoint.onnx](https://download.autoware-ml-model-zoo.tier4.jp/autoware-ml/models/centerpoint/centerpoint/j6gen2/v2.0.1/pts_backbone_neck_head.onnx)
-  - Training results [[Google drive (for internal)]](https://drive.google.com/drive/folders/1x2LUu1hyoeroOdRtTxAPQsKLXDi2TuAc?usp=drive_link)
+    - [detection_class_remapper.param.yaml](https://download.autoware-ml-model-zoo.tier4.jp/autoware-ml/models/centerpoint/centerpoint-shortrange/j6gen2/v2.0.1/detection_class_remapper.param.yaml)
+    - [centerpoint_ml_package.param.yaml](https://download.autoware-ml-model-zoo.tier4.jp/autoware-ml/models/centerpoint/centerpoint-shortrange/j6gen2/v2.0.1/centerpoint_short_range_ml_package.param.yaml)
+    - [deploy_metadata.yaml](https://download.autoware-ml-model-zoo.tier4.jp/autoware-ml/models/centerpoint/centerpoint-shortrange/j6gen2/v2.0.1/deploy_metadata.yaml)
+    - [pts_voxel_encoder_centerpoint.onnx](https://download.autoware-ml-model-zoo.tier4.jp/autoware-ml/models/centerpoint/centerpoint-shortrange/j6gen2/v2.0.1/pts_voxel_encoder_centerpoint_short_range.onnx)
+    - [pts_backbone_neck_head_centerpoint.onnx](https://download.autoware-ml-model-zoo.tier4.jp/autoware-ml/models/centerpoint/centerpoint-shortrange/j6gen2/v2.0.1/pts_backbone_neck_head_centerpoint_short_range.onnx)
+  - Training results [[Google drive (for internal)]](https://drive.google.com/drive/folders/1OGhyp0RObqiHvejTm2ku1QMc4CnLCrn0?usp=drive_link)
   - Training results [model-zoo]
-    - [logs.zip](https://download.autoware-ml-model-zoo.tier4.jp/autoware-ml/models/centerpoint/centerpoint/j6gen2/v2.0.1/logs.zip)
-    - [checkpoint_best.pth](https://download.autoware-ml-model-zoo.tier4.jp/autoware-ml/models/centerpoint/centerpoint/j6gen2/v2.0.1/best_NuScenes_metric_T4Metric_mAP_epoch_28.pth)
-    - [config.py](https://download.autoware-ml-model-zoo.tier4.jp/autoware-ml/models/centerpoint/centerpoint/j6gen2/v2.0.1/second_secfpn_4xb16_121m_j6gen2.py)
+    - [logs.zip](https://download.autoware-ml-model-zoo.tier4.jp/autoware-ml/models/centerpoint/centerpoint-shortrange/j6gen2/v2.0.1/logs.zip)
+    - [checkpoint_best.pth](https://download.autoware-ml-model-zoo.tier4.jp/autoware-ml/models/centerpoint/centerpoint-shortrange/j6gen2/v2.0.1/best_NuScenes_metric_T4Metric_mAP_epoch_28.pth)
+    - [config.py](https://download.autoware-ml-model-zoo.tier4.jp/autoware-ml/models/centerpoint/centerpoint-shortrange/j6gen2/v2.0.1/pillar_016_convnext_secfpn_4xb16_50m_j6gen2.py)
   - Train time: NVIDIA H100 80GB * 4 * 30 epochs = 12 hours
   - Batch size: 4*16 = 64
 
