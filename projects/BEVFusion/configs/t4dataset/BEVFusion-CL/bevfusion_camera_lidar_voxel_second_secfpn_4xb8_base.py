@@ -76,7 +76,7 @@ model = dict(
         convert_weights=True,
         init_cfg=dict(
             type="Pretrained",
-            checkpoint="work_dirs/bevfusion/pretrain//swin_tiny_patch4_window7_224.pth",  # noqa: E251  # noqa: E501
+            checkpoint="work_dirs/bevfusion/pretrain/swin_tiny_patch4_window7_224.pth",  # noqa: E251  # noqa: E501
         ),
     ),
     img_neck=dict(
@@ -341,6 +341,7 @@ val_evaluator = dict(
     class_names=_base_.class_names,
     name_mapping=_base_.name_mapping,
     eval_class_range=eval_class_range,
+		filter_attributes=_base_.filter_attributes,
 )
 test_evaluator = dict(
     type="T4Metric",
@@ -351,6 +352,7 @@ test_evaluator = dict(
     class_names=_base_.class_names,
     name_mapping=_base_.name_mapping,
     eval_class_range=eval_class_range,
+		filter_attributes=_base_.filter_attributes,
 )
 
 # learning rate
