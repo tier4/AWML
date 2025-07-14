@@ -3,20 +3,17 @@
 
 ### Overview
 - Main parameter
-  - range = 121.60m
-  - voxel_size = [0.32, 0.32, 8.0]
-  - grid_size = [760, 760, 1]
+  - range = 51.20m
+  - voxel_size = [0.16, 0.16, 8.0]
+  - grid_size = [640, 640, 1]
 	- **With Intensity**
-- Detailed comparison
-  - [Internal Link](https://docs.google.com/spreadsheets/d/1jkadazpbA2BUYEUdVV8Rpe54-snH1cbdJbbHsuK04-U/edit?usp=sharing)
 - Performance summary
   - Dataset: test dataset of db_j6gen2_v1 + db_j6gen2_v2 + db_j6gen2_v4 + db_largebus_v1 (total frames: 1,761)
   - Class mAP for center distance (0.5m, 1.0m, 2.0m, 4.0m):
 
-| eval range: 120m         | mAP  | car <br> (57,839) | truck <br> (4,608) | bus <br> (1,559) | bicycle <br> (1,057) | pedestrian <br> (10,375) |
+| eval range: 52m         | mAP  | car <br> (24,343) | truck <br> (1,965) | bus <br> (866) | bicycle <br> (689) | pedestrian <br> (6,333) |
 | ---------------------    | ---- | ----------------- | ------------------- | ---------------- | ----------------- | ---------------- |
-| CenterPoint J6Gen2/2.0.1 | 74.01 | 85.97            | 62.57               | 83.36         | 71.05                 | 67.10            |
-| CenterPoint J6Gen2/1.7.1 | 71.77 | 84.80            | 56.64               | 81.78         | 71.26                 | 64.38            |
+| CenterPoint-ShortRange J6Gen2/2.0.1 | 86.00 | 95.30            | 76.20               | 94.50         | 85.90                 | 77.90            |
 
 
 ### Datasets
@@ -26,10 +23,9 @@
 
 - Test datases: db_largebus_v1 (total frames: 604)
 
-| eval range: 120m         | mAP  | car <br> (13,831)     | truck <br> (2,137) | bus <br> (95) | bicycle <br> (724) | pedestrian <br> (3,916) |
-| -------------------------| ---- | -------------------- | ------------------- | ---------------- | ------------ | ------------------------ |
-| CenterPoint J6Gen2/2.0.1   | 74.73   | 90.53   | 69.55   | 80.06 | 65.72       | 67.82       |
-| CenterPoint J6Gen2/1.7.1   | 72.17   | 89.36   | 60.87   | 78.40   | 67.71     | 64.84       |
+| eval range: 52m         | mAP  | car <br> (6,232)     | truck <br> (675) | bus <br> (43) | bicycle <br> (463) | pedestrian <br> (2,129) |
+| -------------------------| ---- | -------------------- | ------------------- | ---------------- | -------------------- | ------------------------ |
+| CenterPoint-ShortRange J6Gen2/2.0     | 87.70   | 95.10   | 86.40   | 98.30 |   81.4  | 77.20 |
 
 </details>
 
@@ -38,10 +34,9 @@
 
 - Test datases: db_j6gen2_v1 + db_j6gen2_v2 + db_j6gen2_v4 (total frames: 1,157)
 
-| eval range: 120m         | mAP  | car <br> (44,008) | truck <br> (2,471) | bus <br> (1,464) | bicycle <br> (333) | pedestrian <br> (6,459) |
-| -------------------------| ---- | ----------------- | ------------------- | ---------------- | -------------------- | ---------------------|
-| CenterPoint J6Gen2/2.0.1   | 74.60   | 84.83   | 56.48   | 83.70 | 81.06       | 66.91       |
-| CenterPoint J6Gen2/1.7.1   | 72.35   | 83.34   | 53.26   | 82.13 | 79.10     | 63.92       |
+| eval range: 52m         | mAP  | car <br> (18,111)     | truck <br> (1,290) | bus <br> (823) | bicycle <br> (226) | pedestrian <br> (4,204) |
+| -------------------------| ---- | -------------------- | ------------------- | ---------------- | -------------------- | ------------------------ |
+| CenterPoint-ShortRange J6Gen2/2.0     | 87.00   | 95.30   | 71.00   | 94.30 |   96.00  | 78.20 |
 
 </details>
 
@@ -49,16 +44,8 @@
 
 ### CenterPoint J6Gen2/2.0.1
 - Changes:
-  - Finetune from `CenterPoint base/2.0.0`
+  - Finetune from `CenterPoint-ShortRange base/2.0.0`
 	- Include intensity as an extra feature
-
-- Overall:
-  - Better than `CenterPoint base/v2.0.0` even when finetuning from `J6Gen2`
-  - `CenterPoint J6Gen2/2.0.1` performs better overall, with improvements across most classes
-  - The largest improvement is in truck detection (`+5.93 AP`)
-  - Pedestrian and car detection also see solid gains.
-  - Bicycle detection slightly drops in 2.0.1 but by a negligible margin (`−0.21 AP`).
-  - `J6Gen2/2.0.1` is a clear upgrade over `J6Gen2/1.7.1` in terms of detection accuracy, especially for trucks and pedestrians, with only a very minor tradeoff in bicycle detection
 
 <details>
 <summary> The link of data and evaluation result </summary>
@@ -83,36 +70,36 @@
 
 - Evaluation
   - db_j6gen2_v1 + db_j6gen2_v2 + db_j6gen2_v4 + + db_largebus_v1 (total frames: 1,761):
-  - Total mAP (eval range = 120m): 0.7401
+  - Total mAP (eval range = 52m): 0.86
 
 | class_name | Count    | mAP    | AP@0.5m | AP@1.0m | AP@2.0m | AP@4.0m |
 | -----------| -------  | ------ | ------- | ------- | ------- | ------- |
-| car        |  57,839  | 85.97  | 80.0    | 86.3    | 88.6    | 88.9    |
-| truck      |   4,608  | 62.57  | 49.2    | 63.2    | 66.8    | 71.1    |
-| bus        |   1,559  | 83.36  | 78.6    | 82.1    | 86.0    | 86.7    |
-| bicycle    |   1,057  | 71.05  | 65.6    | 72.2    | 73.2    | 73.2    |
-| pedestrian |  10,375  | 67.10  | 65.2    | 66.3    | 67.6    | 69.4    |
+| car        |  24,343  | 95.3   | 91.4      | 96.3  | 96.7    | 96.8    |
+| truck      |   1,965  | 76.2   | 67.1      | 76.9  | 79.5    | 81.3    |
+| bus        |     866  | 94.5   | 90.9      | 92.7  | 97.2    | 97.3    |
+| bicycle    |     689  | 85.9   | 82.9      | 87.0  | 87.0    | 87.0    |
+| pedestrian |   6,333  | 77.9   | 76.0      | 77.2  | 78.3    | 80.1    |
 
 - db_largebus_v1 (total frames: 604):
-  - Total mAP (eval range = 120m): 0.7473
+  - Total mAP (eval range = 52m): 0.877
 
 | class_name | Count    | mAP    | AP@0.5m | AP@1.0m | AP@2.0m | AP@4.0m |
 | -----------| -------  | -----  | ------- | ------- | ------- | ------- |
-| car        |  13,831   | 90.53  | 85.4    | 91.3    | 92.6    | 92.8    |
-| truck      |   2,137   | 69.55  | 54.1    | 71.0    | 75.4    | 77.6    |
-| bus        |     95   | 80.06  | 76.5    | 80.4    | 81.7    | 81.7    |
-| bicycle    |    724   | 65.72  | 58.8    | 66.7    | 68.7    | 68.7    |
-| pedestrian |  3,916   | 67.82  | 66.1    | 67.3    | 68.0    | 69.9    |
+| car        |  6,232   | 95.1 | 91.1    | 95.8    | 96.8    | 96.9    |
+| truck      |    675   | 86.4 | 77.9    | 87.2    | 90.2    | 90.4    |
+| bus        |     43   | 98.3 | 94.9    | 99.4    | 99.4    | 99.4    |
+| bicycle    |    463   | 81.4 | 78.3    | 82.1    | 82.1    | 83.0    |
+| pedestrian |  2,129   | 77.2 | 74.8    | 76.6    | 77.9    | 79.6    |
 
-- db_j6gen2_v1 + db_j6gen2_v2 +db_j6gen2_v4 (total frames: 1,157):
-  - Total mAP (eval range = 120m): 0.7460
+- db_j6gen2_v1 + db_j6gen2_v2 + db_j6gen2_v2 (total frames: 1,157):
+  - Total mAP (eval range = 52m): 0.87
 
 | class_name  | Count   | mAP  | AP@0.5m | AP@1.0m | AP@2.0m | AP@4.0m |
 | ----------  | ------  | ---- | ------- | ------- | ------- | ------- |
-| car         | 44,008  | 84.83 | 78.6    | 84.9    | 87.4    | 88.4    |
-| truck       |  2,471  | 56.48 | 44.7    | 56.5    | 59.1    | 65.7    |
-| bus         |  1,464  | 83.70 | 78.7    | 82.2    | 87.0    | 87.0    |
-| bicycle     |    333  | 81.06 | 79.3    | 81.3    | 81.8    | 81.8    |
-| pedestrian  |  6,459  | 66.91 | 65.1    | 66.0    | 67.5    | 69.1    |
+| car         | 18,111  | 95.3 | 91.5    | 96.3    | 96.7    | 96.8    |
+| truck       |  1,290  | 71.0 | 61.9    | 71.7    | 74.1    | 76.4    |
+| bus         |    823  | 94.3 | 90.3    | 92.5    | 97.2    | 97.2    |
+| bicycle     |    226  | 96.0 | 95.1    | 96.3    | 96.3    | 96.3    |
+| pedestrian  |  4,204  | 78.2 | 76.5    | 77.3    | 78.6    | 80.3    |
 
 </details>
