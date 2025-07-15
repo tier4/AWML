@@ -155,7 +155,7 @@ class CalibrationClassificationTransform(BaseTransform):
         return camera_data, lidar_data, calibration_data
 
     def normalize_intensity(self, intensities: np.ndarray) -> np.ndarray:
-        """Normalizes LiDAR intensity values to [0, 1].
+        """Normalizes LiDAR intensity values to [0, 1] using min-max normalization.
 
         Args:
             intensities (np.ndarray): Raw intensity values.
