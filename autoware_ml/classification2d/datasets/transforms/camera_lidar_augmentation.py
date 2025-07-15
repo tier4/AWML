@@ -90,18 +90,6 @@ def random_rotation_matrix(angle: float) -> np.ndarray:
     return transforms3d.quaternions.quat2mat((w, factor * x, factor * y, factor * z))
 
 
-def random_translation(radius: float) -> np.ndarray:
-    """Generates a random translation vector within a sphere of given radius.
-
-    Args:
-        radius (float): The radius of the sphere within which to generate the translation.
-
-    Returns:
-        np.ndarray: A 3D translation vector [x, y, z].
-    """
-    return radius * random_unit_sphere()
-
-
 def alter_calibration(
     camera_to_lidar_pose: np.ndarray,
     min_augmentation_angle: float,
@@ -142,6 +130,6 @@ def alter_calibration(
 
     noise_transform = np.eye(4)
     noise_transform[0:3, 0:3] = random_rotation_matrix(np.pi * noise_angle / 180.0)
-    noise_transform[0:3, 3] = random_translation(noise_radius)
+    noise_transform[0:3, 3] = noise_radius * random_unit_sphere()
     non_calibrated_transform = camera_to_lidar_pose @ noise_transform
     return non_calibrated_transform
