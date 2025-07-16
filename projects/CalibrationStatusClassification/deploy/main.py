@@ -20,6 +20,8 @@ from typing import Dict, Optional, Tuple
 
 import mmengine
 import numpy as np
+import onnx
+import onnxsim
 import torch
 from mmengine.config import Config
 from mmpretrain.apis import get_model
@@ -145,22 +147,14 @@ def export_to_onnx(
 
 
 def _optimize_onnx_model(onnx_path: str, logger: logging.Logger) -> None:
-    """Optimize ONNX model using onnxsim if available."""
-    try:
-        import onnx
-        import onnxsim
-
-        logger.info("Simplifying ONNX model...")
-        model_simplified, success = onnxsim.simplify(onnx_path)
-        if success:
-            onnx.save(model_simplified, onnx_path)
-            logger.info(f"ONNX model simplified successfully. Saved to {onnx_path}")
-        else:
-            logger.warning("ONNX model simplification failed")
-    except ImportError:
-        logger.info("onnxsim not installed, skipping model simplification")
-    except Exception as e:
-        logger.warning(f"ONNX simplification failed: {e}")
+    """Optimize ONNX model using onnxsim."""
+    logger.info("Simplifying ONNX model...")
+    model_simplified, success = onnxsim.simplify(onnx_path)
+    if success:
+        onnx.save(model_simplified, onnx_path)
+        logger.info(f"ONNX model simplified successfully. Saved to {onnx_path}")
+    else:
+        logger.warning("ONNX model simplification failed")
 
 
 def export_to_tensorrt(
