@@ -27,12 +27,12 @@ import pycuda.autoinit
 import pycuda.driver as cuda
 import tensorrt as trt
 import torch
+from mmengine.config import Config
+from mmpretrain.apis import get_model
 
 from autoware_ml.classification2d.datasets.transforms.calibration_classification_transform import (
     CalibrationClassificationTransform,
 )
-from mmengine.config import Config
-from mmpretrain.apis import get_model
 
 # Constants
 DEFAULT_VERIFICATION_TOLERANCE = 1e-3
