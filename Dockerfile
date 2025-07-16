@@ -49,12 +49,13 @@ RUN mim install \
     mmpretrain[multimodal]==${MMPRETRAIN} \
     mmsegmentation==${MMSEGMENTATION}
 
-# Install rerun
+# Install rerun & nvidia-modelopt (tensorrt model optimization)
 RUN apt update && DEBIAN_FRONTEND=noninteractive apt install -y --no-install-recommends \
     libgtk-3-dev \
     libxkbcommon-x11-0
 RUN python3 -m pip --no-cache-dir install \
-    rerun-sdk==0.17.0
+    rerun-sdk==0.17.0 \
+		nvidia-modelopt==0.33.0
 
 # Install t4-devkit
 RUN python3 -m pip install git+https://github.com/tier4/t4-devkit@v0.0.7
