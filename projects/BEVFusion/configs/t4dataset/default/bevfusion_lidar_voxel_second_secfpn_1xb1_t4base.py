@@ -38,6 +38,9 @@ model = dict(
     pts_middle_encoder=dict(
         type="BEVFusionSparseEncoder",
         in_channels=5,
+        aug_features_min_values=[],
+        aug_features_max_values=[],
+        num_aug_features=0,
         sparse_shape=grid_size,
         order=("conv", "norm", "act"),
         norm_cfg=dict(type="BN1d", eps=0.001, momentum=0.01),
