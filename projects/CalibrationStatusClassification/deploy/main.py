@@ -543,5 +543,6 @@ def main():
     logger.info("Deployment completed successfully!")
 
 
+# TODO: make deployment script inherit from awml base deploy script or use awml deploy script directly
 if __name__ == "__main__":
     main()
