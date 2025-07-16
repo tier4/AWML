@@ -22,6 +22,7 @@ import mmengine
 import numpy as np
 import onnx
 import onnxsim
+import tensorrt as trt
 import torch
 from mmengine.config import Config
 from mmpretrain.apis import get_model
@@ -161,64 +162,54 @@ def export_to_tensorrt(
     onnx_path: str, output_path: str, input_tensor: torch.Tensor, config: DeploymentConfig, logger: logging.Logger
 ) -> bool:
     """Export ONNX model to TensorRT format."""
-    try:
-        import tensorrt as trt
+    settings = config.tensorrt_settings
 
-        settings = config.tensorrt_settings
+    # Initialize TensorRT
+    TRT_LOGGER = trt.Logger(trt.Logger.WARNING)
+    trt.init_libnvinfer_plugins(TRT_LOGGER, "")
+    runtime = trt.Runtime(TRT_LOGGER)
+    builder = trt.Builder(TRT_LOGGER)
 
-        # Initialize TensorRT
-        TRT_LOGGER = trt.Logger(trt.Logger.WARNING)
-        trt.init_libnvinfer_plugins(TRT_LOGGER, "")
-        runtime = trt.Runtime(TRT_LOGGER)
-        builder = trt.Builder(TRT_LOGGER)
+    # Create network and config
+    network = builder.create_network(1 << int(trt.NetworkDefinitionCreationFlag.EXPLICIT_BATCH))
+    config_trt = builder.create_builder_config()
+    config_trt.set_memory_pool_limit(pool=trt.MemoryPoolType.WORKSPACE, pool_size=settings["max_workspace_size"])
 
-        # Create network and config
-        network = builder.create_network(1 << int(trt.NetworkDefinitionCreationFlag.EXPLICIT_BATCH))
-        config_trt = builder.create_builder_config()
-        config_trt.set_memory_pool_limit(pool=trt.MemoryPoolType.WORKSPACE, pool_size=settings["max_workspace_size"])
+    # Enable FP16 if specified
+    if settings["fp16_mode"]:
+        config_trt.set_flag(trt.BuilderFlag.FP16)
+        logger.info("FP16 mode enabled")
 
-        # Enable FP16 if specified
-        if settings["fp16_mode"]:
-            config_trt.set_flag(trt.BuilderFlag.FP16)
-            logger.info("FP16 mode enabled")
+    # Setup optimization profile
+    profile = builder.create_optimization_profile()
+    _configure_input_shapes(profile, input_tensor, settings["model_inputs"], logger)
+    config_trt.add_optimization_profile(profile)
 
-        # Setup optimization profile
-        profile = builder.create_optimization_profile()
-        _configure_input_shapes(profile, input_tensor, settings["model_inputs"], logger)
-        config_trt.add_optimization_profile(profile)
-
-        # Parse ONNX model
-        parser = trt.OnnxParser(network, TRT_LOGGER)
-        with open(onnx_path, "rb") as f:
-            if not parser.parse(f.read()):
-                _log_parser_errors(parser, logger)
-                return False
-            logger.info("Successfully parsed the ONNX file")
-
-        # Build engine
-        logger.info("Building TensorRT engine...")
-        serialized_engine = builder.build_serialized_network(network, config_trt)
-
-        if serialized_engine is None:
-            logger.error("Failed to build TensorRT engine")
+    # Parse ONNX model
+    parser = trt.OnnxParser(network, TRT_LOGGER)
+    with open(onnx_path, "rb") as f:
+        if not parser.parse(f.read()):
+            _log_parser_errors(parser, logger)
             return False
+        logger.info("Successfully parsed the ONNX file")
 
-        # Save engine
-        with open(output_path, "wb") as f:
-            f.write(serialized_engine)
+    # Build engine
+    logger.info("Building TensorRT engine...")
+    serialized_engine = builder.build_serialized_network(network, config_trt)
 
-        workspace_gb = settings["max_workspace_size"] / (1024**3)
-        logger.info(f"TensorRT engine saved to {output_path}")
-        logger.info(f"Engine max workspace size: {workspace_gb:.2f} GB")
-
-        return True
-
-    except ImportError:
-        logger.error("TensorRT Python package not found. Install with: pip install tensorrt")
+    if serialized_engine is None:
+        logger.error("Failed to build TensorRT engine")
         return False
-    except Exception as e:
-        logger.error(f"TensorRT conversion failed: {e}")
-        return False
+
+    # Save engine
+    with open(output_path, "wb") as f:
+        f.write(serialized_engine)
+
+    workspace_gb = settings["max_workspace_size"] / (1024**3)
+    logger.info(f"TensorRT engine saved to {output_path}")
+    logger.info(f"Engine max workspace size: {workspace_gb:.2f} GB")
+
+    return True
 
 
 def _configure_input_shapes(profile, input_tensor: torch.Tensor, model_inputs: list, logger: logging.Logger) -> None:
