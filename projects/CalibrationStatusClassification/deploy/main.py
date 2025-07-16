@@ -21,9 +21,16 @@ from typing import Dict, Optional, Tuple
 import mmengine
 import numpy as np
 import onnx
+import onnxruntime as ort
 import onnxsim
+import pycuda.autoinit
+import pycuda.driver as cuda
 import tensorrt as trt
 import torch
+
+from autoware_ml.classification2d.datasets.transforms.calibration_classification_transform import (
+    CalibrationClassificationTransform,
+)
 from mmengine.config import Config
 from mmpretrain.apis import get_model
 
@@ -92,10 +99,6 @@ def setup_logging(level: str) -> logging.Logger:
 
 def load_sample_data(img_path: str, force_generate_miscalibration: bool, device: str = "cpu") -> torch.Tensor:
     """Load and preprocess sample data using CalibrationClassificationTransform."""
-    from autoware_ml.classification2d.datasets.transforms.calibration_classification_transform import (
-        CalibrationClassificationTransform,
-    )
-
     # Create transform for deployment
     transform = CalibrationClassificationTransform(test=not force_generate_miscalibration, debug=False)
 
@@ -276,42 +279,29 @@ def run_onnx_inference(
     logger: logging.Logger,
 ) -> bool:
     """Verify ONNX model output against PyTorch model."""
-    try:
-        import onnxruntime as ort
+    # Clear GPU cache
+    if torch.cuda.is_available():
+        torch.cuda.empty_cache()
 
-        # Clear GPU cache
-        if torch.cuda.is_available():
-            torch.cuda.empty_cache()
+    # ONNX inference with timing
+    providers = ["CPUExecutionProvider"]
+    ort_session = ort.InferenceSession(onnx_path, providers=providers)
+    onnx_input = {ort_session.get_inputs()[0].name: input_tensor.cpu().numpy()}
 
-        # ONNX inference with timing
-        providers = ["CPUExecutionProvider"]
-        ort_session = ort.InferenceSession(onnx_path, providers=providers)
-        onnx_input = {ort_session.get_inputs()[0].name: input_tensor.cpu().numpy()}
+    start_time = time.perf_counter()
+    onnx_output = ort_session.run(None, onnx_input)[0]
+    end_time = time.perf_counter()
+    onnx_latency = (end_time - start_time) * 1000
 
-        start_time = time.perf_counter()
-        onnx_output = ort_session.run(None, onnx_input)[0]
-        end_time = time.perf_counter()
-        onnx_latency = (end_time - start_time) * 1000
+    logger.info(f"ONNX inference latency: {onnx_latency:.2f} ms")
 
-        logger.info(f"ONNX inference latency: {onnx_latency:.2f} ms")
-
-        # Ensure onnx_output is numpy array before comparison
-        if not isinstance(onnx_output, np.ndarray):
-            logger.error(f"Unexpected ONNX output type: {type(onnx_output)}")
-            return False
-
-        # Compare outputs
-        return _compare_outputs(ref_output.cpu().numpy(), onnx_output, "ONNX", logger)
-
-    except ImportError:
-        logger.warning("onnxruntime not installed, skipping verification")
+    # Ensure onnx_output is numpy array before comparison
+    if not isinstance(onnx_output, np.ndarray):
+        logger.error(f"Unexpected ONNX output type: {type(onnx_output)}")
         return False
-    except Exception as e:
-        logger.error(f"ONNX verification failed: {e}")
-        return False
-    finally:
-        if torch.cuda.is_available():
-            torch.cuda.empty_cache()
+
+    # Compare outputs
+    return _compare_outputs(ref_output.cpu().numpy(), onnx_output, "ONNX", logger)
 
 
 def run_tensorrt_inference(
@@ -321,50 +311,32 @@ def run_tensorrt_inference(
     logger: logging.Logger,
 ) -> bool:
     """Verify TensorRT model output against PyTorch model."""
-    try:
-        import pycuda.autoinit
-        import tensorrt as trt
+    # Clear GPU cache
+    if torch.cuda.is_available():
+        torch.cuda.empty_cache()
 
-        # Clear GPU cache
-        if torch.cuda.is_available():
-            torch.cuda.empty_cache()
+    # Load TensorRT engine
+    TRT_LOGGER = trt.Logger(trt.Logger.WARNING)
+    trt.init_libnvinfer_plugins(TRT_LOGGER, "")
+    runtime = trt.Runtime(TRT_LOGGER)
 
-        # Load TensorRT engine
-        TRT_LOGGER = trt.Logger(trt.Logger.WARNING)
-        trt.init_libnvinfer_plugins(TRT_LOGGER, "")
-        runtime = trt.Runtime(TRT_LOGGER)
+    with open(tensorrt_path, "rb") as f:
+        engine = runtime.deserialize_cuda_engine(f.read())
 
-        with open(tensorrt_path, "rb") as f:
-            engine = runtime.deserialize_cuda_engine(f.read())
-
-        if engine is None:
-            logger.error("Failed to deserialize TensorRT engine")
-            return False
-
-        # Run TensorRT inference with timing
-        trt_output, latency = _run_tensorrt_inference(engine, input_tensor.cpu(), logger)
-        logger.info(f"TensorRT inference latency: {latency:.2f} ms")
-
-        # Compare outputs
-        return _compare_outputs(ref_output.cpu().numpy(), trt_output, "TensorRT", logger)
-
-    except ImportError as e:
-        logger.warning(f"TensorRT verification dependencies missing: {e}")
-        logger.info("Install with: pip install tensorrt pycuda")
+    if engine is None:
+        logger.error("Failed to deserialize TensorRT engine")
         return False
-    except Exception as e:
-        logger.error(f"TensorRT verification failed: {e}")
-        return False
-    finally:
-        if torch.cuda.is_available():
-            torch.cuda.empty_cache()
+
+    # Run TensorRT inference with timing
+    trt_output, latency = _run_tensorrt_inference(engine, input_tensor.cpu(), logger)
+    logger.info(f"TensorRT inference latency: {latency:.2f} ms")
+
+    # Compare outputs
+    return _compare_outputs(ref_output.cpu().numpy(), trt_output, "TensorRT", logger)
 
 
 def _run_tensorrt_inference(engine, input_tensor: torch.Tensor, logger: logging.Logger) -> Tuple[np.ndarray, float]:
     """Run TensorRT inference and return output with timing."""
-    import pycuda.driver as cuda
-    import tensorrt as trt
-
     context = engine.create_execution_context()
     stream = cuda.Stream()
     start = cuda.Event()
