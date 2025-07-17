@@ -133,7 +133,7 @@ def main():
                 runner = RUNNERS.build(cfg)
 
             print_log(f"Testing dataset: {dataset_name} with file: {dataset_file}", logger=runner.logger)
-            
+
             # start testing
             runner.test()
     else:
