@@ -132,10 +132,10 @@ def main():
                 # if 'runner_type' is set in the cfg
                 runner = RUNNERS.build(cfg)
 
+            print_log(f"Testing dataset: {dataset_name} with file: {dataset_file}", logger=runner.logger)
+            
             # start testing
             runner.test()
-            print_log(f"Testing dataset: {dataset_name} with file: {dataset_file}", logger=runner.logger)
-
     else:
         # build the runner from config
         if "runner_type" not in cfg:
