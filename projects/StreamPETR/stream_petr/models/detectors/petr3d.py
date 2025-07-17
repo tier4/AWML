@@ -85,8 +85,6 @@ class Petr3D(MVXTwoStageDetector):
         self.position_level = position_level
         self.aux_2d_only = aux_2d_only
         self.test_flag = False
-        self.previous_flag_idx = None
-        self.previous_timestamp = None
 
     def extract_img_feat(self, img, len_queue=1):
         """Extract features of images."""
@@ -242,19 +240,6 @@ class Petr3D(MVXTwoStageDetector):
         augmentations.
         """
         self.stack_tensors(data)
-        # For debugging if the ordering of data is correct
-        flag_idx = torch.tensor(data["img_metas"][0]["flag_index"], device=data["prev_exists"].device).reshape(-1, 1)
-        timestamp = data["timestamp"].detach()
-        if self.previous_flag_idx is None:
-            data["prev_exists"] = torch.zeros_like(data["prev_exists"]).float()
-            data["timestamp"] = torch.zeros_like(data["timestamp"]).float()
-        else:
-            data["prev_exists"] = (
-                (flag_idx == self.previous_flag_idx) & (timestamp > self.previous_timestamp)
-            ).float()
-            data["timestamp"] = data["prev_exists"] * (timestamp - self.previous_timestamp).float()
-        self.previous_flag_idx = flag_idx
-        self.previous_timestamp = timestamp
         if mode == "loss":
             return self.forward_train(**data)
         elif mode == "predict":
@@ -362,7 +347,5 @@ class Petr3D(MVXTwoStageDetector):
     def train(self, mode: bool = True):
         if self.training != mode:
             self.pts_bbox_head.reset_memory()
-            self.previous_flag_idx = None
-            self.previous_timestamp = None
             print("Cleared memory due to change in mode. Train mode: ", mode)
             super().train(mode)

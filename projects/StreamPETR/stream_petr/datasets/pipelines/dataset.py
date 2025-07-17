@@ -69,6 +69,8 @@ class StreamPETRDataset(T4Dataset):
     ):
         assert anchor_camera in camera_order, f"Anchor camera {anchor_camera} not in camera order {camera_order}"
         self.reset_origin = reset_origin
+        self.camera_order = camera_order
+        self.anchor_camera = anchor_camera
         super().__init__(metainfo=metainfo, filter_empty_gt=filter_empty_gt, *args, **kwargs)
         assert seq_mode, "Only supported seq_mode training at the moment"
         self.queue_length = queue_length
@@ -82,8 +84,6 @@ class StreamPETRDataset(T4Dataset):
             self.seq_split_num = seq_split_num
             self.random_length = 0
             self._set_group_indices()
-        self.camera_order = camera_order
-        self.anchor_camera = anchor_camera
         self.shuffle_cameras = shuffle_cameras
 
         if self.reset_origin:
@@ -99,7 +99,7 @@ class StreamPETRDataset(T4Dataset):
                 continue
             info_m1 = self.get_data_info(idx - 1)
             info = self.get_data_info(idx)
-            if info_m1["scene_token"] != info["scene_token"] or info_m1["sorted_index"] != info["sorted_index"] - 1:
+            if info_m1["scene_token"] != info["scene_token"]:
                 curr_sequence += 1
             res.append(curr_sequence)
         flag = np.array(res, dtype=np.int64)
@@ -130,27 +130,37 @@ class StreamPETRDataset(T4Dataset):
                     current_origin = np.array(self.get_data_info(idx)["ego2global"])[:3, 3]
                     flag = value
                     self.origin[idx] = current_origin
+        self.sequence_start_time =  []
+        for idx, value in enumerate(self.flag):
+            if idx == 0 or value != self.flag[idx - 1]:
+                self.sequence_start_time.append(self.get_data_info(idx)["images"][self.anchor_camera]["timestamp"])
+            else:
+                self.sequence_start_time.append(self.sequence_start_time[-1])
 
     def filter_data(self):
         def validate_entry(info) -> bool:
             if (self.anchor_camera not in info["images"]) or (
                 not all([x["img_path"] and os.path.exists(x["img_path"]) for x in info["images"].values()])
             ):
-                print(f"Found frame  {(info['sample_idx'])} without some/all image in it, not using it for training")
                 return False
             return True
 
-        sort_items = [(x["scene_token"], x["timestamp"]) for x in self.data_list]
         for i in range(len(self.data_list)):
             self.data_list[i][
                 "pre_sample_idx"
-            ] = i  # This is necessary to match gts and predictions for frames in testing
+            ] = i 
+        
+        filtered = [info for info in self.data_list if validate_entry(info)]
+
+        sort_items = [(info["scene_token"], info["images"][self.anchor_camera]["timestamp"]) for info in filtered]
         argsorted_indices = sorted(list(range(len(sort_items))), key=lambda i: sort_items[i])
 
-        for i, idx in enumerate(argsorted_indices):
-            self.data_list[idx]["sorted_index"] = i
-
-        self.data_list = [self.data_list[i] for i in argsorted_indices if validate_entry(self.data_list[i])]
+        if len(filtered)!= len(self.data_list):
+            print(
+                f"Filtered {len(self.data_list) - len(filtered)} entries from dataset due to missing images or invalid paths."
+                f"Remaining: {len(filtered)}"
+            )
+        self.data_list = [filtered[i] for i in argsorted_indices]
 
         return self.data_list
 
@@ -167,8 +177,7 @@ class StreamPETRDataset(T4Dataset):
         """
         input_dict = self.get_annot_info(index)
         if self.seq_mode:
-            input_dict.update(dict(prev_exists=-1))
-            # input_dict.update(dict(prev_exists=self.flag[index - 1] == self.flag[index]))    # TODO: handle when no labels exist.
+            input_dict.update(dict(prev_exists=self.flag[index - 1] == self.flag[index]))
         else:
             raise NotImplementedError("Sliding window is not implemented for nuscenes")
         example = self.pipeline(input_dict)
@@ -236,7 +245,7 @@ class StreamPETRDataset(T4Dataset):
             next_idx=info.get("next", None),
             scene_token=info["scene_token"],
             frame_idx=info["token"],
-            timestamp=info["images"][self.anchor_camera]["timestamp"],
+            timestamp=info["images"][self.anchor_camera]["timestamp"] - self.sequence_start_time[index],
             l2e_matrix=l2e_matrix,
             e2g_matrix=e2g_matrix,
         )
@@ -256,7 +265,7 @@ class StreamPETRDataset(T4Dataset):
 
             for cam_type in info["images"]:
                 cam_info = info["images"][cam_type]
-                img_timestamp.append(info["images"][self.anchor_camera]["timestamp"] - cam_info["timestamp"])
+                img_timestamp.append(cam_info["timestamp"] - self.sequence_start_time[index])
                 image_paths.append(cam_info["img_path"])
                 intrinsic_mat = np.array(cam_info["cam2img"])
                 extrinsic_mat = np.array(cam_info["lidar2cam"])
@@ -275,7 +284,6 @@ class StreamPETRDataset(T4Dataset):
                     img_metas=dict(
                         scene_token=info["scene_token"],
                         sample_idx=info["pre_sample_idx"],
-                        order_index=info["sorted_index"],
                         sample_token=info["token"],
                         filenames=image_paths,
                         flag_index=self.flag[index],

@@ -371,7 +371,7 @@ val_cfg = dict()
 test_cfg = dict()
 
 lr = 1e-4
-optimizer = dict(type="AdamW", lr=lr, weight_decay=0.01)  # bs 8: 2e-4 || bs 16: 4e-4,
+optimizer = dict(type="AdamW", lr=lr, weight_decay=0.01)
 
 # optim_wrapper = dict(type="OptimWrapper", optimizer=optimizer, paramwise_cfg=dict(custom_keys={'img_backbone': dict(lr_mult=0.1),}))
 optim_wrapper = dict(
@@ -421,7 +421,7 @@ env_cfg = dict(
 
 sync_bn = "torch"
 
-# load_from = "/workspace/work_dirs/ckpts/nuscenes_baseline.pth"
+load_from = "https://download.autoware-ml-model-zoo.tier4.jp/autoware-ml/models/streampetr/streampetr-vov99/nuscenes/v1.0/nuscenes_vov99_baseline_320x800.pth"
 
 auto_scale_lr = dict(base_batch_size=8, enable=True)
 
