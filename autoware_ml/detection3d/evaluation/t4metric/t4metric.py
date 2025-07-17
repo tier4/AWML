@@ -383,13 +383,15 @@ class T4Metric(NuScenesMetric):
     def _write_to_csv(self, header, data, csv_filename: str, logger) -> None:
         """"""
         with open(csv_filename, "w") as f:
-          writer = csv.writer(f)
-          writer.writerow(header)
-          for row in data:
-            writer.writerow(row)
+            writer = csv.writer(f)
+            writer.writerow(header)
+            for row in data:
+                writer.writerow(row)
         print_log(f"Saved in {csv_filename}", logger=logger)
 
-    def _create_detail(self, metrics: dict, classes: Optional[List[str]], logger = None, save_csv: bool = False) -> Dict[str, float]:
+    def _create_detail(
+        self, metrics: dict, classes: Optional[List[str]], logger=None, save_csv: bool = False
+    ) -> Dict[str, float]:
         """Create a dictionary to store the details of the evaluation.
 
         Returns:
@@ -413,47 +415,49 @@ class T4Metric(NuScenesMetric):
         detail[f"{metric_prefix}/mAP"] = metrics["mean_ap"]
 
         if save_csv:
-          log_file_path = logger.handlers[1].baseFilename
-          log_dir = os.path.dirname(log_file_path)
+            log_file_path = logger.handlers[1].baseFilename
+            log_dir = os.path.dirname(log_file_path)
 
-          score_headers = ["NDS", "mAP"]
-          score_data = [float(f"{metrics['nd_score']:.4f}"), float(f"{metrics['mean_ap']:.4f}")]
-          for k, v in metrics["tp_errors"].items():
-            val = float(f"{v:.4f}")
-            score_headers.append(self.ErrNameMapping[k])
-            score_data.append(val)
+            score_headers = ["NDS", "mAP"]
+            score_data = [float(f"{metrics['nd_score']:.4f}"), float(f"{metrics['mean_ap']:.4f}")]
+            for k, v in metrics["tp_errors"].items():
+                val = float(f"{v:.4f}")
+                score_headers.append(self.ErrNameMapping[k])
+                score_data.append(val)
 
-          csv_filename = osp.join(log_dir, f"scores_{self.dataset_name}.csv")
-          self._write_to_csv(header=score_headers, data=[score_data], csv_filename=csv_filename, logger=logger)
+            csv_filename = osp.join(log_dir, f"scores_{self.dataset_name}.csv")
+            self._write_to_csv(header=score_headers, data=[score_data], csv_filename=csv_filename, logger=logger)
 
-          class_ap_headers = ["class", "mAP"]
-          mean_ap = metrics["mean_dist_aps"]
-          class_ap_data = []
-          if classes is not None:
-            first_class = classes[0]
-            for k in metrics["label_aps"][first_class].keys():
-                header = f"AP_dist_{k}"
-                class_ap_headers.append(header)
+            class_ap_headers = ["class", "mAP"]
+            mean_ap = metrics["mean_dist_aps"]
+            class_ap_data = []
+            if classes is not None:
+                first_class = classes[0]
+                for k in metrics["label_aps"][first_class].keys():
+                    header = f"AP_dist_{k}"
+                    class_ap_headers.append(header)
 
-            for k in metrics["label_tp_errors"][first_class].keys():
-                class_ap_headers.append(k)
+                for k in metrics["label_tp_errors"][first_class].keys():
+                    class_ap_headers.append(k)
 
-            for name in classes:
-                ap_data = [name, float(f"{mean_ap[name] * 100.0:.4f}")]
+                for name in classes:
+                    ap_data = [name, float(f"{mean_ap[name] * 100.0:.4f}")]
 
-                for k, v in metrics["label_aps"][name].items():
-                    val = float(f"{v*100:.4f}")
-                    ap_data.append(val)
+                    for k, v in metrics["label_aps"][name].items():
+                        val = float(f"{v*100:.4f}")
+                        ap_data.append(val)
 
-                for k, v in metrics["label_tp_errors"][name].items():
-                    val = float(f"{v:.4f}")
-                    ap_data.append(val)
+                    for k, v in metrics["label_tp_errors"][name].items():
+                        val = float(f"{v:.4f}")
+                        ap_data.append(val)
 
-                class_ap_data.append(ap_data)
+                    class_ap_data.append(ap_data)
 
-            csv_filename = osp.join(log_dir, f"class_ap_{self.dataset_name}.csv")
-            self._write_to_csv(header=class_ap_headers, data=class_ap_data, csv_filename=csv_filename, logger=logger)
-            
+                csv_filename = osp.join(log_dir, f"class_ap_{self.dataset_name}.csv")
+                self._write_to_csv(
+                    header=class_ap_headers, data=class_ap_data, csv_filename=csv_filename, logger=logger
+                )
+
         return detail
 
     def format_results(
