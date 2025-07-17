@@ -256,7 +256,7 @@ def main():
 
                 if not osp.isdir(scene_root_dir_path):
                     raise ValueError(f"{scene_root_dir_path} does not exist.")
-                t4 = Tier4( data_root=scene_root_dir_path, verbose=False)
+                t4 = Tier4(data_root=scene_root_dir_path, verbose=False)
                 for i, sample in enumerate(t4.sample):
                     info = get_info(cfg, t4, sample, i, args.max_sweeps)
                     # info["version"] = dataset_version             # used for visualizations during debugging.

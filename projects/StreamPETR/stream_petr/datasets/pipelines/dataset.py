@@ -130,7 +130,7 @@ class StreamPETRDataset(T4Dataset):
                     current_origin = np.array(self.get_data_info(idx)["ego2global"])[:3, 3]
                     flag = value
                     self.origin[idx] = current_origin
-        self.sequence_start_time =  []
+        self.sequence_start_time = []
         for idx, value in enumerate(self.flag):
             if idx == 0 or value != self.flag[idx - 1]:
                 self.sequence_start_time.append(self.get_data_info(idx)["images"][self.anchor_camera]["timestamp"])
@@ -146,16 +146,14 @@ class StreamPETRDataset(T4Dataset):
             return True
 
         for i in range(len(self.data_list)):
-            self.data_list[i][
-                "pre_sample_idx"
-            ] = i 
-        
+            self.data_list[i]["pre_sample_idx"] = i
+
         filtered = [info for info in self.data_list if validate_entry(info)]
 
         sort_items = [(info["scene_token"], info["images"][self.anchor_camera]["timestamp"]) for info in filtered]
         argsorted_indices = sorted(list(range(len(sort_items))), key=lambda i: sort_items[i])
 
-        if len(filtered)!= len(self.data_list):
+        if len(filtered) != len(self.data_list):
             print(
                 f"Filtered {len(self.data_list) - len(filtered)} entries from dataset due to missing images or invalid paths."
                 f"Remaining: {len(filtered)}"
