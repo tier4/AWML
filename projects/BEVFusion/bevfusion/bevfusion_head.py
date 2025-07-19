@@ -225,7 +225,13 @@ class BEVFusionHead(nn.Module):
         # equals to nms radius = voxel_size * out_size_factor * kenel_size
         local_max_inner = F.max_pool2d(heatmap, kernel_size=self.nms_kernel_size, stride=1, padding=0)
         local_max[:, :, padding:(-padding), padding:(-padding)] = local_max_inner
+        if self.test_cfg['dataset'] == 't4datasets':
+        #    local_max[:, 3, ] = F.max_pool2d(
+        #        heatmap[:, 3], kernel_size=1, stride=1, padding=0)
+           local_max[:, 4, ] = F.max_pool2d(
+               heatmap[:, 4], kernel_size=1, stride=1, padding=0)
         # for Pedestrian & Traffic_cone in nuScenes
+        
         # if self.test_cfg['dataset'] == 'nuScenes':
         #    local_max[:, 8, ] = F.max_pool2d(
         #        heatmap[:, 8], kernel_size=1, stride=1, padding=0)
