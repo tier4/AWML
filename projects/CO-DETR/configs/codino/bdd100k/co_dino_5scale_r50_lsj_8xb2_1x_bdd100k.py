@@ -23,7 +23,7 @@ batch_augments = [
 ]
 
 # dataset settings
-DATA_ROOT = "/data/bdd100k/"
+DATA_ROOT = "data/bdd100k/"
 DATASET_TYPE = "BDD100kDataset"
 
 backend_args = None
@@ -301,10 +301,10 @@ train_dataset = dict(
     dataset=dict(
         type=DATASET_TYPE,
         data_root=DATA_ROOT,
-        ann_file=DATA_ROOT + "labels/det_v2_train_release.json",
-        data_prefix=dict(img=DATA_ROOT + "bdd100k/images/100k/train"),
+        ann_file="labels/det_v2_train_release.json",
+        data_prefix=dict(img="bdd100k/images/100k/train"),
         pipeline=[
-            dict(type="LoadImageFromFile", backend_args=backend_args),
+            dict(type="LoadImageFromFile"),
             dict(type="LoadAnnotations", with_bbox=True, with_mask=False),
             dict(
                 type='RandomResize',
@@ -352,8 +352,8 @@ val_dataloader = dict(
     dataset=dict(
         type=DATASET_TYPE,
         data_root=DATA_ROOT,
-        ann_file=DATA_ROOT + "labels/det_v2_val_release.json",
-        data_prefix=dict(img=DATA_ROOT + "bdd100k/images/100k/val"),
+        ann_file="labels/det_v2_val_release.json",
+        data_prefix=dict(img="bdd100k/images/100k/val"),
         # Needs to be updated to tlr_infos_test.json once the dataset gets larger, and validation split is also added.
         # The splits were not modified so that we could compare them to previous models.
         test_mode=True,
