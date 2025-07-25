@@ -172,7 +172,8 @@ class BEVLoadMultiViewImageFromFiles(LoadMultiViewImageFromFiles):
 
         # img is of shape (h, w, c, num_views)
         # h and w can be different for different views
-        img_bytes = [get(os.path.join(self.data_root, name), backend_args=self.backend_args) for name in filename]
+        # img_bytes = [get(os.path.join(self.data_root, name), backend_args=self.backend_args) for name in filename]
+        img_bytes = [get(name, backend_args=self.backend_args) for name in filename]
         imgs = [
             mmcv.imfrombytes(img_byte, flag=self.color_type, backend="pillow", channel_order="rgb")
             for img_byte in img_bytes

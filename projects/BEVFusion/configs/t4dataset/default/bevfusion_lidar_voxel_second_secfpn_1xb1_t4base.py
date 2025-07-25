@@ -150,3 +150,5 @@ default_hooks = dict(
 )
 custom_hooks = [dict(type="DisableObjectSampleHook", disable_after_epoch=15)]
 log_processor = dict(window_size=50)
+
+randomness = dict(seed=0, diff_rank_seed=True, deterministic=True)
