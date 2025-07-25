@@ -21,9 +21,8 @@ point_cloud_range = [-51.2, -51.2, -5.0, 51.2, 51.2, 3.0]
 voxel_size = [0.2, 0.2, 8]
 img_norm_cfg = dict(mean=[103.530, 116.280, 123.675], std=[57.375, 57.120, 58.395], to_rgb=False)  # fix img_norm
 
-# camera_order = None # This will lead to shuffled camera order
 camera_order = ["CAM_FRONT", "CAM_BACK", "CAM_FRONT_LEFT", "CAM_BACK_LEFT", "CAM_FRONT_RIGHT", "CAM_BACK_RIGHT"]
-# camera_order = None
+
 
 class_names = _base_.class_names
 
@@ -374,7 +373,7 @@ val_cfg = dict()
 test_cfg = dict()
 
 lr = 1e-4
-optimizer = dict(type="AdamW", lr=lr, weight_decay=0.01)  # bs 8: 2e-4 || bs 16: 4e-4,
+optimizer = dict(type="AdamW", lr=lr, weight_decay=0.01)
 
 # optim_wrapper = dict(type="OptimWrapper", optimizer=optimizer, paramwise_cfg=dict(custom_keys={'img_backbone': dict(lr_mult=0.1),}))
 optim_wrapper = dict(
@@ -424,6 +423,8 @@ env_cfg = dict(
 
 sync_bn = "torch"
 
-# load_from = "/workspace/work_dirs/ckpts/nuscenes_baseline.pth"
+load_from = "https://download.autoware-ml-model-zoo.tier4.jp/autoware-ml/models/streampetr/streampetr-resnet50/nuscenes/v1.0/nuscenes_resnet50_320x800_baseline.pth"
 
 auto_scale_lr = dict(base_batch_size=8, enable=True)
+
+randomness = dict(seed=0, diff_rank_seed=False, deterministic=True)
