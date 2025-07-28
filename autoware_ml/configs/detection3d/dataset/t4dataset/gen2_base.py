@@ -15,6 +15,12 @@ info_test_file_name = "t4dataset_gen2_base_infos_test.pkl"
 dataset_version_config_root = "autoware_ml/configs/t4dataset/"
 dataset_version_list = ["db_j6gen2_v1", "db_j6gen2_v2", "db_j6gen2_v4", "db_largebus_v1"]
 
+dataset_test_groups = {
+    "db_j6gen2": "t4dataset_j6gen2_infos_test.pkl",
+    "db_largebus": "t4dataset_largebus_infos_test.pkl",
+    "db_gen2_base": "t4dataset_gen2_base_infos_test.pkl",
+}
+
 # dataset format setting
 data_prefix = dict(pts="", sweeps="")
 camera_types = {
