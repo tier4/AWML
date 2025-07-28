@@ -226,10 +226,12 @@ class BEVFusionHead(nn.Module):
         local_max_inner = F.max_pool2d(heatmap, kernel_size=self.nms_kernel_size, stride=1, padding=0)
         local_max[:, :, padding:(-padding), padding:(-padding)] = local_max_inner
         # For small object, pedestrian in T4datasets
-        # TODO (KokSeang): This will increase latency 
-        if self.test_cfg['dataset'] == 't4datasets':
-           local_max[:, 4, ] = F.max_pool2d(
-               heatmap[:, 4], kernel_size=1, stride=1, padding=0)
+        # TODO (KokSeang): This will increase latency
+        if self.test_cfg["dataset"] == "t4datasets":
+            local_max[
+                :,
+                4,
+            ] = F.max_pool2d(heatmap[:, 4], kernel_size=1, stride=1, padding=0)
         heatmap = heatmap * (heatmap == local_max)
         heatmap = heatmap.view(batch_size, heatmap.shape[1], -1)
 
