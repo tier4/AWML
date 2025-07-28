@@ -8,7 +8,7 @@ custom_imports["imports"] += _base_.custom_imports["imports"]
 
 # user setting
 data_root = "data/t4dataset/"
-info_directory_path = "info/kokseang_2_0/"
+info_directory_path = "info/kokseang_1_8/"
 train_gpu_size = 4
 train_batch_size = 8
 test_batch_size = 2
@@ -115,6 +115,7 @@ model = dict(
             code_weights=[1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 0.2, 0.2],
         ),
         test_cfg=dict(
+            dataset="t4datasets",
             grid_size=grid_size,
             voxel_size=voxel_size[0:2],
             pc_range=point_cloud_range[0:2],
@@ -353,6 +354,7 @@ test_evaluator = dict(
     name_mapping=_base_.name_mapping,
     eval_class_range=eval_class_range,
     filter_attributes=_base_.filter_attributes,
+    save_csv=True
 )
 
 # learning rate

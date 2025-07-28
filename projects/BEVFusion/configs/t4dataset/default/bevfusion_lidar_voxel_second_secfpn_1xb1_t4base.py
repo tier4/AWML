@@ -90,7 +90,7 @@ model = dict(
             pos_encoding_cfg=dict(input_channel=2, num_pos_feats=128),
         ),
         train_cfg=dict(
-            dataset="nuScenes",
+            dataset="t4datasets",
             point_cloud_range=point_cloud_range,
             grid_size=grid_size,
             voxel_size=voxel_size,
@@ -108,7 +108,7 @@ model = dict(
             ),
         ),
         test_cfg=dict(
-            dataset="nuScenes",
+            dataset="t4datasets",
             grid_size=grid_size,
             out_size_factor=8,
             voxel_size=voxel_size[0:2],
