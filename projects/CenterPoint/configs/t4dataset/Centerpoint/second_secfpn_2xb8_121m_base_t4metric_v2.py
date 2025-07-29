@@ -217,7 +217,8 @@ critical_object_filter_config = dict(
 
 frame_pass_fail_config = dict(
     target_labels=_base_.class_names,
-    matching_threshold_list=None,
+    # Matching thresholds per class (must align with `plane_distance_thresholds` used in evaluation)
+    matching_threshold_list=[2.0, 2.0, 2.0, 2.0, 2.0],
     confidence_threshold_list=None,
 )
 
