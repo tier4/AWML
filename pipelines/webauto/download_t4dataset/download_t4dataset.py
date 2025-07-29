@@ -35,12 +35,13 @@ def get_t4dataset_ids(config_path: str) -> list[str]:
         for t4dataset_ids in data_splits[key]:
             t4dataset_ids = t4dataset_ids.split("   ")
             if len(t4dataset_ids) == 2:
-                all_t4dataset_ids.add((t4dataset_ids[0], t4dataset_ids[1])) # (id, version)
+                all_t4dataset_ids.add((t4dataset_ids[0], t4dataset_ids[1]))  # (id, version)
             elif len(t4dataset_ids) == 1:
                 all_t4dataset_ids.add((t4dataset_ids[0], -1))  # -1 indicates no version specified
             else:
                 raise ValueError(f"Invalid T4Dataset format in {t4dataset_ids}. Use format 'id   version' or 'id'.")
     return list(all_t4dataset_ids)
+
 
 def divide_file_path(full_path: str) -> Union[str, str, str, str, str]:
     """
@@ -170,7 +171,7 @@ def download_t4dataset(
     """
 
     # check the latest version of T4dataset
-    if download_latest or t4dataset_version_id==-1:
+    if download_latest or t4dataset_version_id == -1:
         t4dataset_version_id: int = check_t4dataset_latest_version(
             webauto_path,
             project_id,
@@ -280,7 +281,7 @@ def main():
                 output_dir,
                 temp_dir,
                 args.delete_rosbag,
-                args.download_latest
+                args.download_latest,
             )
 
 
