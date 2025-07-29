@@ -10,7 +10,7 @@ custom_imports["imports"] += _base_.custom_imports["imports"]
 data_root = "data/t4dataset/"
 info_directory_path = "info/kokseang_2_1/"
 train_gpu_size = 4
-train_batch_size = 16
+train_batch_size = 8
 test_batch_size = 2
 val_interval = 5
 max_epochs = 50
@@ -36,7 +36,7 @@ max_num_points = 10
 max_voxels = [120000, 160000]
 num_proposals = 500
 image_size = [256, 704]
-num_workers = 16
+num_workers = 32
 lidar_sweep_dims = [0, 1, 2, 4]  # x, y, z, time_lag
 lidar_feature_dims = 4
 

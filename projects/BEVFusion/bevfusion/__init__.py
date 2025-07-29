@@ -7,6 +7,7 @@ from .sparse_encoder import BEVFusionSparseEncoder
 from .transformer import TransformerDecoderLayer
 from .transforms_3d import BEVFusionGlobalRotScaleTrans, BEVFusionRandomFlip3D, GridMask, ImageAug3D
 from .utils import BBoxBEVL1Cost, HeuristicAssigner3D, HungarianAssigner3D, IoU3DCost
+from .amp_gaussian_focal_loss import AmpGaussianFocalLoss
 
 __all__ = [
     "BEVFusion",
@@ -26,4 +27,5 @@ __all__ = [
     "TransformerDecoderLayer",
     "BEVFusionRandomFlip3D",
     "BEVFusionGlobalRotScaleTrans",
+    "AmpGaussianFocalLoss"
 ]
