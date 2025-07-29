@@ -70,9 +70,10 @@ class GroupStreamingSampler(Sampler):
             # Divide selected_groups into self.batch_size groups, drop the last if not divisible
             batch_groups = [[] for _ in range(self.batch_size)]
             for i, group in enumerate(selected_groups):
-                # Randomly drop some elements from the group based on the random_drop_probability, to simulate camera drop
+                # Randomly drop some elements from the group based on the random_drop_probability, to simulate camera drop. But never drop the first element
+                # because it might cause the value of prev_exists to be wrong in the inputs.
                 batch_groups[i % self.batch_size].extend(
-                    [x for x in group if np.random.rand() > self.random_drop_probability]
+                    [x for position,x in enumerate(group) if np.random.rand() > self.random_drop_probability and position > 0]
                 )
             indices = []
             while all(len(batch_groups[i]) > 0 for i in range(self.batch_size)):
