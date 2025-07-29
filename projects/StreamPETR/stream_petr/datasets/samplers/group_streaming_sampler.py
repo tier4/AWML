@@ -73,7 +73,11 @@ class GroupStreamingSampler(Sampler):
                 # Randomly drop some elements from the group based on the random_drop_probability, to simulate camera drop. But never drop the first element
                 # because it might cause the value of prev_exists to be wrong in the inputs.
                 batch_groups[i % self.batch_size].extend(
-                    [x for position,x in enumerate(group) if np.random.rand() > self.random_drop_probability and position > 0]
+                    [
+                        x
+                        for position, x in enumerate(group)
+                        if np.random.rand() > self.random_drop_probability and position > 0
+                    ]
                 )
             indices = []
             while all(len(batch_groups[i]) > 0 for i in range(self.batch_size)):
