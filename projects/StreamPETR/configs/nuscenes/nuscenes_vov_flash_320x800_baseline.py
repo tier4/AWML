@@ -34,14 +34,14 @@ camera_order = ["CAM_FRONT", "CAM_FRONT_RIGHT", "CAM_FRONT_LEFT", "CAM_BACK", "C
 class_names = [
     "car",
     "truck",
-    "construction_vehicle",
-    "bus",
     "trailer",
-    "barrier",
-    "motorcycle",
+    "bus",
+    "construction_vehicle",
     "bicycle",
+    "motorcycle",
     "pedestrian",
     "traffic_cone",
+    "barrier",
 ]
 metainfo = dict(classes=class_names)
 

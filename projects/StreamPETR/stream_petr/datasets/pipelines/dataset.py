@@ -58,14 +58,19 @@ class StreamPETRDataset(T4Dataset):
         num_frame_losses=1,
         queue_length=8,
         random_length=0,
-        camera_order=None,
+        camera_order=["CAM_FRONT", "CAM_BACK", "CAM_FRONT_LEFT", "CAM_BACK_LEFT", "CAM_FRONT_RIGHT", "CAM_BACK_RIGHT"],
         metainfo={},
         filter_empty_gt=False,
         reset_origin=False,
+        anchor_camera="CAM_FRONT",
+        shuffle_cameras=True,
         *args,
         **kwargs,
     ):
+        assert anchor_camera in camera_order, f"Anchor camera {anchor_camera} not in camera order {camera_order}"
         self.reset_origin = reset_origin
+        self.camera_order = camera_order
+        self.anchor_camera = anchor_camera
         super().__init__(metainfo=metainfo, filter_empty_gt=filter_empty_gt, *args, **kwargs)
         assert seq_mode, "Only supported seq_mode training at the moment"
         self.queue_length = queue_length
@@ -79,19 +84,11 @@ class StreamPETRDataset(T4Dataset):
             self.seq_split_num = seq_split_num
             self.random_length = 0
             self._set_group_indices()
-        self.camera_order = camera_order
+        self.shuffle_cameras = shuffle_cameras
+
         if self.reset_origin:
             print(f"Reset origin: {self.reset_origin}")
         print(f"Camera corder: {self.camera_order} test_mode: {self.test_mode}")
-
-    def _validate_entry(self, info) -> bool:
-        """
-        Validate the necessary entries in the data info dict
-        """
-        if not all([x["img_path"] and os.path.exists(x["img_path"]) for x in info["images"].values()]):
-            print(f"Found frame  {(info['sample_idx'])} without any image in it, not using it for training")
-            return False
-        return True
 
     def _set_group_indices(self):
         res = []
@@ -102,7 +99,7 @@ class StreamPETRDataset(T4Dataset):
                 continue
             info_m1 = self.get_data_info(idx - 1)
             info = self.get_data_info(idx)
-            if info_m1["scene_token"] != info["scene_token"] or info_m1["sorted_index"] != info["sorted_index"] - 1:
+            if info_m1["scene_token"] != info["scene_token"]:
                 curr_sequence += 1
             res.append(curr_sequence)
         flag = np.array(res, dtype=np.int64)
@@ -122,7 +119,6 @@ class StreamPETRDataset(T4Dataset):
         assert len(new_flags) == len(flag)
         self.flag = np.array(new_flags, dtype=np.int64)
         self.origin = [np.array([0, 0, 0]) for _ in range(len(self))]
-
         if self.reset_origin:
             idx = 0
             flag = self.flag[0]
@@ -134,46 +130,37 @@ class StreamPETRDataset(T4Dataset):
                     current_origin = np.array(self.get_data_info(idx)["ego2global"])[:3, 3]
                     flag = value
                     self.origin[idx] = current_origin
+        self.sequence_start_time = []
+        for idx, value in enumerate(self.flag):
+            if idx == 0 or value != self.flag[idx - 1]:
+                self.sequence_start_time.append(self.get_data_info(idx)["images"][self.anchor_camera]["timestamp"])
+            else:
+                self.sequence_start_time.append(self.sequence_start_time[-1])
 
-    def _serialize_data(self) -> Tuple[np.ndarray, np.ndarray]:
-        """Serialize ``self.data_list`` to save memory when launching multiple
-        workers in data loading. This function will be called in ``full_init``.
+    def filter_data(self):
+        def validate_entry(info) -> bool:
+            if (self.anchor_camera not in info["images"]) or (
+                not all([x["img_path"] and os.path.exists(x["img_path"]) for x in info["images"].values()])
+            ):
+                return False
+            return True
 
-        Hold memory using serialized objects, and data loader workers can use
-        shared RAM from master process instead of making a copy.
-
-        Returns:
-            Tuple[np.ndarray, np.ndarray]: Serialized result and corresponding
-            address.
-        """
-
-        def _serialize(data):
-            buffer = pickle.dumps(data, protocol=4)
-            return np.frombuffer(buffer, dtype=np.uint8)
-
-        # Serialize data information list avoid making multiple copies of
-        # `self.data_list` when iterate `import torch.utils.data.dataloader`
-        # with multiple workers.
-        sort_items = [(x["scene_token"], x["timestamp"]) for x in self.data_list]
         for i in range(len(self.data_list)):
-            self.data_list[i][
-                "pre_sample_idx"
-            ] = i  # This is necessary to match gts and predictions for frames in testing
-        argsorted_indices = sorted(list(range(len(sort_items))), key=lambda i: sort_items[i])
-        for i, idx in enumerate(argsorted_indices):
-            self.data_list[idx]["sorted_index"] = i
+            self.data_list[i]["pre_sample_idx"] = i
 
-        self.data_list = [self.data_list[i] for i in argsorted_indices if self._validate_entry(self.data_list[i])]
-        data_list = [_serialize(x) for x in self.data_list]
-        address_list = np.asarray([len(x) for x in data_list], dtype=np.int64)
-        data_address: np.ndarray = np.cumsum(address_list)
-        # TODO Check if np.concatenate is necessary
-        data_bytes = np.concatenate(data_list)
-        # Empty cache for preventing making multiple copies of
-        # `self.data_info` when loading data multi-processes.
-        self.data_list.clear()
-        gc.collect()
-        return data_bytes, data_address
+        filtered = [info for info in self.data_list if validate_entry(info)]
+
+        sort_items = [(info["scene_token"], info["images"][self.anchor_camera]["timestamp"]) for info in filtered]
+        argsorted_indices = sorted(list(range(len(sort_items))), key=lambda i: sort_items[i])
+
+        if len(filtered) != len(self.data_list):
+            print(
+                f"Filtered {len(self.data_list) - len(filtered)} entries from dataset due to missing images or invalid paths."
+                f"Remaining: {len(filtered)}"
+            )
+        self.data_list = [filtered[i] for i in argsorted_indices]
+
+        return self.data_list
 
     def _validate_data(self, queue):
         assert all(x["scene_token"] == queue[0]["scene_token"] for x in queue), "All frames must be from same scene"
@@ -194,10 +181,6 @@ class StreamPETRDataset(T4Dataset):
         example = self.pipeline(input_dict)
 
         queue = [example]
-
-        for k in range(self.num_frame_losses):
-            if self.filter_empty_gt and (queue[-k - 1] is None or ~(queue[-k - 1]["gt_labels_3d"] != -1).any()):
-                return None
 
         self._validate_data(queue)
 
@@ -260,7 +243,7 @@ class StreamPETRDataset(T4Dataset):
             next_idx=info.get("next", None),
             scene_token=info["scene_token"],
             frame_idx=info["token"],
-            timestamp=info["timestamp"],
+            timestamp=info["images"][self.anchor_camera]["timestamp"] - self.sequence_start_time[index],
             l2e_matrix=l2e_matrix,
             e2g_matrix=e2g_matrix,
         )
@@ -272,18 +255,15 @@ class StreamPETRDataset(T4Dataset):
             extrinsics = []
             img_timestamp = []
 
-            if self.camera_order:
-                camera_order = self.camera_order
-            else:
-                camera_order = list(info["images"].keys())
-                if not self.test_mode:
-                    random.shuffle(camera_order)
+            camera_order = self.camera_order.copy()
+            if self.shuffle_cameras and not self.test_mode:
+                random.shuffle(camera_order)
 
             info["images"] = {x: info["images"][x] for x in camera_order}
 
             for cam_type in info["images"]:
                 cam_info = info["images"][cam_type]
-                img_timestamp.append(cam_info["timestamp"])
+                img_timestamp.append(cam_info["timestamp"] - self.sequence_start_time[index])
                 image_paths.append(cam_info["img_path"])
                 intrinsic_mat = np.array(cam_info["cam2img"])
                 extrinsic_mat = np.array(cam_info["lidar2cam"])
@@ -302,9 +282,9 @@ class StreamPETRDataset(T4Dataset):
                     img_metas=dict(
                         scene_token=info["scene_token"],
                         sample_idx=info["pre_sample_idx"],
-                        order_index=info["sorted_index"],
                         sample_token=info["token"],
                         filenames=image_paths,
+                        flag_index=self.flag[index],
                     ),
                 )
             )
