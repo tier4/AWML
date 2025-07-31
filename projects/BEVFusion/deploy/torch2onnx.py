@@ -10,7 +10,7 @@ from typing import Any
 import numpy as np
 import onnx
 import torch
-from mmengine.runner import load_checkpoint
+from containers import TrtBevFusionImageBackboneContainer
 from mmdeploy.apis import build_task_processor
 from mmdeploy.apis.onnx.passes import optimize_onnx
 from mmdeploy.core import RewriterContext, patch_model
@@ -26,8 +26,9 @@ from mmdeploy.utils import (
 )
 from mmdet3d.registry import MODELS
 from mmengine.registry import RUNNERS
+from mmengine.runner import load_checkpoint
 from torch.multiprocessing import set_start_method
-from containers import TrtBevFusionImageBackboneContainer
+
 
 def parse_args():
     parser = argparse.ArgumentParser(description="Export model to onnx.")
@@ -84,7 +85,21 @@ if __name__ == "__main__":
     data_samples = data["data_samples"]
     input_metas = {"data_samples": data_samples, "mode": "predict", "data_preprocessor": data_preprocessor}
 
-    voxels, coors, num_points_per_voxel, points, camera_mask, imgs, lidar2image,cam2image, camera2lidar, geom_feats,kept, ranks, indices= model_inputs
+    (
+        voxels,
+        coors,
+        num_points_per_voxel,
+        points,
+        camera_mask,
+        imgs,
+        lidar2image,
+        cam2image,
+        camera2lidar,
+        geom_feats,
+        kept,
+        ranks,
+        indices,
+    ) = model_inputs
     img_aug_matrix = imgs.new_tensor(np.stack(data_samples[0].img_aug_matrix))
     lidar_aug_matrix = torch.eye(4).to(imgs.device)
 
@@ -153,37 +168,40 @@ if __name__ == "__main__":
         context_info["onnx_custom_passes"] = onnx_custom_passes
     with RewriterContext(**context_info), torch.no_grad():
         if "img_backbone" in model_cfg.model:
-          images_mean = data_preprocessor.mean.to(device)
-          images_std = data_preprocessor.std.to(device)
-          container = TrtBevFusionImageBackboneContainer(patched_model,images_mean, images_std)
-          model_inputs = (
-            imgs.unsqueeze(0).to(device).float(),
-            points.unsqueeze(0).to(device).float(),
-            lidar2image.unsqueeze(0).to(device).float(),
-            cam2image.unsqueeze(0).to(device).float(),
-            torch.inverse(cam2image).unsqueeze(0).to(device).float(),
-            camera2lidar.unsqueeze(0).to(device).float(),
-            img_aug_matrix.unsqueeze(0).to(device).float(),
-            imgs.new_tensor(np.stack([np.linalg.inv(x) for x in data_samples[0].img_aug_matrix])).unsqueeze(0).to(device).float(),
-            lidar_aug_matrix.unsqueeze(0).to(device).float(),
-            torch.inverse(lidar_aug_matrix).unsqueeze(0).to(device).float(),
-            geom_feats.to(device).float(),
-            kept.to(device),
-            ranks.to(device).long(),
-            indices.to(device).long()
-          )
-          with torch.no_grad():
-              torch.onnx.export(
-                  container,
-                  model_inputs,
-                  output_path,
-                  export_params=True,
-                  input_names=input_names,
-                  output_names=output_names,
-                  opset_version=opset_version,
-                  dynamic_axes=dynamic_axes,
-                  keep_initializers_as_inputs=keep_initializers_as_inputs,
-                  verbose=verbose,
-              )
+            images_mean = data_preprocessor.mean.to(device)
+            images_std = data_preprocessor.std.to(device)
+            container = TrtBevFusionImageBackboneContainer(patched_model, images_mean, images_std)
+            model_inputs = (
+                imgs.unsqueeze(0).to(device).float(),
+                points.unsqueeze(0).to(device).float(),
+                lidar2image.unsqueeze(0).to(device).float(),
+                cam2image.unsqueeze(0).to(device).float(),
+                torch.inverse(cam2image).unsqueeze(0).to(device).float(),
+                camera2lidar.unsqueeze(0).to(device).float(),
+                img_aug_matrix.unsqueeze(0).to(device).float(),
+                imgs.new_tensor(np.stack([np.linalg.inv(x) for x in data_samples[0].img_aug_matrix]))
+                .unsqueeze(0)
+                .to(device)
+                .float(),
+                lidar_aug_matrix.unsqueeze(0).to(device).float(),
+                torch.inverse(lidar_aug_matrix).unsqueeze(0).to(device).float(),
+                geom_feats.to(device).float(),
+                kept.to(device),
+                ranks.to(device).long(),
+                indices.to(device).long(),
+            )
+            with torch.no_grad():
+                torch.onnx.export(
+                    container,
+                    model_inputs,
+                    output_path,
+                    export_params=True,
+                    input_names=input_names,
+                    output_names=output_names,
+                    opset_version=opset_version,
+                    dynamic_axes=dynamic_axes,
+                    keep_initializers_as_inputs=keep_initializers_as_inputs,
+                    verbose=verbose,
+                )
 
     logger.info(f"ONNX exported to {output_path}")

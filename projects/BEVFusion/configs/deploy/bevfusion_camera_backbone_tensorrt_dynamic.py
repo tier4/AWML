@@ -16,10 +16,7 @@ backend_config = dict(
         dict(
             input_shapes=dict(
                 imgs=dict(min_shape=[1, 3, 256, 704], opt_shape=[6, 3, 256, 704], max_shape=[6, 3, 256, 704]),
-                points=dict(
-                   min_shape=[5000, 5],
-                   opt_shape=[50000, 5],
-                   max_shape=[200000, 5]),
+                points=dict(min_shape=[5000, 5], opt_shape=[50000, 5], max_shape=[200000, 5]),
                 lidar2image=dict(min_shape=[1, 4, 4], opt_shape=[6, 4, 4], max_shape=[6, 4, 4]),
                 cam2image_inverse=dict(min_shape=[1, 4, 4], opt_shape=[6, 4, 4], max_shape=[6, 4, 4]),
                 camera2lidar=dict(min_shape=[1, 4, 4], opt_shape=[6, 4, 4], max_shape=[6, 4, 4]),
@@ -72,16 +69,15 @@ onnx_config = dict(
         "geom_feats",
         "kept",
         "ranks",
-        "indices"
+        "indices",
     ],
-
     output_names=["image_feats"],
     dynamic_axes={
         "imgs": {
             0: "num_imgs",
         },
-        'points': {
-           0: 'num_points',
+        "points": {
+            0: "num_points",
         },
         "lidar2image": {
             0: "num_imgs",
