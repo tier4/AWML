@@ -217,8 +217,7 @@ def parse_args():
     )
     parser.add_argument(
         "--use_available_dataset_version",
-        type=int,
-        required=True,
+        action="store_true",
         help="Will resort to using the available dataset version if the one specified in the config file does not exist.",
     )
     args = parser.parse_args()
