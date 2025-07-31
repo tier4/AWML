@@ -89,8 +89,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--data_name", type=str, required=True, help="dataset name. example: tlr")
     parser.add_argument(
         "--use_available_dataset_version",
-        type=int,
-        required=True,
+        action="store_true",
         help="Will resort to using the available dataset version if the one specified in the config file does not exist.",
     )
     parser.add_argument("-o", "--out_dir", type=str, required=True, help="output directory of info file")
