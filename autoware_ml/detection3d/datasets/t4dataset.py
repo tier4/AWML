@@ -57,6 +57,7 @@ class T4Dataset(NuScenesDataset):
             # if self.filter_cfg.get("filter_frames_with_missing_image", False) and not all(
             #     [x["img_path"] and osp.exists(osp.join(self.data_root, x["img_path"])) for x in entry["images"].values()]
             # ):
+            # print([x["img_path"] for x in entry["images"].values()])
             if self.filter_cfg.get("filter_frames_with_missing_image", False) and not all(
                 [x["img_path"] and osp.exists(x["img_path"]) for x in entry["images"].values()]
             ):
