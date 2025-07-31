@@ -1,6 +1,6 @@
 _base_ = [
     "../default/bevfusion_lidar_voxel_second_secfpn_1xb1_t4base.py",
-    "../../../../../autoware_ml/configs/detection3d/dataset/t4dataset/base.py",
+    "../../../../../autoware_ml/configs/detection3d/dataset/t4dataset/gen2_base.py",
 ]
 
 custom_imports = dict(imports=["projects.BEVFusion.bevfusion"], allow_failed_imports=False)
@@ -8,12 +8,12 @@ custom_imports["imports"] += _base_.custom_imports["imports"]
 
 # user setting
 data_root = "data/t4dataset/"
-info_directory_path = "info/kokseang_1_8/"
+info_directory_path = "info/user_name/"
 train_gpu_size = 4
 train_batch_size = 8
 test_batch_size = 2
 val_interval = 5
-max_epochs = 50
+max_epochs = 30
 backend_args = None
 
 # range setting
@@ -29,7 +29,7 @@ eval_class_range = {
 }
 
 # model parameter
-input_modality = dict(use_lidar=True, use_camera=False)
+input_modality = dict(use_lidar=True, use_camera=True)
 point_load_dim = 5  # x, y, z, intensity, ring_id
 sweeps_num = 1
 max_num_points = 10
@@ -37,8 +37,8 @@ max_voxels = [120000, 160000]
 num_proposals = 500
 image_size = [256, 704]
 num_workers = 32
-lidar_sweep_dims = [0, 1, 2, 4]  # x, y, z, time_lag
-lidar_feature_dims = 4
+lidar_sweep_dims = [0, 1, 2, 3, 4]  # x, y, z, time_lag
+lidar_feature_dims = 5
 
 model = dict(
     type="BEVFusion",
@@ -276,47 +276,47 @@ test_evaluator = dict(
 )
 
 # learning rate
-lr = 0.0001
+lr = 1e-4
 param_scheduler = [
     # learning rate scheduler
-    # During the first (max_epochs * 0.4) epochs, learning rate increases from 0 to lr * 10
+    # During the first (max_epochs * 0.3) epochs, learning rate increases from 0 to lr * 10
     # during the next epochs, learning rate decreases from lr * 10 to
     # lr * 1e-4
     dict(
         type="CosineAnnealingLR",
-        T_max=15,
+        T_max=8,
         eta_min=lr * 10,
         begin=0,
-        end=15,
+        end=8,
         by_epoch=True,
         convert_to_iter_based=True,
     ),
     dict(
         type="CosineAnnealingLR",
-        T_max=(max_epochs - 15),
+        T_max=22,
         eta_min=lr * 1e-4,
-        begin=15,
+        begin=8,
         end=max_epochs,
         by_epoch=True,
         convert_to_iter_based=True,
     ),
     # momentum scheduler
-    # During the first (0.4 * max_epochs) epochs, momentum increases from 0 to 0.85 / 0.95
+    # During the first (0.3 * max_epochs) epochs, momentum increases from 0 to 0.85 / 0.95
     # during the next epochs, momentum increases from 0.85 / 0.95 to 1
     dict(
         type="CosineAnnealingMomentum",
-        T_max=15,
+        T_max=8,
         eta_min=0.85 / 0.95,
         begin=0,
-        end=15,
+        end=8,
         by_epoch=True,
         convert_to_iter_based=True,
     ),
     dict(
         type="CosineAnnealingMomentum",
-        T_max=(max_epochs - 15),
+        T_max=22,
         eta_min=1,
-        begin=15,
+        begin=8,
         end=max_epochs,
         by_epoch=True,
         convert_to_iter_based=True,
@@ -347,3 +347,5 @@ auto_scale_lr = dict(enable=False, base_batch_size=train_gpu_size * train_batch_
 # Only set if the number of train_gpu_size more than 1
 if train_gpu_size > 1:
     sync_bn = "torch"
+
+load_from = "<best_model_path>"

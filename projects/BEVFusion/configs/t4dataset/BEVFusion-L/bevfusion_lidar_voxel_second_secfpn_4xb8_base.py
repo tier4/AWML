@@ -1,6 +1,6 @@
 _base_ = [
     "../default/bevfusion_lidar_voxel_second_secfpn_1xb1_t4base.py",
-    "../../../../../autoware_ml/configs/detection3d/dataset/t4dataset/gen2_base.py",
+    "../../../../../autoware_ml/configs/detection3d/dataset/t4dataset/base.py",
 ]
 
 custom_imports = dict(imports=["projects.BEVFusion.bevfusion"], allow_failed_imports=False)
@@ -8,12 +8,12 @@ custom_imports["imports"] += _base_.custom_imports["imports"]
 
 # user setting
 data_root = "data/t4dataset/"
-info_directory_path = "info/user_name/"
+info_directory_path = "info/username/"
 train_gpu_size = 4
 train_batch_size = 8
 test_batch_size = 2
 val_interval = 5
-max_epochs = 30
+max_epochs = 50
 backend_args = None
 
 # range setting
@@ -29,7 +29,7 @@ eval_class_range = {
 }
 
 # model parameter
-input_modality = dict(use_lidar=True, use_camera=True)
+input_modality = dict(use_lidar=True, use_camera=False)
 point_load_dim = 5  # x, y, z, intensity, ring_id
 sweeps_num = 1
 max_num_points = 10
@@ -37,8 +37,8 @@ max_voxels = [120000, 160000]
 num_proposals = 500
 image_size = [256, 704]
 num_workers = 32
-lidar_sweep_dims = [0, 1, 2, 3, 4]  # x, y, z, time_lag
-lidar_feature_dims = 5
+lidar_sweep_dims = [0, 1, 2, 4]  # x, y, z, time_lag
+lidar_feature_dims = 4
 
 model = dict(
     type="BEVFusion",
@@ -53,58 +53,8 @@ model = dict(
             deterministic=True,
             voxelize_reduce=True,
         ),
-        mean=[123.675, 116.28, 103.53],
-        std=[58.395, 57.12, 57.375],
-        bgr_to_rgb=False,
     ),
     pts_middle_encoder=dict(sparse_shape=grid_size, in_channels=lidar_feature_dims),
-    img_backbone=dict(
-        type="mmdet.SwinTransformer",
-        embed_dims=96,
-        depths=[2, 2, 6, 2],
-        num_heads=[3, 6, 12, 24],
-        window_size=7,
-        mlp_ratio=4,
-        qkv_bias=True,
-        qk_scale=None,
-        drop_rate=0.0,
-        attn_drop_rate=0.0,
-        drop_path_rate=0.2,
-        patch_norm=True,
-        out_indices=[1, 2, 3],
-        with_cp=False,
-        convert_weights=True,
-        init_cfg=dict(
-            type="Pretrained",
-            checkpoint="https://github.com/SwinTransformer/storage/releases/download/v1.0.0/swin_tiny_patch4_window7_224.pth",  # noqa: E251  # noqa: E501
-        ),
-    ),
-    img_neck=dict(
-        type="GeneralizedLSSFPN",
-        in_channels=[192, 384, 768],
-        out_channels=256,
-        start_level=0,
-        num_outs=3,
-        norm_cfg=dict(type="BN2d", requires_grad=True),
-        act_cfg=dict(type="ReLU", inplace=True),
-        upsample_cfg=dict(mode="bilinear", align_corners=False),
-    ),
-    view_transform=dict(
-        type="DepthLSSTransform",
-        in_channels=256,
-        out_channels=80,
-        image_size=image_size,
-        feature_size=[32, 88],
-        # xbound=[-54.0, 54.0, 0.3],
-        # ybound=[-54.0, 54.0, 0.3],
-        xbound=[-122.4, 122.4, 0.68],
-        ybound=[-122.4, 122.4, 0.68],
-        zbound=[-10.0, 10.0, 20.0],
-        # dbound=[1.0, 60.0, 0.5],
-        dbound=[1.0, 166.2, 1.4],
-        downsample=2,
-    ),
-    fusion_layer=dict(type="ConvFuser", in_channels=[80, 256], out_channels=256),
     bbox_head=dict(
         num_proposals=num_proposals,
         num_classes=_base_.num_class,
@@ -131,12 +81,6 @@ model = dict(
 
 train_pipeline = [
     dict(
-        type="BEVLoadMultiViewImageFromFiles",
-        to_float32=True,
-        color_type="color",
-        backend_args=backend_args,
-    ),
-    dict(
         type="LoadPointsFromFile",
         coord_type="LIDAR",
         load_dim=point_load_dim,
@@ -154,15 +98,6 @@ train_pipeline = [
         test_mode=False,
     ),
     dict(type="LoadAnnotations3D", with_bbox_3d=True, with_label_3d=True, with_attr_label=False),
-    dict(
-        type="ImageAug3D",
-        final_dim=image_size,
-        resize_lim=[0.38, 0.55],
-        bot_pct_lim=[0.0, 0.0],
-        rot_lim=[-5.4, 5.4],
-        rand_flip=True,
-        is_train=True,
-    ),
     dict(
         type="GlobalRotScaleTrans",
         rot_range=[-1.571, 1.571],
@@ -215,12 +150,6 @@ train_pipeline = [
 
 test_pipeline = [
     dict(
-        type="BEVLoadMultiViewImageFromFiles",
-        to_float32=True,
-        color_type="color",
-        backend_args=backend_args,
-    ),
-    dict(
         type="LoadPointsFromFile",
         coord_type="LIDAR",
         load_dim=point_load_dim,
@@ -236,15 +165,6 @@ test_pipeline = [
         remove_close=True,
         backend_args=backend_args,
         test_mode=True,
-    ),
-    dict(
-        type="ImageAug3D",
-        final_dim=image_size,
-        resize_lim=[0.48, 0.48],
-        bot_pct_lim=[0.0, 0.0],
-        rot_lim=[0.0, 0.0],
-        rand_flip=False,
-        is_train=False,
     ),
     dict(type="PointsRangeFilter", point_cloud_range=point_cloud_range),
     dict(
@@ -355,47 +275,48 @@ test_evaluator = dict(
     save_csv=True,
 )
 
-lr = 1e-4
+# learning rate
+lr = 0.0001
 param_scheduler = [
     # learning rate scheduler
-    # During the first (max_epochs * 0.3) epochs, learning rate increases from 0 to lr * 10
+    # During the first (max_epochs * 0.4) epochs, learning rate increases from 0 to lr * 10
     # during the next epochs, learning rate decreases from lr * 10 to
     # lr * 1e-4
     dict(
         type="CosineAnnealingLR",
-        T_max=8,
+        T_max=15,
         eta_min=lr * 10,
         begin=0,
-        end=8,
+        end=15,
         by_epoch=True,
         convert_to_iter_based=True,
     ),
     dict(
         type="CosineAnnealingLR",
-        T_max=22,
+        T_max=(max_epochs - 15),
         eta_min=lr * 1e-4,
-        begin=8,
+        begin=15,
         end=max_epochs,
         by_epoch=True,
         convert_to_iter_based=True,
     ),
     # momentum scheduler
-    # During the first (0.3 * max_epochs) epochs, momentum increases from 0 to 0.85 / 0.95
+    # During the first (0.4 * max_epochs) epochs, momentum increases from 0 to 0.85 / 0.95
     # during the next epochs, momentum increases from 0.85 / 0.95 to 1
     dict(
         type="CosineAnnealingMomentum",
-        T_max=8,
+        T_max=15,
         eta_min=0.85 / 0.95,
         begin=0,
-        end=8,
+        end=15,
         by_epoch=True,
         convert_to_iter_based=True,
     ),
     dict(
         type="CosineAnnealingMomentum",
-        T_max=22,
+        T_max=(max_epochs - 15),
         eta_min=1,
-        begin=8,
+        begin=15,
         end=max_epochs,
         by_epoch=True,
         convert_to_iter_based=True,
@@ -426,5 +347,3 @@ auto_scale_lr = dict(enable=False, base_batch_size=train_gpu_size * train_batch_
 # Only set if the number of train_gpu_size more than 1
 if train_gpu_size > 1:
     sync_bn = "torch"
-
-load_from = "<best_model_path>"
