@@ -158,7 +158,7 @@ def main() -> None:
             print_log(f"Creating data info for split: {split}", logger="current")
             for scene_id in dataset_list_dict.get(split, []):
                 print_log(f"Creating data info for scene: {scene_id}")
-                
+
                 t4_dataset_id, t4_dataset_version_id = scene_id.split("   ")
                 if os.path.exists(osp.join(args.root_path, t4_dataset_id, t4_dataset_version_id)):
                     scene_root_dir_path = osp.join(args.root_path, t4_dataset_id, t4_dataset_version_id)
