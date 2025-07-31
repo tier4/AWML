@@ -6,7 +6,7 @@ _base_ = [
 custom_imports = dict(imports=["projects.CenterPoint.models"], allow_failed_imports=False)
 custom_imports["imports"] += _base_.custom_imports["imports"]
 custom_imports["imports"] += ["autoware_ml.detection3d.datasets.transforms"]
-custom_imports["imports"] += ["projects.FastViT"]
+custom_imports["imports"] += ["projects.FastVIT"]
 custom_imports["imports"] += ["autoware_ml.hooks"]
 
 # This is a base file for t4dataset, add the dataset config.
@@ -40,15 +40,15 @@ eval_class_range = {
 }
 
 # user setting
-data_root = "data/t4dataset/"
-info_directory_path = "info/user_name/"
-train_gpu_size = 4
+data_root = "data/"
+info_directory_path = "info/samrat/base_model_updated_1.0.0/"
+train_gpu_size = 2
 train_batch_size = 8
 test_batch_size = 2
-num_workers = 32
+num_workers = 16
 val_interval = 5
 max_epochs = 30
-work_dir = "work_dirs/centerpoint/" + _base_.dataset_type + "/pillar_020_convnext_standard_secfpn_4xb8_121m_base"
+work_dir = "work_dirs/centerpoint/" + _base_.dataset_type + "/pillar_020_fastvit_ma36_standard_secfpn_4xb8_121m_base"
 
 train_pipeline = [
     dict(
@@ -246,11 +246,11 @@ model = dict(
         type="FastVitMA36",
         input_channels=32,
         out_indices=[0, 1, 2],
-        out_channels=[76,152,308]
+        out_channels=[76,152,304]
     ),
     pts_neck=dict(
         type="SECONDFPN",
-        in_channels=[76,152,308],
+        in_channels=[76,152,304],
         out_channels=[128, 128, 128],
         upsample_strides=[1, 2, 4],
         norm_cfg=dict(type="BN", eps=1e-3, momentum=0.01),
@@ -360,12 +360,26 @@ optim_wrapper = dict(
     clip_grad=dict(max_norm=35, norm_type=2),
 )
 
+# optimizer = dict(type="AdamW", lr=lr, weight_decay=0.01)
+# clip_grad = dict(max_norm=15, norm_type=2)  # max norm of gradients upper bound to be 15 since amp is used
+# optim_wrapper = dict(
+#     type="AmpOptimWrapper",
+#     dtype="float16",
+#     optimizer=optimizer,
+#     clip_grad=clip_grad,
+#     # Update it accordingly
+#     loss_scale={
+#         "init_scale": 2.0**8,  # intial_scale: 256
+#         "growth_interval": 2000,
+#     },
+# )
+
 # Default setting for scaling LR automatically
 #   - `enable` means enable scaling LR automatically
 #       or not by default.
 #   - `base_batch_size` = (2 GPUs) x (8 samples per GPU).
 # auto_scale_lr = dict(enable=False, base_batch_size=32)
-auto_scale_lr = dict(enable=False, base_batch_size=train_gpu_size * train_batch_size)
+auto_scale_lr = dict(enable=True, base_batch_size=32)
 
 # Only set if the number of train_gpu_size more than 1
 if train_gpu_size > 1:

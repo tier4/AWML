@@ -15,7 +15,6 @@ from timm import create_model
 from timm.models.fastvit import RepConditionalPosEnc,FastVit
 from functools import partial
 
-@MODELS.register_module(force=True)
 class FastVit(nn.Module):
     """FastVit backbone for feature extraction.
     
@@ -37,7 +36,12 @@ class FastVit(nn.Module):
         out_channels: List[int] = None,
         pretrained: bool = False,
         frozen_stages: int = 0,  
-        **kwargs 
+        layers=(6, 6, 18),
+        embed_dims=(76, 152, 304),
+        mlp_ratios=(4, 4, 4),
+        pos_embs=(None, None, None, partial(RepConditionalPosEnc, spatial_shape=(7, 7))),
+        token_mixers=("repmixer", "repmixer", "repmixer", "attention"),
+        **kwargs
     ):
         super().__init__()
         
@@ -46,7 +50,9 @@ class FastVit(nn.Module):
         self.frozen_stages = frozen_stages
         
         # Create the FastVit model
-        self.model = create_model(variant_type, in_chans=input_channels, pretrained=pretrained, features_only=True, out_indices=out_indices, **kwargs)
+        self.model = create_model(variant_type, in_chans=input_channels, pretrained=pretrained, features_only=True, out_indices=out_indices,
+                                  layers=layers, embed_dims=embed_dims, mlp_ratios=mlp_ratios, 
+                                  pos_embs=pos_embs, token_mixers=token_mixers)
         # Get feature info to understand the output channels
         self.feature_info = self.model.feature_info
         
@@ -54,7 +60,7 @@ class FastVit(nn.Module):
         if out_channels is None:
             self.out_channels = [info['num_chs'] for info in self.feature_info]
         else:
-            assert out_channels== [self.feature_info[i]['num_chs'] for i in out_indices], "out_channels mismatch"
+            assert out_channels== [self.feature_info[i]['num_chs'] for i in out_indices], f"out_channels mismatch : {out_channels} vs {[self.feature_info[i]['num_chs'] for i in out_indices]}"
             self.out_channels = out_channels
         
         self._freeze_stages()
