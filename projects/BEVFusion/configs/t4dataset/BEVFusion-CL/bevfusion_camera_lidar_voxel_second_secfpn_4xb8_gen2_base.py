@@ -8,7 +8,7 @@ custom_imports["imports"] += _base_.custom_imports["imports"]
 
 # user setting
 data_root = "data/t4dataset/"
-info_directory_path = "info/kokseang_2_0/"
+info_directory_path = "info/user_name/"
 train_gpu_size = 4
 train_batch_size = 8
 test_batch_size = 2
@@ -76,7 +76,7 @@ model = dict(
         convert_weights=True,
         init_cfg=dict(
             type="Pretrained",
-            checkpoint="work_dirs/bevfusion/pretrain/swin_tiny_patch4_window7_224.pth",  # noqa: E251  # noqa: E501
+            checkpoint="https://github.com/SwinTransformer/storage/releases/download/v1.0.0/swin_tiny_patch4_window7_224.pth",  # noqa: E251  # noqa: E501
         ),
     ),
     img_neck=dict(
@@ -132,7 +132,6 @@ model = dict(
 train_pipeline = [
     dict(
         type="BEVLoadMultiViewImageFromFiles",
-        data_root=data_root,
         to_float32=True,
         color_type="color",
         backend_args=backend_args,
@@ -217,7 +216,6 @@ train_pipeline = [
 test_pipeline = [
     dict(
         type="BEVLoadMultiViewImageFromFiles",
-        data_root=data_root,
         to_float32=True,
         color_type="color",
         backend_args=backend_args,
@@ -429,4 +427,4 @@ auto_scale_lr = dict(enable=False, base_batch_size=train_gpu_size * train_batch_
 if train_gpu_size > 1:
     sync_bn = "torch"
 
-load_from = "work_dirs/bevfusion_camera_lidar_voxel_second_secfpn_4xb8_base/epoch_48.pth"
+load_from = "<best_model_path>"

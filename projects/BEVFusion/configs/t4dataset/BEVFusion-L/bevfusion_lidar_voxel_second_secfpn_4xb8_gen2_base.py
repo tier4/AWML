@@ -8,7 +8,7 @@ custom_imports["imports"] += _base_.custom_imports["imports"]
 
 # user setting
 data_root = "data/t4dataset/"
-info_directory_path = "info/kokseang_2_0/"
+info_directory_path = "info/user_name/"
 train_gpu_size = 4
 train_batch_size = 8
 test_batch_size = 2
@@ -348,4 +348,4 @@ auto_scale_lr = dict(enable=False, base_batch_size=train_gpu_size * train_batch_
 if train_gpu_size > 1:
     sync_bn = "torch"
 
-load_from = "work_dirs/bevfusion_lidar_voxel_second_secfpn_4xb8_base_ped_no_pool/epoch_46.pth"
+load_from = "<best_model_path>"
