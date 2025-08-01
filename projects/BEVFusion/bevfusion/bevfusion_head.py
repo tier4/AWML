@@ -378,6 +378,21 @@ class BEVFusionHead(nn.Module):
                     dict(num_class=1, class_names=["Pedestrian"], indices=[1], radius=0.7),
                     dict(num_class=1, class_names=["Cyclist"], indices=[2], radius=0.7),
                 ]
+            elif self.test_cfg["dataset"] == "t4datasets":
+                self.tasks = [
+                    dict(
+                        num_class=4,
+                        class_names=[],
+                        indices=[0, 1, 2, 3],
+                        radius=0.5,
+                    ),
+                    dict(
+                        num_class=1,
+                        class_names=["pedestrian"],
+                        indices=[4],
+                        radius=0.5,
+                    ),
+                ]
 
             ret_layer = []
             for i in range(batch_size):

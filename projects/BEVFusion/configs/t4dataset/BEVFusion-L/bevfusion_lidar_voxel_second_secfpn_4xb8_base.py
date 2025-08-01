@@ -8,7 +8,7 @@ custom_imports["imports"] += _base_.custom_imports["imports"]
 
 # user setting
 data_root = "data/t4dataset/"
-info_directory_path = "info/username/"
+info_directory_path = "info/kokseang_1_8/"
 train_gpu_size = 4
 train_batch_size = 8
 test_batch_size = 2
@@ -29,7 +29,7 @@ eval_class_range = {
 }
 
 # model parameter
-input_modality = dict(use_lidar=True, use_camera=False)
+input_modality = dict(use_lidar=True, use_camera=True)
 point_load_dim = 5  # x, y, z, intensity, ring_id
 sweeps_num = 1
 max_num_points = 10
