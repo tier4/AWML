@@ -189,6 +189,7 @@ class BEVFusion(Base3DDetector):
                 # NOTE(knzo25): onnx demmands this
                 # batch_size = coords[-1, 0] + 1
                 batch_size = 1
+                print("Run onnx point_eSpConvst")
 
                 assert self.voxelize_reduce
                 if self.voxelize_reduce:
