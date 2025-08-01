@@ -1,5 +1,5 @@
 version: 1
-dataset_version: db-j6-v5.0
+dataset_version: db-jpntaxigen2-v1.0
 train:
   - dc90e149-1170-42ab-a075-3ea75b11e9e2 0
   - 6ec8d740-8771-4b5b-ae0a-d7ecb1993c1a 0
