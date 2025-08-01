@@ -215,6 +215,11 @@ def parse_args():
         required=True,
         help="output directory of info file",
     )
+    parser.add_argument(
+        "--use_available_dataset_version",
+        action="store_true",
+        help="Will resort to using the available dataset version if the one specified in the config file does not exist.",
+    )
     args = parser.parse_args()
     return args
 
@@ -248,14 +253,17 @@ def main():
             print_log(f"Creating data info for split: {split}", logger="current")
             for scene_id in dataset_list_dict.get(split, []):
                 print_log(f"Creating data info for scene: {scene_id}")
-                scene_root_dir_path = get_scene_root_dir_path(
-                    args.root_path,
-                    dataset_version,
-                    scene_id,
-                )
+                t4_dataset_id, t4_dataset_version_id = scene_id.split("   ")
+                if os.path.exists(osp.join(args.root_path, t4_dataset_id, t4_dataset_version_id)):
+                    scene_root_dir_path = osp.join(args.root_path, t4_dataset_id, t4_dataset_version_id)
+                elif args.use_available_dataset_version:
+                    print(
+                        "Warning: The version of the dataset specified in the config file does not exist. Will use whatever is available locally."
+                    )
+                    scene_root_dir_path = get_scene_root_dir_path(args.root_path, dataset_version, t4_dataset_id)
+                else:
+                    raise ValueError(f"{t4_dataset_id} does not exist.")
 
-                if not osp.isdir(scene_root_dir_path):
-                    raise ValueError(f"{scene_root_dir_path} does not exist.")
                 t4 = Tier4(version="annotation", data_root=scene_root_dir_path, verbose=False)
                 for i, sample in enumerate(t4.sample):
                     info = get_info(cfg, t4, sample, i, args.max_sweeps)
