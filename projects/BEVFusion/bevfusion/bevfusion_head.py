@@ -383,15 +383,21 @@ class BEVFusionHead(nn.Module):
                     dict(
                         num_class=4,
                         class_names=[],
-                        indices=[0, 1, 2, 3, 4],
-                        radius=0.5,
+                        indices=[0, 1, 2],
+                        radius=0.50,
                     ),
-                    # dict(
-                    #     num_class=1,
-                    #     class_names=["pedestrian"],
-                    #     indices=[4],
-                    #     radius=0.5,
-                    # ),
+                    dict(
+                        num_class=4,
+                        class_names=["bicycle"],
+                        indices=[3],
+                        radius=0.50,
+                    ),
+                    dict(
+                        num_class=1,
+                        class_names=["pedestrian"],
+                        indices=[4],
+                        radius=0.175,
+                    ),
                 ]
 
             ret_layer = []
