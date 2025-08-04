@@ -76,7 +76,7 @@ model = dict(
         convert_weights=True,
         init_cfg=dict(
             type="Pretrained",
-            checkpoint="https://github.com/SwinTransformer/storage/releases/download/v1.0.0/swin_tiny_patch4_window7_224.pth",  # noqa: E251  # noqa: E501
+            checkpoint="work_dirs/bevfusion/pretrain/swin_tiny_patch4_window7_224.pth",  # noqa: E251  # noqa: E501
         ),
     ),
     img_neck=dict(
