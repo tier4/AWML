@@ -381,13 +381,13 @@ class BEVFusionHead(nn.Module):
             elif self.test_cfg["dataset"] == "t4datasets":
                 self.tasks = [
                     dict(
-                        num_class=4,
+                        num_class=3,
                         class_names=[],
                         indices=[0, 1, 2],
                         radius=0.50,
                     ),
                     dict(
-                        num_class=4,
+                        num_class=1,
                         class_names=["bicycle"],
                         indices=[3],
                         radius=0.50,
