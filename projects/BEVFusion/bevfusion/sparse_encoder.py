@@ -151,8 +151,6 @@ class BEVFusionSparseEncoder(SparseEncoder):
             voxel_features = torch.cat([torch.cos(y), torch.sin(y)], dim=1)
 
         coors = coors.int()
-        print(torch.all(coors >= 0).item())
-        print(voxel_features[:20, :])
         input_sp_tensor = SparseConvTensor(voxel_features, coors, self.sparse_shape, batch_size)
         x = self.conv_input(input_sp_tensor)
 

@@ -39,6 +39,8 @@ def basedetector__forward(
     **kwargs
 ) -> Tuple[List[torch.Tensor]]:
 
+    # Note(KokSeang): Convert coors from (z, y, z) to (b, x, y, z)
+    # Downstream sparse ecnoder expects coors in (b, x, y, z) format
     if coors.shape[1] == 3:
       num_points = coors.shape[0]
       coors = coors.flip(dims=[-1]).contiguous() # [x, y, z] 
