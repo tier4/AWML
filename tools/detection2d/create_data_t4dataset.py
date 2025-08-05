@@ -128,7 +128,7 @@ def assign_ids_and_save_detection_data(
                     for instance in entry.instances
                 ],
             }
-            for i, entry in enumerate(detection_data.data_list)
+            for i, entry in enumerate(detection_da + ta.data_list)
         ],
     }
 
