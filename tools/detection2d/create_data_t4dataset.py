@@ -160,7 +160,7 @@ def main() -> None:
 
                 t4_dataset_id, t4_dataset_version_id = scene_id.split("/")
                 scene_root_dir_path = osp.join(args.root_path, dataset_version, t4_dataset_id, t4_dataset_version_id)
-                if not os.path.exists(scene_root_dir_path): 
+                if not os.path.exists(scene_root_dir_path):
                     if args.use_available_dataset_version:
                         print(
                             "Warning: The version of the dataset specified in the config file does not exist. Will use whatever is available locally."
