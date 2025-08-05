@@ -61,10 +61,14 @@ def parse_args():
     return args
 
 
-def build_dataset_task(dataset_task: T4DatasetDetection3DPreparation, config: Any, args: Any) -> DatasetPreparationBase:
+def build_dataset_task(
+    dataset_task: T4DatasetDetection3DPreparation, config: Any, args: Any
+) -> DatasetPreparationBase:
     """Build DataPreparation based on the task."""
     if dataset_task == DatasetTask.T4DETECTION3D:
-        assert args.max_sweeps, f"max_sweeps must be set when the data preparation task is {T4DatasetDetection3DPreparation.DETECTION3D}."
+        assert (
+            args.max_sweeps
+        ), f"max_sweeps must be set when the data preparation task is {T4DatasetDetection3DPreparation.DETECTION3D}."
         dataset_preparation = T4DatasetDetection3DPreparation(
             root_path=Path(args.root_path),
             config=config,
