@@ -4,7 +4,6 @@ import argparse
 from pathlib import Path
 from typing import Any
 
-import yaml
 from mmengine.config import Config
 from mmengine.logging import print_log
 
@@ -64,7 +63,7 @@ def parse_args():
 
 def build_dataset_task(dataset_task: T4DatasetDetection3DPreparation, config: Any, args: Any) -> DatasetPreparationBase:
     """Build DataPreparation based on the task."""
-    if task == DatasetTask.T4DETECTION3D:
+    if dataset_task == DatasetTask.T4DETECTION3D:
         assert args.max_sweeps, f"max_sweeps must be set when the data preparation task is {T4DatasetDetection3DPreparation.DETECTION3D}."
         dataset_preparation = T4DatasetDetection3DPreparation(
             root_path=Path(args.root_path),
@@ -75,9 +74,9 @@ def build_dataset_task(dataset_task: T4DatasetDetection3DPreparation, config: An
             use_available_dataset_version=args.use_available_dataset_version,
         )
     else:
-        raise ValueError(f"Task: {task} not supported yet!")
+        raise ValueError(f"Task: {dataset_task} not supported yet!")
 
-    print_log(f"Built {task}")
+    print_log(f"Built {dataset_task}")
     return dataset_preparation
 
 
