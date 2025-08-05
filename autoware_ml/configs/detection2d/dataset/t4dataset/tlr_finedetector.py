@@ -1,4 +1,4 @@
-dataset_version_config_root = "autoware_ml/configs/t4dataset/"
+dataset_version_config_root = "perception-devops/dataset_annotation/t4datasets/detection2d/"
 dataset_version_list = [
     "db_tlr_v1",
     "db_tlr_v2",
