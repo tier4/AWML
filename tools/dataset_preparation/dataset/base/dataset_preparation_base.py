@@ -1,21 +1,17 @@
-from pathlib import Path
 from abc import ABC
-from typing import Dict, Any
+from pathlib import Path
+from typing import Any, Dict
 
 import mmengine
+
 from tools.analysis_3d.data_classes import AnalysisData, DatasetSplitName
 
 
 class DatasetPreparationBase:
 
-    def __init__(self,
-                 root_path: Path,
-                 config: Any, 
-                 info_save_path: Path, 
-                 info_version: str
-                 ) -> None: 
+    def __init__(self, root_path: Path, config: Any, info_save_path: Path, info_version: str) -> None:
         """
-        Base class of dataset prepation. 
+        Base class of dataset prepation.
         :param root_path: Root path that contains data.
         :param config: Configuration for the dataset prepration.
         :param info_save_path: Path to save a dictionary of dataset information.
@@ -27,13 +23,11 @@ class DatasetPreparationBase:
         self.info_version = info_version
 
         # Make the output path
-        self.info_save_path.mkdirs(
-            exist_ok=True, parents=True
-        )
+        self.info_save_path.mkdirs(exist_ok=True, parents=True)
 
     def run(self) -> None:
         """
-        Run dataset preparation to convert dataset to corresponding info format. 
+        Run dataset preparation to convert dataset to corresponding info format.
         """
         raise NotImplementedError
 
@@ -41,7 +35,7 @@ class DatasetPreparationBase:
         """
         Save a dictionary of datasets information to pickle file that is used by downstream tasks later.
         :param info: Selected info from datasets.
-        :param info_file_name: Info output file name. 
+        :param info_file_name: Info output file name.
         """
         info_file_save_path = self.info_save_path / info_file_name
         mmengine.dump(info, info_file_save_path)

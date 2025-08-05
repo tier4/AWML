@@ -1,25 +1,26 @@
 """Script to compute analysis of T4 datasets."""
-from pathlib import Path 
-from typing import Any 
 
 import argparse
+from pathlib import Path
+from typing import Any
 
-import yaml 
+import yaml
 from mmengine.config import Config
 from mmengine.logging import print_log
 
-from tools.dataset_preparation.enum import Task 
 from tools.dataset_preparation.dataset.base.dataset_preparation_base import DatasetPreparationBase
-from tools.dataset_preparation.dataset.detection3d.t4dataset_detection3d_preparation import \
-  T4DatasetDetection3DPreparation
+from tools.dataset_preparation.dataset.detection3d.t4dataset_detection3d_preparation import (
+    T4DatasetDetection3DPreparation,
+)
+from tools.dataset_preparation.enum import Task
 
 
 def parse_args():
     parser = argparse.ArgumentParser(description="Create data info for T4dataset")
     parser.add_argument(
-      '--task',
-      choices=['detection3d', 'detection2d', 'classification2d'],
-      help='Choose a task for data preparation.',
+        "--task",
+        choices=["detection3d", "detection2d", "classification2d"],
+        help="Choose a task for data preparation.",
     )
     parser.add_argument(
         "--config",
@@ -62,12 +63,12 @@ def parse_args():
 
 
 def build_task(task: Task, config: Any, args: Any) -> DatasetPreparationBase:
-    """ Build DataPreparation based on the task. """
+    """Build DataPreparation based on the task."""
     if task == Task.DETECTION3D:
         assert args.max_sweeps, f"max_sweeps must be set when the data preparation task is {Task.DETECTION3D}."
         dataset_preparation = T4DatasetDetection3DPreparation(
             root_path=Path(args.root_path),
-            config=config, 
+            config=config,
             info_save_path=Path(args.outout_dir),
             info_version=args.version,
             max_sweeps=args.max_sweeps,
@@ -75,8 +76,9 @@ def build_task(task: Task, config: Any, args: Any) -> DatasetPreparationBase:
         )
     else:
         raise ValueError(f"Task: {task} not supported yet!")
-    
-    return dataset_preparation 
+
+    return dataset_preparation
+
 
 def main():
     """Main enrtypoint to run the Runner."""
@@ -87,14 +89,11 @@ def main():
     config = Config.fromfile(args.config)
 
     # Build task
-    dataset_preparation = build_task(
-        task=Task[args.task],
-        config=config,
-        args=args
-    )
+    dataset_preparation = build_task(task=Task[args.task], config=config, args=args)
 
     # Run dataset preparation
     dataset_preparation.run()
+
 
 if __name__ == "__main__":
     main()
