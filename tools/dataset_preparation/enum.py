@@ -15,12 +15,12 @@ class DatasetInfoSplitKey(Enum):
         return self.value
 
 
-class Task(Enum):
-    """Supported types in data preparation."""
+class DatasetTask(Enum):
+    """Supported dataset tasks in data preparation."""
 
-    DETECTION3D = "detection3d"
-    DETECTION2D = "detection2d"
-    CLASSIFICATION2D = "classification2d"
+    T4DETECTION3D = "t4_detection3d"
+    T4DETECTION2D = "t4_detection2d"
+    T4CLASSIFICATION2D = "t4_classification2d"
 
     def __str__(self):
         """String representation."""

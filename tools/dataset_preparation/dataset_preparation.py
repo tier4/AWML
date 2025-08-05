@@ -1,4 +1,4 @@
-"""Script to compute analysis of T4 datasets."""
+"""Script to convert dataset to info pickles."""
 
 import argparse
 from pathlib import Path
@@ -9,17 +9,17 @@ from mmengine.config import Config
 from mmengine.logging import print_log
 
 from tools.dataset_preparation.dataset.base.dataset_preparation_base import DatasetPreparationBase
-from tools.dataset_preparation.dataset.detection3d.t4dataset_detection3d_preparation import (
+from tools.dataset_preparation.dataset.t4dataset.t4dataset_detection3d_preparation import (
     T4DatasetDetection3DPreparation,
 )
-from tools.dataset_preparation.enum import Task
+from tools.dataset_preparation.enum import DatasetTask
 
 
 def parse_args():
     parser = argparse.ArgumentParser(description="Create data info for T4dataset")
     parser.add_argument(
         "--task",
-        choices=["detection3d", "detection2d", "classification2d"],
+        choices=["t4_detection3d", "t4_detection2d", "t4_classification2d"],
         help="Choose a task for data preparation.",
     )
     parser.add_argument(
@@ -62,10 +62,10 @@ def parse_args():
     return args
 
 
-def build_task(task: Task, config: Any, args: Any) -> DatasetPreparationBase:
+def build_dataset_task(dataset_task: T4DatasetDetection3DPreparation, config: Any, args: Any) -> DatasetPreparationBase:
     """Build DataPreparation based on the task."""
-    if task == Task.DETECTION3D:
-        assert args.max_sweeps, f"max_sweeps must be set when the data preparation task is {Task.DETECTION3D}."
+    if task == DatasetTask.T4DETECTION3D:
+        assert args.max_sweeps, f"max_sweeps must be set when the data preparation task is {T4DatasetDetection3DPreparation.DETECTION3D}."
         dataset_preparation = T4DatasetDetection3DPreparation(
             root_path=Path(args.root_path),
             config=config,
@@ -77,6 +77,7 @@ def build_task(task: Task, config: Any, args: Any) -> DatasetPreparationBase:
     else:
         raise ValueError(f"Task: {task} not supported yet!")
 
+    print_log(f"Built {task}")
     return dataset_preparation
 
 
@@ -89,7 +90,7 @@ def main():
     config = Config.fromfile(args.config)
 
     # Build task
-    dataset_preparation = build_task(task=Task[args.task], config=config, args=args)
+    dataset_preparation = build_dataset_task(dataset_task=DatasetTask[args.task], config=config, args=args)
 
     # Run dataset preparation
     dataset_preparation.run()

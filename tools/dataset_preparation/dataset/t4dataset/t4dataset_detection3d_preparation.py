@@ -3,7 +3,7 @@ from typing import Any, Dict, List
 
 from t4_devkit import Tier4
 
-from tools.dataset_preparation.dataset.base.t4dataset_preparation_base import T4DatasetPreparationBase
+from tools.dataset_preparation.dataset.t4dataset.t4dataset_preparation_base import T4DatasetPreparationBase
 from tools.detection3d.create_data_t4dataset import get_info
 
 
