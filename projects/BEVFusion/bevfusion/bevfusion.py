@@ -168,7 +168,7 @@ class BEVFusion(Base3DDetector):
             )
         return x
 
-    def extract_pts_feat(self, feats,coords,sizes,points=None) -> torch.Tensor:
+    def extract_pts_feat(self, feats, coords, sizes, points=None) -> torch.Tensor:
         if points is not None:
             # NOTE(knzo25): training and normal inference
             with torch.cuda.amp.autocast(enabled=False):
@@ -327,10 +327,10 @@ class BEVFusion(Base3DDetector):
             features.append(img_feature)
 
         pts_feature = self.extract_pts_feat(
-            batch_inputs_dict.get("voxels",{}).get("voxels",None), 
-            batch_inputs_dict.get("voxels",{}).get("coors",None), 
-            batch_inputs_dict.get("voxels",{}).get("num_points_per_voxel",None), 
-            points=points
+            batch_inputs_dict.get("voxels", {}).get("voxels", None),
+            batch_inputs_dict.get("voxels", {}).get("coors", None),
+            batch_inputs_dict.get("voxels", {}).get("num_points_per_voxel", None),
+            points=points,
         )
         features.append(pts_feature)
 

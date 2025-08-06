@@ -39,7 +39,13 @@ def parse_args():
     parser.add_argument("--device", help="device used for conversion", default="cpu")
     parser.add_argument("--log-level", help="set log level", default="INFO", choices=list(logging._nameToLevel.keys()))
     parser.add_argument("--sample_idx", type=int, default=0, help="sample index to use during export")
-    parser.add_argument("--module", help="module to export", required=True, default="main_body", choices=["main_body", "image_backbone"])
+    parser.add_argument(
+        "--module",
+        help="module to export",
+        required=True,
+        default="main_body",
+        choices=["main_body", "image_backbone"],
+    )
     args = parser.parse_args()
     return args
 
@@ -103,7 +109,6 @@ if __name__ == "__main__":
         ranks,
         indices,
     ) = model_inputs
-
 
     # export to onnx
     context_info = dict()

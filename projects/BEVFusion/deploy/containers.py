@@ -53,7 +53,7 @@ class TrtBevFusionMainContainer(torch.nn.Module):
         super().__init__(*args, **kwargs)
         self.mod = mod
 
-    def forward(self, voxels,coors,num_points_per_voxel,image_feats=None):
+    def forward(self, voxels, coors, num_points_per_voxel, image_feats=None):
         mod = self.mod
 
         features = []
@@ -86,7 +86,7 @@ class TrtBevFusionMainContainer(torch.nn.Module):
         score = score[0].max(dim=0)[0]
 
         bbox_pred = torch.cat(
-            [outputs["center"][0], outputs["height"][0], outputs["dim"][0], outputs["rot"][0], outputs["vel"][0]], dim=0
+            [outputs["center"][0], outputs["height"][0], outputs["dim"][0], outputs["rot"][0], outputs["vel"][0]],
+            dim=0,
         )
         return bbox_pred, score, outputs["query_labels"][0]
-
