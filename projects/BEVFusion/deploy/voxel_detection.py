@@ -74,9 +74,9 @@ class VoxelDetection(_VoxelDetection):
         coors = voxels["coors"]
         coors = coors[:, 1:]
 
-        if "imgs" not in self.deploy_cfg.onnx_config.input_names:
-            return collate_data, [feats, coors, num_points_per_voxel]
-
+        if "img_backbone" not in self.model_cfg.model:
+            return collate_data, [feats, coors, num_points_per_voxel] + [None]*10
+            
         # NOTE(knzo25): we want to load images from the camera
         # directly to the model in TensorRT
         img = batch["inputs"]["img"].type(torch.uint8)

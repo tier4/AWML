@@ -10,7 +10,7 @@ from typing import Any
 import numpy as np
 import onnx
 import torch
-from containers import TrtBevFusionImageBackboneContainer
+from containers import TrtBevFusionImageBackboneContainer, TrtBevFusionMainContainer
 from mmdeploy.apis import build_task_processor
 from mmdeploy.apis.onnx.passes import optimize_onnx
 from mmdeploy.core import RewriterContext, patch_model
@@ -39,6 +39,7 @@ def parse_args():
     parser.add_argument("--device", help="device used for conversion", default="cpu")
     parser.add_argument("--log-level", help="set log level", default="INFO", choices=list(logging._nameToLevel.keys()))
     parser.add_argument("--sample_idx", type=int, default=0, help="sample index to use during export")
+    parser.add_argument("--module", help="module to export", required=True, default="main_body", choices=["main_body", "image_backbone"])
     args = parser.parse_args()
     return args
 
@@ -57,6 +58,8 @@ if __name__ == "__main__":
     work_dir = args.work_dir
 
     deploy_cfg, model_cfg = load_config(deploy_cfg_path, model_cfg_path)
+
+    model_cfg.randomness = dict(seed=0, diff_rank_seed=False, deterministic=False)
     model_cfg.launcher = "none"
 
     data_preprocessor_cfg = deepcopy(model_cfg.model.data_preprocessor)
@@ -100,8 +103,7 @@ if __name__ == "__main__":
         ranks,
         indices,
     ) = model_inputs
-    img_aug_matrix = imgs.new_tensor(np.stack(data_samples[0].img_aug_matrix))
-    lidar_aug_matrix = torch.eye(4).to(imgs.device)
+
 
     # export to onnx
     context_info = dict()
@@ -167,10 +169,14 @@ if __name__ == "__main__":
         onnx_custom_passes = optimize_onnx if optimize else None
         context_info["onnx_custom_passes"] = onnx_custom_passes
     with RewriterContext(**context_info), torch.no_grad():
+        image_feats = None
+
         if "img_backbone" in model_cfg.model:
+            img_aug_matrix = imgs.new_tensor(np.stack(data_samples[0].img_aug_matrix))
+            lidar_aug_matrix = torch.eye(4).to(imgs.device)
             images_mean = data_preprocessor.mean.to(device)
             images_std = data_preprocessor.std.to(device)
-            container = TrtBevFusionImageBackboneContainer(patched_model, images_mean, images_std)
+            image_backbone_container = TrtBevFusionImageBackboneContainer(patched_model, images_mean, images_std)
             model_inputs = (
                 imgs.unsqueeze(0).to(device).float(),
                 points.unsqueeze(0).to(device).float(),
@@ -190,9 +196,9 @@ if __name__ == "__main__":
                 ranks.to(device).long(),
                 indices.to(device).long(),
             )
-            with torch.no_grad():
-                torch.onnx.export(
-                    container,
+            if args.module == "image_backbone":
+                return_value = torch.onnx.export(
+                    image_backbone_container,
                     model_inputs,
                     output_path,
                     export_params=True,
@@ -203,5 +209,28 @@ if __name__ == "__main__":
                     keep_initializers_as_inputs=keep_initializers_as_inputs,
                     verbose=verbose,
                 )
+            else:
+                image_feats = image_backbone_container(*model_inputs)
 
+        if args.module == "main_body":
+            main_container = TrtBevFusionMainContainer(patched_model)
+            model_inputs = (
+                voxels.to(device).float(),
+                coors.to(device).float(),
+                num_points_per_voxel.to(device).float(),
+            )
+            if image_feats is not None:
+                model_inputs += (image_feats,)
+            torch.onnx.export(
+                main_container,
+                model_inputs,
+                output_path,
+                export_params=True,
+                input_names=input_names,
+                output_names=output_names,
+                opset_version=opset_version,
+                dynamic_axes=dynamic_axes,
+                keep_initializers_as_inputs=keep_initializers_as_inputs,
+                verbose=verbose,
+            )
     logger.info(f"ONNX exported to {output_path}")
