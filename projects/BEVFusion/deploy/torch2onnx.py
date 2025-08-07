@@ -220,9 +220,9 @@ if __name__ == "__main__":
         if args.module == "main_body":
             main_container = TrtBevFusionMainContainer(patched_model)
             model_inputs = (
-                voxels.to(device).float(),
-                coors.to(device).float(),
-                num_points_per_voxel.to(device).float(),
+                voxels.to(device),
+                coors.to(device),
+                num_points_per_voxel.to(device),
             )
             if image_feats is not None:
                 model_inputs += (image_feats,)
@@ -239,3 +239,27 @@ if __name__ == "__main__":
                 verbose=verbose,
             )
     logger.info(f"ONNX exported to {output_path}")
+
+    logger.info("Attempting to fix the graph (TopK's K becoming a tensor)")
+
+    import onnx_graphsurgeon as gs
+
+    model = onnx.load(output_path)
+    graph = gs.import_onnx(model)
+
+    # Fix TopK
+    topk_nodes = [node for node in graph.nodes if node.op == "TopK"]
+    assert len(topk_nodes) == 1
+    topk = topk_nodes[0]
+    k = model_cfg.num_proposals
+    topk.inputs[1] = gs.Constant("K", values=np.array([k], dtype=np.int64))
+    topk.outputs[0].shape = [1, k]
+    topk.outputs[0].dtype = topk.inputs[0].dtype if topk.inputs[0].dtype else np.float32
+    topk.outputs[1].shape = [1, k]
+    topk.outputs[1].dtype = np.int64
+
+    graph.cleanup().toposort()
+    output_path = output_path.replace(".onnx", "_fixed.onnx")
+    onnx.save_model(gs.export_onnx(graph), output_path)
+
+    logger.info(f"(Fixed) ONNX exported to {output_path}")
