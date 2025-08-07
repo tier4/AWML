@@ -107,7 +107,7 @@ model = dict(
     fusion_layer=dict(type="ConvFuser", in_channels=[80, 256], out_channels=256),
     bbox_head=dict(
         num_proposals=num_proposals,
-        num_classes=_base_.num_class,
+        class_names=_base_.class_names,  # Use class names to identify the correct class indices
         train_cfg=dict(
             point_cloud_range=point_cloud_range,
             grid_size=grid_size,
