@@ -49,7 +49,6 @@ class BEVFusionHead(nn.Module):
         auxiliary=True,
         in_channels=128 * 3,
         hidden_channel=128,
-        num_classes=4,
         # config for Transformer
         num_decoder_layers=3,
         decoder_layer=dict(),
@@ -120,14 +119,14 @@ class BEVFusionHead(nn.Module):
             build_conv_layer(
                 dict(type="Conv2d"),
                 hidden_channel,
-                num_classes,
+                self.num_classes,
                 kernel_size=3,
                 padding=1,
                 bias=bias,
             )
         )
         self.heatmap_head = nn.Sequential(*layers)
-        self.class_encoding = nn.Conv1d(num_classes, hidden_channel, 1)
+        self.class_encoding = nn.Conv1d(self.num_classes, hidden_channel, 1)
 
         # transformer decoder layers for object query with LiDAR feature
         self.decoder = nn.ModuleList()
@@ -253,8 +252,9 @@ class BEVFusionHead(nn.Module):
         # equals to nms radius = voxel_size * out_size_factor * kenel_size
         if self.dense_heatmap_pooling_class_indices is not None:
             # Pooling
+            selected_heatmap = heatmap[:, self.dense_heatmap_pooling_class_indices, :, :]
             local_max_inner = F.max_pool2d(
-                heatmap[:, self.dense_heatmap_pooling_class_indices],
+                selected_heatmap,
                 kernel_size=self.nms_kernel_size,
                 stride=1,
                 padding=0,
