@@ -266,9 +266,10 @@ class BEVFusionHead(nn.Module):
                 self.local_heatmap_padding : (-self.local_heatmap_padding),
             ] = local_max_inner
             # Non-pooling classes
-            local_max[:, self.dense_heatmap_exclude_pooling_classes] = heatmap[
-                :, self.dense_heatmap_exclude_pooling_classes
-            ]
+            if self.dense_heatmap_exclude_pooling_classes:
+                local_max[:, self.dense_heatmap_exclude_pooling_classes] = heatmap[
+                    :, self.dense_heatmap_exclude_pooling_classes
+                ]
         else:
             local_max = heatmap
 
