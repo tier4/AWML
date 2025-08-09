@@ -33,7 +33,7 @@ def get_t4dataset_ids(config_path: str) -> list[str]:
     all_t4dataset_ids = set()
     for key in required_keys:
         for t4dataset_ids in data_splits[key]:
-            t4dataset_ids = t4dataset_ids.split("   ")
+            t4dataset_ids = t4dataset_ids.split("/")
             if len(t4dataset_ids) == 2:
                 all_t4dataset_ids.add((t4dataset_ids[0], t4dataset_ids[1]))  # (id, version)
             elif len(t4dataset_ids) == 1:

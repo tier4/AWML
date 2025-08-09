@@ -12,7 +12,7 @@ info_val_file_name = "t4dataset_x2_infos_val.pkl"
 info_test_file_name = "t4dataset_x2_infos_test.pkl"
 
 # dataset scene setting
-dataset_version_config_root = "autoware_ml/configs/t4dataset/"
+dataset_version_config_root = "perception-devops/dataset_annotation/t4datasets/detection3d/"
 dataset_version_list = [
     "db_gsm8_v1",
     "db_j6_v1",
