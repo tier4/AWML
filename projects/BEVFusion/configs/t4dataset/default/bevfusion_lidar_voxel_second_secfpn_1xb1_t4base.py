@@ -90,7 +90,7 @@ model = dict(
             pos_encoding_cfg=dict(input_channel=2, num_pos_feats=128),
         ),
         train_cfg=dict(
-            dataset="nuScenes",
+            dataset="t4datasets",
             point_cloud_range=point_cloud_range,
             grid_size=grid_size,
             voxel_size=voxel_size,
@@ -108,13 +108,20 @@ model = dict(
             ),
         ),
         test_cfg=dict(
-            dataset="nuScenes",
+            dataset="t4datasets",
             grid_size=grid_size,
             out_size_factor=8,
             voxel_size=voxel_size[0:2],
             pc_range=point_cloud_range[0:2],
-            nms_type=None,
+            nms_type=None,  # Set to "circle" for circle_nms
+            # Set NMS for different clusters
+            nms_clusters=[
+                dict(class_names=["car", "truck", "bus"], nms_threshold=0.5),  # It's radius if using circle_nms
+                dict(class_names=["bicycle"], nms_threshold=0.5),
+                dict(class_names=["pedestrian"], nms_threshold=0.175),
+            ],
         ),
+        dense_heatmap_pooling_classes=["car", "truck", "bus", "bicycle"],  # Use class indices for pooling
         common_heads=dict(center=[2, 2], height=[1, 2], dim=[3, 2], rot=[2, 2], vel=[2, 2]),
         bbox_coder=dict(
             type="TransFusionBBoxCoder",
@@ -150,3 +157,5 @@ default_hooks = dict(
 )
 custom_hooks = [dict(type="DisableObjectSampleHook", disable_after_epoch=15)]
 log_processor = dict(window_size=50)
+
+randomness = dict(seed=0, diff_rank_seed=True, deterministic=True)

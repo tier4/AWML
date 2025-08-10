@@ -49,7 +49,7 @@ model = dict(
     pts_middle_encoder=dict(sparse_shape=grid_size),
     bbox_head=dict(
         num_proposals=num_proposals,
-        num_classes=_base_.num_class,
+        class_names=_base_.class_names,  # Use class names to identify the correct class indices
         train_cfg=dict(
             point_cloud_range=point_cloud_range,
             grid_size=grid_size,

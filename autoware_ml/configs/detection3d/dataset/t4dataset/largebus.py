@@ -13,10 +13,21 @@ info_test_file_name = "t4dataset_largebus_infos_test.pkl"
 
 # dataset scene setting
 dataset_version_config_root = "autoware_ml/configs/t4dataset/"
-dataset_version_list = ["db_largebus_v1"]
+dataset_version_list = [
+    "db_largebus_v1",
+]
 
 # dataset format setting
-data_prefix = dict(pts="", sweeps="")
+data_prefix = dict(
+    pts="",
+    CAM_FRONT="",
+    CAM_FRONT_LEFT="",
+    CAM_FRONT_RIGHT="",
+    CAM_BACK="",
+    CAM_BACK_RIGHT="",
+    CAM_BACK_LEFT="",
+    sweeps="",
+)
 camera_types = {
     "CAM_FRONT",
     "CAM_FRONT_RIGHT",
@@ -136,6 +147,10 @@ camera_panels = [
     "data/CAM_BACK_RIGHT",
 ]
 
+<<<<<<< HEAD
+=======
+# Add filter attributes
+>>>>>>> main
 filter_attributes = [
     ("vehicle.bicycle", "vehicle_state.parked"),
     ("vehicle.bicycle", "cycle_state.without_rider"),
