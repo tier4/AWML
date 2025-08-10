@@ -8,7 +8,7 @@ custom_imports["imports"] += _base_.custom_imports["imports"]
 
 # user setting
 data_root = "data/t4dataset/"
-info_directory_path = "info/kokseang_1_8/"
+info_directory_path = "info/user_name/"
 train_gpu_size = 4
 train_batch_size = 8
 test_batch_size = 2
@@ -107,7 +107,7 @@ model = dict(
     fusion_layer=dict(type="ConvFuser", in_channels=[80, 256], out_channels=256),
     bbox_head=dict(
         num_proposals=num_proposals,
-        num_classes=_base_.num_class,
+        class_names=_base_.class_names,  # Use class names to identify the correct class indices
         train_cfg=dict(
             point_cloud_range=point_cloud_range,
             grid_size=grid_size,
@@ -132,7 +132,6 @@ model = dict(
 train_pipeline = [
     dict(
         type="BEVLoadMultiViewImageFromFiles",
-        data_root=data_root,
         to_float32=True,
         color_type="color",
         backend_args=backend_args,
@@ -217,7 +216,6 @@ train_pipeline = [
 test_pipeline = [
     dict(
         type="BEVLoadMultiViewImageFromFiles",
-        data_root=data_root,
         to_float32=True,
         color_type="color",
         backend_args=backend_args,

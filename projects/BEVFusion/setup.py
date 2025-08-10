@@ -40,6 +40,10 @@ def make_cuda_ext(name, module, sources, sources_cuda=[], extra_args=[], extra_i
 if __name__ == "__main__":
     setup(
         name="bev_pool",
+        install_requires=[
+            "onnx_graphsurgeon==0.5.8",
+            "spconv-cu120==2.3.6",
+        ],
         ext_modules=[
             make_cuda_ext(
                 name="bev_pool_ext",

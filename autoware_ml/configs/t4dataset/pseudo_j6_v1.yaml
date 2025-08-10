@@ -1,17 +1,14 @@
 version: 1
 dataset_version: pseudo-j6-v1.0
-
 train:
-  - c583996f-c5bc-46c3-b69a-72bda815ead7
-  - 374bfec2-9df4-4eda-8f1f-49ea8609cbe2
-  - f700d752-aec9-43c9-a973-77039a2de0bd
-  - 95918a34-2457-4f64-8af5-0a929be991cf
-  - 1b0359c6-1aee-498d-90bc-91fdc9f412e0
-  - 750e89e0-aaa3-4d64-8a45-cea4656f9bfd
-  - df1ed583-16a8-4a51-b805-e32f8882a0cf
-  - 9368c612-9680-4c20-a630-686d14a9921a
-  - 602c032e-1fa0-458f-99a8-f96ce1a43073
-
+- c583996f-c5bc-46c3-b69a-72bda815ead7   0
+- 374bfec2-9df4-4eda-8f1f-49ea8609cbe2   0
+- f700d752-aec9-43c9-a973-77039a2de0bd   0
+- 95918a34-2457-4f64-8af5-0a929be991cf   0
+- 1b0359c6-1aee-498d-90bc-91fdc9f412e0   0
+- 750e89e0-aaa3-4d64-8a45-cea4656f9bfd   0
+- df1ed583-16a8-4a51-b805-e32f8882a0cf   0
+- 9368c612-9680-4c20-a630-686d14a9921a   0
+- 602c032e-1fa0-458f-99a8-f96ce1a43073   0
 val: []
-
 test: []

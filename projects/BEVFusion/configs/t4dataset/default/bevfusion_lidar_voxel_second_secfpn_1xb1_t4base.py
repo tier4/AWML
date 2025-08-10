@@ -113,8 +113,15 @@ model = dict(
             out_size_factor=8,
             voxel_size=voxel_size[0:2],
             pc_range=point_cloud_range[0:2],
-            nms_type=None,
+            nms_type=None,  # Set to "circle" for circle_nms
+            # Set NMS for different clusters
+            nms_clusters=[
+                dict(class_names=["car", "truck", "bus"], nms_threshold=0.5),  # It's radius if using circle_nms
+                dict(class_names=["bicycle"], nms_threshold=0.5),
+                dict(class_names=["pedestrian"], nms_threshold=0.175),
+            ],
         ),
+        dense_heatmap_pooling_classes=["car", "truck", "bus", "bicycle"],  # Use class indices for pooling
         common_heads=dict(center=[2, 2], height=[1, 2], dim=[3, 2], rot=[2, 2], vel=[2, 2]),
         bbox_coder=dict(
             type="TransFusionBBoxCoder",
