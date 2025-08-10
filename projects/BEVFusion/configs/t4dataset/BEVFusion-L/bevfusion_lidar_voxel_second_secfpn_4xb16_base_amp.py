@@ -333,10 +333,19 @@ train_cfg = dict(
 val_cfg = dict()
 test_cfg = dict()
 
+optimizer = dict(type="AdamW", lr=lr, weight_decay=0.01)
+clip_grad = dict(max_norm=2.0, norm_type=2)  # max norm of gradients upper bound to be 15 since amp is used
+
 optim_wrapper = dict(
-    type="OptimWrapper",
-    optimizer=dict(type="AdamW", lr=lr, weight_decay=0.01),
-    clip_grad=dict(max_norm=35, norm_type=2),
+    type="AmpOptimWrapper",
+    dtype="float16",
+    optimizer=optimizer,
+    clip_grad=clip_grad,
+    # Update it accordingly
+    loss_scale={
+        "init_scale": 2.0**8,  # intial_scale: 256
+        "growth_interval": 2000,
+    },
 )
 
 # Default setting for scaling LR automatically
@@ -349,3 +358,5 @@ auto_scale_lr = dict(enable=False, base_batch_size=train_gpu_size * train_batch_
 # Only set if the number of train_gpu_size more than 1
 if train_gpu_size > 1:
     sync_bn = "torch"
+
+activation_checkpointing = ["pts_backbone"]
