@@ -8,9 +8,9 @@ custom_imports["imports"] += _base_.custom_imports["imports"]
 
 # user setting
 data_root = "data/t4dataset/"
-info_directory_path = "info/user_name/"
+info_directory_path = "info/kokseang_2_2/"
 train_gpu_size = 4
-train_batch_size = 8
+train_batch_size = 16
 test_batch_size = 2
 val_interval = 5
 max_epochs = 50
@@ -74,7 +74,7 @@ model = dict(
             pc_range=point_cloud_range[0:2],
             voxel_size=voxel_size[0:2],
         ),
-        loss_heatmap=dict(type="mmdet.AmpGaussianFocalLoss", reduction="mean", loss_weight=1.0),
+        # loss_heatmap=dict(type="mmdet.AmpGaussianFocalLoss", reduction="mean", loss_weight=1.0),
 
     ),
     # Lidar pipeline
