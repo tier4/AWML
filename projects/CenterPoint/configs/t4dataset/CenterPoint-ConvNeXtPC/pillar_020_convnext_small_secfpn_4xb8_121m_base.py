@@ -41,14 +41,14 @@ eval_class_range = {
 
 # user setting
 data_root = "data/t4dataset/"
-info_directory_path = "info/user_name/"
+info_directory_path = "info/kokseang_2_2/"
 train_gpu_size = 4
 train_batch_size = 8
 test_batch_size = 2
 num_workers = 32
 val_interval = 5
 max_epochs = 30
-work_dir = "work_dirs/centerpoint/" + _base_.dataset_type + "/pillar_020_convnext_small_secfpn_4xb8_121m_base"
+work_dir = "work_dirs/centerpoint_2_2/" + _base_.dataset_type + "/pillar_020_convnext_small_secfpn_4xb8_121m_base"
 
 train_pipeline = [
     dict(
