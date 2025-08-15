@@ -531,7 +531,7 @@ class MOTModel:
         )
 
         # Initialize new trackers for all detections if no existing trackers
-        if len(self.trackers) == 0:
+        if not len(self.trackers):
             self._add_new_tracker(bbox_list)
             return instance_ids
 
