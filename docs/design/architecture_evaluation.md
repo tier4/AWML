@@ -103,51 +103,56 @@ Figure below shows the top-level overview of evaluation pipeline in AWML:
 		{
 			'scene_0': {
 				'frame_0': {
-					'metric_1': {
-						'car':,
+					'all': {
+						'metric_1': {
+							'car':,
+							...
+						},
+						'metric_2'; {
+							'car':,
+							...
+						},
 						...
-					},
-					'metric_2'; {
-						'car':,
-						...
-					},
-					...
+						}
 				},
 				'frame_1': {
-					'metric_1': {
-						'car':,
+					'all': {
+						'metric_1': {
+							'car':,
+							...
+						},
+						'metric_2'; {
+							'car':,
+							...
+						},
 						...
-					},
-					'metric_2'; {
-						'car':,
-						...
-					},
-					...
 				},
 				...
 			},
 			'scene_1': {
 				'frame_0': {
-					'metric_1': {
-						'car':,
+					'all': {
+						'metric_1': {
+							'car':,
+							...
+						},
+						'metric_2'; {
+							'car':,
+							...
+						},
 						...
-					},
-					'metric_2'; {
-						'car':,
-						...
-					},
-					...
 				},
 				'frame_1': {
-					'metric_1': {
-						'car':,
+					'all': {
+						'metric_1': {
+							'car':,
+							...
+						},
+						'metric_2'; {
+							'car':,
+							...
+						},
 						...
-					},
-					'metric_2'; {
-						'car':,
-						...
-					},
-					...
 				},
 				...
 			},
@@ -158,11 +163,12 @@ Figure below shows the top-level overview of evaluation pipeline in AWML:
 		{
 			'aggregated_metrics': {
 				{
-					'metric_1': {
-						'car': {
-							''
-						}
-					}
+					"metrics": {
+							"mAP_{metric1}": ,
+							"mAPH_{metric1}": ,
+							"mAP_{metric2}": ,
+							"mAPH_{metric2}":
+					},
 					'car': {
 						'metric_1': ,
 						'metric_2': ,
