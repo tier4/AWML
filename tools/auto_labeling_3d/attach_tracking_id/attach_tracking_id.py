@@ -56,9 +56,7 @@ def determine_scene_range(dataset_info: Dict[str, Any]):
 
 def track_objects(
     dataset_info: Dict[str, Any],
-    scene_id: str,
-    start_frame: int,
-    end_frame: int,
+    scene_boundary: SceneBoundary,
     logger: logging.Logger,
 ) -> Dict[str, Any]:
     """
@@ -71,9 +69,7 @@ def track_objects(
         dataset_info: Dictionary containing dataset information
             - metainfo: Meta information (class names, etc.)
             - data_list: List of frame data
-        scene_id: Scene ID of each dataset. e.g,
-        start_frame: Starting frame index for each scene.
-        end_frame: Ending frame index for each scene.
+        scene_boundary: SceneBoundary object containing scene_id, scene_start_frame, and scene_end_frame.
         logger: Logger instance for output messages
 
     Returns:
@@ -83,9 +79,11 @@ def track_objects(
     """
     mot_model = MOTModel(classes=dataset_info["metainfo"]["classes"])
 
-    logger.info(f"Start tracking in {scene_id}")
+    logger.info(f"Start tracking in {scene_boundary.scene_id}")
 
-    for frame_info in tqdm(dataset_info["data_list"][start_frame : end_frame + 1]):
+    for frame_info in tqdm(
+        dataset_info["data_list"][scene_boundary.scene_start_frame : scene_boundary.scene_end_frame + 1]
+    ):
         ego2global = np.array(frame_info["ego2global"])
 
         tracked_instance_ids = mot_model.frame_mot(
@@ -95,7 +93,7 @@ def track_objects(
         for det_index, tracked_instance_id in enumerate(tracked_instance_ids):
             frame_info["pred_instances_3d"][det_index]["instance_id_3d"] = tracked_instance_id
 
-    logger.info(f"Total number of tracks in {scene_id}: {KalmanBoxTracker.count}")
+    logger.info(f"Total number of tracks in {scene_boundary.scene_id}: {KalmanBoxTracker.count}")
     return dataset_info
 
 
@@ -133,10 +131,8 @@ def main():
         dataset_info = pickle.load(f)
 
     scene_boundaries = determine_scene_range(dataset_info)
-    for scene_id, scene_start_frame, scene_end_frame in (
-        (d.scene_id, d.scene_start_frame, d.scene_end_frame) for d in scene_boundaries
-    ):
-        dataset_info = track_objects(dataset_info, scene_id, scene_start_frame, scene_end_frame, logger)
+    for scene_boundary in scene_boundaries:
+        dataset_info = track_objects(dataset_info, scene_boundary, logger)
 
     # save tracked info
     with open(output_path, "wb") as f:
