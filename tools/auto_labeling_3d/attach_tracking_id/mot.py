@@ -346,18 +346,6 @@ def match(
         """Check if matching is allowed between classes."""
         return trk_class in class_matching_matrix[det_class]
 
-    def _calculate_center_distance_bev(det_xy: NDArray, trk_xy: NDArray) -> float:
-        """Calculate Euclidean center distance between two boxes in in BEV (x-y plane).
-
-        Args:
-            det_xy: [x, y]
-            trk_xy: [x, y]
-
-        Returns:
-            float: Euclidean distance between box centers in BEV (x-y plane)
-        """
-        return np.linalg.norm(det_xy - trk_xy)
-
     def _calculate_cost_matrix(
         bbox_list: List[T4Box3D],
         tracked_box_list: List[TrackedBox2D],
@@ -402,7 +390,7 @@ def match(
                     continue
 
                 # Calculate cost only if classes match
-                cost = _calculate_center_distance_bev(det_position, trk_box.position_xy)
+                cost = np.linalg.norm(det_position - trk_box.position_xy)
 
                 # Update cost matrix if within threshold
                 if cost <= cost_threshold:
