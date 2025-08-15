@@ -92,8 +92,8 @@ def track_objects(
             copy.deepcopy(frame_info["pred_instances_3d"]), ego2global, frame_info["timestamp"]
         )
         # update instance_id by tracking
-        for det_id, tracked_instance_id in enumerate(tracked_instance_ids):
-            frame_info["pred_instances_3d"][det_id]["instance_id_3d"] = tracked_instance_id
+        for det_index, tracked_instance_id in enumerate(tracked_instance_ids):
+            frame_info["pred_instances_3d"][det_index]["instance_id_3d"] = tracked_instance_id
 
     logger.info(f"Total number of tracks in {scene_id}: {KalmanBoxTracker.count}")
     return dataset_info
