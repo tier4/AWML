@@ -22,16 +22,7 @@ dataset_version_list = [
 ]
 
 # dataset format setting
-data_prefix = dict(
-    pts="",
-    CAM_FRONT="",
-    CAM_FRONT_LEFT="",
-    CAM_FRONT_RIGHT="",
-    CAM_BACK="",
-    CAM_BACK_RIGHT="",
-    CAM_BACK_LEFT="",
-    sweeps="",
-)
+data_prefix = dict(pts="", sweeps="")
 camera_types = {
     "CAM_FRONT",
     "CAM_FRONT_RIGHT",
