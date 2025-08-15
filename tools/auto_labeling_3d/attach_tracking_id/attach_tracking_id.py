@@ -87,10 +87,9 @@ def track_objects(
 
     for frame_info in tqdm(dataset_info["data_list"][start_frame : end_frame + 1]):
         ego2global = np.array(frame_info["ego2global"])
-        timestamp = frame_info["timestamp"]
 
         tracked_instance_ids = mot_model.frame_mot(
-            copy.deepcopy(frame_info["pred_instances_3d"]), ego2global, timestamp
+            copy.deepcopy(frame_info["pred_instances_3d"]), ego2global, frame_info["timestamp"]
         )
         # update instance_id by tracking
         for det_id, tracked_instance_id in enumerate(tracked_instance_ids):
