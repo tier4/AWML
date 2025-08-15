@@ -1,3 +1,4 @@
+import gzip
 import os
 import random
 from dataclasses import dataclass
@@ -5,7 +6,6 @@ from enum import Enum
 from typing import Any, Dict, Optional, Tuple
 
 import cv2
-import gzip
 import matplotlib.pyplot as plt
 import numpy as np
 import numpy.typing as npt
