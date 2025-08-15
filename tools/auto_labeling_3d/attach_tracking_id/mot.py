@@ -324,7 +324,7 @@ class KalmanBoxTracker:
         return self.age >= self.max_age
 
 
-def match(
+def associate_detections_to_tracks(
     bbox_list: List[T4Box3D],
     tracked_box_list: List[TrackedBox2D],
     class_params: Dict[str, Dict[str, int | float]] = CLASS_PARAMS,
@@ -539,7 +539,7 @@ class MOTModel:
         tracked_box_list: List[TrackedBox2D] = [trk.predict(timestamp) for trk in self.trackers]
 
         # Matching
-        valid_matches, unmatched_dets = match(bbox_list, tracked_box_list)
+        valid_matches, unmatched_dets = associate_detections_to_tracks(bbox_list, tracked_box_list)
 
         # For unmatched detections, add new trackes
         self._add_new_tracker(bbox_list, unmatched_dets)
