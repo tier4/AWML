@@ -15,12 +15,30 @@ from tools.auto_labeling_3d.utils.logger import setup_logger
 
 @define
 class SceneBoundary:
+    """
+    Represents the boundary (start and end frame) of a scene in the dataset.
+
+    Attributes:
+        scene_id (str): Unique identifier for the scene.
+        scene_start_frame (int): Index of the first frame in the scene.
+        scene_end_frame (int): Index of the last frame in the scene.
+    """
+
     scene_id: str
     scene_start_frame: int
     scene_end_frame: int
 
 
 def determine_scene_range(dataset_info: Dict[str, Any]):
+    """
+    Determine the start and end frame indices for each scene in the dataset.
+
+    Args:
+        dataset_info (Dict[str, Any]): Dictionary containing dataset information, including a 'data_list' key with frame data.
+
+    Returns:
+        Values of a dictionary mapping scene_id to SceneBoundary, representing the start and end frame indices for each scene.
+    """
     scene_ids = []
     scene_boundaries = {}
     for frame_id, frame_info in enumerate(dataset_info["data_list"]):
