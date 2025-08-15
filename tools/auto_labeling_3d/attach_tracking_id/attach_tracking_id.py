@@ -1,4 +1,5 @@
 import argparse
+import collections
 import copy
 import logging
 import pickle
@@ -39,19 +40,21 @@ def determine_scene_range(dataset_info: Dict[str, Any]):
     Returns:
         Values of a dictionary mapping scene_id to SceneBoundary, representing the start and end frame indices for each scene.
     """
-    scene_ids = []
-    scene_boundaries = {}
+    scene_frames = collections.defaultdict(list)
     for frame_id, frame_info in enumerate(dataset_info["data_list"]):
-        # get scene_id and frame_id from lidar_path
         scene_id: str = frame_info["lidar_points"]["lidar_path"].split("/")[-4]
-        if scene_id not in scene_ids:
-            scene_boundaries[scene_id] = SceneBoundary(
-                scene_id=scene_id, scene_start_frame=frame_id, scene_end_frame=frame_id
+        scene_frames[scene_id].append(frame_id)
+
+    scene_boundaries = []
+    for scene_id, frames in scene_frames.items():
+        scene_boundaries.append(
+            SceneBoundary(
+                scene_id=scene_id,
+                scene_start_frame=min(frames),
+                scene_end_frame=max(frames),
             )
-            scene_ids.append(scene_id)
-        else:
-            scene_boundaries[scene_id].scene_end_frame = frame_id
-    return scene_boundaries.values()
+        )
+    return scene_boundaries
 
 
 def track_objects(
