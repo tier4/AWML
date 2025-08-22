@@ -22,7 +22,7 @@ backend_config = dict(
                 coors=dict(min_shape=[1, 3], opt_shape=[64000, 3], max_shape=[256000, 3]),
                 num_points_per_voxel=dict(min_shape=[1], opt_shape=[64000], max_shape=[256000]),
                 # TODO(TIERIV): Optimize. Now, using points will increase latency significantly
-                # points=dict(min_shape=[5000, 4], opt_shape=[50000, 4], max_shape=[200000, 4]),
+                points=dict(min_shape=[5000, 4], opt_shape=[50000, 4], max_shape=[200000, 4]),
                 lidar2image=dict(min_shape=[1, 4, 4], opt_shape=[6, 4, 4], max_shape=[6, 4, 4]),
                 img_aug_matrix=dict(min_shape=[1, 4, 4], opt_shape=[6, 4, 4], max_shape=[6, 4, 4]),
                 geom_feats=dict(
@@ -64,7 +64,7 @@ onnx_config = dict(
         "voxels",
         "coors",
         "num_points_per_voxel",
-        # "points",
+        "points",
         "lidar2image",
         "img_aug_matrix",
         "geom_feats",
@@ -84,9 +84,9 @@ onnx_config = dict(
         "num_points_per_voxel": {
             0: "voxels_num",
         },
-        # "points": {
-        #     0: "num_points",
-        # },
+        "points": {
+            0: "num_points",
+        },
         "lidar2image": {
             0: "num_imgs",
         },

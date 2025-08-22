@@ -28,7 +28,7 @@ class TrtBevFusionMainContainer(torch.nn.Module):
     def forward(self, voxels,
         coors, 
         num_points_per_voxel,
-        # points = None,
+        points = None,
         lidar2img = None,
         img_aug_matrix = None,
         geom_feats = None,
@@ -37,9 +37,7 @@ class TrtBevFusionMainContainer(torch.nn.Module):
         indices = None,
         image_feats = None,
     ):
-
         mod = self.mod
-
         if coors.shape[1] == 3:
             num_points = coors.shape[0]
             coors = coors.flip(dims=[-1]).contiguous()  # [x, y, z]
@@ -49,6 +47,9 @@ class TrtBevFusionMainContainer(torch.nn.Module):
         batch_inputs_dict = {
             "voxels": {"voxels": voxels, "coors": coors, "num_points_per_voxel": num_points_per_voxel},
         }
+
+        if points is not None:
+            batch_inputs_dict["points"] = points
 
         if image_feats is not None:
 

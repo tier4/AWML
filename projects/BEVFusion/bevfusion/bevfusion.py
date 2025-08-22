@@ -273,6 +273,8 @@ class BEVFusion(Base3DDetector):
         imgs = batch_inputs_dict.get("imgs", None)
         points = batch_inputs_dict.get("points", None)
         features = []
+
+        is_onnx_inference = False
         if imgs is not None and "lidar2img" not in batch_inputs_dict:
             # NOTE(knzo25): normal training and testing
             imgs = imgs.contiguous()
@@ -304,28 +306,24 @@ class BEVFusion(Base3DDetector):
             features.append(img_feature)
         elif imgs is not None:
             # NOTE(knzo25): onnx inference
+            is_onnx_inference = True
             lidar2image = batch_inputs_dict["lidar2img"]
             camera_intrinsics = batch_inputs_dict["cam2img"]
             camera2lidar = batch_inputs_dict["cam2lidar"]
             img_aug_matrix = batch_inputs_dict["img_aug_matrix"]
             lidar_aug_matrix = batch_inputs_dict["lidar_aug_matrix"]
 
-            # NOTE(knzo25): originally BEVFusion uses all the points
-            # which could be a bit slow. For now I am using only
-            # the centroids, which is also suboptimal, but using
-            # all the voxels produce errors in TensorRT,
-            # so this will be fixed for the next version
-            # (ScatterElements bug, or simply null voxels break the equation)
-            feats = batch_inputs_dict["voxels"]["voxels"]
-            sizes = batch_inputs_dict["voxels"]["num_points_per_voxel"]
-
-            feats = feats.sum(dim=1, keepdim=False) / sizes.type_as(feats).view(-1, 1)
-
             geom_feats = batch_inputs_dict["geom_feats"]
+            
+
+            # feats = batch_inputs_dict["voxels"]["voxels"]
+            # sizes = batch_inputs_dict["voxels"]["num_points_per_voxel"]
+            # feats = feats.sum(dim=1, keepdim=False) / sizes.type_as(feats).view(-1, 1)
+
+
             img_feature = self.extract_img_feat(
                 imgs,
-                [feats],
-                # points,
+                points,
                 lidar2image,
                 camera_intrinsics,
                 camera2lidar,
@@ -341,7 +339,7 @@ class BEVFusion(Base3DDetector):
             batch_inputs_dict.get("voxels", {}).get("voxels", None),
             batch_inputs_dict.get("voxels", {}).get("coors", None),
             batch_inputs_dict.get("voxels", {}).get("num_points_per_voxel", None),
-            points=points,
+            points=points if not is_onnx_inference else None,
         )
         features.append(pts_feature)
 

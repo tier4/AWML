@@ -208,19 +208,19 @@ if __name__ == "__main__":
             )
             if image_feats is not None:
                 model_inputs += (
-                    # points.unsqueeze(0).to(device).float(),    # TODO(TIERIV): Optimize. Now, using points will increase latency significantly
+                    points.unsqueeze(0).to(device).float(),
                     lidar2img.unsqueeze(0).to(device).float(),
                     img_aug_matrix.unsqueeze(0).to(device).float(),
                     geom_feats.to(device).float(),
                     kept.to(device),
                     ranks.to(device).long(),
                     indices.to(device).long(),
-                    image_feats,
+                    image_feats
                 )
             torch.onnx.export(
                 main_container,
                 model_inputs,
-                output_path.replace(".onnx", "_tofix.onnx"),
+                output_path.replace(".onnx", "_temp_to_be_fixed.onnx"),
                 export_params=True,
                 input_names=input_names,
                 output_names=output_names,
@@ -235,7 +235,7 @@ if __name__ == "__main__":
 
             import onnx_graphsurgeon as gs
 
-            model = onnx.load(output_path.replace(".onnx", "_tofix.onnx"))
+            model = onnx.load(output_path.replace(".onnx", "_temp_to_be_fixed.onnx"))
             graph = gs.import_onnx(model)
 
             # Fix TopK
