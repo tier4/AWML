@@ -101,7 +101,7 @@ if __name__ == "__main__":
         points,
         camera_mask,
         imgs,
-        lidar2image,
+        lidar2img,
         cam2image,
         camera2lidar,
         geom_feats,
@@ -178,29 +178,11 @@ if __name__ == "__main__":
 
         if "img_backbone" in model_cfg.model:
             img_aug_matrix = imgs.new_tensor(np.stack(data_samples[0].img_aug_matrix))
-            lidar_aug_matrix = torch.eye(4).to(imgs.device)
             images_mean = data_preprocessor.mean.to(device)
             images_std = data_preprocessor.std.to(device)
             image_backbone_container = TrtBevFusionImageBackboneContainer(patched_model, images_mean, images_std)
-            model_inputs = (
-                imgs.unsqueeze(0).to(device).float(),
-                points.unsqueeze(0).to(device).float(),
-                lidar2image.unsqueeze(0).to(device).float(),
-                cam2image.unsqueeze(0).to(device).float(),
-                torch.inverse(cam2image).unsqueeze(0).to(device).float(),
-                camera2lidar.unsqueeze(0).to(device).float(),
-                img_aug_matrix.unsqueeze(0).to(device).float(),
-                imgs.new_tensor(np.stack([np.linalg.inv(x) for x in data_samples[0].img_aug_matrix]))
-                .unsqueeze(0)
-                .to(device)
-                .float(),
-                lidar_aug_matrix.unsqueeze(0).to(device).float(),
-                torch.inverse(lidar_aug_matrix).unsqueeze(0).to(device).float(),
-                geom_feats.to(device).float(),
-                kept.to(device),
-                ranks.to(device).long(),
-                indices.to(device).long(),
-            )
+            model_inputs = (imgs.unsqueeze(0).to(device).float(),)
+            
             if args.module == "image_backbone":
                 return_value = torch.onnx.export(
                     image_backbone_container,
@@ -225,11 +207,20 @@ if __name__ == "__main__":
                 num_points_per_voxel.to(device),
             )
             if image_feats is not None:
-                model_inputs += (image_feats,)
+                model_inputs += (
+                    # points.unsqueeze(0).to(device).float(),    # TODO(TIERIV): Optimize. Now, using points will increase latency significantly
+                    lidar2img.unsqueeze(0).to(device).float(),
+                    img_aug_matrix.unsqueeze(0).to(device).float(),
+                    geom_feats.to(device).float(),
+                    kept.to(device),
+                    ranks.to(device).long(),
+                    indices.to(device).long(),
+                    image_feats,
+                )
             torch.onnx.export(
                 main_container,
                 model_inputs,
-                output_path,
+                output_path.replace(".onnx", "_tofix.onnx"),
                 export_params=True,
                 input_names=input_names,
                 output_names=output_names,
@@ -237,29 +228,30 @@ if __name__ == "__main__":
                 dynamic_axes=dynamic_axes,
                 keep_initializers_as_inputs=keep_initializers_as_inputs,
                 verbose=verbose,
+                do_constant_folding=False,
             )
-    logger.info(f"ONNX exported to {output_path}")
 
-    logger.info("Attempting to fix the graph (TopK's K becoming a tensor)")
+            logger.info("Attempting to fix the graph (TopK's K becoming a tensor)")
 
-    import onnx_graphsurgeon as gs
+            import onnx_graphsurgeon as gs
 
-    model = onnx.load(output_path)
-    graph = gs.import_onnx(model)
+            model = onnx.load(output_path.replace(".onnx", "_tofix.onnx"))
+            graph = gs.import_onnx(model)
 
-    # Fix TopK
-    topk_nodes = [node for node in graph.nodes if node.op == "TopK"]
-    assert len(topk_nodes) == 1
-    topk = topk_nodes[0]
-    k = model_cfg.num_proposals
-    topk.inputs[1] = gs.Constant("K", values=np.array([k], dtype=np.int64))
-    topk.outputs[0].shape = [1, k]
-    topk.outputs[0].dtype = topk.inputs[0].dtype if topk.inputs[0].dtype else np.float32
-    topk.outputs[1].shape = [1, k]
-    topk.outputs[1].dtype = np.int64
+            # Fix TopK
+            topk_nodes = [node for node in graph.nodes if node.op == "TopK"]
+            assert len(topk_nodes) == 1
+            topk = topk_nodes[0]
+            k = model_cfg.num_proposals
+            topk.inputs[1] = gs.Constant("K", values=np.array([k], dtype=np.int64))
+            topk.outputs[0].shape = [1, k]
+            topk.outputs[0].dtype = topk.inputs[0].dtype if topk.inputs[0].dtype else np.float32
+            topk.outputs[1].shape = [1, k]
+            topk.outputs[1].dtype = np.int64
 
-    graph.cleanup().toposort()
-    output_path = output_path.replace(".onnx", "_fixed.onnx")
-    onnx.save_model(gs.export_onnx(graph), output_path)
+            graph.cleanup().toposort()
+            onnx.save_model(gs.export_onnx(graph), output_path)
 
-    logger.info(f"(Fixed) ONNX exported to {output_path}")
+            logger.info(f"(Fixed) ONNX exported to {output_path}")
+        
+        logger.info(f"ONNX exported to {output_path}")
