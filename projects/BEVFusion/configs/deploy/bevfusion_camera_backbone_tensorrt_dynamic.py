@@ -15,15 +15,15 @@ backend_config = dict(
     model_inputs=[
         dict(
             input_shapes=dict(
-                # points=dict(
-                #    min_shape=[5000, 5],
-                #    opt_shape=[50000, 5],
-                #    max_shape=[200000, 5]),
-                voxels=dict(min_shape=[1, 5], opt_shape=[64000, 5], max_shape=[256000, 5]),
-                coors=dict(min_shape=[1, 4], opt_shape=[64000, 4], max_shape=[256000, 4]),
-                num_points_per_voxel=dict(min_shape=[1], opt_shape=[64000], max_shape=[256000]),
                 imgs=dict(min_shape=[1, 3, 256, 704], opt_shape=[6, 3, 256, 704], max_shape=[6, 3, 256, 704]),
+                points=dict(min_shape=[5000, 5], opt_shape=[50000, 5], max_shape=[200000, 5]),
                 lidar2image=dict(min_shape=[1, 4, 4], opt_shape=[6, 4, 4], max_shape=[6, 4, 4]),
+                cam2image_inverse=dict(min_shape=[1, 4, 4], opt_shape=[6, 4, 4], max_shape=[6, 4, 4]),
+                camera2lidar=dict(min_shape=[1, 4, 4], opt_shape=[6, 4, 4], max_shape=[6, 4, 4]),
+                img_aug_matrix=dict(min_shape=[1, 4, 4], opt_shape=[6, 4, 4], max_shape=[6, 4, 4]),
+                img_aug_matrix_inverse=dict(min_shape=[1, 4, 4], opt_shape=[6, 4, 4], max_shape=[6, 4, 4]),
+                lidar_aug_matrix=dict(min_shape=[1, 4, 4], opt_shape=[6, 4, 4], max_shape=[6, 4, 4]),
+                lidar_aug_matrix_inverse=dict(min_shape=[1, 4, 4], opt_shape=[6, 4, 4], max_shape=[6, 4, 4]),
                 geom_feats=dict(
                     min_shape=[0 * 118 * 32 * 88, 4],
                     opt_shape=[6 * 118 * 32 * 88 // 2, 4],
@@ -54,36 +54,30 @@ onnx_config = dict(
     export_params=True,
     keep_initializers_as_inputs=False,
     opset_version=17,
-    save_file="end2end.onnx",
-    input_names=[  # 'points',
-        "voxels",
-        "coors",
-        "num_points_per_voxel",
+    save_file="image_backbone.onnx",
+    input_names=[
         "imgs",
+        "points",
         "lidar2image",
         "cam2image",
+        "cam2image_inverse",
         "camera2lidar",
+        "img_aug_matrix",
+        "img_aug_matrix_inverse",
+        "lidar_aug_matrix",
+        "lidar_aug_matrix_inverse",
         "geom_feats",
         "kept",
         "ranks",
         "indices",
     ],
-    output_names=["bbox_pred", "score", "label_pred"],
+    output_names=["image_feats"],
     dynamic_axes={
-        # 'points': {
-        #    0: 'num_points',
-        # },
-        "voxels": {
-            0: "num_voxels",
-        },
-        "coors": {
-            0: "num_voxels",
-        },
-        "num_points_per_voxel": {
-            0: "num_voxels",
-        },
         "imgs": {
             0: "num_imgs",
+        },
+        "points": {
+            0: "num_points",
         },
         "lidar2image": {
             0: "num_imgs",
@@ -91,7 +85,22 @@ onnx_config = dict(
         "cam2image": {
             0: "num_imgs",
         },
+        "cam2image_inverse": {
+            0: "num_imgs",
+        },
         "camera2lidar": {
+            0: "num_imgs",
+        },
+        "img_aug_matrix": {
+            0: "num_imgs",
+        },
+        "img_aug_matrix_inverse": {
+            0: "num_imgs",
+        },
+        "lidar_aug_matrix": {
+            0: "num_imgs",
+        },
+        "lidar_aug_matrix_inverse": {
             0: "num_imgs",
         },
         "geom_feats": {

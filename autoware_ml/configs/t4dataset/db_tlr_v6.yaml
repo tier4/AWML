@@ -1,19 +1,18 @@
 version: 1
 dataset_version: db-tlr-v6.0
-
 train:
-  - eb3c134d-f204-4ae5-89ed-76dbd68cf019
-  - 9e434ebc-6619-4aee-bdb6-5dcfc9e52287
-  - ec64c19f-03e4-4fe8-ab7f-850996afebed
-  - 1909b8b7-ddc9-4884-98a3-d8317f5b3e01
-  - 2e04254a-016d-4a0f-933d-528535c217fc
-  - 21a07b65-a6d2-4fed-b2e8-e3b8a1043a0d
-  - ade3e225-9a48-4426-aa1a-84ea8e5ecf41
-  - fccaa083-22b9-4660-a1e7-afbfd6e2da8c
-  - 24e5fb43-9f83-4b76-b510-dd8900c4651d
-  - 2922f804-c77d-4cce-b5ca-d969e65f73aa
+- eb3c134d-f204-4ae5-89ed-76dbd68cf019   0
+- 9e434ebc-6619-4aee-bdb6-5dcfc9e52287   0
+- ec64c19f-03e4-4fe8-ab7f-850996afebed   0
+- 1909b8b7-ddc9-4884-98a3-d8317f5b3e01   0
+- 2e04254a-016d-4a0f-933d-528535c217fc   0
+- 21a07b65-a6d2-4fed-b2e8-e3b8a1043a0d   0
+- ade3e225-9a48-4426-aa1a-84ea8e5ecf41   0
+- fccaa083-22b9-4660-a1e7-afbfd6e2da8c   0
+- 24e5fb43-9f83-4b76-b510-dd8900c4651d   0
+- 2922f804-c77d-4cce-b5ca-d969e65f73aa   0
 val: []
 test:
-  - 8828d243-a204-453b-8ea0-df56088a70f2
-  - 4b0d27fc-97eb-4086-9922-590f631148aa
-  - b71fb6dc-fbe9-429f-b5b8-a6479144b509
+- 8828d243-a204-453b-8ea0-df56088a70f2   0
+- 4b0d27fc-97eb-4086-9922-590f631148aa   0
+- b71fb6dc-fbe9-429f-b5b8-a6479144b509   0

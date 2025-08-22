@@ -14,6 +14,7 @@
 
 | eval range: 120m         | mAP  | car <br> (144,001) | truck <br> (20,823) | bus <br> (5,691) | bicycle <br> (5,007) | pedestrian <br> (42,034) |
 | -------------------------| ---- | ----------------- | ------------------- | ---------------- | -------------------- | ------------------------ |
+| CenterPoint base/2.1     | 67.85 | 82.34            | 55.15               | 78.10         | 57.36                 | 66.26                   |
 | CenterPoint base/2.0     | 68.06 | 82.19            | 55.44               | 79.30         | 57.62                 | 65.74                   |
 | CenterPoint base/1.7     | 67.54 | 81.40            | 51.60               | 80.11         | 59.61                 | 64.96                   |
 
@@ -25,10 +26,11 @@
 
 - Test datases: db_largebus_v1 (total frames: 604)
 
-| eval range: 120m         | mAP  | car <br> (13,831)     | truck <br> (2,137) | bus <br> (95) | bicycle <br> (724) | pedestrian <br> (3,916) |
-| -------------------------| ---- | -------------------- | ------------------- | ---------------- | -------------------- | ------------------------ |
-| CenterPoint base/2.0          | 71.09   | 89.01   | 64.11   | 77.75 | 61.04       | 63.56       |
-| CenterPoint base/1.7          | 69.15   | 87.87   | 53.81   | 78.40   | 63.08     | 62.58       |
+| eval range: 120m         | mAP     | car <br> (13,831)     | truck <br> (2,137) | bus <br> (95) | bicycle <br> (724) | pedestrian <br> (3,916) |
+| -------------------------| ----    | -------------------- | ------------------- | ---------------- | -------------------- | ------------------------ |
+| CenterPoint base/2.1     | 71.85   | 88.85   | 64.67   | 80.35 | 62.15       | 63.20       |
+| CenterPoint base/2.0     | 71.09   | 89.01   | 64.11   | 77.75 | 61.04       | 63.56       |
+| CenterPoint base/1.7     | 69.15   | 87.87   | 53.81   | 78.40   | 63.08     | 62.58       |
 
 </details>
 
@@ -39,6 +41,7 @@
 
 | eval range: 120m         | mAP  | car <br> (44,008) | truck <br> (2,471) | bus <br> (1,464) | bicycle <br> (333) | pedestrian <br> (6,459) |
 | -------------------------| ---- | ----------------- | ------------------- | ---------------- | -------------------- | ------------------------ |
+| CenterPoint base/2.1     | 71.83 | 83.51 | 53.01 | 84.62 | 73.42   | 64.58       |
 | CenterPoint base/2.0     | 71.04 | 83.56 | 53.08 | 85.06 | 68.54   | 64.97       |
 | CenterPoint base/1.7     | 70.10 | 82.27 | 49.65 | 81.78 | 73.67   | 63.14       |
 
@@ -51,6 +54,7 @@
 
 | eval range: 120m         | mAP     | car <br> (16,142) | truck <br> (4,578) | bus <br> (1,457) | bicycle <br> (1,040) | pedestrian <br> (11,971) |
 | -------------------------| ----    | ----------------- | ------------------- | ---------------- | --------------- | ------------------------|
+| CenterPoint base/2.1     | 65.46   | 75.86             | 52.90               | 71.79            | 59.39           | 67.36                   |
 | CenterPoint base/2.0     | 66.20   | 76.02             | 52.59               | 71.18            | 63.55           | 67.67                   |
 | CenterPoint base/1.7     | 65.86   | 75.46             | 51.65               | 73.10            | 61.25           | 67.82                   |
 
@@ -63,12 +67,77 @@
 
 | eval range: 120m         | mAP     | car <br> (67,551) | truck <br> (10,013) | bus <br> (2,503) | bicycle <br> (2,846) | pedestrian <br> (19,117) |
 | -------------------------| ------- | ----------------- | ------------------- | ---------------- | ---------------- | -------------------- |
+| CenterPoint base/2.1     | 67.19   | 82.15             | 55.54               | 77.13            | 54.42      			 | 66.66                |
 | CenterPoint base/2.0     | 67.41   | 82.09             | 56.08               | 80.41            | 53.75      			 | 64.71                |
-| CenterPoint base/1.7     | 67.35  | 81.28             | 52.10               | 83.28            | 56.22             | 63.90                |
+| CenterPoint base/1.7     | 67.35   | 81.28             | 52.10               | 83.28            | 56.22             | 63.90                |
 
 </details>
 
 ## Release
+
+### CenterPoint base/2.1
+- Add more training data to `db_j6gen2_v2` and `db_j6gen2_v4`
+
+- Overall:
+  - Slightly worse overall (-0.21 mAP).
+	- Main improvement comes from `LargeBus` (71.85 vs 71.09) and `J6Gen2` (71.83 vs 71.04).
+
+<details>
+<summary> The link of data and evaluation result </summary>
+
+- Model
+  - Training dataset: DB JPNTAXI v1.0 + DB JPNTAXI v2.0 + DB JPNTAXI v4.0 + DB GSM8 v1.0 + DB J6 v1.0 + DB J6 v2.0 + DB J6 v3.0 + DB J6 v5.0 + DB J6 Gen2 v1.0 + DB J6 Gen2 v2.0 + DB J6 Gen2 v4.0 + DB LargeBus v1.0 (total frames: 75,963)
+  - [Config file path](https://github.com/tier4/AWML/blob/69aba0d001fd26282880a7a3e7622b89115042de/autoware_ml/configs/detection3d/dataset/t4dataset/base.py)
+  - Deployed onnx model and ROS parameter files [[WebAuto (for internal)]](https://evaluation.tier4.jp/evaluation/mlpackages/7156b453-2861-4ae9-b135-e24e48cc9029/releases/b73806f0-404f-4e9c-8b83-d9beb0c66ebd?project_id=zWhWRzei)
+  - Deployed onnx and ROS parameter files [[model-zoo]]
+    - [detection_class_remapper.param.yaml](https://download.autoware-ml-model-zoo.tier4.jp/autoware-ml/models/centerpoint/centerpoint/t4base/v2.1.0/detection_class_remapper.param.yaml)
+    - [centerpoint_ml_package.param.yaml](https://download.autoware-ml-model-zoo.tier4.jp/autoware-ml/models/centerpoint/centerpoint/t4base/v2.1.0/centerpoint_ml_package.param.yaml)
+    - [deploy_metadata.yaml](https://download.autoware-ml-model-zoo.tier4.jp/autoware-ml/models/centerpoint/centerpoint/t4base/v2.1.0/deploy_metadata.yaml)
+    - [pts_voxel_encoder_centerpoint.onnx](https://download.autoware-ml-model-zoo.tier4.jp/autoware-ml/models/centerpoint/centerpoint/t4base/v2.1.0/pts_voxel_encoder_centerpoint.onnx)
+    - [pts_backbone_neck_head_centerpoint.onnx](https://download.autoware-ml-model-zoo.tier4.jp/autoware-ml/models/centerpoint/centerpoint/t4base/v2.1.0/pts_backbone_neck_head_centerpoint.onnx)
+  - Training results [[Google drive (for internal)]](https://drive.google.com/drive/u/0/folders/1FNw3bEvM1Z9Igp-uUzvXQFjLObONfwyg)
+  - Training results [model-zoo]
+    - [logs.zip](https://download.autoware-ml-model-zoo.tier4.jp/autoware-ml/models/centerpoint/centerpoint/t4base/v2.1.0/logs.zip)
+    - [checkpoint_best.pth](https://download.autoware-ml-model-zoo.tier4.jp/autoware-ml/models/centerpoint/centerpoint/t4base/v2.1.0/best_NuScenes_metric_T4Metric_mAP_epoch_49.pth)
+    - [config.py](https://download.autoware-ml-model-zoo.tier4.jp/autoware-ml/models/centerpoint/centerpoint/t4base/v2.1.0/second_secfpn_4xb16_121m_base_amp.py)
+  - Train time: NVIDIA H100 80GB * 4 * 50 epochs = 2 days and 23 hours
+  - Batch size: 4*16 = 64
+
+- Evaluation
+  - db_jpntaxi_v1 + db_jpntaxi_v2 + db_jpntaxi_v4 + db_gsm8_v1 + db_j6_v1 + db_j6_v2 + db_j6_v3 + db_j6_v5 + db_j6gen2_v1 + db_j6gen2_v1 + db_j6gen2_v4 + db_largebus_v1 (total frames: 5,703):
+  - Total mAP (eval range = 120m): 0.678
+
+| class_name | Count    | mAP  | AP@0.5m | AP@1.0m | AP@2.0m | AP@4.0m |
+| -----------| -------  | ----  | ------- | ------- | ------- | ------- |
+| car        |  144,001 | 82.3 | 75.1    | 83.0    | 85.2    | 86.1    |
+| truck      |  20,823  | 55.2 | 40.0    | 55.5    | 59.8    | 65.4    |
+| bus        |   5,691  | 78.1 | 70.7    | 79.0    | 80.8    | 81.8    |
+| bicycle    |   5,007  | 57.4 | 56.3    | 57.7    | 57.7    | 57.8    |
+| pedestrian |  42,034  | 66.3 | 64.0    | 65.4    | 66.9    | 68.8    |
+
+- db_largebus_v1 (total frames: 604):
+  - Total mAP (eval range = 120m): 0.7190
+
+| class_name | Count    | mAP    | AP@0.5m | AP@1.0m | AP@2.0m | AP@4.0m |
+| -----------| -------  | -----  | ------- | ------- | ------- | ------- |
+| car        |  13,831   | 88.9 | 83.6    | 89.7    | 91.0    | 91.1    |
+| truck      |  2,137   | 64.7 | 51.3    | 65.2    | 69.8    | 72.3    |
+| bus        |     95   | 80.4 | 77.9    | 81.2    | 81.2    | 81.2    |
+| bicycle    |    724   | 62.2 | 57.8    | 63.0    | 63.9    | 63.9    |
+| pedestrian |  3,916   | 63.2 | 61.4    | 62.7    | 63.6    | 65.1    |
+
+- db_j6gen2_v1 + db_j6gen2_v2 + db_j6gen2_v2 (total frames: 1,157):
+  - Total mAP (eval range = 120m): 0.7180
+
+| class_name  | Count   | mAP  | AP@0.5m | AP@1.0m | AP@2.0m | AP@4.0m |
+| ----------  | ------  | ---- | ------- | ------- | ------- | ------- |
+| car         | 44,008  | 83.5 | 77.2    | 83.7    | 86.1    | 87.1    |
+| truck       |  2,471  | 53.0 | 42.9    | 52.5    | 55.0    | 61.7    |
+| bus         |  1,464  | 84.6 | 81.2    | 83.8    | 86.8    | 86.8    |
+| bicycle     |    333  | 73.4 | 72.3    | 73.8    | 73.8    | 73.9    |
+| pedestrian  |  6,459  | 64.6 | 63.1    | 64.0    | 64.9    | 66.4    |
+
+</details>
 
 ### CenterPoint base/2.0
 - Changes:

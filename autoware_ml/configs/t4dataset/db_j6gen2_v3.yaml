@@ -1,26 +1,23 @@
 version: 1
 dataset_version: db-j6gen2-v3.0
-
 train:
-  - e4359aff-ea82-4ff0-860b-9ad24808cfd2
-  - 2408cdde-ff85-4feb-96e0-2e1b44e6feda
-  - f7e9bcbf-f9f8-4c7b-9042-80e8f9c5fb3c
-  - f01e1aaa-3cc8-401f-97f0-b4c96a1c1b5b
-  - 381f6bfc-8082-4a96-abbd-3e882c7ebb8c
-  - 90002649-efcb-40aa-bd1d-89a7834c0562
-  - 7a50e2b0-e4b0-44bb-b978-f4b1113275ca
-  - ea4ea9c1-d3c7-44b7-b4db-c91bfbbb5de3
-  - de9ad1f3-d651-45b7-a378-247b2add3a25
-  - c722439d-7a46-4a23-9aa8-abebb99d430d
-  - aa5c8d52-fd06-4fe9-80a8-1290a9883161
-  - 594cc5dc-538f-48cf-a579-94e94d25d563
-  - 39588227-5a55-45c5-9b7b-a1500ec0db8c
-  - f9656f2e-5ce5-4ed5-a29d-4cb29ee5079e
-  - 3bcce97a-86c3-4d38-a691-7293ec2afb20
-  - 65641e4a-b537-4148-9a7c-c354906aabf2
-  - 691a503f-3c8d-4ae3-a973-9a278338a7fc
-
+- e4359aff-ea82-4ff0-860b-9ad24808cfd2   0
+- 2408cdde-ff85-4feb-96e0-2e1b44e6feda   0
+- f7e9bcbf-f9f8-4c7b-9042-80e8f9c5fb3c   0
+- f01e1aaa-3cc8-401f-97f0-b4c96a1c1b5b   0
+- 381f6bfc-8082-4a96-abbd-3e882c7ebb8c   0
+- 90002649-efcb-40aa-bd1d-89a7834c0562   0
+- 7a50e2b0-e4b0-44bb-b978-f4b1113275ca   0
+- ea4ea9c1-d3c7-44b7-b4db-c91bfbbb5de3   0
+- de9ad1f3-d651-45b7-a378-247b2add3a25   0
+- c722439d-7a46-4a23-9aa8-abebb99d430d   0
+- aa5c8d52-fd06-4fe9-80a8-1290a9883161   0
+- 594cc5dc-538f-48cf-a579-94e94d25d563   0
+- 39588227-5a55-45c5-9b7b-a1500ec0db8c   0
+- f9656f2e-5ce5-4ed5-a29d-4cb29ee5079e   0
+- 3bcce97a-86c3-4d38-a691-7293ec2afb20   0
+- 65641e4a-b537-4148-9a7c-c354906aabf2   0
+- 691a503f-3c8d-4ae3-a973-9a278338a7fc   0
 val: []
-
 test:
-  - 104113be-6d9f-40dc-bbbf-1be9f772ccac
+- 104113be-6d9f-40dc-bbbf-1be9f772ccac   0
