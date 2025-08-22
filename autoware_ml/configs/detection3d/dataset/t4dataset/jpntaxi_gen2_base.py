@@ -29,7 +29,9 @@ data_prefix = dict(
     CAM_FRONT_RIGHT="",
     CAM_BACK="",
     CAM_BACK_RIGHT="",
-    CAM_BACK_LEFT="",
+    CAM_TOP_LEFT_CENTER="",
+    CAM_TOP_RIGHT_CENTER="",
+    CAM_TRAFFIC_LIGHT_FAR="",
     sweeps="",
 )
 camera_types = {
@@ -37,8 +39,10 @@ camera_types = {
     "CAM_FRONT_RIGHT",
     "CAM_FRONT_LEFT",
     "CAM_BACK",
-    "CAM_BACK_LEFT",
     "CAM_BACK_RIGHT",
+    "CAM_TRAFFIC_LIGHT_FAR",
+    "CAM_TOP_RIGHT_CENTER",
+    "CAM_TOP_LEFT_CENTER", 
 }
 
 # class setting

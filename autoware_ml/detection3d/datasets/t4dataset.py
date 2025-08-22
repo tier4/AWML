@@ -50,13 +50,17 @@ class T4Dataset(NuScenesDataset):
         Returns:
             List[dict]: Filtered results.
         """
-        if not self.filter_cfg:
+        if not self.filter_cfg or not self.modality["use_camera"]:
             return self.data_list
+
         filtered_data_list = []
         for entry in self.data_list:
             if self.filter_cfg.get("filter_frames_with_missing_image", False) and not all(
                 [x["img_path"] and osp.exists(x["img_path"]) for x in entry["images"].values()]
             ):
+                for x in entry["images"].values():
+                    if x["img_path"] is None or not osp.exists(x["img_path"]):
+                        print(x)
                 continue
             filtered_data_list.append(entry)
 

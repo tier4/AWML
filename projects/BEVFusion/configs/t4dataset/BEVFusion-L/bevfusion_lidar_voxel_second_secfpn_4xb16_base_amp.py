@@ -5,6 +5,8 @@ _base_ = [
 
 custom_imports = dict(imports=["projects.BEVFusion.bevfusion"], allow_failed_imports=False)
 custom_imports["imports"] += _base_.custom_imports["imports"]
+custom_imports["imports"] += ["autoware_ml.detection3d.datasets.transforms"]
+custom_imports["imports"] += ["autoware_ml.hooks"]
 
 # user setting
 data_root = "data/t4dataset/"
@@ -29,7 +31,7 @@ eval_class_range = {
 }
 
 # model parameter
-input_modality = dict(use_lidar=True, use_camera=True)
+input_modality = dict(use_lidar=True, use_camera=False)
 point_load_dim = 5  # x, y, z, intensity, ring_id
 sweeps_num = 1
 max_num_points = 10
@@ -124,6 +126,7 @@ train_pipeline = [
             "traffic_cone",
         ],
     ),
+    dict(type="ObjectMinPointsFilter", min_num_points=5),
     dict(type="PointShuffle"),
     dict(
         type="Pack3DDetInputs",
@@ -343,10 +346,15 @@ optim_wrapper = dict(
     clip_grad=clip_grad,
     # Update it accordingly
     loss_scale={
-        "init_scale": 2.0**8,  # intial_scale: 256
-        "growth_interval": 2000,
+        "init_scale": 2.0**10,  # intial_scale: 1024
+        "growth_interval": 5000,
     },
 )
+# optim_wrapper = dict(
+#     type="OptimWrapper",
+#     optimizer=optimizer,
+#     clip_grad=clip_grad,
+# )
 
 # Default setting for scaling LR automatically
 #   - `enable` means enable scaling LR automatically
@@ -360,3 +368,8 @@ if train_gpu_size > 1:
     sync_bn = "torch"
 
 activation_checkpointing = ["pts_backbone"]
+
+custom_hooks = [
+    dict(type="MomentumInfoHook"),
+    dict(type="LossScaleInfoHook"),
+]
