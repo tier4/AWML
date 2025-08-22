@@ -54,13 +54,14 @@ RUN apt update && DEBIAN_FRONTEND=noninteractive apt install -y --no-install-rec
     libgtk-3-dev \
     libxkbcommon-x11-0
 RUN python3 -m pip --no-cache-dir install \
-    rerun-sdk==0.17.0
+    rerun-sdk==0.17.0 \
+		spconv-cu120==2.3.6
 
 # Install t4-devkit
 RUN python3 -m pip install git+https://github.com/tier4/t4-devkit@v0.0.7
 
 # Instakll autoware-perception-evaluation
-RUN python3 -m pip install git+https://github.com/tier4/autoware_perception_evaluation@feat/support_perception_evaluation_in_awml
+RUN python3 -m pip install git+https://github.com/tier4/autoware_perception_evaluation@feat/parallel_detection
 
 # NOTE(knzo25): this patch is needed to use numpy versions over 1.23.5 (version used in mmdet3d 1.4.0)
 # It can be safely deleted when mmdet3d updates the numpy version
@@ -82,3 +83,4 @@ COPY setup.py setup.py
 COPY README.md README.md
 
 RUN pip install --no-cache-dir -e .
+RUN python3 projects/BEVFusion/setup.py develop
