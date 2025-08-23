@@ -181,7 +181,7 @@ if __name__ == "__main__":
             images_mean = data_preprocessor.mean.to(device)
             images_std = data_preprocessor.std.to(device)
             image_backbone_container = TrtBevFusionImageBackboneContainer(patched_model, images_mean, images_std)
-            model_inputs = (imgs.unsqueeze(0).to(device).float(),)
+            model_inputs = (imgs.to(device).float(),)
             
             if args.module == "image_backbone":
                 return_value = torch.onnx.export(
@@ -208,9 +208,9 @@ if __name__ == "__main__":
             )
             if image_feats is not None:
                 model_inputs += (
-                    points.unsqueeze(0).to(device).float(),
-                    lidar2img.unsqueeze(0).to(device).float(),
-                    img_aug_matrix.unsqueeze(0).to(device).float(),
+                    points.to(device).float(),
+                    lidar2img.to(device).float(),
+                    img_aug_matrix.to(device).float(),
                     geom_feats.to(device).float(),
                     kept.to(device),
                     ranks.to(device).long(),

@@ -14,10 +14,10 @@ class TrtBevFusionImageBackboneContainer(torch.nn.Module):
     def forward(self,imgs):
 
         mod = self.mod
-        imgs = (imgs - self.images_mean) / self.images_std
+        imgs = (imgs.unsqueeze(0) - self.images_mean) / self.images_std
 
         # No lidar augmentations expected during inference.
-        return mod.get_image_backbone_features(imgs)
+        return mod.get_image_backbone_features(imgs)[0]
 
 
 class TrtBevFusionMainContainer(torch.nn.Module):
@@ -49,7 +49,7 @@ class TrtBevFusionMainContainer(torch.nn.Module):
         }
 
         if points is not None:
-            batch_inputs_dict["points"] = points
+            batch_inputs_dict["points"] = [points]
 
         if image_feats is not None:
 
@@ -57,11 +57,11 @@ class TrtBevFusionMainContainer(torch.nn.Module):
 
             batch_inputs_dict.update(
                 {
-                    "imgs": image_feats,
-                    "lidar2img": lidar2img,
+                    "imgs": image_feats.unsqueeze(0),
+                    "lidar2img": lidar2img.unsqueeze(0),
                     "cam2img": None,
                     "cam2lidar": None,
-                    "img_aug_matrix": img_aug_matrix,
+                    "img_aug_matrix": img_aug_matrix.unsqueeze(0),
                     "img_aug_matrix_inverse": None,
                     "lidar_aug_matrix": lidar_aug_matrix,
                     "lidar_aug_matrix_inverse": lidar_aug_matrix,
