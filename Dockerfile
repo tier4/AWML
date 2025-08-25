@@ -61,7 +61,7 @@ RUN python3 -m pip --no-cache-dir install \
 RUN python3 -m pip install git+https://github.com/tier4/t4-devkit@v0.0.7
 
 # Instakll autoware-perception-evaluation
-RUN python3 -m pip install git+https://github.com/tier4/autoware_perception_evaluation@feat/parallel_detection
+RUN python3 -m pip install git+https://github.com/tier4/autoware_perception_evaluation@7de3605974938d77f74eb7cbeaaba909d8b9ca90
 
 # NOTE(knzo25): this patch is needed to use numpy versions over 1.23.5 (version used in mmdet3d 1.4.0)
 # It can be safely deleted when mmdet3d updates the numpy version
@@ -81,6 +81,7 @@ COPY projects projects
 COPY tools tools
 COPY setup.py setup.py
 COPY README.md README.md
+COPY pyproject.toml pyproject.toml
 
 RUN pip install --no-cache-dir -e .
 RUN python3 projects/BEVFusion/setup.py develop
