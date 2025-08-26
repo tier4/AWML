@@ -60,7 +60,7 @@
 
   - Overall:
    - Performance is slightly better than `CenterPoint J6Gen2/2.1.1`
-  
+
 <details>
 <summary> The link of data and evaluation result </summary>
 

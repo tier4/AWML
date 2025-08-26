@@ -113,7 +113,7 @@
   - Logs (for internal)
     - [model-zoo](https://download.autoware-ml-model-zoo.tier4.jp/autoware-ml/models/centerpoint/centerpoint/t4base/v2.2.0/logs.zip)
     - [Google drive](https://drive.google.com/file/d/1aFFA9WRd2G_eqqwVI92jbKQ-daAIJqD0/view?usp=drive_link)
-  - Train time: NVIDIA H100 80GB * 4 * 50 epochs = 4 days 
+  - Train time: NVIDIA H100 80GB * 4 * 50 epochs = 4 days
   - Batch size: 4*16 = 64
 
 - Evaluation
