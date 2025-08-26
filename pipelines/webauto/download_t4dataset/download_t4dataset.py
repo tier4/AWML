@@ -29,7 +29,18 @@ def get_t4dataset_ids(config_path: str) -> list[str]:
     assert isinstance(data_splits, dict) and all(
         [isinstance(data_splits[key], list) for key in required_keys]
     ), "config file must be a type of `dict[str, list]`"
-    return sum([data_splits[key] for key in required_keys], [])
+
+    all_t4dataset_ids = set()
+    for key in required_keys:
+        for t4dataset_ids in data_splits[key]:
+            t4dataset_ids = t4dataset_ids.split("   ")
+            if len(t4dataset_ids) == 2:
+                all_t4dataset_ids.add((t4dataset_ids[0], t4dataset_ids[1]))  # (id, version)
+            elif len(t4dataset_ids) == 1:
+                all_t4dataset_ids.add((t4dataset_ids[0], -1))  # -1 indicates no version specified
+            else:
+                raise ValueError(f"Invalid T4Dataset format in {t4dataset_ids}. Use format 'id   version' or 'id'.")
+    return list(all_t4dataset_ids)
 
 
 def divide_file_path(full_path: str) -> Union[str, str, str, str, str]:
@@ -86,6 +97,7 @@ def pull_t4dataset(
     webauto_path: str,
     project_id: str,
     t4dataset_id: str,
+    t4dataset_version_id: int,
     output_dir: str,
 ) -> None:
     """
@@ -95,15 +107,17 @@ def pull_t4dataset(
         webauto_path (str): The path to WebAutoCLI.
         project_id (str): The project id of webauto command.
         t4dataset_id (str): The t4dataset id of webauto command.
+        t4dataset_version_id (int): The version id of T4dataset.
         output_dir (str): The output directory path.
     Return: None
     """
 
-    download_command = "{} data annotation-dataset pull --project-id {} --annotation-dataset-id {} --asset-dir {}"
+    download_command = "{} data annotation-dataset pull --project-id {} --annotation-dataset-id {} --annotation-dataset-version-id {} --asset-dir {}"
     download_command_ = download_command.format(
         webauto_path,
         project_id,
         t4dataset_id,
+        t4dataset_version_id,
         output_dir,
     )
     print(download_command_)
@@ -134,9 +148,11 @@ def download_t4dataset(
     webauto_path: str,
     project_id: str,
     t4dataset_id: str,
+    t4dataset_version_id: int,
     output_dir: str,
     temp_dir: str,
     delete_rosbag: bool,
+    download_latest: bool = False,
 ) -> None:
     """
     Download T4dataset.
@@ -146,18 +162,21 @@ def download_t4dataset(
         webauto_path (str): The path to WebAutoCLI.
         project_id (str): The project id of webauto command.
         t4dataset_id (str): The t4dataset id of webauto command.
+        t4dataset_version_id (int): The version id of T4dataset.
         output_dir (str): The output directory path.
         temp_dir (str): The temp directory to download T4dataset.
         delete_rosbag: (bool): If the this value is true, the rosbag file is deleted.
+        download_latest (bool): If true, download the latest version of T4dataset.
     Return: None
     """
 
     # check the latest version of T4dataset
-    t4dataset_version_id: int = check_t4dataset_latest_version(
-        webauto_path,
-        project_id,
-        t4dataset_id,
-    )
+    if download_latest or t4dataset_version_id == -1:
+        t4dataset_version_id: int = check_t4dataset_latest_version(
+            webauto_path,
+            project_id,
+            t4dataset_id,
+        )
 
     print(f"\n***** Start downloading T4Dataset ID:{t4dataset_id} with version:{t4dataset_version_id}")
 
@@ -181,6 +200,7 @@ def download_t4dataset(
         webauto_path,
         project_id,
         t4dataset_id,
+        t4dataset_version_id,
         temp_dir,
     )
 
@@ -231,6 +251,11 @@ def parse_args():
         help="The path to WebAutoCLI binary file for executing the CLI command",
         default="webauto",
     )
+    parser.add_argument(
+        "--download-latest",
+        action="store_true",
+        help="Download the latest version of T4dataset",
+    )
     args = parser.parse_args()
     return args
 
@@ -245,16 +270,18 @@ def main():
 
     t4dataset_ids = get_t4dataset_ids(config_path)
 
-    for t4dataset_id in t4dataset_ids:
+    for t4dataset_id, t4dataset_version_id in t4dataset_ids:
         with TemporaryDirectory() as temp_dir:
             download_t4dataset(
                 config_path,
                 args.webauto_path,
                 args.project_id,
                 t4dataset_id,
+                t4dataset_version_id,
                 output_dir,
                 temp_dir,
                 args.delete_rosbag,
+                args.download_latest,
             )
 
 

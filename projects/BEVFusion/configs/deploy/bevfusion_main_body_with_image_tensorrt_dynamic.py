@@ -15,9 +15,10 @@ backend_config = dict(
     model_inputs=[
         dict(
             input_shapes=dict(
-                voxels=dict(min_shape=[1, 5], opt_shape=[64000, 5], max_shape=[256000, 5]),
-                coors=dict(min_shape=[1, 4], opt_shape=[64000, 4], max_shape=[256000, 4]),
+                voxels=dict(min_shape=[1, 10, 4], opt_shape=[64000, 10, 4], max_shape=[256000, 10, 4]),
+                coors=dict(min_shape=[1, 3], opt_shape=[64000, 3], max_shape=[256000, 3]),
                 num_points_per_voxel=dict(min_shape=[1], opt_shape=[64000], max_shape=[256000]),
+                image_feats=dict(min_shape=[80, 180, 180], opt_shape=[80, 180, 180], max_shape=[80, 180, 180]),
             )
         )
     ],
@@ -28,8 +29,8 @@ onnx_config = dict(
     export_params=True,
     keep_initializers_as_inputs=False,
     opset_version=17,
-    save_file="end2end.onnx",
-    input_names=["voxels", "coors", "num_points_per_voxel"],
+    save_file="main_body.onnx",
+    input_names=["voxels", "coors", "num_points_per_voxel", "image_feats"],
     output_names=["bbox_pred", "score", "label_pred"],
     dynamic_axes={
         "voxels": {
