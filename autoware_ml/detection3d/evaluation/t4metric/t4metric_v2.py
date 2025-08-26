@@ -77,6 +77,7 @@ class T4MetricV2(BaseMetric):
         self,
         data_root: str,
         ann_file: str,
+        dataset_name: str,
         prefix: Optional[str] = None,
         collect_device: str = "cpu",
         class_names: List[str] = None,
@@ -89,6 +90,7 @@ class T4MetricV2(BaseMetric):
     ) -> None:
 
         self.default_prefix = "T4MetricV2"
+        self.dataset_name = dataset_name
         super(T4MetricV2, self).__init__(collect_device=collect_device, prefix=prefix)
         self.ann_file = ann_file
         self.data_root = data_root

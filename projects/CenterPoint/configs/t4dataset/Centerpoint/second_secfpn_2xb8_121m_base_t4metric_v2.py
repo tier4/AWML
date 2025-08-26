@@ -31,7 +31,7 @@ lidar_sweep_dims = [0, 1, 2, 4]
 
 # user setting
 data_root = "data/t4dataset/"
-info_directory_path = "info/user_name/"
+info_directory_path = "info/kokseang_2_2/"
 train_gpu_size = 2
 train_batch_size = 8
 test_batch_size = 2
