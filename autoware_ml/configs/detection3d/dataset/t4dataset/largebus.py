@@ -147,6 +147,7 @@ camera_panels = [
     "data/CAM_BACK_RIGHT",
 ]
 
+# Add filter attributes
 filter_attributes = [
     ("vehicle.bicycle", "vehicle_state.parked"),
     ("vehicle.bicycle", "cycle_state.without_rider"),
