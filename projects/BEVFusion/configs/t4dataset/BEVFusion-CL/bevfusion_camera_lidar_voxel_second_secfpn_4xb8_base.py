@@ -424,4 +424,3 @@ auto_scale_lr = dict(enable=True, base_batch_size=train_gpu_size * train_batch_s
 # Only set if the number of train_gpu_size more than 1
 if train_gpu_size > 1:
     sync_bn = "torch"
-work_dir= "/workspace/work_dirs/bevfusion_camera_lidar_voxel_second_secfpn_4xb8_base_deploy"
