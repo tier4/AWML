@@ -41,14 +41,14 @@ eval_class_range = {
 
 # user setting
 data_root = "data/t4dataset/"
-info_directory_path = "info/kokseang_2_2/"
+info_directory_path = "info/user_name/"
 train_gpu_size = 4
 train_batch_size = 16
 test_batch_size = 2
 num_workers = 32
 val_interval = 1
 max_epochs = 20
-work_dir = "work_dirs/centerpoint_2_2/" + _base_.dataset_type + "/second_secfpn_4xb16_121m_jpntaxi_gen2_base/"
+work_dir = "work_dirs/centerpoint/" + _base_.dataset_type + "/second_secfpn_4xb16_121m_jpntaxi_gen2_base/"
 
 train_pipeline = [
     dict(
@@ -301,7 +301,7 @@ model = dict(
 
 randomness = dict(seed=0, diff_rank_seed=False, deterministic=True)
 
-lr = 1e-4
+lr = 3e-4
 param_scheduler = [
     # learning rate scheduler
     # During the first (max_epochs * 0.3) epochs, learning rate increases from 0 to lr * 10
@@ -318,7 +318,7 @@ param_scheduler = [
     ),
     dict(
         type="CosineAnnealingLR",
-        T_max=12,
+        T_max=22,
         eta_min=lr * 1e-4,
         begin=8,
         end=max_epochs,
@@ -339,7 +339,7 @@ param_scheduler = [
     ),
     dict(
         type="CosineAnnealingMomentum",
-        T_max=12,
+        T_max=22,
         eta_min=1,
         begin=8,
         end=max_epochs,
@@ -386,13 +386,13 @@ vis_backends = [
     dict(type="LocalVisBackend"),
     dict(type="TensorboardVisBackend"),
     # Update info accordingly
-    # dict(
-    #     type="SafeMLflowVisBackend",
-    #     exp_name="(UserName) CenterPoint",
-    #     run_name="CenterPoint base",
-    #     tracking_uri="http://localhost:5000",
-    #     artifact_suffix=(),
-    # ),
+    dict(
+        type="SafeMLflowVisBackend",
+        exp_name="(UserName) CenterPoint",
+        run_name="CenterPoint base",
+        tracking_uri="http://localhost:5000",
+        artifact_suffix=(),
+    ),
 ]
 visualizer = dict(type="Det3DLocalVisualizer", vis_backends=vis_backends, name="visualizer")
 
@@ -408,4 +408,4 @@ custom_hooks = [
 ]
 
 # Update the load_from path accordingly
-load_from = "work_dirs/centerpoint_2_2/T4Dataset/second_secfpn_4xb16_121m_base_amp/epoch_49.pth"
+load_from = "<best_checkpoint>"
