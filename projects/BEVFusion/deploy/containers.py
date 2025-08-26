@@ -14,7 +14,7 @@ class TrtBevFusionImageBackboneContainer(torch.nn.Module):
     def forward(self,imgs):
 
         mod = self.mod
-        imgs = (imgs.unsqueeze(0) - self.images_mean) / self.images_std
+        imgs = (imgs.float().unsqueeze(0) - self.images_mean) / self.images_std
 
         # No lidar augmentations expected during inference.
         return mod.get_image_backbone_features(imgs)[0]

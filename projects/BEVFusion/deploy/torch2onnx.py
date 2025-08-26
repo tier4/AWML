@@ -181,7 +181,7 @@ if __name__ == "__main__":
             images_mean = data_preprocessor.mean.to(device)
             images_std = data_preprocessor.std.to(device)
             image_backbone_container = TrtBevFusionImageBackboneContainer(patched_model, images_mean, images_std)
-            model_inputs = (imgs.to(device).float(),)
+            model_inputs = (imgs.to(device=device,dtype=torch.uint8),)
             
             if args.module == "image_backbone":
                 return_value = torch.onnx.export(
