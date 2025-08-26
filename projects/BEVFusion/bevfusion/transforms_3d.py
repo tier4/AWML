@@ -26,9 +26,7 @@ class ImageAug3D(BaseTransform):
         if self.is_train:
             if isinstance(self.resize_lim, (int, float)):
                 aspect_ratio = min(fH / H, fW / W)
-                resize = np.random.uniform(
-                    aspect_ratio - self.resize_lim, aspect_ratio + self.resize_lim
-                )
+                resize = np.random.uniform(aspect_ratio - self.resize_lim, aspect_ratio + self.resize_lim)
             else:
                 resize = np.random.uniform(*self.resize_lim)
 
@@ -59,7 +57,7 @@ class ImageAug3D(BaseTransform):
         img = img.crop(crop)
         if flip:
             img = img.transpose(method=Image.FLIP_LEFT_RIGHT)
-        img = img.rotate(rotate,resample=Image.BICUBIC)  # Default rotation introduces artifacts.
+        img = img.rotate(rotate, resample=Image.BICUBIC)  # Default rotation introduces artifacts.
 
         # post-homography transformation
         rotation *= resize
