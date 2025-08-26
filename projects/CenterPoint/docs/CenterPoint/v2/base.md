@@ -14,7 +14,7 @@
 | eval range: 120m         | mAP  | car <br> (152,572) | truck <br> (24,172) | bus <br> (9,839) | bicycle <br> (5,317) | pedestrian <br> (50,699) |
 | -------------------------| ---- | ----------------- | ------------------- | ---------------- | -------------------- | ------------------------ |
 | CenterPoint base/2.2     | 66.00 | 82.60            | 55.50               | 71.90         | 56.40                 | 66.50                   |
-| CenterPoint base/2.1     | 67.85 | 82.34            | 55.15               | 78.10         | 57.36                 | 66.26                   |
+| CenterPoint base/2.1     | 65.55 | 82.51            | 53.12               | 68.95         | 56.32                 | 66.81                   |
 
 ### Deprecated results
 - [Internal Link](https://docs.google.com/spreadsheets/d/1jkadazpbA2BUYEUdVV8Rpe54-snH1cbdJbbHsuK04-U/edit?usp=sharing)
