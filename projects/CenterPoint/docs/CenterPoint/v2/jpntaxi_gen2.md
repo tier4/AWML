@@ -39,7 +39,7 @@
 	- Include intensity as an extra feature
 
 - Overall:
-  - Performance is worse than `CenterPoint base/2.2.0`, likely the test set is not diverse and it's overffited to the training set
+  - Performance is worse than `CenterPoint base/2.2.0`, likely the training and test set are not diverse, and it's overffited to the training set
 
 
 <details>
