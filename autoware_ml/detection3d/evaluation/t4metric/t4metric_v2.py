@@ -1,3 +1,6 @@
+from concurrent.futures import ProcessPoolExecutor
+from dataclasses import dataclass
+from itertools import islice
 import json
 import pickle
 import time
@@ -10,6 +13,7 @@ from mmdet3d.registry import METRICS
 from mmdet3d.structures import LiDARInstance3DBoxes
 from mmengine.evaluator import BaseMetric
 from mmengine.logging import MMLogger
+from perception_eval.common import ObjectType
 from perception_eval.common.dataset import FrameGroundTruth
 from perception_eval.common.label import AutowareLabel, Label, LabelType
 from perception_eval.common.object import DynamicObject
@@ -28,6 +32,15 @@ from pyquaternion import Quaternion
 
 __all__ = ["T4MetricV2"]
 _UNKNOWN = "unknown"
+
+@dataclass(frozen=True)
+class PerceptionFrameProcessingData:
+
+  scene_id: str
+  sample_id: str
+  unix_time: float
+  ground_truth_objects: FrameGroundTruth
+  estimated_objects: List[ObjectType]
 
 
 @METRICS.register_module()
@@ -78,6 +91,7 @@ class T4MetricV2(BaseMetric):
         data_root: str,
         ann_file: str,
         dataset_name: str,
+        output_dir: Optional[Union[Path, str]],
         prefix: Optional[str] = None,
         collect_device: str = "cpu",
         class_names: List[str] = None,
@@ -86,7 +100,6 @@ class T4MetricV2(BaseMetric):
         critical_object_filter_config: Optional[Dict[str, Any]] = None,
         frame_pass_fail_config: Optional[Dict[str, Any]] = None,
         results_pickle_path: Optional[Union[Path, str]] = None,
-        output_dir: Optional[Union[Path, str]] = None,
     ) -> None:
 
         self.default_prefix = "T4MetricV2"
@@ -106,10 +119,6 @@ class T4MetricV2(BaseMetric):
             raise ValueError(f"results_pickle_path must end with '.pkl', got: {self.results_pickle_path}")
 
         self.results_pickle_exists = True if self.results_pickle_path and self.results_pickle_path.exists() else False
-
-        # Set output directory for metrics files
-        self.output_dir = Path(output_dir) if output_dir else Path.cwd()
-        self.output_dir.mkdir(parents=True, exist_ok=True)
 
         self.target_labels = [AutowareLabel[label.upper()] for label in self.class_names]
 
@@ -131,6 +140,13 @@ class T4MetricV2(BaseMetric):
         self.frame_results_with_info = []
 
         self.logger = MMLogger.get_current_instance()
+        
+        # Set output directory for metrics files
+        if output_dir is not None:
+            self.logger_file_path = Path(self.logger.log_file).parent
+            self.output_dir = self.logger_file_path / output_dir
+            self.output_dir.mkdir(parents=True, exist_ok=True)
+            self.logger.info(f"Metrics output directory set to: {self.output_dir}")
 
     # override of BaseMetric.process
     def process(self, data_batch: dict, data_samples: Sequence[dict]) -> None:
@@ -198,7 +214,8 @@ class T4MetricV2(BaseMetric):
             final_metric_dict = self._process_metrics_for_aggregation(final_metric_score)
 
             # Write output files
-            self._write_output_files(scenes, final_metric_dict)
+            if self.output_dir is not None:
+              self._write_output_files(scenes, final_metric_dict)
 
             return final_metric_dict
 
@@ -258,6 +275,34 @@ class T4MetricV2(BaseMetric):
             evaluation_config=self.perception_evaluator_configs, load_ground_truth=False
         )
 
+    def _batch_scenes(self, scenes: dict, scene_batch_size: int) -> List[PerceptionFrameProcessingData]:
+      """
+      Batch scenes and group them for parallel processing based on the batch size.
+      """
+      batch = []
+      for scene_batch_id, (scene_id, samples) in enumerate(scenes.items()):
+        for sample_id, perception_frame in samples.items():
+          batch.append(
+            (
+              PerceptionFrameProcessingData(
+                scene_id,
+                sample_id,
+                time.time(),
+                perception_frame.ground_truth_objects,
+                perception_frame.estimated_objects,
+              )
+            )
+          )
+        
+
+        if (scene_batch_id+1) % scene_batch_size == 0:
+          yield batch
+          batch = []
+
+      # Any remaining batches
+      if len(batch):
+        yield batch
+
     def _process_all_frames(self, evaluator: PerceptionEvaluationManager, scenes: dict) -> None:
         """Process all frames in all scenes and collect frame results.
 
@@ -265,22 +310,73 @@ class T4MetricV2(BaseMetric):
             evaluator (PerceptionEvaluationManager): The evaluator instance.
             scenes (dict): Dictionary of scenes and their samples.
         """
-        for scene_id, samples in scenes.items():
-            for sample_id, perception_frame in samples.items():
-                try:
-                    frame_result: PerceptionFrameResult = evaluator.add_frame_result(
-                        unix_time=time.time(),
-                        ground_truth_now_frame=perception_frame.ground_truth_objects,
-                        estimated_objects=perception_frame.estimated_objects,
-                        critical_object_filter_config=self.critical_object_filter_config,
-                        frame_pass_fail_config=self.frame_pass_fail_config,
-                    )
+        # Multiprocessing to speed up frame processing
+        with ProcessPoolExecutor(max_workers=64) as executor:
+          for scene_batches in self._batch_scenes(scenes, scene_batch_size=8):
+            future_args = [(
+              scene_batch.unix_time,
+              scene_batch.ground_truth_objects,
+              scene_batch.estimated_objects, 
+              self.critical_object_filter_config,
+              self.frame_pass_fail_config,
+            ) for scene_batch in scene_batches]
 
-                    self.frame_results_with_info.append(
-                        {"scene_id": scene_id, "sample_id": sample_id, "frame_result": frame_result}
-                    )
-                except Exception as e:
-                    self.logger.warning(f"Failed to process frame {scene_id}/{sample_id}: {e}")
+            # Proprocessing all frames in the batch
+            future_perception_frame_results = list(executor.map(
+              evaluator.preprocess_object_results, future_args
+            ))
+
+            future_perceptiopn_frame_evaluation_args = [
+              (future_perception_frame_results[0], None)
+            ]
+
+            # Find the mask where an scene id is different from the previous frame, and it's the first frame of the scene
+            first_sample_masks = [i == 0 or scene_batches[i].scene_id != scene_batches[i-1].scene_id for i in range(len(scene_batches))]
+
+            # Group perception frame results with pair
+            future_perceptiopn_frame_evaluation_args += [
+              (future_perception_frame_results[index], future_perception_frame_results[index-1]) 
+              if not first_sample_masks[index] else (future_perception_frame_results[index], None) 
+              for index in enumerate(range(1, len(future_perception_frame_results)))
+            ]
+
+            # Run evaluation for all frames in the batch
+            future_perception_frame_results = list(executor.map(
+              evaluator.evaluate_frame, future_perceptiopn_frame_evaluation_args
+            ))
+
+            self.frame_results_with_info += [
+              {
+                "scene_id": scene_batch.scene_id,
+                "sample_id": scene_batch.sample_id,
+                "frame_result": perception_frame_result,
+              }
+              for scene_batch, perception_frame_result in zip(scene_batches, future_perception_frame_results)
+            ]
+
+
+            
+        # Multiprocessing to speed up frame processing
+        # with ProcessPoolExecutor(max_workers=64) as executor:
+        # 	# 1. Preprocessing all frames
+        # 	perception_frame_results: List[PerceptionFrameResult] = []
+
+        # for scene_id, samples in scenes.items():
+        #     for sample_id, perception_frame in samples.items():
+        #         try:
+        #             frame_result: PerceptionFrameResult = evaluator.add_frame_result(
+        #                 unix_time=time.time(),
+        #                 ground_truth_now_frame=perception_frame.ground_truth_objects,
+        #                 estimated_objects=perception_frame.estimated_objects,
+        #                 critical_object_filter_config=self.critical_object_filter_config,
+        #                 frame_pass_fail_config=self.frame_pass_fail_config,
+        #             )
+
+        #             self.frame_results_with_info.append(
+        #                 {"scene_id": scene_id, "sample_id": sample_id, "frame_result": frame_result}
+        #             )
+        #         except Exception as e:
+        #             self.logger.warning(f"Failed to process frame {scene_id}/{sample_id}: {e}")
 
     def _write_output_files(self, scenes: dict, final_metric_dict: dict) -> None:
         """Write scene metrics and aggregated metrics to files.
