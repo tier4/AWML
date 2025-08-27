@@ -76,7 +76,6 @@ model = dict(
             pc_range=point_cloud_range[0:2],
             voxel_size=voxel_size[0:2],
         ),
-        # loss_heatmap=dict(type="mmdet.AmpGaussianFocalLoss", reduction="mean", loss_weight=1.0),
 
     ),
     # Lidar pipeline
