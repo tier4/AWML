@@ -233,26 +233,29 @@ frame_pass_fail_config = dict(
 val_evaluator = dict(
     type="T4MetricV2",
     data_root=data_root,
-		output_dir=None,
+		output_dir="validation",
     ann_file=data_root + info_directory_path + _base_.info_val_file_name,
     class_names={{_base_.class_names}},
     name_mapping={{_base_.name_mapping}},
     perception_evaluator_configs=perception_evaluator_configs,
     critical_object_filter_config=critical_object_filter_config,
     frame_pass_fail_config=frame_pass_fail_config,
+		num_workers=64,
+		write_metric_summary=False
 )
 
 test_evaluator = dict(
     type="T4MetricV2",
     data_root=data_root,
-		output_dir="evaluation",
+		output_dir="testing",
     ann_file=data_root + info_directory_path + _base_.info_test_file_name,
     class_names={{_base_.class_names}},
     name_mapping={{_base_.name_mapping}},
     perception_evaluator_configs=perception_evaluator_configs,
     critical_object_filter_config=critical_object_filter_config,
     frame_pass_fail_config=frame_pass_fail_config,
-    results_pickle_path=f"{work_dir}/evaluation/pickles/results.pkl",
+		num_workers=64,
+		write_metric_summary=True
 )
 
 model = dict(
