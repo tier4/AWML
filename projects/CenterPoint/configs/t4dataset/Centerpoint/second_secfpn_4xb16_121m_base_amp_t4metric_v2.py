@@ -240,7 +240,6 @@ val_evaluator = dict(
     perception_evaluator_configs=perception_evaluator_configs,
     critical_object_filter_config=critical_object_filter_config,
     frame_pass_fail_config=frame_pass_fail_config,
-    num_workers=64,
     write_metric_summary=False,
 )
 
@@ -254,7 +253,6 @@ test_evaluator = dict(
     perception_evaluator_configs=perception_evaluator_configs,
     critical_object_filter_config=critical_object_filter_config,
     frame_pass_fail_config=frame_pass_fail_config,
-    num_workers=64,
     write_metric_summary=True,
 )
 
