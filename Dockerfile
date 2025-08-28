@@ -54,10 +54,11 @@ RUN apt update && DEBIAN_FRONTEND=noninteractive apt install -y --no-install-rec
     libgtk-3-dev \
     libxkbcommon-x11-0
 RUN python3 -m pip --no-cache-dir install \
-    rerun-sdk==0.17.0
+    rerun-sdk==0.17.0 \
+		pyinstrument==5.1.1
 
 # Install t4-devkit
-RUN python3 -m pip install git+https://github.com/tier4/t4-devkit@v0.0.7
+RUN python3 -m pip install git+https://github.com/tier4/t4-devkit@v0.2.1
 
 # NOTE(knzo25): this patch is needed to use numpy versions over 1.23.5 (version used in mmdet3d 1.4.0)
 # It can be safely deleted when mmdet3d updates the numpy version
