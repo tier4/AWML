@@ -285,9 +285,13 @@ class ResizeCropFlipRotImage:
     def _sample_augmentation(self, H, W):
         fH, fW = self.data_aug_conf["final_dim"]
         if self.training:
-            # resize = max(fH / H, fW / W)
-            # resize = min(np.random.uniform(resize+self.data_aug_conf["resize_lim"][0], resize+self.data_aug_conf["resize_lim"][1]),1)
-            resize = np.random.uniform(*self.data_aug_conf["resize_lim"])
+            if isinstance(self.data_aug_conf["resize_lim"], (int, float)):
+                aspect_ratio = max(fH / H, fW / W)
+                resize = np.random.uniform(
+                    aspect_ratio - self.data_aug_conf["resize_lim"], aspect_ratio + self.data_aug_conf["resize_lim"]
+                )
+            else:
+                resize = np.random.uniform(*self.data_aug_conf["resize_lim"])
 
             resize_dims = (int(W * resize), int(H * resize))
             newW, newH = resize_dims

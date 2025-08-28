@@ -85,7 +85,6 @@ class Petr3D(MVXTwoStageDetector):
         self.position_level = position_level
         self.aux_2d_only = aux_2d_only
         self.test_flag = False
-        self.previous_order_idx = None
 
     def extract_img_feat(self, img, len_queue=1):
         """Extract features of images."""
@@ -241,17 +240,6 @@ class Petr3D(MVXTwoStageDetector):
         augmentations.
         """
         self.stack_tensors(data)
-
-        # For debugging if the ordering of data is correct
-        prev_sample = data["prev_exists"].cpu().reshape(-1)
-        order_idx = torch.tensor(data["img_metas"][0]["order_index"])
-        if self.previous_order_idx is not None:
-            assert (
-                prev_sample * order_idx == (self.previous_order_idx + 1) * prev_sample
-            ).all(), (
-                f"prev_sample: {prev_sample}, order_idx: {order_idx}, previous_order_idx: {self.previous_order_idx}"
-            )
-        self.previous_order_idx = order_idx
         if mode == "loss":
             return self.forward_train(**data)
         elif mode == "predict":

@@ -293,7 +293,6 @@ class StreamPETRNuScenesDataset(T4Dataset):
                     img_metas=dict(
                         scene_token=None,
                         sample_idx=info["pre_sample_idx"],
-                        order_index=info["pre_sample_idx"],
                         sample_token=info["token"],
                         filenames=image_paths,
                     ),
