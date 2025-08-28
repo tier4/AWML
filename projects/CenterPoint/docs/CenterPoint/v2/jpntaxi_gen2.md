@@ -1,4 +1,4 @@
-# Deployed model for CenterPoint J6Gen2/1.X
+# Deployed model for CenterPoint JPNTAXI-GEN2/2.X
 ## Summary
 
 ### Overview
