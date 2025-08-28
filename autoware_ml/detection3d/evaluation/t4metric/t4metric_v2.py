@@ -28,6 +28,7 @@ from pyquaternion import Quaternion
 
 __all__ = ["T4MetricV2"]
 _UNKNOWN = "unknown"
+DEFAULT_T4METRIC_FILE_NAME = "t4metric_v2_results.pkl"
 
 
 @METRICS.register_module()
@@ -38,6 +39,9 @@ class T4MetricV2(BaseMetric):
             Path of dataset root.
         ann_file (str):
             Path of annotation file.
+        dataset_name (str): Dataset running metrics.
+        output_dir (str): Directory to save the evaluation results. Note that it's working_directory/<output_dir>.
+        write_metric_summary (bool): Whether to write metric summary to json files.
         prefix (str, optional):
             The prefix that will be added in the metric
             names to disambiguate homonymous metrics of different evaluators.
@@ -68,9 +72,6 @@ class T4MetricV2(BaseMetric):
               ground truth from the pickle file, and runs `compute_metrics()`.
 
             Defaults to None.
-        output_dir (Optional[Union[Path, str]]):
-            Path to the output directory for metrics files.
-            Defaults to None.
     """
 
     def __init__(
@@ -78,6 +79,8 @@ class T4MetricV2(BaseMetric):
         data_root: str,
         ann_file: str,
         dataset_name: str,
+        output_dir: str,
+        write_metric_summary: bool,
         prefix: Optional[str] = None,
         collect_device: str = "cpu",
         class_names: List[str] = None,
@@ -86,7 +89,6 @@ class T4MetricV2(BaseMetric):
         critical_object_filter_config: Optional[Dict[str, Any]] = None,
         frame_pass_fail_config: Optional[Dict[str, Any]] = None,
         results_pickle_path: Optional[Union[Path, str]] = None,
-        output_dir: Optional[Union[Path, str]] = None,
     ) -> None:
 
         self.default_prefix = "T4MetricV2"
@@ -101,36 +103,39 @@ class T4MetricV2(BaseMetric):
         if name_mapping is not None:
             self.class_names = [self.name_mapping.get(name, name) for name in self.class_names]
 
-        self.results_pickle_path: Optional[Path] = Path(results_pickle_path) if results_pickle_path else None
-        if self.results_pickle_path is not None and self.results_pickle_path.suffix != ".pkl":
-            raise ValueError(f"results_pickle_path must end with '.pkl', got: {self.results_pickle_path}")
-
-        self.results_pickle_exists = True if self.results_pickle_path and self.results_pickle_path.exists() else False
-
-        # Set output directory for metrics files
-        self.output_dir = Path(output_dir) if output_dir else Path.cwd()
-        self.output_dir.mkdir(parents=True, exist_ok=True)
-
         self.target_labels = [AutowareLabel[label.upper()] for label in self.class_names]
-
         self.perception_evaluator_configs = PerceptionEvaluationConfig(**perception_evaluator_configs)
-
         self.critical_object_filter_config = CriticalObjectFilterConfig(
             evaluator_config=self.perception_evaluator_configs, **critical_object_filter_config
         )
         self.frame_pass_fail_config = PerceptionPassFailConfig(
             evaluator_config=self.perception_evaluator_configs, **frame_pass_fail_config
         )
-
         self.metrics_config = MetricsScoreConfig(
             self.perception_evaluator_configs.evaluation_task, target_labels=self.target_labels
         )
 
         self.scene_id_to_index_map: Dict[str, int] = {}  # scene_id to index map in self.results
-
         self.frame_results_with_info = []
 
         self.logger = MMLogger.get_current_instance()
+        self.logger_file_path = Path(self.logger.log_file).parent
+
+        # Set output directory for metrics files
+        assert output_dir, f"output_dir must be provided, got: {output_dir}"
+        self.output_dir = self.logger_file_path / output_dir
+        self.output_dir.mkdir(parents=True, exist_ok=True)
+        self.logger.info(f"Metrics output directory set to: {self.output_dir}")
+
+        self.results_pickle_path: Optional[Path] = Path(results_pickle_path) if results_pickle_path else None
+        if self.results_pickle_path is None:
+            self.results_pickle_path = self.output_dir / DEFAULT_T4METRIC_FILE_NAME
+
+        if self.results_pickle_path.suffix != ".pkl":
+            raise ValueError(f"results_pickle_path must end with '.pkl', got: {self.results_pickle_path}")
+
+        self.results_pickle_exists = True if self.results_pickle_path and self.results_pickle_path.exists() else False
+        self.write_metric_summary = write_metric_summary
 
     # override of BaseMetric.process
     def process(self, data_batch: dict, data_samples: Sequence[dict]) -> None:
@@ -198,7 +203,8 @@ class T4MetricV2(BaseMetric):
             final_metric_dict = self._process_metrics_for_aggregation(final_metric_score)
 
             # Write output files
-            self._write_output_files(scenes, final_metric_dict)
+            if self.write_metric_summary:
+                self._write_output_files(scenes, final_metric_dict)
 
             return final_metric_dict
 
