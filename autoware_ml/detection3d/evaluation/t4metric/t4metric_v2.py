@@ -95,6 +95,7 @@ class T4MetricV2(BaseMetric):
         dataset_name: str,
         output_dir: str,
         write_metric_summary: bool,
+        scene_batch_size: int = 128,
         num_workers: int = 8,
         prefix: Optional[str] = None,
         collect_device: str = "cpu",
@@ -111,7 +112,8 @@ class T4MetricV2(BaseMetric):
         super(T4MetricV2, self).__init__(collect_device=collect_device, prefix=prefix)
         self.ann_file = ann_file
         self.data_root = data_root
-        self.num_workers = num_workers 
+        self.num_workers = num_workers
+        self.scene_batch_size = scene_batch_size 
 
         self.class_names = class_names
         self.name_mapping = name_mapping
@@ -322,11 +324,10 @@ class T4MetricV2(BaseMetric):
             scenes (dict): Dictionary of scenes and their samples.
       """
       # Multiprocessing to speed up frame processing
-      self.logger.info(f"Multiprocessing with {self.num_workers} workers...")
+      self.logger.info(f"Multiprocessing with {self.num_workers} workers and batch size: {self.scene_batch_size}...")
       with ProcessPoolExecutor(max_workers=self.num_workers) as executor:
-        for batch_index, scene_batches in enumerate(self._batch_scenes(scenes, scene_batch_size=self.num_workers)):
+        for batch_index, scene_batches in enumerate(self._batch_scenes(scenes, scene_batch_size=self.scene_batch_size)):
           self.logger.info(f"Pre-processing batch: {batch_index+1} with frames: {len(scene_batches)}")
-          # self.logger.info(f"Processing batch: {batch_index}")
           future_args = [(
             scene_batch.unix_time,
             scene_batch.ground_truth_objects,
@@ -337,7 +338,7 @@ class T4MetricV2(BaseMetric):
 
           # Flatten each args to a list 
           unix_time, ground_truth_objects, estimated_objects, critical_object_filter_config, frame_pass_fail_config = zip(*future_args)
-          # Proprocessing all frames in the batch
+          # Preprocessing all frames in the batch
           future_perception_frame_results = list(executor.map(
             evaluator.preprocess_object_results, unix_time, ground_truth_objects, estimated_objects, critical_object_filter_config, frame_pass_fail_config
           ))
