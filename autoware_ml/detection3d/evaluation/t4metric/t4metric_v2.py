@@ -328,6 +328,9 @@ class T4MetricV2(BaseMetric):
       with ProcessPoolExecutor(max_workers=self.num_workers) as executor:
         for batch_index, scene_batches in enumerate(self._batch_scenes(scenes, scene_batch_size=self.scene_batch_size)):
           self.logger.info(f"Pre-processing batch: {batch_index+1} with frames: {len(scene_batches)}")
+          self.logger.info(
+            f"{[(scene_batch.scene_id, scene_batch.sample_id) for scene_batch in scene_batches[:30]]}"
+          )
           future_args = [(
             scene_batch.unix_time,
             scene_batch.ground_truth_objects,
