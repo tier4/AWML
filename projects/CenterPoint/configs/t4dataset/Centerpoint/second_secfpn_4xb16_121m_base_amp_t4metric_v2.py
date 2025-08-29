@@ -42,7 +42,7 @@ eval_class_range = {
 
 # user setting
 data_root = "data/t4dataset/"
-info_directory_path = "info/kokseang_2_2/"
+info_directory_path = "info/user_name/"
 train_gpu_size = 4
 train_batch_size = 16
 test_batch_size = 2
@@ -107,8 +107,9 @@ test_pipeline = [
         backend_args=backend_args,
     ),
     dict(type="PointsRangeFilter", point_cloud_range=point_cloud_range),
-    dict(type="Pack3DDetInputs", 
-        keys=["points", "gt_bboxes_3d", "gt_labels_3d"], 
+    dict(
+        type="Pack3DDetInputs",
+        keys=["points", "gt_bboxes_3d", "gt_labels_3d"],
         meta_keys=(
             "timestamp",
             "lidar2img",
@@ -121,8 +122,7 @@ test_pipeline = [
             "cam2global",
             "lidar2cam",
             "ego2global",
-        ), 
-    
+        ),
     ),
 ]
 
@@ -233,31 +233,31 @@ frame_pass_fail_config = dict(
 val_evaluator = dict(
     type="T4MetricV2",
     data_root=data_root,
-	output_dir="validation",
+    output_dir="validation",
     ann_file=data_root + info_directory_path + _base_.info_val_file_name,
     class_names={{_base_.class_names}},
     name_mapping={{_base_.name_mapping}},
     perception_evaluator_configs=perception_evaluator_configs,
     critical_object_filter_config=critical_object_filter_config,
     frame_pass_fail_config=frame_pass_fail_config,
-	num_workers=128,
+    num_workers=128,
     scene_batch_size=256,
-	write_metric_summary=False
+    write_metric_summary=False,
 )
 
 test_evaluator = dict(
     type="T4MetricV2",
     data_root=data_root,
-	output_dir="testing",
+    output_dir="testing",
     ann_file=data_root + info_directory_path + _base_.info_test_file_name,
     class_names={{_base_.class_names}},
     name_mapping={{_base_.name_mapping}},
     perception_evaluator_configs=perception_evaluator_configs,
     critical_object_filter_config=critical_object_filter_config,
     frame_pass_fail_config=frame_pass_fail_config,
-	num_workers=128,
+    num_workers=128,
     scene_batch_size=256,
-	write_metric_summary=True
+    write_metric_summary=True,
 )
 
 model = dict(
