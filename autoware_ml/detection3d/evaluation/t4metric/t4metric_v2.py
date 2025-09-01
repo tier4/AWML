@@ -279,13 +279,18 @@ class T4MetricV2(BaseMetric):
         Returns:
         """
         # Reinitialize
-        self.results = []
         self.scene_id_to_index_map: Dict[str, int] = {}
+
         # [{scene_id: {sample_id: perception_frame}}]
-        for result in results:
-            for scene_id, samples in result.items():
-                for sample_id, perception_frame in samples.items():
-                    self._save_perception_frame(scene_id, sample_id, perception_frame)
+        tmp_results = []
+        for scenes in results:
+            for scene_id, samples in scenes.items():
+                result_index = self.scene_id_to_index_map.get(scene_id, None)
+                if result_index is not None:
+                    tmp_results[result_index].update(samples)
+                else:
+                    self.scene_id_to_index_map[scene_id] = len(tmp_results)
+                    tmp_results.append(samples)
 
         # Reorder all samples in all scenes
         for result in self.results:
@@ -293,7 +298,9 @@ class T4MetricV2(BaseMetric):
                 result[scene_id] = {k: v for k, v in sorted(samples.items(), key=lambda item: item[0])}
 
         self.logger.info(f"Collated results from {len(results)} into {len(self.results)} scenes")
-        return self.results
+        # Update results to the collated results
+        self.results = tmp_results
+        return tmp_results
 
     def _handle_results_persistence(self, results: List[dict]) -> List[dict]:
         """Handle loading or saving results based on pickle configuration.
