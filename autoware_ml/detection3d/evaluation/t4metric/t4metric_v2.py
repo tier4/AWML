@@ -1,9 +1,9 @@
-from concurrent.futures import ProcessPoolExecutor
-from dataclasses import dataclass
-from itertools import islice
 import json
 import pickle
 import time
+from concurrent.futures import ProcessPoolExecutor
+from dataclasses import dataclass
+from itertools import islice
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Sequence, Union
 
@@ -30,19 +30,19 @@ from perception_eval.evaluation.result.perception_frame_result import Perception
 from perception_eval.manager import PerceptionEvaluationManager
 from pyquaternion import Quaternion
 
-
 __all__ = ["T4MetricV2"]
 _UNKNOWN = "unknown"
 DEFAULT_T4METRIC_FILE_NAME = "t4metric_v2_results.pkl"
 
+
 @dataclass(frozen=True)
 class PerceptionFrameProcessingData:
 
-  scene_id: str
-  sample_id: str
-  unix_time: float
-  ground_truth_objects: FrameGroundTruth
-  estimated_objects: List[ObjectType]
+    scene_id: str
+    sample_id: str
+    unix_time: float
+    ground_truth_objects: FrameGroundTruth
+    estimated_objects: List[ObjectType]
 
 
 @METRICS.register_module()
@@ -53,6 +53,9 @@ class T4MetricV2(BaseMetric):
             Path of dataset root.
         ann_file (str):
             Path of annotation file.
+        dataset_name (str): Dataset running metrics.
+        output_dir (str): Directory to save the evaluation results. Note that it's working_directory/<output_dir>.
+        write_metric_summary (bool): Whether to write metric summary to json files.
         prefix (str, optional):
             The prefix that will be added in the metric
             names to disambiguate homonymous metrics of different evaluators.
@@ -83,9 +86,6 @@ class T4MetricV2(BaseMetric):
               ground truth from the pickle file, and runs `compute_metrics()`.
 
             Defaults to None.
-        output_dir (Optional[Union[Path, str]]):
-            Path to the output directory for metrics files.
-            Defaults to None.
     """
 
     def __init__(
@@ -113,7 +113,7 @@ class T4MetricV2(BaseMetric):
         self.ann_file = ann_file
         self.data_root = data_root
         self.num_workers = num_workers
-        self.scene_batch_size = scene_batch_size 
+        self.scene_batch_size = scene_batch_size
 
         self.class_names = class_names
         self.name_mapping = name_mapping
@@ -122,38 +122,33 @@ class T4MetricV2(BaseMetric):
             self.class_names = [self.name_mapping.get(name, name) for name in self.class_names]
 
         self.target_labels = [AutowareLabel[label.upper()] for label in self.class_names]
-
         self.perception_evaluator_configs = PerceptionEvaluationConfig(**perception_evaluator_configs)
-
         self.critical_object_filter_config = CriticalObjectFilterConfig(
             evaluator_config=self.perception_evaluator_configs, **critical_object_filter_config
         )
         self.frame_pass_fail_config = PerceptionPassFailConfig(
             evaluator_config=self.perception_evaluator_configs, **frame_pass_fail_config
         )
-
         self.metrics_config = MetricsScoreConfig(
             self.perception_evaluator_configs.evaluation_task, target_labels=self.target_labels
         )
 
         self.scene_id_to_index_map: Dict[str, int] = {}  # scene_id to index map in self.results
-
         self.frame_results_with_info = []
 
         self.logger = MMLogger.get_current_instance()
         self.logger_file_path = Path(self.logger.log_file).parent
-        
+
         # Set output directory for metrics files
         assert output_dir, f"output_dir must be provided, got: {output_dir}"
-        
         self.output_dir = self.logger_file_path / output_dir
         self.output_dir.mkdir(parents=True, exist_ok=True)
         self.logger.info(f"Metrics output directory set to: {self.output_dir}")
-        
+
         self.results_pickle_path: Optional[Path] = Path(results_pickle_path) if results_pickle_path else None
         if self.results_pickle_path is None:
-          self.results_pickle_path = self.output_dir / DEFAULT_T4METRIC_FILE_NAME
-        
+            self.results_pickle_path = self.output_dir / DEFAULT_T4METRIC_FILE_NAME
+
         if self.results_pickle_path.suffix != ".pkl":
             raise ValueError(f"results_pickle_path must end with '.pkl', got: {self.results_pickle_path}")
 
@@ -227,7 +222,7 @@ class T4MetricV2(BaseMetric):
 
             # Write output files
             if self.write_metric_summary:
-              self._write_output_files(scenes, final_metric_dict)
+                self._write_output_files(scenes, final_metric_dict)
 
             return final_metric_dict
 
@@ -288,124 +283,145 @@ class T4MetricV2(BaseMetric):
         )
 
     def _batch_scenes(self, scenes: dict, scene_batch_size: int) -> List[PerceptionFrameProcessingData]:
-      """
-      Batch scenes and group them for parallel processing based on the batch size.
-      """
-      batch = []
-      for scene_batch_id, (scene_id, samples) in enumerate(scenes.items()):
-        for sample_id, perception_frame in samples.items():
-          batch.append(
-            (
-              PerceptionFrameProcessingData(
-                scene_id,
-                sample_id,
-                time.time(),
-                perception_frame.ground_truth_objects,
-                perception_frame.estimated_objects,
-              )
-            )
-          )
-        
+        """
+        Batch scenes and group them for parallel processing based on the batch size.
+        """
+        batch = []
+        for scene_batch_id, (scene_id, samples) in enumerate(scenes.items()):
+            for sample_id, perception_frame in samples.items():
+                batch.append(
+                    (
+                        PerceptionFrameProcessingData(
+                            scene_id,
+                            sample_id,
+                            time.time(),
+                            perception_frame.ground_truth_objects,
+                            perception_frame.estimated_objects,
+                        )
+                    )
+                )
 
-        if (scene_batch_id+1) % scene_batch_size == 0:
-          yield batch
-          batch = []
+            if (scene_batch_id + 1) % scene_batch_size == 0:
+                yield batch
+                batch = []
 
-      # Any remaining batches
-      if len(batch):
-        yield batch
+        # Any remaining batches
+        if len(batch):
+            yield batch
 
-     
     def _multi_process_all_frames(self, evaluator: PerceptionEvaluationManager, scenes: dict) -> None:
-      """ Process all frames in all scenes using multiprocessing to speed up frame processing.
+        """Process all frames in all scenes using multiprocessing to speed up frame processing.
 
         Args:
             evaluator (PerceptionEvaluationManager): The evaluator instance.
             scenes (dict): Dictionary of scenes and their samples.
-      """
-      # Multiprocessing to speed up frame processing
-      self.logger.info(f"Multiprocessing with {self.num_workers} workers and batch size: {self.scene_batch_size}...")
-      with ProcessPoolExecutor(max_workers=self.num_workers) as executor:
-        for batch_index, scene_batches in enumerate(self._batch_scenes(scenes, scene_batch_size=self.scene_batch_size)):
-          self.logger.info(f"Pre-processing batch: {batch_index+1} with frames: {len(scene_batches)}")
-          future_args = [(
-            scene_batch.unix_time,
-            scene_batch.ground_truth_objects,
-            scene_batch.estimated_objects, 
-            self.critical_object_filter_config,
-            self.frame_pass_fail_config,
-          ) for scene_batch in scene_batches]
+        """
+        # Multiprocessing to speed up frame processing
+        self.logger.info(f"Multiprocessing with {self.num_workers} workers and batch size: {self.scene_batch_size}...")
+        with ProcessPoolExecutor(max_workers=self.num_workers) as executor:
+            for batch_index, scene_batches in enumerate(
+                self._batch_scenes(scenes, scene_batch_size=self.scene_batch_size)
+            ):
+                self.logger.info(f"Pre-processing batch: {batch_index+1} with frames: {len(scene_batches)}")
+                future_args = [
+                    (
+                        scene_batch.unix_time,
+                        scene_batch.ground_truth_objects,
+                        scene_batch.estimated_objects,
+                        self.critical_object_filter_config,
+                        self.frame_pass_fail_config,
+                    )
+                    for scene_batch in scene_batches
+                ]
 
-          # Flatten each args to a list 
-          unix_time, ground_truth_objects, estimated_objects, critical_object_filter_config, frame_pass_fail_config = zip(*future_args)
-          # Preprocessing all frames in the batch
-          future_perception_frame_results = list(executor.map(
-            evaluator.preprocess_object_results, unix_time, ground_truth_objects, estimated_objects, critical_object_filter_config, frame_pass_fail_config
-          ))
-          
-          self.logger.info(f"Evaluating batch: {batch_index+1}")
+                # Flatten each args to a list
+                (
+                    unix_time,
+                    ground_truth_objects,
+                    estimated_objects,
+                    critical_object_filter_config,
+                    frame_pass_fail_config,
+                ) = zip(*future_args)
+                # Preprocessing all frames in the batch
+                future_perception_frame_results = list(
+                    executor.map(
+                        evaluator.preprocess_object_results,
+                        unix_time,
+                        ground_truth_objects,
+                        estimated_objects,
+                        critical_object_filter_config,
+                        frame_pass_fail_config,
+                    )
+                )
 
-          future_perceptiopn_frame_evaluation_args = [
-            (future_perception_frame_results[0], None)
-          ]
+                self.logger.info(f"Evaluating batch: {batch_index+1}")
 
-          # Find the mask where an scene id is different from the previous frame, and it's the first frame of the scene
-          first_sample_masks = [i == 0 or scene_batches[i].scene_id != scene_batches[i-1].scene_id for i in range(len(scene_batches))]
+                future_perceptiopn_frame_evaluation_args = [(future_perception_frame_results[0], None)]
 
-          # Group perception frame results with pair
-          for index in range(1, len(future_perception_frame_results)):
-              if first_sample_masks[index]:
-                  future_perceptiopn_frame_evaluation_args.append(
-                      (future_perception_frame_results[index], None)
-                  )
-              else:
-                  future_perceptiopn_frame_evaluation_args.append(
-                      (future_perception_frame_results[index], future_perception_frame_results[index-1])
-                  )
+                # Find the mask where an scene id is different from the previous frame, and it's the first frame of the scene
+                first_sample_masks = [
+                    i == 0 or scene_batches[i].scene_id != scene_batches[i - 1].scene_id
+                    for i in range(len(scene_batches))
+                ]
 
-          # Flatten each arg to a list
-          current_perception_frame_results, previous_perception_frame_results = zip(*future_perceptiopn_frame_evaluation_args) 
-          # Run evaluation for all frames in the batch
-          future_perception_frame_results = list(executor.map(
-            evaluator.evaluate_perception_frame, current_perception_frame_results, previous_perception_frame_results
-          ))
-          
-          # Append results
-          self.logger.info(f"Post-processing batch: {batch_index+1}")
-          for scene_batch, perception_frame_result in zip(scene_batches, future_perception_frame_results):
-            self.frame_results_with_info.append(
-              {
-                "scene_id": scene_batch.scene_id,
-                "sample_id": scene_batch.sample_id,
-                "frame_result": perception_frame_result,
-              }
-            )
-            # We append the results outside of evaluator to keep the order of the frame results
-            evaluator.frame_results.append(perception_frame_result)
+                # Group perception frame results with pair
+                for index in range(1, len(future_perception_frame_results)):
+                    if first_sample_masks[index]:
+                        future_perceptiopn_frame_evaluation_args.append((future_perception_frame_results[index], None))
+                    else:
+                        future_perceptiopn_frame_evaluation_args.append(
+                            (future_perception_frame_results[index], future_perception_frame_results[index - 1])
+                        )
+
+                # Flatten each arg to a list
+                current_perception_frame_results, previous_perception_frame_results = zip(
+                    *future_perceptiopn_frame_evaluation_args
+                )
+                # Run evaluation for all frames in the batch
+                future_perception_frame_results = list(
+                    executor.map(
+                        evaluator.evaluate_perception_frame,
+                        current_perception_frame_results,
+                        previous_perception_frame_results,
+                    )
+                )
+
+                # Append results
+                self.logger.info(f"Post-processing batch: {batch_index+1}")
+                for scene_batch, perception_frame_result in zip(scene_batches, future_perception_frame_results):
+                    self.frame_results_with_info.append(
+                        {
+                            "scene_id": scene_batch.scene_id,
+                            "sample_id": scene_batch.sample_id,
+                            "frame_result": perception_frame_result,
+                        }
+                    )
+                    # We append the results outside of evaluator to keep the order of the frame results
+                    evaluator.frame_results.append(perception_frame_result)
 
     def _sequential_process_all_frames(self, evaluator: PerceptionEvaluationManager, scenes: dict) -> None:
-      """ Process all frames in all scenes sequentially.
-      
-      Args:
-            evaluator (PerceptionEvaluationManager): The evaluator instance.
-            scenes (dict): Dictionary of scenes and their samples.
-      """
-      for scene_id, samples in scenes.items():
-          for sample_id, perception_frame in samples.items():
-              try:
-                  frame_result: PerceptionFrameResult = evaluator.add_frame_result(
-                      unix_time=time.time(),
-                      ground_truth_now_frame=perception_frame.ground_truth_objects,
-                      estimated_objects=perception_frame.estimated_objects,
-                      critical_object_filter_config=self.critical_object_filter_config,
-                      frame_pass_fail_config=self.frame_pass_fail_config,
-                  )
+        """Process all frames in all scenes sequentially.
 
-                  self.frame_results_with_info.append(
-                      {"scene_id": scene_id, "sample_id": sample_id, "frame_result": frame_result}
-                  )
-              except Exception as e:
-                  self.logger.warning(f"Failed to process frame {scene_id}/{sample_id}: {e}")
+        Args:
+              evaluator (PerceptionEvaluationManager): The evaluator instance.
+              scenes (dict): Dictionary of scenes and their samples.
+        """
+        for scene_id, samples in scenes.items():
+            for sample_id, perception_frame in samples.items():
+                try:
+                    frame_result: PerceptionFrameResult = evaluator.add_frame_result(
+                        unix_time=time.time(),
+                        ground_truth_now_frame=perception_frame.ground_truth_objects,
+                        estimated_objects=perception_frame.estimated_objects,
+                        critical_object_filter_config=self.critical_object_filter_config,
+                        frame_pass_fail_config=self.frame_pass_fail_config,
+                    )
+
+                    self.frame_results_with_info.append(
+                        {"scene_id": scene_id, "sample_id": sample_id, "frame_result": frame_result}
+                    )
+                except Exception as e:
+                    self.logger.warning(f"Failed to process frame {scene_id}/{sample_id}: {e}")
 
     def _process_all_frames(self, evaluator: PerceptionEvaluationManager, scenes: dict) -> None:
         """Process all frames in all scenes and collect frame results.
@@ -415,9 +431,9 @@ class T4MetricV2(BaseMetric):
             scenes (dict): Dictionary of scenes and their samples.
         """
         if self.num_workers > 1:
-          self._multi_process_all_frames(evaluator, scenes)
+            self._multi_process_all_frames(evaluator, scenes)
         else:
-          self._sequential_process_all_frames(evaluator, scenes)
+            self._sequential_process_all_frames(evaluator, scenes)
 
     def _write_output_files(self, scenes: dict, final_metric_dict: dict) -> None:
         """Write scene metrics and aggregated metrics to files.
