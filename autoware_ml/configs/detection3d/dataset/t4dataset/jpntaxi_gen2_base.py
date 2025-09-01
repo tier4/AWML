@@ -19,6 +19,7 @@ dataset_test_groups = {
 
 dataset_version_list = [
     "db_jpntaxigen2_v1",
+    "db_jpntaxigen2_v2",
 ]
 
 # dataset format setting
