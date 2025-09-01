@@ -30,11 +30,11 @@ dataset_version_list = [
     "db_j6_v5",
 ]
 dataset_test_groups = {
-    "db_jpntaxi_gen2_base": "t4dataset_jpntaxi_gen2_base_infos_test.pkl",
-    "db_j6gen2": "t4dataset_j6gen2_infos_test.pkl",
-    "db_largebus": "t4dataset_largebus_infos_test.pkl",
-    "db_jpntaxi": "t4dataset_xx1_infos_test.pkl",
-    "db_j6": "t4dataset_x2_infos_test.pkl",
+    # "db_jpntaxi_gen2_base": "t4dataset_jpntaxi_gen2_base_infos_test.pkl",
+    # "db_j6gen2": "t4dataset_j6gen2_infos_test.pkl",
+    # "db_largebus": "t4dataset_largebus_infos_test.pkl",
+    # "db_jpntaxi": "t4dataset_xx1_infos_test.pkl",
+    # "db_j6": "t4dataset_x2_infos_test.pkl",
     "db_base": "t4dataset_base_infos_test.pkl",
 }
 
@@ -187,7 +187,7 @@ filter_attributes = [
 evaluator_metric_configs = dict(
     evaluation_task="detection",
     target_labels=class_names,
-    center_distance_thresholds=[0.5, 1.0, 2.0, 4.0],
+    center_distance_bev_thresholds=[0.5, 1.0, 2.0, 4.0],
     plane_distance_thresholds=[2.0, 4.0],
     iou_2d_thresholds=None,
     iou_3d_thresholds=None,
