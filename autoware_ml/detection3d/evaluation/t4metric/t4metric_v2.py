@@ -287,10 +287,10 @@ class T4MetricV2(BaseMetric):
             for scene_id, samples in scenes.items():
                 result_index = self.scene_id_to_index_map.get(scene_id, None)
                 if result_index is not None:
-                    tmp_results[result_index].update(samples)
+                    tmp_results[result_index][scene_id].update(samples)
                 else:
                     self.scene_id_to_index_map[scene_id] = len(tmp_results)
-                    tmp_results.append(samples)
+                    tmp_results.append({scene_id: samples})
 
         # Reorder all samples in all scenes
         for result in self.results:
