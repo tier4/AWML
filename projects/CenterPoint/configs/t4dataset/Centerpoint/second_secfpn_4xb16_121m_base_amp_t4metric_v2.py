@@ -42,7 +42,7 @@ eval_class_range = {
 
 # user setting
 data_root = "data/t4dataset/"
-info_directory_path = "info/user_name/"
+info_directory_path = "info/kokseang_2_2/"
 train_gpu_size = 4
 train_batch_size = 16
 test_batch_size = 2
@@ -447,7 +447,7 @@ logger_interval = 50
 default_hooks = dict(
     logger=dict(type="LoggerHook", interval=logger_interval),
     checkpoint=dict(
-        type="CheckpointHook", interval=1, max_keep_ckpts=3, save_best="T4MetricV2/T4MetricV2/mAP_center_distance"
+        type="CheckpointHook", interval=1, max_keep_ckpts=3, save_best="T4MetricV2/T4MetricV2/mAP_center_distance_bev"
     ),
 )
 
