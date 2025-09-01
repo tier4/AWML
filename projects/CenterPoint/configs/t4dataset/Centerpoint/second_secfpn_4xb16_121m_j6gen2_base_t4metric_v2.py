@@ -107,9 +107,9 @@ test_pipeline = [
     ),
     dict(type="PointsRangeFilter", point_cloud_range=point_cloud_range),
     dict(
-			type="Pack3DDetInputs", 
-			keys=["points", "gt_bboxes_3d", "gt_labels_3d"], 
-			meta_keys=(
+        type="Pack3DDetInputs",
+        keys=["points", "gt_bboxes_3d", "gt_labels_3d"],
+        meta_keys=(
             "timestamp",
             "lidar2img",
             "depth2img",
@@ -122,7 +122,7 @@ test_pipeline = [
             "lidar2cam",
             "ego2global",
         ),
-		),
+    ),
 ]
 
 # construct a pipeline for data and gt loading in show function
@@ -233,7 +233,7 @@ val_evaluator = dict(
     type="T4MetricV2",
     data_root=data_root,
     output_dir="validation",
-		dataset_name="j6gen2_base",
+    dataset_name="j6gen2_base",
     ann_file=data_root + info_directory_path + _base_.info_val_file_name,
     class_names={{_base_.class_names}},
     name_mapping={{_base_.name_mapping}},
@@ -249,7 +249,7 @@ test_evaluator = dict(
     type="T4MetricV2",
     data_root=data_root,
     output_dir="testing",
-		dataset_name="j6gen2_base",
+    dataset_name="j6gen2_base",
     ann_file=data_root + info_directory_path + _base_.info_test_file_name,
     class_names={{_base_.class_names}},
     name_mapping={{_base_.name_mapping}},
@@ -445,7 +445,9 @@ visualizer = dict(type="Det3DLocalVisualizer", vis_backends=vis_backends, name="
 logger_interval = 50
 default_hooks = dict(
     logger=dict(type="LoggerHook", interval=logger_interval),
-    checkpoint=dict(type="CheckpointHook", interval=1, max_keep_ckpts=10, save_best="T4MetricV2/T4MetricV2/mAP_center_distance"),
+    checkpoint=dict(
+        type="CheckpointHook", interval=1, max_keep_ckpts=10, save_best="T4MetricV2/T4MetricV2/mAP_center_distance"
+    ),
 )
 
 custom_hooks = [
