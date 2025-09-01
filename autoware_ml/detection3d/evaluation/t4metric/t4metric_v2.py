@@ -32,7 +32,7 @@ from pyquaternion import Quaternion
 
 __all__ = ["T4MetricV2"]
 _UNKNOWN = "unknown"
-DEFAULT_T4METRIC_FILE_NAME = "t4metric_v2_results.pkl"
+DEFAULT_T4METRIC_FILE_NAME = "t4metric_v2_results_{}.pkl"
 
 
 @dataclass(frozen=True)
@@ -268,7 +268,7 @@ class T4MetricV2(BaseMetric):
             self.logger.info("Loading results from pickle file")
             return self._load_results_from_pickle(self.results_pickle_path)
 
-        current_epoch = self.message_hub.get_info("epoch", -1)
+        current_epoch = self.message_hub.get_info("epoch", -1) + 1
         results_pickle_path = (
             self.results_pickle_path
             if self.results_pickle_path is not None
