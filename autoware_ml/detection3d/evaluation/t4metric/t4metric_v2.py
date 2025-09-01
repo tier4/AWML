@@ -319,7 +319,7 @@ class T4MetricV2(BaseMetric):
         if self.num_running_gpus > 1:
             results = self._collate_results(results)
 
-        current_epoch = self.message_hub.get_info("epoch", -1)
+        current_epoch = self.message_hub.get_info("epoch", -1) + 1
         results_pickle_path = (
             self.results_pickle_path
             if self.results_pickle_path is not None
