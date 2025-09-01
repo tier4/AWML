@@ -142,7 +142,6 @@ class T4MetricV2(BaseMetric):
 
         # Set output directory for metrics files
         assert output_dir, f"output_dir must be provided, got: {output_dir}"
-
         self.output_dir = self.logger_file_path / output_dir
         self.output_dir.mkdir(parents=True, exist_ok=True)
         self.logger.info(f"Metrics output directory set to: {self.output_dir}")
