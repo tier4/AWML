@@ -90,7 +90,7 @@ def track_objects(
         ego2global = np.array(frame_info["ego2global"])
 
         tracked_instance_ids = mot_model.frame_mot(
-            copy.deepcopy(frame_info["pred_instances_3d"]), ego2global, frame_info["timestamp"]
+            frame_info["pred_instances_3d"], ego2global, frame_info["timestamp"]
         )
         # update instance_id by tracking
         for det_index, tracked_instance_id in enumerate(tracked_instance_ids):
