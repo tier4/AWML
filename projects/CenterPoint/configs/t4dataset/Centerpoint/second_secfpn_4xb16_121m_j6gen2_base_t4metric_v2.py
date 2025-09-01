@@ -446,7 +446,7 @@ logger_interval = 50
 default_hooks = dict(
     logger=dict(type="LoggerHook", interval=logger_interval),
     checkpoint=dict(
-        type="CheckpointHook", interval=1, max_keep_ckpts=10, save_best="T4MetricV2/T4MetricV2/mAP_center_distance"
+        type="CheckpointHook", interval=1, max_keep_ckpts=10, save_best="T4MetricV2/T4MetricV2/mAP_center_distance_bev"
     ),
 )
 
