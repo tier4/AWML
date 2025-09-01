@@ -54,6 +54,9 @@ class T4MetricV2(BaseMetric):
             Path of dataset root.
         ann_file (str):
             Path of annotation file.
+        dataset_name (str): Dataset running metrics.
+        output_dir (str): Directory to save the evaluation results. Note that it's working_directory/<output_dir>.
+        write_metric_summary (bool): Whether to write metric summary to json files.
         prefix (str, optional):
             The prefix that will be added in the metric
             names to disambiguate homonymous metrics of different evaluators.
@@ -83,9 +86,6 @@ class T4MetricV2(BaseMetric):
             - If provided and the file exists: skips `process()`, loads predictions and
               ground truth from the pickle file, and runs `compute_metrics()`.
 
-            Defaults to None.
-        output_dir (Optional[Union[Path, str]]):
-            Path to the output directory for metrics files.
             Defaults to None.
     """
 
@@ -123,22 +123,18 @@ class T4MetricV2(BaseMetric):
             self.class_names = [self.name_mapping.get(name, name) for name in self.class_names]
 
         self.target_labels = [AutowareLabel[label.upper()] for label in self.class_names]
-
         self.perception_evaluator_configs = PerceptionEvaluationConfig(**perception_evaluator_configs)
-
         self.critical_object_filter_config = CriticalObjectFilterConfig(
             evaluator_config=self.perception_evaluator_configs, **critical_object_filter_config
         )
         self.frame_pass_fail_config = PerceptionPassFailConfig(
             evaluator_config=self.perception_evaluator_configs, **frame_pass_fail_config
         )
-
         self.metrics_config = MetricsScoreConfig(
             self.perception_evaluator_configs.evaluation_task, target_labels=self.target_labels
         )
 
         self.scene_id_to_index_map: Dict[str, int] = {}  # scene_id to index map in self.results
-
         self.frame_results_with_info = []
 
         self.message_hub = MessageHub.get_current_instance()
@@ -147,7 +143,6 @@ class T4MetricV2(BaseMetric):
 
         # Set output directory for metrics files
         assert output_dir, f"output_dir must be provided, got: {output_dir}"
-
         self.output_dir = self.logger_file_path / output_dir
         self.output_dir.mkdir(parents=True, exist_ok=True)
         self.logger.info(f"Metrics output directory set to: {self.output_dir}")
