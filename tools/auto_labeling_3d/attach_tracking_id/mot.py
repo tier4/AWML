@@ -342,10 +342,6 @@ def associate_detections_to_tracks(
         - set: Unmatched detection indices
     """
 
-    def _can_match_classes(det_class: str, trk_class: str, class_matching_matrix=class_matching_matrix) -> bool:
-        """Check if matching is allowed between classes."""
-        return trk_class in class_matching_matrix[det_class]
-
     def _calculate_cost_matrix(
         bbox_list: List[T4Box3D],
         tracked_box_list: List[TrackedBox2D],
@@ -386,7 +382,7 @@ def associate_detections_to_tracks(
 
             for j, trk_box in enumerate(tracked_box_list):
                 # Skip if classes cannot match
-                if not _can_match_classes(det_class, trk_box.class_name):
+                if trk_box.class_name not in class_matching_matrix[det_class]:
                     continue
 
                 # Calculate cost only if classes match
