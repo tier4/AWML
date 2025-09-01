@@ -4,6 +4,8 @@ import os
 import os.path as osp
 import time
 
+import torch 
+
 from mmdet3d.utils import replace_ceph_backend
 from mmengine.config import Config, ConfigDict, DictAction
 from mmengine.logging import print_log

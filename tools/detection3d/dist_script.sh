@@ -1,8 +1,9 @@
 #!/usr/bin/env bash
 
 CONFIG=$1
-TASK=$2
-GPUS=$3
+GPUS=$2
+TASK=$3
+CHECKPOINT=$4
 NNODES=${NNODES:-1}
 NODE_RANK=${NODE_RANK:-0}
 PORT=${PORT:-29500}
@@ -19,7 +20,7 @@ if [ "$TASK" = "train" ]; then
 			--master_port=$PORT \
 			$(dirname "$0")/train.py \
 			$CONFIG \
-			--launcher pytorch ${@:3}
+			--launcher pytorch ${@:5}
 elif [ "$TASK" = "test" ]; then
 	python -m torch.distributed.launch \
 			--nnodes=$NNODES \
@@ -29,7 +30,8 @@ elif [ "$TASK" = "test" ]; then
 			--master_port=$PORT \
 			$(dirname "$0")/test.py \
 			$CONFIG \
-			--launcher pytorch ${@:3}
+			$CHECKPOINT \
+			--launcher pytorch ${@:5}
 else
     echo "Invalid TASK: $TASK"
     echo "Usage: $0 <CONFIG> <GPUS> <train|test> [additional args]"

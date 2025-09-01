@@ -12,7 +12,8 @@ import torch
 from mmdet3d.registry import METRICS
 from mmdet3d.structures import LiDARInstance3DBoxes
 from mmengine.evaluator import BaseMetric
-from mmengine.logging import MMLogger
+from mmengine.logging import MMLogger, MessageHub
+from mmengine.dist import get_world_size
 from perception_eval.common import ObjectType
 from perception_eval.common.dataset import FrameGroundTruth
 from perception_eval.common.label import AutowareLabel, Label, LabelType
@@ -33,7 +34,7 @@ from pyquaternion import Quaternion
 
 __all__ = ["T4MetricV2"]
 _UNKNOWN = "unknown"
-DEFAULT_T4METRIC_FILE_NAME = "t4metric_v2_results.pkl"
+DEFAULT_T4METRIC_FILE_NAME = "t4metric_v2_results_{}.pkl"
 
 @dataclass(frozen=True)
 class PerceptionFrameProcessingData:
@@ -139,7 +140,8 @@ class T4MetricV2(BaseMetric):
         self.scene_id_to_index_map: Dict[str, int] = {}  # scene_id to index map in self.results
 
         self.frame_results_with_info = []
-
+        
+        self.message_hub = MessageHub.get_current_instance()
         self.logger = MMLogger.get_current_instance()
         self.logger_file_path = Path(self.logger.log_file).parent
         
@@ -150,15 +152,26 @@ class T4MetricV2(BaseMetric):
         self.output_dir.mkdir(parents=True, exist_ok=True)
         self.logger.info(f"Metrics output directory set to: {self.output_dir}")
         
-        self.results_pickle_path: Optional[Path] = Path(results_pickle_path) if results_pickle_path else None
-        if self.results_pickle_path is None:
-          self.results_pickle_path = self.output_dir / DEFAULT_T4METRIC_FILE_NAME
-        
-        if self.results_pickle_path.suffix != ".pkl":
+        self.results_pickle_path: Optional[Path] = self.output_dir / results_pickle_path if results_pickle_path else None
+        if self.results_pickle_path and self.results_pickle_path.suffix != ".pkl":
             raise ValueError(f"results_pickle_path must end with '.pkl', got: {self.results_pickle_path}")
-
+        
         self.results_pickle_exists = True if self.results_pickle_path and self.results_pickle_path.exists() else False
         self.write_metric_summary = write_metric_summary
+
+        self.num_running_gpus = get_world_size()
+        self.logger.info(f"{self.default_prefix} running with {self.num_running_gpus} GPUs")
+
+    def evaluate(self, size: int) -> Dict[str, float]:
+        """
+        Evaluate the results and return a dict of metrics. Override of BaseMetric.evaluate to clean up caches 
+        for the multi-gpu case.        
+        """
+        metrics = super().evaluate(size=size)
+        # Clean up any caches for multi-gpu case
+        self._clean_up()
+
+        return metrics
 
     # override of BaseMetric.process
     def process(self, data_batch: dict, data_samples: Sequence[dict]) -> None:
@@ -260,6 +273,31 @@ class T4MetricV2(BaseMetric):
 
         self.logger.info(f"Validated {len(results)} scenes")
 
+    def _collate_results(self, results: List[dict]) -> List[dict]:
+        """Collate results from multiple GPUs.
+
+        Args:
+            results (List[dict]): List of results from different GPUs.
+
+        Returns:
+        """
+        # Reinitialize
+        self.results = []
+        self.scene_id_to_index_map: Dict[str, int] = {}
+        # [{scene_id: {sample_id: perception_frame}}]
+        for result in results:
+            for scene_id, samples in result.items():
+              for sample_id, perception_frame in samples.items():
+                self._save_perception_frame(scene_id, sample_id, perception_frame)
+
+        # Reorder all samples in all scenes
+        for result in self.results:
+          for scene_id, samples in result.items():
+            result[scene_id] = {k: v for k, v in sorted(samples.items(), key=lambda item: item[0])}
+        
+        self.logger.info(f"Collated results from {len(results)} into {len(self.results)} scenes")
+        return self.results
+    
     def _handle_results_persistence(self, results: List[dict]) -> List[dict]:
         """Handle loading or saving results based on pickle configuration.
 
@@ -272,9 +310,15 @@ class T4MetricV2(BaseMetric):
         if self.results_pickle_exists:
             self.logger.info("Loading results from pickle file")
             return self._load_results_from_pickle(self.results_pickle_path)
-        elif self.results_pickle_path:
-            self.logger.info("Saving results to pickle file")
-            self._save_results_to_pickle(self.results_pickle_path)
+        
+        # Reorganize results from multi-gpu
+        if self.num_running_gpus > 1:
+            results = self._collate_results(results)
+
+        current_epoch = self.message_hub.get_info('epoch', -1)
+        results_pickle_path = self.results_pickle_path if self.results_pickle_path is not None else self.output_dir / DEFAULT_T4METRIC_FILE_NAME.format(current_epoch)
+        self.logger.info(f"Saving results of epoch: {current_epoch} to pickle file: {results_pickle_path}")
+        self._save_results_to_pickle(results_pickle_path)
         return results
 
     def _create_evaluator(self) -> PerceptionEvaluationManager:
@@ -315,7 +359,6 @@ class T4MetricV2(BaseMetric):
       if len(batch):
         yield batch
 
-     
     def _multi_process_all_frames(self, evaluator: PerceptionEvaluationManager, scenes: dict) -> None:
       """ Process all frames in all scenes using multiprocessing to speed up frame processing.
 
@@ -328,9 +371,6 @@ class T4MetricV2(BaseMetric):
       with ProcessPoolExecutor(max_workers=self.num_workers) as executor:
         for batch_index, scene_batches in enumerate(self._batch_scenes(scenes, scene_batch_size=self.scene_batch_size)):
           self.logger.info(f"Pre-processing batch: {batch_index+1} with frames: {len(scene_batches)}")
-          self.logger.info(
-            f"{[(scene_batch.scene_id, scene_batch.sample_id) for scene_batch in scene_batches[:30]]}"
-          )
           future_args = [(
             scene_batch.unix_time,
             scene_batch.ground_truth_objects,
