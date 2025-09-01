@@ -12,7 +12,7 @@ import torch
 from mmdet3d.registry import METRICS
 from mmdet3d.structures import LiDARInstance3DBoxes
 from mmengine.evaluator import BaseMetric
-from mmengine.logging import MMLogger
+from mmengine.logging import MessageHub, MMLogger
 from perception_eval.common import ObjectType
 from perception_eval.common.dataset import FrameGroundTruth
 from perception_eval.common.label import AutowareLabel, Label, LabelType
@@ -136,20 +136,21 @@ class T4MetricV2(BaseMetric):
         self.scene_id_to_index_map: Dict[str, int] = {}  # scene_id to index map in self.results
         self.frame_results_with_info = []
 
+        self.message_hub = MessageHub.get_current_instance()
         self.logger = MMLogger.get_current_instance()
         self.logger_file_path = Path(self.logger.log_file).parent
 
         # Set output directory for metrics files
         assert output_dir, f"output_dir must be provided, got: {output_dir}"
+
         self.output_dir = self.logger_file_path / output_dir
         self.output_dir.mkdir(parents=True, exist_ok=True)
         self.logger.info(f"Metrics output directory set to: {self.output_dir}")
 
-        self.results_pickle_path: Optional[Path] = Path(results_pickle_path) if results_pickle_path else None
-        if self.results_pickle_path is None:
-            self.results_pickle_path = self.output_dir / DEFAULT_T4METRIC_FILE_NAME
-
-        if self.results_pickle_path.suffix != ".pkl":
+        self.results_pickle_path: Optional[Path] = (
+            self.output_dir / results_pickle_path if results_pickle_path else None
+        )
+        if self.results_pickle_path and self.results_pickle_path.suffix != ".pkl":
             raise ValueError(f"results_pickle_path must end with '.pkl', got: {self.results_pickle_path}")
 
         self.results_pickle_exists = True if self.results_pickle_path and self.results_pickle_path.exists() else False
@@ -267,9 +268,15 @@ class T4MetricV2(BaseMetric):
         if self.results_pickle_exists:
             self.logger.info("Loading results from pickle file")
             return self._load_results_from_pickle(self.results_pickle_path)
-        elif self.results_pickle_path:
-            self.logger.info("Saving results to pickle file")
-            self._save_results_to_pickle(self.results_pickle_path)
+
+        current_epoch = self.message_hub.get_info("epoch", -1)
+        results_pickle_path = (
+            self.results_pickle_path
+            if self.results_pickle_path is not None
+            else self.output_dir / DEFAULT_T4METRIC_FILE_NAME.format(current_epoch)
+        )
+        self.logger.info(f"Saving results of epoch: {current_epoch} to pickle file: {results_pickle_path}")
+        self._save_results_to_pickle(results_pickle_path)
         return results
 
     def _create_evaluator(self) -> PerceptionEvaluationManager:
