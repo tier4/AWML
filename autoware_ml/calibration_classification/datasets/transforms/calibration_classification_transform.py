@@ -297,7 +297,7 @@ class CalibrationClassificationTransform(BaseTransform):
 
         logger.warning(
             f"Saved binary data for sample {idx} ({suffix}) to {save_dir}. "
-            "This is heavy opeartion and should be considered mostly for deployment scrip run."
+            "This operation can utilize about 100 MB of disk space and should be used only for deployment script."
         )
 
     def _load_data(
