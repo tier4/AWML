@@ -277,7 +277,7 @@ class CalibrationClassificationTransform(BaseTransform):
             calibration_data.new_camera_matrix.astype(np.float64), ((0, 0), (0, 1)), mode="constant"
         ).astype(np.float64)
         lidar_to_camera_tf = calibration_data.lidar_to_camera_transformation.astype(np.float64)
-        fused_input_data = input_data.astype(np.float32)
+        fused_input_data = np.transpose(input_data.astype(np.float32), (2, 0, 1))
 
         # Save data
         suffix = "calibrated" if label == 1 else "miscalibrated"
