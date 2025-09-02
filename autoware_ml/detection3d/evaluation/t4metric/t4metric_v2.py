@@ -384,7 +384,7 @@ class T4MetricV2(BaseMetric):
                     *future_perceptiopn_frame_evaluation_args
                 )
                 # Run evaluation for all frames in the batch
-                future_perception_frame_results = list(
+                perception_frame_results = list(
                     executor.map(
                         evaluator.evaluate_perception_frame,
                         current_perception_frame_results,
@@ -394,7 +394,7 @@ class T4MetricV2(BaseMetric):
 
                 # Append results
                 self.logger.info(f"Post-processing batch: {batch_index+1}")
-                for scene_batch, perception_frame_result in zip(scene_batches, future_perception_frame_results):
+                for scene_batch, perception_frame_result in zip(scene_batches, perception_frame_results):
                     self.frame_results_with_info.append(
                         {
                             "scene_id": scene_batch.scene_id,
