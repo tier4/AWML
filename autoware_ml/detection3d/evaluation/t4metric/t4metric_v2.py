@@ -5,7 +5,7 @@ from concurrent.futures import ProcessPoolExecutor
 from dataclasses import dataclass
 from itertools import islice
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Sequence, Union
+from typing import Any, Dict, Generator, List, Optional, Sequence, Union
 
 import numpy as np
 import torch
@@ -339,7 +339,7 @@ class T4MetricV2(BaseMetric):
             evaluation_config=self.perception_evaluator_configs, load_ground_truth=False
         )
 
-    def _batch_scenes(self, scenes: dict, scene_batch_size: int) -> List[PerceptionFrameProcessingData]:
+    def _batch_scenes(self, scenes: dict, scene_batch_size: int) -> Generator[PerceptionFrameProcessingData]:
         """
         Batch scenes and group them for parallel processing based on the batch size.
         """
@@ -435,7 +435,7 @@ class T4MetricV2(BaseMetric):
                     *future_perceptiopn_frame_evaluation_args
                 )
                 # Run evaluation for all frames in the batch
-                future_perception_frame_results = list(
+                perception_frame_results = list(
                     executor.map(
                         evaluator.evaluate_perception_frame,
                         current_perception_frame_results,
@@ -445,7 +445,7 @@ class T4MetricV2(BaseMetric):
 
                 # Append results
                 self.logger.info(f"Post-processing batch: {batch_index+1}")
-                for scene_batch, perception_frame_result in zip(scene_batches, future_perception_frame_results):
+                for scene_batch, perception_frame_result in zip(scene_batches, perception_frame_results):
                     self.frame_results_with_info.append(
                         {
                             "scene_id": scene_batch.scene_id,
