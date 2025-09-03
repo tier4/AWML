@@ -24,7 +24,7 @@
 ## Get started
 ### 1. Setup
 
-- [Run setup environment](../../tools/setting_environment/README.md)
+- [Run setup environment](/tools/setting_environment/README.md)
 - Run docker
 
 ```sh

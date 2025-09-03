@@ -21,7 +21,7 @@
 ## Get started
 ### 1. Setup
 
-- [Run setup environment at first](../../tools/setting_environment/README.md)
+- [Run setup environment at first](/tools/setting_environment/README.md)
 - Docker build for CalibrationStatusClassification
 
 ```sh
