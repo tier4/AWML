@@ -49,6 +49,10 @@ We hope that `AWML` promotes the community between Autoware and ML researchers a
 | AWMLPrediction | TBD                                            |
 
 ## Docs
+### Tutorial
+
+- [Start training for 3D object detection](/docs/tutorial/tutorial_detection_3d.md)
+
 ### Design documents
 
 If you want to know about the design of `AWML`, you should read following pages.
