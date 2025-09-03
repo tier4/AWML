@@ -109,8 +109,7 @@ If you want to know about `AWML`, you should read following pages.
 
 ## Supported model
 
-- Supported models
-  - :star: is recommended to use
+- :star: is recommended to use
 
 | Task              | Model                                         | Use for Autoware   |
 | ----------------- | --------------------------------------------- | ------------------ |
