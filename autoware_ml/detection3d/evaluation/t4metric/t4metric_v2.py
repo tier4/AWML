@@ -5,7 +5,7 @@ from concurrent.futures import ProcessPoolExecutor
 from dataclasses import dataclass
 from itertools import islice
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Sequence, Union
+from typing import Any, Dict, Generator, List, Optional, Sequence, Union
 
 import numpy as np
 import torch
@@ -288,7 +288,7 @@ class T4MetricV2(BaseMetric):
             evaluation_config=self.perception_evaluator_configs, load_ground_truth=False
         )
 
-    def _batch_scenes(self, scenes: dict, scene_batch_size: int) -> List[PerceptionFrameProcessingData]:
+    def _batch_scenes(self, scenes: dict, scene_batch_size: int) -> Generator[PerceptionFrameProcessingData]:
         """
         Batch scenes and group them for parallel processing based on the batch size.
         """
