@@ -25,7 +25,7 @@
 ### 1. Setup
 
 - [Run setup environment at first](/tools/setting_environment/)
-
+- Setup libraries necessary for YOLOX deployment with `pip3 install -r ./projects/YOLOX_opt/requirements.txt`
 ### 2. Train
 
 - For traffic light recognition of fine detector

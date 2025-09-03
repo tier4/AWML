@@ -1,4 +1,7 @@
+import gc
+import pickle
 from os import path as osp
+from typing import List
 
 import numpy as np
 from mmdet3d.datasets import NuScenesDataset
@@ -9,7 +12,16 @@ from mmengine.registry import DATASETS
 @DATASETS.register_module()
 class T4Dataset(NuScenesDataset):
     """T4Dataset Dataset base class
-    The descriptions below are for the methods that aren't implemented this class.
+
+    This dataset class extends NuScenesDataset to provide specialized functionality
+    for T4 dataset processing with additional filtering and validation capabilities.
+
+    Args:
+        metainfo: Metadata information for the dataset.
+        class_names: List of class names for object detection/classification.
+        use_valid_flag (bool, optional): Whether to use validity flags for filtering
+            annotations. Defaults to False.
+        **kwargs: Additional keyword arguments passed to the parent NuScenesDataset.
     """
 
     def __init__(
@@ -24,6 +36,37 @@ class T4Dataset(NuScenesDataset):
         self.class_names = class_names
         super().__init__(use_valid_flag=use_valid_flag, **kwargs)
         print_log(f"Valid dataset instances: {self.valid_class_name_ins}", logger="current")
+
+    def filter_data(self) -> List[dict]:
+        """
+        Overriding from superclass.
+
+        Filter annotations according to filter_cfg. Defaults return all
+        ``data_list``in Superclass.
+
+        If some ``data_list`` could be filtered according to specific logic,
+        the subclass should override this method.
+
+        Returns:
+            List[dict]: Filtered results.
+        """
+        if not self.filter_cfg:
+            return self.data_list
+        filtered_data_list = []
+        for entry in self.data_list:
+            if self.filter_cfg.get("filter_frames_with_missing_image", False) and not all(
+                [x["img_path"] and osp.exists(x["img_path"]) for x in entry["images"].values()]
+            ):
+                continue
+            filtered_data_list.append(entry)
+
+        if len(filtered_data_list) != len(self.data_list):
+            print_log(
+                f"Filtered {len(self.data_list)-len(filtered_data_list)}/{len(self.data_list)} frames without images.",
+                logger="current",
+            )
+
+        return filtered_data_list
 
     def _filter_with_mask(self, ann_info: dict) -> dict:
         """Remove annotations that do not need to be cared.

@@ -1,14 +1,11 @@
 version: 1
 dataset_version: db-tlr-v5.0
-
 train:
-  - e2f9895c-dffa-421b-9cd9-caac40d01c8d
-  - 8d66ec30-8060-4e56-8da4-751e7d8ba6b5
-  - ba5aa800-adee-4d65-a601-7fb943ef6954
-  - bc62ff5b-71a1-4547-9482-b03ffc69c890
-  - 1c62f5ae-8515-43e4-b8fd-a68200668ef7
-
+- e2f9895c-dffa-421b-9cd9-caac40d01c8d   0
+- 8d66ec30-8060-4e56-8da4-751e7d8ba6b5   0
+- ba5aa800-adee-4d65-a601-7fb943ef6954   0
+- bc62ff5b-71a1-4547-9482-b03ffc69c890   0
+- 1c62f5ae-8515-43e4-b8fd-a68200668ef7   0
 val: []
-
 test:
-  - 2821adc7-c0cb-499b-a9bc-3b6585b7d7a0
+- 2821adc7-c0cb-499b-a9bc-3b6585b7d7a0   0

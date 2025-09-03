@@ -107,24 +107,42 @@ Note: we only support traveller59's backend during deployment, but the model che
 
 #### 3.3. ONNX export
 
-We provide two general deploy config files:
- - [lidar-only](configs/deploy/bevfusion_lidar_tensorrt_dynamic.py)
- - [camera-lidar](configs/deploy/bevfusion_camera_lidar_tensorrt_dynamic.py)
+We provide three general deploy config files:
+ - lidar-only
+    - [main-body](configs/deploy/bevfusion_main_body_lidar_only_tensorrt_dynamic.py)
+ - camera-lidar-model
+    - [main-body](configs/deploy/bevfusion_main_body_with_image_tensorrt_dynamic.py)
+    - [image-backbone](configs/deploy/bevfusion_camera_backbone_tensorrt_dynamic.py)
+
+
 
 To export an ONNX, use the following command:
 
 ```bash
-DEPLOY_CFG=projects/BEVFusion/configs/deploy/bevfusion_lidar_tensorrt_dynamic-20x5.py
+DEPLOY_CFG_MAIN_BODY=configs/deploy/bevfusion_main_body_with_image_tensorrt_dynamic.py
+DEPLOY_CFG_IMAGE_BACKBONE=configs/deploy/bevfusion_camera_backbone_tensorrt_dynamic.py
+
 MODEL_CFG=...
 CHECKPOINT_PATH=...
 WORK_DIR=...
 
-python projects/BEVFusion/deploy/export.py \
-  ${DEPLOY_CFG} \
+python projects/BEVFusion/deploy/torch2onnx.py \
+  ${DEPLOY_CFG_MAIN_BODY} \
   ${MODEL_CFG} \
   ${CHECKPOINT_PATH} \
   --device cuda:0 \
   --work-dir ${WORK_DIR}
+  --module main_body
+
+
+python projects/BEVFusion/deploy/torch2onnx.py \
+  ${DEPLOY_CFG_IMAGE_BACKBONE} \
+  ${MODEL_CFG} \
+  ${CHECKPOINT_PATH} \
+  --device cuda:0 \
+  --work-dir ${WORK_DIR}
+  --module image_backbone
+
 ```
 
 This will generate two models in the `WORK_DIR` folder. `end2end.onnx` corresponds to the standard exported model ,whereas `end2end_fixed.onnx` contains a fix for the `TopK` operator (compatibility issues between `mmdeploy` and `TensorRT`).
