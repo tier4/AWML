@@ -222,6 +222,7 @@ class ResultVisualizationHook(Hook):
                     f"[ResultVisualizationHook] fused_img data not found for {img_path}, skipping visualization."
                 )
                 return
+
             # Extract image index and sample index
             frame_idx = output.metainfo.get("frame_idx", None)
             sample_idx = output.metainfo.get("sample_idx", 0)  # Default to 0 if not available
