@@ -37,6 +37,7 @@ DEFAULT_T4METRIC_FILE_NAME = "t4metric_v2_results_{}.pkl"
 
 @dataclass(frozen=True)
 class PerceptionFrameProcessingData:
+    """Dataclass to save parameters before processing PerceptionFrameResult."""
 
     scene_id: str
     sample_id: str
