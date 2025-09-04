@@ -831,7 +831,7 @@ class CalibrationClassificationTransform(BaseTransform):
         return overlay_image
 
     def _visualize_projection(
-        self, input_data: npt.NDArray[np.uint8], label: int, results: Dict[str, Any], phase: str = "test"
+        self, input_data: npt.NDArray[np.float32], label: int, results: Dict[str, Any], phase: str = "test"
     ) -> None:
         """Visualize LiDAR projection results.
         Args:
@@ -844,8 +844,8 @@ class CalibrationClassificationTransform(BaseTransform):
         frame_idx = results.get("frame_idx", "unknown")
         sample_idx = results["sample_idx"]
 
-        camera_data = input_data[:, :, :3]
-        intensity_image = input_data[:, :, 4:5]
+        camera_data = np.clip(input_data[:, :, :3] * 255, 0, 255).astype(np.uint8)
+        intensity_image = np.clip(input_data[:, :, 4:5] * 255, 0, 255).astype(np.uint8)
         overlay_image = self._create_overlay_image(camera_data, intensity_image)
         os.makedirs(self.projection_vis_dir, exist_ok=True)
         frame_id_str = frame_id if frame_id is not None else "unknown"
@@ -858,7 +858,7 @@ class CalibrationClassificationTransform(BaseTransform):
 
     def visualize_results(
         self,
-        input_data: npt.NDArray[np.uint8],
+        input_data: npt.NDArray[np.float32],
         pred_label: int,
         gt_label: int,
         original_image: npt.NDArray[np.uint8],
@@ -881,9 +881,8 @@ class CalibrationClassificationTransform(BaseTransform):
         """
         if self.results_vis_dir is None:
             return
-        camera_data = input_data[:, :, :3]  # BGR format
-        depth_image = input_data[:, :, 3:4]
-        intensity_image = input_data[:, :, 4:5]
+        camera_data = np.clip(input_data[:, :, :3] * 255, 0, 255).astype(np.uint8)  # BGR format
+        intensity_image = np.clip(input_data[:, :, 4:5] * 255, 0, 255).astype(np.uint8)
         overlay_image = self._create_overlay_image(camera_data, intensity_image)  # Returns BGR format
         # Determine if prediction matches ground truth
         prediction_correct = pred_label == gt_label

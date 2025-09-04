@@ -222,14 +222,13 @@ class ResultVisualizationHook(Hook):
                     f"[ResultVisualizationHook] fused_img data not found for {img_path}, skipping visualization."
                 )
                 return
-            viz_data = np.clip(input_data * 255, 0, 255).astype(np.uint8)
             # Extract image index and sample index
             frame_idx = output.metainfo.get("frame_idx", None)
             sample_idx = output.metainfo.get("sample_idx", 0)  # Default to 0 if not available
 
             # Perform visualization with phase information
             self.transform.visualize_results(
-                viz_data,
+                input_data,
                 pred_label,
                 gt_label,
                 original_image,
