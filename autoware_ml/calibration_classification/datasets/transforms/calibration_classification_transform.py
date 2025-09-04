@@ -218,11 +218,11 @@ class CalibrationClassificationTransform(BaseTransform):
         self,
         label: int,
         idx: int,
-        camera_data: np.ndarray,
-        lidar_data: Dict[str, np.ndarray],
+        camera_data: npt.NDArray[np.uint8],
+        lidar_data: Dict[str, npt.NDArray[np.float32]],
         calibration_data: CalibrationData,
-        undistorted_data: np.ndarray,
-        input_data: np.ndarray,
+        undistorted_data: npt.NDArray[np.uint8],
+        input_data: npt.NDArray[np.float32],
     ):
         """Save processed data as compressed (gzip) files. Save data can be further used for unit tests in inference environment.
 
@@ -605,10 +605,9 @@ class CalibrationClassificationTransform(BaseTransform):
         """
         Applies a controlled affine transformation to the image and updates the calibration matrix.
         Args:
-            image (np.ndarray): Input image.
+            image: Input image.
         Returns:
-            Tuple[np.ndarray, np.ndarray]:
-                Transformed image and the 3x3 affine transformation matrix.
+            Transformed image and the 3x3 affine transformation matrix.
         """
         h, w = image.shape[:2]
         max_distortion = self.transform_config["max_distortion"]
@@ -642,7 +641,7 @@ class CalibrationClassificationTransform(BaseTransform):
         lidar_data: Dict[str, npt.NDArray[np.float32]],
         calibration_data: CalibrationData,
         augmentation_tf: Optional[npt.NDArray[np.float32]] = None,
-    ) -> npt.NDArray[np.uint8]:
+    ) -> npt.NDArray[np.float32]:
         """Generate depth and intensity images using augmented calibration.
         Args:
             image: Input camera image.
