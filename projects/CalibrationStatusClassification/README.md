@@ -36,7 +36,7 @@ docker run -it --rm --gpus all --shm-size=64g --name awml -p 6006:6006 -v $PWD/:
 
 ### 2. Config
 
-- Change parameters for your environment by changing [base config file](configs/t4dataset/resnet18_5ch_1xb8-25e_t4base.py).
+- Change parameters for your environment by changing [base config file](configs/t4dataset/resnet18_5ch_1xb8-25e_j6gen2.py).
 
 ```py
 batch_size = 8
@@ -55,12 +55,12 @@ Run training:
 
 - Single GPU:
 ```sh
-python tools/calibration_classification/train.py projects/CalibrationStatusClassification/configs/t4dataset/resnet18_5ch_1xb8-25e_t4base.py
+python tools/calibration_classification/train.py projects/CalibrationStatusClassification/configs/t4dataset/resnet18_5ch_1xb8-25e_j6gen2.py
 ```
 
 - Multi GPU (example with 2 GPUs):
 ```sh
-./tools/calibration_classification/dist_train.sh projects/CalibrationStatusClassification/configs/t4dataset/resnet18_5ch_1xb8-25e_t4base.py 2
+./tools/calibration_classification/dist_train.sh projects/CalibrationStatusClassification/configs/t4dataset/resnet18_5ch_1xb8-25e_j6gen2.py 2
 ```
 
 ### 5. Deploy
