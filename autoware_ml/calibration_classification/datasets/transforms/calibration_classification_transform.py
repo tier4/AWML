@@ -882,6 +882,7 @@ class CalibrationClassificationTransform(BaseTransform):
         if self.results_vis_dir is None:
             return
         camera_data = np.clip(input_data[:, :, :3] * 255, 0, 255).astype(np.uint8)  # BGR format
+        depth_image = np.clip(input_data[:, :, 3:4] * 255, 0, 255).astype(np.uint8)
         intensity_image = np.clip(input_data[:, :, 4:5] * 255, 0, 255).astype(np.uint8)
         overlay_image = self._create_overlay_image(camera_data, intensity_image)  # Returns BGR format
         # Determine if prediction matches ground truth
