@@ -109,7 +109,8 @@ If you want to know about `AWML`, you should read following pages.
 
 ## Supported model
 
-- :star: is recommended to use
+- Supported models
+  - :star: is recommended to use
 
 | Task              | Model                                         | Use for Autoware   |
 | ----------------- | --------------------------------------------- | ------------------ |
@@ -125,7 +126,7 @@ If you want to know about `AWML`, you should read following pages.
 | Vision language   | [BLIP-2](/projects/BLIP-2/)                   |                    |
 |                   |                                               |                    |
 
-- Additional operation
+- Additional plug-ins
   - [SparseConvolutions](/projects/SparseConvolution/)
   - [ConvNeXt](/projects/ConvNeXt_PC/)
 
