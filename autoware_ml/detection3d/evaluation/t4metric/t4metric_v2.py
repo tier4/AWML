@@ -289,7 +289,9 @@ class T4MetricV2(BaseMetric):
             evaluation_config=self.perception_evaluator_configs, load_ground_truth=False
         )
 
-    def _batch_scenes(self, scenes: dict, scene_batch_size: int) -> Generator[PerceptionFrameProcessingData]:
+    def _batch_scenes(
+        self, scenes: dict, scene_batch_size: int
+    ) -> Generator[PerceptionFrameProcessingData, None, None]:
         """
         Batch scenes and group them for parallel processing based on the batch size.
         """
