@@ -7,19 +7,8 @@ Tools setting environment for `AWML`.
   - [x] Ubuntu22.04 LTS
     - This scripts do not need docker environment
 
-## 1. Download dataset
-### 1.1. Download T4dataset
-
-If you want to download [T4dataset](https://github.com/tier4/tier4_perception_dataset) and you have data access right for [WebAuto](https://docs.web.auto/en/user-manuals/), you can download T4dataset by a predefined script. Please refer to [the Readme of the script](/pipelines/webauto/download_t4dataset/) for the specific instruction.
-
-If you do not have the access to Web.Auto and still want to use the dataset, please contact Web.Auto team from [the Web.Auto contact form](https://web.auto/contact/). However, please note that these dataset are currently only available for TIER IV members as of September 2024.
-
-### 1.2. Download the other open dataset
-
-If you want to use open dataset like nuScenes dataset, please follow [mmdetection3d documents](https://mmdetection3d.readthedocs.io/en/latest/advanced_guides/index.html) and [mmdetection documents](https://mmdetection.readthedocs.io/en/latest/user_guides/dataset_prepare.html).
-
-## 2. Setup environment
-### 2.1. Set repository
+## 1. Setup environment
+### 1.1. Set repository
 
 - Set environment
 
@@ -39,7 +28,7 @@ git clone https://github.com/tier4/AWML
 └── work_dirs
 ```
 
-### 2.2 Prepare docker
+### 1.2 Prepare docker
 
 - Docker pull for base environment
   - See https://github.com/tier4/AWML/pkgs/container/autoware-ml-base
@@ -54,6 +43,17 @@ docker pull ghcr.io/tier4/autoware-ml-base:latest
 ```
 docker pull ghcr.io/tier4/autoware-ml-ros2:latest
 ```
+
+## 2. Download dataset
+### 2.1. Download T4dataset
+
+If you want to download [T4dataset](https://github.com/tier4/tier4_perception_dataset) and you have data access right for [WebAuto](https://docs.web.auto/en/user-manuals/), you can download T4dataset by a predefined script. Please refer to [the Readme of the script](/pipelines/webauto/download_t4dataset/) for the specific instruction.
+
+If you do not have the access to Web.Auto and still want to use the dataset, please contact Web.Auto team from [the Web.Auto contact form](https://web.auto/contact/). However, please note that these dataset are currently only available for TIER IV members as of September 2024.
+
+### 2.2. Download the other open dataset
+
+If you want to use open dataset like nuScenes dataset, please follow [mmdetection3d documents](https://mmdetection3d.readthedocs.io/en/latest/advanced_guides/index.html) and [mmdetection documents](https://mmdetection.readthedocs.io/en/latest/user_guides/dataset_prepare.html).
 
 ## Tips
 ### Build docker on your own

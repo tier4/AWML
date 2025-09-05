@@ -4,12 +4,11 @@ This page shows community supports abround `AWML`.
 `AWML` is based on [Autoware Core & Universe strategy](https://autoware.org/autoware-overview/).
 We hope that this page promote the community between Autoware and ML researchers and engineers.
 
-![](/docs/fig/autoware_ml_community.drawio.svg)
-
 ## Papers
 ### AWML
 
-The arXiv paper of AWML is [here](https://arxiv.org/abs/2506.00645).
+- The arXiv paper of AWML: https://arxiv.org/abs/2506.00645
+  - This paper contains the whole design of AWML.
 
 ```
 @misc{tanaka2025awmlopensourcemlbasedrobotics,
@@ -23,12 +22,26 @@ The arXiv paper of AWML is [here](https://arxiv.org/abs/2506.00645).
 }
 ```
 
+- The arXiv paper of experimental evaluation system: https://arxiv.org/abs/2507.00190
+
+```
+@misc{tanaka2025rethink3dobjectdetection,
+      title={Rethink 3D Object Detection from Physical World},
+      author={Satoshi Tanaka and Koji Minoda and Fumiya Watanabe and Takamasa Horibe},
+      year={2025},
+      eprint={2507.00190},
+      archivePrefix={arXiv},
+      primaryClass={cs.RO},
+      url={https://arxiv.org/abs/2507.00190},
+}
+```
+
 ## Libraries
-### (TBD) autoware-ml-prediction
+### AWMLPrediction
 
-- autoware-ml-prediction
+- AWMLPrediction
 
-We are implementing `autoware-ml-prediction` for now, which aims to deploy ML-based prediction model for Autoware.
+We are implementing `AWMLPrediction` for now, which aims to deploy ML-based prediction model for Autoware.
 
 ## Tools
 ### mm-project-template
