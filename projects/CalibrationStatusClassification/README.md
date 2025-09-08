@@ -21,7 +21,7 @@
 ## Get started
 ### 1. Setup
 
-- [Run setup environment at first](/tools/setting_environment/README.md)
+- Set up environment by [install tutorial](/docs/tutorial/tutorial_install.md).
 - Docker build for CalibrationStatusClassification
 
 ```sh

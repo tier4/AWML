@@ -34,7 +34,7 @@
 ## Get started
 ### 1. Setup
 
-- [Run environment setup first](/tools/setting_environment/)
+- Set up environment by [install tutorial](/docs/tutorial/tutorial_install.md).
 - Run docker
 
 ```sh

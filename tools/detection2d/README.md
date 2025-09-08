@@ -11,7 +11,7 @@ Training and evaluation tools for 2D Detection.
 
 ## 1. Set environment
 
-- See [setting environment](/tools/setting_environment/)
+- See [install tutorial](/docs/tutorial/tutorial_install.md).
 
 ## 2. Prepare dataset
 ### 2.1. COCO dataset

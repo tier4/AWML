@@ -48,11 +48,11 @@ We hope that `AWML` promotes the community between Autoware and ML researchers a
 | Autoware       | https://github.com/autowarefoundation/autoware |
 | AWMLPrediction | TBD                                            |
 
-## Docs
-### Tutorial
+## Get started
 
 - [Start training for 3D object detection](/docs/tutorial/tutorial_detection_3d.md)
 
+## Docs
 ### Design documents
 
 If you want to know about the design of `AWML`, you should read following pages.
@@ -88,7 +88,7 @@ If you want to know about `AWML`, you should read following pages.
 
 ## Supported tools
 
-- [Setting environment for AWML](/tools/setting_environment/)
+- [Docker environment for AWML](/tools/setting_environment/)
 - Training, evaluation, and deployment
   - [Train and evaluate 3D detection model and 3D semantic segmentation model](/tools/detection3d/)
   - [Train and evaluate 2D detection model](/tools/detection2d/)

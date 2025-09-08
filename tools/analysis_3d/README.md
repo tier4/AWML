@@ -19,7 +19,7 @@ They only need to follow `AnalysisCallbackInterface` to add the analyses they ar
 ## Get started
 ### 1. Setup
 
-- [Run setup environment](/tools/setting_environment/README.md)
+- Set up environment by [install tutorial](/docs/tutorial/tutorial_install.md).
 - Run docker
 
 ```sh
