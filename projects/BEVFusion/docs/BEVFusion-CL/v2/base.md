@@ -7,7 +7,8 @@
 | Eval range: 120m                | mAP  | car  | truck | bus  | bicycle | pedestrian |
 | --------------------------------| ---- | ---- | ----- | ---- | ------- | ---------- |
 | BEVFusion-CL base/2.0.0 (A)     | 70.72 | 81.04 | **62.06** | 82.52 | **70.82** | 57.14                   |
-| BEVFusion-CL base/2.0.0 (B)     | **75.03** | 79.62 | 61.20 | **86.67** | 69.99 | **77.62**                   |
+| BEVFusion-CL base/2.0.0 (B)     | **75.03** | 79.62 | 61.20 | **86.67** | 69.99 | **77.62**                |   
+| BEVFusion-CL base/2.0.0 (C)     | **76.3**  | **80.50** | **61.90** |   85.90   | **74.70** | **78.70**    |
 
 ### Datasets
 #### base
@@ -40,12 +41,47 @@
 | BEVFusion-CL base/2.0.0 (A)      | 69.99 | 79.41 | 64.64 | 83.58 | 67.03 | 55.28                |
 | BEVFusion-CL base/2.0.0 (B)     | 74.48 | 77.28 | 62.67 | 87.92 | 66.58 | 77.98                  |
 
+- BEVFusion-CL base/2.0.0 (A): Without intensity and training pedestrians with pooling pedestrians
+- BEVFusion-CL base/2.0.0 (B): Same as `BEVFusion-CL base/2.0.0 (A)` without pooling pedestrians
+- BEVFusion-CL base/2.0.0 (C): Same as `BEVFusion-CL base/2.0.0 (B)` with improved image ROI cropping, and augmentation parameter fixes.
 
 ## Release
 
-### BEVFusion-CL base/2.0.0
-- BEVFusion-CL base/2.0.0 (A): Without intensity and training pedestrians with pooling pedestrians
-- BEVFusion-CL base/2.0.0 (B): Same as `BEVFusion-CL base/2.0.0 (A)` without pooling pedestrians
+### BEVFusion-CL base/2.0.0 (C)
+
+<details>
+<summary> The link of data and evaluation result </summary>
+
+- Model
+  - Training dataset: DB JPNTAXI v1.0 + DB JPNTAXI v2.0 + DB JPNTAXI v4.0 + DB GSM8 v1.0 + DB J6 v1.0 + DB J6 v2.0 + DB J6 v3.0 + DB J6 v5.0 + DB J6 Gen2 v1.0 + DB J6 Gen2 v2.0 + DB J6 Gen2 v4.0 + DB LargeBus v1.0 (total frames: 71,633)
+  - [Config file path](https://github.com/tier4/AWML/blob/50f35a8ae52c4892351be0c7aa5d260c1b310b7e/projects/BEVFusion/configs/t4dataset/BEVFusion-CL/bevfusion_camera_lidar_voxel_second_secfpn_4xb8_base.py)
+  - Deployed onnx model and ROS parameter files [[WebAuto (for internal)]](WIP)
+  - Deployed onnx and ROS parameter files [[model-zoo]]
+    - [image_backbone.onnx](https://download.autoware-ml-model-zoo.tier4.jp/autoware-ml/models/bevfusion/bevfusion-cl/t4base/v2.0.0/image_backbone.onnx)
+    - [main_body.onnx](https://download.autoware-ml-model-zoo.tier4.jp/autoware-ml/models/bevfusion/bevfusion-cl/t4base/v2.0.0/main_body.onnx)
+  - Training results [model-zoo]
+    - [logs.zip](https://download.autoware-ml-model-zoo.tier4.jp/autoware-ml/models/bevfusion/bevfusion-cl/t4base/v2.0.0/log.zip)
+    - [checkpoint_best.pth](https://download.autoware-ml-model-zoo.tier4.jp/autoware-ml/models/bevfusion/bevfusion-cl/t4base/v2.0.0/best_NuScenes_metric_T4Metric_mAP_epoch_48.pth)
+    - [config.py](https://download.autoware-ml-model-zoo.tier4.jp/autoware-ml/models/bevfusion/bevfusion-cl/t4base/v2.0.0/bevfusion_camera_lidar_voxel_second_secfpn_4xb8_base.py)
+  - [PR](https://github.com/tier4/AWML/pull/88)
+  - Train time: NVIDIA H100 80GB * 4 * 50 epochs = 3 days and 20 hours
+  - Batch size: 4*16 = 64
+
+- Evaluation
+  - db_jpntaxi_v1 + db_jpntaxi_v2 + db_jpntaxi_v4 + db_gsm8_v1 + db_j6_v1 + db_j6_v2 + db_j6_v3 + db_j6_v5 + db_j6gen2_v1 + db_j6gen2_v1 + db_j6gen2_v4 + db_largebus_v1 (total frames: 5,703):
+  - Total mAP (eval range = 120m): 0.763
+
+| class_name |  Count    | mAP  | AP@0.5m | AP@1.0m | AP@2.0m | AP@4.0m |
+| ----       |  -------  | ---- | ---- | ---- | ---- | ---- |
+| car        |   144,001 | 80.5 | 69.2    | 80.5    | 85.1    | 87.2    |
+| truck      |   20,823  | 61.9 | 37.7    | 60.9    | 71.1    | 78.1    |
+| bus        |    5,691  | 85.9 | 71.9    | 86.0    | 92.1    | 93.5    |
+| bicycle    |    5,007  | 74.7 | 71.2    | 75.4    | 75.9    | 76.4    |
+| pedestrian |   42,034  | 78.7 | 76.1    | 78.4    | 79.5    | 80.6    |
+
+</details>
+
+### BEVFusion-CL base/2.0.0 (B)
 - We report only `BEVFusion-CL base/2.0.0 (B)` since the performance is much better than `BEVFusion-CL base/2.0.0 (A)`, and it is mainly due to it doesn't downsample the dense heatmaps for pedestrians, and thus it has more queries
 
 <details>
