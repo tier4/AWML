@@ -2,11 +2,12 @@
 ## 1. Report issue
 
 If you want to add/fix some code, please make the issue at first.
-You should comment and show the issue and show what you want to fix  before implementation.
+You should comment and show the issue and show what you want to fix before implementation.
 
 ## 2. Implementation
 
 You should fork from autoware-ml to own repository and make new branch.
+Please check [AWML design document](/docs/design/autoware_ml_design.md) before implementation.
 
 ## 3. Formatting
 
