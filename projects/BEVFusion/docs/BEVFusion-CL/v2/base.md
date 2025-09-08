@@ -65,7 +65,7 @@
     - [config.py](https://download.autoware-ml-model-zoo.tier4.jp/autoware-ml/models/bevfusion/bevfusion-cl/t4base/v2.0.0/bevfusion_camera_lidar_voxel_second_secfpn_4xb8_base.py)
   - [PR](https://github.com/tier4/AWML/pull/88)
   - Train time: NVIDIA H100 80GB * 4 * 50 epochs = 3 days and 20 hours
-  - Batch size: 4*16 = 64
+  - Batch size: 4*8 = 32
 
 - Evaluation
   - db_jpntaxi_v1 + db_jpntaxi_v2 + db_jpntaxi_v4 + db_gsm8_v1 + db_j6_v1 + db_j6_v2 + db_j6_v3 + db_j6_v5 + db_j6gen2_v1 + db_j6gen2_v1 + db_j6gen2_v4 + db_largebus_v1 (total frames: 5,703):

@@ -418,8 +418,7 @@ optim_wrapper = dict(
 #   - `enable` means enable scaling LR automatically
 #       or not by default.
 #   - `base_batch_size` = (8 GPUs) x (4 samples per GPU).
-# auto_scale_lr = dict(enable=False, base_batch_size=32)
-auto_scale_lr = dict(enable=True, base_batch_size=train_gpu_size * train_batch_size)
+auto_scale_lr = dict(enable=True, base_batch_size=32)
 
 # Only set if the number of train_gpu_size more than 1
 if train_gpu_size > 1:
