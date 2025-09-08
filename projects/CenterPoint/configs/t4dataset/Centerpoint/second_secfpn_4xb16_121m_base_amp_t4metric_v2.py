@@ -48,7 +48,7 @@ test_batch_size = 2
 num_workers = 32
 val_interval = 5
 max_epochs = 50
-work_dir = "work_dirs/centerpoint/" + _base_.dataset_type + "/second_secfpn_4xb16_121m_base_amp/"
+work_dir = "work_dirs/centerpoint/" + _base_.dataset_type + "/second_secfpn_4xb16_121m_base_amp_t4metric_v2/"
 
 train_pipeline = [
     dict(
@@ -106,7 +106,27 @@ test_pipeline = [
         backend_args=backend_args,
     ),
     dict(type="PointsRangeFilter", point_cloud_range=point_cloud_range),
-    dict(type="Pack3DDetInputs", keys=["points", "gt_bboxes_3d", "gt_labels_3d"]),
+    dict(
+        type="Pack3DDetInputs",
+        keys=["points", "gt_bboxes_3d", "gt_labels_3d"],
+        # Specify the metadata keys required by the downstream pipeline.
+        # Refer to the official MMDetection3D formatting transform implementation for details:
+        # https://github.com/open-mmlab/mmdetection3d/blob/main/mmdet3d/datasets/transforms/formating.py#L67
+        # Also see the content structure in "t4dataset_base_infos_test.pkl" for reference.
+        meta_keys=(
+            "timestamp",
+            "lidar2img",
+            "depth2img",
+            "cam2img",
+            "box_type_3d",
+            "sample_idx",
+            "lidar_path",
+            "ori_cam2img",
+            "cam2global",
+            "lidar2cam",
+            "ego2global",
+        ),
+    ),
 ]
 
 # construct a pipeline for data and gt loading in show function
@@ -190,29 +210,53 @@ test_dataloader = dict(
     ),
 )
 
+# Add evaluator configs
+perception_evaluator_configs = dict(
+    dataset_paths=data_root,
+    frame_id="base_link",
+    result_root_directory=work_dir + "/result",
+    evaluation_config_dict=_base_.evaluator_metric_configs,
+    load_raw_data=False,
+)
+
+critical_object_filter_config = dict(
+    target_labels=_base_.class_names,
+    ignore_attributes=None,
+    max_distance_list=[121.0, 121.0, 121.0, 121.0, 121.0],
+    min_distance_list=[-121.0, -121.0, -121.0, -121.0, -121.0],
+)
+
+frame_pass_fail_config = dict(
+    target_labels=_base_.class_names,
+    # Matching thresholds per class (must align with `plane_distance_thresholds` used in evaluation)
+    matching_threshold_list=[2.0, 2.0, 2.0, 2.0, 2.0],
+    confidence_threshold_list=None,
+)
+
 val_evaluator = dict(
-    type="T4Metric",
+    type="T4MetricV2",
     data_root=data_root,
+    output_dir="validation",
     ann_file=data_root + info_directory_path + _base_.info_val_file_name,
-    metric="bbox",
-    backend_args=backend_args,
     class_names={{_base_.class_names}},
     name_mapping={{_base_.name_mapping}},
-    eval_class_range=eval_class_range,
-    filter_attributes=_base_.filter_attributes,
+    perception_evaluator_configs=perception_evaluator_configs,
+    critical_object_filter_config=critical_object_filter_config,
+    frame_pass_fail_config=frame_pass_fail_config,
+    write_metric_summary=False,
 )
 
 test_evaluator = dict(
-    type="T4Metric",
+    type="T4MetricV2",
     data_root=data_root,
+    output_dir="testing",
     ann_file=data_root + info_directory_path + _base_.info_test_file_name,
-    metric="bbox",
-    backend_args=backend_args,
     class_names={{_base_.class_names}},
     name_mapping={{_base_.name_mapping}},
-    eval_class_range=eval_class_range,
-    filter_attributes=_base_.filter_attributes,
-    save_csv=True,
+    perception_evaluator_configs=perception_evaluator_configs,
+    critical_object_filter_config=critical_object_filter_config,
+    frame_pass_fail_config=frame_pass_fail_config,
+    write_metric_summary=True,
 )
 
 model = dict(
@@ -399,7 +443,9 @@ visualizer = dict(type="Det3DLocalVisualizer", vis_backends=vis_backends, name="
 logger_interval = 50
 default_hooks = dict(
     logger=dict(type="LoggerHook", interval=logger_interval),
-    checkpoint=dict(type="CheckpointHook", interval=1, max_keep_ckpts=3, save_best="NuScenes metric/T4Metric/mAP"),
+    checkpoint=dict(
+        type="CheckpointHook", interval=1, max_keep_ckpts=3, save_best="T4MetricV2/T4MetricV2/mAP_center_distance_bev"
+    ),
 )
 
 custom_hooks = [

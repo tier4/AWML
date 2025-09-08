@@ -1,0 +1,39 @@
+version: 1
+dataset_version: db-jpntaxigen2-v1.0
+train:
+  - dc90e149-1170-42ab-a075-3ea75b11e9e2   0
+  - 6ec8d740-8771-4b5b-ae0a-d7ecb1993c1a   0
+  - c7d9be5f-05b5-4de7-9f85-ac5a91a5d965   0
+  - bc4dc4b3-f60c-4cf6-bc68-76988263511d   0
+  - 64c2e637-d170-4e03-bf8d-3d3c58996b8b   0
+  - 0bc6f987-fb64-4a76-9df3-bb8629bd7115   0
+  - 5831cf18-3b49-45f8-b37e-7b50e4048f5c   0
+  - 016241c2-37b4-4126-8221-68da4dcc4e13   0
+  - ccec1eb7-f0e6-4a18-ba4e-d3d9b995b598   0
+  - e3d3e209-8ac5-4793-a5cc-fe3439b003a8   0
+  - 54819912-f0e3-49ac-974e-9f7dc3a2042d   0
+  - 5e8d07d9-89a4-43db-b725-f78936e2a9b2   0
+  - b91323d7-1e85-4348-b5ca-bf2d0344f580   0
+  - 66a67e86-b8e1-436b-b3e6-f08d254192b4   0
+  - 6730382b-be53-4b5a-9e08-93bffefa0527   0
+  - e4a1e255-7eb2-4f72-8174-f8833106d49e   0
+  - 701b7a49-8580-41d2-b9f7-353dc150ba3f   0
+  - ad123a1d-bd5d-4838-bf03-8fa85deaa403   0
+  - 2bb81162-b5fa-439f-a660-fc1e4250eda3   0
+  - fd5ce146-77d3-40d5-a508-1ae39af879bb   0
+  - bcb16d27-8466-49fa-a06a-5faa09a7d71d   0
+  - 5c1edb84-7c4f-47c9-b61d-166f5afb8d3b   0
+  - 3ff13b6c-c485-4d86-be7d-01eee741c316   0
+  - 668f67ae-fd90-4656-914e-eda52688f659   0
+  - e0f4f52b-3ab0-490a-979b-9e066b20b1c1   0
+  - 433a2328-a5a6-4790-87d3-59e930ac7020   0
+  - b5f640d7-6e5f-4007-8438-f29a176e8050   0
+
+val:
+  - cbf88fa3-f9ea-46ba-ad52-75f4e0364e0a   0
+  - 1e57face-9486-4507-a505-8b423400cf76   0
+
+test:
+  - a7eb58aa-342a-47b5-a537-c9580c9768f6   0
+  - 9f1c46d9-9038-47b4-a227-8af0e5c30bf9   0
+  - d078b80c-1cfb-4f23-99ef-598d633ad1d5   0

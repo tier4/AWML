@@ -8,14 +8,18 @@ custom_imports = dict(
 
 # dataset type setting
 dataset_type = "T4Dataset"
-info_train_file_name = "t4dataset_largebus_infos_train.pkl"
-info_val_file_name = "t4dataset_largebus_infos_val.pkl"
-info_test_file_name = "t4dataset_largebus_infos_test.pkl"
+info_train_file_name = "t4dataset_jpntaxi_gen2_base_infos_train.pkl"
+info_val_file_name = "t4dataset_jpntaxi_gen2_base_infos_val.pkl"
+info_test_file_name = "t4dataset_jpntaxi_gen2_base_infos_test.pkl"
 
 # dataset scene setting
 dataset_version_config_root = "autoware_ml/configs/t4dataset/"
+dataset_test_groups = {
+    "db_jpntaxi_gen2_base": "t4dataset_jpntaxi_gen2_base_infos_test.pkl",
+}
+
 dataset_version_list = [
-    "db_largebus_v1",
+    "db_jpntaxigen2_v1",
 ]
 
 # dataset format setting
