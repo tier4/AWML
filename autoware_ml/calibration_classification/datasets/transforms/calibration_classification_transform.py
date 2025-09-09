@@ -801,8 +801,8 @@ class CalibrationClassificationTransform(BaseTransform):
             sorted_depths = final_depths[sort_indices]
             sorted_intensities = final_intensities[sort_indices]
 
-            depth_image[sorted_rows, sorted_cols] = sorted_depths.astype(np.float32)
-            intensity_image[sorted_rows, sorted_cols] = sorted_intensities.astype(np.float32)
+            depth_image[sorted_rows, sorted_cols] = sorted_depths
+            intensity_image[sorted_rows, sorted_cols] = sorted_intensities
 
         depth_image = np.expand_dims(depth_image, axis=2)
         intensity_image = np.expand_dims(intensity_image, axis=2)
