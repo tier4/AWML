@@ -57,7 +57,9 @@ class BEVFusion(Base3DDetector):
 
         self.init_weights()
 
-    def _forward(self, batch_inputs_dict: Tensor, batch_data_samples: OptSampleList = [], using_image_features=False,**kwargs):
+    def _forward(
+        self, batch_inputs_dict: Tensor, batch_data_samples: OptSampleList = [], using_image_features=False, **kwargs
+    ):
         """Network forward process.
 
         Usually includes backbone, neck and head forward without any post-
@@ -66,7 +68,7 @@ class BEVFusion(Base3DDetector):
 
         # NOTE(knzo25): this is used during onnx export
         batch_input_metas = [item.metainfo for item in batch_data_samples]
-        feats = self.extract_feat(batch_inputs_dict, batch_input_metas,using_image_features)
+        feats = self.extract_feat(batch_inputs_dict, batch_input_metas, using_image_features)
 
         if self.with_bbox_head:
             outputs = self.bbox_head(feats, batch_input_metas)
@@ -226,8 +228,11 @@ class BEVFusion(Base3DDetector):
         return feats, coords, sizes
 
     def predict(
-        self, batch_inputs_dict: Dict[str, Optional[Tensor]], batch_data_samples: List[Det3DDataSample], 
-        using_image_features=False, **kwargs
+        self,
+        batch_inputs_dict: Dict[str, Optional[Tensor]],
+        batch_data_samples: List[Det3DDataSample],
+        using_image_features=False,
+        **kwargs,
     ) -> List[Det3DDataSample]:
         """Forward of testing.
 
@@ -301,7 +306,7 @@ class BEVFusion(Base3DDetector):
                 img_aug_matrix,
                 lidar_aug_matrix,
                 batch_input_metas,
-                using_image_features=using_image_features
+                using_image_features=using_image_features,
             )
             features.append(img_feature)
         elif imgs is not None:
@@ -314,12 +319,10 @@ class BEVFusion(Base3DDetector):
             lidar_aug_matrix = batch_inputs_dict["lidar_aug_matrix"]
 
             geom_feats = batch_inputs_dict["geom_feats"]
-            
 
             # feats = batch_inputs_dict["voxels"]["voxels"]
             # sizes = batch_inputs_dict["voxels"]["num_points_per_voxel"]
             # feats = feats.sum(dim=1, keepdim=False) / sizes.type_as(feats).view(-1, 1)
-
 
             img_feature = self.extract_img_feat(
                 imgs,
@@ -331,7 +334,7 @@ class BEVFusion(Base3DDetector):
                 lidar_aug_matrix,
                 batch_input_metas,
                 geom_feats=geom_feats,
-                using_image_features=using_image_features
+                using_image_features=using_image_features,
             )
             features.append(img_feature)
 
@@ -355,10 +358,14 @@ class BEVFusion(Base3DDetector):
         return x
 
     def loss(
-        self, batch_inputs_dict: Dict[str, Optional[Tensor]], batch_data_samples: List[Det3DDataSample], using_image_features:bool = False, **kwargs
+        self,
+        batch_inputs_dict: Dict[str, Optional[Tensor]],
+        batch_data_samples: List[Det3DDataSample],
+        using_image_features: bool = False,
+        **kwargs,
     ) -> List[Det3DDataSample]:
         batch_input_metas = [item.metainfo for item in batch_data_samples]
-        feats = self.extract_feat(batch_inputs_dict, batch_input_metas,using_image_features)
+        feats = self.extract_feat(batch_inputs_dict, batch_input_metas, using_image_features)
 
         losses = dict()
         if self.with_bbox_head:

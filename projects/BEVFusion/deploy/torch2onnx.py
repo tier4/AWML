@@ -181,8 +181,8 @@ if __name__ == "__main__":
             images_mean = data_preprocessor.mean.to(device)
             images_std = data_preprocessor.std.to(device)
             image_backbone_container = TrtBevFusionImageBackboneContainer(patched_model, images_mean, images_std)
-            model_inputs = (imgs.to(device=device,dtype=torch.uint8),)
-            
+            model_inputs = (imgs.to(device=device, dtype=torch.uint8),)
+
             if args.module == "image_backbone":
                 return_value = torch.onnx.export(
                     image_backbone_container,
@@ -215,7 +215,7 @@ if __name__ == "__main__":
                     kept.to(device),
                     ranks.to(device).long(),
                     indices.to(device).long(),
-                    image_feats
+                    image_feats,
                 )
             torch.onnx.export(
                 main_container,
@@ -253,5 +253,5 @@ if __name__ == "__main__":
             onnx.save_model(gs.export_onnx(graph), output_path)
 
             logger.info(f"(Fixed) ONNX exported to {output_path}")
-        
+
         logger.info(f"ONNX exported to {output_path}")

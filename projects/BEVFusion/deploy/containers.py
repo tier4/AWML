@@ -11,7 +11,7 @@ class TrtBevFusionImageBackboneContainer(torch.nn.Module):
         self.images_mean = mean
         self.images_std = std
 
-    def forward(self,imgs):
+    def forward(self, imgs):
 
         mod = self.mod
         imgs = (imgs.float().unsqueeze(0) - self.images_mean) / self.images_std
@@ -25,17 +25,19 @@ class TrtBevFusionMainContainer(torch.nn.Module):
         super().__init__(*args, **kwargs)
         self.mod = mod
 
-    def forward(self, voxels,
-        coors, 
+    def forward(
+        self,
+        voxels,
+        coors,
         num_points_per_voxel,
-        points = None,
-        lidar2img = None,
-        img_aug_matrix = None,
-        geom_feats = None,
-        kept = None,
-        ranks = None,
-        indices = None,
-        image_feats = None,
+        points=None,
+        lidar2img=None,
+        img_aug_matrix=None,
+        geom_feats=None,
+        kept=None,
+        ranks=None,
+        indices=None,
+        image_feats=None,
     ):
         mod = self.mod
         if coors.shape[1] == 3:
@@ -69,7 +71,7 @@ class TrtBevFusionMainContainer(torch.nn.Module):
                 }
             )
 
-        outputs = mod._forward(batch_inputs_dict,using_image_features=True)
+        outputs = mod._forward(batch_inputs_dict, using_image_features=True)
 
         # The following code is taken from
         # projects/BEVFusion/bevfusion/bevfusion_head.py
@@ -80,7 +82,8 @@ class TrtBevFusionMainContainer(torch.nn.Module):
         score = score[0].max(dim=0)[0]
 
         bbox_pred = torch.cat(
-            [outputs["center"][0], outputs["height"][0], outputs["dim"][0], outputs["rot"][0], outputs["vel"][0]], dim=0
+            [outputs["center"][0], outputs["height"][0], outputs["dim"][0], outputs["rot"][0], outputs["vel"][0]],
+            dim=0,
         )
 
         return bbox_pred, score, outputs["query_labels"][0]

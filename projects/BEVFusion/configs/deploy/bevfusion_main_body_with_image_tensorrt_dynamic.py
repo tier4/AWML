@@ -10,7 +10,7 @@ custom_imports = dict(
 )
 
 depth_bins = 118
-feature_dims = (48,72)
+feature_dims = (48, 72)
 
 backend_config = dict(
     type="tensorrt",
@@ -26,7 +26,7 @@ backend_config = dict(
                 lidar2image=dict(min_shape=[1, 4, 4], opt_shape=[6, 4, 4], max_shape=[6, 4, 4]),
                 img_aug_matrix=dict(min_shape=[1, 4, 4], opt_shape=[6, 4, 4], max_shape=[6, 4, 4]),
                 geom_feats=dict(
-                    min_shape=[0 * depth_bins * feature_dims[0] * feature_dims[1], 4],   
+                    min_shape=[0 * depth_bins * feature_dims[0] * feature_dims[1], 4],
                     opt_shape=[6 * depth_bins * feature_dims[0] * feature_dims[1] // 2, 4],
                     max_shape=[6 * depth_bins * feature_dims[0] * feature_dims[1], 4],
                 ),
@@ -46,9 +46,10 @@ backend_config = dict(
                     max_shape=[6 * depth_bins * feature_dims[0] * feature_dims[1]],
                 ),
                 image_feats=dict(
-                    min_shape=[0, 256, feature_dims[0], feature_dims[1]], 
-                    opt_shape=[6, 256, feature_dims[0], feature_dims[1]], 
-                    max_shape=[6, 256, feature_dims[0], feature_dims[1]]),
+                    min_shape=[0, 256, feature_dims[0], feature_dims[1]],
+                    opt_shape=[6, 256, feature_dims[0], feature_dims[1]],
+                    max_shape=[6, 256, feature_dims[0], feature_dims[1]],
+                ),
             )
         )
     ],

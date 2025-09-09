@@ -9,7 +9,7 @@ custom_imports = dict(
     allow_failed_imports=False,
 )
 
-image_dims = (384,576)
+image_dims = (384, 576)
 
 backend_config = dict(
     type="tensorrt",
@@ -17,7 +17,11 @@ backend_config = dict(
     model_inputs=[
         dict(
             input_shapes=dict(
-                imgs=dict(min_shape=[1, 3, image_dims[0], image_dims[1]], opt_shape=[6, 3, image_dims[0], image_dims[1]], max_shape=[6, 3, image_dims[0], image_dims[1]]),
+                imgs=dict(
+                    min_shape=[1, 3, image_dims[0], image_dims[1]],
+                    opt_shape=[6, 3, image_dims[0], image_dims[1]],
+                    max_shape=[6, 3, image_dims[0], image_dims[1]],
+                ),
             )
         )
     ],
@@ -37,7 +41,6 @@ onnx_config = dict(
         "imgs": {
             0: "num_imgs",
         },
-
     },
     input_shape=None,
     verbose=True,

@@ -395,12 +395,12 @@ class BaseDepthTransform(BaseViewTransform):
             post_trans = img_aug_matrix[..., :3, 3]
             camera2lidar_rots = camera2lidar[..., :3, :3]
             camera2lidar_trans = camera2lidar[..., :3, 3]
-            
+
             if camera_intrinsics_inverse is None:
                 intrins_inverse = torch.inverse(cam_intrinsic)[..., :3, :3]
             else:
                 intrins_inverse = camera_intrinsics_inverse[..., :3, :3]
-            
+
             if img_aug_matrix_inverse is None:
                 post_rots_inverse = torch.inverse(img_aug_matrix)[..., :3, :3]
             else:
