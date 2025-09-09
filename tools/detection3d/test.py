@@ -2,6 +2,7 @@
 import argparse
 import os
 import os.path as osp
+import time
 
 from mmdet3d.utils import replace_ceph_backend
 from mmengine.config import Config, ConfigDict, DictAction
@@ -83,6 +84,8 @@ def trigger_visualization_hook(cfg, args):
 
 
 def main():
+    start_time = time.time()
+
     args = parse_args()
 
     # load config
@@ -149,6 +152,10 @@ def main():
 
         # start testing
         runner.test()
+
+    end_time = time.time()
+    elapsed_time = end_time - start_time
+    print_log(f"Elapsed time: {elapsed_time:.4f} seconds", logger=runner.logger)
 
 
 if __name__ == "__main__":

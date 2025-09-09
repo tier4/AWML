@@ -263,7 +263,6 @@ def main():
                     scene_root_dir_path = get_scene_root_dir_path(args.root_path, dataset_version, t4_dataset_id)
                 else:
                     raise ValueError(f"{t4_dataset_id} does not exist.")
-
                 t4 = Tier4(version="annotation", data_root=scene_root_dir_path, verbose=False)
                 for i, sample in enumerate(t4.sample):
                     info = get_info(cfg, t4, sample, i, args.max_sweeps)

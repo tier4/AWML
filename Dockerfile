@@ -59,6 +59,13 @@ RUN python3 -m pip --no-cache-dir install \
 # Install t4-devkit
 RUN python3 -m pip install git+https://github.com/tier4/t4-devkit@v0.0.7
 
+# Install autoware-perception-evaluation
+RUN python3 -m pip install git+https://github.com/tier4/autoware_perception_evaluation
+
+# Need to dowgrade setuptools to 60.2.0 to fix setup
+RUN python3 -m pip --no-cache-dir install \
+    setuptools==60.2.0
+
 # NOTE(knzo25): this patch is needed to use numpy versions over 1.23.5 (version used in mmdet3d 1.4.0)
 # It can be safely deleted when mmdet3d updates the numpy version
 COPY .patches/mmdet3d.patch /tmp/mmdet3d.patch
