@@ -20,7 +20,9 @@ class GroupStreamingSampler(Sampler):
         seed: Optional[int] = 10,
         pad_sequences: bool = False,
         trim_sequences: bool = False,
+        random_drop_probability: float = 0.0,
     ) -> None:
+        self.random_drop_probability = random_drop_probability
         rank, world_size = get_dist_info()
         self.rank = rank
         self.world_size = world_size
@@ -68,7 +70,15 @@ class GroupStreamingSampler(Sampler):
             # Divide selected_groups into self.batch_size groups, drop the last if not divisible
             batch_groups = [[] for _ in range(self.batch_size)]
             for i, group in enumerate(selected_groups):
-                batch_groups[i % self.batch_size].extend(group)
+                # Randomly drop some elements from the group based on the random_drop_probability, to simulate camera drop. But never drop the first element
+                # because it might cause the value of prev_exists to be wrong in the inputs.
+                batch_groups[i % self.batch_size].extend(
+                    [
+                        x
+                        for position, x in enumerate(group)
+                        if np.random.rand() > self.random_drop_probability and position > 0
+                    ]
+                )
             indices = []
             while all(len(batch_groups[i]) > 0 for i in range(self.batch_size)):
                 for i in range(self.batch_size):
