@@ -806,7 +806,7 @@ class CalibrationClassificationTransform(BaseTransform):
 
         depth_image = np.expand_dims(depth_image, axis=2)
         intensity_image = np.expand_dims(intensity_image, axis=2)
-        return np.concatenate([image.astype(np.float32), depth_image, intensity_image], axis=2)
+        return np.concatenate([image, depth_image, intensity_image], axis=2, dtype=np.float32)
 
     def _create_overlay_image(
         self, bgr_image: npt.NDArray[np.uint8], feature_image: npt.NDArray[np.uint8]
