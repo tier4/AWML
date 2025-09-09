@@ -16,7 +16,7 @@ batch_size = 16
 max_epochs = 50
 warmup_epochs = 5
 num_workers = 4
-lidar_range = 128.0
+max_depth = 128.0
 dilation_size = 1
 miscalibration_probability = 0.5
 
@@ -91,7 +91,7 @@ train_pipeline = [
     dict(
         type="CalibrationClassificationTransform",
         mode="train",
-        lidar_range=lidar_range,
+        max_depth=max_depth,
         dilation_size=dilation_size,
         undistort=True,
         miscalibration_probability=miscalibration_probability,
@@ -129,7 +129,7 @@ val_pipeline = [
     dict(
         type="CalibrationClassificationTransform",
         mode="val",
-        lidar_range=lidar_range,
+        max_depth=max_depth,
         dilation_size=dilation_size,
         undistort=True,
         miscalibration_probability=miscalibration_probability,
@@ -173,7 +173,7 @@ test_pipeline = [
     dict(
         type="CalibrationClassificationTransform",
         mode="test",
-        lidar_range=lidar_range,
+        max_depth=max_depth,
         dilation_size=dilation_size,
         undistort=True,
         miscalibration_probability=miscalibration_probability,

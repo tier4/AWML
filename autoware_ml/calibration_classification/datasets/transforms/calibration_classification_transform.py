@@ -61,7 +61,7 @@ class CalibrationClassificationTransform(BaseTransform):
         self,
         transform_config: Dict[str, Any],
         mode: str = "train",
-        lidar_range: float = 128.0,
+        max_depth: float = 128.0,
         dilation_size: int = 1,
         undistort: bool = True,
         miscalibration_probability: float = 0.5,
@@ -78,7 +78,8 @@ class CalibrationClassificationTransform(BaseTransform):
                 - max_distortion: Maximum distortion for affine transformation [0.0, 1.0]
                 - rgb_weight: Weight for RGB overlay [0.0, 1.0]
             mode (str): Transform mode. Options: "train", "val", "test". Defaults to "train".
-            lidar_range (float): Range of LiDAR points which are considered valid. Defaults to 128.0.
+            max_depth (float): Maximum depth (in meters) for projected LiDAR points in the camera frame.
+                               Points with depth values greater than this are considered invalid. Defaults to 128.0.
             dilation_size (int): Size of the dilation for point cloud processing. Defaults to 1 (3x3 patch).
             undistort (bool): Whether to undistort images. Defaults to True.
             miscalibration_probability (float): Probability of generating miscalibration. Defaults to 0.5.
@@ -103,7 +104,7 @@ class CalibrationClassificationTransform(BaseTransform):
         if data_root is not None and not os.path.exists(data_root):
             raise ValueError(f"Data root does not exist: {data_root}")
 
-        self.lidar_range = lidar_range
+        self.max_depth = max_depth
         self.dilation_size = dilation_size
         self.undistort = undistort
         self.miscalibration_probability = miscalibration_probability
@@ -761,7 +762,7 @@ class CalibrationClassificationTransform(BaseTransform):
             & (pointcloud_ics[:, 1] >= 0)
             & (pointcloud_ics[:, 1] <= h - 1)
             & (pointcloud_ccs[:, 2] > 0.0)
-            & (pointcloud_ccs[:, 2] < self.lidar_range)
+            & (pointcloud_ccs[:, 2] < self.max_depth)
         )
 
         valid_ics = pointcloud_ics[valid_mask]
@@ -783,7 +784,7 @@ class CalibrationClassificationTransform(BaseTransform):
 
             in_bounds_mask = (patch_rows >= 0) & (patch_rows < h) & (patch_cols >= 0) & (patch_cols < w)
 
-            center_depths = 255 * valid_ccs[:, 2] / self.lidar_range
+            center_depths = 255 * valid_ccs[:, 2] / self.max_depth
             center_intensities = valid_intensities.squeeze()
 
             broadcasted_depths = np.broadcast_to(center_depths[:, np.newaxis], patch_rows.shape)
