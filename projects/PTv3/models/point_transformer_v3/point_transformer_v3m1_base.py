@@ -25,17 +25,7 @@ from models.scatter.functional import argsort, segment_csr, unique
 from models.utils.misc import offset2bincount
 from models.utils.structure import Point
 
-# NOTE(knzo25): hack to use exportable spconv when available
-
-try:
-
-    from SparseConvolution.sparse_conv import SubMConv3d
-
-    print("Using spconv2.0 with export support")
-
-except ImportError:
-
-    from spconv.pytorch import SubMConv3d
+from spconv.pytorch import SubMConv3d
 
 
 class DropPath(nn.Module):
@@ -649,6 +639,8 @@ class PointTransformerV3(PointModule):
         self.cls_mode = cls_mode
         self.shuffle_orders = shuffle_orders
         self.export_mode = export_mode
+        if export_mode:
+            from SparseConvolution.sparse_conv import SubMConv3d
 
         assert self.num_stages == len(stride) + 1
         assert self.num_stages == len(enc_depths)
