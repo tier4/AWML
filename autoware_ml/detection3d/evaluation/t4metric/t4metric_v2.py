@@ -342,7 +342,7 @@ class T4MetricV2(BaseMetric):
                     for scene_batch in scene_batches
                 ]
 
-                # Flatten each args to a list
+                # Unpack batched args into aligned iterables for executor.map
                 (
                     unix_time,
                     ground_truth_objects,
@@ -381,7 +381,7 @@ class T4MetricV2(BaseMetric):
                             (future_perception_frame_results[index], future_perception_frame_results[index - 1])
                         )
 
-                # Flatten each arg to a list
+                # Separate current and previous results into two sequences
                 current_perception_frame_results, previous_perception_frame_results = zip(
                     *future_perception_frame_evaluation_args
                 )
