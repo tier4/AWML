@@ -4,7 +4,7 @@ import torch.nn as nn
 from mmdet.structures.bbox import bbox_xyxy_to_cxcywh
 
 
-def inverse_sigmoid(x, eps=1e-5):
+def inverse_sigmoid(x, eps=1e-4):
     """Inverse function of sigmoid.
 
     Args:

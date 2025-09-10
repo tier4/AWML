@@ -15,8 +15,9 @@ import argparse
 import logging
 import os
 import os.path as osp
+import pickle
 import time
-from typing import Dict, Optional, Tuple
+from typing import Any, Dict, Optional, Tuple
 
 import mmengine
 import numpy as np
@@ -30,7 +31,7 @@ import torch
 from mmengine.config import Config
 from mmpretrain.apis import get_model
 
-from autoware_ml.classification2d.datasets.transforms.calibration_classification_transform import (
+from autoware_ml.calibration_classification.datasets.transforms.calibration_classification_transform import (
     CalibrationClassificationTransform,
 )
 
@@ -39,6 +40,113 @@ DEFAULT_VERIFICATION_TOLERANCE = 1e-3
 DEFAULT_WORKSPACE_SIZE = 1 << 30  # 1 GB
 EXPECTED_CHANNELS = 5  # RGB + Depth + Intensity
 LABELS = {"0": "miscalibrated", "1": "calibrated"}
+
+
+def load_info_pkl_data(info_pkl_path: str, sample_idx: int = 0) -> Dict[str, Any]:
+    """
+    Load a single sample from info.pkl file.
+
+    Args:
+        info_pkl_path: Path to the info.pkl file
+        sample_idx: Index of the sample to load (default: 0)
+
+    Returns:
+        Sample dictionary with the required structure for CalibrationClassificationTransform
+
+    Raises:
+        FileNotFoundError: If info.pkl file doesn't exist
+        ValueError: If data format is unexpected or sample index is invalid
+    """
+    if not os.path.exists(info_pkl_path):
+        raise FileNotFoundError(f"Info.pkl file not found: {info_pkl_path}")
+
+    try:
+        with open(info_pkl_path, "rb") as f:
+            info_data = pickle.load(f)
+    except Exception as e:
+        raise ValueError(f"Failed to load info.pkl file: {e}")
+
+    # Extract samples from info.pkl
+    if isinstance(info_data, dict):
+        if "data_list" in info_data:
+            samples_list = info_data["data_list"]
+        else:
+            raise ValueError(f"Expected 'data_list' key in info_data, found keys: {list(info_data.keys())}")
+    else:
+        raise ValueError(f"Expected dict format, got {type(info_data)}")
+
+    if not samples_list:
+        raise ValueError("No samples found in info.pkl")
+
+    if sample_idx >= len(samples_list):
+        raise ValueError(f"Sample index {sample_idx} out of range (0-{len(samples_list)-1})")
+
+    sample = samples_list[sample_idx]
+
+    # Validate sample structure
+    required_keys = ["image", "lidar_points"]
+    if not all(key in sample for key in required_keys):
+        raise ValueError(f"Sample {sample_idx} has invalid structure. Required keys: {required_keys}")
+
+    return sample
+
+
+def load_sample_data_from_info_pkl(
+    info_pkl_path: str,
+    model_cfg: Config,
+    miscalibration_probability: float,
+    sample_idx: int = 0,
+    device: str = "cpu",
+) -> torch.Tensor:
+    """
+    Load and preprocess sample data from info.pkl using CalibrationClassificationTransform.
+
+    Args:
+        info_pkl_path: Path to the info.pkl file
+        model_cfg: Model configuration containing data_root setting
+        miscalibration_probability: Probability of loading a miscalibrated sample
+        sample_idx: Index of the sample to load (default: 0)
+        device: Device to load tensor on
+
+    Returns:
+        Preprocessed tensor ready for model inference
+    """
+    # Load sample data from info.pkl
+    sample_data = load_info_pkl_data(info_pkl_path, sample_idx)
+
+    # Get data_root from model config
+    data_root = model_cfg.get("data_root", None)
+    if data_root is None:
+        raise ValueError("data_root not found in model configuration")
+
+    # Create transform for deployment
+    transform_config = model_cfg.get("transform_config", None)
+    if transform_config is None:
+        raise ValueError("transform_config not found in model configuration")
+
+    transform = CalibrationClassificationTransform(
+        transform_config=transform_config,
+        mode="test",
+        lidar_range=model_cfg.get("lidar_range", 128.0),
+        dilation_size=model_cfg.get("dilation_size", 1),
+        undistort=True,
+        miscalibration_probability=miscalibration_probability,
+        enable_augmentation=False,
+        data_root=data_root,
+        projection_vis_dir=model_cfg.get("test_projection_vis_dir", None),
+        results_vis_dir=model_cfg.get("test_results_vis_dir", None),
+        binary_save_dir=model_cfg.get("binary_save_dir", None),
+    )
+
+    # Apply transform
+    results = transform.transform(sample_data)
+    input_data_processed = results["fused_img"]  # (H, W, 5)
+
+    # Convert to tensor
+    input_tensor = torch.from_numpy(input_data_processed).permute(2, 0, 1).float()  # (5, H, W)
+    input_tensor = input_tensor.unsqueeze(0).to(device)  # (1, 5, H, W)
+
+    return input_tensor
 
 
 class DeploymentConfig:
@@ -83,7 +191,8 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("deploy_cfg", help="deploy config path")
     parser.add_argument("model_cfg", help="model config path")
     parser.add_argument("checkpoint", help="model checkpoint path")
-    parser.add_argument("img", help="image used to convert model")
+    parser.add_argument("--info_pkl", required=True, help="info.pkl file path containing calibration data")
+    parser.add_argument("--sample_idx", type=int, default=0, help="sample index from info.pkl (default: 0)")
     parser.add_argument("--work-dir", default=os.getcwd(), help="output directory")
     parser.add_argument("--device", default="cpu", help="device for conversion")
     parser.add_argument("--log-level", default="INFO", choices=list(logging._nameToLevel.keys()), help="logging level")
@@ -95,22 +204,6 @@ def setup_logging(level: str) -> logging.Logger:
     """Setup logging configuration."""
     logging.basicConfig(level=getattr(logging, level), format="%(levelname)s:%(name)s:%(message)s")
     return logging.getLogger("mmdeploy")
-
-
-def load_sample_data(img_path: str, force_generate_miscalibration: bool, device: str = "cpu") -> torch.Tensor:
-    """Load and preprocess sample data using CalibrationClassificationTransform."""
-    # Create transform for deployment
-    transform = CalibrationClassificationTransform(test=not force_generate_miscalibration, debug=False)
-
-    # Apply transform
-    results = transform.transform({"img_path": img_path}, force_generate_miscalibration=force_generate_miscalibration)
-    input_data_processed = results["img"]  # (H, W, 5)
-
-    # Convert to tensor
-    input_tensor = torch.from_numpy(input_data_processed).permute(2, 0, 1).float()  # (5, H, W)
-    input_tensor = input_tensor.unsqueeze(0).to(device)  # (1, 5, H, W)
-
-    return input_tensor
 
 
 def export_to_onnx(
@@ -434,6 +527,18 @@ def run_verification(
         logger.info("-" * 50)
         logger.info("Verifying PyTorch model...")
         pytorch_output, pytorch_latency = run_pytorch_inference(model, input_tensor, logger)
+        logger.info(
+            f"PyTorch output for {LABELS[key]}: [SCORE_MISCALIBRATED, SCORE_CALIBRATED] = {pytorch_output.cpu().numpy()}"
+        )
+        score_calibrated = pytorch_output.cpu().numpy()[0, 1] - pytorch_output.cpu().numpy()[0, 0]
+        if key == "0" and score_calibrated < 0:
+            logger.info(f"Negative calibration score detected for {LABELS[key]} sample: {score_calibrated:.6f}")
+        elif key == "0" and score_calibrated > 0:
+            logger.warning(f"Positive calibration score detected for {LABELS[key]} sample: {score_calibrated:.6f}")
+        elif key == "1" and score_calibrated > 0:
+            logger.info(f"Positive calibration score detected for {LABELS[key]} sample: {score_calibrated:.6f}")
+        elif key == "1" and score_calibrated < 0:
+            logger.warning(f"Negative calibration score detected for {LABELS[key]} sample: {score_calibrated:.6f}")
 
         if onnx_path and osp.exists(onnx_path):
             logger.info("-" * 50)
@@ -482,9 +587,13 @@ def main():
     model = get_model(model_cfg, args.checkpoint, device=device)
 
     # Load sample data
-    logger.info(f"Loading sample data from: {args.img}")
-    input_tensor_calibrated = load_sample_data(args.img, force_generate_miscalibration=False, device=args.device)
-    input_tensor_miscalibrated = load_sample_data(args.img, force_generate_miscalibration=True, device=args.device)
+    logger.info(f"Loading sample data from info.pkl: {args.info_pkl}")
+    input_tensor_calibrated = load_sample_data_from_info_pkl(
+        args.info_pkl, model_cfg, 0.0, args.sample_idx, device=args.device
+    )
+    input_tensor_miscalibrated = load_sample_data_from_info_pkl(
+        args.info_pkl, model_cfg, 1.0, args.sample_idx, device=args.device
+    )
 
     # Export models
     export_to_onnx(model, input_tensor_calibrated, onnx_path, config, logger)

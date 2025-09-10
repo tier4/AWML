@@ -3,10 +3,10 @@ _base_ = [
     "../default/vov_flash_480x640_baseline.py",
 ]
 
-info_directory_path = "info/user/base_model1.0.0/"
-data_root = "data/"
+info_directory_path = "info/kokseang_1_8/"
+data_root = "data/t4dataset/"
 
-batch_size = 1
+batch_size = 8
 num_workers = 16
 
 num_epochs = 35
@@ -15,15 +15,16 @@ val_interval = 5
 train_dataloader = dict(
     batch_size=batch_size,
     num_workers=num_workers,
+    sampler=dict(type="GroupStreamingSampler", shuffle=True, batch_size=batch_size, trim_sequences=True),
     dataset=dict(ann_file=info_directory_path + _base_.info_train_file_name, data_root=data_root),
 )
 val_dataloader = dict(
-    batch_size=batch_size,
+    batch_size=1,
     num_workers=num_workers,
     dataset=dict(ann_file=info_directory_path + _base_.info_val_file_name, data_root=data_root),
 )
 test_dataloader = dict(
-    batch_size=batch_size,
+    batch_size=1,
     num_workers=num_workers,
     dataset=dict(ann_file=info_directory_path + _base_.info_test_file_name, data_root=data_root),
 )
@@ -37,8 +38,21 @@ train_cfg = dict(
     by_epoch=True, max_epochs=num_epochs, val_interval=val_interval, dynamic_intervals=[(num_epochs - 5, 1)]
 )
 
-lr = 1e-4
-optimizer = dict(type="AdamW", lr=lr, weight_decay=0.01)  # bs 8: 2e-4 || bs 16: 4e-4,
+lr = 5e-5
+optimizer = dict(type="AdamW", lr=lr, weight_decay=0.01)
+
+# optim_wrapper = dict(type="OptimWrapper", optimizer=optimizer, paramwise_cfg=dict(custom_keys={'img_backbone': dict(lr_mult=0.1),}))
+optim_wrapper = dict(
+    type="NoCacheAmpOptimWrapper",
+    optimizer=optimizer,
+    paramwise_cfg=dict(
+        custom_keys={
+            "img_backbone": dict(lr_mult=0.1),
+        }
+    ),
+    loss_scale="dynamic",
+    clip_grad=dict(max_norm=1, norm_type=2),
+)
 
 # lrg policy
 param_scheduler = [
@@ -49,7 +63,5 @@ param_scheduler = [
         eta_min=lr * 1e-4,
     ),
 ]
-
-load_from = "/workspace/work_dirs/ckpts/nuscenes_resnet50_320x800_baseline.pth"
 
 auto_scale_lr = dict(base_batch_size=8, enable=True)
