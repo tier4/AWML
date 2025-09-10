@@ -365,7 +365,7 @@ class T4MetricV2(BaseMetric):
 
                 self.logger.info(f"Evaluating batch: {batch_index+1}")
 
-                future_perceptiopn_frame_evaluation_args = [(future_perception_frame_results[0], None)]
+                future_perception_frame_evaluation_args = [(future_perception_frame_results[0], None)]
 
                 # Find the mask where an scene id is different from the previous frame, and it's the first frame of the scene
                 first_sample_masks = [
@@ -376,15 +376,15 @@ class T4MetricV2(BaseMetric):
                 # Group perception frame results with pair
                 for index in range(1, len(future_perception_frame_results)):
                     if first_sample_masks[index]:
-                        future_perceptiopn_frame_evaluation_args.append((future_perception_frame_results[index], None))
+                        future_perception_frame_evaluation_args.append((future_perception_frame_results[index], None))
                     else:
-                        future_perceptiopn_frame_evaluation_args.append(
+                        future_perception_frame_evaluation_args.append(
                             (future_perception_frame_results[index], future_perception_frame_results[index - 1])
                         )
 
                 # Flatten each arg to a list
                 current_perception_frame_results, previous_perception_frame_results = zip(
-                    *future_perceptiopn_frame_evaluation_args
+                    *future_perception_frame_evaluation_args
                 )
                 # Run evaluation for all frames in the batch
                 perception_frame_results = list(
