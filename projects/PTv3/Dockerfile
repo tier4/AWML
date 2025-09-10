@@ -22,6 +22,8 @@ RUN conda install pytorch-cluster pytorch-scatter pytorch-sparse -c pyg -y
 RUN python3 -m pip --no-cache-dir install --force-reinstall \
     yapf==0.40.1
 
+ENV PYTHONPATH=${PYTHONPATH}:/workspace/projects
+
 # For Blackwell, as of 2025/05, some packages need to be compiled or use nightly versions
 # RUN python3 -m pip --no-cache-dir install git+https://github.com/rusty1s/pytorch_scatter.git@2.1.2 -vvv
 # RUN python3 -m pip --no-cache-dir install torch-geometric -f https://data.pyg.org/whl/nightly/torch-2.7.0%2Bcu128.html
