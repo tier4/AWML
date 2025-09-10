@@ -4,9 +4,10 @@ from functools import partial
 import torch
 import torch.utils.data
 import utils.comm as comm
-from datasets import ConcatDataset
-from datasets.utils import point_collate_fn
 from utils.env import set_seed
+
+from .defaults import ConcatDataset
+from .utils import point_collate_fn
 
 
 class MultiDatasetDummySampler:
