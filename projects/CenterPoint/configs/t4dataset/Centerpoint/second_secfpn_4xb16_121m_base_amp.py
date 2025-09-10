@@ -212,6 +212,7 @@ test_evaluator = dict(
     name_mapping={{_base_.name_mapping}},
     eval_class_range=eval_class_range,
     filter_attributes=_base_.filter_attributes,
+    save_csv=True,
 )
 
 model = dict(

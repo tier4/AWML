@@ -2,9 +2,11 @@
 import argparse
 import os
 import os.path as osp
+import time
 
 from mmdet3d.utils import replace_ceph_backend
 from mmengine.config import Config, ConfigDict, DictAction
+from mmengine.logging import print_log
 from mmengine.registry import RUNNERS
 from mmengine.runner import Runner
 
@@ -82,6 +84,8 @@ def trigger_visualization_hook(cfg, args):
 
 
 def main():
+    start_time = time.time()
+
     args = parse_args()
 
     # load config
@@ -117,16 +121,41 @@ def main():
         cfg.model = ConfigDict(**cfg.tta_model, module=cfg.model)
 
     # build the runner from config
-    if "runner_type" not in cfg:
-        # build the default runner
-        runner = Runner.from_cfg(cfg)
-    else:
-        # build customized runner from the registry
-        # if 'runner_type' is set in the cfg
-        runner = RUNNERS.build(cfg)
+    if "dataset_test_groups" in cfg:
+        for dataset_name, dataset_file in cfg.dataset_test_groups.items():
+            cfg.test_dataloader.dataset.ann_file = osp.join(cfg.info_directory_path, dataset_file)
+            cfg.test_evaluator.dataset_name = dataset_name
+            cfg.test_evaluator.ann_file = osp.join(cfg.data_root, cfg.info_directory_path, dataset_file)
 
-    # start testing
-    runner.test()
+            # build the runner from config
+            if "runner_type" not in cfg:
+                # build the default runner
+                runner = Runner.from_cfg(cfg)
+            else:
+                # build customized runner from the registry
+                # if 'runner_type' is set in the cfg
+                runner = RUNNERS.build(cfg)
+
+            print_log(f"Testing dataset: {dataset_name} with file: {dataset_file}", logger=runner.logger)
+
+            # start testing
+            runner.test()
+    else:
+        # build the runner from config
+        if "runner_type" not in cfg:
+            # build the default runner
+            runner = Runner.from_cfg(cfg)
+        else:
+            # build customized runner from the registry
+            # if 'runner_type' is set in the cfg
+            runner = RUNNERS.build(cfg)
+
+        # start testing
+        runner.test()
+
+    end_time = time.time()
+    elapsed_time = end_time - start_time
+    print_log(f"Elapsed time: {elapsed_time:.4f} seconds", logger=runner.logger)
 
 
 if __name__ == "__main__":

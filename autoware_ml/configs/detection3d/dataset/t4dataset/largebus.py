@@ -2,21 +2,33 @@ custom_imports = dict(
     imports=[
         "autoware_ml.detection3d.datasets.t4dataset",
         "autoware_ml.detection3d.evaluation.t4metric.t4metric",
+        "autoware_ml.detection3d.evaluation.t4metric.t4metric_v2",
     ]
 )
 
 # dataset type setting
 dataset_type = "T4Dataset"
-info_train_file_name = "t4dataset_gen2_base_infos_train.pkl"
-info_val_file_name = "t4dataset_gen2_base_infos_val.pkl"
-info_test_file_name = "t4dataset_gen2_base_infos_test.pkl"
+info_train_file_name = "t4dataset_largebus_infos_train.pkl"
+info_val_file_name = "t4dataset_largebus_infos_val.pkl"
+info_test_file_name = "t4dataset_largebus_infos_test.pkl"
 
 # dataset scene setting
 dataset_version_config_root = "autoware_ml/configs/t4dataset/"
-dataset_version_list = ["db_j6gen2_v1", "db_j6gen2_v2", "db_j6gen2_v3", "db_largebus_v1"]
+dataset_version_list = [
+    "db_largebus_v1",
+]
 
 # dataset format setting
-data_prefix = dict(pts="", sweeps="")
+data_prefix = dict(
+    pts="",
+    CAM_FRONT="",
+    CAM_FRONT_LEFT="",
+    CAM_FRONT_RIGHT="",
+    CAM_BACK="",
+    CAM_BACK_RIGHT="",
+    CAM_BACK_LEFT="",
+    sweeps="",
+)
 camera_types = {
     "CAM_FRONT",
     "CAM_FRONT_RIGHT",
@@ -136,6 +148,7 @@ camera_panels = [
     "data/CAM_BACK_RIGHT",
 ]
 
+# Add filter attributes
 filter_attributes = [
     ("vehicle.bicycle", "vehicle_state.parked"),
     ("vehicle.bicycle", "cycle_state.without_rider"),
@@ -150,3 +163,17 @@ filter_attributes = [
     ("motorcycle", "cycle_state.without_rider"),
     ("motorcycle", "motorcycle_state.without_rider"),
 ]
+
+evaluator_metric_configs = dict(
+    evaluation_task="detection",
+    target_labels=class_names,
+    center_distance_bev_thresholds=[0.5, 1.0, 2.0, 4.0],
+    # plane_distance_thresholds is required for the pass fail evaluation
+    plane_distance_thresholds=[2.0, 4.0],
+    iou_2d_thresholds=None,
+    iou_3d_thresholds=None,
+    label_prefix="autoware",
+    max_distance=121.0,
+    min_distance=-121.0,
+    min_point_numbers=0,
+)

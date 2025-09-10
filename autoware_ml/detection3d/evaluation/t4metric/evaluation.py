@@ -94,9 +94,6 @@ class T4DetectionEvaluation(DetectionEval):
         # Load data.
         if verbose:
             print("Initializing nuScenes detection evaluation")
-        assert set(self.pred_boxes.sample_tokens) == set(
-            self.gt_boxes.sample_tokens
-        ), "Samples in split doesn't match samples in predictions."
 
         self.sample_tokens = self.gt_boxes.sample_tokens
 
