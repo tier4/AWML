@@ -3,7 +3,6 @@ import pickle
 import time
 from concurrent.futures import ProcessPoolExecutor
 from dataclasses import dataclass
-from itertools import islice
 from pathlib import Path
 from typing import Any, Dict, Generator, List, Optional, Sequence, Union
 
