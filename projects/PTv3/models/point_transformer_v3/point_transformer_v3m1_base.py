@@ -24,7 +24,6 @@ from models.point_prompt_training import PDNorm
 from models.scatter.functional import argsort, segment_csr, unique
 from models.utils.misc import offset2bincount
 from models.utils.structure import Point
-
 from spconv.pytorch import SubMConv3d
 
 

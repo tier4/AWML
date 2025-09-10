@@ -1,8 +1,7 @@
 import torch
-
+import torch_scatter
 from torch.autograd import Function
 from torch.onnx.symbolic_helper import _get_tensor_sizes
-import torch_scatter
 
 
 class SegmentCSR(Function):

@@ -1,3 +1,1 @@
-from .functional import argsort
-from .functional import segment_csr
-from .functional import unique
+from .functional import argsort, segment_csr, unique
