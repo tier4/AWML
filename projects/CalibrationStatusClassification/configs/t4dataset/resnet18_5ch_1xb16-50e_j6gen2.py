@@ -9,13 +9,16 @@ info_directory_path = "/workspace/data/t4dataset/calibration_info/"
 train_projection_vis_dir = None
 val_projection_vis_dir = None
 val_results_vis_dir = None
-test_projection_vis_dir = "./work_dirs/test_projection_vis_t4dataset/"
-test_results_vis_dir = "./work_dirs/test_results_vis_t4dataset/"
-batch_size = 8
-num_workers = 8
-max_epochs = 25
-randomness = dict(seed=0, diff_rank_seed=False, deterministic=True)
-
+test_projection_vis_dir = None
+test_results_vis_dir = None
+binary_save_dir = None
+batch_size = 16
+max_epochs = 50
+warmup_epochs = 5
+num_workers = 4
+max_depth = 128.0
+dilation_size = 1
+miscalibration_probability = 0.5
 
 data_preprocessor = dict()
 
