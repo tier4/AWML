@@ -1,7 +1,7 @@
 
 ## 1. Set up repository
 
-- Set environment
+- Prepare the environment
 
 ```sh
 git clone https://github.com/tier4/AWML
