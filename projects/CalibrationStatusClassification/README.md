@@ -36,11 +36,11 @@ docker run -it --rm --gpus all --shm-size=64g --name awml -p 6006:6006 -v $PWD/:
 
 ### 2. Config
 
-- Change parameters for your environment by changing [base config file](configs/t4dataset/resnet18_5ch_1xb8-25e_t4base.py).
+- Change parameters for your environment by changing [base config file](configs/t4dataset/resnet18_5ch_1xb16-50e_j6gen2.py).
 
 ```py
-batch_size = 8
-max_epochs = 25
+batch_size = 16
+max_epochs = 50
 ```
 
 ### 3. Dataset
@@ -55,12 +55,12 @@ Run training:
 
 - Single GPU:
 ```sh
-python tools/calibration_classification/train.py projects/CalibrationStatusClassification/configs/t4dataset/resnet18_5ch_1xb8-25e_t4base.py
+python tools/calibration_classification/train.py projects/CalibrationStatusClassification/configs/t4dataset/resnet18_5ch_1xb16-50e_j6gen2.py
 ```
 
 - Multi GPU (example with 2 GPUs):
 ```sh
-./tools/calibration_classification/dist_train.sh projects/CalibrationStatusClassification/configs/t4dataset/resnet18_5ch_1xb8-25e_t4base.py 2
+./tools/calibration_classification/dist_train.sh projects/CalibrationStatusClassification/configs/t4dataset/resnet18_5ch_1xb16-50e_j6gen2.py 2
 ```
 
 ### 5. Deploy
@@ -68,7 +68,7 @@ python tools/calibration_classification/train.py projects/CalibrationStatusClass
 Example commands for deployment (modify paths if needed):
 - Custom script (with verification):
 ```sh
-python projects/CalibrationStatusClassification/deploy/main.py projects/CalibrationStatusClassification/configs/deploy/resnet18_5ch.py projects/CalibrationStatusClassification/configs/t4dataset/resnet18_5ch_1xb8-25e_j6gen2.py checkpoint.pth --info_pkl data/t4dataset/calibration_info/t4dataset_gen2_base_infos_test.pkl --sample_idx 0 --device cuda:0 --work-dir /workspace/work_dirs/ --verify
+python projects/CalibrationStatusClassification/deploy/main.py projects/CalibrationStatusClassification/configs/deploy/resnet18_5ch.py projects/CalibrationStatusClassification/configs/t4dataset/resnet18_5ch_1xb16-50e_j6gen2.py checkpoint.pth --info_pkl data/t4dataset/calibration_info/t4dataset_gen2_base_infos_test.pkl --sample_idx 0 --device cuda:0 --work-dir /workspace/work_dirs/ --verify
 ```
 
 ## Troubleshooting
