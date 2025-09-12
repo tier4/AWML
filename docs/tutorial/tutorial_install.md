@@ -9,7 +9,7 @@ git clone https://github.com/tier4/AWML
 
 ## 2. Prepare docker
 
-- Docker pull for base environment
+- Pull the base Docker image
   - See [autoware-ml-base](https://github.com/tier4/AWML/pkgs/container/autoware-ml-base)
 .
 
