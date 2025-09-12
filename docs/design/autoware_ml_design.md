@@ -214,8 +214,8 @@ Please use this directory unless you have a specific reason not to.
 
 ### work_dirs/
 
-The directory of `work_dirs/` manages the output files to use for `AWML` including training results and visualization results.
-Please use this directory unless you have a specific reason not to.
+The directory manages any artifacts and files generated from `AWML`, for example, training/evaluation/visualization.
+Please change the directory name accordingly.
 
 ## Support priority
 
