@@ -94,8 +94,8 @@ def load_info_pkl_data(info_pkl_path: str, sample_idx: int = 0) -> Dict[str, Any
 def load_sample_data_from_info_pkl(
     info_pkl_path: str,
     model_cfg: Config,
+    miscalibration_probability: float,
     sample_idx: int = 0,
-    force_generate_miscalibration: bool = False,
     device: str = "cpu",
 ) -> torch.Tensor:
     """
@@ -104,8 +104,8 @@ def load_sample_data_from_info_pkl(
     Args:
         info_pkl_path: Path to the info.pkl file
         model_cfg: Model configuration containing data_root setting
+        miscalibration_probability: Probability of loading a miscalibrated sample
         sample_idx: Index of the sample to load (default: 0)
-        force_generate_miscalibration: Whether to force generation of miscalibration
         device: Device to load tensor on
 
     Returns:
@@ -120,23 +120,26 @@ def load_sample_data_from_info_pkl(
         raise ValueError("data_root not found in model configuration")
 
     # Create transform for deployment
-    mode = "test" if not force_generate_miscalibration else "train"
-
     transform_config = model_cfg.get("transform_config", None)
     if transform_config is None:
         raise ValueError("transform_config not found in model configuration")
 
     transform = CalibrationClassificationTransform(
         transform_config=transform_config,
-        mode=mode,
-        data_root=data_root,
-        projection_vis_dir=None,
-        results_vis_dir=None,
+        mode="test",
+        lidar_range=model_cfg.get("lidar_range", 128.0),
+        dilation_size=model_cfg.get("dilation_size", 1),
+        undistort=True,
+        miscalibration_probability=miscalibration_probability,
         enable_augmentation=False,
+        data_root=data_root,
+        projection_vis_dir=model_cfg.get("test_projection_vis_dir", None),
+        results_vis_dir=model_cfg.get("test_results_vis_dir", None),
+        binary_save_dir=model_cfg.get("binary_save_dir", None),
     )
 
     # Apply transform
-    results = transform.transform(sample_data, force_generate_miscalibration=force_generate_miscalibration)
+    results = transform.transform(sample_data)
     input_data_processed = results["fused_img"]  # (H, W, 5)
 
     # Convert to tensor
@@ -524,6 +527,18 @@ def run_verification(
         logger.info("-" * 50)
         logger.info("Verifying PyTorch model...")
         pytorch_output, pytorch_latency = run_pytorch_inference(model, input_tensor, logger)
+        logger.info(
+            f"PyTorch output for {LABELS[key]}: [SCORE_MISCALIBRATED, SCORE_CALIBRATED] = {pytorch_output.cpu().numpy()}"
+        )
+        score_calibrated = pytorch_output.cpu().numpy()[0, 1] - pytorch_output.cpu().numpy()[0, 0]
+        if key == "0" and score_calibrated < 0:
+            logger.info(f"Negative calibration score detected for {LABELS[key]} sample: {score_calibrated:.6f}")
+        elif key == "0" and score_calibrated > 0:
+            logger.warning(f"Positive calibration score detected for {LABELS[key]} sample: {score_calibrated:.6f}")
+        elif key == "1" and score_calibrated > 0:
+            logger.info(f"Positive calibration score detected for {LABELS[key]} sample: {score_calibrated:.6f}")
+        elif key == "1" and score_calibrated < 0:
+            logger.warning(f"Negative calibration score detected for {LABELS[key]} sample: {score_calibrated:.6f}")
 
         if onnx_path and osp.exists(onnx_path):
             logger.info("-" * 50)
@@ -574,10 +589,10 @@ def main():
     # Load sample data
     logger.info(f"Loading sample data from info.pkl: {args.info_pkl}")
     input_tensor_calibrated = load_sample_data_from_info_pkl(
-        args.info_pkl, model_cfg, args.sample_idx, force_generate_miscalibration=False, device=args.device
+        args.info_pkl, model_cfg, 0.0, args.sample_idx, device=args.device
     )
     input_tensor_miscalibrated = load_sample_data_from_info_pkl(
-        args.info_pkl, model_cfg, args.sample_idx, force_generate_miscalibration=True, device=args.device
+        args.info_pkl, model_cfg, 1.0, args.sample_idx, device=args.device
     )
 
     # Export models
