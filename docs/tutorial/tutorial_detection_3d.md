@@ -1,7 +1,7 @@
 
 ## 1. Setup environment
 
-See [install tutorial](/docs/tutorial/tutorial_install.md).
+See [tutorial_installation](/docs/tutorial/tutorial_installation.md) to set up the environment.
 
 ## 2. Train and evaluation
 

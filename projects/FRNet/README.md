@@ -23,7 +23,7 @@
 ## Get started
 ### 1. Setup
 
-- Set up environment by [install tutorial](/docs/tutorial/tutorial_install.md).
+- Please follow the [installation tutorial] to set up the environment.
 - Docker build for FRNet
 
 ```sh

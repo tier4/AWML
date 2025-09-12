@@ -12,7 +12,7 @@ It contains training, evaluation, and visualization for Calibration classificati
 
 ## 1. Setup environment
 
-Set up environment by [install tutorial](/docs/tutorial/tutorial_install.md).
+Please follow the [installation tutorial] to set up the environment.
 
 ## 2. Prepare dataset
 
