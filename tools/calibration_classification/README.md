@@ -205,7 +205,7 @@ python tools/calibration_classification/train.py {config_file}
 
 * Example
 ```sh
-python tools/calibration_classification/train.py projects/CalibrationStatusClassification/configs/t4dataset/resnet18_5ch_1xb8-25e_j6gen2.py
+python tools/calibration_classification/train.py projects/CalibrationStatusClassification/configs/t4dataset/resnet18_5ch_1xb16-50e_j6gen2.py
 ```
 
 - You can use docker command for training as below.
@@ -232,5 +232,5 @@ python tools/calibration_classification/test.py {config_file} {checkpoint_file}
 ```
 * Example
 ```sh
-python tools/calibration_classification/test.py projects/CalibrationStatusClassification/configs/t4dataset/resnet18_5ch_1xb8-25e_j6gen2.py  epoch_25.pth --out {output_file}
+python tools/calibration_classification/test.py projects/CalibrationStatusClassification/configs/t4dataset/resnet18_5ch_1xb16-50e_j6gen2.py  epoch_25.pth --out {output_file}
 ```
