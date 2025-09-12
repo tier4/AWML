@@ -43,6 +43,3 @@ After downloading dataset, the directory shows as below.
 ### Set up other dataset
 
 If you want to use open dataset like nuScenes dataset, please follow [mmdetection3d documents](https://mmdetection3d.readthedocs.io/en/latest/advanced_guides/index.html) and [mmdetection documents](https://mmdetection.readthedocs.io/en/latest/user_guides/dataset_prepare.html).
-
-
-- Set up environment by [install tutorial](/docs/tutorial/tutorial_install.md).
