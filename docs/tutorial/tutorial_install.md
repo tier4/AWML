@@ -1,5 +1,5 @@
 
-## 1. Set repository
+## 1. Set up repository
 
 - Set environment
 
