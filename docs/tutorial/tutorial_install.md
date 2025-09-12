@@ -18,7 +18,7 @@ docker pull ghcr.io/tier4/autoware-ml-base:latest
 
 ## 3. Download T4dataset
 
-- Get data access right for T4dataset in [WebAuto](https://docs.web.auto/en/user-manuals/).
+- Request access to the T4dataset in [WebAuto](https://docs.web.auto/en/user-manuals/).
 - Download T4dataset by using [download scripts](/pipelines/webauto/download_t4dataset/).
 
 If you do not have the access to Web.Auto and still want to use the dataset, please contact Web.Auto team from [the Web.Auto contact form](https://web.auto/contact/).
