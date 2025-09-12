@@ -31,7 +31,7 @@ DOCKER_BUILDKIT=1 docker build -t autoware-ml-calib projects/CalibrationStatusCl
 - Run docker
 
 ```sh
-docker run -it --rm --gpus all --shm-size=64g --name awml -p 6006:6006 -v $PWD/:/workspace -v $PWD/data:/workspace/data autoware-ml-calib
+docker run -it --rm --gpus all --shm-size=64g --name awml-calib -p 6006:6006 -v $PWD/:/workspace -v $PWD/data:/workspace/data autoware-ml-calib
 ```
 
 ### 2. Config
@@ -50,15 +50,16 @@ max_epochs = 50
 
 ### 4. Train
 
-
 Run training:
 
 - Single GPU:
+
 ```sh
 python tools/calibration_classification/train.py projects/CalibrationStatusClassification/configs/t4dataset/resnet18_5ch_1xb16-50e_j6gen2.py
 ```
 
 - Multi GPU (example with 2 GPUs):
+
 ```sh
 ./tools/calibration_classification/dist_train.sh projects/CalibrationStatusClassification/configs/t4dataset/resnet18_5ch_1xb16-50e_j6gen2.py 2
 ```
@@ -66,7 +67,9 @@ python tools/calibration_classification/train.py projects/CalibrationStatusClass
 ### 5. Deploy
 
 Example commands for deployment (modify paths if needed):
+
 - Custom script (with verification):
+
 ```sh
 python projects/CalibrationStatusClassification/deploy/main.py projects/CalibrationStatusClassification/configs/deploy/resnet18_5ch.py projects/CalibrationStatusClassification/configs/t4dataset/resnet18_5ch_1xb16-50e_j6gen2.py checkpoint.pth --info_pkl data/t4dataset/calibration_info/t4dataset_gen2_base_infos_test.pkl --sample_idx 0 --device cuda:0 --work-dir /workspace/work_dirs/ --verify
 ```
