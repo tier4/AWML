@@ -29,7 +29,7 @@
 ## Get started
 ### 1. Setup
 
-- [Run setup environment at first](/tools/setting_environment/)
+- Please follow the [installation tutorial] to set up the environment.
 - Docker build for TransFusion
 
 ```sh
