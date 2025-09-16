@@ -24,6 +24,8 @@
 
 
 ### Deprecated results
+<details>
+
 - [Internal Link](https://docs.google.com/spreadsheets/d/1jkadazpbA2BUYEUdVV8Rpe54-snH1cbdJbbHsuK04-U/edit?usp=sharing)
 
 - Performance summary
@@ -33,6 +35,7 @@
 | CenterPoint base/2.2     | 66.00 | 82.60            | 55.50               | 71.90         | 56.40                 | 66.50                   |
 | CenterPoint base/2.1     | 65.55 | 82.51            | 53.12               | 68.95         | 56.32                 | 66.81                   |
 
+</details>
 
 ### Datasets
 
