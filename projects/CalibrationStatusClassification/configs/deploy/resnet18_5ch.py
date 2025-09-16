@@ -7,9 +7,9 @@ backend_config = dict(
         dict(
             input_shapes=dict(
                 input=dict(
-                    min_shape=[1, 5, 1860, 2880],
+                    min_shape=[1, 5, 1080, 1920],
                     opt_shape=[1, 5, 1860, 2880],
-                    max_shape=[1, 5, 1860, 2880],
+                    max_shape=[1, 5, 2160, 3840],
                 ),
             )
         )
@@ -25,6 +25,6 @@ onnx_config = dict(
     save_file="end2end.onnx",
     input_names=["input"],
     output_names=["output"],
-    dynamic_axes={"input": {0: "batch_size"}, "output": {0: "batch_size"}},
+    dynamic_axes={"input": {0: "batch_size", 2: "height", 3: "width"}, "output": {0: "batch_size"}},
     input_shape=None,
 )
