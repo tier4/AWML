@@ -1,0 +1,23 @@
+version: 1
+dataset_version: db-j6gen2-v5.0
+train:
+- 02793b78-f191-474a-9895-bbaa72d0ab5e   0
+- bdb22918-6318-4090-8f4d-5907f4425466   0
+- 90414272-c7dd-4e9a-b150-1e07548f52e0   0
+- 6cfa182d-eab4-4c47-9887-539714c1b712   0
+- 33c858b5-660f-4d26-9097-cf36260ee668   0
+- 7d103d25-7908-4f29-800d-f88cbe53afc4   0
+- 1ee7c1d6-b9db-4eeb-905e-5d4844666335   0
+- 64c9f935-faab-43d7-9dd9-fe463bcac3ca   0
+- 5b27bc42-4543-4a46-be81-d628c694702c   0
+- c33a021b-7711-463f-8c6e-9c97b815dcab   0
+- c40c5318-509e-4bb0-af8d-61b470ed4d53   0
+- 68e217fe-b872-48ee-9369-04eaa1532a1b   0
+- 14dbf9fa-051b-4c19-bfd3-a09c1f92a0b1   0
+- 62f57ffb-7af7-48fb-8952-270be33f4eee   0
+- 4fb92066-a64b-42cf-ac36-f7ef08bb178f   0
+- c32f5e31-6ebc-4df9-99dd-aa81e10d7afe   0
+- 81e947e4-53d6-4957-adda-ae37cbcf6600   0
+
+val: []
+test: []

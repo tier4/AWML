@@ -2,51 +2,24 @@ custom_imports = dict(
     imports=[
         "autoware_ml.detection3d.datasets.t4dataset",
         "autoware_ml.detection3d.evaluation.t4metric.t4metric",
-        "autoware_ml.detection3d.evaluation.t4metric.t4metric_v2",
     ]
 )
 
 # dataset type setting
 dataset_type = "T4Dataset"
-info_train_file_name = "t4dataset_base_infos_train.pkl"
-info_val_file_name = "t4dataset_base_infos_val.pkl"
-info_test_file_name = "t4dataset_base_infos_test.pkl" 
-# info_train_file_name = "t4dataset_largebus_infos_train.pkl"
-# info_val_file_name = "t4dataset_largebus_infos_val.pkl"
-# info_test_file_name = "t4dataset_largebus_infos_test.pkl"
-# info_train_file_name = "t4dataset_j6gen2_base_infos_train.pkl"
-# info_val_file_name = "t4dataset_j6gen2_base_infos_val.pkl"
-# info_test_file_name = "t4dataset_j6gen2_base_infos_test.pkl"
+info_train_file_name = "t4dataset_jpntaxi_gen2_v2_infos_train.pkl"
+info_val_file_name = "t4dataset_jpntaxi_gen2_v2_infos_val.pkl"
+info_test_file_name = "t4dataset_jpntaxi_gen2_v2_infos_test.pkl"
 
 # dataset scene setting
 dataset_version_config_root = "autoware_ml/configs/t4dataset/"
-dataset_version_list = [
-    "db_jpntaxigen2_v1",
-    "db_jpntaxigen2_v2",
-    "db_j6gen2_v1",
-    "db_j6gen2_v2",
-    "db_j6gen2_v3",
-    "db_j6gen2_v4",
-    "db_j6gen2_v5",
-    "db_largebus_v1",
-    "db_largebus_v2",
-    "db_jpntaxi_v1",
-    "db_jpntaxi_v2",
-    "db_jpntaxi_v4",
-    "db_gsm8_v1",
-    "db_j6_v1",
-    "db_j6_v2",
-    "db_j6_v3",
-    "db_j6_v5",
-]
 dataset_test_groups = {
-    "db_jpntaxi_gen2_base": "t4dataset_jpntaxi_gen2_base_infos_test.pkl",
-    "db_j6gen2": "t4dataset_j6gen2_infos_test.pkl",
-    "db_largebus": "t4dataset_largebus_infos_test.pkl",
-    "db_jpntaxi": "t4dataset_xx1_infos_test.pkl",
-    "db_j6": "t4dataset_x2_infos_test.pkl",
-    "db_base": "t4dataset_base_infos_test.pkl",
+    "db_jpntaxi_gen2_v2": "t4dataset_jpntaxi_gen2_v2_infos_test.pkl",
 }
+
+dataset_version_list = [
+    "db_jpntaxigen2_v2",
+]
 
 # dataset format setting
 data_prefix = dict(
@@ -54,7 +27,7 @@ data_prefix = dict(
     CAM_FRONT="",
     CAM_FRONT_LEFT="",
     CAM_FRONT_RIGHT="",
-    # CAM_BACK="",
+    CAM_BACK="",
     CAM_BACK_RIGHT="",
     CAM_BACK_LEFT="",
     sweeps="",
@@ -193,17 +166,3 @@ filter_attributes = [
     ("motorcycle", "cycle_state.without_rider"),
     ("motorcycle", "motorcycle_state.without_rider"),
 ]
-
-evaluator_metric_configs = dict(
-    evaluation_task="detection",
-    target_labels=class_names,
-    center_distance_bev_thresholds=[0.5, 1.0, 2.0, 4.0],
-    # plane_distance_thresholds is required for the pass fail evaluation
-    plane_distance_thresholds=[2.0, 4.0],
-    iou_2d_thresholds=None,
-    iou_3d_thresholds=None,
-    label_prefix="autoware",
-    max_distance=121.0,
-    min_distance=-121.0,
-    min_point_numbers=0,
-)
