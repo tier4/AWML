@@ -291,7 +291,7 @@ class PseudoLabelGenerator3D:
         self.logger.info("Validate pseudo labeled t4dataset.")
         try:
             Tier4(
-                version="annotation",
+                revision="annotation",
                 data_root=data_root,
             )
             self.logger.info(f"Validation for pseudo labeled dataset in {data_root} succeeded.")

@@ -170,7 +170,7 @@ def main() -> None:
                     raise ValueError(f"{t4_dataset_id} does not exist.")
 
                 t4 = Tier4(
-                    version="annotation",
+                    revision="annotation",
                     data_root=scene_root_dir_path,
                     verbose=False,
                 )
