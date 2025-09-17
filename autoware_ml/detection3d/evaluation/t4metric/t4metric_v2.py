@@ -33,6 +33,7 @@ from pyquaternion import Quaternion
 __all__ = ["T4MetricV2"]
 _UNKNOWN = "unknown"
 DEFAULT_T4METRIC_FILE_NAME = "t4metric_v2_results_{}.pkl"
+DEFAULT_T4METRIC_METRICS_FOLDER = "metrics"
 
 
 @dataclass(frozen=True)
@@ -335,8 +336,11 @@ class T4MetricV2(BaseMetric):
         Returns:
             PerceptionEvaluationManager: The configured evaluator.
         """
+        metric_output_dir = self.output_dir / DEFAULT_T4METRIC_METRICS_FOLDER if self.write_metric_summary else None
         return PerceptionEvaluationManager(
-            evaluation_config=self.perception_evaluator_configs, load_ground_truth=False
+            evaluation_config=self.perception_evaluator_configs,
+            load_ground_truth=False,
+            metric_output_dir=metric_output_dir,
         )
 
     def _batch_scenes(
