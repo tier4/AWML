@@ -14,7 +14,15 @@ info_test_file_name = "t4dataset_j6gen2_base_infos_test.pkl"
 
 # dataset scene setting
 dataset_version_config_root = "autoware_ml/configs/t4dataset/"
-dataset_version_list = ["db_j6gen2_v1", "db_j6gen2_v2", "db_j6gen2_v4", "db_largebus_v1"]
+dataset_version_list = [
+    "db_j6gen2_v1",
+    "db_j6gen2_v2",
+    "db_j6gen2_v3",
+    "db_j6gen2_v4",
+    "db_j6gen2_v5",
+    "db_largebus_v1",
+    "db_largebus_v2",
+]
 
 dataset_test_groups = {
     "db_j6gen2": "t4dataset_j6gen2_infos_test.pkl",
