@@ -294,7 +294,7 @@ class T4MetricV2(BaseMetric):
                     tmp_results.append({scene_id: samples})
 
         # Reorder all samples in all scenes
-        for result in self.results:
+        for result in tmp_results:
             for scene_id, samples in result.items():
                 result[scene_id] = {k: v for k, v in sorted(samples.items(), key=lambda item: item[0])}
 

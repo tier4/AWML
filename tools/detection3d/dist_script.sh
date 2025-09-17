@@ -34,6 +34,8 @@ elif [ "$TASK" = "test" ]; then
 			--launcher pytorch ${@:5}
 else
     echo "Invalid TASK: $TASK"
-    echo "Usage: $0 <CONFIG> <GPUS> <train|test> [additional args]"
+		echo "Usage: $0 <CONFIG> <GPUS> <train|test> <CHECKPOINT> [additional args]"
+	  echo "  - For train: $0 <CONFIG> <GPUS> train [additional args]"
+	  echo "  - For test:  $0 <CONFIG> <GPUS> test <CHECKPOINT> [additional args]"
     exit 1
 fi
