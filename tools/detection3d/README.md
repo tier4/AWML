@@ -1,6 +1,6 @@
 # tools/detection3d
 
-The pipeline to make the model for 3D object detection.
+The pipeline to develop the model for 3D object detection.
 It contains training, evaluation, and visualization for 3D detection and 3D semantic segmentation.
 
 - [Support priority](https://github.com/tier4/AWML/blob/main/docs/design/autoware_ml_design.md#support-priority): Tier S
