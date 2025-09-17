@@ -66,6 +66,7 @@ train_pipeline = [
         pad_empty_sweeps=True,
         remove_close=True,
         backend_args=backend_args,
+        test_mode=True,
     ),
     dict(type="LoadAnnotations3D", with_bbox_3d=True, with_label_3d=True),
     dict(
@@ -104,6 +105,7 @@ test_pipeline = [
         pad_empty_sweeps=True,
         remove_close=True,
         backend_args=backend_args,
+        test_mode=True,
     ),
     dict(type="PointsRangeFilter", point_cloud_range=point_cloud_range),
     dict(
