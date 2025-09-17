@@ -209,8 +209,8 @@ The target of `README.md` is a developer of `AWML`.
 
 ### data/
 
-The directory of `data/` manages the input files to use for `AWML` including datasets and info files.
-Please use this directory unless you have a specific reason not to.
+`data/` directory is gitignored, and it refers to inputs for `AWML`, for example, datasets and info files.
+The design follows `mmdetection3d` as recommended in  https://mmdetection3d.readthedocs.io/en/latest/advanced_guides/datasets/nuscenes.html. Please change the directory name for different use cases accordingly.
 
 ### work_dirs/
 
