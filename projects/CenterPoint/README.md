@@ -56,9 +56,7 @@ python tools/detection3d/train.py projects/CenterPoint/configs/t4dataset/second_
 ```sh
 # Command
 bash tools/detection3d/dist_script.sh <config> <number of gpus> train
-```
 
-```sh
 # Example: T4dataset
 bash tools/detection3d/dist_script.sh projects/CenterPoint/configs/t4dataset/Centerpoint/second_secfpn_4xb16_121m_base_amp.py 4 train
 ```
@@ -82,9 +80,7 @@ python tools/detection3d/test.py projects/CenterPoint/configs/t4dataset/second_s
 # Command
 CHECKPOINT_PATH=<checkpoint> && \
 bash tools/detection3d/dist_script.sh <config> <number of gpus> test $CHECKPOINT_PATH
-```
 
-```sh
 # Example: T4dataset
 CHECKPOINT_PATH="work_dirs/centerpoint/t4dataset/second_secfpn_2xb8_121m_base/epoch_50.pth" && \
 bash tools/detection3d/dist_script.sh projects/CenterPoint/configs/t4dataset/Centerpoint/second_secfpn_4xb16_121m_base_amp.py 4 test $CHECKPOINT_PATH
