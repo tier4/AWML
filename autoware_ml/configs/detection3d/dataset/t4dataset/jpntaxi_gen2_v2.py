@@ -2,34 +2,35 @@ custom_imports = dict(
     imports=[
         "autoware_ml.detection3d.datasets.t4dataset",
         "autoware_ml.detection3d.evaluation.t4metric.t4metric",
-        "autoware_ml.detection3d.evaluation.t4metric.t4metric_v2",
     ]
 )
 
 # dataset type setting
 dataset_type = "T4Dataset"
-info_train_file_name = "t4dataset_xx1_infos_train.pkl"
-info_val_file_name = "t4dataset_xx1_infos_val.pkl"
-info_test_file_name = "t4dataset_xx1_infos_test.pkl"
+info_train_file_name = "t4dataset_jpntaxi_gen2_v2_infos_train.pkl"
+info_val_file_name = "t4dataset_jpntaxi_gen2_v2_infos_val.pkl"
+info_test_file_name = "t4dataset_jpntaxi_gen2_v2_infos_test.pkl"
 
 # dataset scene setting
 dataset_version_config_root = "autoware_ml/configs/t4dataset/"
+dataset_test_groups = {
+    "db_jpntaxi_gen2_v2": "t4dataset_jpntaxi_gen2_v2_infos_test.pkl",
+}
+
 dataset_version_list = [
-    "db_jpntaxi_v1",
-    "db_jpntaxi_v2",
-    "db_jpntaxi_v4",
+    "db_jpntaxigen2_v2",
 ]
 
 # dataset format setting
 data_prefix = dict(
     pts="",
-    sweeps="",
     CAM_FRONT="",
     CAM_FRONT_LEFT="",
     CAM_FRONT_RIGHT="",
     CAM_BACK="",
     CAM_BACK_RIGHT="",
     CAM_BACK_LEFT="",
+    sweeps="",
 )
 camera_types = {
     "CAM_FRONT",
@@ -78,13 +79,41 @@ name_mapping = {
     "forklift": "car",
     "construction_worker": "pedestrian",
     "stroller": "pedestrian",
+    # DBv2.0 and DBv3.0
+    "animal": "animal",
+    "movable_object.barrier": "barrier",
+    "movable_object.pushable_pullable": "pushable_pullable",
+    "movable_object.traffic_cone": "traffic_cone",
+    "pedestrian.adult": "pedestrian",
+    "pedestrian.child": "pedestrian",
+    "pedestrian.construction_worker": "pedestrian",
+    "pedestrian.personal_mobility": "pedestrian",
+    "pedestrian.police_officer": "pedestrian",
+    "pedestrian.stroller": "pedestrian",
+    "pedestrian.wheelchair": "pedestrian",
+    "static_object.bicycle rack": "bicycle rack",
+    "static_object.bollard": "bollard",
+    "vehicle.ambulance": "car",  # Define vehicle.ambulance as car since vehicle.emergency (ambulance & police) is defined as car
+    "vehicle.bicycle": "bicycle",
+    "vehicle.bus": "bus",
+    "vehicle.car": "car",
+    "vehicle.construction": "truck",
+    "vehicle.fire": "truck",
+    "vehicle.motorcycle": "bicycle",
+    "vehicle.police": "car",
+    "vehicle.trailer": "trailer",
+    "vehicle.truck": "truck",
     # DBv1.3
+    "ambulance": "car",
+    "kart": "car",
+    "wheelchair": "pedestrian",
+    "personal_mobility": "pedestrian",
+    "fire_truck": "truck",
     "semi_trailer": "trailer",
     "tractor_unit": "truck",
-    "kart": "car",
-    "unknown": "unknown",
     "construction_vehicle": "truck",
 }
+
 class_names = [
     "car",
     "truck",
@@ -137,17 +166,3 @@ filter_attributes = [
     ("motorcycle", "cycle_state.without_rider"),
     ("motorcycle", "motorcycle_state.without_rider"),
 ]
-
-evaluator_metric_configs = dict(
-    evaluation_task="detection",
-    target_labels=class_names,
-    center_distance_bev_thresholds=[0.5, 1.0, 2.0, 4.0],
-    # plane_distance_thresholds is required for the pass fail evaluation
-    plane_distance_thresholds=[2.0, 4.0],
-    iou_2d_thresholds=None,
-    iou_3d_thresholds=None,
-    label_prefix="autoware",
-    max_distance=121.0,
-    min_distance=-121.0,
-    min_point_numbers=0,
-)

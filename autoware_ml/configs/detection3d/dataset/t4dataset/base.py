@@ -16,10 +16,14 @@ info_test_file_name = "t4dataset_base_infos_test.pkl"
 dataset_version_config_root = "autoware_ml/configs/t4dataset/"
 dataset_version_list = [
     "db_jpntaxigen2_v1",
+    "db_jpntaxigen2_v2",
     "db_j6gen2_v1",
     "db_j6gen2_v2",
+    "db_j6gen2_v3",
     "db_j6gen2_v4",
+    "db_j6gen2_v5",
     "db_largebus_v1",
+    "db_largebus_v2",
     "db_jpntaxi_v1",
     "db_jpntaxi_v2",
     "db_jpntaxi_v4",
@@ -188,6 +192,7 @@ evaluator_metric_configs = dict(
     evaluation_task="detection",
     target_labels=class_names,
     center_distance_bev_thresholds=[0.5, 1.0, 2.0, 4.0],
+    # plane_distance_thresholds is required for the pass fail evaluation
     plane_distance_thresholds=[2.0, 4.0],
     iou_2d_thresholds=None,
     iou_3d_thresholds=None,
