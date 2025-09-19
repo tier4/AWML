@@ -74,8 +74,11 @@ python tools/detection3d/train.py projects/BEVFusion/configs/t4dataset/bevfusion
   - Rename the config file to use multi GPUs and different batch sizes (e.g., `2xb8` means using 2 GPUs and a batch size of 8)
 
 ```sh
-# T4dataset
-bash tools/detection3d/dist_train.sh projects/BEVFusion/configs/t4dataset/bevfusion_lidar_voxel_second_secfpn_1xb1_t4xx1.py 2
+# Command
+bash tools/detection3d/dist_script.sh <config> <number of gpus> train
+
+# Example: T4dataset
+bash tools/detection3d/dist_script.sh projects/BEVFusion/configs/t4dataset/bevfusion_lidar_voxel_second_secfpn_1xb1_t4xx1.py 4 train
 ```
 
 #### 2.2. [Option] Train the camera backbone
@@ -97,15 +100,40 @@ TBD
 python tools/detection3d/train.py projects/BEVFusion/configs/nuscenes/bevfusion_lidar-cam_voxel0075_second_secfpn_1xb2-cyclic-20e_nus-3d.py --cfg-options load_from=${LIDAR_PRETRAINED_CHECKPOINT} model.img_backbone.init_cfg.checkpoint=${IMAGE_PRETRAINED_BACKBONE}
 ```
 
-### 3. Deployment
+### 3. Evaluation
 
-#### 3.2. Sparse convolutions support
+- Run evaluation on a test set, please select experiment config accordingly
+
+- [choice] Evaluate with a single GPU
+
+```sh
+# Evaluation for t4dataset
+DIR="work_dirs/bevfusion_lidar_voxel_second_secfpn_1xb1_t4xx1/" && \
+python tools/detection3d/test.py projects/BEVFusion/configs/t4dataset/bevfusion_lidar_voxel_second_secfpn_1xb1_t4xx1.py $DIR/epoch_50.pth
+```
+
+- [choice] Evaluate with multiple GPUs
+  - Note that if you choose to evaluate with multiple GPUs, you might get slightly different results as compared to single GPU due to differences across GPUs
+
+```sh
+# Command
+CHECKPOINT_PATH=<checkpoint> && \
+bash tools/detection3d/dist_script.sh <config> <number of gpus> test $CHECKPOINT_PATH
+
+# Example: T4dataset
+CHECKPOINT_PATH="work_dirs/bevfusion_lidar_voxel_second_secfpn_1xb1_t4xx1/epoch_50.pth" && \
+bash tools/detection3d/dist_script.sh projects/BEVFusion/configs/t4dataset/bevfusion_lidar_voxel_second_secfpn_1xb1_t4xx1.py 4 test $CHECKPOINT_PATH
+```
+
+### 4. Deployment
+
+#### 4.1. Sparse convolutions support
 
 Sparse convolutions are not deployable by default. In the [deployment](configs/deploy/bevfusion_lidar_tensorrt_dynamic.py) we follow the instructions found in the [SparseConvolution](../SparseConvolution/README.md) project to enable this feature.
 
 Note: we only support traveller59's backend during deployment, but the model checkpoints can correspond to either backend.
 
-#### 3.3. ONNX export
+#### 4.2. ONNX export
 
 We provide three general deploy config files:
  - lidar-only
