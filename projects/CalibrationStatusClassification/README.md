@@ -21,7 +21,7 @@
 ## Get started
 ### 1. Setup
 
-- [Run setup environment at first](../../tools/setting_environment/README.md)
+- Please follow the [installation tutorial](/docs/tutorial/tutorial_detection_3d.md)to set up the environment.
 - Docker build for CalibrationStatusClassification
 
 ```sh

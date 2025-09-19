@@ -1,8 +1,10 @@
 # auto_label_2d
-## 1. Setup environment
 
 - [Support priority](https://github.com/tier4/AWML/blob/main/docs/design/autoware_ml_design.md#support-priority): Tier B
-- See [setting environemnt](/tools/setting_environment/)
+
+## 1. Setup environment
+
+- Please follow the [installation tutorial](/docs/tutorial/tutorial_detection_3d.md)to set up the environment.
 
 ## 2. command
 ### (TBD) 2.1 T4dataset to info file

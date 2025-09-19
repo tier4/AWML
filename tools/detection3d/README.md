@@ -1,6 +1,6 @@
 # tools/detection3d
 
-The pipeline to make the model.
+The pipeline to develop the model for 3D object detection.
 It contains training, evaluation, and visualization for 3D detection and 3D semantic segmentation.
 
 - [Support priority](https://github.com/tier4/AWML/blob/main/docs/design/autoware_ml_design.md#support-priority): Tier S
@@ -13,28 +13,9 @@ It contains training, evaluation, and visualization for 3D detection and 3D sema
 
 ## 1. Setup environment
 
-See [setting environment](/tools/setting_environment/)
+See [tutorial](/docs/tutorial/tutorial_detection_3d.md)
 
-## 2. Prepare dataset
-
-Prepare the dataset you use.
-
-### 2.1. nuScenes
-
-- Run docker
-
-```sh
-docker run -it --rm --gpus '"device=0"' --shm-size=64g --name awml -p 6006:6006 -v $PWD/:/workspace -v $PWD/data:/workspace/data autoware-ml
-```
-
-- Make info files for nuScenes
-  - If you want to make own pkl, you should change from "nuscenes" to "custom_name"
-
-```sh
-python tools/detection3d/create_data.py nuscenes --root-path ./data/nuscenes --out-dir ./data/nuscenes --extra-tag nuscenes
-```
-
-### 2.2. T4dataset
+## 2. Prepare T4dataset
 
 - Run docker
 
@@ -138,3 +119,19 @@ where `ann-file-path` is a path to the info file , and `frame-range` represents 
 ## 5. Deploy
 
 See each projects
+
+## Tips
+### Use nuScenes dataset
+
+- Run docker
+
+```sh
+docker run -it --rm --gpus '"device=0"' --shm-size=64g --name awml -p 6006:6006 -v $PWD/:/workspace -v $PWD/data:/workspace/data autoware-ml
+```
+
+- Make info files for nuScenes
+  - If you want to make own pkl, you should change from "nuscenes" to "custom_name"
+
+```sh
+python tools/detection3d/create_data.py nuscenes --root-path ./data/nuscenes --out-dir ./data/nuscenes --extra-tag nuscenes
+```
