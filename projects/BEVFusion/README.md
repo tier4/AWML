@@ -159,7 +159,7 @@ python projects/BEVFusion/deploy/torch2onnx.py \
   ${MODEL_CFG} \
   ${CHECKPOINT_PATH} \
   --device cuda:0 \
-  --work-dir ${WORK_DIR}
+  --work-dir ${WORK_DIR} \
   --module main_body
 
 
@@ -168,7 +168,7 @@ python projects/BEVFusion/deploy/torch2onnx.py \
   ${MODEL_CFG} \
   ${CHECKPOINT_PATH} \
   --device cuda:0 \
-  --work-dir ${WORK_DIR}
+  --work-dir ${WORK_DIR} \
   --module image_backbone
 
 ```
