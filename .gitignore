@@ -1,11 +1,7 @@
 # autoware-ml
 /data
 /work_dirs
-tests/samplefiles/data
-calibration_visualization/
 
-test_projection_vis_t4dataset/
-test_result_vis_t4dataset/
 *.bin
 *.onnx
 *.engine

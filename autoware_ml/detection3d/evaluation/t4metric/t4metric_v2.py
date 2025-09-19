@@ -10,6 +10,7 @@ import numpy as np
 import torch
 from mmdet3d.registry import METRICS
 from mmdet3d.structures import LiDARInstance3DBoxes
+from mmengine.dist import get_world_size
 from mmengine.evaluator import BaseMetric
 from mmengine.logging import MessageHub, MMLogger
 from perception_eval.common import ObjectType
@@ -32,6 +33,7 @@ from pyquaternion import Quaternion
 __all__ = ["T4MetricV2"]
 _UNKNOWN = "unknown"
 DEFAULT_T4METRIC_FILE_NAME = "t4metric_v2_results_{}.pkl"
+DEFAULT_T4METRIC_METRICS_FOLDER = "metrics"
 
 
 @dataclass(frozen=True)
@@ -155,6 +157,20 @@ class T4MetricV2(BaseMetric):
         self.results_pickle_exists = True if self.results_pickle_path and self.results_pickle_path.exists() else False
         self.write_metric_summary = write_metric_summary
 
+        self.num_running_gpus = get_world_size()
+        self.logger.info(f"{self.default_prefix} running with {self.num_running_gpus} GPUs")
+
+    def evaluate(self, size: int) -> Dict[str, float]:
+        """
+        Evaluate the results and return a dict of metrics. Override of BaseMetric.evaluate to clean up caches
+        for the multi-gpu case.
+        """
+        metrics = super().evaluate(size=size)
+        # Clean up any caches for multi-gpu case
+        self._clean_up()
+
+        return metrics
+
     # override of BaseMetric.process
     def process(self, data_batch: dict, data_samples: Sequence[dict]) -> None:
         """Process one batch of data samples and predictions.
@@ -255,6 +271,38 @@ class T4MetricV2(BaseMetric):
 
         self.logger.info(f"Validated {len(results)} scenes")
 
+    def _collate_results(self, results: List[dict]) -> List[dict]:
+        """Collate results from multiple GPUs.
+
+        Args:
+            results (List[dict]): List of results from different GPUs.
+
+        Returns:
+        """
+        # Reinitialize
+        self.scene_id_to_index_map: Dict[str, int] = {}
+
+        # [{scene_id: {sample_id: perception_frame}}]
+        tmp_results = []
+        for scenes in results:
+            for scene_id, samples in scenes.items():
+                result_index = self.scene_id_to_index_map.get(scene_id, None)
+                if result_index is not None:
+                    tmp_results[result_index][scene_id].update(samples)
+                else:
+                    self.scene_id_to_index_map[scene_id] = len(tmp_results)
+                    tmp_results.append({scene_id: samples})
+
+        # Reorder all samples in all scenes
+        for result in tmp_results:
+            for scene_id, samples in result.items():
+                result[scene_id] = {k: v for k, v in sorted(samples.items(), key=lambda item: item[0])}
+
+        # Update results to the collated results
+        self.results = tmp_results
+        self.logger.info(f"Collated results from {len(results)} into {len(self.results)} scenes")
+        return tmp_results
+
     def _handle_results_persistence(self, results: List[dict]) -> List[dict]:
         """Handle loading or saving results based on pickle configuration.
 
@@ -267,6 +315,10 @@ class T4MetricV2(BaseMetric):
         if self.results_pickle_exists:
             self.logger.info("Loading results from pickle file")
             return self._load_results_from_pickle(self.results_pickle_path)
+
+        # Reorganize results from multi-gpu
+        if self.num_running_gpus > 1:
+            results = self._collate_results(results)
 
         current_epoch = self.message_hub.get_info("epoch", -1) + 1
         results_pickle_path = (
@@ -284,8 +336,11 @@ class T4MetricV2(BaseMetric):
         Returns:
             PerceptionEvaluationManager: The configured evaluator.
         """
+        metric_output_dir = self.output_dir / DEFAULT_T4METRIC_METRICS_FOLDER if self.write_metric_summary else None
         return PerceptionEvaluationManager(
-            evaluation_config=self.perception_evaluator_configs, load_ground_truth=False
+            evaluation_config=self.perception_evaluator_configs,
+            load_ground_truth=False,
+            metric_output_dir=metric_output_dir,
         )
 
     def _batch_scenes(

@@ -49,16 +49,36 @@ python tools/detection3d/train.py projects/StreamPETR/configs/t4dataset/t4_base_
 ```sh
 # Multi GPU training
 
-bash tools/detection3d/dist_train.sh projects/StreamPETR/configs/t4dataset/t4_base_vov_flash_480x640_baseline.py 2
+# Command
+bash tools/detection3d/dist_script.sh <config> <number of gpus> train
+
+# Example: T4dataset
+bash tools/detection3d/dist_script.sh projects/StreamPETR/configs/t4dataset/t4_base_vov_flash_480x640_baseline.py 4 train
 ```
 
 ### 3. Evaluation
 
+
 - Run evaluation on a test set, please select experiment config accordingly
+
+- [choice] Evaluate with a single GPU
 
 ```sh
 # Evaluation for t4dataset
 python tools/detection3d/test.py projects/StreamPETR/configs/t4dataset/t4_base_vov_flash_480x640_baseline.py work_dirs/t4_base_vov_flash_480x640_baseline/epoch_35.pth
+```
+
+- [choice] Evaluate with multiple GPUs
+  - Note that if you choose to evaluate with multiple GPUs, you might get slightly different results as compared to single GPU due to differences across GPUs
+
+```sh
+# Command
+CHECKPOINT_PATH=<checkpoint> && \
+bash tools/detection3d/dist_script.sh <config> <number of gpus> test $CHECKPOINT_PATH
+
+# Example: T4dataset
+CHECKPOINT_PATH="work_dirs/t4_base_vov_flash_480x640_baseline/epoch_35.pth" && \
+bash tools/detection3d/dist_script.sh projects/StreamPETR/configs/t4dataset/t4_base_vov_flash_480x640_baseline.py 4 test $CHECKPOINT_PATH
 ```
 
 ### 4. Visualization
