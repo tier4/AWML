@@ -109,7 +109,7 @@ python tools/detection3d/train.py projects/BEVFusion/configs/nuscenes/bevfusion_
 ```sh
 # Evaluation for t4dataset
 DIR="work_dirs/bevfusion_lidar_voxel_second_secfpn_1xb1_t4xx1/" && \
-python tools/detection3d/test.py projects/CenterPoint/configs/t4dataset/bevfusion_lidar_voxel_second_secfpn_1xb1_t4xx1.py $DIR/epoch_50.pth
+python tools/detection3d/test.py projects/BEVFusion/configs/t4dataset/bevfusion_lidar_voxel_second_secfpn_1xb1_t4xx1.py $DIR/epoch_50.pth
 ```
 
 - [choice] Evaluate with multiple GPUs
