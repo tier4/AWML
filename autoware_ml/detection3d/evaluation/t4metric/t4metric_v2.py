@@ -298,9 +298,9 @@ class T4MetricV2(BaseMetric):
             for scene_id, samples in result.items():
                 result[scene_id] = {k: v for k, v in sorted(samples.items(), key=lambda item: item[0])}
 
-        self.logger.info(f"Collated results from {len(results)} into {len(self.results)} scenes")
         # Update results to the collated results
         self.results = tmp_results
+        self.logger.info(f"Collated results from {len(results)} into {len(self.results)} scenes")
         return tmp_results
 
     def _handle_results_persistence(self, results: List[dict]) -> List[dict]:
