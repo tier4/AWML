@@ -6,13 +6,13 @@ The pipeline of auto labeling for 3D detection.
 
 ## 1. Setup environment
 
-- Please pull docker image of `autoware-ml-base` by following [setting environemnt](/tools/setting_environment/)
+- Please follow the [installation tutorial](/docs/tutorial/tutorial_detection_3d.md)to set up the environment.
 - In addition, please follow the below setting up procedure.
 
 ### Set up environment for auto_labeling_3d
 
 - Build docker image.
-  - If you [build `AWML` image locally](/tools/setting_environment/README.md#tips), please add `--build-arg BASE_IMAGE=autoware-ml` or `--build-arg BASE_IMAGE=autoware-ml-ros2` to build script.
+  - If you build `AWML` image locally, please add `--build-arg BASE_IMAGE=autoware-ml` or `--build-arg BASE_IMAGE=autoware-ml-ros2` to build script.
 
 ```sh
 DOCKER_BUILDKIT=1 docker build -t auto_labeling_3d tools/auto_labeling_3d/
