@@ -24,7 +24,8 @@ In addition to ML model deployment, `AWML` supports active learning framework in
 - NVIDIA dependency: CUDA 12.1 + cuDNN 8
   - Need > 530.xx.xx NVIDIA device driver
 
-If you use this project in your research, please use [the arXiv paper](https://arxiv.org/abs/2506.00645) and consider cite.
+If you use this project in your research, please use [the arXiv paper of AWML](https://arxiv.org/abs/2506.00645) and [the arXiv paper for fine-tuning strategy](https://arxiv.org/abs/2509.04711).
+And please use consider citation as below.
 
 ```
 @misc{tanaka2025awmlopensourcemlbasedrobotics,
@@ -35,6 +36,16 @@ If you use this project in your research, please use [the arXiv paper](https://a
       archivePrefix={arXiv},
       primaryClass={cs.RO},
       url={https://arxiv.org/abs/2506.00645},
+}
+
+@misc{tanaka2025domainadaptationdifferentsensor,
+      title={Domain Adaptation for Different Sensor Configurations in 3D Object Detection},
+      author={Satoshi Tanaka and Kok Seang Tan and Isamu Yamashita},
+      year={2025},
+      eprint={2509.04711},
+      archivePrefix={arXiv},
+      primaryClass={cs.CV},
+      url={https://arxiv.org/abs/2509.04711},
 }
 ```
 
