@@ -171,7 +171,7 @@ class AnalysisRunner:
             if not scene_root_dir_path.is_dir():
                 raise ValueError(f"{scene_root_dir_path} does not exist.")
 
-            t4 = Tier4(version="annotation", data_root=str(scene_root_dir_path), verbose=False)
+            t4 = Tier4(data_root=str(scene_root_dir_path), verbose=False)
             sample_data = self._extract_sample_data(t4=t4)
             scenario_data[scene_token] = ScenarioData(scene_token=scene_token, sample_data=sample_data)
         return scenario_data
