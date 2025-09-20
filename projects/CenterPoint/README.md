@@ -24,7 +24,7 @@
 ## Get started
 ### 1. Setup
 
-- [Run setup environment](../../tools/setting_environment/README.md)
+- Please follow the [installation tutorial](/docs/tutorial/tutorial_detection_3d.md)to set up the environment.
 - Run docker
 
 ```sh

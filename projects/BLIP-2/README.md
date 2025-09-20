@@ -15,8 +15,8 @@
 ## Get started
 ### 1. Setup
 
-- 1.1. [Run setup environment at first](/tools/setting_environment/).
-- 1.2. Run docker
+- Please follow the [installation tutorial](/docs/tutorial/tutorial_detection_3d.md)to set up the environment.
+- Run docker
 
 ```
 docker run -it --rm --gpus all --shm-size=64g --name awml -v $PWD/:/workspace -v $PWD/data:/workspace/data autoware-ml

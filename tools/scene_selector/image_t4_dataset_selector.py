@@ -141,7 +141,7 @@ def main():
     np.random.shuffle(train_list)
     for dataset_path in train_list:
         dataset_id = dataset_path.split("/")[-2]
-        t4_info = Tier4(version="annotation", data_root=dataset_path, verbose=False)
+        t4_info = Tier4(data_root=dataset_path, verbose=False)
         image_paths = []
         for sample in t4_info.sample:
             sensor_data_paths = [t4_info.get_sample_data_path(v) for k, v in sample.data.items() if k in used_sensors]
