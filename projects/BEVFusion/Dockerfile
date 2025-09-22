@@ -1,5 +1,4 @@
-#ARG AWML_BASE_IMAGE="ghcr.io/tier4/autoware-ml-base:latest"
-ARG AWML_BASE_IMAGE="awml"
+ARG AWML_BASE_IMAGE="ghcr.io/tier4/autoware-ml-base:latest"
 FROM ${AWML_BASE_IMAGE}
 
 # Install SparseConv
