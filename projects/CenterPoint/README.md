@@ -2,7 +2,7 @@
 ## Summary
 
 - [Support priority](https://github.com/tier4/AWML/blob/main/docs/design/autoware_ml_design.md#support-priority): Tier S
-- ROS package: [auotoware_lidar_centerpoint] (https://github.com/autowarefoundation/autoware.universe/tree/main/perception/autoware_lidar_centerpoint)
+- ROS package: [auotoware_lidar_centerpoint](https://github.com/autowarefoundation/autoware.universe/tree/main/perception/autoware_lidar_centerpoint)
 - Supported dataset
   - [x] T4dataset
   - [] NuScenes
