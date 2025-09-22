@@ -131,4 +131,5 @@ where `rot_y_axis_reference` can be removed if we would like to use the original
 
 ## Reference
 
+- "Center-based 3D Object Detection and Tracking", Tianwei Yin, Xingyi Zhou, Philipp Krähenbühl, CVPR2021.
 - [CenterPoint of mmdetection3d](https://github.com/open-mmlab/mmdetection3d/tree/main/configs/centerpoint)
