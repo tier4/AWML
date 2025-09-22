@@ -5,7 +5,7 @@
 - ROS package: [auotoware_lidar_centerpoint](https://github.com/autowarefoundation/autoware.universe/tree/main/perception/autoware_lidar_centerpoint)
 - Supported dataset
   - [x] T4dataset
-  - [] NuScenes
+  - [ ] NuScenes
 - Supported model
   - [x] LiDAR-only model
 - Other supported feature
@@ -19,7 +19,17 @@
   - v1 (121m range, grid_size = 760)
     - [CenterPoint base/1.X](./docs/CenterPoint/v1/base.md)
     - [CenterPoint x2/1.X](./docs/CenterPoint/v1/x2.md)
-    - [CenterPoint-ConvNeXtPC base/0.x](./docs/CenterPoint-ConvNeXtPC/v0/base.md)
+  - v2 (121m range, grid_size = 760)
+    - [CenterPoint base/2.X](./docs/CenterPoint/v2/base.md)
+    - [CenterPoint x2/2.X](./docs/CenterPoint/v2/x2.md)
+- CenterPoint-ConvNeXtPC
+  - [CenterPoint-ConvNeXtPC base/0.x](./docs/CenterPoint-ConvNeXtPC/v0/base.md)
+- CenterPoint-ShortRange
+  - v0
+    - [CenterPoint-ShortRange base/0.X](./docs/CenterPoint-ShortRange/v0/base.md)
+  - v2
+    - [CenterPoint-ShortRange base/2.X](./docs/CenterPoint-ShortRange/v2/base.md)
+    - [CenterPoint-ShortRange j6gen2/2.X](./docs/CenterPoint-ShortRange/v2/j6gen2.md)
 
 ## Get started
 ### 1. Setup
