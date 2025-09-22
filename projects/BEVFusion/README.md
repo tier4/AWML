@@ -174,17 +174,12 @@ This will generate two models in the `WORK_DIR` folder. `end2end.onnx` correspon
  - Add self-supervised loss
 
 ## Trouble shooting
+### Sparse convolutions
 
-- (Choice) Install traveller59's sparse convolutions backend
+- Install traveller59's sparse convolutions backend
 
-By default, mmcv's backend will be used, but the commonly adopted backend is traveller59's, which is also includes deployment concerns in its design such as memory allocation. For this reason it is highly recommended to install it:
-
-```bash
-pip install spconv-cu120
-```
-
-`AWML` will automatically select this implementation if the dependency is installed.
-
+If you use mmcv's backend, the commonly adopted backend is traveller59's, which is also includes deployment concerns in its design such as memory allocation.
+For this reason, in our Dockerfile, we use `spconv-cu120`.
 
 ## Reference
 
