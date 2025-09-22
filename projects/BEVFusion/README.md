@@ -20,9 +20,19 @@
 - BEVFusion-L
   - v0
     - [BEVFusion-L base/0.X](./docs/BEVFusion-L/v0/base.md)
+  - v1
+    - [BEVFusion-L base/1.X](./docs/BEVFusion-L/v1/base.md)
+  - v2
+    - [BEVFusion-L base/2.X](./docs/BEVFusion-L/v2/base.md)
+    - [BEVFusion-L j6gen2/2.X](./docs/BEVFusion-L/v2/j6gen2.md)
 - BEVFusion-CL
   - v0
     - [BEVFusion-CL base/0.X](./docs/BEVFusion-CL/v0/base.md)
+  - v1
+    - [BEVFusion-CL base/1.X](./docs/BEVFusion-CL/v1/base.md)
+  - v2
+    - [BEVFusion-CL base/2.X](./docs/BEVFusion-CL/v2/base.md)
+    - [BEVFusion-CL j6gen2/2.X](./docs/BEVFusion-CL/v2/j6gen2.md)
 - BEVFusion-L-offline
   - v0
     - [BEVFusion-L-offline base/0.X](./docs/BEVFusion-L-offline/v0/base.md)
@@ -34,10 +44,10 @@
 ### 1. Setup
 
 - Please follow the [installation tutorial](/docs/tutorial/tutorial_detection_3d.md)to set up the environment.
-- Docker build for TransFusion
+- Docker build for BEVFusion
 
 ```sh
-DOCKER_BUILDKIT=1 docker build -t awml-bevfusion projects/BEVFusion/
+docker build -t awml-bevfusion projects/BEVFusion/
 ```
 
 - Run docker
@@ -175,8 +185,6 @@ This will generate two models in the `WORK_DIR` folder. `end2end.onnx` correspon
 
 ## Trouble shooting
 ### Sparse convolutions
-
-- Install traveller59's sparse convolutions backend
 
 If you use mmcv's backend, the commonly adopted backend is traveller59's, which is also includes deployment concerns in its design such as memory allocation.
 For this reason, in our Dockerfile, we use `spconv-cu120`.
