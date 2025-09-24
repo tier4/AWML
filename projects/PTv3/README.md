@@ -53,14 +53,7 @@ python tools/test.py --config-file configs/semseg-pt-v3m1-0-t4dataset.py --num-g
 
 ### 3. Deployment
 
-To deploy the model, a modified version of spconv is required. To use it,
-please add `projects` to the `PYTHONPATH`:
-
-```sh
-export PYTHONPATH=${PYTHONPATH}:/workspace/projects
-```
-
-and then export the model:
+Export the model:
 
 ```sh
 cd projects/PTv3
@@ -75,3 +68,8 @@ which will generate a file called `ptv3.onnx`
 ## Reference
 
 - [Pointcept's PTv3](https://github.com/Pointcept/Pointcept)
+
+## Limitations
+
+- Currently there is a bug in training loop with `NaN` loss and it prevents training from completing.
+  This is being worked on and will be fixed in a future release.

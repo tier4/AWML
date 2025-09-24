@@ -27,9 +27,9 @@ class T4Dataset(DefaultDataset):
     def get_info_path(self, split):
         assert split in ["train", "val", "test"]
         if split == "train":
-            return os.path.join(self.data_root, "info/kenzo_all", f"t4dataset_xx1_infos_train.pkl")
+            return os.path.join(self.data_root, "info", f"t4dataset_xx1_infos_train.pkl")
         elif split == "val":
-            return os.path.join(self.data_root, "info/kenzo_all", f"t4dataset_xx1_infos_val.pkl")
+            return os.path.join(self.data_root, "info", f"t4dataset_xx1_infos_val.pkl")
         elif split == "test":
             return os.path.join(self.data_root, "info", f"t4dataset_xx1_infos_test.pkl")
         else:
