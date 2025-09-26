@@ -20,9 +20,19 @@
 - BEVFusion-L
   - v0
     - [BEVFusion-L base/0.X](./docs/BEVFusion-L/v0/base.md)
+  - v1
+    - [BEVFusion-L base/1.X](./docs/BEVFusion-L/v1/base.md)
+  - v2
+    - [BEVFusion-L base/2.X](./docs/BEVFusion-L/v2/base.md)
+    - [BEVFusion-L j6gen2/2.X](./docs/BEVFusion-L/v2/j6gen2.md)
 - BEVFusion-CL
   - v0
     - [BEVFusion-CL base/0.X](./docs/BEVFusion-CL/v0/base.md)
+  - v1
+    - [BEVFusion-CL base/1.X](./docs/BEVFusion-CL/v1/base.md)
+  - v2
+    - [BEVFusion-CL base/2.X](./docs/BEVFusion-CL/v2/base.md)
+    - [BEVFusion-CL j6gen2/2.X](./docs/BEVFusion-CL/v2/j6gen2.md)
 - BEVFusion-L-offline
   - v0
     - [BEVFusion-L-offline base/0.X](./docs/BEVFusion-L-offline/v0/base.md)
@@ -30,15 +40,20 @@
   - v0
     - [BEVFusion-CL-offline base/0.X](./docs/BEVFusion-CL-offline/v0/base.md)
 
-
 ## Get started
 ### 1. Setup
 
 - Please follow the [installation tutorial](/docs/tutorial/tutorial_detection_3d.md)to set up the environment.
+- Docker build for BEVFusion
+
+```sh
+docker build -t awml-bevfusion projects/BEVFusion/
+```
+
 - Run docker
 
 ```sh
-docker run -it --rm --gpus all --shm-size=64g --name awml -p 6006:6006 -v $PWD/:/workspace -v $PWD/data:/workspace/data autoware-ml
+docker run -it --rm --gpus all --shm-size=64g --name awml -p 6006:6006 -v $PWD/:/workspace -v $PWD/data:/workspace/data awml-bevfusion
 ```
 
 - Build and install dependencies (required only the first time)
@@ -46,16 +61,6 @@ docker run -it --rm --gpus all --shm-size=64g --name awml -p 6006:6006 -v $PWD/:
 ```sh
 python projects/BEVFusion/setup.py develop
 ```
-
-- (Choice) Install traveller59's sparse convolutions backend
-
-By default, mmcv's backend will be used, but the commonly adopted backend is traveller59's, which is also includes deployment concerns in its design such as memory allocation. For this reason it is highly recommended to install it:
-
-```bash
-pip install spconv-cu120
-```
-
-`AWML` will automatically select this implementation if the dependency is installed.
 
 ### 2. Train
 #### 2.1. Train the LiDAR-only model first
@@ -126,7 +131,6 @@ bash tools/detection3d/dist_script.sh projects/BEVFusion/configs/t4dataset/bevfu
 ```
 
 ### 4. Deployment
-
 #### 4.1. Sparse convolutions support
 
 Sparse convolutions are not deployable by default. In the [deployment](configs/deploy/bevfusion_lidar_tensorrt_dynamic.py) we follow the instructions found in the [SparseConvolution](../SparseConvolution/README.md) project to enable this feature.
@@ -141,8 +145,6 @@ We provide three general deploy config files:
  - camera-lidar-model
     - [main-body](configs/deploy/bevfusion_main_body_with_image_tensorrt_dynamic.py)
     - [image-backbone](configs/deploy/bevfusion_camera_backbone_tensorrt_dynamic.py)
-
-
 
 To export an ONNX, use the following command:
 
@@ -162,7 +164,6 @@ python projects/BEVFusion/deploy/torch2onnx.py \
   --work-dir ${WORK_DIR}
   --module main_body
 
-
 python projects/BEVFusion/deploy/torch2onnx.py \
   ${DEPLOY_CFG_IMAGE_BACKBONE} \
   ${MODEL_CFG} \
@@ -181,6 +182,12 @@ This will generate two models in the `WORK_DIR` folder. `end2end.onnx` correspon
  - `fp16` inference (TensorRT plugin)
  - Fix BEVFusion ROIs for t4dataset
  - Add self-supervised loss
+
+## Trouble shooting
+### Sparse convolutions
+
+If you use mmcv's backend, the commonly adopted backend is traveller59's, which is also includes deployment concerns in its design such as memory allocation.
+For this reason, in our Dockerfile, we use `spconv-cu120`.
 
 ## Reference
 
