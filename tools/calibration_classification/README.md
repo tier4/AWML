@@ -12,7 +12,7 @@ It contains training, evaluation, and visualization for Calibration classificati
 
 ## 1. Setup environment
 
-Please follow the [installation tutorial](/docs/tutorial/tutorial_detection_3d.md)to set up the environment.
+Please follow the [installation tutorial](/docs/tutorial/tutorial_detection_3d.md) to set up the environment.
 
 ## 2. Prepare dataset
 
