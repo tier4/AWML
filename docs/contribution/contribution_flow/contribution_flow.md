@@ -2,11 +2,12 @@
 ## 1. Report issue
 
 If you want to add/fix some code, please make the issue at first.
-You should comment and show the issue and show what you want to fix  before implementation.
+Please comment and show any issues that need to be fixed before creating a PR.
 
 ## 2. Implementation
 
 You should fork from autoware-ml to own repository and make new branch.
+Please check [AWML design document](/docs/design/autoware_ml_design.md) before implementation.
 
 ## 3. Formatting
 
@@ -53,18 +54,18 @@ The target of document is as below.
 - `/docs/*`: Design documents for developers
 
 Design documents aims for developers.
-So you should write "why we should do" for documents.
+So please comment and show "why we should do" for documents.
 
 - `/tools/*`: Process documents for engineer users
 
 Process documents aims for engineer users.
-So you should write "how we should do" for documents assuming that users know basic command linux around machine learning.
+So please comment and show "how we should do" for documents assuming that users know basic command linux around machine learning.
 You can assume the user can fix the bug in the tools on their own.
 
 - `/pipelines/*`: Process documents for non-engineer users
 
 Process documents aims for non-engineer users.
-So you should write "how we should do" for documents assuming that users do not know basic linux command.
+So please comment and show "how we should do" for documents assuming that users do not know basic linux command.
 
 ## 5. Test by CI/CD
 
