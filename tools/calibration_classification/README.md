@@ -223,7 +223,7 @@ tensorboard --logdir work_dirs --bind_all
 ```
 
 ## 5. Analyze
-### 5.1. Evaluation
+### 5.1. Evaluation Pytorch
 
 - Evaluation
 
@@ -234,3 +234,73 @@ python tools/calibration_classification/test.py {config_file} {checkpoint_file}
 ```sh
 python tools/calibration_classification/test.py projects/CalibrationStatusClassification/configs/t4dataset/resnet18_5ch_1xb16-50e_j6gen2.py  epoch_25.pth --out {output_file}
 ```
+
+
+
+## 6. Deployment
+This directory contains scripts for evaluating calibration classification models in different formats.
+
+### 6.1 Convert to ONNX and TensorRT
+```sh
+python projects/CalibrationStatusClassification/deploy/main.py projects/CalibrationStatusClassification/configs/deploy/resnet18_5ch.py projects/CalibrationStatusClassification/configs/t4dataset/resnet18_5ch_1xb8-25e_j6gen2.py checkpoint.pth --info_pkl data/t4dataset/calibration_info/t4dataset_gen2_base_infos_test.pkl --sample_idx 0 --device cuda:0 --work-dir /workspace/work_dirs/ --verify --onnx --tensorrt
+```
+
+### 6.1.1 Convert to ONNX
+```sh
+python projects/CalibrationStatusClassification/deploy/main.py projects/CalibrationStatusClassification/configs/deploy/resnet18_5ch.py projects/CalibrationStatusClassification/configs/t4dataset/resnet18_5ch_1xb8-25e_j6gen2.py checkpoint.pth --info_pkl data/t4dataset/calibration_info/t4dataset_gen2_base_infos_test.pkl --sample_idx 0 --device cuda:0 --work-dir /workspace/work_dirs/ --verify --onnx
+```
+
+### 6.1.2 Convert to TensorRT
+```sh
+python projects/CalibrationStatusClassification/deploy/main.py projects/CalibrationStatusClassification/configs/deploy/resnet18_5ch.py projects/CalibrationStatusClassification/configs/t4dataset/resnet18_5ch_1xb8-25e_j6gen2.py checkpoint.pth --info_pkl data/t4dataset/calibration_info/t4dataset_gen2_base_infos_test.pkl --sample_idx 0 --device cuda:0 --work-dir /workspace/work_dirs/ --verify  --tensorrt --onnx-file model.onnx
+```
+
+
+
+
+### 6.2 Evaluate ONNX and tensorrt
+
+##### ONNX Model Evaluation
+```bash
+python tools/calibration_classification/evaluate_inference.py --onnx work_dirs/end2end.onnx --model-cfg projects/CalibrationStatusClassification/configs/t4dataset/resnet18_5ch_1xb8-25e_j6gen2.py --info-pkl data/t4dataset/calibration_info/t4dataset_gen2_base_infos_test.pkl
+```
+
+##### TensorRT Model Evaluation
+```bash
+python tools/calibration_classification/evaluate_inference.py --tensorrt work_dirs/end2end.quant.engine --model-cfg projects/CalibrationStatusClassification/configs/t4dataset/resnet18_5ch_1xb8-25e_j6gen2.py --info-pkl data/t4dataset/calibration_info/t4dataset_gen2_base_infos_test.pkl
+```
+
+
+
+
+### 6.3 INT8 Optimization
+
+Set the number of image you want for calibration. Note that you need to consider the size of your memory.
+For 32 GB, the most you can do is 1860 x 2880 x 5 x 4 Bytes / 32 GB
+
+Thus, please limit the calibration data with the indices parameters
+
+```python
+python tools/calibration_classification/visualize_lidar_camera_projection.py projects/CalibrationStatusClassification/configs/t4dataset/resnet18_5ch_1xb8-25e_j6gen2.py --info_pkl data/t4dataset/calibration_info/t4dataset_gen2_base_infos_train.pkl --data_root data/t4dataset --output_dir /vis --npz_output_path calibration_file.npz --indices 200
+```
+
+
+
+```python
+DOCKER_BUILDKIT=1 docker build -t autoware-ml-calib-opt -f projects/CalibrationStatusClassification/DockerfileOpt .
+docker run -it --rm --gpus all --shm-size=32g --name awml-opt -p 6006:6006 -v $PWD/:/workspace -v $PWD/data:/workspace/data autoware-ml-calib-opt
+# Access the optimization docker
+python3 -m modelopt.onnx.quantization --onnx_path=end2end.onnx --quantize_mode=int8 --calibration_data_path=calibration_file.npz
+
+# After getting the end2en2.quant.onnx, you can evaluate with quant onnx or engine
+```
+
+
+
+#### Command Line Arguments
+
+- `--onnx`: Path to ONNX model file (mutually exclusive with `--tensorrt`)
+- `--tensorrt`: Path to TensorRT engine file (mutually exclusive with `--onnx`)
+- `--model-cfg`: Path to model config file (default: `projects/CalibrationStatusClassification/configs/t4dataset/resnet18_5ch_1xb8-25e_j6gen2.py`)
+- `--device`: Device to use for inference (`cpu` or `cuda`, default: `cpu`)
+- `--log-level`: Logging level (`DEBUG`, `INFO`, `WARNING`, `ERROR`, default: `INFO`)

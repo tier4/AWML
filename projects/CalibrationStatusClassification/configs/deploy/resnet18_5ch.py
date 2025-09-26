@@ -2,7 +2,11 @@ codebase_config = dict(type="mmpretrain", task="Classification", model_type="end
 
 backend_config = dict(
     type="tensorrt",
-    common_config=dict(max_workspace_size=1 << 30),
+    common_config=dict(
+        max_workspace_size=1 << 30,
+        fp16_mode=True,
+        strongly_typed=False,
+    ),
     model_inputs=[
         dict(
             input_shapes=dict(

@@ -179,6 +179,7 @@ class DeploymentConfig:
             "max_workspace_size": common_config.get("max_workspace_size", DEFAULT_WORKSPACE_SIZE),
             "fp16_mode": common_config.get("fp16_mode", False),
             "model_inputs": self.backend_config.get("model_inputs", []),
+            "strongly_typed": common_config.get("strongly_typed", False),
         }
 
 
@@ -197,6 +198,11 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--device", default="cpu", help="device for conversion")
     parser.add_argument("--log-level", default="INFO", choices=list(logging._nameToLevel.keys()), help="logging level")
     parser.add_argument("--verify", action="store_true", help="verify model outputs")
+    parser.add_argument("--onnx", action="store_true", help="export to ONNX format")
+    parser.add_argument("--tensorrt", action="store_true", help="export to TensorRT format")
+    parser.add_argument(
+        "--onnx-file", help="path to existing ONNX file (required when --tensorrt is specified without --onnx)"
+    )
     return parser.parse_args()
 
 
@@ -267,7 +273,17 @@ def export_to_tensorrt(
     builder = trt.Builder(TRT_LOGGER)
 
     # Create network and config
-    network = builder.create_network(1 << int(trt.NetworkDefinitionCreationFlag.EXPLICIT_BATCH))
+    strongly_typed = settings.get("strongly_typed", False)
+
+    if strongly_typed:
+        flags = (1 << int(trt.NetworkDefinitionCreationFlag.EXPLICIT_BATCH)) | (
+            1 << int(trt.NetworkDefinitionCreationFlag.STRONGLY_TYPED)
+        )
+        network = builder.create_network(flags)
+        logger.info("Using strongly typed TensorRT network creation")
+    else:
+        network = builder.create_network(1 << int(trt.NetworkDefinitionCreationFlag.EXPLICIT_BATCH))
+        logger.info("Using standard TensorRT network creation (EXPLICIT_BATCH only)")
     config_trt = builder.create_builder_config()
     config_trt.set_memory_pool_limit(pool=trt.MemoryPoolType.WORKSPACE, pool_size=settings["max_workspace_size"])
 
@@ -563,6 +579,18 @@ def main():
     args = parse_args()
     logger = setup_logging(args.log_level)
 
+    # Check if at least one export format is specified
+    if not args.onnx and not args.tensorrt:
+        logger.error("Please specify at least one export format: --onnx or --tensorrt")
+        return
+
+    # Check if TensorRT is requested but no ONNX file is provided and ONNX export is not requested
+    if args.tensorrt and not args.onnx and not args.onnx_file:
+        logger.error(
+            "TensorRT export requires either --onnx (to export ONNX first) or --onnx-file (to use existing ONNX file)"
+        )
+        return
+
     # Setup
     mmengine.mkdir_or_exist(osp.abspath(args.work_dir))
 
@@ -575,12 +603,35 @@ def main():
     model_cfg = Config.fromfile(args.model_cfg)
 
     # Setup file paths
-    onnx_settings = config.onnx_settings
-    onnx_path = osp.join(args.work_dir, onnx_settings["save_file"])
-    trt_path: Optional[str] = None
-    trt_file = onnx_settings["save_file"].replace(".onnx", ".engine")
-    trt_path = osp.join(args.work_dir, trt_file)
+    onnx_path = None
+    trt_path = None
+    trt_file = None
 
+    if args.onnx:
+        onnx_settings = config.onnx_settings
+        onnx_path = osp.join(args.work_dir, onnx_settings["save_file"])
+
+    if args.tensorrt:
+        if args.onnx_file:
+            # Use provided ONNX file path
+            onnx_path = args.onnx_file
+            if not osp.exists(onnx_path):
+                logger.error(f"Provided ONNX file does not exist: {onnx_path}")
+                return
+            logger.info(f"Using existing ONNX file: {onnx_path}")
+        elif args.onnx:
+            # ONNX will be exported first, use the path from config
+            onnx_settings = config.onnx_settings
+            onnx_path = osp.join(args.work_dir, onnx_settings["save_file"])
+        else:
+            # This should not happen due to validation above, but just in case
+            logger.error("No ONNX file path available for TensorRT conversion")
+            return
+
+        # Set TensorRT output path
+        onnx_settings = config.onnx_settings
+        trt_file = onnx_settings["save_file"].replace(".onnx", ".engine")
+        trt_path = osp.join(args.work_dir, trt_file)
     # Load model
     logger.info(f"Loading model from checkpoint: {args.checkpoint}")
     device = torch.device(args.device)
@@ -596,22 +647,23 @@ def main():
     )
 
     # Export models
-    export_to_onnx(model, input_tensor_calibrated, onnx_path, config, logger)
+    if args.onnx:
+        export_to_onnx(model, input_tensor_calibrated, onnx_path, config, logger)
+    if args.tensorrt:
+        logger.info("Converting ONNX to TensorRT...")
 
-    logger.info("Converting ONNX to TensorRT...")
+        # Ensure CUDA device for TensorRT
+        if args.device == "cpu":
+            logger.warning("TensorRT requires CUDA device, switching to cuda")
+            device = torch.device("cuda")
+            input_tensor_calibrated = input_tensor_calibrated.to(device)
+            input_tensor_miscalibrated = input_tensor_miscalibrated.to(device)
 
-    # Ensure CUDA device for TensorRT
-    if args.device == "cpu":
-        logger.warning("TensorRT requires CUDA device, switching to cuda")
-        device = torch.device("cuda")
-        input_tensor_calibrated = input_tensor_calibrated.to(device)
-        input_tensor_miscalibrated = input_tensor_miscalibrated.to(device)
-
-    success = export_to_tensorrt(onnx_path, trt_path, input_tensor_calibrated, config, logger)
-    if success:
-        logger.info(f"TensorRT conversion successful: {trt_path}")
-    else:
-        logger.error("TensorRT conversion failed, keeping ONNX model")
+        success = export_to_tensorrt(onnx_path, trt_path, input_tensor_calibrated, config, logger)
+        if success:
+            logger.info(f"TensorRT conversion successful: {trt_path}")
+        else:
+            logger.error("TensorRT conversion failed")
 
     # Run verification if requested
     if args.verify:
@@ -619,9 +671,22 @@ def main():
             "Running verification for miscalibrated and calibrated samples with an output array [SCORE_MISCALIBRATED, SCORE_CALIBRATED]..."
         )
         input_tensors = {"0": input_tensor_miscalibrated, "1": input_tensor_calibrated}
-        run_verification(model, onnx_path, trt_path, input_tensors, logger)
+        # Only verify formats that were exported
+        onnx_path_for_verify = onnx_path if (args.onnx or (args.tensorrt and args.onnx_file)) else None
+        trt_path_for_verify = trt_path if args.tensorrt else None
+
+        run_verification(model, onnx_path_for_verify, trt_path_for_verify, input_tensors, logger)
 
     logger.info("Deployment completed successfully!")
+
+    # Log what was exported
+    exported_formats = []
+    if args.onnx:
+        exported_formats.append("ONNX")
+    if args.tensorrt:
+        exported_formats.append("TensorRT")
+
+    logger.info(f"Exported formats: {', '.join(exported_formats)}")
 
 
 # TODO: make deployment script inherit from awml base deploy script or use awml deploy script directly
