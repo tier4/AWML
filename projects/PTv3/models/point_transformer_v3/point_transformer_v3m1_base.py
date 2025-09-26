@@ -24,7 +24,6 @@ from models.point_prompt_training import PDNorm
 from models.scatter.functional import argsort, segment_csr, unique
 from models.utils.misc import offset2bincount
 from models.utils.structure import Point
-from spconv.pytorch import SubMConv3d
 
 
 class DropPath(nn.Module):
@@ -336,6 +335,11 @@ class Block(PointModule):
         self.pre_norm = pre_norm
         self.export_mode = export_mode
 
+        if export_mode:
+            from SparseConvolution.sparse_conv import SubMConv3d
+        else:
+            from spconv.pytorch import SubMConv3d
+
         self.cpe = PointSequential(
             SubMConv3d(
                 channels,
@@ -569,12 +573,17 @@ class Embedding(PointModule):
         embed_channels,
         norm_layer=None,
         act_layer=None,
+        export_mode=False,
     ):
         super().__init__()
         self.in_channels = in_channels
         self.embed_channels = embed_channels
 
-        # TODO: check remove spconv
+        if export_mode:
+            from SparseConvolution.sparse_conv import SubMConv3d
+        else:
+            from spconv.pytorch import SubMConv3d
+
         self.stem = PointSequential(
             conv=SubMConv3d(
                 in_channels,
@@ -638,8 +647,6 @@ class PointTransformerV3(PointModule):
         self.cls_mode = cls_mode
         self.shuffle_orders = shuffle_orders
         self.export_mode = export_mode
-        if export_mode:
-            from SparseConvolution.sparse_conv import SubMConv3d
 
         assert self.num_stages == len(stride) + 1
         assert self.num_stages == len(enc_depths)
@@ -680,6 +687,7 @@ class PointTransformerV3(PointModule):
             embed_channels=enc_channels[0],
             norm_layer=bn_layer,
             act_layer=act_layer,
+            export_mode=export_mode,
         )
 
         # encoder
