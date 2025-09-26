@@ -48,7 +48,7 @@ cd projects/PTv3
 python tools/test.py --config-file configs/semseg-pt-v3m1-0-t4dataset.py --num-gpus 1 \
   --options \
   save_path=data/experiment \
-  weight=exp/model/model_best.pth
+  weight=exp/default/model/model_best.pth
 ```
 
 ### 3. Deployment
@@ -60,7 +60,7 @@ cd projects/PTv3
 python tools/export.py --config-file configs/semseg-pt-v3m1-0-t4dataset.py --num-gpus 1 \
   --options \
   save_path=data/experiment \
-  weight=exp/model/model_best.pth
+  weight=exp/default/model/model_best.pth
 ```
 
 which will generate a file called `ptv3.onnx`
