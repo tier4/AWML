@@ -41,9 +41,10 @@ class T4Dataset(NuScenesDataset):
         self.category_frame_number = {class_name: 0 for class_name in class_names}
         self.class_names = class_names
         self.point_cloud_range = point_cloud_range
+        self.repeat_sampling_factory_t = repeat_sampling_factory_t
+        self.ann_info = []
         super().__init__(use_valid_flag=use_valid_flag, **kwargs)
         print_log(f"Valid dataset instances: {self.valid_class_name_ins}", logger="current")
-
         self.category_frame_number = {
             class_name: value / len(self) for class_name, value in self.category_frame_number.items()
         }
@@ -58,9 +59,10 @@ class T4Dataset(NuScenesDataset):
             for class_name, class_bbox_num in self.valid_class_name_ins.items()
         }
         print_log(f"Valid dataset fraction: {self.valid_class_bbox_fraction}", logger="current")
-        self.repeat_sampling_factory_t = repeat_sampling_factory_t
         self.frame_weights = self._compute_frame_repeat_sampling_factor()
         print_log(f"First 10 dataset frame weights: {self.frame_weights[:10]}", logger="current")
+        self.ann_info.clear()
+        gc.collect()
 
     def filter_data(self) -> List[dict]:
         """
@@ -112,8 +114,7 @@ class T4Dataset(NuScenesDataset):
         print_log(f"Category repeat weights: {category_fraction_factor}", logger="current")
 
         frame_weights = []
-        for data in self.data_list:
-            ann_info = data["ann_info"]
+        for ann_info in self.ann_info:
             valid_bbox_categories = ann_info["valid_bbox_categories"]
             frame_repeat_sampling_factor = 1
             for class_name, value in valid_bbox_categories.items():
@@ -254,5 +255,9 @@ class T4Dataset(NuScenesDataset):
                     info["lidar2img"] = np.array(info["images"][self.default_cam_key]["lidar2img"])
                 else:
                     info["lidar2img"] = info["cam2img"] @ info["lidar2cam"]
-
+        
+        if "ann_info" in info:
+            self.ann_info.append(
+                info["ann_info"]
+            )
         return info
