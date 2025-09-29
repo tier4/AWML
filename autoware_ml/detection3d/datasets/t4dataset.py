@@ -2,7 +2,7 @@ import gc
 import math
 import pickle
 from os import path as osp
-from typing import List
+from typing import List, Optional
 
 import numpy as np
 from mmdet3d.datasets import NuScenesDataset
@@ -31,7 +31,7 @@ class T4Dataset(NuScenesDataset):
         class_names,
         pointcloud_range: List[float],
         use_valid_flag: bool = False,
-        repeat_sampling_factory_t: float = 10e-3,
+        repeat_sampling_factory_t: Optional[float] = None,
         **kwargs,
     ):
         T4Dataset.METAINFO = metainfo
@@ -90,6 +90,9 @@ class T4Dataset(NuScenesDataset):
 
     def _compute_frame_repeat_sampling_factor(self) -> List[float]:
         """ """
+        if self.repeat_sampling_factory_t is None:
+            return [1.0] * len(self.data_list)
+
         # Compute category faction
         category_fraction_factor = {
             class_name: max(
@@ -100,6 +103,7 @@ class T4Dataset(NuScenesDataset):
             )
             for class_name, number_frame in self.category_frame_number
         }
+        print_log(f"Category repeat weights: {category_fraction_factor}", logger="current")
 
         frame_weights = []
         for data in self.data_list:
