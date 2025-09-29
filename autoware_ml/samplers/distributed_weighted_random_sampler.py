@@ -57,7 +57,7 @@ class DistributedWeightedRandomSampler(DefaultSampler):
         if weights is None:
             self.weights = self.dataset.frame_weights
 
-        self.weights = torch.tensor(weights, dtype=torch.double)
+        self.weights = torch.tensor(self.weights, dtype=torch.double)
 
         assert len(self.weights) == len(self.dataset), "weights length should be equal to dataset length"
         self.replacement = replacement

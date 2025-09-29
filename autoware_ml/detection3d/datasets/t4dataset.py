@@ -91,7 +91,7 @@ class T4Dataset(NuScenesDataset):
     def _compute_frame_repeat_sampling_factor(self) -> List[float]:
         """ """
         if self.repeat_sampling_factory_t is None:
-            return [1.0] * len(self.data_list)
+            return [1.0] * len(self)
 
         # Compute category faction
         category_fraction_factor = {
