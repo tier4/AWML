@@ -102,7 +102,7 @@ class T4Dataset(NuScenesDataset):
                     / math.sqrt((number_frame * self.valid_class_bbox_fraction[class_name]))
                 ),
             )
-            for class_name, number_frame in self.category_frame_number
+            for class_name, number_frame in self.category_frame_number.items()
         }
         print_log(f"Category repeat weights: {category_fraction_factor}", logger="current")
 
