@@ -44,6 +44,11 @@ class T4Dataset(NuScenesDataset):
         super().__init__(use_valid_flag=use_valid_flag, **kwargs)
         print_log(f"Valid dataset instances: {self.valid_class_name_ins}", logger="current")
 
+        self.category_frame_number = {
+            class_name: value / len(self) for class_name, value in self.category_frame_number.items()
+        }
+        print_log(f"Category frame fraction: {self.category_frame_number}", logger="current")
+
         # Total bbox
         total_bboxes = sum(self.valid_class_name_ins.values())
 
