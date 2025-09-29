@@ -255,9 +255,7 @@ class T4Dataset(NuScenesDataset):
                     info["lidar2img"] = np.array(info["images"][self.default_cam_key]["lidar2img"])
                 else:
                     info["lidar2img"] = info["cam2img"] @ info["lidar2cam"]
-        
+
         if "ann_info" in info:
-            self.ann_info.append(
-                info["ann_info"]
-            )
+            self.ann_info.append(info["ann_info"])
         return info
