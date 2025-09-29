@@ -98,7 +98,8 @@ class T4Dataset(NuScenesDataset):
             class_name: max(
                 1,
                 math.sqrt(
-                    self.repeat_sampling_factory_t / (number_frame * self.valid_class_bbox_fraction[class_name])
+                    self.repeat_sampling_factory_t
+                    / math.sqrt((number_frame * self.valid_class_bbox_fraction[class_name]))
                 ),
             )
             for class_name, number_frame in self.category_frame_number
