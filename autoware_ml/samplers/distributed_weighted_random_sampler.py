@@ -43,7 +43,6 @@ class DistributedWeightedRandomSampler(DefaultSampler):
     def __init__(
         self,
         dataset: Sized,
-        dataset_weight_key: Optional[str] = None,
         weights: Optional[List[float]] = None,
         shuffle: bool = True,
         seed: Optional[int] = None,
@@ -55,22 +54,13 @@ class DistributedWeightedRandomSampler(DefaultSampler):
         )
 
         assert self.shuffle, "DistributedWeightedRandomSampler only supports shuffle=True"
-        if weights is not None:
-            self.weights = torch.tensor(weights, dtype=torch.double)
-        else:
-            self.weights = self._load_weights(dataset_weight_key)
+        if weights is None:
+            self.weights = self.dataset.frame_weights
+
+        self.weights = torch.tensor(weights, dtype=torch.double)
 
         assert len(self.weights) == len(self.dataset), "weights length should be equal to dataset length"
         self.replacement = replacement
-
-    def _load_weights(self, dataset_weight_key: str) -> torch.DoubleTensor:
-        """Load weights from a pickle file."""
-        weights = []
-        for data in self.dataset:
-            if dataset_weight_key not in data:
-                raise KeyError(f"{dataset_weight_key} is not found in dataset item.")
-            weights.append(float(data[dataset_weight_key]))
-        return torch.tensor(weights, dtype=torch.double)
 
     def __iter__(self) -> Iterator[int]:
         # Shuffle must be true to use multinomial sampling

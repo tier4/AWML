@@ -1,4 +1,5 @@
 import gc
+import math
 import pickle
 from os import path as osp
 from typing import List
@@ -28,14 +29,33 @@ class T4Dataset(NuScenesDataset):
         self,
         metainfo,
         class_names,
+        pointcloud_range: List[float],
         use_valid_flag: bool = False,
+        repeat_sampling_factory_t: float = 10e-3,
         **kwargs,
     ):
         T4Dataset.METAINFO = metainfo
         self.valid_class_name_ins = {class_name: 0 for class_name in class_names}
+
+        # Number of frames for each category that contains at least one of the category
+        self.category_frame_number = {class_name: 0 for class_name in class_names}
         self.class_names = class_names
+        self.point_cloud_range = pointcloud_range
         super().__init__(use_valid_flag=use_valid_flag, **kwargs)
         print_log(f"Valid dataset instances: {self.valid_class_name_ins}", logger="current")
+
+        # Total bbox
+        total_bboxes = sum(self.valid_class_name_ins.values())
+
+        # Compute bbox fraction
+        self.valid_class_bbox_fraction = {
+            class_name: class_bbox_num / total_bboxes
+            for class_name, class_bbox_num in self.valid_class_name_ins.items()
+        }
+        print_log(f"Valid dataset fraction: {self.valid_class_bbox_fraction}", logger="current")
+        self.repeat_sampling_factory_t = repeat_sampling_factory_t
+        self.frame_weights = self._compute_frame_repeat_sampling_factor()
+        print_log(f"First 10 dataset frame weights: {self.frame_weights[:10]}", logger="current")
 
     def filter_data(self) -> List[dict]:
         """
@@ -67,6 +87,33 @@ class T4Dataset(NuScenesDataset):
             )
 
         return filtered_data_list
+
+    def _compute_frame_repeat_sampling_factor(self) -> List[float]:
+        """ """
+        # Compute category faction
+        category_fraction_factor = {
+            class_name: max(
+                1,
+                math.sqrt(
+                    self.repeat_sampling_factory_t / (number_frame * self.valid_class_bbox_fraction[class_name])
+                ),
+            )
+            for class_name, number_frame in self.category_frame_number
+        }
+
+        frame_weights = []
+        for data in self.data_list:
+            ann_info = data["ann_info"]
+            valid_bbox_categories = ann_info["valid_bbox_categories"]
+            frame_repeat_sampling_factor = 1
+            for class_name, value in valid_bbox_categories.items():
+                if value:
+                    frame_repeat_sampling_factor = max(
+                        frame_repeat_sampling_factor, category_fraction_factor[class_name]
+                    )
+            frame_weights.append(frame_repeat_sampling_factor)
+
+        return frame_weights
 
     def _filter_with_mask(self, ann_info: dict) -> dict:
         """Remove annotations that do not need to be cared.
@@ -108,8 +155,26 @@ class T4Dataset(NuScenesDataset):
                 - gt_labels_3d (np.ndarray): Labels of ground truths.
         """
         ann_info = super().parse_ann_info(info=info)
-        for label in ann_info["gt_labels_3d"]:
-            self.valid_class_name_ins[self.class_names[label]] += 1
+        bbox_range = [
+            self.point_cloud_range[0],
+            self.point_cloud_range[1],
+            self.point_cloud_range[3],
+            self.point_cloud_range[4],
+        ]
+        bbox_in_ranges = ann_info["gt_bboxes_3d"].in_range_bev(bbox_range)
+        valid_bbox_categories = {class_name: 0 for class_name in self.class_names}
+        for label, bbox_in_ranges in zip(ann_info["gt_labels_3d"], bbox_in_ranges):
+            if bbox_in_ranges:
+                class_idx = self.class_names[label]
+                self.valid_class_name_ins[class_idx] += 1
+                # Set to 1 if a category exists in this frame
+                valid_bbox_categories[class_idx] = 1
+
+        # Sum up category fraction for this frame
+        for class_name in self.class_names:
+            self.category_frame_number[class_name] += valid_bbox_categories[class_name]
+
+        ann_info["valid_bbox_categories"] = valid_bbox_categories
         return ann_info
 
     def parse_data_info(self, info: dict) -> dict:
