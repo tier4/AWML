@@ -29,7 +29,7 @@ class T4Dataset(NuScenesDataset):
         self,
         metainfo,
         class_names,
-        pointcloud_range: List[float],
+        point_cloud_range: List[float],
         use_valid_flag: bool = False,
         repeat_sampling_factory_t: Optional[float] = None,
         **kwargs,
@@ -40,7 +40,7 @@ class T4Dataset(NuScenesDataset):
         # Number of frames for each category that contains at least one of the category
         self.category_frame_number = {class_name: 0 for class_name in class_names}
         self.class_names = class_names
-        self.point_cloud_range = pointcloud_range
+        self.point_cloud_range = point_cloud_range
         super().__init__(use_valid_flag=use_valid_flag, **kwargs)
         print_log(f"Valid dataset instances: {self.valid_class_name_ins}", logger="current")
 
