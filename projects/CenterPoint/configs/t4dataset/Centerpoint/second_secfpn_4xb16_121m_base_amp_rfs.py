@@ -153,7 +153,7 @@ train_dataloader = dict(
         data_prefix=_base_.data_prefix,
         box_type_3d="LiDAR",
         point_cloud_range=point_cloud_range,
-        repeat_sampling_factory_t=0.2
+        repeat_sampling_factory_t=0.25
     ),
 )
 val_dataloader = dict(
