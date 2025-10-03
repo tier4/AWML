@@ -123,7 +123,7 @@ model = dict(
         split=0.75,  ###positive rate
         LID=True,
         with_position=True,
-        use_gravity_center=False,
+        use_bottom_center=False,
         position_range=[-61.2, -61.2, -10.0, 61.2, 61.2, 10.0],
         code_weights=[
             2.0,
