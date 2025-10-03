@@ -13,7 +13,6 @@ from typing import Union
 
 import yaml
 
-
 # Required webauto version
 WEBAUTO_VERSION = "v0.50.0"
 
@@ -21,10 +20,10 @@ WEBAUTO_VERSION = "v0.50.0"
 def check_webauto_version(webauto_path: str) -> None:
     """
     Check if the webauto version matches the required version.
-    
+
     Args:
         webauto_path (str): The path to WebAutoCLI.
-    
+
     Raises:
         Exception: If webauto version check fails or doesn't match required version.
     """
@@ -32,7 +31,7 @@ def check_webauto_version(webauto_path: str) -> None:
     result = subprocess.run(command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     if result.returncode != 0:
         raise Exception(f"Failed to get webauto version. {result.stderr.decode('utf-8')}")
-    
+
     version_output = result.stdout.decode("utf-8")
     if WEBAUTO_VERSION not in version_output:
         raise Exception(f"Webauto version is not {WEBAUTO_VERSION}. Found: {version_output.strip()}")
