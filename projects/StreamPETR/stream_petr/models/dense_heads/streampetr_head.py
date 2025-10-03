@@ -1088,7 +1088,7 @@ class StreamPETRHead(AnchorFreeHead):
             preds = preds_dicts[i]
             bboxes = preds["bboxes"]
             if self.use_bottom_center:
-                bboxes[:, 2] = bboxes[:, 2] - bboxes[:, 5] * 0.5  # This returns the gravity centers
+                bboxes[:, 2] = bboxes[:, 2] - bboxes[:, 5] * 0.5  # This returns the bottom centers
             scores = preds["scores"]
             labels = preds["labels"]
 
