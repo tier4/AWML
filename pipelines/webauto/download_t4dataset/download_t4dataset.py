@@ -14,6 +14,30 @@ from typing import Union
 import yaml
 
 
+# Required webauto version
+WEBAUTO_VERSION = "v0.50.0"
+
+
+def check_webauto_version(webauto_path: str) -> None:
+    """
+    Check if the webauto version matches the required version.
+    
+    Args:
+        webauto_path (str): The path to WebAutoCLI.
+    
+    Raises:
+        Exception: If webauto version check fails or doesn't match required version.
+    """
+    command = f"{webauto_path} --version"
+    result = subprocess.run(command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    if result.returncode != 0:
+        raise Exception(f"Failed to get webauto version. {result.stderr.decode('utf-8')}")
+    
+    version_output = result.stdout.decode("utf-8")
+    if WEBAUTO_VERSION not in version_output:
+        raise Exception(f"Webauto version is not {WEBAUTO_VERSION}. Found: {version_output.strip()}")
+
+
 def get_t4dataset_ids(config_path: str) -> list[str]:
     """
     Get T4Dataset IDs like "0df0328e-39ea-42f1-844a-b455c91dc6cc".
@@ -262,6 +286,9 @@ def parse_args():
 
 def main():
     args = parse_args()
+
+    # Check webauto version before proceeding
+    check_webauto_version(args.webauto_path)
 
     config_path = Path(args.config)
     assert config_path.exists() and config_path.is_file()
