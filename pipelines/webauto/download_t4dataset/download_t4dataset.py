@@ -7,7 +7,6 @@ import argparse
 import json
 import os
 import re
-
 import subprocess
 from pathlib import Path
 from tempfile import TemporaryDirectory
@@ -36,15 +35,15 @@ def check_webauto_version(webauto_path: str) -> None:
         raise Exception(f"Failed to get webauto version. {result.stderr.decode('utf-8')}")
 
     version_output = result.stdout.decode("utf-8").strip()
-    
+
     # Extract version from output (assuming format like "webauto v0.50.0" or just "v0.50.0")
-    version_match = re.search(r'v?(\d+\.\d+\.\d+)', version_output)
+    version_match = re.search(r"v?(\d+\.\d+\.\d+)", version_output)
     if not version_match:
         raise Exception(f"Could not parse version from webauto output: {version_output}")
-    
+
     current_version = version_match.group(1)
-    required_version = WEBAUTO_VERSION.lstrip('v')  # Remove 'v' prefix if present
-    
+    required_version = WEBAUTO_VERSION.lstrip("v")  # Remove 'v' prefix if present
+
     if version.parse(current_version) < version.parse(required_version):
         raise Exception(f"Webauto version {current_version} is below required version {required_version}")
 
