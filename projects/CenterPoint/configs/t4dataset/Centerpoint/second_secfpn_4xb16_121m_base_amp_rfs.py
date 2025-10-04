@@ -173,7 +173,7 @@ val_dataloader = dict(
         test_mode=True,
         box_type_3d="LiDAR",
         backend_args=backend_args,
-        point_cloud_range=point_cloud_range
+        point_cloud_range=point_cloud_range,
     ),
 )
 test_dataloader = dict(
@@ -193,7 +193,7 @@ test_dataloader = dict(
         test_mode=True,
         box_type_3d="LiDAR",
         backend_args=backend_args,
-        point_cloud_range=point_cloud_range
+        point_cloud_range=point_cloud_range,
     ),
 )
 
