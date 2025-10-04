@@ -36,9 +36,7 @@ class T4Dataset(NuScenesDataset):
     ):
         T4Dataset.METAINFO = metainfo
         # Add low pedestrian for less than 1.5m
-        class_names.append(
-            "low_pedestrian"
-        ) 
+        class_names.append("low_pedestrian")
 
         self.valid_class_name_ins = {class_name: 0 for class_name in class_names}
 
@@ -179,14 +177,16 @@ class T4Dataset(NuScenesDataset):
         ]
         bbox_in_ranges = ann_info["gt_bboxes_3d"].in_range_bev(bbox_range)
         valid_bbox_categories = {class_name: 0 for class_name in self.class_names}
-        for label, bbox_in_ranges, gt_bbox_3d in zip(ann_info["gt_labels_3d"], bbox_in_ranges, ann_info["gt_bboxes_3d"]):
+        for label, bbox_in_ranges, gt_bbox_3d in zip(
+            ann_info["gt_labels_3d"], bbox_in_ranges, ann_info["gt_bboxes_3d"]
+        ):
             if bbox_in_ranges:
                 class_idx = self.class_names[label]
                 if label == "pedestrian":
                     height = gt_bbox_3d.dims[-1]
                     if height <= 1.5:
                         class_idx = -1
-                
+
                 self.valid_class_name_ins[class_idx] += 1
                 # Set to 1 if a category exists in this frame
                 valid_bbox_categories[class_idx] = 1
