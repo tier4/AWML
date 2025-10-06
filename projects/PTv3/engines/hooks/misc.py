@@ -242,7 +242,7 @@ class PreciseEvaluator(HookBase):
         else:
             self.trainer.logger.info("=> Testing on model_best ...")
             best_path = os.path.join(self.trainer.cfg.save_path, "model", "model_best.pth")
-            checkpoint = torch.load(best_path)
+            checkpoint = torch.load(best_path, weights_only=True)
             state_dict = checkpoint["state_dict"]
             tester.model.load_state_dict(state_dict, strict=True, weights_only=False)
         tester.test()
