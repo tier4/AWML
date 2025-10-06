@@ -68,4 +68,3 @@ which will generate a file called `ptv3.onnx`
 ## Reference
 
 - [Pointcept's PTv3](https://github.com/Pointcept/Pointcept)
-
