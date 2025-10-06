@@ -5,7 +5,7 @@ batch_size = 1  # bs: total bs in all gpus
 num_worker = 16  # total worker in all gpu
 mix_prob = 0.8
 empty_cache = False
-enable_amp = True
+enable_amp = False
 
 grid_size = 0.1  # original is 0.05
 num_classes = 6
