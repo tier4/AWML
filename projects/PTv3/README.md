@@ -69,7 +69,3 @@ which will generate a file called `ptv3.onnx`
 
 - [Pointcept's PTv3](https://github.com/Pointcept/Pointcept)
 
-## Limitations
-
-- Currently there is a bug in training loop with `NaN` loss and it prevents training from completing.
-  This is being worked on and will be fixed in a future release.
