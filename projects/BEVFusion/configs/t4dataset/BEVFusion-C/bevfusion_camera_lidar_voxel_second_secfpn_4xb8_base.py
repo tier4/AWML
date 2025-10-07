@@ -101,7 +101,7 @@ model = dict(
         xbound=[-122.4, 122.4, 0.68],
         ybound=[-122.4, 122.4, 0.68],
         zbound=[-10.0, 10.0, 20.0],
-        dbound=[1.0, 134, 1.4],
+        dbound=[1.0, 134, 1.0],
         downsample=2,
     ),
     # fusion_layer=dict(type="ConvFuser", in_channels=[80, 256], out_channels=256),
