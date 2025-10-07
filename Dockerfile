@@ -3,7 +3,7 @@ ARG CUDA="12.9"
 ARG CUDNN="9"
 FROM pytorch/pytorch:${PYTORCH}-cuda${CUDA}-cudnn${CUDNN}-devel
 
-ARG MMCV="2.2.0"
+ARG MMCV="2.1.0"
 ARG MMENGINE="0.10.7"
 ARG MMDET="3.3.0"
 ARG MMDEPLOY="1.3.1"
