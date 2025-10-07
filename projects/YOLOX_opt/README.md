@@ -24,7 +24,7 @@
 ## Get started
 ### 1. Setup
 
-- Please follow the [installation tutorial](/docs/tutorial/tutorial_detection_3d.md)to set up the environment.
+- Please follow the [installation tutorial](/docs/tutorial/tutorial_detection_3d.md) to set up the environment.
 - Setup libraries necessary for YOLOX deployment with `pip3 install -r ./projects/YOLOX_opt/requirements.txt`
 ### 2. Train
 
