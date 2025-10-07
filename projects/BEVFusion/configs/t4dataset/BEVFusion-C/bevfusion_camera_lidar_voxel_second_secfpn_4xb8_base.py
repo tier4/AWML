@@ -29,8 +29,10 @@ eval_class_range = {
 }
 
 # model parameter
-input_modality = dict(use_lidar=True, use_camera=True)
-point_load_dim = 5  # x, y, z, intensity, ring_id
+input_modality = dict(
+    use_lidar=True,  # lidar-related information (like ego-pose) is loaded, but pointcloud is not loaded or used,
+    use_camera=True,
+)
 sweeps_num = 1
 max_num_points = 10
 max_voxels = [120000, 160000]
@@ -43,22 +45,22 @@ camera_order = ["CAM_FRONT", "CAM_FRONT_LEFT", "CAM_BACK_LEFT", "CAM_FRONT_RIGHT
 
 model = dict(
     type="BEVFusion",
+    # voxelize_cfg=dict(
+    # 		max_num_points=max_num_points,
+    # 		voxel_size=voxel_size,
+    # 		point_cloud_range=point_cloud_range,
+    # 		max_voxels=max_voxels,
+    # 		deterministic=True,
+    # 		voxelize_reduce=True,
+    # ),
     data_preprocessor=dict(
         type="Det3DDataPreprocessor",
         pad_size_divisor=32,
-        voxelize_cfg=dict(
-            max_num_points=max_num_points,
-            voxel_size=voxel_size,
-            point_cloud_range=point_cloud_range,
-            max_voxels=max_voxels,
-            deterministic=True,
-            voxelize_reduce=True,
-        ),
         mean=[123.675, 116.28, 103.53],
         std=[58.395, 57.12, 57.375],
         bgr_to_rgb=False,
     ),
-    pts_middle_encoder=dict(sparse_shape=grid_size, in_channels=lidar_feature_dims),
+    pts_middle_encoder=None,
     img_backbone=dict(
         type="mmdet.SwinTransformer",
         embed_dims=96,
@@ -91,9 +93,9 @@ model = dict(
         upsample_cfg=dict(mode="bilinear", align_corners=False),
     ),
     view_transform=dict(
-        type="DepthLSSTransform",
+        type="NonLinearLSSTransform",
         in_channels=256,
-        out_channels=80,
+        out_channels=256,
         image_size=image_size,
         feature_size=[48, 72],
         xbound=[-122.4, 122.4, 0.68],
@@ -102,7 +104,7 @@ model = dict(
         dbound=[1.0, 134, 1.4],
         downsample=2,
     ),
-    fusion_layer=dict(type="ConvFuser", in_channels=[80, 256], out_channels=256),
+    # fusion_layer=dict(type="ConvFuser", in_channels=[80, 256], out_channels=256),
     bbox_head=dict(
         num_proposals=num_proposals,
         class_names=_base_.class_names,  # Use class names to identify the correct class indices
@@ -124,7 +126,7 @@ model = dict(
         ),
     ),
     # Lidar pipeline
-    pts_voxel_encoder=dict(num_features=lidar_feature_dims),
+    # pts_voxel_encoder=dict(num_features=lidar_feature_dims),
 )
 
 train_pipeline = [
@@ -134,23 +136,6 @@ train_pipeline = [
         color_type="color",
         backend_args=backend_args,
         camera_order=camera_order,
-    ),
-    dict(
-        type="LoadPointsFromFile",
-        coord_type="LIDAR",
-        load_dim=point_load_dim,
-        use_dim=point_load_dim,
-        backend_args=backend_args,
-    ),
-    dict(
-        type="LoadPointsFromMultiSweeps",
-        sweeps_num=sweeps_num,
-        load_dim=point_load_dim,
-        use_dim=lidar_sweep_dims,
-        pad_empty_sweeps=True,
-        remove_close=True,
-        backend_args=backend_args,
-        test_mode=False,
     ),
     dict(type="LoadAnnotations3D", with_bbox_3d=True, with_label_3d=True, with_attr_label=False),
     dict(
@@ -162,13 +147,6 @@ train_pipeline = [
         rand_flip=True,
         is_train=True,
     ),
-    dict(
-        type="BEVFusionGlobalRotScaleTrans",
-        rot_range=[-1.571, 1.571],
-        scale_ratio_range=[0.8, 1.2],
-        translation_std=[1.0, 1.0, 0.2],
-    ),
-    dict(type="BEVFusionRandomFlip3D"),
     dict(type="PointsRangeFilter", point_cloud_range=point_cloud_range),
     dict(type="ObjectRangeFilter", point_cloud_range=point_cloud_range),
     dict(
@@ -186,10 +164,9 @@ train_pipeline = [
             "traffic_cone",
         ],
     ),
-    dict(type="PointShuffle"),
     dict(
         type="Pack3DDetInputs",
-        keys=["points", "img", "gt_bboxes_3d", "gt_labels_3d", "gt_bboxes", "gt_labels"],
+        keys=["img", "gt_bboxes_3d", "gt_labels_3d", "gt_bboxes", "gt_labels"],
         meta_keys=[
             "cam2img",
             "ori_cam2img",
@@ -220,23 +197,6 @@ test_pipeline = [
         backend_args=backend_args,
     ),
     dict(
-        type="LoadPointsFromFile",
-        coord_type="LIDAR",
-        load_dim=point_load_dim,
-        use_dim=point_load_dim,
-        backend_args=backend_args,
-    ),
-    dict(
-        type="LoadPointsFromMultiSweeps",
-        sweeps_num=sweeps_num,
-        load_dim=point_load_dim,
-        use_dim=lidar_sweep_dims,
-        pad_empty_sweeps=True,
-        remove_close=True,
-        backend_args=backend_args,
-        test_mode=True,
-    ),
-    dict(
         type="ImageAug3D",
         final_dim=image_size,
         resize_lim=0.02,
@@ -248,7 +208,7 @@ test_pipeline = [
     dict(type="PointsRangeFilter", point_cloud_range=point_cloud_range),
     dict(
         type="Pack3DDetInputs",
-        keys=["img", "points", "gt_bboxes_3d", "gt_labels_3d"],
+        keys=["img", "gt_bboxes_3d", "gt_labels_3d"],
         meta_keys=[
             "cam2img",
             "ori_cam2img",

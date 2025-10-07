@@ -1,7 +1,7 @@
 from .bevfusion import BEVFusion
 from .bevfusion_head import BEVFusionHead, ConvFuser
 from .bevfusion_necks import GeneralizedLSSFPN
-from .depth_lss import DepthLSSTransform, LSSTransform
+from .depth_lss import DepthLSSTransform, LSSTransform, NonLinearLSSTransform
 from .loading import BEVLoadMultiViewImageFromFiles
 from .sparse_encoder import BEVFusionSparseEncoder
 from .transformer import TransformerDecoderLayer
@@ -26,4 +26,5 @@ __all__ = [
     "TransformerDecoderLayer",
     "BEVFusionRandomFlip3D",
     "BEVFusionGlobalRotScaleTrans",
+    "NonLinearLSSTransform",
 ]

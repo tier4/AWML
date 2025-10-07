@@ -1,7 +1,7 @@
 # Copyright (c) OpenMMLab. All rights reserved.
 import copy
 import os
-from typing import Optional
+from typing import List, Optional
 
 import mmcv
 import numpy as np
@@ -34,6 +34,7 @@ class BEVLoadMultiViewImageFromFiles(LoadMultiViewImageFromFiles):
 
     def __init__(
         self,
+        camera_order: List[str],
         to_float32: bool = False,
         color_type: str = "unchanged",
         backend_args: Optional[dict] = None,
@@ -42,6 +43,7 @@ class BEVLoadMultiViewImageFromFiles(LoadMultiViewImageFromFiles):
         test_mode: bool = False,
         set_default_scale: bool = True,
     ) -> None:
+        self.camera_order = camera_order
         self.to_float32 = to_float32
         self.color_type = color_type
         self.backend_args = backend_args
@@ -135,30 +137,34 @@ class BEVLoadMultiViewImageFromFiles(LoadMultiViewImageFromFiles):
 
         # to fill None data
         # for _ , cam_item in results['images'].items():
-        for cam_type, cam_item in results["images"].items():
-            # TODO (KokSeang): This sometime causes an error when we set num_workers > 1 during training,
-            # it's likely due to multiprocessing in CPU. We should probably process this part when creating info files
-            if cam_item["img_path"] is None:
-                cam_item = self.before_camera_info[cam_type]
-                print("Warning: fill None data")
-            else:
-                self.before_camera_info[cam_type] = cam_item
+        for camera_type in self.camera_order:
+            if camera_type not in results["images"]:
+                continue
 
-            filename.append(cam_item["img_path"])
-            lidar2cam.append(cam_item["lidar2cam"])
+            for cam_item, cam_item_value in results["images"][camera_type].items():
+                # TODO (KokSeang): This sometime causes an error when we set num_workers > 1 during training,
+                # it's likely due to multiprocessing in CPU. We should probably process this part when creating info files
+                if cam_item["img_path"] is None:
+                    cam_item = self.before_camera_info[camera_type]
+                    print("Warning: fill None data")
+                else:
+                    self.before_camera_info[camera_type] = cam_item_value
 
-            lidar2cam_array = np.array(cam_item["lidar2cam"]).astype(np.float32)
-            lidar2cam_rot = lidar2cam_array[:3, :3]
-            lidar2cam_trans = lidar2cam_array[:3, 3:4]
-            camera2lidar = np.eye(4)
-            camera2lidar[:3, :3] = lidar2cam_rot.T
-            camera2lidar[:3, 3:4] = -1 * np.matmul(lidar2cam_rot.T, lidar2cam_trans.reshape(3, 1))
-            cam2lidar.append(camera2lidar)
+                filename.append(cam_item["img_path"])
+                lidar2cam.append(cam_item["lidar2cam"])
 
-            cam2img_array = np.eye(4).astype(np.float32)
-            cam2img_array[:3, :3] = np.array(cam_item["cam2img"]).astype(np.float32)
-            cam2img.append(cam2img_array)
-            lidar2img.append(cam2img_array @ lidar2cam_array)
+                lidar2cam_array = np.array(cam_item["lidar2cam"]).astype(np.float32)
+                lidar2cam_rot = lidar2cam_array[:3, :3]
+                lidar2cam_trans = lidar2cam_array[:3, 3:4]
+                camera2lidar = np.eye(4)
+                camera2lidar[:3, :3] = lidar2cam_rot.T
+                camera2lidar[:3, 3:4] = -1 * np.matmul(lidar2cam_rot.T, lidar2cam_trans.reshape(3, 1))
+                cam2lidar.append(camera2lidar)
+
+                cam2img_array = np.eye(4).astype(np.float32)
+                cam2img_array[:3, :3] = np.array(cam_item["cam2img"]).astype(np.float32)
+                cam2img.append(cam2img_array)
+                lidar2img.append(cam2img_array @ lidar2cam_array)
 
         results["img_path"] = filename
         results["cam2img"] = np.stack(cam2img, axis=0)

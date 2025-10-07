@@ -21,40 +21,57 @@ class BEVFusion(Base3DDetector):
 
     def __init__(
         self,
+        pts_backbone: dict,
+        pts_neck: dict,
+        bbox_head: dict,
+        voxelize_cfg: Optional[dict] = None,
         data_preprocessor: OptConfigType = None,
         pts_voxel_encoder: Optional[dict] = None,
         pts_middle_encoder: Optional[dict] = None,
         fusion_layer: Optional[dict] = None,
         img_backbone: Optional[dict] = None,
-        pts_backbone: Optional[dict] = None,
         view_transform: Optional[dict] = None,
         img_neck: Optional[dict] = None,
-        pts_neck: Optional[dict] = None,
-        bbox_head: Optional[dict] = None,
         init_cfg: OptMultiConfig = None,
         seg_head: Optional[dict] = None,
         **kwargs,
     ) -> None:
-        voxelize_cfg = data_preprocessor.pop("voxelize_cfg")
         super().__init__(data_preprocessor=data_preprocessor, init_cfg=init_cfg)
 
-        self.voxelize_reduce = voxelize_cfg.pop("voxelize_reduce")
-        self.pts_voxel_layer = Voxelization(**voxelize_cfg)
+        if voxelize_cfg is not None:
+            voxelize_cfg = data_preprocessor.pop("voxelize_cfg", None)
+            self.voxelize_reduce = voxelize_cfg.pop("voxelize_reduce")
+            self.pts_voxel_layer = Voxelization(**voxelize_cfg)
+            self.pts_voxel_encoder = MODELS.build(pts_voxel_encoder)
+            self.pts_middle_encoder = MODELS.build(pts_middle_encoder)
+        else:
+            self.pts_voxel_layer = None
+            self.voxelize_reduce = False
+            self.pts_voxel_encoder = None
+            self.pts_middle_encoder = None
 
-        self.pts_voxel_encoder = MODELS.build(pts_voxel_encoder)
+        # Image Backbone, Neck and View Transformer
+        if img_backbone is not None:
+            assert img_neck is not None, "img_neck should be passed when img_backbone is passed"
+            assert view_transform is not None, "view_transform should be passed when img_backbone is passed"
 
-        self.img_backbone = MODELS.build(img_backbone) if img_backbone is not None else None
-        self.img_neck = MODELS.build(img_neck) if img_neck is not None else None
-        self.view_transform = MODELS.build(view_transform) if view_transform is not None else None
-        self.pts_middle_encoder = MODELS.build(pts_middle_encoder)
+            self.img_backbone = MODELS.build(img_backbone)
+            self.img_neck = MODELS.build(img_neck)
+            self.view_transform = MODELS.build(view_transform)
+        else:
+            self.img_backbone = None
+            self.img_neck = None
+            self.view_transform = None
 
-        self.fusion_layer = MODELS.build(fusion_layer) if fusion_layer is not None else None
+        if fusion_layer is not None:
+            self.fusion_layer = MODELS.build(fusion_layer)
+        else:
+            self.fusion_layer = None
 
+        # BEV Backbone and Neck
         self.pts_backbone = MODELS.build(pts_backbone)
         self.pts_neck = MODELS.build(pts_neck)
-
         self.bbox_head = MODELS.build(bbox_head)
-
         self.init_weights()
 
     def _forward(self, batch_inputs_dict: Tensor, batch_data_samples: OptSampleList = None, **kwargs):
@@ -326,13 +343,14 @@ class BEVFusion(Base3DDetector):
             )
             features.append(img_feature)
 
-        pts_feature = self.extract_pts_feat(
-            batch_inputs_dict.get("voxels", {}).get("voxels", None),
-            batch_inputs_dict.get("voxels", {}).get("coors", None),
-            batch_inputs_dict.get("voxels", {}).get("num_points_per_voxel", None),
-            points=points,
-        )
-        features.append(pts_feature)
+        if points is not None:
+            pts_feature = self.extract_pts_feat(
+                batch_inputs_dict.get("voxels", {}).get("voxels", None),
+                batch_inputs_dict.get("voxels", {}).get("coors", None),
+                batch_inputs_dict.get("voxels", {}).get("num_points_per_voxel", None),
+                points=points,
+            )
+            features.append(pts_feature)
 
         if self.fusion_layer is not None:
             x = self.fusion_layer(features)
