@@ -7,7 +7,7 @@ ENV PYTHONPATH=/workspace/projects:/workspace/projects/PTv3
 RUN python3 -m pip --no-cache-dir install \
   addict \
   open3d \
-  flash-attn \
+  flash-attn --no-build-isolation \
   regex \
   sharedarray \
   spconv-cu120 \
@@ -16,5 +16,3 @@ RUN python3 -m pip --no-cache-dir install \
   torch-scatter -f https://data.pyg.org/whl/torch-2.8.0+cu129.html \
   tqdm \
   yapf==0.40.1
-
-RUN MAX_JOBS=4 python3 -m pip --no-cache-dir install flash-attn --no-build-isolation -vvv
