@@ -294,7 +294,7 @@ class Trainer(TrainerBase):
         return build_scheduler(self.cfg.scheduler, self.optimizer)
 
     def build_scaler(self):
-        scaler = torch.cuda.amp.GradScaler() if self.cfg.enable_amp else None
+        scaler = torch.amp.GradScaler("cuda") if self.cfg.enable_amp else None
         return scaler
 
 
