@@ -54,7 +54,7 @@ echo "Dataset: $DATASET"
 echo "Config: $CONFIG"
 echo "GPU Num: $GPU"
 
-EXP_DIR=exp/${DATASET}/${EXP_NAME}
+EXP_DIR=work_dirs/${DATASET}/${EXP_NAME}
 MODEL_DIR=${EXP_DIR}/model
 CODE_DIR=${EXP_DIR}/code
 CONFIG_DIR=configs/${DATASET}/${CONFIG}.py

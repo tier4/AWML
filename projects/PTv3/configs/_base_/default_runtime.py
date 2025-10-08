@@ -4,7 +4,7 @@ evaluate = True  # evaluate after each epoch training process
 test_only = False  # test process
 
 seed = None  # train process will init a random seed and record
-save_path = "exp/default"
+save_path = "work_dirs/ptv3"
 num_worker = 16  # total worker in all gpu
 batch_size = 16  # total batch size in all gpu
 batch_size_val = None  # auto adapt to bs 1 for each gpu

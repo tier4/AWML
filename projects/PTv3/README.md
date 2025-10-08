@@ -37,18 +37,16 @@ docker run -it --rm --gpus '"device=0"' --shm-size=64g --name awml -p 6006:6006 
 To train the model, use the following commands:
 
 ```sh
-cd projects/PTv3
-python tools/train.py --config-file configs/semseg-pt-v3m1-0-t4dataset.py --num-gpus 1
+python projects/PTv3/tools/train.py --config-file projects/PTv3/configs/semseg-pt-v3m1-0-t4dataset.py --num-gpus 1
 ```
 
 To test the model, use the following commands:
 
 ```sh
-cd projects/PTv3
-python tools/test.py --config-file configs/semseg-pt-v3m1-0-t4dataset.py --num-gpus 1 \
+python projects/PTv3/tools/test.py --config-file projects/PTv3/configs/semseg-pt-v3m1-0-t4dataset.py --num-gpus 1 \
   --options \
   save_path=data/experiment \
-  weight=exp/default/model/model_best.pth
+  weight=work_dirs/ptv3/model/model_best.pth
 ```
 
 ### 3. Deployment
@@ -56,11 +54,10 @@ python tools/test.py --config-file configs/semseg-pt-v3m1-0-t4dataset.py --num-g
 Export the model:
 
 ```sh
-cd projects/PTv3
-python tools/export.py --config-file configs/semseg-pt-v3m1-0-t4dataset.py --num-gpus 1 \
+python projects/PTv3/tools/export.py --config-file projects/PTv3/configs/semseg-pt-v3m1-0-t4dataset.py --num-gpus 1 \
   --options \
   save_path=data/experiment \
-  weight=exp/default/model/model_best.pth
+  weight=work_dirs/ptv3/model/model_best.pth
 ```
 
 which will generate a file called `ptv3.onnx`
