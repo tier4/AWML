@@ -1,11 +1,11 @@
 _base_ = ["./_base_/default_runtime.py"]
 
 # misc custom setting
-batch_size = 1  # bs: total bs in all gpus
-num_worker = 16  # total worker in all gpu
+batch_size = 8 # bs: total bs in all gpus
+num_worker = 32  # total worker in all gpu
 mix_prob = 0.8
 empty_cache = False
-enable_amp = False
+enable_amp = True  # NOTE: set to False if NaN loss occurs
 
 grid_size = 0.1  # original is 0.05
 num_classes = 6
