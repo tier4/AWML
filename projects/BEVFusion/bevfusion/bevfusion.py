@@ -36,10 +36,10 @@ class BEVFusion(Base3DDetector):
         seg_head: Optional[dict] = None,
         **kwargs,
     ) -> None:
+        print(data_preprocessor)
         super().__init__(data_preprocessor=data_preprocessor, init_cfg=init_cfg)
 
         if voxelize_cfg is not None:
-            voxelize_cfg = data_preprocessor.pop("voxelize_cfg", None)
             self.voxelize_reduce = voxelize_cfg.pop("voxelize_reduce")
             self.pts_voxel_layer = Voxelization(**voxelize_cfg)
             self.pts_voxel_encoder = MODELS.build(pts_voxel_encoder)

@@ -26,13 +26,13 @@ model = dict(
     data_preprocessor=dict(
         type="Det3DDataPreprocessor",
         pad_size_divisor=32,
-        voxelize_cfg=dict(
-            max_num_points=max_num_points,
-            point_cloud_range=point_cloud_range,
-            voxel_size=voxel_size,
-            max_voxels=max_voxels,
-            voxelize_reduce=True,
-        ),
+        # voxelize_cfg=dict(
+        #     max_num_points=max_num_points,
+        #     point_cloud_range=point_cloud_range,
+        #     voxel_size=voxel_size,
+        #     max_voxels=max_voxels,
+        #     voxelize_reduce=True,
+        # ),
     ),
     pts_voxel_encoder=dict(type="HardSimpleVFE", num_features=5),
     pts_middle_encoder=dict(
