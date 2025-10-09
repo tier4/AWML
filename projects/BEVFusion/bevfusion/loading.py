@@ -140,31 +140,32 @@ class BEVLoadMultiViewImageFromFiles(LoadMultiViewImageFromFiles):
         for camera_type in self.camera_order:
             if camera_type not in results["images"]:
                 continue
+            
+            cam_item = results["images"][camera_type]
+            # TODO (KokSeang): This sometime causes an error when we set num_workers > 1 during training,
+            # it's likely due to multiprocessing in CPU. We should probably process this part when creating info files
+            if cam_item["img_path"] is None:
+                print(cam_item["img_path"])
+                cam_item = self.before_camera_info[camera_type]
+                print("Warning: fill None data")
+            else:
+                self.before_camera_info[camera_type] = cam_item
 
-            for cam_item, cam_item_value in results["images"][camera_type].items():
-                # TODO (KokSeang): This sometime causes an error when we set num_workers > 1 during training,
-                # it's likely due to multiprocessing in CPU. We should probably process this part when creating info files
-                if cam_item["img_path"] is None:
-                    cam_item = self.before_camera_info[camera_type]
-                    print("Warning: fill None data")
-                else:
-                    self.before_camera_info[camera_type] = cam_item_value
+            filename.append(cam_item["img_path"])
+            lidar2cam.append(cam_item["lidar2cam"])
 
-                filename.append(cam_item["img_path"])
-                lidar2cam.append(cam_item["lidar2cam"])
+            lidar2cam_array = np.array(cam_item["lidar2cam"]).astype(np.float32)
+            lidar2cam_rot = lidar2cam_array[:3, :3]
+            lidar2cam_trans = lidar2cam_array[:3, 3:4]
+            camera2lidar = np.eye(4)
+            camera2lidar[:3, :3] = lidar2cam_rot.T
+            camera2lidar[:3, 3:4] = -1 * np.matmul(lidar2cam_rot.T, lidar2cam_trans.reshape(3, 1))
+            cam2lidar.append(camera2lidar)
 
-                lidar2cam_array = np.array(cam_item["lidar2cam"]).astype(np.float32)
-                lidar2cam_rot = lidar2cam_array[:3, :3]
-                lidar2cam_trans = lidar2cam_array[:3, 3:4]
-                camera2lidar = np.eye(4)
-                camera2lidar[:3, :3] = lidar2cam_rot.T
-                camera2lidar[:3, 3:4] = -1 * np.matmul(lidar2cam_rot.T, lidar2cam_trans.reshape(3, 1))
-                cam2lidar.append(camera2lidar)
-
-                cam2img_array = np.eye(4).astype(np.float32)
-                cam2img_array[:3, :3] = np.array(cam_item["cam2img"]).astype(np.float32)
-                cam2img.append(cam2img_array)
-                lidar2img.append(cam2img_array @ lidar2cam_array)
+            cam2img_array = np.eye(4).astype(np.float32)
+            cam2img_array[:3, :3] = np.array(cam_item["cam2img"]).astype(np.float32)
+            cam2img.append(cam2img_array)
+            lidar2img.append(cam2img_array @ lidar2cam_array)
 
         results["img_path"] = filename
         results["cam2img"] = np.stack(cam2img, axis=0)
