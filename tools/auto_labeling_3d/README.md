@@ -248,7 +248,7 @@ python tools/auto_labeling_3d/create_pseudo_t4dataset.py {yaml config file about
 
 Please upload Pseudo-T4dataset to WebAuto to share easily for other users.
 
-Please check [Web.Auto document](https://docs.web.auto/en/user-manuals/vehicle-data-search/quick-start#register-t4-datasets) for detail.
+Please check [Web.Auto document](https://docs.web.auto/en/user-manuals/vehicle-data-search/quick-start#register-t4-datasets) for the detail.
 
 #### (TBD) 6.2. Use in local PC
 
