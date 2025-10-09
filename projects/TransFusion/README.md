@@ -29,7 +29,7 @@
 ## Get started
 ### 1. Setup
 
-- [Run setup environment at first](/tools/setting_environment/)
+- Please follow the [installation tutorial](/docs/tutorial/tutorial_detection_3d.md)to set up the environment.
 - Docker build for TransFusion
 
 ```sh
@@ -73,7 +73,7 @@ python tools/detection3d/train.py projects/TransFusion/configs/nuscenes/transfus
   - Rename and change [config file](configs/nuscenes/transfusion_lidar_pillar02_second_secfpn_2xb8-cyclic-20e_nus-3d.py) to use for multi GPU and batch size
 
 ```sh
-bash tools/detection3d/dist_train.sh projects/TransFusion/configs/nuscenes/transfusion_lidar_pillar02_second_secfpn_2xb8-cyclic-20e_nus-3d.py 2
+bash tools/detection3d/dist_script.sh projects/TransFusion/configs/nuscenes/transfusion_lidar_pillar02_second_secfpn_2xb8-cyclic-20e_nus-3d.py 2 train
 ```
 
 - (Choice) Train for T4dataset with single GPU
@@ -91,7 +91,7 @@ python tools/detection3d/train.py {config file} \
   - auto_scale_lr.base_batch_size = batch size * GPU number
 
 ```sh
-bash ./tools/detection3d/dist_train.sh {config file} 2 \
+bash ./tools/detection3d/dist_script.sh {config file} 2 train \
 --cfg-options train_dataloader.batch_size=4 --cfg-options auto_scale_lr.base_batch_size=8
 ```
 

@@ -24,7 +24,7 @@
 ## Get started
 ### 1. Setup
 
-- [Run setup environment](../../tools/setting_environment/README.md)
+- Please follow the [installation tutorial](/docs/tutorial/tutorial_detection_3d.md)to set up the environment.
 - Run docker
 
 ```sh
@@ -42,7 +42,7 @@ export CUBLAS_WORKSPACE_CONFIG=:4096:8
 
 #### 2.2. Train CenterPoint model with T4dataset-base
 
-- [choice] Train with single GPU
+- [choice] Train with a single GPU
   - Rename config file to use for single GPU and batch size
   - Change `train_batch_size` and `train_gpu_size` accordingly
 
@@ -54,18 +54,36 @@ python tools/detection3d/train.py projects/CenterPoint/configs/t4dataset/second_
 - [choice] Train with multi GPU
 
 ```sh
-# T4dataset
-bash tools/detection3d/dist_train.sh projects/CenterPoint/configs/t4dataset/second_secfpn_2xb8_121m_base.py 2
+# Command
+bash tools/detection3d/dist_script.sh <config> <number of gpus> train
+
+# Example: T4dataset
+bash tools/detection3d/dist_script.sh projects/CenterPoint/configs/t4dataset/Centerpoint/second_secfpn_4xb16_121m_base_amp.py 4 train
 ```
 
 ### 3. Evaluation
 
 - Run evaluation on a test set, please select experiment config accordingly
 
+- [choice] Evaluate with a single GPU
+
 ```sh
 # Evaluation for t4dataset
 DIR="work_dirs/centerpoint/t4dataset/second_secfpn_2xb8_121m_base/" && \
 python tools/detection3d/test.py projects/CenterPoint/configs/t4dataset/second_secfpn_2xb8_121m_base.py $DIR/epoch_50.pth
+```
+
+- [choice] Evaluate with multiple GPUs
+  - Note that if you choose to evaluate with multiple GPUs, you might get slightly different results as compared to single GPU due to differences across GPUs
+
+```sh
+# Command
+CHECKPOINT_PATH=<checkpoint> && \
+bash tools/detection3d/dist_script.sh <config> <number of gpus> test $CHECKPOINT_PATH
+
+# Example: T4dataset
+CHECKPOINT_PATH="work_dirs/centerpoint/t4dataset/second_secfpn_2xb8_121m_base/epoch_50.pth" && \
+bash tools/detection3d/dist_script.sh projects/CenterPoint/configs/t4dataset/Centerpoint/second_secfpn_4xb16_121m_base_amp.py 4 test $CHECKPOINT_PATH
 ```
 
 ### 4. Visualization

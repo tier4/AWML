@@ -12,7 +12,7 @@ It contains training, evaluation, and visualization for Calibration classificati
 
 ## 1. Setup environment
 
-See [setting environment](/tools/setting_environment/)
+Please follow the [installation tutorial](/docs/tutorial/tutorial_detection_3d.md)to set up the environment.
 
 ## 2. Prepare dataset
 
@@ -124,19 +124,19 @@ Each file contains calibration information including:
 
 ```sh
 # Process all samples from info.pkl
-python tools/calibration_classification/visualize_lidar_camera_projection.py projects/CalibrationStatusClassification/configs/t4dataset/resnet18_5ch_1xb16-50e_j6gen2.py --info_pkl data/info.pkl --data_root data/ --output_dir ./calibration_visualization
+python tools/calibration_classification/visualize_lidar_camera_projection.py projects/CalibrationStatusClassification/configs/t4dataset/resnet18_5ch_1xb16-50e_j6gen2.py --info_pkl data/info.pkl --data_root data/ --output_dir ./work_dirs/calibration_visualization
 
 # Process specific sample
-python tools/calibration_classification/visualize_lidar_camera_projection.py projects/CalibrationStatusClassification/configs/t4dataset/resnet18_5ch_1xb16-50e_j6gen2.py --info_pkl data/info.pkl --data_root data/ --output_dir ./calibration_visualization --sample_idx 0
+python tools/calibration_classification/visualize_lidar_camera_projection.py projects/CalibrationStatusClassification/configs/t4dataset/resnet18_5ch_1xb16-50e_j6gen2.py --info_pkl data/info.pkl --data_root data/ --output_dir ./work_dirs/calibration_visualization --sample_idx 0
 
 # Process specific indices
-python tools/calibration_classification/visualize_lidar_camera_projection.py projects/CalibrationStatusClassification/configs/t4dataset/resnet18_5ch_1xb16-50e_j6gen2.py --info_pkl data/info.pkl --data_root data/ --output_dir ./calibration_visualization --indices 0 1 2
+python tools/calibration_classification/visualize_lidar_camera_projection.py projects/CalibrationStatusClassification/configs/t4dataset/resnet18_5ch_1xb16-50e_j6gen2.py --info_pkl data/info.pkl --data_root data/ --output_dir ./work_dirs/calibration_visualization --indices 0 1 2
 ```
 
 - For T4dataset visualization:
 
 ```sh
-python tools/calibration_classification/visualize_lidar_camera_projection.py projects/CalibrationStatusClassification/configs/t4dataset/resnet18_5ch_1xb16-50e_j6gen2.py --info_pkl data/t4dataset/calibration_info/t4dataset_gen2_base_infos_test.pkl --data_root data/t4dataset --output_dir ./calibration_visualization
+python tools/calibration_classification/visualize_lidar_camera_projection.py projects/CalibrationStatusClassification/configs/t4dataset/resnet18_5ch_1xb16-50e_j6gen2.py --info_pkl data/t4dataset/calibration_info/t4dataset_gen2_base_infos_test.pkl --data_root data/t4dataset --output_dir ./work_dirs/calibration_visualization
 ```
 
 ## 3. Visualization Settings (During training, validation, testing)

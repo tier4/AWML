@@ -8,11 +8,24 @@
   - grid_size = [760, 760, 1]
 	- **With Intensity**
 - Detailed comparison
-  - [Internal Link](https://docs.google.com/spreadsheets/d/13Stt9hdbTER6ugaRMEZscbt_6kD7ld-0b30JyeTGTrs/edit?usp=sharing)
-  - [Internal Link](https://docs.google.com/spreadsheets/d/1jkadazpbA2BUYEUdVV8Rpe54-snH1cbdJbbHsuK04-U/edit?usp=sharing)
+  - [Internal Link](https://docs.google.com/spreadsheets/d/13Stt9hdbTER6ugaRMEZscbt_6kD7ld-0b30JyeTGTrs/edit?gid=1466166341#gid=1466166341)
 - Performance summary
-  - Dataset: test dataset of db_j6gen2_v1 + db_j6gen2_v2 + db_j6gen2_v4 + db_largebus_v1 (total frames: 1,761)
+  - Datasets (frames: 2,086):
+			- j6gen2: db_j6gen2_v1 + db_j6gen2_v2 + db_j6gen2_v3 + db_j6gen2_v4 + db_j6gen2_v5 (1,217 frames)
+			- largebus: db_largebus_v1 + db_largebus_v2 (859 frames)
+
   - Class mAP for center distance (0.5m, 1.0m, 2.0m, 4.0m):
+
+| eval range: 120m         | mAP     | car <br> (56,829) | truck <br> (4,633) | bus <br> (1,559) | bicycle <br> (1,166) | pedestrian <br> (10,955) |
+| -------------------------    | ---- | ----------------- | ------------------- | ---------------- | -------------------- | ------------------------ |
+| CenterPoint J6Gen2/2.3.1     | 74.60 | 86.40            | 60.00               | 85.50         | 72.30                 | 68.80                   |
+| CenterPoint J6Gen2/2.2.1     | 73.40 | 86.10            | 58.80               | 83.50         | 70.50                 | 68.30                   |
+
+
+### Deprecated results
+
+<details>
+- Performance summary
 
 | eval range: 120m         | mAP  | car <br> (57,839) | truck <br> (4,608) | bus <br> (1,559) | bicycle <br> (1,057) | pedestrian <br> (10,375) |
 | ---------------------    | ---- | ----------------- | ------------------- | ---------------- | ----------------- | ---------------- |
@@ -20,39 +33,88 @@
 | CenterPoint J6Gen2/2.1.1 | 74.07 | 85.80            | 61.74               | 84.94         | 70.63                 | 67.24            |
 | CenterPoint J6Gen2/2.0.1 | 74.01 | 85.97            | 62.57               | 83.36         | 71.05                 | 67.10            |
 | CenterPoint J6Gen2/1.7.1 | 71.77 | 84.80            | 56.64               | 81.78         | 71.26                 | 64.38            |
-
+</details>
 
 ### Datasets
 
 <details>
 <summary> LargeBus </summary>
 
-- Test datases: db_largebus_v1 (total frames: 604)
+- Test datases: db_largebus_v1 + db_largebus_v2 (total frames: 859)
 
-| eval range: 120m         | mAP  | car <br> (13,831)     | truck <br> (2,137) | bus <br> (95) | bicycle <br> (724) | pedestrian <br> (3,916) |
-| -------------------------| ---- | -------------------- | ------------------- | ---------------- | ------------ | ------------------------ |
-| CenterPoint J6Gen2/2.2.1   | 74.67   | 90.20   | 70.60   | 78.20 | 66.50       | 67.80       |
-| CenterPoint J6Gen2/2.1.1   | 74.99   | 90.35   | 70.43   | 79.63 | 67.51       | 66.99       |
-| CenterPoint J6Gen2/2.0.1   | 74.73   | 90.53   | 69.55   | 80.06 | 65.72       | 67.82       |
-| CenterPoint J6Gen2/1.7.1   | 72.17   | 89.36   | 60.87   | 78.40   | 67.71     | 64.84       |
+| eval range: 120m         | mAP     | car <br> (16,604)     | truck <br> (1,961) | bus <br> (171) | bicycle <br> (863) | pedestrian <br> (4,659) |
+| -------------------------| ----    | -------------------- | ------------------- | ---------------- | -------------------- | ------------------------ |
+| CenterPoint J6Gen2/2.3.1     | 75.20 | 91.20            | 69.70               | 75.70         | 68.80                 | 70.30                   |
+| CenterPoint J6Gen2/2.2.1     | 72.50 | 89.90            | 67.70               | 68.80         | 67.00                 | 69.10                   |
 
 </details>
 
 <details>
 <summary> J6Gen2 </summary>
 
-- Test datases: db_j6gen2_v1 + db_j6gen2_v2 + db_j6gen2_v4 (total frames: 1,157)
+- Test datases: db_j6gen2_v1 + db_j6gen2_v2 + db_j6gen2_v3 + db_j6gen2_v4 + db_j6gen2_v5  (total frames: 1,217)
 
-| eval range: 120m         | mAP  | car <br> (44,008) | truck <br> (2,471) | bus <br> (1,464) | bicycle <br> (333) | pedestrian <br> (6,459) |
-| -------------------------| ---- | ----------------- | ------------------- | ---------------- | -------------------- | ---------------------|
-| CenterPoint J6Gen2/2.2.1   | 75.20   | 84.70   | 57.40   | 85.50 | 80.70       | 67.80       |
-| CenterPoint J6Gen2/2.1.1   | 74.24   | 84.65   | 54.66   | 85.45 | 79.07       | 67.35       |
-| CenterPoint J6Gen2/2.0.1   | 74.60   | 84.83   | 56.48   | 83.70 | 81.06       | 66.91       |
-| CenterPoint J6Gen2/1.7.1   | 72.35   | 83.34   | 53.26   | 82.13 | 79.10     | 63.92       |
+| eval range: 120m         | mAP     | car <br> (40,225) | truck <br> (2,672) | bus <br> (1,388) | bicycle <br> (303) | pedestrian <br> (6,296) |
+| -------------------------| ----    | ----------------- | ------------------- | ---------------- | -------------------- | ------------------------ |
+| CenterPoint J6Gen2/2.3.1     | 74.80 | 84.50            | 53.00               | 86.50         | 82.10                 | 67.70                   |
+| CenterPoint J6Gen2/2.2.1     | 74.30 | 84.70            | 53.00               | 85.30         | 80.70                 | 67.70                   |
+
 
 </details>
 
 ## Release
+### CenterPoint J6Gen2/2.3.1
+- Changes:
+  - Finetune from `CenterPoint base/2.3.0` with j6gen2 base dataset
+  - Include intensity as an extra feature
+
+- Overall:
+   - Performance is slightly better than `CenterPoint J6Gen2/2.2.1`
+
+<details>
+<summary> The link of data and evaluation result </summary>
+
+- Model
+- Training Datasets (frames: 30,290):
+			- j6gen2: db_j6gen2_v1 + db_j6gen2_v2 + db_j6gen2_v3 + db_j6gen2_v4 + db_j6gen2_v5 (21,077 frames)
+			- largebus: db_largebus_v1 + db_largebus_v2 (9,213 frames)
+  - [Config file path](https://github.com/tier4/AWML/blob/c0ba7268f110062f71ee80a3469102867a63b740/projects/CenterPoint/configs/t4dataset/Centerpoint/second_secfpn_4xb16_121m_j6gen2_base.py)
+  - Deployed onnx and ROS parameter files (for internal)
+    - [WebAuto](https://evaluation.tier4.jp/evaluation/mlpackages/7156b453-2861-4ae9-b135-e24e48cc9029/releases/cb7d790e-4efe-47c2-b2b4-62d9d80aa085?project_id=zWhWRzei)
+    - [model-zoo](https://download.autoware-ml-model-zoo.tier4.jp/autoware-ml/models/centerpoint/centerpoint/j6gen2/v2.3.1/deployment.zip)
+    - [Google drive](https://drive.google.com/file/d/1toIlwTYbjIkXVoRdG4e0WSUBwqRKQDNi/view?usp=drive_link)
+  - Logs (for internal)
+    - [model-zoo](https://download.autoware-ml-model-zoo.tier4.jp/autoware-ml/models/centerpoint/centerpoint/j6gen2/v2.3.1/logs.zip)
+    - [Google drive](https://drive.google.com/file/d/1i4uvbOHsbDuNn0CtF1Dkx4CTrrjCAICt/view?usp=drive_link)
+  - Train time: NVIDIA H100 80GB * 4 * 30 epochs = 12 hours
+  - Batch size: 4*16 = 64
+
+- Evaluation
+
+- db_largebus_v1 + db_largebus_v2 (859 frames):
+  - Total mAP (eval range = 120m): 0.752
+
+| class_name | Count        | mAP  | AP@0.5m | AP@1.0m | AP@2.0m | AP@4.0m |
+| ----       | -------------| ---- | ---- | ---- | ---- | ---- |
+| car        | 16,604       | 91.2 | 86.0    | 92.0    | 93.3    | 93.5    |
+| truck      |  1,961       | 69.7 | 56.5    | 70.3    | 75.1    | 77.0    |
+| bus        |    171       | 75.7 | 61.6    | 80.3    | 80.5    | 80.5    |
+| bicycle    |    863       | 68.8 | 63.7    | 69.6    | 70.9    | 70.9    |
+| pedestrian |   4,659      | 70.3 | 68.7    | 69.7    | 70.7    | 72.2    |
+
+- j6gen2: db_j6gen2_v1 + db_j6gen2_v2 + db_j6gen2_v3 + db_j6gen2_v4 + db_j6gen2_v5 (1,217 frames):
+  - Total mAP (eval range = 120m): 0.748
+
+| class_name | Count      | mAP  | AP@0.5m | AP@1.0m | AP@2.0m | AP@4.0m |
+| ----       | ---------- | ---- | ---- | ---- | ---- | ---- |
+| car        | 40,225     | 84.5 | 78.4    | 84.8    | 87.1    | 87.5    |
+| truck      |  2,672     | 53.0 | 42.6    | 51.0    | 55.8    | 62.7    |
+| bus        |  1,388     | 86.5 | 82.4    | 85.1    | 88.8    | 89.5    |
+| bicycle    |    303     | 82.1 | 80.6    | 82.5    | 82.7    | 82.7    |
+| pedestrian |  6,296     | 67.7 | 65.9    | 67.1    | 68.2    | 69.8    |
+
+</details>
+
 ### CenterPoint J6Gen2/2.2.1
 - Changes:
   - Finetune from `CenterPoint base/2.2.0` with j6gen2 base dataset

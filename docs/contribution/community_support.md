@@ -5,7 +5,7 @@ This page shows community supports abround `AWML`.
 We hope that this page promote the community between Autoware and ML researchers and engineers.
 
 ## Papers
-### AWML
+### About `AWML`
 
 - The arXiv paper of AWML: https://arxiv.org/abs/2506.00645
   - This paper contains the whole design of AWML.
@@ -19,6 +19,22 @@ We hope that this page promote the community between Autoware and ML researchers
       archivePrefix={arXiv},
       primaryClass={cs.RO},
       url={https://arxiv.org/abs/2506.00645},
+}
+```
+
+- The arXiv paper for domain adaptation between different sensor configuration: https://arxiv.org/abs/2509.04711.
+
+![](/docs/fig/finetuning.drawio.svg)
+
+```
+@misc{tanaka2025domainadaptationdifferentsensor,
+      title={Domain Adaptation for Different Sensor Configurations in 3D Object Detection},
+      author={Satoshi Tanaka and Kok Seang Tan and Isamu Yamashita},
+      year={2025},
+      eprint={2509.04711},
+      archivePrefix={arXiv},
+      primaryClass={cs.CV},
+      url={https://arxiv.org/abs/2509.04711},
 }
 ```
 

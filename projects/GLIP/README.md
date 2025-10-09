@@ -15,7 +15,7 @@
 ## Get started
 ### 1. Setup
 
-- 1.1. [Run setup environment at first](/tools/setting_environment/).
+- 1.1. Please follow the [installation tutorial](/docs/tutorial/tutorial_detection_3d.md)to set up the environment.
 - 1.2. Download pretrain weight from [GLIP of mmdetection](https://github.com/open-mmlab/mmdetection/tree/main/configs/glip/README.md).
   - In demonstration, you should put `work_dirs/pretrain/glip/`.
 - 1.3. Run docker
