@@ -36,7 +36,6 @@ class BEVFusion(Base3DDetector):
         seg_head: Optional[dict] = None,
         **kwargs,
     ) -> None:
-        print(data_preprocessor)
         super().__init__(data_preprocessor=data_preprocessor, init_cfg=init_cfg)
 
         if voxelize_cfg is not None:
@@ -266,9 +265,13 @@ class BEVFusion(Base3DDetector):
         feats = self.extract_feat(batch_inputs_dict, batch_input_metas)
 
         if self.with_bbox_head:
-            outputs = self.bbox_head.predict(feats, batch_input_metas)
+            # outputs = self.bbox_head.predict(feats, batch_input_metas)
+            outputs = self.bbox_head.predict(feats, batch_data_samples)
 
         res = self.add_pred_to_datasample(batch_data_samples, outputs)
+        # for i in res:
+        #     pred_instances_3d = i.pred_instances_3d
+        #     print(f"pred_instance_3d: {pred_instances_3d.tensor.shape}")
 
         return res
 
@@ -342,6 +345,7 @@ class BEVFusion(Base3DDetector):
                 geom_feats=geom_feats,
             )
             features.append(img_feature)
+            print("Extracting img features 2")
 
         if points is not None:
             pts_feature = self.extract_pts_feat(

@@ -194,6 +194,7 @@ class BEVLoadMultiViewImageFromFiles(LoadMultiViewImageFromFiles):
         if pad_shape is not None:
             imgs = [mmcv.impad(img, shape=pad_shape, pad_val=0) for img in imgs]
         img = np.stack(imgs, axis=-1)
+        # print(f"image_shape: {img.shape}")
         if self.to_float32:
             img = img.astype(np.float32)
 

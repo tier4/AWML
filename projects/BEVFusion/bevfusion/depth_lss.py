@@ -1,10 +1,14 @@
 # modify from https://github.com/mit-han-lab/bevfusion
+import uuid
+from pathlib import Path
 from typing import Optional, Tuple
 
 import torch
 from mmdet3d.registry import MODELS
 from torch import Tensor, nn
+import torch.distributed as dist
 
+from .visualize import save_bev_single
 from .ops import bev_pool
 
 
@@ -120,6 +124,15 @@ class BaseViewTransform(nn.Module):
         self.D = self.frustum.shape[0]
         self.fp16_enabled = False
 
+        if dist.is_available() and dist.is_initialized():
+          self.main_gpu = dist.get_rank() == 0
+        else:
+          self.main_gpu = False 
+        
+        if self.main_gpu:
+          self.debug_folder = Path(f"./work_dirs/bev_debug_{uuid.uuid4().hex[:8]}")
+          self.debug_folder.mkdir(exist_ok=True, parents=True)
+
     def create_frustum(self):
         iH, iW = self.image_size
         fH, fW = self.feature_size
@@ -232,6 +245,8 @@ class BaseViewTransform(nn.Module):
         # collapse Z
         final = torch.cat(x.unbind(dim=2), 1)
 
+        # if self.main_gpu:
+        #   save_bev_single(final, f"{self.debug_folder}/bev_pool_debug_{uuid.uuid4().hex[:8]}.png", mode="max")
         return final
 
     def bev_pool_precomputed(self, x, geom_feats, kept, ranks, indices):
@@ -250,6 +265,48 @@ class BaseViewTransform(nn.Module):
 
         # collapse Z
         final = torch.cat(x.unbind(dim=2), 1)
+
+        return final
+
+    def voxel_pooling(self, x, geom_feats):
+        B, N, D, H, W, C = x.shape
+        Nprime = B * N * D * H * W
+        nx = self.nx.to(torch.long)
+        # flatten x
+        x = x.reshape(Nprime, C)
+
+        # flatten indices
+        geom_feats = ((geom_feats - (self.bx - self.dx / 2.)) / self.dx).long()
+        geom_feats = geom_feats.view(Nprime, 3)
+        batch_ix = torch.cat([torch.full([Nprime // B, 1], ix,
+                                         device=x.device, dtype=torch.long) for ix in range(B)])
+        geom_feats = torch.cat((geom_feats, batch_ix), 1)
+
+        # filter out points that are outside box
+        kept = (geom_feats[:, 0] >= 0) & (geom_feats[:, 0] < self.nx[0]) \
+               & (geom_feats[:, 1] >= 0) & (geom_feats[:, 1] < self.nx[1]) \
+               & (geom_feats[:, 2] >= 0) & (geom_feats[:, 2] < self.nx[2])
+        x = x[kept]
+        geom_feats = geom_feats[kept]
+
+        # get tensors from the same voxel next to each other
+        ranks = geom_feats[:, 0] * (self.nx[1] * self.nx[2] * B) \
+                + geom_feats[:, 1] * (self.nx[2] * B) \
+                + geom_feats[:, 2] * B \
+                + geom_feats[:, 3]
+        sorts = ranks.argsort()
+        x, geom_feats, ranks = x[sorts], geom_feats[sorts], ranks[sorts]
+
+        # cumsum trick
+        x, geom_feats = QuickCumsum.apply(x, geom_feats, ranks)
+
+        # griddify (B x C x Z x X x Y)
+        final = torch.zeros((B, C, nx[2], nx[1], nx[0]), device=x.device)
+        final[geom_feats[:, 3], :, geom_feats[:, 2], geom_feats[:, 1], geom_feats[:, 0]] = x
+        # if self.voxel:
+        #     return final.sum(2), x, geom_feats
+        # collapse Z
+        final = torch.cat(final.unbind(dim=2), 1)
 
         return final
 
@@ -298,6 +355,7 @@ class BaseViewTransform(nn.Module):
             # is also flattened_indices
             x = self.get_cam_feats(img)
             x = self.bev_pool(x, geom)
+            # x = self.voxel_pooling(x, geom)
 
         return x
 
