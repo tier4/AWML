@@ -21,8 +21,8 @@ In addition to ML model deployment, `AWML` supports active learning framework in
 `AWML` supports following environment.
 
 - All tools are tested by [Docker environment](Dockerfile) on Ubuntu 22.04LTS
-- NVIDIA dependency: CUDA 12.1 + cuDNN 8
-  - Need > 530.xx.xx NVIDIA device driver
+- NVIDIA dependency: CUDA 12.9 + cuDNN 9
+  - Need >= 575.xx.xx NVIDIA device driver
 
 If you use this project in your research, please use [the arXiv paper of AWML](https://arxiv.org/abs/2506.00645) and [the arXiv paper for fine-tuning strategy](https://arxiv.org/abs/2509.04711).
 And please use consider citation as below.
