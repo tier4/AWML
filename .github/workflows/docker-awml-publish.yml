@@ -2,6 +2,11 @@ name: Publish AWML Docker image
 
 on:
   workflow_dispatch:
+  pull_request:
+    paths:
+      - '.github/workflows/docker-awml-publish.yml'
+      - 'Dockerfile'
+      - 'tools/setting_environment/ros2/Dockerfile'
   push:
     tags:
       - "*"
@@ -9,14 +14,14 @@ on:
 jobs:
   build-base-image:
     runs-on: ubuntu-22.04-m
-    timeout-minutes: 90
+    timeout-minutes: 240
 
     permissions:
       contents: read
       packages: write
 
     outputs:
-      tag: ${{ steps.get-tag.outputs.tag }}
+      tag: latest
 
     steps:
       - name: Checkout code
@@ -46,15 +51,15 @@ jobs:
         uses: docker/build-push-action@v5
         with:
           context: .
-          push: true
+          push: ${{ github.event_name != 'pull_request' }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
           tags: |
-            ghcr.io/tier4/AWML:base-${{ steps.get-tag.outputs.tag }}
+            ghcr.io/tier4/awml:base-latest
 
   build-ros2-image:
     runs-on: ubuntu-22.04-m
-    timeout-minutes: 90
+    timeout-minutes: 240
     needs: build-base-image
 
     permissions:
@@ -81,10 +86,10 @@ jobs:
         with:
           context: .
           file: ./tools/setting_environment/ros2/Dockerfile
-          push: true
+          push: ${{ github.event_name != 'pull_request' }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
           tags: |
-            ghcr.io/tier4/AWML:ros2-${{ needs.build-base-image.outputs.tag }}
+            ghcr.io/tier4/awml:ros2-${{ needs.build-base-image.outputs.tag }}
           build-args: |
-            AWML_BASE_IMAGE=ghcr.io/tier4/AWML:base-${{ needs.build-base-image.outputs.tag }}
+            AWML_BASE_IMAGE=ghcr.io/tier4/awml:base-${{ needs.build-base-image.outputs.tag }}
