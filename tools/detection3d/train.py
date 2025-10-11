@@ -4,6 +4,8 @@ import logging
 import os
 import os.path as osp
 
+import torch 
+
 from mmdet3d.utils import replace_ceph_backend
 from mmengine.config import Config, DictAction
 from mmengine.logging import print_log
@@ -123,6 +125,9 @@ def main():
         # build customized runner from the registry
         # if 'runner_type' is set in the cfg
         runner = RUNNERS.build(cfg)
+
+    # 
+    torch.use_deterministic_algorithms(True, warn_only=True)
 
     # start training
     runner.train()

@@ -12,8 +12,8 @@ info_directory_path = "info/kokseang_2_3/"
 train_gpu_size = 4
 train_batch_size = 8
 test_batch_size = 2
-val_interval = 50
-max_epochs = 300
+val_interval = 20
+max_epochs = 200
 backend_args = None
 
 # range setting
@@ -87,7 +87,7 @@ model = dict(
     #     ),
     # ),
     img_backbone=dict(
-        # pretrained="work_dirs/resnet50/resnet50-11ad3fa6.pth",
+        pretrained="work_dirs/resnet50/resnet50-11ad3fa6.pth",
         type="mmdet.ResNet",
         depth=50,
         num_stages=4,
@@ -388,8 +388,8 @@ train_dataloader = dict(
         modality=input_modality,
         backend_args=backend_args,
         data_root=data_root,
-        # ann_file=info_directory_path + _base_.info_train_file_name,
-        ann_file=info_directory_path + _base_.info_val_file_name,
+        ann_file=info_directory_path + _base_.info_train_file_name,
+        # ann_file=info_directory_path + _base_.info_val_file_name,
         metainfo=_base_.metainfo,
         class_names=_base_.class_names,
         test_mode=False,
@@ -526,7 +526,7 @@ test_cfg = dict()
 optim_wrapper = dict(
     type="OptimWrapper",
     optimizer=dict(type="AdamW", lr=lr, weight_decay=0.01),
-    clip_grad=dict(max_norm=3.0, norm_type=2),
+    clip_grad=dict(max_norm=5.0, norm_type=2),
 )
 
 # Default setting for scaling LR automatically
