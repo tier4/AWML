@@ -10,11 +10,11 @@ git clone https://github.com/tier4/AWML
 ## 2. Prepare docker
 
 - Pull the base Docker image
-  - See [autoware-ml-base](https://github.com/tier4/AWML/pkgs/container/autoware-ml-base)
+  - See [awml](https://github.com/tier4/AWML/pkgs/container/awml)
 .
 
 ```
-docker pull ghcr.io/tier4/autoware-ml-base:latest
+docker pull ghcr.io/tier4/awml:base-latest
 ```
 
 ## 3. Download T4dataset

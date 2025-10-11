@@ -1,4 +1,4 @@
-ARG AWML_BASE_IMAGE="ghcr.io/tier4/autoware-ml-base:latest"
+ARG AWML_BASE_IMAGE="ghcr.io/tier4/awml:base-latest"
 FROM ${AWML_BASE_IMAGE}
 
 # Install pip dependencies (1)

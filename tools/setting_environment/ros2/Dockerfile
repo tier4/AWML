@@ -1,4 +1,4 @@
-ARG AWML_BASE_IMAGE="ghcr.io/tier4/autoware-ml-base:latest"
+ARG AWML_BASE_IMAGE="ghcr.io/tier4/awml:base-latest"
 FROM ${AWML_BASE_IMAGE}
 
 # Following commands are based on : https://docs.ros.org/en/humble/Installation/Ubuntu-Install-Debs.html
