@@ -36,9 +36,7 @@ class T4Dataset(NuScenesDataset):
     ):
         T4Dataset.METAINFO = metainfo
         # Add low pedestrian for less than 1.5m
-        class_names.append(
-            "low_pedestrian"
-        ) 
+        class_names.append("low_pedestrian")
 
         self.valid_class_name_ins = {class_name: 0 for class_name in class_names}
 
