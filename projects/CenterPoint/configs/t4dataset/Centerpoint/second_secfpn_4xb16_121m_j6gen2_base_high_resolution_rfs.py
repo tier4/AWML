@@ -416,6 +416,6 @@ custom_hooks = [
 ]
 
 # Update the load_from path accordingly
-load_from = "work_dirs/centerpoint_2_3/T4Dataset/second_secfpn_4xb16_121m_base_amp_high_resolution/epoch_48.pth"
+load_from = "work_dirs/centerpoint_2_3_rfs/T4Dataset/second_secfpn_4xb16_121m_base_amp_high_resolution/epoch_49.pth"
 
 activation_checkpointing = ["pts_backbone"]
