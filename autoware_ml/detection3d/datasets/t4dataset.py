@@ -179,13 +179,15 @@ class T4Dataset(NuScenesDataset):
         gt_bbox_heights = ann_info["gt_bboxes_3d"].height
         nearer_bbox_in_ranges = ann_info["gt_bboxes_3d"].in_range_bev([-50, -50, 50, 50])
         valid_bbox_categories = {class_name: 0 for class_name in self.class_names}
-        for label, bbox_in_ranges, gt_bbox_height, nearer_bbox in zip(ann_info["gt_labels_3d"], bbox_in_ranges, gt_bbox_heights, nearer_bbox_in_ranges):
+        for label, bbox_in_ranges, gt_bbox_height, nearer_bbox in zip(
+            ann_info["gt_labels_3d"], bbox_in_ranges, gt_bbox_heights, nearer_bbox_in_ranges
+        ):
             if bbox_in_ranges:
                 class_name = self.class_names[label]
                 if class_name == "pedestrian":
                     if gt_bbox_height <= 1.5 and nearer_bbox:
                         class_name = "low_pedestrian"
-                
+
                 self.valid_class_name_ins[class_name] += 1
                 # Set to 1 if a category exists in this frame
                 valid_bbox_categories[class_name] = 1

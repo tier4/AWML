@@ -49,7 +49,9 @@ test_batch_size = 2
 num_workers = 32
 val_interval = 5
 max_epochs = 50
-work_dir = "work_dirs/centerpoint_2_3_rfs/" + _base_.dataset_type + "/second_secfpn_4xb16_121m_base_amp_high_resolution_rfs/"
+work_dir = (
+    "work_dirs/centerpoint_2_3_rfs/" + _base_.dataset_type + "/second_secfpn_4xb16_121m_base_amp_high_resolution_rfs/"
+)
 
 train_pipeline = [
     dict(
@@ -106,7 +108,7 @@ test_pipeline = [
         pad_empty_sweeps=True,
         remove_close=True,
         backend_args=backend_args,
-        test_mode=True
+        test_mode=True,
     ),
     dict(type="PointsRangeFilter", point_cloud_range=point_cloud_range),
     dict(type="Pack3DDetInputs", keys=["points", "gt_bboxes_3d", "gt_labels_3d"]),
@@ -130,7 +132,7 @@ eval_pipeline = [
         pad_empty_sweeps=True,
         remove_close=True,
         backend_args=backend_args,
-        test_mode=True
+        test_mode=True,
     ),
     dict(type="PointsRangeFilter", point_cloud_range=point_cloud_range),
     dict(type="Pack3DDetInputs", keys=["points", "gt_bboxes_3d", "gt_labels_3d"]),
@@ -154,7 +156,7 @@ train_dataloader = dict(
         data_prefix=_base_.data_prefix,
         box_type_3d="LiDAR",
         point_cloud_range=point_cloud_range,
-        repeat_sampling_factory_t=0.30
+        repeat_sampling_factory_t=0.30,
     ),
 )
 val_dataloader = dict(
