@@ -16,6 +16,7 @@ from mmdet.models.utils import multi_apply
 from mmengine.structures import InstanceData
 from torch import nn
 
+from projects.CenterPoint.models.dense_heads.centerpoint_head import CustomSeparateHead
 
 def clip_sigmoid(x, eps=1e-4):
     y = torch.clamp(x.sigmoid_(), min=eps, max=1 - eps)
@@ -138,13 +139,23 @@ class BEVFusionHead(nn.Module):
         for i in range(self.num_decoder_layers):
             heads = copy.deepcopy(common_heads)
             heads.update(dict(heatmap=(self.num_classes, num_heatmap_convs)))
+            # self.prediction_heads.append(
+            #     SeparateHead(
+            #         hidden_channel,
+            #         heads,
+            #         conv_cfg=conv_cfg,
+            #         norm_cfg=norm_cfg,
+            #         bias=bias,
+            #     )
+            # )
             self.prediction_heads.append(
-                SeparateHead(
+                CustomSeparateHead(
                     hidden_channel,
                     heads,
                     conv_cfg=conv_cfg,
                     norm_cfg=norm_cfg,
                     bias=bias,
+                    init_bias=-4.595
                 )
             )
 
@@ -607,7 +618,10 @@ class BEVFusionHead(nn.Module):
         gt_instances, pred_instances = InstanceData(bboxes=gt_bboxes_tensor), InstanceData(priors=bboxes_tensor)
         sampling_result = self.bbox_sampler.sample(assign_result_ensemble, pred_instances, gt_instances)
         pos_inds = sampling_result.pos_inds
+
         neg_inds = sampling_result.neg_inds
+        # print("==== Assign results ====")
+        # print(f"num_proposals: {num_proposals}, bboxes_tensor: {len(bboxes_tensor)}, gts: {len(gt_bboxes_tensor)}, num_gts: {assign_result_ensemble.num_gts}, pos_inds: {len(pos_inds > 0)}, negative_ids: {len(neg_inds > 0)}")
         assert len(pos_inds) + len(neg_inds) == num_proposals
 
         # 3. Create target for loss computation
@@ -625,7 +639,7 @@ class BEVFusionHead(nn.Module):
         # and iou loss
         if len(pos_inds) > 0:
             pos_bbox_targets = self.bbox_coder.encode(sampling_result.pos_gt_bboxes)
-
+            
             bbox_targets[pos_inds, :] = pos_bbox_targets
             bbox_weights[pos_inds, :] = 1.0
 
@@ -633,6 +647,7 @@ class BEVFusionHead(nn.Module):
                 labels[pos_inds] = 1
             else:
                 labels[pos_inds] = gt_labels_3d[sampling_result.pos_assigned_gt_inds]
+
             if self.train_cfg.pos_weight <= 0:
                 label_weights[pos_inds] = 1.0
             else:
@@ -650,12 +665,15 @@ class BEVFusionHead(nn.Module):
         feature_map_size = grid_size[:2] // self.train_cfg["out_size_factor"]  # [x_len, y_len]
         heatmap = gt_bboxes_3d.new_zeros(self.num_classes, feature_map_size[1], feature_map_size[0])
         for idx in range(len(gt_bboxes_3d)):
-            width = gt_bboxes_3d[idx][3]
-            length = gt_bboxes_3d[idx][4]
+            # width = gt_bboxes_3d[idx][3]
+            # length = gt_bboxes_3d[idx][4]
+            width = gt_bboxes_3d[idx][4]
+            length = gt_bboxes_3d[idx][3]
             width = width / voxel_size[0] / self.train_cfg["out_size_factor"]
             length = length / voxel_size[1] / self.train_cfg["out_size_factor"]
             if width > 0 and length > 0:
-                radius = gaussian_radius((length, width), min_overlap=self.train_cfg["gaussian_overlap"])
+                # radius = gaussian_radius((length, width), min_overlap=self.train_cfg["gaussian_overlap"])
+                radius = gaussian_radius((width, length), min_overlap=self.train_cfg["gaussian_overlap"])
                 radius = max(self.train_cfg["min_radius"], int(radius))
                 x, y = gt_bboxes_3d[idx][0], gt_bboxes_3d[idx][1]
 
@@ -666,9 +684,9 @@ class BEVFusionHead(nn.Module):
                 center_int = center.to(torch.int32)
 
                 # original
-                # draw_heatmap_gaussian(heatmap[gt_labels_3d[idx]], center_int, radius) # noqa: E501
+                draw_heatmap_gaussian(heatmap[gt_labels_3d[idx]], center_int, radius) # noqa: E501
                 # NOTE: fix
-                draw_heatmap_gaussian(heatmap[gt_labels_3d[idx]], center_int[[1, 0]], radius)
+                # draw_heatmap_gaussian(heatmap[gt_labels_3d[idx]], center_int[[1, 0]], radius)
 
         mean_iou = ious[pos_inds].sum() / max(len(pos_inds), 1)
         return (

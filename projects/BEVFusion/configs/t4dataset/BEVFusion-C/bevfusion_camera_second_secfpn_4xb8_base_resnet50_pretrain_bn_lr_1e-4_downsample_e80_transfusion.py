@@ -12,8 +12,8 @@ info_directory_path = "info/kokseang_2_3/"
 train_gpu_size = 4
 train_batch_size = 8
 test_batch_size = 2
-val_interval = 5
-max_epochs = 80
+val_interval = 10
+max_epochs = 150
 backend_args = None
 
 # range setting
@@ -38,7 +38,7 @@ input_modality = dict(
 sweeps_num = 1
 max_num_points = 10
 max_voxels = [120000, 160000]
-num_proposals = 500
+num_proposals = 300
 # image_size = [384, 576]  # height, width
 image_size = [480, 640]  # height, width
 num_workers = 32
@@ -161,67 +161,67 @@ model = dict(
         upsample_cfg=dict(type="deconv", bias=False),
         use_conv_for_no_stride=True,
     ),
-    bbox_head=dict(
-        type="CenterHead",
-        # in_channels=sum([128, 128, 128]),
-        in_channels=sum([256, 256]),
-        # (output_channel_size, num_conv_layers)
-        common_heads=dict(
-            reg=(2, 2),
-            height=(1, 2),
-            dim=(3, 2),
-            rot=(2, 2),
-            vel=(2, 2),
-        ),
-        bbox_coder=dict(
-            type="CenterPointBBoxCoder",
-            max_num=500,
-            score_threshold=0.1,
-            code_size=9,
-            voxel_size=voxel_size,
-            pc_range=point_cloud_range,
-            post_center_range=[-200.0, -200.0, -10.0, 200.0, 200.0, 10.0],
-            out_size_factor=out_size_factor,
-        ),
-        share_conv_channel=64,
-        loss_cls=dict(type="mmdet.GaussianFocalLoss", reduction="none", loss_weight=1.0),
-        loss_bbox=dict(type="mmdet.L1Loss", reduction="mean", loss_weight=0.25),
-        norm_bbox=True,
-        tasks=[
-            dict(num_class=5, class_names=["car", "truck", "bus", "bicycle", "pedestrian"]),
-        ],
-        # sigmoid(-4.595) = 0.01 for initial small values
-        separate_head=dict(type="CustomSeparateHead", init_bias=-4.595, final_kernel=1),
-        train_cfg=dict(
-            out_size_factor=out_size_factor,
-            dense_reg=1,
-            gaussian_overlap=0.1,
-            max_objs=500,
-            min_radius=2,
-            # (Reg x 2, height x 1, dim 3, rot x 2, vel x 2)
-            code_weights=[1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 0.2, 0.2],
-            grid_size=grid_size,
-            voxel_size=voxel_size,
-            point_cloud_range=point_cloud_range,
-        ),
-        test_cfg=dict(
-            nms_type="circle",
-            min_radius=[1.0],
-            post_max_size=100,
-            grid_size=grid_size,
-            out_size_factor=out_size_factor,
-            pc_range=point_cloud_range,
-            voxel_size=voxel_size,
-            # No filter by range
-            post_center_limit_range=[-200.0, -200.0, -10.0, 200.0, 200.0, 10.0],
-            # nms_type="rotate",
-            # post_center_limit_range=[-90.0, -90.0, -10.0, 90.0, 90.0, 10.0],
-            # score_threshold=0.1,
-            # nms_thr=0.2,
-            # pre_max_size=1000,
-            # post_max_size=100,
-        ),
-    ),
+    # bbox_head=dict(
+    #     type="CenterHead",
+    #     # in_channels=sum([128, 128, 128]),
+    #     in_channels=sum([256, 256]),
+    #     # (output_channel_size, num_conv_layers)
+    #     common_heads=dict(
+    #         reg=(2, 2),
+    #         height=(1, 2),
+    #         dim=(3, 2),
+    #         rot=(2, 2),
+    #         vel=(2, 2),
+    #     ),
+    #     bbox_coder=dict(
+    #         type="CenterPointBBoxCoder",
+    #         max_num=500,
+    #         score_threshold=0.1,
+    #         code_size=9,
+    #         voxel_size=voxel_size,
+    #         pc_range=point_cloud_range,
+    #         post_center_range=[-200.0, -200.0, -10.0, 200.0, 200.0, 10.0],
+    #         out_size_factor=out_size_factor,
+    #     ),
+    #     share_conv_channel=64,
+    #     loss_cls=dict(type="mmdet.GaussianFocalLoss", reduction="none", loss_weight=1.0),
+    #     loss_bbox=dict(type="mmdet.L1Loss", reduction="mean", loss_weight=0.25),
+    #     norm_bbox=True,
+    #     tasks=[
+    #         dict(num_class=5, class_names=["car", "truck", "bus", "bicycle", "pedestrian"]),
+    #     ],
+    #     # sigmoid(-4.595) = 0.01 for initial small values
+    #     separate_head=dict(type="CustomSeparateHead", init_bias=-4.595, final_kernel=1),
+    #     train_cfg=dict(
+    #         out_size_factor=out_size_factor,
+    #         dense_reg=1,
+    #         gaussian_overlap=0.1,
+    #         max_objs=500,
+    #         min_radius=2,
+    #         # (Reg x 2, height x 1, dim 3, rot x 2, vel x 2)
+    #         code_weights=[1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 0.2, 0.2],
+    #         grid_size=grid_size,
+    #         voxel_size=voxel_size,
+    #         point_cloud_range=point_cloud_range,
+    #     ),
+    #     test_cfg=dict(
+    #         nms_type="circle",
+    #         min_radius=[1.0],
+    #         post_max_size=100,
+    #         grid_size=grid_size,
+    #         out_size_factor=out_size_factor,
+    #         pc_range=point_cloud_range,
+    #         voxel_size=voxel_size,
+    #         # No filter by range
+    #         post_center_limit_range=[-200.0, -200.0, -10.0, 200.0, 200.0, 10.0],
+    #         # nms_type="rotate",
+    #         # post_center_limit_range=[-90.0, -90.0, -10.0, 90.0, 90.0, 10.0],
+    #         # score_threshold=0.1,
+    #         # nms_thr=0.2,
+    #         # pre_max_size=1000,
+    #         # post_max_size=100,
+    #     ),
+    # ),
     # model training and testing settings
     # train_cfg=dict(
     #     pts=dict(
@@ -247,29 +247,31 @@ model = dict(
     #         # post_max_size=100,
     #     )
     # fusion_layer=dict(type="ConvFuser", in_channels=[80, 256], out_channels=256),
-    # bbox_head=dict(
-    #     num_proposals=num_proposals,
-    #     class_names=_base_.class_names,  # Use class names to identify the correct class indices
-    #     train_cfg=dict(
-    #         point_cloud_range=point_cloud_range,
-    #         grid_size=grid_size,
-    #         voxel_size=voxel_size,
-    #         code_weights=[1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 0.2, 0.2],
-	# 					out_size_factor=8,
-    #     ),
-    #     test_cfg=dict(
-    #         dataset="t4datasets",
-    #         grid_size=grid_size,
-    #         voxel_size=voxel_size[0:2],
-    #         pc_range=point_cloud_range[0:2],
-	# 					out_size_factor=8,
-    #     ),
-    #     bbox_coder=dict(
-    #         pc_range=point_cloud_range[0:2],
-    #         voxel_size=voxel_size[0:2],
-	# 					out_size_factor=8,
-    #     ),
-    # ),
+    bbox_head=dict(
+        num_proposals=num_proposals,
+        class_names=_base_.class_names,  # Use class names to identify the correct class indices
+        train_cfg=dict(
+            point_cloud_range=point_cloud_range,
+            grid_size=grid_size,
+            voxel_size=voxel_size,
+            code_weights=[1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 0.2, 0.2],
+			out_size_factor=8,
+            pos_weight=3.0
+        ),
+        test_cfg=dict(
+            dataset="t4datasets",
+            grid_size=grid_size,
+            voxel_size=voxel_size[0:2],
+            pc_range=point_cloud_range[0:2],
+			out_size_factor=8,
+        ),
+        bbox_coder=dict(
+            pc_range=point_cloud_range[0:2],
+            voxel_size=voxel_size[0:2],
+			out_size_factor=8,
+            score_threshold=0.10,
+        ),
+    ),
     # Lidar pipeline
     # pts_voxel_encoder=dict(num_features=lidar_feature_dims),
 )
@@ -388,8 +390,8 @@ train_dataloader = dict(
         modality=input_modality,
         backend_args=backend_args,
         data_root=data_root,
-        ann_file=info_directory_path + _base_.info_train_file_name,
-        # ann_file=info_directory_path + _base_.info_val_file_name,
+        # ann_file=info_directory_path + _base_.info_train_file_name,
+        ann_file=info_directory_path + _base_.info_val_file_name,
         metainfo=_base_.metainfo,
         class_names=_base_.class_names,
         test_mode=False,
@@ -526,7 +528,7 @@ test_cfg = dict()
 optim_wrapper = dict(
     type="OptimWrapper",
     optimizer=dict(type="AdamW", lr=lr, weight_decay=0.01),
-    clip_grad=dict(max_norm=5.0, norm_type=2),
+    clip_grad=dict(max_norm=35.0, norm_type=2),
 )
 
 # Default setting for scaling LR automatically
