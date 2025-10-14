@@ -109,8 +109,7 @@ def check_bbox_visibility_in_image(lidar2cam, cam2img, bboxes, labels, img_shape
     C, H, W = img_shape
     is_visible = []
 
-    for bbox_std, bbox, label in zip(bboxes, [b.corners for b in bboxes], labels):
-        # Project corners + center to image space
+    for bbox in bboxes.corners:
         all_points = np.concatenate([bbox, bbox.mean(0).reshape(1, 3)], axis=0)
         corners_img, valid_mask = project_to_image(all_points, lidar2cam, cam2img)
         projected_center = corners_img[-1]
@@ -172,7 +171,7 @@ class StreamPETRLoadAnnotations2D(BaseTransform):
 @TRANSFORMS.register_module()
 class Filter3DBoxesinBlindSpot(BaseTransform):
 
-    def __init__(self, visibility=0.05, *args, **kwargs):
+    def __init__(self, visibility=0.1, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.visibility = visibility
 
@@ -185,8 +184,10 @@ class Filter3DBoxesinBlindSpot(BaseTransform):
                 results["gt_bboxes_3d"],
                 results["gt_labels_3d"],
                 results["img"][i].shape,
+                visibility=self.visibility,
             )
             visibility_mask.append(is_visible)
-        visibility_mask = np.stack(visibility_mask).mean(0)
-
+        visibility_mask = np.stack(visibility_mask).mean(0) > 0 # visible in at least one view
+        results["gt_bboxes_3d"] = results["gt_bboxes_3d"][visibility_mask]
+        results["gt_labels_3d"] = results["gt_labels_3d"][visibility_mask]
         return results
