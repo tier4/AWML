@@ -414,7 +414,7 @@ default_hooks = dict(
 env_cfg = dict(
     cudnn_benchmark=False,
     mp_cfg=dict(mp_start_method="fork", opencv_num_threads=0),
-    dist_cfg=dict(backend="nccl", timeout=3600*3),
+    dist_cfg=dict(backend="nccl", timeout=3600 * 3),
 )  # Since we are doing inference with batch_size=1, it can be slow so timeout needs to be increased
 
 sync_bn = "torch"

@@ -187,7 +187,7 @@ class Filter3DBoxesinBlindSpot(BaseTransform):
                 visibility=self.visibility,
             )
             visibility_mask.append(is_visible)
-        visibility_mask = np.stack(visibility_mask).mean(0) > 0 # visible in at least one view
+        visibility_mask = np.stack(visibility_mask).mean(0) > 0  # visible in at least one view
         results["gt_bboxes_3d"] = results["gt_bboxes_3d"][visibility_mask]
         results["gt_labels_3d"] = results["gt_labels_3d"][visibility_mask]
         return results
