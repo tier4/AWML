@@ -51,7 +51,7 @@ num_workers = 32
 val_interval = 5
 max_epochs = 30
 work_dir = (
-    "work_dirs/centerpoint_2_3_rfs/" + _base_.dataset_type + "/second_secfpn_4xb16_121m_j6gen2_base_high_resolution/"
+    "work_dirs/centerpoint_2_3_rfs/" + _base_.dataset_type + "/second_secfpn_4xb16_121m_j6gen2_base_high_resolution_reload/"
 )
 
 train_pipeline = [
