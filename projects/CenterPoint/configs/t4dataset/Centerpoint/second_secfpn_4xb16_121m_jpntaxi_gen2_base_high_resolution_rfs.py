@@ -1,6 +1,6 @@
 _base_ = [
     "../../../../../autoware_ml/configs/detection3d/default_runtime.py",
-    "../../../../../autoware_ml/configs/detection3d/dataset/t4dataset/j6gen2_base.py",
+    "../../../../../autoware_ml/configs/detection3d/dataset/t4dataset/jpntaxi_gen2_base.py",
     "../../default/second_secfpn_base.py",
 ]
 custom_imports = dict(imports=["projects.CenterPoint.models"], allow_failed_imports=False)
@@ -51,7 +51,7 @@ num_workers = 32
 val_interval = 5
 max_epochs = 30
 work_dir = (
-    "work_dirs/centerpoint_2_3_rfs/" + _base_.dataset_type + "/second_secfpn_4xb16_121m_j6gen2_base_high_resolution_reload/"
+    "work_dirs/centerpoint_2_3_rfs/" + _base_.dataset_type + "/second_secfpn_4xb16_121m_jpntaxi_gen2_base_high_resolution/"
 )
 
 train_pipeline = [
