@@ -8,7 +8,7 @@ custom_imports["imports"] += _base_.custom_imports["imports"]
 
 # user setting
 data_root = "data/t4dataset/"
-info_directory_path = "info/user_name/"
+info_directory_path = "info/kokseang_2_3_fixed/"
 train_gpu_size = 4
 train_batch_size = 8
 test_batch_size = 2
@@ -39,20 +39,29 @@ image_size = [256, 704]
 num_workers = 32
 lidar_sweep_dims = [0, 1, 2, 4]  # x, y, z, time_lag
 lidar_feature_dims = 4
+camera_order = ["CAM_FRONT", "CAM_FRONT_LEFT", "CAM_FRONT_RIGHT", "CAM_BACK_LEFT", "CAM_BACK_RIGHT"]
 
 model = dict(
     type="BEVFusion",
+    voxelize_cfg=dict(
+        max_num_points=max_num_points,
+    	voxel_size=voxel_size,
+    	point_cloud_range=point_cloud_range,
+    	max_voxels=max_voxels,
+    	deterministic=True,
+    	voxelize_reduce=True,
+    ),
     data_preprocessor=dict(
         type="Det3DDataPreprocessor",
         pad_size_divisor=32,
-        voxelize_cfg=dict(
-            max_num_points=max_num_points,
-            voxel_size=voxel_size,
-            point_cloud_range=point_cloud_range,
-            max_voxels=max_voxels,
-            deterministic=True,
-            voxelize_reduce=True,
-        ),
+        # voxelize_cfg=dict(
+        #     max_num_points=max_num_points,
+        #     voxel_size=voxel_size,
+        #     point_cloud_range=point_cloud_range,
+        #     max_voxels=max_voxels,
+        #     deterministic=True,
+        #     voxelize_reduce=True,
+        # ),
     ),
     pts_middle_encoder=dict(sparse_shape=grid_size, in_channels=lidar_feature_dims),
     bbox_head=dict(
@@ -73,6 +82,7 @@ model = dict(
         bbox_coder=dict(
             pc_range=point_cloud_range[0:2],
             voxel_size=voxel_size[0:2],
+            score_threshold=0.1,
         ),
     ),
     # Lidar pipeline
@@ -188,8 +198,6 @@ test_pipeline = [
     ),
 ]
 
-filter_cfg = dict(filter_frames_with_missing_image=True)
-
 train_dataloader = dict(
     batch_size=train_batch_size,
     num_workers=num_workers,
@@ -207,7 +215,6 @@ train_dataloader = dict(
         test_mode=False,
         data_prefix=_base_.data_prefix,
         box_type_3d="LiDAR",
-        filter_cfg=filter_cfg,
     ),
 )
 
@@ -334,7 +341,7 @@ test_cfg = dict()
 optim_wrapper = dict(
     type="OptimWrapper",
     optimizer=dict(type="AdamW", lr=lr, weight_decay=0.01),
-    clip_grad=dict(max_norm=35, norm_type=2),
+    clip_grad=dict(max_norm=35.0, norm_type=2),
 )
 
 # Default setting for scaling LR automatically

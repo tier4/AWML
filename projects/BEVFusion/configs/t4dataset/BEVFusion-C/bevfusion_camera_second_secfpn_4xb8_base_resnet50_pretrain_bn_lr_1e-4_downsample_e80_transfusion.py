@@ -256,7 +256,7 @@ model = dict(
             voxel_size=voxel_size,
             code_weights=[1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 0.2, 0.2],
 			out_size_factor=8,
-            pos_weight=3.0
+            pos_weight=1.0
         ),
         test_cfg=dict(
             dataset="t4datasets",

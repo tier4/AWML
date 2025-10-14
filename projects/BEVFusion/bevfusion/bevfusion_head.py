@@ -139,25 +139,25 @@ class BEVFusionHead(nn.Module):
         for i in range(self.num_decoder_layers):
             heads = copy.deepcopy(common_heads)
             heads.update(dict(heatmap=(self.num_classes, num_heatmap_convs)))
-            # self.prediction_heads.append(
-            #     SeparateHead(
-            #         hidden_channel,
-            #         heads,
-            #         conv_cfg=conv_cfg,
-            #         norm_cfg=norm_cfg,
-            #         bias=bias,
-            #     )
-            # )
             self.prediction_heads.append(
-                CustomSeparateHead(
+                SeparateHead(
                     hidden_channel,
                     heads,
                     conv_cfg=conv_cfg,
                     norm_cfg=norm_cfg,
                     bias=bias,
-                    init_bias=-4.595
                 )
             )
+            # self.prediction_heads.append(
+            #     CustomSeparateHead(
+            #         hidden_channel,
+            #         heads,
+            #         conv_cfg=conv_cfg,
+            #         norm_cfg=norm_cfg,
+            #         bias=bias,
+            #         init_bias=-4.595
+            #     )
+            # )
 
         self.init_weights()
         self._init_assigner_sampler()
