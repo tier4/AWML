@@ -7,19 +7,19 @@
   - image_size: (320, 800)
   - images: `CAM_FRONT, CAM_BACK, CAM_FRONT_LEFT, CAM_BACK_LEFT, CAM_FRONT_RIGHT, CAM_BACK_RIGHT`
 
-| Object Class (<50m)  | AP     | 
+| Object Class (<50m)  | AP     |
 |----------------------|--------|
-| MEAN                 | 0.469  | 
-| car                  | 0.636  | 
-| truck                | 0.421  | 
-| bus                  | 0.483  | 
-| trailer              | 0.300  | 
-| construction_vehicle | 0.145  | 
-| pedestrian           | 0.541  | 
-| motorcycle           | 0.456  | 
-| bicycle              | 0.462  | 
-| traffic_cone         | 0.646  | 
-| barrier              | 0.607  | 
+| MEAN                 | 0.469  |
+| car                  | 0.636  |
+| truck                | 0.421  |
+| bus                  | 0.483  |
+| trailer              | 0.300  |
+| construction_vehicle | 0.145  |
+| pedestrian           | 0.541  |
+| motorcycle           | 0.456  |
+| bicycle              | 0.462  |
+| traffic_cone         | 0.646  |
+| barrier              | 0.607  |
 
 ## Release
 ### StreamPETR Nuscenes Baseline
@@ -41,12 +41,12 @@
   - Frame count: 6019
 
 ```
-mAP: 0.4697                                                                                                                                                                     
+mAP: 0.4697  
 mATE: 0.6437
 mASE: 0.2618
 mAOE: 0.3879
 mAVE: 0
-mAP: 0.4697                                                                                                                                                                     
+mAP: 0.4697  
 mATE: 0.6437
 mASE: 0.2618
 mAOE: 0.3879
@@ -56,34 +56,34 @@ NDS: 0.5568
 Eval time: 134.7s
 
 Per-class results:
-Object Class            AP      ATE     ASE     AOE     AVE     AAE   
-car                     0.636   0.457   0.146   0.065   0.299   0.199 
-truck                   0.421   0.655   0.201   0.077   0.233   0.207 
-bus                     0.483   0.728   0.201   0.095   0.529   0.322 
-trailer                 0.300   0.930   0.224   0.588   0.186   0.153 
-construction_vehicle    0.145   0.972   0.476   1.072   0.134   0.355 
-pedestrian              0.541   0.616   0.282   0.424   0.330   0.152 
-motorcycle              0.456   0.661   0.247   0.428   0.419   0.190 
-bicycle                 0.462   0.550   0.257   0.608   0.179   0.009 
-traffic_cone            0.646   0.425   0.312   nan     nan     nan   
-barrier                 0.607   0.442   0.272   0.134   nan     nan   
+Object Class            AP      ATE     ASE     AOE     AVE     AAE  
+car                     0.636   0.457   0.146   0.065   0.299   0.199
+truck                   0.421   0.655   0.201   0.077   0.233   0.207
+bus                     0.483   0.728   0.201   0.095   0.529   0.322
+trailer                 0.300   0.930   0.224   0.588   0.186   0.153
+construction_vehicle    0.145   0.972   0.476   1.072   0.134   0.355
+pedestrian              0.541   0.616   0.282   0.424   0.330   0.152
+motorcycle              0.456   0.661   0.247   0.428   0.419   0.190
+bicycle                 0.462   0.550   0.257   0.608   0.179   0.009
+traffic_cone            0.646   0.425   0.312   nan     nan     nan  
+barrier                 0.607   0.442   0.272   0.134   nan     nan  
 .2885
 mAAE: 0.1983
 NDS: 0.5568
 Eval time: 134.7s
 
 Per-class results:
-Object Class            AP      ATE     ASE     AOE     AVE     AAE   
-car                     0.636   0.457   0.146   0.065   0.299   0.199 
-truck                   0.421   0.655   0.201   0.077   0.233   0.207 
-bus                     0.483   0.728   0.201   0.095   0.529   0.322 
-trailer                 0.300   0.930   0.224   0.588   0.186   0.153 
-construction_vehicle    0.145   0.972   0.476   1.072   0.134   0.355 
-pedestrian              0.541   0.616   0.282   0.424   0.330   0.152 
-motorcycle              0.456   0.661   0.247   0.428   0.419   0.190 
-bicycle                 0.462   0.550   0.257   0.608   0.179   0.009 
-traffic_cone            0.646   0.425   0.312   nan     nan     nan   
-barrier                 0.607   0.442   0.272   0.134   nan     nan   
+Object Class            AP      ATE     ASE     AOE     AVE     AAE  
+car                     0.636   0.457   0.146   0.065   0.299   0.199
+truck                   0.421   0.655   0.201   0.077   0.233   0.207
+bus                     0.483   0.728   0.201   0.095   0.529   0.322
+trailer                 0.300   0.930   0.224   0.588   0.186   0.153
+construction_vehicle    0.145   0.972   0.476   1.072   0.134   0.355
+pedestrian              0.541   0.616   0.282   0.424   0.330   0.152
+motorcycle              0.456   0.661   0.247   0.428   0.419   0.190
+bicycle                 0.462   0.550   0.257   0.608   0.179   0.009
+traffic_cone            0.646   0.425   0.312   nan     nan     nan  
+barrier                 0.607   0.442   0.272   0.134   nan     nan  
 ```
 
 </details>
