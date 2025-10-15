@@ -288,11 +288,11 @@ train_pipeline = [
     dict(
         type="ImageAug3D",
         final_dim=image_size,
-        resize_lim=0.02,
+        resize_lim=0.0,
         bot_pct_lim=[0.0, 0.0],
         # rot_lim=[-5.4, 5.4],
         rot_lim=[0.0, 0.0],
-        rand_flip=False,
+        rand_flip=True,
         is_train=True,
         # is_train=False,
     ),
