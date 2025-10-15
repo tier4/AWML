@@ -6,6 +6,8 @@ Filter objects provides components for filtering and ensemble processing of 3D o
 - **ThresholdFilter**: Confidence-based filtering of 3D object detection results
 - **NMSEnsembleModel**: Non-Maximum Suppression ensemble for multiple model predictions
 
+Please check [test](../filter_objects/test/README.md), too. This shows the implementation detail.
+
 ## filter_objetcs
 
 ### Design
