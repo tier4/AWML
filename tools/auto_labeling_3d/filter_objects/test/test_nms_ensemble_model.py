@@ -18,7 +18,7 @@ class TestNMSModelInstances:
 
     def test_filter_and_weight_instances_basic(self, sample_classes):
         """Test basic filtering and weighting of instances in NMSModelInstances.
-        
+
         Verifies: Instance filtering respects class membership and score weighting is applied
         Expected: Only instances of specified classes are kept with scores adjusted by model weight
         """
@@ -51,7 +51,7 @@ class TestNMSModelInstances:
 
     def test_filter_and_weight_instances_empty_result(self, sample_classes):
         """Test filtering behavior when no instances match target label criteria.
-        
+
         Verifies: Proper handling when no instances belong to target classes
         Expected: Empty arrays returned with correct shapes for scores and boxes
         """
@@ -74,7 +74,7 @@ class TestNMSModelInstances:
 
     def test_filter_and_weight_instances_no_instances(self, sample_classes):
         """Test filtering behavior when input instances list is completely empty.
-        
+
         Verifies: Proper handling of empty input data structure
         Expected: Empty arrays returned with appropriate data types and shapes
         """
@@ -98,7 +98,7 @@ class TestNMSEnsembleModel:
 
     def test_init(self, mock_logger, ensemble_settings):
         """Test NMSEnsembleModel initialization with valid configuration settings.
-        
+
         Verifies: Proper initialization of ensemble settings and logger assignment
         Expected: All configuration parameters are correctly stored and accessible
         """
@@ -110,7 +110,7 @@ class TestNMSEnsembleModel:
 
     def test_ensemble_single_model(self, mock_logger, ensemble_settings, sample_ensemble_results):
         """Test ensemble behavior with only one model result as input.
-        
+
         Verifies: Single model results pass through unchanged when no ensemble is needed
         Expected: Original model predictions are returned without modification
         """
@@ -124,7 +124,7 @@ class TestNMSEnsembleModel:
 
     def test_ensemble_basic_functionality(self, mock_logger, sample_ensemble_results):
         """Test basic ensemble functionality with multiple model predictions.
-        
+
         Verifies: Multiple model results are properly combined using NMS algorithm
         Expected: Overlapping predictions are merged and confidence scores weighted appropriately
         """
@@ -155,7 +155,7 @@ class TestNMSEnsembleModel:
 
     def test_ensemble_with_overlapping_predictions(self, mock_logger, sample_classes):
         """Test ensemble behavior with overlapping predictions that require NMS merging.
-        
+
         Verifies: Overlapping bounding boxes from different models are properly merged
         Expected: Duplicate/overlapping detections are removed and best predictions kept
         """
@@ -211,7 +211,7 @@ class TestNMSEnsembleModel:
 
     def test_ensemble_label_groups(self, mock_logger, sample_classes):
         """Test ensemble_label_groups functionality for selective NMS application.
-        
+
         Verifies: NMS is applied only within specified label groups, not across all classes
         Expected: Objects of different groups maintain independence despite spatial overlap
         """
@@ -275,7 +275,7 @@ class TestNMSEnsembleModel:
 
     def test_ensemble_empty_predictions(self, mock_logger, ensemble_settings, sample_classes):
         """Test ensemble behavior when all model predictions are empty.
-        
+
         Verifies: Proper handling of completely empty prediction sets from all models
         Expected: Empty result structure is returned without errors
         """
@@ -295,7 +295,7 @@ class TestNMSEnsembleModel:
 
     def test_ensemble_partial_empty_predictions(self, mock_logger, ensemble_settings, sample_classes):
         """Test ensemble behavior when some models have empty predictions while others don't.
-        
+
         Verifies: Proper handling of mixed empty and non-empty prediction sets
         Expected: Non-empty predictions are kept and processed normally
         """
@@ -323,7 +323,7 @@ class TestNMSEnsembleModel:
 
     def test_weight_mismatch_assertion(self, mock_logger, sample_ensemble_results):
         """Test error handling when weight count doesn't match model count.
-        
+
         Verifies: Proper validation of weight-to-model correspondence
         Expected: AssertionError raised when weights and models counts mismatch
         """
@@ -340,7 +340,7 @@ class TestNMSEnsembleModel:
 
     def test_extreme_iou_thresholds(self, mock_logger, sample_classes):
         """Test ensemble behavior with extreme IoU threshold values.
-        
+
         Verifies: Ensemble handles very low/high IoU thresholds appropriately
         Expected: Non-overlapping boxes are preserved regardless of threshold value
         """
@@ -393,7 +393,7 @@ class TestNMSHelperFunctions:
 
     def test_calculate_iou_identical_boxes(self):
         """Test IoU calculation for perfectly identical bounding boxes.
-        
+
         Verifies: IoU correctly computed as 1.0 for boxes with same dimensions and position
         Expected: IoU value of exactly 1.0 for identical boxes
         """
@@ -407,7 +407,7 @@ class TestNMSHelperFunctions:
 
     def test_calculate_iou_no_overlap(self):
         """Test IoU calculation for completely non-overlapping bounding boxes.
-        
+
         Verifies: IoU correctly computed as 0.0 for boxes with no spatial intersection
         Expected: IoU value of exactly 0.0 for non-overlapping boxes
         """
@@ -421,7 +421,7 @@ class TestNMSHelperFunctions:
 
     def test_calculate_iou_partial_overlap(self):
         """Test IoU calculation for partially overlapping bounding boxes.
-        
+
         Verifies: IoU correctly computed for boxes with partial spatial intersection
         Expected: IoU value between 0.0 and 1.0 representing intersection/union ratio
         """
@@ -437,7 +437,7 @@ class TestNMSHelperFunctions:
 
     def test_calculate_iou_multiple_boxes(self):
         """Test IoU calculation with one box compared against multiple target boxes.
-        
+
         Verifies: IoU correctly computed for single box versus array of comparison boxes
         Expected: Array of IoU values corresponding to each comparison box
         """
@@ -459,7 +459,7 @@ class TestNMSHelperFunctions:
 
     def test_nms_indices_basic(self):
         """Test basic NMS indices selection functionality with overlapping boxes.
-        
+
         Verifies: NMS correctly suppresses lower-confidence overlapping boxes
         Expected: Higher-confidence boxes are kept while overlapping lower-confidence ones are removed
         """
@@ -484,7 +484,7 @@ class TestNMSHelperFunctions:
 
     def test_nms_indices_no_overlap(self):
         """Test NMS behavior when no bounding boxes overlap spatially.
-        
+
         Verifies: All boxes are kept when there are no overlapping detections
         Expected: All input boxes retained regardless of confidence scores
         """
@@ -506,7 +506,7 @@ class TestNMSHelperFunctions:
 
     def test_nms_indices_single_box(self):
         """Test NMS behavior with only one bounding box as input.
-        
+
         Verifies: Single box input is handled correctly without errors
         Expected: The single box is always kept in the result
         """
@@ -521,7 +521,7 @@ class TestNMSHelperFunctions:
 
     def test_nms_indices_empty_input(self):
         """Test NMS behavior with completely empty input arrays.
-        
+
         Verifies: Empty input is handled gracefully without errors
         Expected: Empty list returned for empty input
         """
@@ -546,7 +546,7 @@ class TestNMSHelperFunctions:
     )
     def test_nms_indices_various_thresholds(self, iou_threshold, expected_kept):
         """Test NMS behavior across different IoU threshold values using parametrization.
-        
+
         Verifies: Different IoU thresholds produce expected suppression behavior
         Expected: Number of kept boxes varies predictably with threshold strictness
         """
