@@ -8,8 +8,8 @@ from mmdet3d.registry import MODELS
 from torch import Tensor, nn
 import torch.distributed as dist
 
-from .visualize import save_bev_single
-# from .ops import bev_pool
+# from .visualize import save_bev_single
+from .ops import bev_pool
 
 
 def gen_dx_bx(xbound, ybound, zbound):
@@ -154,14 +154,14 @@ class BaseViewTransform(nn.Module):
         self.D = self.frustum.shape[0]
         self.fp16_enabled = False
 
-        if dist.is_available() and dist.is_initialized():
-          self.main_gpu = dist.get_rank() == 0
-        else:
-          self.main_gpu = False 
+        # if dist.is_available() and dist.is_initialized():
+        #   self.main_gpu = dist.get_rank() == 0
+        # else:
+        #   self.main_gpu = False 
         
-        if self.main_gpu:
-          self.debug_folder = Path(f"./work_dirs/bev_debug_{uuid.uuid4().hex[:8]}")
-          self.debug_folder.mkdir(exist_ok=True, parents=True)
+        # if self.main_gpu:
+        #   self.debug_folder = Path(f"./work_dirs/bev_debug_{uuid.uuid4().hex[:8]}")
+        #   self.debug_folder.mkdir(exist_ok=True, parents=True)
 
     def create_frustum(self):
         iH, iW = self.image_size
@@ -247,6 +247,10 @@ class BaseViewTransform(nn.Module):
         geom_feats = geom_feats[kept]
 
         ranks = geom_feats[:, 0] * (W * D * B) + geom_feats[:, 1] * (D * B) + geom_feats[:, 2] * B + geom_feats[:, 3]
+        # ranks = geom_feats[:, 0] * (self.nx[1] * self.nx[2] * B) \
+        #         + geom_feats[:, 1] * (self.nx[2] * B) \
+        #         + geom_feats[:, 2] * B \
+        #         + geom_feats[:, 3]
         indices = ranks.argsort()
 
         ranks = ranks[indices]

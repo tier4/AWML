@@ -13,7 +13,7 @@ train_gpu_size = 4
 train_batch_size = 8
 test_batch_size = 2
 val_interval = 10
-max_epochs = 150
+max_epochs = 100
 backend_args = None
 
 # range setting
@@ -38,7 +38,7 @@ input_modality = dict(
 sweeps_num = 1
 max_num_points = 10
 max_voxels = [120000, 160000]
-num_proposals = 300
+num_proposals = 500
 # image_size = [384, 576]  # height, width
 image_size = [480, 640]  # height, width
 num_workers = 32
@@ -130,7 +130,7 @@ model = dict(
         upsample_cfg=dict(mode="bilinear", align_corners=False),
     ),
     view_transform=dict(
-        type="LSSTransform",
+        type="NonLinearLSSTransform",
         in_channels=256,
         out_channels=256,
         image_size=image_size,
@@ -292,8 +292,8 @@ train_pipeline = [
         bot_pct_lim=[0.0, 0.0],
         rot_lim=[-5.4, 5.4],
         rand_flip=True,
-        is_train=True,
-        # is_train=False,
+        # is_train=True,
+        is_train=False,
     ),
     # dict(type="PointsRangeFilter", point_cloud_range=point_cloud_range),
     dict(type="ObjectRangeFilter", point_cloud_range=point_cloud_range),
@@ -470,7 +470,7 @@ test_evaluator = dict(
 
 # learning rate
 # lr = 0.0001
-lr = 1e-4
+lr = 5e-5
 param_scheduler = [
     # learning rate scheduler
     # During the first (max_epochs * 0.4) epochs, learning rate increases from 0 to lr * 10
@@ -528,7 +528,7 @@ test_cfg = dict()
 optim_wrapper = dict(
     type="OptimWrapper",
     optimizer=dict(type="AdamW", lr=lr, weight_decay=0.01),
-    clip_grad=dict(max_norm=35.0, norm_type=2),
+    clip_grad=dict(max_norm=5.0, norm_type=2),
 )
 
 # Default setting for scaling LR automatically
@@ -540,3 +540,5 @@ auto_scale_lr = dict(enable=False, base_batch_size=train_gpu_size * train_batch_
 # Only set if the number of train_gpu_size more than 1
 if train_gpu_size > 1:
     sync_bn = "torch"
+
+load_from = "work_dirs/bevfusion_lidar_voxel_second_secfpn_4xb8_base_ped_no_pool/epoch_46.pth"

@@ -12,8 +12,8 @@ info_directory_path = "info/kokseang_2_3/"
 train_gpu_size = 4
 train_batch_size = 8
 test_batch_size = 2
-val_interval = 10
-max_epochs = 150
+val_interval = 5
+max_epochs = 50
 backend_args = None
 
 # range setting
@@ -38,7 +38,7 @@ input_modality = dict(
 sweeps_num = 1
 max_num_points = 10
 max_voxels = [120000, 160000]
-num_proposals = 300
+num_proposals = 500
 # image_size = [384, 576]  # height, width
 image_size = [480, 640]  # height, width
 num_workers = 32
@@ -65,39 +65,39 @@ model = dict(
         rgb_to_bgr=False
     ),
     pts_middle_encoder=None,
-    # img_backbone=dict(
-    #     type="mmdet.SwinTransformer",
-    #     embed_dims=96,
-    #     depths=[2, 2, 6, 2],
-    #     num_heads=[3, 6, 12, 24],
-    #     window_size=7,
-    #     mlp_ratio=4,
-    #     qkv_bias=True,
-    #     qk_scale=None,
-    #     drop_rate=0.0,
-    #     attn_drop_rate=0.0,
-    #     drop_path_rate=0.2,
-    #     patch_norm=True,
-    #     out_indices=[1, 2, 3],
-    #     with_cp=False,
-    #     convert_weights=True,
-    #     init_cfg=dict(
-    #         type="Pretrained",
-    #         checkpoint="work_dirs/bevfusion/pretrain/swin_tiny_patch4_window7_224.pth"  # noqa: E251  # noqa: E501
-    #     ),
-    # ),
     img_backbone=dict(
-        pretrained="work_dirs/resnet50/resnet50-11ad3fa6.pth",
-        type="mmdet.ResNet",
-        depth=50,
-        num_stages=4,
-        out_indices=(2, 3),
-        frozen_stages=-1,
-        norm_cfg=dict(type="BN2d", requires_grad=True),
-        norm_eval=False,
+        type="mmdet.SwinTransformer",
+        embed_dims=96,
+        depths=[2, 2, 6, 2],
+        num_heads=[3, 6, 12, 24],
+        window_size=7,
+        mlp_ratio=4,
+        qkv_bias=True,
+        qk_scale=None,
+        drop_rate=0.0,
+        attn_drop_rate=0.0,
+        drop_path_rate=0.2,
+        patch_norm=True,
+        out_indices=[1, 2, 3],
         with_cp=False,
-        style="pytorch",
+        convert_weights=True,
+        init_cfg=dict(
+            type="Pretrained",
+            checkpoint="work_dirs/bevfusion/pretrain/swin_tiny_patch4_window7_224.pth"  # noqa: E251  # noqa: E501
+        ),
     ),
+    # img_backbone=dict(
+    #     pretrained="work_dirs/resnet50/resnet50-11ad3fa6.pth",
+    #     type="mmdet.ResNet",
+    #     depth=50,
+    #     num_stages=4,
+    #     out_indices=(2, 3),
+    #     frozen_stages=-1,
+    #     norm_cfg=dict(type="BN2d", requires_grad=True),
+    #     norm_eval=False,
+    #     with_cp=False,
+    #     style="pytorch",
+    # ),
     # img_backbone=dict(
     #     type="VoVNet",  ###use checkpoint to save memory
     #     spec_name="V-99-eSE",
@@ -121,21 +121,21 @@ model = dict(
     # ),
     img_neck=dict(
         type="GeneralizedLSSFPN",
-        in_channels=[1024, 2048],
+        in_channels=[192, 384, 768],
         out_channels=256,
         start_level=0,
-        num_outs=2,
+        num_outs=3,
         norm_cfg=dict(type="BN2d", requires_grad=True),
         act_cfg=dict(type="ReLU", inplace=True),
         upsample_cfg=dict(mode="bilinear", align_corners=False),
     ),
     view_transform=dict(
-        type="LSSTransform",
+        type="NonLinearLSSTransform",
         in_channels=256,
-        out_channels=256,
+        out_channels=80,
         image_size=image_size,
         # feature_size=[48, 72],
-        feature_size=[30, 40],
+        feature_size=[60, 80],
         xbound=[-122.4, 122.4, 0.68],
         ybound=[-122.4, 122.4, 0.68],
         zbound=[-10.0, 10.0, 20.0],
@@ -143,9 +143,9 @@ model = dict(
         downsample=2,
         # downsample=1,
     ),
-		pts_backbone=dict(
+	pts_backbone=dict(
         type="SECOND",
-        in_channels=256,
+        in_channels=80,
         out_channels=[128, 256],
         layer_nums=[5, 5],
         layer_strides=[1, 2],
@@ -540,3 +540,5 @@ auto_scale_lr = dict(enable=False, base_batch_size=train_gpu_size * train_batch_
 # Only set if the number of train_gpu_size more than 1
 if train_gpu_size > 1:
     sync_bn = "torch"
+
+load_from = "work_dirs/bevfusion_lidar_voxel_second_secfpn_4xb8_base_ped_no_pool/epoch_46.pth"

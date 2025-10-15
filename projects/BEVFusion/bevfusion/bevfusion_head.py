@@ -16,8 +16,6 @@ from mmdet.models.utils import multi_apply
 from mmengine.structures import InstanceData
 from torch import nn
 
-from projects.CenterPoint.models.dense_heads.centerpoint_head import CustomSeparateHead
-
 def clip_sigmoid(x, eps=1e-4):
     y = torch.clamp(x.sigmoid_(), min=eps, max=1 - eps)
     return y
@@ -684,9 +682,9 @@ class BEVFusionHead(nn.Module):
                 center_int = center.to(torch.int32)
 
                 # original
-                draw_heatmap_gaussian(heatmap[gt_labels_3d[idx]], center_int, radius) # noqa: E501
+                # draw_heatmap_gaussian(heatmap[gt_labels_3d[idx]], center_int, radius) # noqa: E501
                 # NOTE: fix
-                # draw_heatmap_gaussian(heatmap[gt_labels_3d[idx]], center_int[[1, 0]], radius)
+                draw_heatmap_gaussian(heatmap[gt_labels_3d[idx]], center_int[[1, 0]], radius)
 
         mean_iou = ious[pos_inds].sum() / max(len(pos_inds), 1)
         return (
@@ -739,12 +737,21 @@ class BEVFusionHead(nn.Module):
         loss_dict = dict()
 
         # compute heatmap loss
-        loss_heatmap = self.loss_heatmap(
-            clip_sigmoid(preds_dict["dense_heatmap"]).float(),
-            heatmap.float(),
-            avg_factor=max(heatmap.eq(1).float().sum().item(), 1),
+        # loss_heatmap = self.loss_heatmap(
+        #     clip_sigmoid(preds_dict["dense_heatmap"]).float(),
+        #     heatmap.float(),
+        #     avg_factor=max(heatmap.eq(1).float().sum().item(), 1),
+        # )
+        # loss_dict["loss_heatmap"] = loss_heatmap
+        dense_heatmap = clip_sigmoid(preds_dict["dense_heatmap"])
+        loss_heatmap_cls: torch.Tensor = self.loss_heatmap(
+            dense_heatmap,
+            heatmap,
         )
-        loss_dict["loss_heatmap"] = loss_heatmap
+        cls_num_pos = heatmap.eq(1).float().sum().item()
+        loss_heatmap_cls = loss_heatmap_cls.sum((0, 2, 3)) / max(cls_num_pos, 1)
+        for cls_i, class_name in enumerate(self.class_names):
+            loss_dict[f"task.loss_heatmap_{class_name}"] = loss_heatmap_cls[cls_i]
 
         # compute loss for each layer
         for idx_layer in range(self.num_decoder_layers if self.auxiliary else 1):
