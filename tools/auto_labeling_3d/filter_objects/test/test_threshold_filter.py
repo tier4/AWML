@@ -12,7 +12,11 @@ class TestThresholdFilter:
     """Test cases for ThresholdFilter class."""
 
     def test_init(self, mock_logger, sample_confidence_thresholds, sample_use_label):
-        """Test ThresholdFilter initialization."""
+        """Test ThresholdFilter initialization with valid parameters.
+        
+        Verifies: Proper initialization of settings and logger assignment
+        Expected: All configuration parameters are correctly stored and accessible
+        """
         filter_obj = ThresholdFilter(
             confidence_thresholds=sample_confidence_thresholds, use_label=sample_use_label, logger=mock_logger
         )
@@ -22,7 +26,11 @@ class TestThresholdFilter:
         assert filter_obj.logger == mock_logger
 
     def test_init_with_duplicate_use_label(self, mock_logger, sample_confidence_thresholds):
-        """Test initialization with duplicate labels in use_label."""
+        """Test ThresholdFilter initialization with duplicate labels in use_label list.
+        
+        Verifies: Proper handling of duplicate labels in use_label parameter
+        Expected: Duplicates are automatically removed and unique labels are preserved
+        """
         use_label_with_duplicates = ["car", "pedestrian", "car", "bicycle"]
         filter_obj = ThresholdFilter(
             confidence_thresholds=sample_confidence_thresholds, use_label=use_label_with_duplicates, logger=mock_logger
@@ -35,7 +43,11 @@ class TestThresholdFilter:
     def test_basic_filtering(
         self, mock_logger, sample_confidence_thresholds, sample_use_label, sample_predicted_result_info
     ):
-        """Test basic filtering functionality."""
+        """Test basic confidence-based filtering functionality.
+        
+        Verifies: Objects are filtered based on confidence thresholds for each class
+        Expected: Only objects meeting confidence requirements are kept in results
+        """
         filter_obj = ThresholdFilter(
             confidence_thresholds=sample_confidence_thresholds, use_label=sample_use_label, logger=mock_logger
         )
@@ -67,7 +79,11 @@ class TestThresholdFilter:
         assert frame2_instances[0]["bbox_score_3d"] == 0.9
 
     def test_use_label_filtering(self, mock_logger, sample_predicted_result_info):
-        """Test filtering by use_label - exclude certain classes."""
+        """Test filtering by use_label parameter to exclude certain classes.
+        
+        Verifies: Only objects from classes specified in use_label are retained
+        Expected: Objects from excluded classes are removed regardless of confidence
+        """
         # Only allow car and pedestrian, exclude bicycle
         confidence_thresholds = {"car": 0.1, "pedestrian": 0.1}  # Very low thresholds
         use_label = ["car", "pedestrian"]
@@ -94,7 +110,11 @@ class TestThresholdFilter:
         assert len(pedestrian_instances) > 0
 
     def test_boundary_values(self, mock_logger, sample_classes):
-        """Test filtering with boundary confidence values."""
+        """Test filtering behavior with boundary confidence values (0.0 and 1.0).
+        
+        Verifies: Correct handling of edge cases with minimum and maximum confidence values
+        Expected: Objects with confidence exactly at threshold are included; boundary behaviors work correctly
+        """
         # Create data with exact threshold values
         confidence_thresholds = {"car": 0.5}
         use_label = ["car"]
@@ -131,7 +151,11 @@ class TestThresholdFilter:
         assert instances[0]["bbox_score_3d"] == 0.5
 
     def test_extreme_thresholds(self, mock_logger, sample_classes):
-        """Test filtering with extreme threshold values (0.0 and 1.0)."""
+        """Test filtering behavior with extreme threshold values (0.0 and 1.0).
+        
+        Verifies: Proper handling of extreme thresholds that should keep all or no objects
+        Expected: Threshold 0.0 keeps all objects; threshold 1.0 keeps only perfect confidence objects
+        """
         test_data = {
             "metainfo": {"classes": sample_classes},
             "data_list": [
@@ -172,7 +196,11 @@ class TestThresholdFilter:
     def test_empty_data(
         self, mock_logger, sample_confidence_thresholds, sample_use_label, empty_predicted_result_info
     ):
-        """Test handling of empty prediction data."""
+        """Test proper handling of empty prediction data structures.
+        
+        Verifies: Filter correctly processes datasets with no predicted instances
+        Expected: Empty data structure is preserved without errors; no filtering occurs
+        """
         filter_obj = ThresholdFilter(
             confidence_thresholds=sample_confidence_thresholds, use_label=sample_use_label, logger=mock_logger
         )
@@ -186,7 +214,11 @@ class TestThresholdFilter:
         assert len(result["data_list"][0]["pred_instances_3d"]) == 0
 
     def test_multiple_frames(self, mock_logger, sample_classes):
-        """Test filtering across multiple frames."""
+        """Test filtering consistency across multiple data frames.
+        
+        Verifies: Filter applies same logic consistently across all frames in dataset
+        Expected: Each frame is processed independently with consistent filtering rules
+        """
         confidence_thresholds = {"car": 0.5}
         use_label = ["car"]
 
@@ -234,7 +266,11 @@ class TestThresholdFilter:
         assert len(result["data_list"][2]["pred_instances_3d"]) == 0
 
     def test_unknown_class_handling(self, mock_logger, sample_classes):
-        """Test handling of classes not in confidence_thresholds."""
+        """Test handling of object classes not defined in confidence_thresholds.
+        
+        Verifies: Proper handling when objects have classes without threshold definitions
+        Expected: Unknown classes are filtered out or handled according to default behavior
+        """
         # Define thresholds only for car, but use_label includes pedestrian
         confidence_thresholds = {"car": 0.5}  # Missing pedestrian
         use_label = ["car", "pedestrian"]
@@ -262,7 +298,11 @@ class TestThresholdFilter:
     def test_filter_statistics_logging(
         self, mock_logger, sample_confidence_thresholds, sample_use_label, sample_predicted_result_info
     ):
-        """Test that filtering statistics are properly logged."""
+        """Test that filtering statistics are properly logged during operation.
+        
+        Verifies: Logger captures filtering statistics including counts and model information
+        Expected: Info messages are logged with original/filtered object counts per frame
+        """
         # Use a mock logger to capture log calls
         mock_logger = Mock(spec=logging.Logger)
 
@@ -297,7 +337,11 @@ class TestThresholdFilter:
         ],
     )
     def test_various_thresholds_parametrized(self, mock_logger, sample_classes, confidence_threshold, expected_kept):
-        """Test filtering with various threshold values using parametrize."""
+        """Test filtering behavior across various threshold values using parametrization.
+        
+        Verifies: Different threshold values produce expected object count results
+        Expected: Number of kept objects matches expected count for each threshold level
+        """
         # Use same threshold for all classes to simplify testing
         confidence_thresholds = {cls: confidence_threshold for cls in sample_classes}
         use_label = sample_classes
@@ -326,7 +370,11 @@ class TestThresholdFilter:
         assert len(instances) == expected_kept
 
     def test_should_filter_instance_private_method(self, mock_logger, sample_confidence_thresholds, sample_use_label):
-        """Test the _should_filter_instance private method behavior indirectly."""
+        """Test the _should_filter_instance private method behavior through public interface.
+        
+        Verifies: Private filtering logic correctly evaluates individual objects
+        Expected: Objects are filtered based on class inclusion and confidence thresholds
+        """
         filter_obj = ThresholdFilter(
             confidence_thresholds=sample_confidence_thresholds, use_label=sample_use_label, logger=mock_logger
         )
