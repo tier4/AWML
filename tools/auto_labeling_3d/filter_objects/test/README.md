@@ -48,18 +48,6 @@ Tests Non-Maximum Suppression ensemble functionality:
 - **IoU Calculation**: Bird's Eye View intersection over union
 - **NMS Algorithm**: Non-maximum suppression with various thresholds
 
-### Visual Test Documentation
-
-#### High IoU Case (Suppression)
-![NMS Ensemble: Overlap Case](../../docs/figs/nms_ensemble_with_overlap.svg)
-
-Shows how overlapping bounding boxes (IoU > threshold) are processed through NMS, with one detection being suppressed while preserving original confidence scores.
-
-#### Low IoU Case (Keep Both)  
-![NMS Ensemble: No Overlap Case](../../docs/figs/nms_ensemble_no_overlap.svg)
-
-Demonstrates how non-overlapping detections (IoU ≤ threshold) are both kept in the final output with original confidence scores preserved.
-
 ## Running Tests
 
 ```bash
