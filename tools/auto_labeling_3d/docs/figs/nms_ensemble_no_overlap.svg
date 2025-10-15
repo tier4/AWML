@@ -1,12 +1,12 @@
 <svg width="800" height="400" xmlns="http://www.w3.org/2000/svg">
   <!-- Background -->
   <rect width="800" height="400" fill="#f8f9fa" stroke="#dee2e6" stroke-width="2"/>
-  
+
   <!-- Title -->
   <text x="400" y="30" text-anchor="middle" font-family="Arial, sans-serif" font-size="20" font-weight="bold" fill="#212529">
     NMS Ensemble: No Overlap Case (IoU ≤ Threshold)
   </text>
-  
+
   <!-- Model 1 -->
   <g>
     <rect x="50" y="70" width="120" height="80" fill="#e3f2fd" stroke="#1976d2" stroke-width="2" rx="10"/>
@@ -14,7 +14,7 @@
     <text x="110" y="115" text-anchor="middle" font-family="Arial, sans-serif" font-size="12" fill="#1976d2">🚗 Score: 0.8</text>
     <text x="110" y="135" text-anchor="middle" font-family="Arial, sans-serif" font-size="12" fill="#1976d2">Weight: 0.5</text>
   </g>
-  
+
   <!-- Model 2 -->
   <g>
     <rect x="50" y="180" width="120" height="80" fill="#f3e5f5" stroke="#7b1fa2" stroke-width="2" rx="10"/>
@@ -22,13 +22,13 @@
     <text x="110" y="225" text-anchor="middle" font-family="Arial, sans-serif" font-size="12" fill="#7b1fa2">🚗 Score: 0.6</text>
     <text x="110" y="245" text-anchor="middle" font-family="Arial, sans-serif" font-size="12" fill="#7b1fa2">Weight: 0.5</text>
   </g>
-  
+
   <!-- Arrow from Model 1 -->
   <path d="M 170 110 L 220 110" stroke="#333" stroke-width="2" marker-end="url(#arrowhead)"/>
-  
+
   <!-- Arrow from Model 2 -->
   <path d="M 170 220 L 220 220" stroke="#333" stroke-width="2" marker-end="url(#arrowhead)"/>
-  
+
   <!-- Weighted Scores -->
   <g>
     <rect x="240" y="70" width="120" height="80" fill="#fff3e0" stroke="#f57c00" stroke-width="2" rx="10"/>
@@ -36,18 +36,18 @@
     <text x="300" y="110" text-anchor="middle" font-family="Arial, sans-serif" font-size="12" fill="#f57c00">🚗 0.4 (0.8 × 0.5)</text>
     <text x="300" y="130" text-anchor="middle" font-family="Arial, sans-serif" font-size="10" fill="#f57c00">Original: 0.8</text>
   </g>
-  
+
   <g>
     <rect x="240" y="180" width="120" height="80" fill="#fff3e0" stroke="#f57c00" stroke-width="2" rx="10"/>
     <text x="300" y="200" text-anchor="middle" font-family="Arial, sans-serif" font-size="12" font-weight="bold" fill="#f57c00">Selection Score</text>
     <text x="300" y="220" text-anchor="middle" font-family="Arial, sans-serif" font-size="12" fill="#f57c00">🚗 0.3 (0.6 × 0.5)</text>
     <text x="300" y="240" text-anchor="middle" font-family="Arial, sans-serif" font-size="10" fill="#f57c00">Original: 0.6</text>
   </g>
-  
+
   <!-- Arrows to NMS -->
   <path d="M 360 110 L 420 140" stroke="#333" stroke-width="2" marker-end="url(#arrowhead)"/>
   <path d="M 360 220 L 420 190" stroke="#333" stroke-width="2" marker-end="url(#arrowhead)"/>
-  
+
   <!-- NMS Process -->
   <g>
     <rect x="440" y="130" width="140" height="100" fill="#e8f5e8" stroke="#388e3c" stroke-width="2" rx="10"/>
@@ -56,11 +56,11 @@
     <text x="510" y="190" text-anchor="middle" font-family="Arial, sans-serif" font-size="12" fill="#388e3c">IoU: 0.2 &lt; 0.5</text>
     <text x="510" y="210" text-anchor="middle" font-family="Arial, sans-serif" font-size="12" fill="#388e3c">→ Keep Both</text>
   </g>
-  
+
   <!-- Arrow to Output -->
   <path d="M 580 160 L 630 110" stroke="#333" stroke-width="2" marker-end="url(#arrowhead)"/>
   <path d="M 580 200 L 630 250" stroke="#333" stroke-width="2" marker-end="url(#arrowhead)"/>
-  
+
   <!-- Output -->
   <g>
     <rect x="650" y="70" width="120" height="80" fill="#ffebee" stroke="#d32f2f" stroke-width="2" rx="10"/>
@@ -68,34 +68,34 @@
     <text x="710" y="110" text-anchor="middle" font-family="Arial, sans-serif" font-size="12" fill="#d32f2f">🚗 Score: 0.8</text>
     <text x="710" y="130" text-anchor="middle" font-family="Arial, sans-serif" font-size="12" fill="#d32f2f">(Original Score)</text>
   </g>
-  
+
   <g>
     <rect x="650" y="210" width="120" height="80" fill="#ffebee" stroke="#d32f2f" stroke-width="2" rx="10"/>
     <text x="710" y="230" text-anchor="middle" font-family="Arial, sans-serif" font-size="14" font-weight="bold" fill="#d32f2f">Output 2</text>
     <text x="710" y="250" text-anchor="middle" font-family="Arial, sans-serif" font-size="12" fill="#d32f2f">🚗 Score: 0.6</text>
     <text x="710" y="270" text-anchor="middle" font-family="Arial, sans-serif" font-size="12" fill="#d32f2f">(Original Score)</text>
   </g>
-  
+
   <!-- IoU Visualization -->
   <g>
     <text x="400" y="310" text-anchor="middle" font-family="Arial, sans-serif" font-size="16" font-weight="bold" fill="#212529">
       IoU Calculation (Bird's Eye View)
     </text>
-    
+
     <!-- Box 1 -->
     <rect x="300" y="330" width="60" height="40" fill="rgba(25, 118, 210, 0.3)" stroke="#1976d2" stroke-width="2"/>
     <text x="330" y="355" text-anchor="middle" font-family="Arial, sans-serif" font-size="10" fill="#1976d2">Box 1</text>
-    
+
     <!-- Box 2 (small overlap with Box 1) -->
     <rect x="350" y="340" width="60" height="40" fill="rgba(123, 31, 162, 0.3)" stroke="#7b1fa2" stroke-width="2"/>
     <text x="380" y="365" text-anchor="middle" font-family="Arial, sans-serif" font-size="10" fill="#7b1fa2">Box 2</text>
-    
+
     <!-- IoU Text -->
     <text x="500" y="350" font-family="Arial, sans-serif" font-size="14" fill="#212529">
       IoU = Intersection / Union = 0.2
     </text>
   </g>
-  
+
   <!-- Arrow marker definition -->
   <defs>
     <marker id="arrowhead" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">

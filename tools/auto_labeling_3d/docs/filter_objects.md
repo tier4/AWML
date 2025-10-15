@@ -86,25 +86,25 @@ class CustomFilter(BaseFilter):
 
     def _should_filter_instance(self, pred_instance_3d: Dict[str, Any], category: str) -> bool:
         ...
-            
+
         # Add your custom filtering criteria
         if this_object_should_be_filtered_out:
             return True
 
         return False
-    
+
     def filter(self, predicted_result_info: Dict[str, Any], info_name: str) -> Dict[str, Any]:
-        # ... initialize counters and iterate through frames ...        
+        # ... initialize counters and iterate through frames ...  
         for pred_instance_3d in frame_info["pred_instances_3d"]:
             ...
-            
+
             # Core: Call _should_filter_instance to determine filtering
             if not self._should_filter_instance(pred_instance_3d, category):
                 filtered_pred_instances.append(pred_instance_3d)
             else:
                 # Instance is filtered out
                 filtered_instances[category] += 1
-        
+
         ...
         return filtered_predicted_result_info
 ```
@@ -126,11 +126,11 @@ flowchart TD
     A[Model 1 Predictions] --> D[Apply Weights for Selection]
     B[Model 2 Predictions] --> E[Apply Weights for Selection]
     C[Model N Predictions] --> F[Apply Weights for Selection]
-    
+
     D --> G[Combine All Predictions]
     E --> G
     F --> G
-    
+
     G --> H[Sort by Weighted Score]
     H --> I[Calculate IoU]
     I --> J{IoU > Threshold?}
@@ -163,15 +163,15 @@ graph LR
     subgraph "BEV Projection"
         A["3D Box → 2D Rectangle<br/>[x, y, dx, dy]"]
     end
-    
+
     subgraph "IoU Formula"
         B["Intersection Area<br/>÷<br/>Union Area"]
     end
-    
+
     subgraph "Test Cases"
         C["Identical: IoU = 1.0<br/>Partial: IoU = 0.863<br/>No overlap: IoU = 0.0"]
     end
-    
+
     A --> B
     B --> C
 ```
@@ -185,12 +185,12 @@ graph TD
         B["Box 2: [1.1, 2.1, 0.0, 4.0, 2.0, 1.5, 0.1]<br/>Score: 0.6"]
         C["IoU = 0.863"]
     end
-    
+
     subgraph "NMS Decisions"
         D["Threshold 0.5<br/>0.863 > 0.5<br/>→ Keep 1 box"]
         E["Threshold 0.9<br/>0.863 < 0.9<br/>→ Keep 2 boxes"]
     end
-    
+
     A --> C
     B --> C
     C --> D
