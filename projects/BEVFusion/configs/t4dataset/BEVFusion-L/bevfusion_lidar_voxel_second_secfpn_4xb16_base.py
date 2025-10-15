@@ -10,7 +10,7 @@ custom_imports["imports"] += _base_.custom_imports["imports"]
 data_root = "data/t4dataset/"
 info_directory_path = "info/kokseang_2_3_fixed/"
 train_gpu_size = 4
-train_batch_size = 8
+train_batch_size = 16
 test_batch_size = 2
 val_interval = 5
 max_epochs = 50
@@ -39,7 +39,7 @@ image_size = [256, 704]
 num_workers = 32
 lidar_sweep_dims = [0, 1, 2, 4]  # x, y, z, time_lag
 lidar_feature_dims = 4
-work_dir = "work_dirs/bevfusion_2_3/" + _base_.dataset_type + "/bevfusion_lidar_voxel_second_secfpn_4xb8_base/"
+work_dir = "work_dirs/bevfusion_2_3/" + _base_.dataset_type + "/bevfusion_lidar_voxel_second_secfpn_4xb16_base/"
 
 model = dict(
     type="BEVFusion",
