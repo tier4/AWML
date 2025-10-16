@@ -288,12 +288,12 @@ train_pipeline = [
     dict(
         type="ImageAug3D",
         final_dim=image_size,
-        resize_lim=0.02,
+        resize_lim=0.00,
         bot_pct_lim=[0.0, 0.0],
         # rot_lim=[-5.4, 5.4],
         rot_lim=[0.0, 0.0],
         rand_flip=True,
-        is_train=True,
+        is_train=False,
         # is_train=False,
     ),
     # dict(type="PointsRangeFilter", point_cloud_range=point_cloud_range),
@@ -471,7 +471,7 @@ test_evaluator = dict(
 
 # learning rate
 # lr = 0.0001
-lr = 1e-4
+lr = 5e-5
 param_scheduler = [
     # learning rate scheduler
     # During the first (max_epochs * 0.4) epochs, learning rate increases from 0 to lr * 10
@@ -529,7 +529,7 @@ test_cfg = dict()
 optim_wrapper = dict(
     type="OptimWrapper",
     optimizer=dict(type="AdamW", lr=lr, weight_decay=0.01),
-    clip_grad=dict(max_norm=35.0, norm_type=2),
+    clip_grad=dict(max_norm=5.0, norm_type=2),
 )
 
 # Default setting for scaling LR automatically

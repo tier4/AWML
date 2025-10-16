@@ -35,6 +35,7 @@ class ImageAug3D(BaseTransform):
             crop_h = int((1 - np.random.uniform(*self.bot_pct_lim)) * newH) - fH
             crop_w = int(np.random.uniform(0, max(0, newW - fW)))
             crop = (crop_w, crop_h, crop_w + fW, crop_h + fH)
+            # print(f"ori_shape: {(H, W)}, resize: {resize}, resize_dims: {resize_dims}, crop: {crop}, crop_h: {crop_h}, crop_w: {crop_w}, fH: {fH}, fW: {fW}")
             flip = False
             if self.rand_flip and np.random.choice([0, 1]):
                 flip = True
@@ -64,7 +65,7 @@ class ImageAug3D(BaseTransform):
         translation -= torch.Tensor(crop[:2])
         if flip:
             A = torch.Tensor([[-1, 0], [0, 1]])
-            b = torch.Tensor([crop[2] - crop[0], 0])
+            b = torch.Tensor([(crop[2] - crop[0]), 0])
             rotation = A.matmul(rotation)
             translation = A.matmul(translation) + b
         theta = rotate / 180 * np.pi
@@ -74,7 +75,9 @@ class ImageAug3D(BaseTransform):
                 [-np.sin(theta), np.cos(theta)],
             ]
         )
-        b = torch.Tensor([crop[2] - crop[0], crop[3] - crop[1]]) / 2
+        # print(f"flip: {flip}, resize: {resize}, crop: {crop}, rotation: {rotation}, translation: {translation}, theta: {theta}, A: {A}")
+        # print(f"crop: {crop}")
+        b = torch.Tensor([(crop[2] - crop[0]), (crop[3] - crop[1])]) / 2
         b = A.matmul(-b) + b
         rotation = A.matmul(rotation)
         translation = A.matmul(translation) + b

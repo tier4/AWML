@@ -293,7 +293,7 @@ train_pipeline = [
         # rot_lim=[-5.4, 5.4],
         rot_lim=[0.0, 0.0],
         rand_flip=True,
-        is_train=True,
+        is_train=False,
         # is_train=False,
     ),
     # dict(type="PointsRangeFilter", point_cloud_range=point_cloud_range),
