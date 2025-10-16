@@ -90,7 +90,7 @@ def compute_bbox_and_centers(lidar2cam, cam2img, bboxes, labels, img_shape):
     return bboxes_2d, projected_centers, object_depth, valid_labels
 
 
-def check_bbox_visibility_in_image(lidar2cam, cam2img, bboxes, labels, img_shape, visibility=0.1):
+def check_bbox_visibility_in_image(lidar2cam, cam2img, bboxes, img_shape, visibility=0.1):
     """
     Projects 3D bounding boxes into the image plane and determines visibility.
 
@@ -98,7 +98,6 @@ def check_bbox_visibility_in_image(lidar2cam, cam2img, bboxes, labels, img_shape
         lidar2cam (np.ndarray): 4x4 transformation matrix from LiDAR to camera coordinates.
         cam2img (np.ndarray): 3x3 camera intrinsic matrix.
         bboxes (list): List of 3D bounding boxes. Each must have `.corners` attribute and be indexable.
-        labels (list): List of labels corresponding to the bounding boxes.
         img_shape (tuple): Shape of the image in (Channels, Height, Width) format.
         visibility (float, optional): Minimum fraction (0–1) of projected 2D bbox area that must lie
             within the image to consider it visible. Defaults to 0.1.
@@ -106,13 +105,12 @@ def check_bbox_visibility_in_image(lidar2cam, cam2img, bboxes, labels, img_shape
     Returns:
         list: A list of booleans indicating if each bounding box is sufficiently visible.
     """
-    C, H, W = img_shape
+    _, H, W = img_shape
     is_visible = []
 
     for bbox in bboxes.corners:
         all_points = np.concatenate([bbox, bbox.mean(0).reshape(1, 3)], axis=0)
         corners_img, valid_mask = project_to_image(all_points, lidar2cam, cam2img)
-        projected_center = corners_img[-1]
         corners_img = corners_img[:-1][valid_mask[:-1]]
 
         if len(corners_img) == 0:
@@ -182,7 +180,6 @@ class Filter3DBoxesinBlindSpot(BaseTransform):
                 results["extrinsics"][i],
                 results["intrinsics"][i],
                 results["gt_bboxes_3d"],
-                results["gt_labels_3d"],
                 results["img"][i].shape,
                 visibility=self.visibility,
             )
