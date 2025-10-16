@@ -16,7 +16,7 @@ from tools.auto_labeling_3d.filter_objects.ensemble.nms_ensemble_model import (
 class TestNMSModelInstances:
     """Test cases for NMSModelInstances dataclass."""
 
-    def test_filter_and_weight_instances_basic(self, sample_classes):
+    def test_filter_and_weight_instances_with_target_labels(self, sample_classes):
         """Test basic filtering and weighting of instances in NMSModelInstances.
 
         Verifies: Instance filtering respects class membership and score weighting is applied.
@@ -49,7 +49,7 @@ class TestNMSModelInstances:
         assert isinstance(boxes, np.ndarray)
         assert boxes.shape == (2, 7)  # 2 instances, 7 bbox parameters each
 
-    def test_filter_and_weight_instances_empty_result(self, sample_classes):
+    def test_filter_and_weight_instances_no_target_labels(self, sample_classes):
         """Test filtering behavior when no instances match target label criteria.
 
         Verifies: Proper handling when no instances belong to target classes.
@@ -72,7 +72,7 @@ class TestNMSModelInstances:
         assert boxes.size == 0
         assert scores.size == 0
 
-    def test_filter_and_weight_instances_no_instances(self, sample_classes):
+    def test_filter_and_weight_instances_with_empty_instances(self, sample_classes):
         """Test filtering behavior when input instances list is completely empty.
 
         Verifies: Proper handling of empty input data structure.
