@@ -521,7 +521,7 @@ if __name__ == "__main__":
     # make_ptq_model(args, model, cfg, dir_name)
 
     # Make onnx
-    data = torch.load(args.input_data)
+    data = torch.load(args.input_data, weights_only=False)
     img = data["img"].data[0].cuda()
     points = [i.cuda() for i in data["points"].data[0]]
     make_camera_onnx(args, model_, cfg, save_root, points, img)

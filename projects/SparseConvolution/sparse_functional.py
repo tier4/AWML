@@ -1,3 +1,4 @@
+import sys
 from typing import Any, List, Optional
 
 import numpy as np
@@ -9,11 +10,205 @@ from spconv.constants import SPCONV_DO_SORT, SPCONV_USE_DIRECT_TABLE, AllocKeys
 from spconv.core import ConvAlgo
 from spconv.core_cc.csrc.sparse.all import SpconvOps
 from spconv.core_cc.csrc.sparse.convops.spops import ConvGemmOps
+from spconv.pytorch import ops
 from spconv.pytorch.core import ThrustSortAllocator
 from spconv.pytorch.cppcore import _TORCH_DTYPE_TO_TV, TorchAllocator, get_arch, get_current_stream, torch_tensor_to_tv
 from spconv.tools import CUDAKernelTimer
 from torch.autograd import Function
 from torch.onnx.symbolic_helper import _get_tensor_sizes
+
+
+class GetIndicePairs(Function):
+
+    @staticmethod
+    def symbolic(
+        g,
+        indices: torch.Tensor,
+        batch_size: int,
+        spatial_shape: List[int],
+        algo: ConvAlgo,
+        ksize: List[int],
+        stride: List[int],
+        padding: List[int],
+        dilation: List[int],
+        out_padding: List[int],
+        subm: bool,
+        transpose: bool,
+    ):
+        outputs = g.op(
+            "autoware::GetIndicePairs",
+            indices,
+            batch_size_i=batch_size,
+            spatial_shape_i=spatial_shape,
+            algo_i=algo.value,
+            ksize_i=ksize,
+            stride_i=stride,
+            padding_i=padding,
+            dilation_i=dilation,
+            out_padding_i=out_padding,
+            subm_i=subm,
+            transpose_i=transpose,
+            outputs=4,
+        )
+        indices_shape = _get_tensor_sizes(indices)
+        if indices_shape is not None and hasattr(indices.type(), "with_sizes"):
+            output_type_1 = indices.type().with_sizes([None, indices_shape[1]])
+            output_type_2 = indices.type().with_sizes([2, np.prod(ksize), None])
+            output_type_3 = indices.type().with_sizes([np.prod(ksize)])
+            output_type_4 = indices.type().with_sizes([])
+
+            outputs[0].setType(output_type_1)
+            outputs[1].setType(output_type_2)
+            outputs[2].setType(output_type_3)
+            outputs[3].setType(output_type_4)
+        return outputs
+
+    @staticmethod
+    def forward(
+        ctx,
+        indices: torch.Tensor,
+        batch_size: int,
+        spatial_shape: List[int],
+        algo: ConvAlgo,
+        ksize: List[int],
+        stride: List[int],
+        padding: List[int],
+        dilation: List[int],
+        out_padding: List[int],
+        subm: bool,
+        transpose: bool,
+    ) -> torch.Tensor:
+
+        alloc = TorchAllocator(indices.device)
+        stream = 0
+        if indices.is_cuda:
+            stream = get_current_stream()
+
+        num_act_out = SpconvOps.get_indice_pairs(
+            alloc,
+            torch_tensor_to_tv(indices),
+            batch_size,
+            spatial_shape,
+            algo.value,
+            ksize,
+            stride,
+            padding,
+            dilation,
+            out_padding,
+            subm,
+            transpose,
+            stream,
+        )
+        if subm:
+            out_inds = indices
+        else:
+            out_inds = alloc.allocated[AllocKeys.OutIndices]
+
+        pair = alloc.allocated[AllocKeys.PairFwd]
+        indice_num_per_loc = alloc.allocated[AllocKeys.IndiceNumPerLoc]
+
+        num_act_out = torch.tensor([num_act_out], dtype=torch.int32).to(out_inds.device)
+
+        return out_inds[:num_act_out], pair, indice_num_per_loc, num_act_out
+
+    @staticmethod
+    def backward(ctx: Any, grad_output: torch.Tensor) -> tuple:
+        return None, None, None, None, None, None, None, None, None, None
+
+
+class IndiceConvFunction(Function):
+
+    @staticmethod
+    def symbolic(
+        g,
+        features,
+        filters,
+        indice_pairs,
+        indice_pair_num,
+        num_activate_out,
+        algo,
+        is_train,
+        is_subm,
+        timer: CUDAKernelTimer = CUDAKernelTimer(False),
+        bias: Optional[torch.Tensor] = None,
+        act_alpha: float = 0.0,
+        act_beta: float = 0.0,
+        act_type: tv.gemm.Activation = tv.gemm.Activation.None_,
+    ):
+
+        output = g.op(
+            "autoware::IndiceConv",
+            features,
+            filters,
+            indice_pairs,
+            indice_pair_num,
+            num_activate_out,
+            is_subm_i=is_subm,
+            outputs=1,
+        )
+
+        features_shape = _get_tensor_sizes(features)
+        filters_shape = _get_tensor_sizes(filters)
+        if features_shape is not None and hasattr(features.type(), "with_sizes"):
+            output_type = features.type().with_sizes([features_shape[0], filters_shape[0]])
+            output.setType(output_type)
+
+        return output
+
+    @staticmethod
+    def forward(
+        ctx,
+        features,
+        filters,
+        indice_pairs,
+        indice_pair_num,
+        num_activate_out,
+        algo,
+        is_train: False,
+        is_subm: True,
+        timer: CUDAKernelTimer = CUDAKernelTimer(False),
+        bias: Optional[torch.Tensor] = None,
+        act_alpha: float = 0.0,
+        act_beta: float = 0.0,
+        act_type: tv.gemm.Activation = tv.gemm.Activation.None_,
+    ):
+
+        assert bias is None, "bias is not supported"
+        assert act_alpha == 0.0
+        assert act_beta == 0.0
+        assert act_type == tv.gemm.Activation.None_
+
+        ctx.save_for_backward(indice_pairs, indice_pair_num, features, filters)
+        ctx.algo = algo
+        ctx.timer = timer
+        try:
+            out = ops.indice_conv(
+                features,
+                filters,
+                indice_pairs,
+                indice_pair_num,
+                num_activate_out,
+                is_train,
+                is_subm,
+                algo=algo,
+                timer=timer,
+                bias=bias,
+                act_alpha=act_alpha,
+                act_beta=act_beta,
+                act_type=act_type,
+            )
+
+            return out
+        except Exception as e:
+            msg = f"[Exception|indice_conv|{'subm' if is_subm else 'not_subm'}]"
+            msg += f"feat={features.shape},w={filters.shape},pair={indice_pairs.shape},"
+            msg += f"pairnum={indice_pair_num},act={num_activate_out},algo={algo}"
+            print(msg, file=sys.stderr)
+            raise e
+
+    @staticmethod
+    def backward(ctx: Any, grad_output: torch.Tensor) -> tuple:
+        return None, None, None, None, None, None, None, None, None, None
 
 
 class GetIndicePairsImplicitGemm(Function):
@@ -135,6 +330,8 @@ class GetIndicePairsImplicitGemm(Function):
             direct_table=direct_table,
             do_sort=do_sort,
         )
+
+        num_act_out = torch.tensor([num_act_out], dtype=torch.int32).to(indices.device)
 
         mask_split_count = mask_tensor.dim(0)
         # NOTE(knzo25): we support only the simplest case
@@ -318,6 +515,10 @@ class ImplicitGemm(Function):
             assert mask_output_fwd is not None
 
         return out_features
+
+
+get_indice_pairs = GetIndicePairs.apply
+indice_conv = IndiceConvFunction.apply
 
 
 get_indice_pairs_implicit_gemm = GetIndicePairsImplicitGemm.apply
