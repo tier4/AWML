@@ -127,29 +127,29 @@ class ResizeCropFlipRotImage:
     Args:
         data_aug_conf (dict): Configuration dictionary for data augmentation parameters.
             Contains the following keys:
-            
+
             - **resize_lim** (float or tuple): Resize scale limits.
                 - If float: Random scale sampled from [aspect_ratio - resize_lim, aspect_ratio + resize_lim]
                   where aspect_ratio = max(final_H/H, final_W/W)
                 - If tuple (min, max): Random scale sampled from [min, max]
-            
+
             - **final_dim** (tuple): Target output dimensions (height, width) after all transformations.
-            
+
             - **bot_pct_lim** (tuple): Bottom percentage limits (min, max) for crop positioning.
                 Controls how much of the bottom portion of the resized image to include.
                 (0.0, 0.0) means crop from bottom, (1.0, 1.0) means crop from top.
-            
+
             - **rot_lim** (tuple): Rotation angle limits in degrees (min, max).
                 Currently only (0.0, 0.0) is supported (no rotation).
-            
+
             - **rand_flip** (bool): Whether to apply random horizontal flipping.
 
         with_2d (bool, optional): Whether to transform 2D annotations (bboxes, centers, etc.).
             Default: True.
-        
+
         filter_invisible (bool, optional): Whether to filter out invisible bounding boxes
             after transformation. Default: True.
-        
+
         training (bool, optional): Whether in training mode. Affects augmentation behavior.
             In training mode, random augmentations are applied. In test mode, deterministic
             center crop is used. Default: True.
@@ -164,8 +164,8 @@ class ResizeCropFlipRotImage:
             "rot_lim": (0.0, 0.0),          # No rotation
             "rand_flip": True,              # Enable random flipping
         }
-        
-        # Configuration for testing  
+
+        # Configuration for testing
         ida_aug_conf_test = {
             "resize_lim": 0.02,             # Scale variation ±0.02 around aspect ratio
             "final_dim": (480, 640),        # Output size 480x640
@@ -173,7 +173,7 @@ class ResizeCropFlipRotImage:
             "rot_lim": (0.0, 0.0),          # No rotation
             "rand_flip": False,             # No flipping in test
         }
-        
+
         transform = ResizeCropFlipRotImage(
             data_aug_conf=ida_aug_conf,
             with_2d=True,
@@ -188,6 +188,7 @@ class ResizeCropFlipRotImage:
         - When filter_invisible=True, overlapping bounding boxes are filtered based on depth
         - The transform handles both single and multi-view image scenarios
     """
+
     def __init__(self, data_aug_conf=None, with_2d=True, filter_invisible=True, training=True):
         self.data_aug_conf = data_aug_conf
         self.training = training
