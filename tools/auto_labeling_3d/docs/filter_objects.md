@@ -39,9 +39,6 @@ Output: [car: 0.8, pedestrian: 0.7] # car:0.3 and bicycle:0.2 filtered out
 #### Features
 
 - **Configurable Thresholds**: Different confidence thresholds per class
-- **Boundary Handling**: Proper handling of edge cases at exact threshold values
-- **Multi-frame Support**: Processing multiple time frames
-- **Unknown Class Handling**: Graceful handling of unmapped classes
 - **Statistics Logging**: Detailed filtering statistics
 
 ### How to add new filter
@@ -75,9 +72,10 @@ classDiagram
 
 #### _should_filter_instance
 
-- Function that determines whether a single instance should be filtered out
+- Determines whether a single instance should be filtered out
 - Override to implement the core filtering criteria here
-- Should return `True` if instance should be filtered, `False` if kept
+- Return `True` if instance should be filtered, `False` if kept
+- `_should_filter_instance` is defined as an abstract method in `BaseFilter` and is intended to be overridden for use
 
 #### Example Implementation
 
@@ -150,13 +148,13 @@ flowchart TD
 
 ![NMS Ensemble: Overlap Case](./figs/nms_ensemble_with_overlap.svg)
 
-When two detections have high IoU (> threshold), the detection with lower weighted score is suppressed, but the original confidence score is preserved in the output.
+When more than one detections have high IoU (> threshold), the detection with lower weighted score is suppressed, but the original confidence score is preserved in the output.
 
 ##### Case 2: Low IoU (No Overlap) - Keep Both
 
 ![NMS Ensemble: No Overlap Case](./figs/nms_ensemble_no_overlap.svg)
 
-When two detections have low IoU (≤ threshold), both detections are kept in the final output with their original confidence scores preserved.
+When more than one detections have low IoU (≤ threshold), both detections are kept in the final output with their original confidence scores preserved.
 
 #### Bird's Eye View IoU Calculation
 
@@ -238,8 +236,8 @@ classDiagram
 
 #### ensemble_function
 
-- Function containing the ensemble logic
-- Override as a pure function for better testability
+- Contains the ensemble logic, i.e, NMS, WBF
+- `ensemble_function` is defined as an abstract method in `BaseEnsembleModel` and is intended to be overridden for use
 
 #### ModelInstances
 
