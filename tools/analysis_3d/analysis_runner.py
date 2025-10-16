@@ -46,6 +46,7 @@ class AnalysisRunner:
         # Initialization
         self.config = Config.fromfile(self.config_path)
         self.out_path.mkdir(parents=True, exist_ok=True)
+        # TODO (MasatoSaeki): When creating the base AnalysisRunner, remove this temporary fix.
         self.remapping_classes = getattr(self.config, "name_mapping", None)
         self.max_sweeps = max_sweeps
 
@@ -67,7 +68,6 @@ class AnalysisRunner:
                 out_path=self.out_path,
                 pc_ranges=[-121.60, -121.60, -3.0, 121.60, 121.60, 5.0],
                 voxel_sizes=[0.20, 0.20, 8.0],
-                point_thresholds=[1, 5, 10],
                 analysis_dir="voxel_nums_121_020",
                 bins=100,
             ),
