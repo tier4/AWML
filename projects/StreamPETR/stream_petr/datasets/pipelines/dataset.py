@@ -139,8 +139,13 @@ class StreamPETRDataset(T4Dataset):
 
     def filter_data(self):
         def validate_entry(info) -> bool:
-            if (self.anchor_camera not in info["images"]) or (
-                not all([x["img_path"] and os.path.exists(x["img_path"]) for x in info["images"].values()])
+            if not all(
+                [
+                    x in info["images"]
+                    and info["images"][x]["img_path"]
+                    and os.path.exists(info["images"][x]["img_path"])
+                    for x in self.camera_order
+                ]
             ):
                 return False
             return True
