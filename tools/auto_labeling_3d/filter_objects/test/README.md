@@ -29,8 +29,6 @@ Tests confidence-based filtering functionality:
 
 ## NMSEnsembleModel Tests
 
-Tests Non-Maximum Suppression ensemble functionality:
-
 ### Test Categories
 
 #### 1. NMSModelInstances
