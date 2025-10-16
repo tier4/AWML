@@ -7,8 +7,8 @@ You can download T4dataset by script using WebAuto CLI.
 ## Environment
 
 - This script do not need docker environment and is tested by Ubuntu22.04 LTS environment.
-- Download WebAuto CLI and setup as [the document](https://docs.web.auto/en/developers-guides/quick-start)
-- You check data access right of [WebAuto(> v0.33.1)](https://docs.web.auto/en/user-manuals/).
+- Download WebAuto CLI(>=v0.50.0) and setup as [the document](https://docs.web.auto/en/developers-guides/quick-start)
+- You check data access right of [WebAuto(>=v0.50.0)](https://docs.web.auto/en/user-manuals/).
 
 ## Get started
 

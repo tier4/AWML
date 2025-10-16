@@ -28,7 +28,7 @@ docker run -it --gpus '"device=0"' --name auto_labeling_3d --shm-size=64g -d -v 
   - For example, if you want to use BEVFusion, please follow [setting environemnt for BEVFusion](/projects/BEVFusion/README.md#1-setup).
 
 
-## (TBD) 2. Create info file from non-annotated T4dataset
+## 2. Create info file from non-annotated T4dataset
 
 - Set non-annotated T4dataset
 
@@ -74,12 +74,6 @@ python tools/auto_labeling_3d/create_info_data/create_info_data.py --root-path .
   - info/
     - pseudo_infos_raw_centerpoint.pkl
     - pseudo_infos_raw_bevfusion.pkl
-```
-
-- You can check the pseudo labels by [rerun visualization](/tools/rerun_visualization/).
-
-```
-TBD
 ```
 
 ## 3. Filter objects which do not use for pseudo T4dataset
@@ -198,13 +192,7 @@ python tools/auto_labeling_3d/filter_objects/ensemble_infos.py --config {config_
     - pseudo_infos_filtered.pkl
 ```
 
-- You can check the pseudo labels by [rerun visualization](/tools/rerun_visualization/).
-
-```
-TBD
-```
-
-### (TBD) 4. Attach tracking id to info file
+### 4. Attach tracking id to info file
 
 - If you do not use for target annotation, you can skip this section.
 - Attach tracking id to info
@@ -232,7 +220,7 @@ python tools/auto_labeling_3d/attach_tracking_id/attach_tracking_id.py --input {
     - pseudo_infos_tracked.pkl
 ```
 
-### (TBD) 5. Create pseudo T4dataset
+### 5. Create pseudo T4dataset
 
 - Run script
 
@@ -255,9 +243,12 @@ python tools/auto_labeling_3d/create_pseudo_t4dataset.py {yaml config file about
 ```
 
 ### 6. Use for training
-#### (TBD) 6.1. Upload for WebAuto
 
-If you upload Pseudo-T4dataset for WebAuto, you can share easily for other users of WebAuto.
+#### 6.1. Upload for WebAuto
+
+Please upload Pseudo-T4dataset to WebAuto to share easily for other users.
+
+Please check [Web.Auto document](https://docs.web.auto/en/user-manuals/vehicle-data-search/quick-start#register-t4-datasets) for the detail.
 
 #### (TBD) 6.2. Use in local PC
 
