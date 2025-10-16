@@ -119,7 +119,7 @@ class StreamPETRHead(AnchorFreeHead):
         split=0.5,
         init_cfg=None,
         normedlinear=False,
-        use_gravity_center=False,
+        use_bottom_center=False,
         **kwargs,
     ):
         # NOTE here use `AnchorFreeHead` instead of `TransformerHead`,
@@ -236,7 +236,7 @@ class StreamPETRHead(AnchorFreeHead):
 
         self._init_layers()
         self.reset_memory()
-        self.use_gravity_center = use_gravity_center
+        self.use_bottom_center = use_bottom_center
 
     def _init_layers(self):
         """Initialize layers of the transformer head."""
@@ -1087,8 +1087,8 @@ class StreamPETRHead(AnchorFreeHead):
         for i in range(num_samples):
             preds = preds_dicts[i]
             bboxes = preds["bboxes"]
-            if self.use_gravity_center:
-                bboxes[:, 2] = bboxes[:, 2] - bboxes[:, 5] * 0.5  # This returns the gravity centers
+            if self.use_bottom_center:
+                bboxes[:, 2] = bboxes[:, 2] - bboxes[:, 5] * 0.5  # This returns the bottom centers
             scores = preds["scores"]
             labels = preds["labels"]
 
