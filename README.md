@@ -126,19 +126,18 @@ If you want to know about `AWML`, you should read following pages.
 
 - :star: is recommended to use
 
-| Task              | Model                                         | Use for Autoware   |
-| ----------------- | --------------------------------------------- | ------------------ |
-| 3D detection      | [CenterPoint](/projects/CenterPoint/)         | :star:             |
-| 3D detection      | [TransFusion](/projects/TransFusion/)         | :white_check_mark: |
-| 3D detection      | [BEVFusion](/projects/BEVFusion/)             | :white_check_mark: |
-| 3D segmentation   | [FRNet](/projects/FRNet/)                     | (Reviewing now)    |
-| 2D detection      | [YOLOX](/projects/YOLOX/)                     |                    |
-| 2D detection      | [YOLOX_opt](/projects/YOLOX_opt/)             | :star:             |
-| 2D detection      | [GLIP](/projects/GLIP/)                       |                    |
-| 2D detection      | [SwinTransformer](/projects/SwinTransformer/) |                    |
-| 2D classification | [MobileNetv2](/projects/MobileNetv2/)         | :white_check_mark: |
-| Vision language   | [BLIP-2](/projects/BLIP-2/)                   |                    |
-|                   |                                               |                    |
+| Task              | Model                                 | Use for Autoware   |
+| ----------------- | ------------------------------------- | ------------------ |
+| 3D detection      | [CenterPoint](/projects/CenterPoint/) | :star:             |
+| 3D detection      | [TransFusion](/projects/TransFusion/) | :white_check_mark: |
+| 3D detection      | [BEVFusion](/projects/BEVFusion/)     | :white_check_mark: |
+| 3D segmentation   | [FRNet](/projects/FRNet/)             | (Reviewing now)    |
+| 2D detection      | [YOLOX](/projects/YOLOX/)             |                    |
+| 2D detection      | [YOLOX_opt](/projects/YOLOX_opt/)     | :star:             |
+| 2D detection      | [GLIP](/projects/GLIP/)               |                    |
+| 2D classification | [MobileNetv2](/projects/MobileNetv2/) | :white_check_mark: |
+| Vision language   | [BLIP-2](/projects/BLIP-2/)           |                    |
+|                   |                                       |                    |
 
 - Additional plug-ins
   - [SparseConvolutions](/projects/SparseConvolution/)
