@@ -143,7 +143,6 @@ train_pipeline = [
             "pcd_rotation",
             "pcd_scale_factor",
             "pcd_trans",
-            "img_aug_matrix",
             "lidar_aug_matrix",
         ],
     ),
