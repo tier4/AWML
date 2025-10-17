@@ -148,13 +148,15 @@ flowchart TD
 
 ![NMS Ensemble: Overlap Case](./figs/nms_ensemble_with_overlap.svg)
 
-When more than one detections have high IoU (> threshold), the detection with lower weighted score is suppressed, but the original confidence score is preserved in the output.
+- When more than one detections have high IoU (> threshold), the detection with lower weighted score is suppressed.
+- The highest confidence score among detections is preserved in the output.
 
 ##### Case 2: Low IoU (No Overlap) - Keep Both
 
 ![NMS Ensemble: No Overlap Case](./figs/nms_ensemble_no_overlap.svg)
 
-When more than one detections have low IoU (≤ threshold), both detections are kept in the final output with their original confidence scores preserved.
+- When more than one detections have low IoU (≤ threshold), both detections are kept.
+- The highest confidence score among detections is preserved in the output.
 
 #### Bird's Eye View IoU Calculation
 
