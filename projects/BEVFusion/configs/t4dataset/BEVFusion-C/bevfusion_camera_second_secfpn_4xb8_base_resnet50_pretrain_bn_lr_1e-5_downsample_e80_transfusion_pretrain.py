@@ -269,7 +269,6 @@ model = dict(
             pc_range=point_cloud_range[0:2],
             voxel_size=voxel_size[0:2],
 			out_size_factor=8,
-            score_threshold=0.10,
         ),
     ),
     # Lidar pipeline
@@ -333,7 +332,6 @@ train_pipeline = [
             "pcd_rotation",
             "pcd_scale_factor",
             "pcd_trans",
-            # "img_aug_matrix",
             "lidar_aug_matrix",
         ],
     ),
