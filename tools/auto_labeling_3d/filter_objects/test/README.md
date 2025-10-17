@@ -49,10 +49,10 @@ Tests confidence-based filtering functionality:
 ## Running Tests
 
 ```bash
-# All tests (42 total)
-python -m pytest tools/auto_labeling_3d/filter_objects/test/ -v
+# All tests (unittest discovery)
+python -m unittest discover tools/auto_labeling_3d/filter_objects/test/ -v
 
 # Specific component
-python -m pytest tools/auto_labeling_3d/filter_objects/test/test_threshold_filter.py -v
-python -m pytest tools/auto_labeling_3d/filter_objects/test/test_nms_ensemble_model.py -v
+python -m unittest tools.auto_labeling_3d.filter_objects.test.test_threshold_filter -v
+python -m unittest tools.auto_labeling_3d.filter_objects.test.test_nms_ensemble_model -v
 ```
