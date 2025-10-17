@@ -250,12 +250,12 @@ Please upload Pseudo-T4dataset to WebAuto to share easily for other users.
 
 Please check [Web.Auto document](https://docs.web.auto/en/user-manuals/vehicle-data-search/quick-start#register-t4-datasets) for the detail.
 
-#### (TBD) 6.2. Use in local PC
+#### 6.2. Use in local PC
 
 To align T4dataset directory structure, you run the script as following.
 
 ```sh
-tools/auto_labeling_3d/change_directory_structure/change_directory_structure.sh data/t4dataset/pseudo_xx1/
+python tools/auto_labeling_3d/change_directory_structure/change_directory_structure.py --dataset_dir data/t4dataset/pseudo_xx1/
 ```
 
 The result of the structure of Pseudo-T4dataset is following.
@@ -269,7 +269,7 @@ The result of the structure of Pseudo-T4dataset is following.
           - sample.json
           - ..
     - scene_1/
-      - 1/
+      - 0/
         - ..
     - ..
 ```
