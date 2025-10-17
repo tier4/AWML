@@ -1,8 +1,8 @@
 import logging
+import unittest
 from collections import defaultdict
 from typing import Any, Dict, List
 from unittest.mock import Mock
-import unittest
 
 from tools.auto_labeling_3d.filter_objects.filter.threshold_filter import ThresholdFilter
 
@@ -36,14 +36,14 @@ class TestThresholdFilter(unittest.TestCase):
         }
         self.empty_predicted_result_info = {
             "metainfo": {"classes": self.sample_classes},
-            "data_list": [
-                {"pred_instances_3d": []}
-            ],
+            "data_list": [{"pred_instances_3d": []}],
         }
 
     def test_init(self):
         filter_obj = ThresholdFilter(
-            confidence_thresholds=self.sample_confidence_thresholds, use_label=self.sample_use_label, logger=self.mock_logger
+            confidence_thresholds=self.sample_confidence_thresholds,
+            use_label=self.sample_use_label,
+            logger=self.mock_logger,
         )
         self.assertEqual(filter_obj.settings["confidence_thresholds"], self.sample_confidence_thresholds)
         self.assertEqual(set(filter_obj.settings["use_label"]), set(self.sample_use_label))
@@ -52,14 +52,18 @@ class TestThresholdFilter(unittest.TestCase):
     def test_init_with_duplicate_use_label(self):
         use_label_with_duplicates = ["car", "pedestrian", "car", "bicycle"]
         filter_obj = ThresholdFilter(
-            confidence_thresholds=self.sample_confidence_thresholds, use_label=use_label_with_duplicates, logger=self.mock_logger
+            confidence_thresholds=self.sample_confidence_thresholds,
+            use_label=use_label_with_duplicates,
+            logger=self.mock_logger,
         )
         self.assertEqual(len(filter_obj.settings["use_label"]), 3)
         self.assertEqual(set(filter_obj.settings["use_label"]), {"car", "pedestrian", "bicycle"})
 
     def test_basic_filtering(self):
         filter_obj = ThresholdFilter(
-            confidence_thresholds=self.sample_confidence_thresholds, use_label=self.sample_use_label, logger=self.mock_logger
+            confidence_thresholds=self.sample_confidence_thresholds,
+            use_label=self.sample_use_label,
+            logger=self.mock_logger,
         )
         result = filter_obj.filter(self.sample_predicted_result_info, "test_model")
         self.assertIn("metainfo", result)
@@ -129,10 +133,14 @@ class TestThresholdFilter(unittest.TestCase):
                 }
             ],
         }
-        filter_obj_zero = ThresholdFilter(confidence_thresholds={"car": 0.0}, use_label=["car"], logger=self.mock_logger)
+        filter_obj_zero = ThresholdFilter(
+            confidence_thresholds={"car": 0.0}, use_label=["car"], logger=self.mock_logger
+        )
         result_zero = filter_obj_zero.filter(test_data, "test_model")
         self.assertEqual(len(result_zero["data_list"][0]["pred_instances_3d"]), 3)
-        filter_obj_one = ThresholdFilter(confidence_thresholds={"car": 1.0}, use_label=["car"], logger=self.mock_logger)
+        filter_obj_one = ThresholdFilter(
+            confidence_thresholds={"car": 1.0}, use_label=["car"], logger=self.mock_logger
+        )
         result_one = filter_obj_one.filter(test_data, "test_model")
         instances = result_one["data_list"][0]["pred_instances_3d"]
         self.assertEqual(len(instances), 1)
@@ -140,7 +148,9 @@ class TestThresholdFilter(unittest.TestCase):
 
     def test_empty_data(self):
         filter_obj = ThresholdFilter(
-            confidence_thresholds=self.sample_confidence_thresholds, use_label=self.sample_use_label, logger=self.mock_logger
+            confidence_thresholds=self.sample_confidence_thresholds,
+            use_label=self.sample_use_label,
+            logger=self.mock_logger,
         )
         result = filter_obj.filter(self.empty_predicted_result_info, "test_model")
         self.assertIn("metainfo", result)
@@ -206,7 +216,9 @@ class TestThresholdFilter(unittest.TestCase):
     def test_filter_statistics_logging(self):
         mock_logger = Mock(spec=logging.Logger)
         filter_obj = ThresholdFilter(
-            confidence_thresholds=self.sample_confidence_thresholds, use_label=self.sample_use_label, logger=mock_logger
+            confidence_thresholds=self.sample_confidence_thresholds,
+            use_label=self.sample_use_label,
+            logger=mock_logger,
         )
         filter_obj.filter(self.sample_predicted_result_info, "test_model")
         self.assertTrue(mock_logger.info.called)
@@ -236,8 +248,16 @@ class TestThresholdFilter(unittest.TestCase):
                         "pred_instances_3d": [
                             {"bbox_label_3d": 0, "bbox_score_3d": 0.8, "bbox_3d": [1.0, 2.0, 0.0, 4.0, 2.0, 1.5, 0.1]},
                             {"bbox_label_3d": 0, "bbox_score_3d": 0.3, "bbox_3d": [5.0, 6.0, 0.0, 4.0, 2.0, 1.5, 0.2]},
-                            {"bbox_label_3d": 1, "bbox_score_3d": 0.4, "bbox_3d": [10.0, 11.0, 0.0, 0.6, 0.6, 1.8, 0.0]},
-                            {"bbox_label_3d": 2, "bbox_score_3d": 0.2, "bbox_3d": [15.0, 16.0, 0.0, 1.8, 0.8, 1.2, 0.3]},
+                            {
+                                "bbox_label_3d": 1,
+                                "bbox_score_3d": 0.4,
+                                "bbox_3d": [10.0, 11.0, 0.0, 0.6, 0.6, 1.8, 0.0],
+                            },
+                            {
+                                "bbox_label_3d": 2,
+                                "bbox_score_3d": 0.2,
+                                "bbox_3d": [15.0, 16.0, 0.0, 1.8, 0.8, 1.2, 0.3],
+                            },
                         ]
                     }
                 ],
@@ -251,7 +271,9 @@ class TestThresholdFilter(unittest.TestCase):
 
     def test_should_filter_instance_private_method(self):
         filter_obj = ThresholdFilter(
-            confidence_thresholds=self.sample_confidence_thresholds, use_label=self.sample_use_label, logger=self.mock_logger
+            confidence_thresholds=self.sample_confidence_thresholds,
+            use_label=self.sample_use_label,
+            logger=self.mock_logger,
         )
         test_cases = [
             ({"bbox_score_3d": 0.8}, "car", False),
@@ -262,6 +284,7 @@ class TestThresholdFilter(unittest.TestCase):
         for instance, category, expected_filtered in test_cases:
             result = filter_obj._should_filter_instance(instance, category)
             self.assertEqual(result, expected_filtered, f"Failed for {instance} with category {category}")
+
 
 if __name__ == "__main__":
     unittest.main()

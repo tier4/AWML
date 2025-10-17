@@ -1,7 +1,8 @@
 import logging
+import unittest
 from typing import Any, Dict, List
 from unittest.mock import Mock
-import unittest
+
 import numpy as np
 
 from tools.auto_labeling_3d.filter_objects.ensemble.nms_ensemble_model import (
@@ -82,7 +83,11 @@ class TestNMSEnsembleModel(unittest.TestCase):
                     {
                         "pred_instances_3d": [
                             {"bbox_label_3d": 0, "bbox_score_3d": 0.8, "bbox_3d": [1.0, 2.0, 0.0, 4.0, 2.0, 1.5, 0.1]},
-                            {"bbox_label_3d": 1, "bbox_score_3d": 0.7, "bbox_3d": [10.0, 11.0, 0.0, 0.6, 0.6, 1.8, 0.0]},
+                            {
+                                "bbox_label_3d": 1,
+                                "bbox_score_3d": 0.7,
+                                "bbox_3d": [10.0, 11.0, 0.0, 0.6, 0.6, 1.8, 0.0],
+                            },
                         ]
                     }
                 ],
@@ -92,7 +97,11 @@ class TestNMSEnsembleModel(unittest.TestCase):
                 "data_list": [
                     {
                         "pred_instances_3d": [
-                            {"bbox_label_3d": 2, "bbox_score_3d": 0.6, "bbox_3d": [20.0, 21.0, 0.0, 1.8, 0.8, 1.2, 0.2]},
+                            {
+                                "bbox_label_3d": 2,
+                                "bbox_score_3d": 0.6,
+                                "bbox_3d": [20.0, 21.0, 0.0, 1.8, 0.8, 1.2, 0.2],
+                            },
                         ]
                     }
                 ],
