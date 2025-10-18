@@ -12,8 +12,8 @@ info_directory_path = "info/kokseang_2_3/"
 train_gpu_size = 4
 train_batch_size = 8
 test_batch_size = 2
-val_interval = 2
-max_epochs = 80
+val_interval = 5
+max_epochs = 50
 backend_args = None
 
 # range setting
@@ -35,7 +35,9 @@ sweeps_num = 1
 max_num_points = 10
 max_voxels = [120000, 160000]
 num_proposals = 500
-image_size = [384, 576]  # height, width
+# image_size = [384, 576]  # height, width
+image_size = [480, 640]  # height, width
+
 num_workers = 32
 lidar_sweep_dims = [0, 1, 2, 4]  # x, y, z, time_lag
 lidar_feature_dims = 4
@@ -191,7 +193,8 @@ train_pipeline = [
         final_dim=image_size,
         resize_lim=0.02,
         bot_pct_lim=[0.0, 0.0],
-        rot_lim=[-5.4, 5.4],
+        # rot_lim=[-5.4, 5.4],
+        rot_lim=[0.0, 0.0],
         rand_flip=True,
         is_train=True,
     ),
@@ -200,7 +203,16 @@ train_pipeline = [
         rot_range=[-1.571, 1.571],
         scale_ratio_range=[0.8, 1.2],
         translation_std=[1.0, 1.0, 0.2],
+        # scale_ratio_range=[0.9, 1.1],
+        # rot_range=[-0.78539816, 0.78539816],
+        # translation_std=0.5
     ),
+    # dict(
+    #     type="BEVFusionGlobalRotScaleTrans",
+    #     rot_range=[-1.571, 1.571],
+    #     scale_ratio_range=[0.8, 1.2],
+    #     translation_std=[1.0, 1.0, 0.2],
+    # ),
     dict(type="BEVFusionRandomFlip3D"),
     dict(type="PointsRangeFilter", point_cloud_range=point_cloud_range),
     dict(type="ObjectRangeFilter", point_cloud_range=point_cloud_range),
@@ -239,7 +251,6 @@ train_pipeline = [
             "pcd_rotation",
             "pcd_scale_factor",
             "pcd_trans",
-            "img_aug_matrix",
             "lidar_aug_matrix",
         ],
     ),
@@ -396,18 +407,18 @@ param_scheduler = [
     # lr * 1e-4
     dict(
         type="CosineAnnealingLR",
-        T_max=30,
+        T_max=15,
         eta_min=lr * 10,
         begin=0,
-        end=30,
+        end=15,
         by_epoch=True,
         convert_to_iter_based=True,
     ),
     dict(
         type="CosineAnnealingLR",
-        T_max=(max_epochs - 30),
+        T_max=(max_epochs - 15),
         eta_min=lr * 1e-4,
-        begin=30,
+        begin=15,
         end=max_epochs,
         by_epoch=True,
         convert_to_iter_based=True,
@@ -417,18 +428,18 @@ param_scheduler = [
     # during the next epochs, momentum increases from 0.85 / 0.95 to 1
     dict(
         type="CosineAnnealingMomentum",
-        T_max=30,
+        T_max=15,
         eta_min=0.85 / 0.95,
         begin=0,
-        end=30,
+        end=15,
         by_epoch=True,
         convert_to_iter_based=True,
     ),
     dict(
         type="CosineAnnealingMomentum",
-        T_max=(max_epochs - 30),
+        T_max=(max_epochs - 15),
         eta_min=1,
-        begin=30,
+        begin=15,
         end=max_epochs,
         by_epoch=True,
         convert_to_iter_based=True,
@@ -458,3 +469,5 @@ auto_scale_lr = dict(enable=False, base_batch_size=train_gpu_size * train_batch_
 # Only set if the number of train_gpu_size more than 1
 if train_gpu_size > 1:
     sync_bn = "torch"
+
+load_from = "work_dirs/bevfusion_lidar_voxel_second_secfpn_4xb8_base_ped_no_pool/epoch_46.pth"

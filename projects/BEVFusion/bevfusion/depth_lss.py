@@ -341,6 +341,7 @@ class BaseViewTransform(nn.Module):
         #     return final.sum(2), x, geom_feats
         # collapse Z
         final = torch.cat(final.unbind(dim=2), 1)
+        print("Run voxel pooling")
 
         return final
 
@@ -561,7 +562,8 @@ class BaseDepthTransform(BaseViewTransform):
             )
 
             x = self.get_cam_feats(img, depth)
-            x = self.bev_pool(x, geom)
+            # x = self.bev_pool(x, geom)
+            x = self.voxel_pooling(x, geom)
 
         return x
 
