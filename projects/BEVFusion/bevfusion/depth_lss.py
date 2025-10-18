@@ -101,19 +101,19 @@ class DownSampleNet(nn.Module):
 
 class LidarDepthImageNet(nn.Module):
 
-    def __init__(self, in_channels: int = 1, out_channels: int = 64) -> None:
+    def __init__(self, in_channels: int = 1, out_channels: int = 64, last_stride: int = 2) -> None:
         super().__init__()
         self.in_channels = in_channels
         self.out_channels = out_channels
 
         self.net = nn.Sequential(
-            nn.Conv2d(in_channels=1, out_channels=8, kernel_size=1),
+            nn.Conv2d(in_channels=in_channels, out_channels=8, kernel_size=1),
             nn.BatchNorm2d(num_features=8),
             nn.ReLU(True),
-            nn.Conv2d(in_channels=in_channels, out_channels=32, kernel_size=5, stride=4, padding=2),
+            nn.Conv2d(in_channels=8, out_channels=32, kernel_size=5, stride=4, padding=2),
             nn.BatchNorm2d(num_features=32),
             nn.ReLU(True),
-            nn.Conv2d(in_channels=32, out_channels=out_channels, kernel_size=5, stride=2, padding=2),
+            nn.Conv2d(in_channels=32, out_channels=out_channels, kernel_size=5, stride=last_stride, padding=2),
             nn.BatchNorm2d(num_features=out_channels),
             nn.ReLU(True),
         )
@@ -341,7 +341,6 @@ class BaseViewTransform(nn.Module):
         #     return final.sum(2), x, geom_feats
         # collapse Z
         final = torch.cat(final.unbind(dim=2), 1)
-        print("Run voxel pooling")
 
         return final
 
@@ -582,6 +581,7 @@ class DepthLSSTransform(BaseDepthTransform):
         zbound: Tuple[float, float, float],
         dbound: Tuple[float, float, float],
         downsample: int = 1,
+        lidar_depth_image_last_stride: int = 2
     ) -> None:
         """Compared with `LSSTransform`, `DepthLSSTransform` adds sparse depth
         information from lidar points into the inputs of the `depthnet`."""
@@ -596,7 +596,7 @@ class DepthLSSTransform(BaseDepthTransform):
             dbound=dbound,
         )
 
-        self.dtransform = LidarDepthImageNet(in_channels=1, out_channels=64)
+        self.dtransform = LidarDepthImageNet(in_channels=1, out_channels=64, last_stride=lidar_depth_image_last_stride)
         self.depthnet = DepthLSSNet(
             in_channels=in_channels + self.dtransform.out_channels, out_channels=self.D + self.C
         )

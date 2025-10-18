@@ -5,6 +5,7 @@ _base_ = [
 
 custom_imports = dict(imports=["projects.BEVFusion.bevfusion"], allow_failed_imports=False)
 custom_imports["imports"] += _base_.custom_imports["imports"]
+custom_imports["imports"] += ["autoware_ml.detection3d.datasets.transforms"]
 
 # user setting
 data_root = "data/t4dataset/"
@@ -136,6 +137,7 @@ model = dict(
         # dbound=[1.0, 134, 1.4],
         dbound=[1.0, 130, 1.0],
         downsample=2,
+        lidar_depth_image_last_stride=4
     ),
     fusion_layer=dict(type="ConvFuser", in_channels=[80, 256], out_channels=256),
     bbox_head=dict(
@@ -231,6 +233,7 @@ train_pipeline = [
             "traffic_cone",
         ],
     ),
+    dict(type="ObjectMinPointsFilter", min_num_points=5),
     dict(type="PointShuffle"),
     dict(
         type="Pack3DDetInputs",
@@ -262,6 +265,7 @@ test_pipeline = [
         to_float32=True,
         color_type="color",
         backend_args=backend_args,
+        camera_order=camera_order,
     ),
     dict(
         type="LoadPointsFromFile",
