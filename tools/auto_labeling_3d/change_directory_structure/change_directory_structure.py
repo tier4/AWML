@@ -13,61 +13,60 @@ python tools/auto_labeling_3d/change_directory_structure/change_directory_struct
 import argparse
 import os
 import shutil
-import sys
+import logging
 from pathlib import Path
+from tools.auto_labeling_3d.utils.logger import setup_logger
 
 
-def move_contents_to_numbered_dir(scene_dir: Path) -> None:
+def move_contents_to_numbered_dir(scene_dir: Path, logger: logging.Logger, default_dir_name: str) -> None:
     """Move all contents of scene directory to a numbered subdirectory (0)."""
-    num_dir = scene_dir / "0"
+    num_dir = scene_dir / default_dir_name
 
     # Create the numbered directory if it doesn't exist
     num_dir.mkdir(exist_ok=True)
 
     # Move all contents except the newly created numbered directory
     for item in scene_dir.iterdir():
-        if item.name != "0":
-            print(f"  Moving {item.name} to 0/")
+        if item.name != default_dir_name:
+            logger.info(f"  Moving {item.name} to {default_dir_name}/")
             shutil.move(str(item), str(num_dir / item.name))
 
 
-def move_contents_from_numbered_dir(scene_dir: Path) -> None:
+def move_contents_from_numbered_dir(scene_dir: Path, logger: logging.Logger, default_dir_name: str) -> None:
     """Move all contents from numbered subdirectory (0) back to scene directory."""
-    num_dir = scene_dir / "0"
+    num_dir = scene_dir / default_dir_name
 
     if not num_dir.exists() or not num_dir.is_dir():
-        print(f"  Warning: {num_dir} does not exist, skipping...")
+        logger.warning(f"  {num_dir} does not exist, skipping...")
         return
 
     # Move all contents from numbered directory to parent
     for item in num_dir.iterdir():
         target_path = scene_dir / item.name
         if target_path.exists():
-            print(f"  Warning: {target_path} already exists, skipping {item.name}")
+            logger.warning(f"  {target_path} already exists, skipping {item.name}")
             continue
-        print(f"  Moving {item.name} from 0/")
+        logger.info(f"  Moving {item.name} from {default_dir_name}/")
         shutil.move(str(item), str(target_path))
 
     # Remove the now-empty numbered directory
     try:
         num_dir.rmdir()
-        print(f"  Removed empty directory 0/")
-    except OSError as e:
-        print(f"  Warning: Could not remove directory 0/: {e}")
+        logger.info(f"  Removed empty directory {default_dir_name}/")
+    except Exception as e:
+        raise OSError(f"  Could not remove directory {default_dir_name}/: {e}")
 
 
-def process_dataset(dataset_dir: Path, annotated_to_non_annotated: bool = False) -> None:
+def process_dataset(dataset_dir: Path, logger: logging.Logger, annotated_to_non_annotated: bool = False, default_dir_name: str = "0") -> None:
     """Process the dataset directory structure."""
     if not dataset_dir.exists():
-        print(f"Error: Directory '{dataset_dir}' does not exist.")
-        sys.exit(1)
+        raise FileNotFoundError(f"Directory '{dataset_dir}' does not exist.")
 
     if not dataset_dir.is_dir():
-        print(f"Error: '{dataset_dir}' is not a directory.")
-        sys.exit(1)
+        raise RuntimeError(f"'{dataset_dir}' is not a directory.")
 
     operation = "Removing numbered directories" if annotated_to_non_annotated else "Adding numbered directories"
-    print(f"{operation} for {dataset_dir}...")
+    logger.info(f"{operation} for {dataset_dir}...")
 
     # Process each directory in the dataset directory
     for scene_dir in dataset_dir.iterdir():
@@ -75,14 +74,14 @@ def process_dataset(dataset_dir: Path, annotated_to_non_annotated: bool = False)
             continue
 
         scene_name = scene_dir.name
-        print(f"Processing {scene_name}...")
+        logger.info(f"Processing {scene_name}...")
 
         if annotated_to_non_annotated:
-            move_contents_from_numbered_dir(scene_dir)
+            move_contents_from_numbered_dir(scene_dir, logger, default_dir_name)
         else:
-            move_contents_to_numbered_dir(scene_dir)
+            move_contents_to_numbered_dir(scene_dir, logger, default_dir_name)
 
-    print("Directory structure changed successfully!")
+    logger.info("Directory structure changed successfully!")
 
 
 def main():
@@ -99,24 +98,36 @@ def main():
     parser.add_argument(
         "--dataset_dir", type=Path, help="Path to the t4dataset directory (e.g., data/t4dataset/pseudo_xx1/)"
     )
-
     parser.add_argument(
         "--annotated-to-non-annotated",
         action="store_true",
         help="Remove numbered directory structure (reverse operation)",
     )
-
+    parser.add_argument(
+        "--default-dir-name",
+        type=str,
+        default="0",
+        help="Name of the numbered subdirectory to use (default: '0')",
+    )
+    parser.add_argument(
+        "--log-level",
+        help="Set log level",
+        default="INFO",
+        choices=list(logging._nameToLevel.keys()),
+    )
+    parser.add_argument(
+        "--work-dir",
+    )
     args = parser.parse_args()
 
-    try:
-        process_dataset(args.dataset_dir, args.annotated_to_non_annotated)
-    except KeyboardInterrupt:
-        print("\nOperation cancelled by user.")
-        sys.exit(1)
-    except Exception as e:
-        print(f"Error: {e}")
-        sys.exit(1)
+    logger: logging.Logger = setup_logger(args, name="create_pseudo_t4dataset")
 
+    process_dataset(
+        args.dataset_dir,
+        logger,
+        args.annotated_to_non_annotated,
+        args.default_dir_name,
+    )
 
 if __name__ == "__main__":
     main()
