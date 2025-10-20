@@ -13,7 +13,7 @@ info_directory_path = "info/kokseang_2_3/"
 train_gpu_size = 4
 train_batch_size = 8
 test_batch_size = 2
-val_interval = 5
+val_interval = 10
 max_epochs = 80
 backend_args = None
 
@@ -88,16 +88,25 @@ model = dict(
     #     ),
     # ),
     img_backbone=dict(
-        pretrained="work_dirs/resnet50/resnet50-11ad3fa6.pth",
-        type="mmdet.ResNet",
-        depth=50,
-        num_stages=4,
-        out_indices=(2, 3),
-        frozen_stages=-1,
-        norm_cfg=dict(type="BN2d", requires_grad=True),
-        norm_eval=False,
+        type="mmdet.SwinTransformer",
+        embed_dims=96,
+        depths=[2, 2, 6, 2],
+        num_heads=[3, 6, 12, 24],
+        window_size=7,
+        mlp_ratio=4,
+        qkv_bias=True,
+        qk_scale=None,
+        drop_rate=0.0,
+        attn_drop_rate=0.0,
+        drop_path_rate=0.2,
+        patch_norm=True,
+        out_indices=[1, 2, 3],
         with_cp=False,
-        style="pytorch",
+        convert_weights=True,
+        init_cfg=dict(
+            type="Pretrained",
+            checkpoint="work_dirs/bevfusion/pretrain/swin_tiny_patch4_window7_224.pth"  # noqa: E251  # noqa: E501
+        ),
     ),
     # img_backbone=dict(
     #     type="VoVNet",  ###use checkpoint to save memory
@@ -122,10 +131,10 @@ model = dict(
     # ),
     img_neck=dict(
         type="GeneralizedLSSFPN",
-        in_channels=[1024, 2048],
+        in_channels=[192, 384, 768],
         out_channels=256,
         start_level=0,
-        num_outs=2,
+        num_outs=3,
         norm_cfg=dict(type="BN2d", requires_grad=True),
         act_cfg=dict(type="ReLU", inplace=True),
         upsample_cfg=dict(mode="bilinear", align_corners=False),
@@ -133,10 +142,10 @@ model = dict(
     view_transform=dict(
         type="NonLinearLSSTransform",
         in_channels=256,
-        out_channels=256,
+        out_channels=80,
         image_size=image_size,
         # feature_size=[48, 72],
-        feature_size=[30, 40],
+        feature_size=[60, 80],
         xbound=[-122.4, 122.4, 0.68],
         ybound=[-122.4, 122.4, 0.68],
         zbound=[-10.0, 10.0, 20.0],
@@ -146,7 +155,7 @@ model = dict(
     ),
 		pts_backbone=dict(
         type="SECOND",
-        in_channels=256,
+        in_channels=80,
         out_channels=[128, 256],
         layer_nums=[5, 5],
         layer_strides=[1, 2],
@@ -284,6 +293,13 @@ train_pipeline = [
         backend_args=backend_args,
         camera_order=camera_order,
     ),
+    dict(
+        type="LoadPointsFromFile",
+        coord_type="LIDAR",
+        load_dim=5,
+        use_dim=5,
+        backend_args=backend_args,
+    ),
     dict(type="LoadAnnotations3D", with_bbox_3d=True, with_label_3d=True, with_attr_label=False),
     dict(
         type="ImageAug3D",
@@ -297,7 +313,7 @@ train_pipeline = [
         # is_train=False,
     ),
     # dict(type="BEVFusionRandomFlip3D"),
-    # dict(type="PointsRangeFilter", point_cloud_range=point_cloud_range),
+    dict(type="PointsRangeFilter", point_cloud_range=point_cloud_range),
     dict(type="ObjectRangeFilter", point_cloud_range=point_cloud_range),
     dict(
         type="ObjectNameFilter",
@@ -314,6 +330,7 @@ train_pipeline = [
             "traffic_cone",
         ],
     ),
+    dict(type="ObjectMinPointsFilter", min_num_points=5, remove_points=True),
     dict(
         type="Pack3DDetInputs",
         keys=["img", "gt_bboxes_3d", "gt_labels_3d", "gt_bboxes", "gt_labels"],
@@ -391,8 +408,8 @@ train_dataloader = dict(
         modality=input_modality,
         backend_args=backend_args,
         data_root=data_root,
-        # ann_file=info_directory_path + _base_.info_train_file_name,
-        ann_file=info_directory_path + _base_.info_val_file_name,
+        ann_file=info_directory_path + _base_.info_train_file_name,
+        # ann_file=info_directory_path + _base_.info_val_file_name,
         metainfo=_base_.metainfo,
         class_names=_base_.class_names,
         test_mode=False,
@@ -471,7 +488,7 @@ test_evaluator = dict(
 
 # learning rate
 # lr = 0.0001
-lr = 5e-5
+lr = 1e-4
 param_scheduler = [
     # learning rate scheduler
     # During the first (max_epochs * 0.4) epochs, learning rate increases from 0 to lr * 10

@@ -137,26 +137,25 @@ class QuickCumsumCuda(torch.autograd.Function):
 def bev_pool(feats, coords, ranks, B, D, H, W, is_training):
     assert feats.shape[0] == coords.shape[0]
 
-    x = QuickCumsumTrainingCuda.apply(feats, coords, ranks, B, D, H, W)
     # NOTE(knzo25): we want to put all the operations we can in the graph
-    # if is_training:
-    #     x = QuickCumsumTrainingCuda.apply(feats, coords, ranks, B, D, H, W)
+    if is_training:
+        x = QuickCumsumTrainingCuda.apply(feats, coords, ranks, B, D, H, W)
 
-    # else:
+    else:
 
-    #     kept = torch.ones(feats.shape[0], device=feats.device, dtype=torch.bool)
-    #     kept[1:] = ranks[1:] != ranks[:-1]
-    #     interval_starts = torch.where(kept)[0].int()
-    #     interval_lengths = torch.zeros_like(interval_starts)
-    #     interval_lengths[:-1] = interval_starts[1:] - interval_starts[:-1]
-    #     interval_lengths[-1] = feats.shape[0] - interval_starts[-1]
+        kept = torch.ones(feats.shape[0], device=feats.device, dtype=torch.bool)
+        kept[1:] = ranks[1:] != ranks[:-1]
+        interval_starts = torch.where(kept)[0].int()
+        interval_lengths = torch.zeros_like(interval_starts)
+        interval_lengths[:-1] = interval_starts[1:] - interval_starts[:-1]
+        interval_lengths[-1] = feats.shape[0] - interval_starts[-1]
 
-    #     if coords.dtype != torch.int32:
-    #         coords = coords.int()
+        if coords.dtype != torch.int32:
+            coords = coords.int()
 
-    #     x = QuickCumsumCuda.apply(
-    #         feats, coords, interval_lengths, interval_starts, int(B), D.item(), H.item(), W.item()
-    #     )
+        x = QuickCumsumCuda.apply(
+            feats, coords, interval_lengths, interval_starts, int(B), D.item(), H.item(), W.item()
+        )
 
     x = x.permute(0, 4, 1, 2, 3).contiguous()
 

@@ -11,9 +11,10 @@ class ObjectMinPointsFilter(BaseTransform):
         min_num_points: (int): the number of points to filter objects
     """
 
-    def __init__(self, min_num_points: int = 5) -> None:
+    def __init__(self, min_num_points: int = 5, remove_points: bool = False) -> None:
         assert isinstance(min_num_points, int)
         self.min_num_points = min_num_points
+        self.remove_points = remove_points
 
     def transform(self, input_dict: dict) -> dict:
         """Call function to filter objects the number of points in them.
@@ -40,6 +41,9 @@ class ObjectMinPointsFilter(BaseTransform):
         input_dict["gt_bboxes_3d"] = input_dict["gt_bboxes_3d"][gt_bboxes_mask]
         input_dict["gt_labels_3d"] = input_dict["gt_labels_3d"][gt_bboxes_mask]
 
+        if self.remove_points:
+            input_dict.pop("points")
+
         return input_dict
 
     def __repr__(self) -> str:
@@ -47,3 +51,4 @@ class ObjectMinPointsFilter(BaseTransform):
         repr_str = self.__class__.__name__
         repr_str += f"(min_num_points={self.min_num_points})"
         return repr_str
+

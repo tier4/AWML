@@ -284,6 +284,13 @@ train_pipeline = [
         backend_args=backend_args,
         camera_order=camera_order,
     ),
+    dict(
+        type="LoadPointsFromFile",
+        coord_type="LIDAR",
+        load_dim=5,
+        use_dim=5,
+        backend_args=backend_args,
+    ),
     dict(type="LoadAnnotations3D", with_bbox_3d=True, with_label_3d=True, with_attr_label=False),
     dict(
         type="ImageAug3D",
@@ -297,7 +304,7 @@ train_pipeline = [
         # is_train=False,
     ),
     # dict(type="BEVFusionRandomFlip3D"),
-    # dict(type="PointsRangeFilter", point_cloud_range=point_cloud_range),
+    dict(type="PointsRangeFilter", point_cloud_range=point_cloud_range),
     dict(type="ObjectRangeFilter", point_cloud_range=point_cloud_range),
     dict(
         type="ObjectNameFilter",
@@ -314,6 +321,7 @@ train_pipeline = [
             "traffic_cone",
         ],
     ),
+    dict(type="ObjectMinPointsFilter", min_num_points=5, remove_points=True),
     dict(
         type="Pack3DDetInputs",
         keys=["img", "gt_bboxes_3d", "gt_labels_3d", "gt_bboxes", "gt_labels"],

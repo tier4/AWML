@@ -133,7 +133,7 @@ model = dict(
     view_transform=dict(
         type="NonLinearLSSTransform",
         in_channels=256,
-        out_channels=256,
+        out_channels=80,
         image_size=image_size,
         # feature_size=[48, 72],
         feature_size=[30, 40],
@@ -146,7 +146,7 @@ model = dict(
     ),
 		pts_backbone=dict(
         type="SECOND",
-        in_channels=256,
+        in_channels=80,
         out_channels=[128, 256],
         layer_nums=[5, 5],
         layer_strides=[1, 2],
@@ -284,6 +284,13 @@ train_pipeline = [
         backend_args=backend_args,
         camera_order=camera_order,
     ),
+    dict(
+        type="LoadPointsFromFile",
+        coord_type="LIDAR",
+        load_dim=5,
+        use_dim=5,
+        backend_args=backend_args,
+    ),
     dict(type="LoadAnnotations3D", with_bbox_3d=True, with_label_3d=True, with_attr_label=False),
     dict(
         type="ImageAug3D",
@@ -297,7 +304,7 @@ train_pipeline = [
         # is_train=False,
     ),
     # dict(type="BEVFusionRandomFlip3D"),
-    # dict(type="PointsRangeFilter", point_cloud_range=point_cloud_range),
+    dict(type="PointsRangeFilter", point_cloud_range=point_cloud_range),
     dict(type="ObjectRangeFilter", point_cloud_range=point_cloud_range),
     dict(
         type="ObjectNameFilter",
@@ -314,6 +321,7 @@ train_pipeline = [
             "traffic_cone",
         ],
     ),
+    dict(type="ObjectMinPointsFilter", min_num_points=5, remove_points=True),
     dict(
         type="Pack3DDetInputs",
         keys=["img", "gt_bboxes_3d", "gt_labels_3d", "gt_bboxes", "gt_labels"],
@@ -391,8 +399,8 @@ train_dataloader = dict(
         modality=input_modality,
         backend_args=backend_args,
         data_root=data_root,
-        # ann_file=info_directory_path + _base_.info_train_file_name,
-        ann_file=info_directory_path + _base_.info_val_file_name,
+        ann_file=info_directory_path + _base_.info_train_file_name,
+        # ann_file=info_directory_path + _base_.info_val_file_name,
         metainfo=_base_.metainfo,
         class_names=_base_.class_names,
         test_mode=False,

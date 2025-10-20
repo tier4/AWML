@@ -272,7 +272,8 @@ class BaseViewTransform(nn.Module):
 
         assert x.shape[0] == geom_feats.shape[0]
 
-        x, geom_feats, ranks = x[indices], geom_feats[indices], ranks[indices]
+        # x, geom_feats, ranks = x[indices], geom_feats[indices], ranks[indices]
+        x = x[indices]
 
         x = bev_pool(x, geom_feats, ranks, B, self.nx[2], self.nx[0], self.nx[1], self.training)
 
@@ -388,8 +389,8 @@ class BaseViewTransform(nn.Module):
             # on_img is
             # is also flattened_indices
             x = self.get_cam_feats(img)
-            # x = self.bev_pool(x, geom)
-            x = self.voxel_pooling(x, geom)
+            x = self.bev_pool(x, geom)
+            # x = self.voxel_pooling(x, geom)
 
         return x
 
@@ -561,8 +562,8 @@ class BaseDepthTransform(BaseViewTransform):
             )
 
             x = self.get_cam_feats(img, depth)
-            # x = self.bev_pool(x, geom)
-            x = self.voxel_pooling(x, geom)
+            x = self.bev_pool(x, geom)
+            # x = self.voxel_pooling(x, geom)
 
         return x
 
