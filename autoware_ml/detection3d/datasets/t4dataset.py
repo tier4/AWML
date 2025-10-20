@@ -1,13 +1,14 @@
 import gc
 import math
-import pickle
 from os import path as osp
-from typing import List, Optional
+from typing import Dict, List, Optional
 
 import numpy as np
 from mmdet3d.datasets import NuScenesDataset
 from mmengine.logging import print_log
-from mmengine.registry import DATASETS
+from mmengine.registry import DATA_SAMPLERS, DATASETS
+
+from autoware_ml.samplers.frame_object_sampler import FILTER_CLASS_LABELS, SAMPLE_CLASS_NAME_KEY, FrameObjectSampler
 
 
 @DATASETS.register_module()
@@ -23,37 +24,51 @@ class T4Dataset(NuScenesDataset):
         use_valid_flag (bool, optional): Whether to use validity flags for filtering
             annotations. Defaults to False.
         **kwargs: Additional keyword arguments passed to the parent NuScenesDataset.
+        repeat_sampling_factor (float, optional): A threshold value to compute repeat sampling factor
+        `max(1, sqrt(repeat_sampling_factor / frame_sampling_factor))` for every frame.
+        special_class_sampling (Dict[str, Dict[str, Tuple[float, List[float, float]]]], optional): A dictionary
+            specifying special classes and their sampling criteria.
+            The key is the (original class name, special class name), and the value is a tuple containing
+            the sampling factor and a list with height and distance thresholds. For example,
+            to add a new class 'low_pedestrian' for pedestrians to repeat sampling factor lower than 1.5m
+            height and within 10m from the ego vehicle, you can specify:
+            {'pedestrian': {'low_pedestrian': (1.5, 10.0)}}.
     """
 
     def __init__(
         self,
         metainfo,
         class_names,
-        point_cloud_range: List[float],
         use_valid_flag: bool = False,
-        repeat_sampling_factory_t: Optional[float] = None,
+        repeat_sampling_factor: Optional[float] = None,
+        frame_object_sampler: Optional[dict] = None,
         **kwargs,
     ):
         T4Dataset.METAINFO = metainfo
-        # Add low pedestrian for less than 1.5m
-        class_names.append("low_pedestrian")
+        self.frame_object_sampler: Optional[FrameObjectSampler] = (
+            DATA_SAMPLERS.build(frame_object_sampler) if frame_object_sampler is not None else None
+        )
+        if self.frame_object_sampler is not None:
+            class_names += self.frame_object_sampler.category_names
 
+        self.class_names = class_names
         self.valid_class_name_ins = {class_name: 0 for class_name in class_names}
 
+        # Repeat Sampling Factor variables
         # Number of frames for each category that contains at least one of the category
         self.category_frame_number = {class_name: 0 for class_name in class_names}
-        self.class_names = class_names
-        self.point_cloud_range = point_cloud_range
-        self.repeat_sampling_factory_t = repeat_sampling_factory_t
+        self.repeat_sampling_factor = repeat_sampling_factor
+
+        # Save annotation info for all frames to compute frame repeat sampling factor
         self.ann_info = []
         super().__init__(use_valid_flag=use_valid_flag, **kwargs)
-        print_log(f"Valid dataset instances: {self.valid_class_name_ins}", logger="current")
+
+        # Repeat sampling factor computation
+        # Compute category frame fraction
         self.category_frame_number = {
             class_name: value / len(self) for class_name, value in self.category_frame_number.items()
         }
-        print_log(f"Category frame fraction: {self.category_frame_number}", logger="current")
-
-        # Total bbox
+        # Total valid bbox
         total_bboxes = sum(self.valid_class_name_ins.values())
 
         # Compute bbox fraction
@@ -61,11 +76,22 @@ class T4Dataset(NuScenesDataset):
             class_name: class_bbox_num / total_bboxes
             for class_name, class_bbox_num in self.valid_class_name_ins.items()
         }
-        print_log(f"Valid dataset fraction: {self.valid_class_bbox_fraction}", logger="current")
+
+        self.category_fraction_factor = self._compute_category_faction_factor()
         self.frame_weights = self._compute_frame_repeat_sampling_factor()
-        print_log(f"First 10 dataset frame weights: {self.frame_weights[:10]}", logger="current")
+
+        # Print dataset statistics and clean up
+        self.print_dataset_statistics()
         self.ann_info.clear()
         gc.collect()
+
+    def print_dataset_statistics(self) -> None:
+        """Print dataset statistics."""
+        print_log(f"Valid dataset instances: {self.valid_class_name_ins}", logger="current")
+        print_log(f"Category frame fraction: {self.category_frame_number}", logger="current")
+        print_log(f"Valid bbox fraction: {self.valid_class_bbox_fraction}", logger="current")
+        print_log(f"Category fraction factor: {self.category_fraction_factor}", logger="current")
+        print_log(f"First 10 dataset frame weights: {self.frame_weights[:10]}", logger="current")
 
     def filter_data(self) -> List[dict]:
         """
@@ -98,33 +124,36 @@ class T4Dataset(NuScenesDataset):
 
         return filtered_data_list
 
-    def _compute_frame_repeat_sampling_factor(self) -> List[float]:
-        """ """
-        if self.repeat_sampling_factory_t is None:
-            return [1.0] * len(self)
-
-        # Compute category faction
+    def _compute_category_faction_factor(self) -> Dict[str, float]:
+        """Compute category fraction factor used for repeat sampling factor computation."""
         category_fraction_factor = {
             class_name: max(
                 1,
                 math.sqrt(
-                    self.repeat_sampling_factory_t
+                    self.repeat_sampling_factor
                     / math.sqrt((number_frame * self.valid_class_bbox_fraction[class_name]))
                 ),
             )
             for class_name, number_frame in self.category_frame_number.items()
         }
-        print_log(f"Category repeat weights: {category_fraction_factor}", logger="current")
+        return category_fraction_factor
+
+    def _compute_frame_repeat_sampling_factor(self) -> List[float]:
+        """Compute repeat sampling factor for every frame in the dataset."""
+        if self.repeat_sampling_factor is None:
+            return [1.0] * len(self)
 
         frame_weights = []
         for ann_info in self.ann_info:
             valid_bbox_categories = ann_info["valid_bbox_categories"]
             frame_repeat_sampling_factor = 1
             for class_name, value in valid_bbox_categories.items():
-                if value:
-                    frame_repeat_sampling_factor = max(
-                        frame_repeat_sampling_factor, category_fraction_factor[class_name]
-                    )
+                if not value:
+                    continue
+
+                frame_repeat_sampling_factor = max(
+                    frame_repeat_sampling_factor, self.category_fraction_factor[class_name]
+                )
             frame_weights.append(frame_repeat_sampling_factor)
 
         return frame_weights
@@ -169,28 +198,18 @@ class T4Dataset(NuScenesDataset):
                 - gt_labels_3d (np.ndarray): Labels of ground truths.
         """
         ann_info = super().parse_ann_info(info=info)
-        bbox_range = [
-            self.point_cloud_range[0],
-            self.point_cloud_range[1],
-            self.point_cloud_range[3],
-            self.point_cloud_range[4],
-        ]
-        bbox_in_ranges = ann_info["gt_bboxes_3d"].in_range_bev(bbox_range)
-        gt_bbox_heights = ann_info["gt_bboxes_3d"].height
-        nearer_bbox_in_ranges = ann_info["gt_bboxes_3d"].in_range_bev([-50, -50, 50, 50])
-        valid_bbox_categories = {class_name: 0 for class_name in self.class_names}
-        for label, bbox_in_ranges, gt_bbox_height, nearer_bbox in zip(
-            ann_info["gt_labels_3d"], bbox_in_ranges, gt_bbox_heights, nearer_bbox_in_ranges
-        ):
-            if bbox_in_ranges:
-                class_name = self.class_names[label]
-                if class_name == "pedestrian":
-                    if gt_bbox_height <= 1.5 and nearer_bbox:
-                        class_name = "low_pedestrian"
+        ann_info = self.frame_object_sampler.sample(ann_info) if self.frame_object_sampler else ann_info
 
-                self.valid_class_name_ins[class_name] += 1
-                # Set to 1 if a category exists in this frame
-                valid_bbox_categories[class_name] = 1
+        valid_bbox_categories = {class_name: 0 for class_name in self.class_names}
+        for label, sample_class_name in zip(ann_info["gt_labels_3d"], ann_info[SAMPLE_CLASS_NAME_KEY]):
+
+            if sample_class_name == FILTER_CLASS_LABELS:
+                continue
+
+            class_name = self.class_names[label] if not sample_class_name else sample_class_name
+            self.valid_class_name_ins[class_name] += 1
+            # Set to 1 if a category exists in this frame
+            valid_bbox_categories[class_name] = 1
 
         # Sum up category fraction for this frame
         for class_name in self.class_names:
