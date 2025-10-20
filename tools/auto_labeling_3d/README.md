@@ -6,7 +6,7 @@ The pipeline of auto labeling for 3D detection.
 
 ## 1. Setup environment
 
-- Please follow the [installation tutorial](/docs/tutorial/tutorial_detection_3d.md)to set up the environment.
+- Please follow the [installation tutorial](/docs/tutorial/tutorial_detection_3d.md) to set up the environment.
 - In addition, please follow the below setting up procedure.
 
 ### Set up environment for auto_labeling_3d

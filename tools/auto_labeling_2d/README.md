@@ -4,7 +4,7 @@
 
 ## 1. Setup environment
 
-- Please follow the [installation tutorial](/docs/tutorial/tutorial_detection_3d.md)to set up the environment.
+- Please follow the [installation tutorial](/docs/tutorial/tutorial_detection_3d.md) to set up the environment.
 
 ## 2. command
 ### (TBD) 2.1 T4dataset to info file
