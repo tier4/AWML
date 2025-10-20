@@ -18,23 +18,23 @@ from pathlib import Path
 from tools.auto_labeling_3d.utils.logger import setup_logger
 
 
-def move_contents_to_numbered_dir(scene_dir: Path, logger: logging.Logger, default_dir_name: str) -> None:
+def move_contents_to_numbered_dir(scene_dir: Path, logger: logging.Logger, version_dir_name: str) -> None:
     """Move all contents of scene directory to a numbered subdirectory (0)."""
-    num_dir = scene_dir / default_dir_name
+    num_dir = scene_dir / version_dir_name
 
     # Create the numbered directory if it doesn't exist
     num_dir.mkdir(exist_ok=True)
 
     # Move all contents except the newly created numbered directory
     for item in scene_dir.iterdir():
-        if item.name != default_dir_name:
-            logger.info(f"  Moving {item.name} to {default_dir_name}/")
+        if item.name != version_dir_name:
+            logger.info(f"  Moving {item.name} to {version_dir_name}/")
             shutil.move(str(item), str(num_dir / item.name))
 
 
-def move_contents_from_numbered_dir(scene_dir: Path, logger: logging.Logger, default_dir_name: str) -> None:
+def move_contents_from_numbered_dir(scene_dir: Path, logger: logging.Logger, version_dir_name: str) -> None:
     """Move all contents from numbered subdirectory (0) back to scene directory."""
-    num_dir = scene_dir / default_dir_name
+    num_dir = scene_dir / version_dir_name
 
     if not num_dir.exists() or not num_dir.is_dir():
         logger.warning(f"  {num_dir} does not exist, skipping...")
@@ -46,18 +46,18 @@ def move_contents_from_numbered_dir(scene_dir: Path, logger: logging.Logger, def
         if target_path.exists():
             logger.warning(f"  {target_path} already exists, skipping {item.name}")
             continue
-        logger.info(f"  Moving {item.name} from {default_dir_name}/")
+        logger.info(f"  Moving {item.name} from {version_dir_name}/")
         shutil.move(str(item), str(target_path))
 
     # Remove the now-empty numbered directory
     try:
         num_dir.rmdir()
-        logger.info(f"  Removed empty directory {default_dir_name}/")
+        logger.info(f"  Removed empty directory {version_dir_name}/")
     except Exception as e:
-        raise OSError(f"  Could not remove directory {default_dir_name}/: {e}")
+        raise OSError(f"  Could not remove directory {version_dir_name}/: {e}")
 
 
-def process_dataset(dataset_dir: Path, logger: logging.Logger, annotated_to_non_annotated: bool = False, default_dir_name: str = "0") -> None:
+def process_dataset(dataset_dir: Path, logger: logging.Logger, annotated_to_non_annotated: bool = False, version_dir_name: str = "0") -> None:
     """Process the dataset directory structure."""
     if not dataset_dir.exists():
         raise FileNotFoundError(f"Directory '{dataset_dir}' does not exist.")
@@ -77,9 +77,9 @@ def process_dataset(dataset_dir: Path, logger: logging.Logger, annotated_to_non_
         logger.info(f"Processing {scene_name}...")
 
         if annotated_to_non_annotated:
-            move_contents_from_numbered_dir(scene_dir, logger, default_dir_name)
+            move_contents_from_numbered_dir(scene_dir, logger, version_dir_name)
         else:
-            move_contents_to_numbered_dir(scene_dir, logger, default_dir_name)
+            move_contents_to_numbered_dir(scene_dir, logger, version_dir_name)
 
     logger.info("Directory structure changed successfully!")
 
@@ -104,7 +104,7 @@ def main():
         help="Remove numbered directory structure (reverse operation)",
     )
     parser.add_argument(
-        "--default-dir-name",
+        "--version-dir-name",
         type=str,
         default="0",
         help="Name of the numbered subdirectory to use (default: '0')",
@@ -126,7 +126,7 @@ def main():
         args.dataset_dir,
         logger,
         args.annotated_to_non_annotated,
-        args.default_dir_name,
+        args.version_dir_name,
     )
 
 if __name__ == "__main__":
