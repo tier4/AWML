@@ -1,0 +1,39 @@
+# Sample configuration for auto_labeling_pipeline.py
+# Update every path to match your workspace before running.
+
+logging:
+  level: INFO
+  work_dir: ../../work_dirs/auto_labeling_3d/pipeline_example
+
+create_info:
+  - name: centerpoint
+    root_path: ../../data/t4dataset/pseudo_xx1
+    output_dir: ../../data/t4dataset/info
+    model_config: ../create_info/configs/example_model.py
+    checkpoint_model_zoo: https://autoware-ml-model-zoo.s3.ap-northeast-1.amazonaws.com/autoware-ml/models/centerpoint/centerpoint/j6gen2/v2.3.1/deployment.zip
+    checkpoint: ../../checkpoints/example_model.pth
+  - name: bevfusion
+    root_path: ../../data/t4dataset/pseudo_xx1
+    output_dir: ../../data/t4dataset/info
+    model_config: ../create_info/configs/example_model_bevfusion.py
+    checkpoint_model_zoo: https://autoware-ml-model-zoo.s3.ap-northeast-1.amazonaws.com/autoware-ml/models/bevfusion/bevfusion-cl/t4base/v2.0.0/best_NuScenes_metric_T4Metric_mAP_epoch_48.pth
+    checkpoint: ../../checkpoints/example_model_bevfusion.pth
+  - name: streampetr
+    root_path: ../../data/t4dataset/pseudo_xx1
+    output_dir: ../../data/t4dataset/info
+    model_config: ../create_info/configs/example_model_streampetr.py
+    checkpoint_model_zoo: https://autoware-ml-model-zoo.s3.ap-northeast-1.amazonaws.com/autoware-ml/models/streampetr/streampetr-vov99/t4base/v2.3/best_NuScenes_metric_T4Metric_mAP_epoch_31.pth
+    checkpoint: ../../checkpoints/example_model_streampetr.pth
+
+ensemble:
+  config: ../filter_objects/config/ensemble_base.py
+
+tracking:
+  input_path: ../../data/t4dataset/info/pseudo_infos_centerpoint_filtered.pkl
+  output_path: ../../data/t4dataset/info/pseudo_infos_centerpoint_tracked.pkl
+
+pseudo_dataset:
+  config: ../create_pseudo_t4dataset/config/x2.yaml
+  root_path: ../../data/t4dataset/pseudo_xx1
+  input_source: tracking
+  overwrite: false
