@@ -3,37 +3,37 @@
 
 logging:
   level: INFO
-  work_dir: ../../work_dirs/auto_labeling_3d/pipeline_example
+  work_dir: /workspace/work_dirs/auto_labeling_3d/pipeline_example
 
 create_info:
+  root_path: /workspace/data/t4dataset/t4x2_pseudo
+  output_dir: /workspace/data/t4dataset/info
+  model_list:
   - name: centerpoint
-    root_path: ../../data/t4dataset/pseudo_xx1
-    output_dir: ../../data/t4dataset/info
-    model_config: ../create_info/configs/example_model.py
-    checkpoint_model_zoo: https://autoware-ml-model-zoo.s3.ap-northeast-1.amazonaws.com/autoware-ml/models/centerpoint/centerpoint/j6gen2/v2.3.1/deployment.zip
-    checkpoint: ../../checkpoints/example_model.pth
+    model_config: /workspace/projects/CenterPoint/configs/t4dataset/Centerpoint/second_secfpn_4xb16_121m_j6gen2_base_t4metric_v2.py
+    checkpoint:
+      model_zoo_url: https://download.autoware-ml-model-zoo.tier4.jp/autoware-ml/models/bevfusion/bevfusion-cl/t4base/v1.0/best_NuScenes_metric_T4Metric_mAP_epoch_38.pth
+      checkpoint_path: /workspace/work_dirs/checkpoints/example_model.pth
   - name: bevfusion
-    root_path: ../../data/t4dataset/pseudo_xx1
-    output_dir: ../../data/t4dataset/info
-    model_config: ../create_info/configs/example_model_bevfusion.py
-    checkpoint_model_zoo: https://autoware-ml-model-zoo.s3.ap-northeast-1.amazonaws.com/autoware-ml/models/bevfusion/bevfusion-cl/t4base/v2.0.0/best_NuScenes_metric_T4Metric_mAP_epoch_48.pth
-    checkpoint: ../../checkpoints/example_model_bevfusion.pth
+    model_config: /workspace/projects/BEVFusion/configs/t4dataset/BEVFusion-CL/bevfusion_camera_lidar_voxel_second_secfpn_4xb8_gen2_base.py
+    checkpoint:
+      model_zoo_url: https://download.autoware-ml-model-zoo.tier4.jp/autoware-ml/models/bevfusion/bevfusion-cl/t4base/v1.0/best_NuScenes_metric_T4Metric_mAP_epoch_38.pth
+      checkpoint_path: /workspace/work_dirs/checkpoints/example_model_bevfusion.pth
   - name: streampetr
-    root_path: ../../data/t4dataset/pseudo_xx1
-    output_dir: ../../data/t4dataset/info
-    model_config: ../create_info/configs/example_model_streampetr.py
-    checkpoint_model_zoo: https://autoware-ml-model-zoo.s3.ap-northeast-1.amazonaws.com/autoware-ml/models/streampetr/streampetr-vov99/t4base/v2.3/best_NuScenes_metric_T4Metric_mAP_epoch_31.pth
-    checkpoint: ../../checkpoints/example_model_streampetr.pth
+    model_config: /workspace/projects/StreamPETR/configs/t4dataset/t4_base_vov_flash_480x640_baseline.py
+    checkpoint:
+      model_zoo_url: https://download.autoware-ml-model-zoo.tier4.jp/autoware-ml/models/bevfusion/bevfusion-cl/t4base/v1.0/best_NuScenes_metric_T4Metric_mAP_epoch_38.pth
+      checkpoint_path: /workspace/work_dirs/checkpoints/example_model_streampetr.pth
 
 ensemble:
-  config: ../filter_objects/config/ensemble_base.py
+  config: /workspace/tools/auto_labeling_3d/filter_objects/config/ensemble_base.py
 
 tracking:
-  input_path: ../../data/t4dataset/info/pseudo_infos_centerpoint_filtered.pkl
-  output_path: ../../data/t4dataset/info/pseudo_infos_centerpoint_tracked.pkl
+  input_path: /workspace/work_dirs/auto_labeling_3d/filter_objects/pseudo_infos_centerpoint+bevfusion+streampetr_filtered.pkl
+  output_path: /workspace/work_dirs/auto_labeling_3d/filter_objects/pseudo_infos_centerpoint+bevfusion+streampetr_filtered_tracked.pkl
 
 pseudo_dataset:
-  config: ../create_pseudo_t4dataset/config/x2.yaml
-  root_path: ../../data/t4dataset/pseudo_xx1
+  config: /workspace/tools/auto_labeling_3d/create_pseudo_t4dataset/config/x2.yaml
+  root_path: /workspace/data/t4dataset/t4x2_pseudo
   input_source: tracking
   overwrite: false
