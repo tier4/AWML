@@ -15,7 +15,7 @@ The pipeline of auto labeling for 3D detection.
   - If you build `AWML` image locally, please add `--build-arg BASE_IMAGE=autoware-ml` or `--build-arg BASE_IMAGE=autoware-ml-ros2` to build script.
 
 ```sh
-DOCKER_BUILDKIT=1 docker build -t auto_labeling_3d tools/auto_labeling_3d/
+DOCKER_BUILDKIT=1 docker build -t auto_labeling_3d -f tools/auto_labeling_3d/Dockerfile .
 ```
 
 - Run docker container.
