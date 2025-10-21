@@ -28,7 +28,7 @@ def download_checkpoints(config: PipelineConfig, logger: logging.Logger) -> None
 def trigger_auto_labeling_pipeline(config: PipelineConfig) -> None:
     # Execute the whole auto labeling pipeline.
     logger = logging.getLogger("auto_labeling_3d.entrypoint")
-    
+
     # Step 1: Download checkpoints
     download_checkpoints(config, logger)
 

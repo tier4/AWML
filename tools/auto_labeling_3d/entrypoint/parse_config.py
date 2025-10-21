@@ -8,6 +8,7 @@ import yaml
 @dataclass
 class LoggingConfig:
     """Configuration for logging."""
+
     level: str
     work_dir: Path
 
@@ -15,6 +16,7 @@ class LoggingConfig:
 @dataclass
 class CheckpointConfig:
     """Configuration for model checkpoint."""
+
     model_zoo_url: str
     checkpoint_path: Path
 
@@ -22,6 +24,7 @@ class CheckpointConfig:
 @dataclass
 class ModelConfig:
     """Configuration for a single model."""
+
     name: str
     model_config: Path
     checkpoint: CheckpointConfig
@@ -30,6 +33,7 @@ class ModelConfig:
 @dataclass
 class CreateInfoConfig:
     """Configuration for create_info step."""
+
     root_path: Path
     output_dir: Path
     model_list: List[ModelConfig]
@@ -38,12 +42,14 @@ class CreateInfoConfig:
 @dataclass
 class EnsembleConfig:
     """Configuration for ensemble step."""
+
     config: Path
 
 
 @dataclass
 class TrackingConfig:
     """Configuration for tracking step."""
+
     input_path: Path
     output_path: Path
 
@@ -51,6 +57,7 @@ class TrackingConfig:
 @dataclass
 class PseudoDatasetConfig:
     """Configuration for pseudo_dataset step."""
+
     config: Path
     root_path: Path
     input_source: str
@@ -60,6 +67,7 @@ class PseudoDatasetConfig:
 @dataclass
 class PipelineConfig:
     """Complete pipeline configuration."""
+
     logging: LoggingConfig
     create_info: CreateInfoConfig
     ensemble: EnsembleConfig
@@ -94,12 +102,12 @@ def _parse_create_info(create_info_dict: Optional[Dict[str, Any]], base_dir: Pat
     """Parse create_info configuration from dictionary."""
     if not create_info_dict:
         raise ValueError("create_info section is required in configuration")
-    
+
     root_path = Path(create_info_dict.get("root_path", ""))
     output_dir = Path(create_info_dict.get("output_dir", ""))
     model_list_raw = create_info_dict.get("model_list", [])
     model_list = [_parse_model(m) for m in model_list_raw]
-    
+
     return CreateInfoConfig(root_path=root_path, output_dir=output_dir, model_list=model_list)
 
 
@@ -113,7 +121,7 @@ def _parse_tracking(tracking_dict: Optional[Dict[str, Any]], base_dir: Path) -> 
     """Parse tracking configuration from dictionary."""
     if not tracking_dict:
         raise ValueError("tracking section is required in configuration")
-    
+
     input_path = Path(tracking_dict.get("input_path", ""))
     output_path = Path(tracking_dict.get("output_path", ""))
     return TrackingConfig(input_path=input_path, output_path=output_path)
@@ -125,7 +133,7 @@ def _parse_pseudo_dataset(pseudo_dataset_dict: Dict[str, Any], base_dir: Path) -
     root_path = Path(pseudo_dataset_dict.get("root_path", ""))
     input_source = pseudo_dataset_dict.get("input_source", "tracking")
     overwrite = pseudo_dataset_dict.get("overwrite", False)
-    
+
     return PseudoDatasetConfig(
         config=config,
         root_path=root_path,
@@ -137,13 +145,13 @@ def _parse_pseudo_dataset(pseudo_dataset_dict: Dict[str, Any], base_dir: Path) -
 def load_pipeline_config(config_path: Path) -> PipelineConfig:
     """
     Load and parse pipeline configuration from YAML file.
-    
+
     Args:
         config_path (Path): Path to the YAML configuration file.
-        
+
     Returns:
         PipelineConfig: Parsed pipeline configuration.
-        
+
     Raises:
         FileNotFoundError: If the configuration file does not exist.
         TypeError: If the configuration is not a valid mapping.

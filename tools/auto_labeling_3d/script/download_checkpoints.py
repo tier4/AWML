@@ -1,9 +1,12 @@
 import argparse
+import logging
 from pathlib import Path
+
 import requests
 import yaml
-import logging
+
 from tools.auto_labeling_3d.utils.logger import setup_logger
+
 
 def download_file(url: str, save_path: Path, logger: logging.Logger) -> None:
     """
@@ -23,6 +26,7 @@ def download_file(url: str, save_path: Path, logger: logging.Logger) -> None:
         for chunk in response.iter_content(chunk_size=8192):
             f.write(chunk)
     logger.info("Download completed.")
+
 
 def main() -> None:
     """
@@ -58,6 +62,7 @@ def main() -> None:
             download_file(url, Path(save_path), logger)
         else:
             logger.warning(f"Skipping model: missing url or save_path: {model}")
+
 
 if __name__ == "__main__":
     main()
