@@ -1,41 +1,36 @@
 import argparse
 import logging
 from pathlib import Path
-from typing import Any, Dict, Iterable, List, Optional
 
-import yaml
+from tools.auto_labeling_3d.entrypoint.parse_config import PipelineConfig, load_pipeline_config
+from tools.auto_labeling_3d.script.download_checkpoints import download_file
 
 
-def trigger_auto_labeling_pipeline(config: "PipelineConfig") -> None:
+def download_checkpoints(config: PipelineConfig, logger: logging.Logger) -> None:
+    """
+    Download checkpoints specified in the pipeline configuration.
+
+    Args:
+        config (PipelineConfig): The pipeline configuration containing model information.
+        logger (logging.Logger): Logger for logging messages.
+    """
+    logger.info("Starting checkpoint download...")
+    for model in config.create_info.model_list:
+        url = model.checkpoint.model_zoo_url
+        checkpoint_path = model.checkpoint.checkpoint_path
+        if url and checkpoint_path:
+            download_file(url, checkpoint_path, logger)
+        else:
+            logger.warning(f"Skipping model '{model.name}': missing url or checkpoint_path")
+    logger.info("Checkpoint download completed.")
+
+
+def trigger_auto_labeling_pipeline(config: PipelineConfig) -> None:
     # Execute the whole auto labeling pipeline.
-    pass
-
-
-def load_pipeline_config(config_path: Path) -> PipelineConfig:
-    if not config_path.exists():
-        raise FileNotFoundError(f"Configuration file not found: {config_path}")
-
-    with config_path.open("r", encoding="utf-8") as fp:
-        raw_config = yaml.safe_load(fp) or {}
-
-    if not isinstance(raw_config, dict):
-        raise TypeError("Top-level configuration must be a mapping")
-
-    base_dir = config_path.parent
-
-    logging_cfg = _parse_logging_config(raw_config.get("logging", {}), base_dir)
-    create_info_cfg = _parse_create_info(raw_config.get("create_info"), base_dir)
-    ensemble_cfg = _parse_ensemble(raw_config.get("ensemble", {}), base_dir)
-    tracking_cfg = _parse_tracking(raw_config.get("tracking"), base_dir)
-    pseudo_dataset_cfg = _parse_pseudo_dataset(raw_config.get("pseudo_dataset", {}), base_dir)
-
-    return PipelineConfig(
-        logging=logging_cfg,
-        create_info=create_info_cfg,
-        ensemble=ensemble_cfg,
-        tracking=tracking_cfg,
-        pseudo_dataset=pseudo_dataset_cfg,
-    )
+    logger = logging.getLogger("auto_labeling_3d.entrypoint")
+    
+    # Step 1: Download checkpoints
+    download_checkpoints(config, logger)
 
 
 def parse_args() -> argparse.Namespace:
