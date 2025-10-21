@@ -11,10 +11,11 @@ python tools/auto_labeling_3d/change_directory_structure/change_directory_struct
 """
 
 import argparse
+import logging
 import os
 import shutil
-import logging
 from pathlib import Path
+
 from tools.auto_labeling_3d.utils.logger import setup_logger
 
 
@@ -57,7 +58,9 @@ def move_contents_from_numbered_dir(scene_dir: Path, logger: logging.Logger, ver
         raise OSError(f"  Could not remove directory {version_dir_name}/: {e}")
 
 
-def process_dataset(dataset_dir: Path, logger: logging.Logger, annotated_to_non_annotated: bool = False, version_dir_name: str = "0") -> None:
+def process_dataset(
+    dataset_dir: Path, logger: logging.Logger, annotated_to_non_annotated: bool = False, version_dir_name: str = "0"
+) -> None:
     """Process the dataset directory structure."""
     if not dataset_dir.exists():
         raise FileNotFoundError(f"Directory '{dataset_dir}' does not exist.")
@@ -128,6 +131,7 @@ def main():
         args.annotated_to_non_annotated,
         args.version_dir_name,
     )
+
 
 if __name__ == "__main__":
     main()
