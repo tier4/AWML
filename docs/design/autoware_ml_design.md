@@ -197,7 +197,6 @@ The directory of `tools/` manages the tools for each tasks.
 `tools/` scripts are abstracted. For example, `tools/detection3d` can be used for any 3D detection models such as TransFusion and BEVFusion.
 This directory can depend on `/autoware_ml` and other `/tools`.
 
-
 ```
 - tools/
   - detection3d/
@@ -207,6 +206,16 @@ This directory can depend on `/autoware_ml` and other `/tools`.
 
 Each tool has `README.md` for developers.
 The target of `README.md` is a developer of `AWML`.
+
+### data/
+
+`data/` directory is gitignored, and it refers to inputs for `AWML`, for example, datasets and info files.
+The design follows `mmdetection3d` as recommended in  https://mmdetection3d.readthedocs.io/en/latest/advanced_guides/datasets/nuscenes.html. Please change the directory name for different use cases accordingly.
+
+### work_dirs/
+
+The directory manages any artifacts and files generated from `AWML`, for example, training/evaluation/visualization.
+Please change the directory name accordingly.
 
 ## Support priority
 
