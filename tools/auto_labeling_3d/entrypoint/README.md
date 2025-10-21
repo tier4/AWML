@@ -10,5 +10,5 @@
 ## Quick start
 
 ```python
-python tools/auto_labeling_3d/entripoint/launch.py tools/auto_labeling_3d/entripoint/configs/example.yaml
+python tools/auto_labeling_3d/entrypoint/launch.py tools/auto_labeling_3d/entrypoint/configs/example.yaml
 ```
