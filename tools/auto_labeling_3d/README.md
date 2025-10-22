@@ -4,6 +4,49 @@ The pipeline of auto labeling for 3D detection.
 
 - [Support priority](https://github.com/tier4/AWML/blob/main/docs/design/autoware_ml_design.md#support-priority): Tier S
 
+```mermaid
+graph LR
+    NADATA[(non-annotated dataset)]
+
+    subgraph "LiDAR detector inference"
+        INFERENCE_A[<a href='#2-create-info-file-from-non-annotated-t4dataset'>create_info</a>]
+    end
+
+    subgraph "Camera detector inference"
+        INFERENCE_B[<a href='#2-create-info-file-from-non-annotated-t4dataset'>create_info</a>]
+    end
+
+    subgraph "Camera LiDAR detector inference"
+        INFERENCE_C[<a href='#2-create-info-file-from-non-annotated-t4dataset'>create_info</a>]
+    end
+
+    subgraph "Ensemble"
+        ENSEMBLE[<a href='#3-filter-objects-which-do-not-use-for-pseudo-t4dataset'>filter_objects</a>]
+    end
+
+    subgraph "Temporal ID Consistency"
+        TRACKING[<a href='#4-attach-tracking-id-to-info-file'>attach_tracking_id</a>]
+    end
+
+    subgraph "Convert to t4dataset"
+        CONVERT[<a href='#5-create-pseudo-t4dataset'>create_pseudo_dataset</a>]
+    end
+
+    DATA[(auto-labeled dataset)]
+
+    NADATA --> INFERENCE_A
+    NADATA --> INFERENCE_B
+    NADATA --> INFERENCE_C
+
+    INFERENCE_A --> ENSEMBLE
+    INFERENCE_B --> ENSEMBLE
+    INFERENCE_C --> ENSEMBLE
+    
+    ENSEMBLE --> TRACKING
+    TRACKING --> CONVERT
+    CONVERT --> DATA
+```
+
 ## 1. Setup environment
 
 - Please follow the [installation tutorial](/docs/tutorial/tutorial_detection_3d.md) to set up the environment.
