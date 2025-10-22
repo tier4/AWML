@@ -12,17 +12,17 @@ create_info:
   - name: centerpoint
     model_config: /workspace/projects/CenterPoint/configs/t4dataset/Centerpoint/second_secfpn_4xb16_121m_j6gen2_base_t4metric_v2.py
     checkpoint:
-      model_zoo_url: https://download.autoware-ml-model-zoo.tier4.jp/autoware-ml/models/bevfusion/bevfusion-cl/t4base/v1.0/best_NuScenes_metric_T4Metric_mAP_epoch_38.pth
+      model_zoo_url: https://download.autoware-ml-model-zoo.tier4.jp/autoware-ml/models/centerpoint/centerpoint/j6gen2/v2.3.1/best_NuScenes_metric_T4Metric_mAP_epoch_29.pth
       checkpoint_path: /workspace/work_dirs/checkpoints/example_model.pth
   - name: bevfusion
     model_config: /workspace/projects/BEVFusion/configs/t4dataset/BEVFusion-CL/bevfusion_camera_lidar_voxel_second_secfpn_4xb8_gen2_base.py
     checkpoint:
-      model_zoo_url: https://download.autoware-ml-model-zoo.tier4.jp/autoware-ml/models/bevfusion/bevfusion-cl/t4base/v1.0/best_NuScenes_metric_T4Metric_mAP_epoch_38.pth
+      model_zoo_url: https://download.autoware-ml-model-zoo.tier4.jp/autoware-ml/models/bevfusion/bevfusion-cl/t4base/v2.0.0/best_NuScenes_metric_T4Metric_mAP_epoch_48.pth
       checkpoint_path: /workspace/work_dirs/checkpoints/example_model_bevfusion.pth
   - name: streampetr
     model_config: /workspace/projects/StreamPETR/configs/t4dataset/t4_base_vov_flash_480x640_baseline.py
     checkpoint:
-      model_zoo_url: https://download.autoware-ml-model-zoo.tier4.jp/autoware-ml/models/bevfusion/bevfusion-cl/t4base/v1.0/best_NuScenes_metric_T4Metric_mAP_epoch_38.pth
+      model_zoo_url: https://download.autoware-ml-model-zoo.tier4.jp/autoware-ml/models/streampetr/streampetr-vov99/t4base/v2.3/best_NuScenes_metric_T4Metric_mAP_epoch_31.pth
       checkpoint_path: /workspace/work_dirs/checkpoints/example_model_streampetr.pth
 
 ensemble:
