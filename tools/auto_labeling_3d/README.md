@@ -54,6 +54,8 @@ graph LR
     click CONVERT "https://github.com/tier4/AWML/tree/main/tools/auto_labeling_3d#5-create-pseudo-t4dataset"
 ```
 
+![Auto Labeling 3D Process Flow](docs/auto_labeling_3d_process_flow.drawio.svg)
+
 ## 1. Setup environment
 
 - Please follow the [installation tutorial](/docs/tutorial/tutorial_detection_3d.md) to set up the environment.
