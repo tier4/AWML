@@ -9,27 +9,27 @@ graph LR
     NADATA[(non-annotated dataset)]
 
     subgraph "LiDAR detector inference"
-        INFERENCE_A[<a href='#2-create-info-file-from-non-annotated-t4dataset'>create_info</a>]
+        INFERENCE_A[create_info]
     end
 
     subgraph "Camera detector inference"
-        INFERENCE_B[<a href='#2-create-info-file-from-non-annotated-t4dataset'>create_info</a>]
+        INFERENCE_B[create_info]
     end
 
     subgraph "Camera LiDAR detector inference"
-        INFERENCE_C[<a href='#2-create-info-file-from-non-annotated-t4dataset'>create_info</a>]
+        INFERENCE_C[create_info]
     end
 
     subgraph "Ensemble"
-        ENSEMBLE[<a href='#3-filter-objects-which-do-not-use-for-pseudo-t4dataset'>filter_objects</a>]
+        ENSEMBLE[filter_objects]
     end
 
     subgraph "Temporal ID Consistency"
-        TRACKING[<a href='#4-attach-tracking-id-to-info-file'>attach_tracking_id</a>]
+        TRACKING[attach_tracking_id]
     end
 
     subgraph "Convert to t4dataset"
-        CONVERT[<a href='#5-create-pseudo-t4dataset'>create_pseudo_dataset</a>]
+        CONVERT[create_pseudo_dataset]
     end
 
     DATA[(auto-labeled dataset)]
@@ -45,6 +45,13 @@ graph LR
     ENSEMBLE --> TRACKING
     TRACKING --> CONVERT
     CONVERT --> DATA
+
+    click INFERENCE_A "https://github.com/tier4/AWML/tree/main/tools/auto_labeling_3d#2-create-info-file-from-non-annotated-t4dataset"
+    click INFERENCE_B "https://github.com/tier4/AWML/tree/main/tools/auto_labeling_3d#2-create-info-file-from-non-annotated-t4dataset"
+    click INFERENCE_C "https://github.com/tier4/AWML/tree/main/tools/auto_labeling_3d#2-create-info-file-from-non-annotated-t4dataset"
+    click ENSEMBLE "https://github.com/tier4/AWML/tree/main/tools/auto_labeling_3d#3-filter-objects-which-do-not-use-for-pseudo-t4dataset"
+    click TRACKING "https://github.com/tier4/AWML/tree/main/tools/auto_labeling_3d#4-attach-tracking-id-to-info-file"
+    click CONVERT "https://github.com/tier4/AWML/tree/main/tools/auto_labeling_3d#5-create-pseudo-t4dataset"
 ```
 
 ## 1. Setup environment
