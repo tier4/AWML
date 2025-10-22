@@ -8,15 +8,15 @@ The pipeline of auto labeling for 3D detection.
 graph LR
     NADATA[(non-annotated dataset)]
 
-    subgraph "LiDAR detector inference"
+    subgraph "Model A inference"
         INFERENCE_A[create_info]
     end
 
-    subgraph "Camera detector inference"
+    subgraph "Model B inference"
         INFERENCE_B[create_info]
     end
 
-    subgraph "Camera LiDAR detector inference"
+    subgraph "Model C inference"
         INFERENCE_C[create_info]
     end
 
