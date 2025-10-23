@@ -21,7 +21,7 @@ point_cloud_range = [-51.2, -51.2, -5.0, 51.2, 51.2, 3.0]
 voxel_size = [0.2, 0.2, 8]
 img_norm_cfg = dict(mean=[103.530, 116.280, 123.675], std=[57.375, 57.120, 58.395], to_rgb=False)  # fix img_norm
 
-camera_order = ["CAM_FRONT", "CAM_BACK", "CAM_FRONT_LEFT", "CAM_BACK_LEFT", "CAM_FRONT_RIGHT", "CAM_BACK_RIGHT"]
+camera_order = ["CAM_FRONT", "CAM_FRONT_LEFT", "CAM_BACK_LEFT", "CAM_FRONT_RIGHT", "CAM_BACK_RIGHT"]
 
 
 class_names = _base_.class_names
@@ -32,7 +32,7 @@ batch_size = 4
 test_batch_size = 1
 val_interval = 5
 num_epochs = 35
-num_cameras = 6
+num_cameras = len(camera_order)
 backend_args = None
 stride = 16  # downsampling factor of extracted features form image
 
@@ -189,23 +189,19 @@ model = dict(
 file_client_args = dict(backend="disk")
 
 ida_aug_conf = {
-    "resize_lim": (0.42, 0.46),
+    "resize_lim": 0.02,
     "final_dim": (480, 640),
     "bot_pct_lim": (0.0, 0.0),
     "rot_lim": (0.0, 0.0),
-    "H": 1080,
-    "W": 1440,
     "rand_flip": True,
 }
 
 ida_aug_conf_test = {
-    "resize_lim": (0.42, 0.46),
+    "resize_lim": 0.02,
     "final_dim": (480, 640),
     "bot_pct_lim": (0.0, 0.0),
     "rot_lim": (0.0, 0.0),
-    "H": 1080,
-    "W": 1440,
-    "rand_flip": True,
+    "rand_flip": False,
 }
 
 # augmementations = [
@@ -418,7 +414,7 @@ default_hooks = dict(
 env_cfg = dict(
     cudnn_benchmark=False,
     mp_cfg=dict(mp_start_method="fork", opencv_num_threads=0),
-    dist_cfg=dict(backend="nccl", timeout=3600),
+    dist_cfg=dict(backend="nccl", timeout=3600 * 3),
 )  # Since we are doing inference with batch_size=1, it can be slow so timeout needs to be increased
 
 sync_bn = "torch"
