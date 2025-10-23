@@ -6,7 +6,7 @@ The pipeline of auto labeling for 3D detection.
 
 ```mermaid
 graph LR
-    NADATA[(non-annotated dataset)]
+    NADATA[(non-annotated T4Dataset)]
 
     subgraph "Model A inference"
         INFERENCE_A[create_info]
@@ -28,11 +28,11 @@ graph LR
         TRACKING[attach_tracking_id]
     end
 
-    subgraph "Convert to t4dataset"
+    subgraph "Convert to T4Dataset"
         CONVERT[create_pseudo_dataset]
     end
 
-    DATA[(auto-labeled dataset)]
+    DATA[(pseudo-label T4Dataset)]
 
     NADATA --> INFERENCE_A
     NADATA --> INFERENCE_B
