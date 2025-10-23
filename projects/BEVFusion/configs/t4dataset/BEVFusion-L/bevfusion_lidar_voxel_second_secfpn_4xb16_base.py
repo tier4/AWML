@@ -102,9 +102,11 @@ train_pipeline = [
     dict(type="LoadAnnotations3D", with_bbox_3d=True, with_label_3d=True, with_attr_label=False),
     dict(
         type="BEVFusionGlobalRotScaleTrans",
-        rot_range=[-1.571, 1.571],
-        scale_ratio_range=[0.8, 1.2],
-        translation_std=[1.0, 1.0, 0.2],
+        scale_ratio_range=[0.9, 1.1],
+        rot_range=[-0.78539816, 0.78539816],
+        # rot_range=[-1.571, 1.571],
+        # scale_ratio_range=[0.8, 1.2],
+        translation_std=[0.5, 0.5, 0.2],
     ),
     dict(type="BEVFusionRandomFlip3D"),
     dict(type="PointsRangeFilter", point_cloud_range=point_cloud_range),
@@ -124,7 +126,7 @@ train_pipeline = [
             "traffic_cone",
         ],
     ),
-    dict(type="ObjectMinPointsFilter", min_num_points=5),
+    # dict(type="ObjectMinPointsFilter", min_num_points=5),
     dict(type="PointShuffle"),
     dict(
         type="Pack3DDetInputs",
@@ -209,7 +211,7 @@ train_dataloader = dict(
         test_mode=False,
         data_prefix=_base_.data_prefix,
         box_type_3d="LiDAR",
-        filter_cfg=filter_cfg,
+        # filter_cfg=filter_cfg,
     ),
 )
 
