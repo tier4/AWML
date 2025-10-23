@@ -1,11 +1,11 @@
-ARG PYTORCH="2.2.2"
-ARG CUDA="12.1"
-ARG CUDNN="8"
+ARG PYTORCH="2.8.0"
+ARG CUDA="12.9"
+ARG CUDNN="9"
 FROM pytorch/pytorch:${PYTORCH}-cuda${CUDA}-cudnn${CUDNN}-devel
 
 ARG MMCV="2.1.0"
-ARG MMENGINE="0.10.3"
-ARG MMDET="3.2.0"
+ARG MMENGINE="0.10.7"
+ARG MMDET="3.3.0"
 ARG MMDEPLOY="1.3.1"
 ARG MMDET3D="1.4.0"
 ARG MMPRETRAIN="1.2.0"
@@ -13,7 +13,7 @@ ARG MMSEGMENTATION="1.2.2"
 
 ENV CUDA_HOME="/usr/local/cuda" \
     FORCE_CUDA="1" \
-    TORCH_CUDA_ARCH_LIST="6.0 6.1 7.0 7.5 8.0 8.6 8.7 8.9+PTX" \
+    TORCH_CUDA_ARCH_LIST="6.0 6.1 7.0 7.5 8.0 8.6 8.7 8.9 9.0 12.0+PTX" \
     TORCH_NVCC_FLAGS="-Xfatbin -compress-all"
 
 # Install apt dependencies for base library
@@ -37,7 +37,8 @@ RUN python3 -m pip --no-cache-dir install \
     numpy==1.23.5 \
     nvidia-pyindex \
     openmim \
-    nltk==3.8.1
+    nltk==3.8.1 \
+    mlflow==3.4.0
 
 # Install mim components
 RUN mim install \
@@ -69,10 +70,13 @@ RUN python3 -m pip --no-cache-dir install \
 
 # NOTE(knzo25): this patch is needed to use numpy versions over 1.23.5 (version used in mmdet3d 1.4.0)
 # It can be safely deleted when mmdet3d updates the numpy version
+# NOTE(amadeuszsz): patches for torch.load can be removed after mmlab's PyTorch 2.6+ support
 COPY .patches/mmdet3d.patch /tmp/mmdet3d.patch
+COPY .patches/mmengine.patch /tmp/mmengine.patch
 RUN cd $(python -c "import site; print(site.getsitepackages()[0])") \
   && git apply < /tmp/mmdet3d.patch \
-  && rm -f /tmp/mmdet3d.patch \
+  && git apply < /tmp/mmengine.patch \
+  && rm -rf /tmp/* \
   && cd /
 
 ENV WGPU_BACKEND=gl

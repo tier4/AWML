@@ -1,4 +1,4 @@
-ARG BASE_IMAGE=ghcr.io/tier4/autoware-ml-base:latest
+ARG BASE_IMAGE=ghcr.io/tier4/awml:base-latest
 FROM ${BASE_IMAGE}
 
 # Install pip dependencies
@@ -10,3 +10,19 @@ ARG perception_dataset_version=v1.0.26
 
 RUN git clone -b ${perception_dataset_version} ${perception_dataset_url} \
     && cd tier4_perception_dataset && pip install .
+
+# Setup the supported models in default
+WORKDIR /workspace
+COPY projects projects
+
+## Setup CenterPoint
+ENV CUBLAS_WORKSPACE_CONFIG=:4096:8
+
+## Setup BEVFusion
+RUN python /workspace/projects/BEVFusion/setup.py develop \
+    && pip install spconv-cu120
+ENV PYTHONPATH=/workspace/projects
+ENV PYTHONPATH=${PYTHONPATH}
+
+## Setup StreamPETR
+RUN pip install -e /workspace/projects/StreamPETR

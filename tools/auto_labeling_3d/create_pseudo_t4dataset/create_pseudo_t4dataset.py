@@ -93,7 +93,7 @@ def _transform_pred_instance_to_global_t4box(
     velocity: Tuple[float] = (*velocity, np.float64(0.0))
 
     box = T4Box3D(
-        unix_time=timestamp,
+        unix_time=int(timestamp),
         frame_id="base_link",
         semantic_label=SemanticLabel(label),
         position=position,
