@@ -67,7 +67,7 @@ graph LR
   - If you build `AWML` image locally, please add `--build-arg BASE_IMAGE=autoware-ml` or `--build-arg BASE_IMAGE=autoware-ml-ros2` to build script.
 
 ```sh
-DOCKER_BUILDKIT=1 docker build -t auto_labeling_3d tools/auto_labeling_3d/
+DOCKER_BUILDKIT=1 docker build -t auto_labeling_3d -f tools/auto_labeling_3d/Dockerfile .
 ```
 
 - Run docker container.
@@ -277,7 +277,7 @@ python tools/auto_labeling_3d/attach_tracking_id/attach_tracking_id.py --input {
 - Run script
 
 ```sh
-python tools/auto_labeling_3d/create_pseudo_t4dataset.py {yaml config file about T4dataset data} --root-path {path to directory of non-annotated T4dataset} --input {path to pkl file}
+python tools/auto_labeling_3d/create_pseudo_t4dataset/create_pseudo_t4dataset.py {yaml config file about T4dataset data} --root-path {path to directory of non-annotated T4dataset} --input {path to pkl file}
 ```
 
 - As a result, pseudo-label T4dataset is made as below.
