@@ -1,14 +1,16 @@
 from __future__ import annotations
 
+from abc import ABC, abstractmethod
 from collections import defaultdict
 from dataclasses import dataclass, field
-from typing import Any, Dict, List, NamedTuple, Optional
+from typing import Any, Dict, List, NamedTuple, Optional, TypeVar
 
 import numpy as np
 import numpy.typing as npt
 from mmengine.logging import print_log
-from t4_devkit import Tier4 as t4
-from t4_devkit.dataclass import Box3D
+from t4_devkit.dataclass import Box3D, BoxLike
+
+SampleDataT = TypeVar("SampleDataT", bound="SampleData")
 
 
 class DatasetSplitName(NamedTuple):
@@ -19,11 +21,18 @@ class DatasetSplitName(NamedTuple):
 
 
 @dataclass(frozen=True)
-class Detection3DBox:
+class DetectionBox:
+    """Base boxes from detection."""
+
+    box: BoxLike
+    attrs: List[str]
+
+
+@dataclass(frozen=True)
+class Detection3DBox(DetectionBox):
     """3D boxes from detection."""
 
     box: Box3D
-    attrs: List[str]
 
 
 @dataclass(frozen=True)
@@ -40,13 +49,11 @@ class LidarSweep:
 
 
 @dataclass(frozen=True)
-class SampleData:
-    """Dataclass to save data for a sample, for example, 3D bounding boxes."""
+class SampleData(ABC):
+    """Dataclass to save data for a sample, for example, bounding boxes."""
 
     sample_token: str
-    detection_3d_boxes: List[Detection3DBox]
-    lidar_point: Optional[LidarPoint] = None  # Path to the lidar file
-    lidar_sweeps: Optional[List[LidarSweep]] = None  # List of lidar sweeps
+    detection_boxes: List[DetectionBox]
 
     def get_category_attr_counts(
         self,
@@ -61,14 +68,14 @@ class SampleData:
         :return: A dict of {attribute name: total counts}.
         """
         category_attr_counts: Dict[str, int] = defaultdict(int)
-        for detection_3d_box in self.detection_3d_boxes:
-            box_category_name = detection_3d_box.box.semantic_label.name
+        for detection_box in self.detection_boxes:
+            box_category_name = detection_box.box.semantic_label.name
             if remapping_classes is not None:
                 # If no category found from the remapping, then it uses the original category name
                 box_category_name = remapping_classes.get(box_category_name, box_category_name)
 
             if box_category_name == category_name:
-                for attr_name in detection_3d_box.attrs:
+                for attr_name in detection_box.attrs:
                     category_attr_counts[attr_name] += 1
 
         return category_attr_counts
@@ -84,13 +91,38 @@ class SampleData:
         :return: A dict of {sample token: {category name: total counts}}.
         """
         category_counts: Dict[str, int] = defaultdict(int)
-        for detection_3d_box in self.detection_3d_boxes:
-            box_category_name = detection_3d_box.box.semantic_label.name
+        for detection_box in self.detection_boxes:
+            box_category_name = detection_box.box.semantic_label.name
             if remapping_classes is not None:
                 # If no category found from the remapping, then it uses the original category name
                 box_category_name = remapping_classes.get(box_category_name, box_category_name)
             category_counts[box_category_name] += 1
         return category_counts
+
+    @classmethod
+    @abstractmethod
+    def create_sample_data(
+        cls,
+        sample_token: str,
+        boxes: List[BaseBox],
+        **kwargs: Any,
+    ) -> SampleDataT:
+        """
+        Create a SampleData given the params.
+        :param sample_token: Sample token to represent a sample (sensor frame).
+        :param boxes: List of bounding boxes for the given sample token.
+        """
+        raise NotImplementedError
+
+
+@dataclass(frozen=True)
+class SampleData3D(SampleData):
+    """Dataclass to save data for a sample, for example, 3D bounding boxes."""
+
+    sample_token: str
+    detection_boxes: List[Detection3DBox]
+    lidar_point: Optional[LidarPoint] = None  # Path to the lidar file
+    lidar_sweeps: Optional[List[LidarSweep]] = None  # List of lidar sweeps
 
     @classmethod
     def create_sample_data(
@@ -99,17 +131,17 @@ class SampleData:
         boxes: List[Box3D],
         lidar_point: Optional[LidarPoint] = None,
         lidar_sweeps: Optional[List[LidarSweep]] = None,
-    ) -> SampleData:
+    ) -> SampleData3D:
         """
         Create a SampleData given the params.
         :param sample_token: Sample token to represent a sample (lidar frame).
-        :param detection_3d_boxes: List of 3D bounding boxes for the given sample token.
+        :param boxes: List of 3D bounding boxes for the given sample token.
         """
         detection_3d_boxes = [Detection3DBox(box=box, attrs=box.semantic_label.attributes) for box in boxes]
 
-        return SampleData(
+        return cls(
             sample_token=sample_token,
-            detection_3d_boxes=detection_3d_boxes,
+            detection_boxes=detection_3d_boxes,
             lidar_sweeps=lidar_sweeps,
             lidar_point=lidar_point,
         )
@@ -125,7 +157,7 @@ class ScenarioData:
     def add_sample_data(self, sample_data: SampleData) -> None:
         """
         Add a SampleData to ScenarioData.
-        :param sample_data: SampleData contains data for descripting a sample/lidar frame.
+        :param sample_data: SampleData contains data for descripting a sample/sensor frame.
         """
         if sample_data.sample_token in self.sample_data:
             print_log(f"Found {sample_data.sample_token} in the data, replacing it...")
