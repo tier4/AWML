@@ -225,7 +225,7 @@ python tools/auto_labeling_3d/attach_tracking_id/attach_tracking_id.py --input {
 - Run script
 
 ```sh
-python tools/auto_labeling_3d/create_pseudo_t4dataset.py {yaml config file about T4dataset data} --root-path {path to directory of non-annotated T4dataset} --input {path to pkl file}
+python tools/auto_labeling_3d/create_pseudo_t4dataset/create_pseudo_t4dataset.py {yaml config file about T4dataset data} --root-path {path to directory of non-annotated T4dataset} --input {path to pkl file}
 ```
 
 - As a result, pseudo-label T4dataset is made as below.
