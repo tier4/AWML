@@ -1,11 +1,11 @@
 # Auto Labeling 3D Pipeline
 
-`launch.py` stitches the existing Auto Labeling 3D utilities into a single end-to-end workflow:
+`launch.py` launches `auto_labeling_3d` in a single end-to-end workflow:
 
-1. **create_info_data** – build pseudo-labelled info files from a non-annotated dataset
-2. **ensemble_infos** – ensemble/filter pseudo labels across one or more models
-3. **attach_tracking_id** – assign consistent tracking IDs per scene
-4. **create_pseudo_t4dataset** – write final pseudo labels in T4Dataset format
+1. **create_info_data** – Create info files for saving pseudo labels from a non-annotated T4Dataset
+2. **ensemble_infos** – Ensemble/filter pseudo labels across one or more models
+3. **attach_tracking_id** – Assign consistent tracking ID to every 3D bounding box across frames per scene
+4. **create_pseudo_t4dataset** – Write processed pseudo labels to a T4Dataset
 
 ## Quick start
 
