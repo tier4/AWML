@@ -18,8 +18,8 @@
 
 | eval range: 120m         | mAP     | car <br> (56,829) | truck <br> (4,633) | bus <br> (1,559) | bicycle <br> (1,166) | pedestrian <br> (10,955) |
 | -------------------------    | ---- | ----------------- | ------------------- | ---------------- | -------------------- | ------------------------ |
-| CenterPoint J6Gen2/2.3.1     | 74.60 | 86.40            | 60.00               | 85.50         | 72.30                 | 68.80                   |
-| CenterPoint J6Gen2/2.2.1     | 73.40 | 86.10            | 58.80               | 83.50         | 70.50                 | 68.30                   |
+| CenterPoint J6Gen2/2.4.1     | 76.10 | 85.60            | 62.20               | 85.20         | 76.50                 | 70.80                   |
+| CenterPoint J6Gen2/2.3.1     | 74.20 | 86.50            | 59.70               | 84.70         | 71.40                 | 68.40                   |
 
 
 ### Deprecated results
@@ -44,8 +44,8 @@
 
 | eval range: 120m         | mAP     | car <br> (16,604)     | truck <br> (1,961) | bus <br> (171) | bicycle <br> (863) | pedestrian <br> (4,659) |
 | -------------------------| ----    | -------------------- | ------------------- | ---------------- | -------------------- | ------------------------ |
-| CenterPoint J6Gen2/2.3.1     | 75.20 | 91.20            | 69.70               | 75.70         | 68.80                 | 70.30                   |
-| CenterPoint J6Gen2/2.2.1     | 72.50 | 89.90            | 67.70               | 68.80         | 67.00                 | 69.10                   |
+| CenterPoint J6Gen2/2.4.1     | 76.50 | 90.80            | 69.10               | 77.90         | 73.40                 | 71.10                   |
+| CenterPoint J6Gen2/2.3.1     | 74.80 | 91.20            | 69.70               | 75.40         | 67.70                 | 69.80                   |
 
 </details>
 
@@ -56,13 +56,65 @@
 
 | eval range: 120m         | mAP     | car <br> (40,225) | truck <br> (2,672) | bus <br> (1,388) | bicycle <br> (303) | pedestrian <br> (6,296) |
 | -------------------------| ----    | ----------------- | ------------------- | ---------------- | -------------------- | ------------------------ |
-| CenterPoint J6Gen2/2.3.1     | 74.80 | 84.50            | 53.00               | 86.50         | 82.10                 | 67.70                   |
-| CenterPoint J6Gen2/2.2.1     | 74.30 | 84.70            | 53.00               | 85.30         | 80.70                 | 67.70                   |
+| CenterPoint J6Gen2/2.4.1        | 76.70 | 83.50            | 57.20               | 86.10         | 86.10                 | 70.40                   |
+| CenterPoint J6Gen2/2.3.1    | 74.30 | 84.50            | 52.60               | 85.70         | 81.60                 | 67.20                   |
 
 
 </details>
 
 ## Release
+### CenterPoint J6Gen2/2.4.1
+- Changes:
+  - Finetune from `CenterPoint base/2.4.0` with j6gen2 base dataset
+  - Include intensity as an extra feature and Repeat Sampling Factor (RFS)
+
+- Overall:
+   - Performance is better than `CenterPoint J6Gen2/2.3.1`, especially, `truck`, `bicycle` and `pedestrian`, where `bicycle` improves mAP more than `5.0` in `j6gen2_base` dataset
+
+<details>
+<summary> The link of data and evaluation result </summary>
+
+- Model
+  - Training Dataset (frames: 30,290):
+      - j6gen2: db_j6gen2_v1 + db_j6gen2_v2 + db_j6gen2_v3 + db_j6gen2_v4 + db_j6gen2_v5 (21,077 frames)
+			- largebus: db_largebus_v1 + db_largebus_v2 (9,213 frames)
+  - [Config file path](https://github.com/tier4/AWML/blob/c0ba7268f110062f71ee80a3469102867a63b740/projects/CenterPoint/configs/t4dataset/Centerpoint/second_secfpn_4xb16_121m_j6gen2_base.py)
+  - Deployed onnx and ROS parameter files (for internal)
+    - [WebAuto](https://evaluation.tier4.jp/evaluation/mlpackages/7156b453-2861-4ae9-b135-e24e48cc9029/releases/cb7d790e-4efe-47c2-b2b4-62d9d80aa085?project_id=zWhWRzei)
+    - [model-zoo](https://download.autoware-ml-model-zoo.tier4.jp/autoware-ml/models/centerpoint/centerpoint/j6gen2/v2.3.1/deployment.zip)
+    - [Google drive](https://drive.google.com/file/d/1toIlwTYbjIkXVoRdG4e0WSUBwqRKQDNi/view?usp=drive_link)
+  - Logs (for internal)
+    - [model-zoo](https://download.autoware-ml-model-zoo.tier4.jp/autoware-ml/models/centerpoint/centerpoint/j6gen2/v2.3.1/logs.zip)
+    - [Google drive](https://drive.google.com/file/d/1i4uvbOHsbDuNn0CtF1Dkx4CTrrjCAICt/view?usp=drive_link)
+  - Train time: NVIDIA H100 80GB * 4 * 30 epochs = 1 day 3 hours
+  - Batch size: 4*16 = 64
+
+- Evaluation
+
+- db_largebus_v1 + db_largebus_v2 (859 frames):
+  - Total mAP (eval range = 120m): 0.765
+
+| class_name | Count        | mAP  | AP@0.5m | AP@1.0m | AP@2.0m | AP@4.0m |
+| ----       | -------------| ---- | ---- | ---- | ---- | ---- |
+| car        | 16,604       | 90.8 | 85.9    | 91.4    | 92.8    | 93.1    |
+| truck      |  1,961       | 69.1 | 56.2    | 69.3    | 74.6    | 76.5    |
+| bus        |    171       | 77.9 | 63.0    | 82.8    | 82.9    | 82.9    |
+| bicycle    |    863       | 73.4 | 69.4    | 73.9    | 75.1    | 75.3    |
+| pedestrian |   4,659      | 71.1 | 69.7    | 70.7    | 71.3    | 72.7    |
+
+- j6gen2: db_j6gen2_v1 + db_j6gen2_v2 + db_j6gen2_v3 + db_j6gen2_v4 + db_j6gen2_v5 (1,217 frames):
+  - Total mAP (eval range = 120m): 0.767
+
+| class_name | Count      | mAP  | AP@0.5m | AP@1.0m | AP@2.0m | AP@4.0m |
+| ----       | ---------- | ---- | ---- | ---- | ---- | ---- |
+| car        | 40,225     | 83.5 | 77.5    | 83.6    | 85.9    | 86.9    |
+| truck      |  2,672     | 57.2 | 46.9    | 56.1    | 59.2    | 66.6    |
+| bus        |  1,388     | 86.1 | 81.3    | 85.2    | 88.6    | 89.3    |
+| bicycle    |    303     | 86.1 | 85.6    | 86.3    | 86.3    | 86.3    |
+| pedestrian |  6,296     | 70.4 | 69.2    | 70.0    | 70.8    | 71.8    |
+
+</details>
+
 ### CenterPoint J6Gen2/2.3.1
 - Changes:
   - Finetune from `CenterPoint base/2.3.0` with j6gen2 base dataset
@@ -75,8 +127,8 @@
 <summary> The link of data and evaluation result </summary>
 
 - Model
-- Training Datasets (frames: 30,290):
-			- j6gen2: db_j6gen2_v1 + db_j6gen2_v2 + db_j6gen2_v3 + db_j6gen2_v4 + db_j6gen2_v5 (21,077 frames)
+  - Training Dataset (frames: 30,290):
+      - j6gen2: db_j6gen2_v1 + db_j6gen2_v2 + db_j6gen2_v3 + db_j6gen2_v4 + db_j6gen2_v5 (21,077 frames)
 			- largebus: db_largebus_v1 + db_largebus_v2 (9,213 frames)
   - [Config file path](https://github.com/tier4/AWML/blob/c0ba7268f110062f71ee80a3469102867a63b740/projects/CenterPoint/configs/t4dataset/Centerpoint/second_secfpn_4xb16_121m_j6gen2_base.py)
   - Deployed onnx and ROS parameter files (for internal)
@@ -92,26 +144,26 @@
 - Evaluation
 
 - db_largebus_v1 + db_largebus_v2 (859 frames):
-  - Total mAP (eval range = 120m): 0.752
+  - Total mAP (eval range = 120m): 0.748
 
 | class_name | Count        | mAP  | AP@0.5m | AP@1.0m | AP@2.0m | AP@4.0m |
 | ----       | -------------| ---- | ---- | ---- | ---- | ---- |
-| car        | 16,604       | 91.2 | 86.0    | 92.0    | 93.3    | 93.5    |
-| truck      |  1,961       | 69.7 | 56.5    | 70.3    | 75.1    | 77.0    |
-| bus        |    171       | 75.7 | 61.6    | 80.3    | 80.5    | 80.5    |
-| bicycle    |    863       | 68.8 | 63.7    | 69.6    | 70.9    | 70.9    |
-| pedestrian |   4,659      | 70.3 | 68.7    | 69.7    | 70.7    | 72.2    |
+| car        | 16,604       | 91.2 | 86.0    | 92.0    | 93.2    | 93.5    |
+| truck      |  1,961       | 69.7 | 57.1    | 70.3    | 74.9    | 76.5    |
+| bus        |    171       | 75.4 | 59.6    | 80.7    | 80.7    | 80.7    |
+| bicycle    |    863       | 67.7 | 62.0    | 68.9    | 69.9    | 70.0    |
+| pedestrian |   4,659      | 69.8 | 68.1    | 69.2    | 70.1    | 71.8    |
 
 - j6gen2: db_j6gen2_v1 + db_j6gen2_v2 + db_j6gen2_v3 + db_j6gen2_v4 + db_j6gen2_v5 (1,217 frames):
-  - Total mAP (eval range = 120m): 0.748
+  - Total mAP (eval range = 120m): 0.743
 
 | class_name | Count      | mAP  | AP@0.5m | AP@1.0m | AP@2.0m | AP@4.0m |
 | ----       | ---------- | ---- | ---- | ---- | ---- | ---- |
-| car        | 40,225     | 84.5 | 78.4    | 84.8    | 87.1    | 87.5    |
-| truck      |  2,672     | 53.0 | 42.6    | 51.0    | 55.8    | 62.7    |
-| bus        |  1,388     | 86.5 | 82.4    | 85.1    | 88.8    | 89.5    |
-| bicycle    |    303     | 82.1 | 80.6    | 82.5    | 82.7    | 82.7    |
-| pedestrian |  6,296     | 67.7 | 65.9    | 67.1    | 68.2    | 69.8    |
+| car        | 40,225     | 84.5 | 78.4    | 84.9    | 87.2    | 87.5    |
+| truck      |  2,672     | 52.6 | 42.1    | 50.8    | 55.1    | 62.5    |
+| bus        |  1,388     | 85.7 | 81.9    | 84.2    | 88.0    | 88.7    |
+| bicycle    |    303     | 81.6 | 79.9    | 81.8    | 82.3    | 82.3    |
+| pedestrian |  6,296     | 67.2 | 65.3    | 66.4    | 67.6    | 69.3    |
 
 </details>
 
