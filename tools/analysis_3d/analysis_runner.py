@@ -67,6 +67,7 @@ class AnalysisRunner:
                 out_path=self.out_path,
                 pc_ranges=[-121.60, -121.60, -3.0, 121.60, 121.60, 5.0],
                 voxel_sizes=[0.20, 0.20, 8.0],
+                point_thresholds=[1, 5, 10],
                 analysis_dir="voxel_nums_121_020",
                 bins=100,
             ),
@@ -160,8 +161,9 @@ class AnalysisRunner:
         :return: A dict of {scenario token: ScenarioData}.
         """
         scenario_data = {}
-        for scene_token in scene_tokens:
-            print_log(f"Creating scenario data for the scene: {scene_token}")
+        for scene_token_with_version in scene_tokens:
+            scene_token, version = scene_token_with_version.split("   ")
+            print_log(f"Creating scenario data for the scene: {scene_token}, version: {version}")
             scene_root_dir_path = get_scene_root_dir_path(
                 root_path=self.data_root_path,
                 dataset_version=dataset_version,
