@@ -16,7 +16,6 @@ from mmdet.models.utils import multi_apply
 from mmengine.structures import InstanceData
 from torch import nn
 
-
 def clip_sigmoid(x, eps=1e-4):
     y = torch.clamp(x.sigmoid_(), min=eps, max=1 - eps)
     return y
@@ -147,6 +146,16 @@ class BEVFusionHead(nn.Module):
                     bias=bias,
                 )
             )
+            # self.prediction_heads.append(
+            #     CustomSeparateHead(
+            #         hidden_channel,
+            #         heads,
+            #         conv_cfg=conv_cfg,
+            #         norm_cfg=norm_cfg,
+            #         bias=bias,
+            #         init_bias=-4.595
+            #     )
+            # )
 
         self.init_weights()
         self._init_assigner_sampler()
@@ -607,7 +616,10 @@ class BEVFusionHead(nn.Module):
         gt_instances, pred_instances = InstanceData(bboxes=gt_bboxes_tensor), InstanceData(priors=bboxes_tensor)
         sampling_result = self.bbox_sampler.sample(assign_result_ensemble, pred_instances, gt_instances)
         pos_inds = sampling_result.pos_inds
+
         neg_inds = sampling_result.neg_inds
+        # print("==== Assign results ====")
+        # print(f"num_proposals: {num_proposals}, bboxes_tensor: {len(bboxes_tensor)}, gts: {len(gt_bboxes_tensor)}, num_gts: {assign_result_ensemble.num_gts}, pos_inds: {len(pos_inds > 0)}, negative_ids: {len(neg_inds > 0)}")
         assert len(pos_inds) + len(neg_inds) == num_proposals
 
         # 3. Create target for loss computation
@@ -625,7 +637,7 @@ class BEVFusionHead(nn.Module):
         # and iou loss
         if len(pos_inds) > 0:
             pos_bbox_targets = self.bbox_coder.encode(sampling_result.pos_gt_bboxes)
-
+            
             bbox_targets[pos_inds, :] = pos_bbox_targets
             bbox_weights[pos_inds, :] = 1.0
 
@@ -633,6 +645,7 @@ class BEVFusionHead(nn.Module):
                 labels[pos_inds] = 1
             else:
                 labels[pos_inds] = gt_labels_3d[sampling_result.pos_assigned_gt_inds]
+
             if self.train_cfg.pos_weight <= 0:
                 label_weights[pos_inds] = 1.0
             else:
@@ -650,12 +663,15 @@ class BEVFusionHead(nn.Module):
         feature_map_size = grid_size[:2] // self.train_cfg["out_size_factor"]  # [x_len, y_len]
         heatmap = gt_bboxes_3d.new_zeros(self.num_classes, feature_map_size[1], feature_map_size[0])
         for idx in range(len(gt_bboxes_3d)):
-            width = gt_bboxes_3d[idx][3]
-            length = gt_bboxes_3d[idx][4]
+            # width = gt_bboxes_3d[idx][3]
+            # length = gt_bboxes_3d[idx][4]
+            width = gt_bboxes_3d[idx][4]
+            length = gt_bboxes_3d[idx][3]
             width = width / voxel_size[0] / self.train_cfg["out_size_factor"]
             length = length / voxel_size[1] / self.train_cfg["out_size_factor"]
             if width > 0 and length > 0:
-                radius = gaussian_radius((length, width), min_overlap=self.train_cfg["gaussian_overlap"])
+                # radius = gaussian_radius((length, width), min_overlap=self.train_cfg["gaussian_overlap"])
+                radius = gaussian_radius((width, length), min_overlap=self.train_cfg["gaussian_overlap"])
                 radius = max(self.train_cfg["min_radius"], int(radius))
                 x, y = gt_bboxes_3d[idx][0], gt_bboxes_3d[idx][1]
 
@@ -721,12 +737,21 @@ class BEVFusionHead(nn.Module):
         loss_dict = dict()
 
         # compute heatmap loss
-        loss_heatmap = self.loss_heatmap(
-            clip_sigmoid(preds_dict["dense_heatmap"]).float(),
-            heatmap.float(),
-            avg_factor=max(heatmap.eq(1).float().sum().item(), 1),
+        # loss_heatmap = self.loss_heatmap(
+        #     clip_sigmoid(preds_dict["dense_heatmap"]).float(),
+        #     heatmap.float(),
+        #     avg_factor=max(heatmap.eq(1).float().sum().item(), 1),
+        # )
+        # loss_dict["loss_heatmap"] = loss_heatmap
+        dense_heatmap = clip_sigmoid(preds_dict["dense_heatmap"])
+        loss_heatmap_cls: torch.Tensor = self.loss_heatmap(
+            dense_heatmap,
+            heatmap,
         )
-        loss_dict["loss_heatmap"] = loss_heatmap
+        cls_num_pos = heatmap.eq(1).float().sum().item()
+        loss_heatmap_cls = loss_heatmap_cls.sum((0, 2, 3)) / max(cls_num_pos, 1)
+        for cls_i, class_name in enumerate(self.class_names):
+            loss_dict[f"task.loss_heatmap_{class_name}"] = loss_heatmap_cls[cls_i]
 
         # compute loss for each layer
         for idx_layer in range(self.num_decoder_layers if self.auxiliary else 1):

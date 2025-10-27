@@ -26,13 +26,13 @@ model = dict(
     data_preprocessor=dict(
         type="Det3DDataPreprocessor",
         pad_size_divisor=32,
-        voxelize_cfg=dict(
-            max_num_points=max_num_points,
-            point_cloud_range=point_cloud_range,
-            voxel_size=voxel_size,
-            max_voxels=max_voxels,
-            voxelize_reduce=True,
-        ),
+        # voxelize_cfg=dict(
+        #     max_num_points=max_num_points,
+        #     point_cloud_range=point_cloud_range,
+        #     voxel_size=voxel_size,
+        #     max_voxels=max_voxels,
+        #     voxelize_reduce=True,
+        # ),
     ),
     pts_voxel_encoder=dict(type="HardSimpleVFE", num_features=5),
     pts_middle_encoder=dict(
@@ -140,7 +140,7 @@ model = dict(
             reduction="mean",
             loss_weight=1.0,
         ),
-        loss_heatmap=dict(type="mmdet.GaussianFocalLoss", reduction="mean", loss_weight=1.0),
+        loss_heatmap=dict(type="mmdet.GaussianFocalLoss", reduction="none", loss_weight=1.0),
         loss_bbox=dict(type="mmdet.L1Loss", reduction="mean", loss_weight=0.25),
     ),
 )
@@ -153,7 +153,7 @@ visualizer = dict(type="Det3DLocalVisualizer", vis_backends=vis_backends, name="
 
 default_hooks = dict(
     logger=dict(type="LoggerHook", interval=50),
-    checkpoint=dict(type="CheckpointHook", interval=1, max_keep_ckpts=3, save_best="NuScenes metric/T4Metric/mAP"),
+    checkpoint=dict(type="CheckpointHook", interval=1, max_keep_ckpts=10, save_best="NuScenes metric/T4Metric/mAP"),
 )
 custom_hooks = [dict(type="DisableObjectSampleHook", disable_after_epoch=15)]
 log_processor = dict(window_size=50)

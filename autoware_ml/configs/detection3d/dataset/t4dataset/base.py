@@ -10,7 +10,13 @@ custom_imports = dict(
 dataset_type = "T4Dataset"
 info_train_file_name = "t4dataset_base_infos_train.pkl"
 info_val_file_name = "t4dataset_base_infos_val.pkl"
-info_test_file_name = "t4dataset_base_infos_test.pkl"
+info_test_file_name = "t4dataset_base_infos_test.pkl" 
+# info_train_file_name = "t4dataset_largebus_infos_train.pkl"
+# info_val_file_name = "t4dataset_largebus_infos_val.pkl"
+# info_test_file_name = "t4dataset_largebus_infos_test.pkl"
+# info_train_file_name = "t4dataset_j6gen2_base_infos_train.pkl"
+# info_val_file_name = "t4dataset_j6gen2_base_infos_val.pkl"
+# info_test_file_name = "t4dataset_j6gen2_base_infos_test.pkl"
 
 # dataset scene setting
 dataset_version_config_root = "autoware_ml/configs/t4dataset/"
@@ -44,7 +50,7 @@ data_prefix = dict(
     CAM_FRONT="",
     CAM_FRONT_LEFT="",
     CAM_FRONT_RIGHT="",
-    CAM_BACK="",
+    # CAM_BACK="",
     CAM_BACK_RIGHT="",
     CAM_BACK_LEFT="",
     sweeps="",

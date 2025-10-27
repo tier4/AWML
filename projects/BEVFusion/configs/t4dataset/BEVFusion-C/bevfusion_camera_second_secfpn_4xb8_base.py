@@ -3,17 +3,17 @@ _base_ = [
     "../../../../../autoware_ml/configs/detection3d/dataset/t4dataset/base.py",
 ]
 
-custom_imports = dict(imports=["projects.BEVFusion.bevfusion"], allow_failed_imports=False)
+custom_imports = dict(imports=["projects.BEVFusion.bevfusion", "projects.CenterPoint.models"], allow_failed_imports=False)
 custom_imports["imports"] += _base_.custom_imports["imports"]
 
 # user setting
-data_root = "data/t4dataset/"
+data_root = "data/t4datasets/"
 info_directory_path = "info/kokseang_2_3/"
-train_gpu_size = 4
+train_gpu_size = 1
 train_batch_size = 8
 test_batch_size = 2
 val_interval = 2
-max_epochs = 80
+max_epochs = 50
 backend_args = None
 
 # range setting
@@ -29,8 +29,10 @@ eval_class_range = {
 }
 
 # model parameter
-input_modality = dict(use_lidar=True, use_camera=True)
-point_load_dim = 5  # x, y, z, intensity, ring_id
+input_modality = dict(
+    use_lidar=True,  # lidar-related information (like ego-pose) is loaded, but pointcloud is not loaded or used,
+    use_camera=True,
+)
 sweeps_num = 1
 max_num_points = 10
 max_voxels = [120000, 160000]
@@ -39,103 +41,70 @@ image_size = [384, 576]  # height, width
 num_workers = 32
 lidar_sweep_dims = [0, 1, 2, 4]  # x, y, z, time_lag
 lidar_feature_dims = 4
-camera_order = ["CAM_FRONT", "CAM_FRONT_LEFT", "CAM_BACK_LEFT", "CAM_FRONT_RIGHT", "CAM_BACK_RIGHT"]
+camera_order = ["CAM_FRONT", "CAM_FRONT_LEFT", "CAM_FRONT_RIGHT", "CAM_BACK_LEFT", "CAM_BACK_RIGHT"]
 
 model = dict(
     type="BEVFusion",
+    # voxelize_cfg=dict(
+    # 		max_num_points=max_num_points,
+    # 		voxel_size=voxel_size,
+    # 		point_cloud_range=point_cloud_range,
+    # 		max_voxels=max_voxels,
+    # 		deterministic=True,
+    # 		voxelize_reduce=True,
+    # ),
     data_preprocessor=dict(
         type="Det3DDataPreprocessor",
         pad_size_divisor=32,
         mean=[123.675, 116.28, 103.53],
         std=[58.395, 57.12, 57.375],
         bgr_to_rgb=False,
-        rgb_to_bgr=False
     ),
-    voxelize_cfg=dict(
-        max_num_points=max_num_points,
-        voxel_size=voxel_size,
-        point_cloud_range=point_cloud_range,
-        max_voxels=max_voxels,
-        deterministic=True,
-        voxelize_reduce=True,
-    ),
-    # data_preprocessor=dict(
-    #     type="Det3DDataPreprocessor",
-    #     pad_size_divisor=32,
-        
-    #     mean=[123.675, 116.28, 103.53],
-    #     std=[58.395, 57.12, 57.375],
-    #     bgr_to_rgb=False,
-    # ),
-    pts_middle_encoder=dict(sparse_shape=grid_size, in_channels=lidar_feature_dims),
-    # img_backbone=dict(
-    #     type="mmdet.SwinTransformer",
-    #     embed_dims=96,
-    #     depths=[2, 2, 6, 2],
-    #     num_heads=[3, 6, 12, 24],
-    #     window_size=7,
-    #     mlp_ratio=4,
-    #     qkv_bias=True,
-    #     qk_scale=None,
-    #     drop_rate=0.0,
-    #     attn_drop_rate=0.0,
-    #     drop_path_rate=0.2,
-    #     patch_norm=True,
-    #     out_indices=[1, 2, 3],
-    #     with_cp=False,
-    #     convert_weights=True,
-    #     init_cfg=dict(
-    #         type="Pretrained",
-    #         checkpoint="https://github.com/SwinTransformer/storage/releases/download/v1.0.0/swin_tiny_patch4_window7_224.pth",  # noqa: E251  # noqa: E501
-    #     ),
-    # ),
+    pts_middle_encoder=None,
     img_backbone=dict(
-        pretrained="work_dirs/resnet50/resnet50-11ad3fa6.pth",
-        type="mmdet.ResNet",
-        depth=50,
-        num_stages=4,
-        out_indices=(2, 3),
-        frozen_stages=-1,
-        norm_cfg=dict(type="BN2d", requires_grad=True),
-        norm_eval=False,
+        type="mmdet.SwinTransformer",
+        embed_dims=96,
+        depths=[2, 2, 6, 2],
+        num_heads=[3, 6, 12, 24],
+        window_size=7,
+        mlp_ratio=4,
+        qkv_bias=True,
+        qk_scale=None,
+        drop_rate=0.0,
+        attn_drop_rate=0.0,
+        drop_path_rate=0.2,
+        patch_norm=True,
+        out_indices=[1, 2, 3],
         with_cp=False,
-        style="pytorch",
+        convert_weights=True,
+        init_cfg=dict(
+            type="Pretrained",
+            checkpoint="work_dirs/bevfusion/pretrain/swin_tiny_patch4_window7_224.pth"  # noqa: E251  # noqa: E501
+        ),
     ),
     img_neck=dict(
         type="GeneralizedLSSFPN",
-        in_channels=[1024, 2048],
+        in_channels=[192, 384, 768],
         out_channels=256,
         start_level=0,
-        num_outs=2,
+        num_outs=3,
         norm_cfg=dict(type="BN2d", requires_grad=True),
         act_cfg=dict(type="ReLU", inplace=True),
         upsample_cfg=dict(mode="bilinear", align_corners=False),
     ),
-    # img_neck=dict(
-    #     type="GeneralizedLSSFPN",
-    #     in_channels=[192, 384, 768],
-    #     out_channels=256,
-    #     start_level=0,
-    #     num_outs=3,
-    #     norm_cfg=dict(type="BN2d", requires_grad=True),
-    #     act_cfg=dict(type="ReLU", inplace=True),
-    #     upsample_cfg=dict(mode="bilinear", align_corners=False),
-    # ),
     view_transform=dict(
-        type="DepthLSSTransform",
+        type="LSSTransform",
         in_channels=256,
-        out_channels=80,
+        out_channels=256,
         image_size=image_size,
-        # feature_size=[48, 72],
-        feature_size=[30, 40],
+        feature_size=[48, 72],
         xbound=[-122.4, 122.4, 0.68],
         ybound=[-122.4, 122.4, 0.68],
         zbound=[-10.0, 10.0, 20.0],
-        # dbound=[1.0, 134, 1.4],
-        dbound=[1.0, 130, 1.0],
-        downsample=2,
+        dbound=[1.0, 134, 1.0],
+        downsample=1,
     ),
-    fusion_layer=dict(type="ConvFuser", in_channels=[80, 256], out_channels=256),
+    # fusion_layer=dict(type="ConvFuser", in_channels=[80, 256], out_channels=256),
     bbox_head=dict(
         num_proposals=num_proposals,
         class_names=_base_.class_names,  # Use class names to identify the correct class indices
@@ -157,7 +126,7 @@ model = dict(
         ),
     ),
     # Lidar pipeline
-    pts_voxel_encoder=dict(num_features=lidar_feature_dims),
+    # pts_voxel_encoder=dict(num_features=lidar_feature_dims),
 )
 
 train_pipeline = [
@@ -167,23 +136,6 @@ train_pipeline = [
         color_type="color",
         backend_args=backend_args,
         camera_order=camera_order,
-    ),
-    dict(
-        type="LoadPointsFromFile",
-        coord_type="LIDAR",
-        load_dim=point_load_dim,
-        use_dim=point_load_dim,
-        backend_args=backend_args,
-    ),
-    dict(
-        type="LoadPointsFromMultiSweeps",
-        sweeps_num=sweeps_num,
-        load_dim=point_load_dim,
-        use_dim=lidar_sweep_dims,
-        pad_empty_sweeps=True,
-        remove_close=True,
-        backend_args=backend_args,
-        test_mode=False,
     ),
     dict(type="LoadAnnotations3D", with_bbox_3d=True, with_label_3d=True, with_attr_label=False),
     dict(
@@ -195,14 +147,7 @@ train_pipeline = [
         rand_flip=True,
         is_train=True,
     ),
-    dict(
-        type="BEVFusionGlobalRotScaleTrans",
-        rot_range=[-1.571, 1.571],
-        scale_ratio_range=[0.8, 1.2],
-        translation_std=[1.0, 1.0, 0.2],
-    ),
-    dict(type="BEVFusionRandomFlip3D"),
-    dict(type="PointsRangeFilter", point_cloud_range=point_cloud_range),
+    # dict(type="PointsRangeFilter", point_cloud_range=point_cloud_range),
     dict(type="ObjectRangeFilter", point_cloud_range=point_cloud_range),
     dict(
         type="ObjectNameFilter",
@@ -219,10 +164,9 @@ train_pipeline = [
             "traffic_cone",
         ],
     ),
-    dict(type="PointShuffle"),
     dict(
         type="Pack3DDetInputs",
-        keys=["points", "img", "gt_bboxes_3d", "gt_labels_3d", "gt_bboxes", "gt_labels"],
+        keys=["img", "gt_bboxes_3d", "gt_labels_3d", "gt_bboxes", "gt_labels"],
         meta_keys=[
             "cam2img",
             "ori_cam2img",
@@ -251,23 +195,7 @@ test_pipeline = [
         to_float32=True,
         color_type="color",
         backend_args=backend_args,
-    ),
-    dict(
-        type="LoadPointsFromFile",
-        coord_type="LIDAR",
-        load_dim=point_load_dim,
-        use_dim=point_load_dim,
-        backend_args=backend_args,
-    ),
-    dict(
-        type="LoadPointsFromMultiSweeps",
-        sweeps_num=sweeps_num,
-        load_dim=point_load_dim,
-        use_dim=lidar_sweep_dims,
-        pad_empty_sweeps=True,
-        remove_close=True,
-        backend_args=backend_args,
-        test_mode=True,
+        camera_order=camera_order,
     ),
     dict(
         type="ImageAug3D",
@@ -278,10 +206,10 @@ test_pipeline = [
         rand_flip=False,
         is_train=False,
     ),
-    dict(type="PointsRangeFilter", point_cloud_range=point_cloud_range),
+    # dict(type="PointsRangeFilter", point_cloud_range=point_cloud_range),
     dict(
         type="Pack3DDetInputs",
-        keys=["img", "points", "gt_bboxes_3d", "gt_labels_3d"],
+        keys=["img", "gt_bboxes_3d", "gt_labels_3d"],
         meta_keys=[
             "cam2img",
             "ori_cam2img",
@@ -388,7 +316,7 @@ test_evaluator = dict(
 )
 
 # learning rate
-lr = 3e-5
+lr = 0.0001
 param_scheduler = [
     # learning rate scheduler
     # During the first (max_epochs * 0.4) epochs, learning rate increases from 0 to lr * 10
@@ -396,18 +324,18 @@ param_scheduler = [
     # lr * 1e-4
     dict(
         type="CosineAnnealingLR",
-        T_max=30,
+        T_max=15,
         eta_min=lr * 10,
         begin=0,
-        end=30,
+        end=15,
         by_epoch=True,
         convert_to_iter_based=True,
     ),
     dict(
         type="CosineAnnealingLR",
-        T_max=(max_epochs - 30),
+        T_max=(max_epochs - 15),
         eta_min=lr * 1e-4,
-        begin=30,
+        begin=15,
         end=max_epochs,
         by_epoch=True,
         convert_to_iter_based=True,
@@ -417,18 +345,18 @@ param_scheduler = [
     # during the next epochs, momentum increases from 0.85 / 0.95 to 1
     dict(
         type="CosineAnnealingMomentum",
-        T_max=30,
+        T_max=15,
         eta_min=0.85 / 0.95,
         begin=0,
-        end=30,
+        end=15,
         by_epoch=True,
         convert_to_iter_based=True,
     ),
     dict(
         type="CosineAnnealingMomentum",
-        T_max=(max_epochs - 30),
+        T_max=(max_epochs - 15),
         eta_min=1,
-        begin=30,
+        begin=15,
         end=max_epochs,
         by_epoch=True,
         convert_to_iter_based=True,
@@ -445,7 +373,7 @@ test_cfg = dict()
 
 optim_wrapper = dict(
     type="OptimWrapper",
-    optimizer=dict(type="AdamW", lr=lr, weight_decay=0.01),
+    optimizer=dict(type="AdamW", lr=lr, weight_decay=0.001),
     clip_grad=dict(max_norm=35, norm_type=2),
 )
 

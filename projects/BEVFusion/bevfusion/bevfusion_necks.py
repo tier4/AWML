@@ -93,4 +93,5 @@ class GeneralizedLSSFPN(BaseModule):
 
         # build outputs
         outs = [laterals[i] for i in range(used_backbone_levels)]
+        # print([out.shape for out in outs])
         return tuple(outs)

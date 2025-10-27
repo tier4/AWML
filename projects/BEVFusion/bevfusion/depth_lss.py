@@ -1,10 +1,14 @@
 # modify from https://github.com/mit-han-lab/bevfusion
-from typing import Tuple
+import uuid
+from pathlib import Path
+from typing import Optional, Tuple
 
 import torch
+import torch.distributed as dist
 from mmdet3d.registry import MODELS
-from torch import nn
+from torch import Tensor, nn
 
+# from .visualize import save_bev_single
 from .ops import bev_pool
 
 
@@ -13,6 +17,109 @@ def gen_dx_bx(xbound, ybound, zbound):
     bx = torch.Tensor([row[0] + row[2] / 2.0 for row in [xbound, ybound, zbound]])
     nx = torch.LongTensor([(row[1] - row[0]) / row[2] for row in [xbound, ybound, zbound]])
     return dx, bx, nx
+
+
+class QuickCumsum(torch.autograd.Function):
+
+    @staticmethod
+    def forward(ctx, x, geom_feats, ranks):
+        x = x.cumsum(0)
+        kept = torch.ones(x.shape[0], device=x.device, dtype=torch.bool)
+        kept[:-1] = ranks[1:] != ranks[:-1]
+
+        x, geom_feats = x[kept], geom_feats[kept]
+        x = torch.cat((x[:1], x[1:] - x[:-1]))
+
+        # save kept for backward
+        ctx.save_for_backward(kept)
+
+        # no gradient for geom_feats
+        ctx.mark_non_differentiable(geom_feats)
+
+        return x, geom_feats
+
+    @staticmethod
+    def backward(ctx, gradx, gradgeom):
+        (kept,) = ctx.saved_tensors
+        back = torch.cumsum(kept, 0)
+        back[kept] -= 1
+
+        val = gradx[back]
+
+        return val, None, None
+
+
+class DepthLSSNet(nn.Module):
+
+    def __init__(self, in_channels: int, out_channels: int) -> None:
+        super().__init__()
+        self.net = nn.Sequential(
+            nn.Conv2d(in_channels=in_channels, out_channels=in_channels, kernel_size=3, padding=1),
+            nn.BatchNorm2d(num_features=in_channels),
+            nn.ReLU(True),
+            nn.Conv2d(in_channels=in_channels, out_channels=in_channels, kernel_size=3, padding=1),
+            nn.BatchNorm2d(num_features=in_channels),
+            nn.ReLU(True),
+            nn.Conv2d(in_channels=in_channels, out_channels=out_channels, kernel_size=1),
+        )
+
+    def forward(self, x):
+        return self.net(x)
+
+
+class DownSampleNet(nn.Module):
+
+    def __init__(self, downsample: int, in_channels: int, out_channels: int) -> None:
+        super().__init__()
+
+        if downsample > 1:
+            assert downsample == 2, downsample
+            self.net = nn.Sequential(
+                nn.Conv2d(in_channels=in_channels, out_channels=out_channels, kernel_size=3, padding=1, bias=False),
+                nn.BatchNorm2d(num_features=out_channels),
+                nn.ReLU(True),
+                nn.Conv2d(
+                    in_channels=in_channels,
+                    out_channels=out_channels,
+                    kernel_size=3,
+                    stride=downsample,
+                    padding=1,
+                    bias=False,
+                ),
+                nn.BatchNorm2d(num_features=out_channels),
+                nn.ReLU(True),
+                nn.Conv2d(in_channels=in_channels, out_channels=out_channels, kernel_size=3, padding=1, bias=False),
+                nn.BatchNorm2d(num_features=out_channels),
+                nn.ReLU(True),
+            )
+        else:
+            self.net = nn.Identity()
+
+    def forward(self, x):
+        return self.net(x)
+
+
+class LidarDepthImageNet(nn.Module):
+
+    def __init__(self, in_channels: int = 1, out_channels: int = 64, last_stride: int = 2) -> None:
+        super().__init__()
+        self.in_channels = in_channels
+        self.out_channels = out_channels
+
+        self.net = nn.Sequential(
+            nn.Conv2d(in_channels=in_channels, out_channels=8, kernel_size=1),
+            nn.BatchNorm2d(num_features=8),
+            nn.ReLU(True),
+            nn.Conv2d(in_channels=8, out_channels=32, kernel_size=5, stride=4, padding=2),
+            nn.BatchNorm2d(num_features=32),
+            nn.ReLU(True),
+            nn.Conv2d(in_channels=32, out_channels=out_channels, kernel_size=5, stride=last_stride, padding=2),
+            nn.BatchNorm2d(num_features=out_channels),
+            nn.ReLU(True),
+        )
+
+    def forward(self, x):
+        return self.net(x)
 
 
 class BaseViewTransform(nn.Module):
@@ -46,6 +153,15 @@ class BaseViewTransform(nn.Module):
         self.frustum = self.create_frustum()
         self.D = self.frustum.shape[0]
         self.fp16_enabled = False
+
+        # if dist.is_available() and dist.is_initialized():
+        #   self.main_gpu = dist.get_rank() == 0
+        # else:
+        #   self.main_gpu = False
+
+        # if self.main_gpu:
+        #   self.debug_folder = Path(f"./work_dirs/bev_debug_{uuid.uuid4().hex[:8]}")
+        #   self.debug_folder.mkdir(exist_ok=True, parents=True)
 
     def create_frustum(self):
         iH, iW = self.image_size
@@ -131,6 +247,10 @@ class BaseViewTransform(nn.Module):
         geom_feats = geom_feats[kept]
 
         ranks = geom_feats[:, 0] * (W * D * B) + geom_feats[:, 1] * (D * B) + geom_feats[:, 2] * B + geom_feats[:, 3]
+        # ranks = geom_feats[:, 0] * (self.nx[1] * self.nx[2] * B) \
+        #         + geom_feats[:, 1] * (self.nx[2] * B) \
+        #         + geom_feats[:, 2] * B \
+        #         + geom_feats[:, 3]
         indices = ranks.argsort()
 
         ranks = ranks[indices]
@@ -159,6 +279,8 @@ class BaseViewTransform(nn.Module):
         # collapse Z
         final = torch.cat(x.unbind(dim=2), 1)
 
+        # if self.main_gpu:
+        #   save_bev_single(final, f"{self.debug_folder}/bev_pool_debug_{uuid.uuid4().hex[:8]}.png", mode="max")
         return final
 
     def bev_pool_precomputed(self, x, geom_feats, kept, ranks, indices):
@@ -177,6 +299,54 @@ class BaseViewTransform(nn.Module):
 
         # collapse Z
         final = torch.cat(x.unbind(dim=2), 1)
+
+        return final
+
+    def voxel_pooling(self, x, geom_feats):
+        B, N, D, H, W, C = x.shape
+        Nprime = B * N * D * H * W
+        nx = self.nx.to(torch.long)
+        # flatten x
+        x = x.reshape(Nprime, C)
+
+        # flatten indices
+        geom_feats = ((geom_feats - (self.bx - self.dx / 2.0)) / self.dx).long()
+        geom_feats = geom_feats.view(Nprime, 3)
+        batch_ix = torch.cat([torch.full([Nprime // B, 1], ix, device=x.device, dtype=torch.long) for ix in range(B)])
+        geom_feats = torch.cat((geom_feats, batch_ix), 1)
+
+        # filter out points that are outside box
+        kept = (
+            (geom_feats[:, 0] >= 0)
+            & (geom_feats[:, 0] < self.nx[0])
+            & (geom_feats[:, 1] >= 0)
+            & (geom_feats[:, 1] < self.nx[1])
+            & (geom_feats[:, 2] >= 0)
+            & (geom_feats[:, 2] < self.nx[2])
+        )
+        x = x[kept]
+        geom_feats = geom_feats[kept]
+
+        # get tensors from the same voxel next to each other
+        ranks = (
+            geom_feats[:, 0] * (self.nx[1] * self.nx[2] * B)
+            + geom_feats[:, 1] * (self.nx[2] * B)
+            + geom_feats[:, 2] * B
+            + geom_feats[:, 3]
+        )
+        sorts = ranks.argsort()
+        x, geom_feats, ranks = x[sorts], geom_feats[sorts], ranks[sorts]
+
+        # cumsum trick
+        x, geom_feats = QuickCumsum.apply(x, geom_feats, ranks)
+
+        # griddify (B x C x Z x X x Y)
+        final = torch.zeros((B, C, nx[2], nx[1], nx[0]), device=x.device)
+        final[geom_feats[:, 3], :, geom_feats[:, 2], geom_feats[:, 1], geom_feats[:, 0]] = x
+        # if self.voxel:
+        #     return final.sum(2), x, geom_feats
+        # collapse Z
+        final = torch.cat(final.unbind(dim=2), 1)
 
         return final
 
@@ -225,6 +395,7 @@ class BaseViewTransform(nn.Module):
             # is also flattened_indices
             x = self.get_cam_feats(img)
             x = self.bev_pool(x, geom)
+            # x = self.voxel_pooling(x, geom)
 
         return x
 
@@ -255,28 +426,7 @@ class LSSTransform(BaseViewTransform):
             dbound=dbound,
         )
         self.depthnet = nn.Conv2d(in_channels, self.D + self.C, 1)
-        if downsample > 1:
-            assert downsample == 2, downsample
-            self.downsample = nn.Sequential(
-                nn.Conv2d(out_channels, out_channels, 3, padding=1, bias=False),
-                nn.BatchNorm2d(out_channels),
-                nn.ReLU(True),
-                nn.Conv2d(
-                    out_channels,
-                    out_channels,
-                    3,
-                    stride=downsample,
-                    padding=1,
-                    bias=False,
-                ),
-                nn.BatchNorm2d(out_channels),
-                nn.ReLU(True),
-                nn.Conv2d(out_channels, out_channels, 3, padding=1, bias=False),
-                nn.BatchNorm2d(out_channels),
-                nn.ReLU(True),
-            )
-        else:
-            self.downsample = nn.Identity()
+        self.downsample = DownSampleNet(downsample, out_channels, out_channels)
 
     def get_cam_feats(self, x):
         B, N, C, fH, fW = x.shape
@@ -418,12 +568,70 @@ class BaseDepthTransform(BaseViewTransform):
 
             x = self.get_cam_feats(img, depth)
             x = self.bev_pool(x, geom)
+            # x = self.voxel_pooling(x, geom)
 
         return x
 
 
 @MODELS.register_module()
 class DepthLSSTransform(BaseDepthTransform):
+
+    def __init__(
+        self,
+        in_channels: int,
+        out_channels: int,
+        image_size: Tuple[int, int],
+        feature_size: Tuple[int, int],
+        xbound: Tuple[float, float, float],
+        ybound: Tuple[float, float, float],
+        zbound: Tuple[float, float, float],
+        dbound: Tuple[float, float, float],
+        downsample: int = 1,
+        lidar_depth_image_last_stride: int = 2,
+    ) -> None:
+        """Compared with `LSSTransform`, `DepthLSSTransform` adds sparse depth
+        information from lidar points into the inputs of the `depthnet`."""
+        super().__init__(
+            in_channels=in_channels,
+            out_channels=out_channels,
+            image_size=image_size,
+            feature_size=feature_size,
+            xbound=xbound,
+            ybound=ybound,
+            zbound=zbound,
+            dbound=dbound,
+        )
+
+        self.dtransform = LidarDepthImageNet(in_channels=1, out_channels=64, last_stride=lidar_depth_image_last_stride)
+        self.depthnet = DepthLSSNet(
+            in_channels=in_channels + self.dtransform.out_channels, out_channels=self.D + self.C
+        )
+        self.downsample = DownSampleNet(downsample=downsample, in_channels=out_channels, out_channels=out_channels)
+
+    def get_cam_feats(self, x, d):
+        B, N, C, fH, fW = x.shape
+
+        x = x.view(B * N, C, fH, fW)
+        d = d.view(B * N, *d.shape[2:])
+        d = self.dtransform(d)
+        x = torch.cat([d, x], dim=1)
+        x = self.depthnet(x)
+
+        depth = x[:, : self.D].softmax(dim=1)
+        x = depth.unsqueeze(1) * x[:, self.D : (self.D + self.C)].unsqueeze(2)
+
+        x = x.view(B, N, self.C, self.D, fH, fW)
+        x = x.permute(0, 1, 3, 4, 5, 2)
+        return x
+
+    def forward(self, *args, **kwargs):
+        x = super().forward(*args, **kwargs)
+        x = self.downsample(x)
+        return x
+
+
+@MODELS.register_module()
+class NonLinearLSSTransform(BaseViewTransform):
 
     def __init__(
         self,
@@ -449,57 +657,14 @@ class DepthLSSTransform(BaseDepthTransform):
             zbound=zbound,
             dbound=dbound,
         )
-        self.dtransform = nn.Sequential(
-            nn.Conv2d(1, 8, 1),
-            nn.BatchNorm2d(8),
-            nn.ReLU(True),
-            nn.Conv2d(8, 32, 5, stride=4, padding=2),
-            nn.BatchNorm2d(32),
-            nn.ReLU(True),
-            nn.Conv2d(32, 64, 5, stride=2, padding=2),
-            nn.BatchNorm2d(64),
-            nn.ReLU(True),
-        )
-        self.depthnet = nn.Sequential(
-            nn.Conv2d(in_channels + 64, in_channels, 3, padding=1),
-            nn.BatchNorm2d(in_channels),
-            nn.ReLU(True),
-            nn.Conv2d(in_channels, in_channels, 3, padding=1),
-            nn.BatchNorm2d(in_channels),
-            nn.ReLU(True),
-            nn.Conv2d(in_channels, self.D + self.C, 1),
-        )
-        if downsample > 1:
-            assert downsample == 2, downsample
-            self.downsample = nn.Sequential(
-                nn.Conv2d(out_channels, out_channels, 3, padding=1, bias=False),
-                nn.BatchNorm2d(out_channels),
-                nn.ReLU(True),
-                nn.Conv2d(
-                    out_channels,
-                    out_channels,
-                    3,
-                    stride=downsample,
-                    padding=1,
-                    bias=False,
-                ),
-                nn.BatchNorm2d(out_channels),
-                nn.ReLU(True),
-                nn.Conv2d(out_channels, out_channels, 3, padding=1, bias=False),
-                nn.BatchNorm2d(out_channels),
-                nn.ReLU(True),
-            )
-        else:
-            self.downsample = nn.Identity()
 
-    def get_cam_feats(self, x, d):
+        self.depthnet = DepthLSSNet(in_channels=in_channels, out_channels=self.D + self.C)
+        self.downsample = DownSampleNet(downsample=downsample, in_channels=out_channels, out_channels=out_channels)
+
+    def get_cam_feats(self, x):
         B, N, C, fH, fW = x.shape
 
-        d = d.view(B * N, *d.shape[2:])
         x = x.view(B * N, C, fH, fW)
-
-        d = self.dtransform(d)
-        x = torch.cat([d, x], dim=1)
         x = self.depthnet(x)
 
         depth = x[:, : self.D].softmax(dim=1)

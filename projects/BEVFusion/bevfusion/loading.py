@@ -1,7 +1,7 @@
 # Copyright (c) OpenMMLab. All rights reserved.
 import copy
 import os
-from typing import Optional
+from typing import List, Optional
 
 import mmcv
 import numpy as np
@@ -34,6 +34,7 @@ class BEVLoadMultiViewImageFromFiles(LoadMultiViewImageFromFiles):
 
     def __init__(
         self,
+        camera_order: List[str],
         to_float32: bool = False,
         color_type: str = "unchanged",
         backend_args: Optional[dict] = None,
@@ -42,6 +43,7 @@ class BEVLoadMultiViewImageFromFiles(LoadMultiViewImageFromFiles):
         test_mode: bool = False,
         set_default_scale: bool = True,
     ) -> None:
+        self.camera_order = camera_order
         self.to_float32 = to_float32
         self.color_type = color_type
         self.backend_args = backend_args
@@ -135,14 +137,19 @@ class BEVLoadMultiViewImageFromFiles(LoadMultiViewImageFromFiles):
 
         # to fill None data
         # for _ , cam_item in results['images'].items():
-        for cam_type, cam_item in results["images"].items():
+        for camera_type in self.camera_order:
+            if camera_type not in results["images"]:
+                continue
+            
+            cam_item = results["images"][camera_type]
             # TODO (KokSeang): This sometime causes an error when we set num_workers > 1 during training,
             # it's likely due to multiprocessing in CPU. We should probably process this part when creating info files
             if cam_item["img_path"] is None:
-                cam_item = self.before_camera_info[cam_type]
+                print(cam_item["img_path"])
+                cam_item = self.before_camera_info[camera_type]
                 print("Warning: fill None data")
             else:
-                self.before_camera_info[cam_type] = cam_item
+                self.before_camera_info[camera_type] = cam_item
 
             filename.append(cam_item["img_path"])
             lidar2cam.append(cam_item["lidar2cam"])
@@ -187,6 +194,7 @@ class BEVLoadMultiViewImageFromFiles(LoadMultiViewImageFromFiles):
         if pad_shape is not None:
             imgs = [mmcv.impad(img, shape=pad_shape, pad_val=0) for img in imgs]
         img = np.stack(imgs, axis=-1)
+        # print(f"image_shape: {img.shape}")
         if self.to_float32:
             img = img.astype(np.float32)
 
