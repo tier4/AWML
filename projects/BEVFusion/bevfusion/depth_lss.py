@@ -152,7 +152,7 @@ class BaseViewTransform(nn.Module):
 
         assert x.shape[0] == geom_feats.shape[0]
 
-        x, geom_feats, ranks = x[indices], geom_feats[indices], ranks[indices]
+        x = x[indices]
 
         x = bev_pool(x, geom_feats, ranks, B, self.nx[2], self.nx[0], self.nx[1], self.training)
 
