@@ -40,27 +40,17 @@ class CreateInfoConfig:
 
 
 @dataclass
-class EnsembleConfig:
+class EnsembleInfosConfig:
     """Configuration for ensemble step."""
 
     config: Path
 
 
 @dataclass
-class TrackingConfig:
-    """Configuration for tracking step."""
-
-    input_path: Path
-    output_path: Path
-
-
-@dataclass
-class PseudoDatasetConfig:
+class CreatePseudoT4datasetConfig:
     """Configuration for pseudo_dataset step."""
 
     config: Path
-    root_path: Path
-    input_source: str
     overwrite: bool
 
 
@@ -70,9 +60,8 @@ class PipelineConfig:
 
     logging: LoggingConfig
     create_info: CreateInfoConfig
-    ensemble: EnsembleConfig
-    tracking: TrackingConfig
-    pseudo_dataset: PseudoDatasetConfig
+    ensemble_infos: EnsembleInfosConfig
+    create_pseudo_t4dataset: CreatePseudoT4datasetConfig
 
 
 def _parse_logging_config(logging_dict: Dict[str, Any], base_dir: Path) -> LoggingConfig:
@@ -111,33 +100,19 @@ def _parse_create_info(create_info_dict: Optional[Dict[str, Any]], base_dir: Pat
     return CreateInfoConfig(root_path=root_path, output_dir=output_dir, model_list=model_list)
 
 
-def _parse_ensemble(ensemble_dict: Dict[str, Any], base_dir: Path) -> EnsembleConfig:
+def _parse_ensemble(ensemble_dict: Dict[str, Any], base_dir: Path) -> EnsembleInfosConfig:
     """Parse ensemble configuration from dictionary."""
     config = Path(ensemble_dict.get("config", ""))
-    return EnsembleConfig(config=config)
+    return EnsembleInfosConfig(config=config)
 
 
-def _parse_tracking(tracking_dict: Optional[Dict[str, Any]], base_dir: Path) -> TrackingConfig:
-    """Parse tracking configuration from dictionary."""
-    if not tracking_dict:
-        raise ValueError("tracking section is required in configuration")
-
-    input_path = Path(tracking_dict.get("input_path", ""))
-    output_path = Path(tracking_dict.get("output_path", ""))
-    return TrackingConfig(input_path=input_path, output_path=output_path)
-
-
-def _parse_pseudo_dataset(pseudo_dataset_dict: Dict[str, Any], base_dir: Path) -> PseudoDatasetConfig:
+def _parse_pseudo_dataset(pseudo_dataset_dict: Dict[str, Any], base_dir: Path) -> CreatePseudoT4datasetConfig:
     """Parse pseudo_dataset configuration from dictionary."""
     config = Path(pseudo_dataset_dict.get("config", ""))
-    root_path = Path(pseudo_dataset_dict.get("root_path", ""))
-    input_source = pseudo_dataset_dict.get("input_source", "tracking")
     overwrite = pseudo_dataset_dict.get("overwrite", False)
 
-    return PseudoDatasetConfig(
+    return CreatePseudoT4datasetConfig(
         config=config,
-        root_path=root_path,
-        input_source=input_source,
         overwrite=overwrite,
     )
 
@@ -170,14 +145,12 @@ def load_pipeline_config(config_path: Path) -> PipelineConfig:
 
     logging_cfg = _parse_logging_config(raw_config.get("logging", {}), base_dir)
     create_info_cfg = _parse_create_info(raw_config.get("create_info"), base_dir)
-    ensemble_cfg = _parse_ensemble(raw_config.get("ensemble", {}), base_dir)
-    tracking_cfg = _parse_tracking(raw_config.get("tracking"), base_dir)
-    pseudo_dataset_cfg = _parse_pseudo_dataset(raw_config.get("pseudo_dataset", {}), base_dir)
+    ensemble_infos_cfg = _parse_ensemble(raw_config.get("ensemble_infos", {}), base_dir)
+    create_pseudo_t4dataset_cfg = _parse_pseudo_dataset(raw_config.get("create_pseudo_t4dataset", {}), base_dir)
 
     return PipelineConfig(
         logging=logging_cfg,
         create_info=create_info_cfg,
-        ensemble=ensemble_cfg,
-        tracking=tracking_cfg,
-        pseudo_dataset=pseudo_dataset_cfg,
+        ensemble_infos=ensemble_infos_cfg,
+        create_pseudo_t4dataset=create_pseudo_t4dataset_cfg,
     )

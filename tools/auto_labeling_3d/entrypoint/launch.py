@@ -32,6 +32,15 @@ def trigger_auto_labeling_pipeline(config: PipelineConfig) -> None:
     # Step 1: Download checkpoints
     download_checkpoints(config, logger)
 
+    # TODO(Shin-kyoto): Implement Step 2, 3, 4, 5 in other PRs
+    # Step 2: create_info_data
+
+    # Step 3: ensemble_infos
+    # Check the consistency of models between pipeline config and ensemble config
+
+    # Step 4: attach_tracking_id
+
+    # Step 5: create_pseudo_t4dataset
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
