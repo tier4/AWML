@@ -42,6 +42,7 @@ def trigger_auto_labeling_pipeline(config: PipelineConfig) -> None:
 
     # Step 5: create_pseudo_t4dataset
 
+
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
         description="Auto Labeling 3D pipeline launcher",
