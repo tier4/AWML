@@ -5,7 +5,7 @@ from typing import Any, Dict, List, Optional
 import yaml
 
 
-@dataclass
+@dataclass(frozen=True)
 class LoggingConfig:
     """Configuration for logging."""
 
@@ -13,7 +13,7 @@ class LoggingConfig:
     work_dir: Path
 
 
-@dataclass
+@dataclass(frozen=True)
 class CheckpointConfig:
     """Configuration for model checkpoint."""
 
@@ -21,7 +21,7 @@ class CheckpointConfig:
     checkpoint_path: Path
 
 
-@dataclass
+@dataclass(frozen=True)
 class ModelConfig:
     """Configuration for a single model."""
 
@@ -30,7 +30,7 @@ class ModelConfig:
     checkpoint: CheckpointConfig
 
 
-@dataclass
+@dataclass(frozen=True)
 class CreateInfoConfig:
     """Configuration for create_info step."""
 
@@ -39,14 +39,14 @@ class CreateInfoConfig:
     model_list: List[ModelConfig]
 
 
-@dataclass
+@dataclass(frozen=True)
 class EnsembleInfosConfig:
     """Configuration for ensemble step."""
 
     config: Path
 
 
-@dataclass
+@dataclass(frozen=True)
 class CreatePseudoT4datasetConfig:
     """Configuration for pseudo_dataset step."""
 
@@ -54,7 +54,7 @@ class CreatePseudoT4datasetConfig:
     overwrite: bool
 
 
-@dataclass
+@dataclass(frozen=True)
 class PipelineConfig:
     """Complete pipeline configuration."""
 
