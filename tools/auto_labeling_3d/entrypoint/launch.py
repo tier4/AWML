@@ -49,10 +49,10 @@ def trigger_auto_labeling_pipeline(config: PipelineConfig) -> None:
     logger.info("Starting create_info_data step...")
     for model in config.create_info.model_list:
         logger.info(f"Processing model: {model.name}")
-        
+
         # Load model config
         model_config = load_model_config(model, config.logging.work_dir)
-        
+
         # Execute create_info_data
         create_info_data(
             non_annotated_dataset_path=config.create_info.root_path,
@@ -63,16 +63,16 @@ def trigger_auto_labeling_pipeline(config: PipelineConfig) -> None:
             logger=logger,
         )
         logger.info(f"Completed processing for model: {model.name}")
-    
+
     logger.info("create_info_data step completed.")
 
     # Step 3: Ensemble infos
     logger.info("Starting ensemble step...")
     ensemble_cfg = load_ensemble_config(config.ensemble_infos.config)
-    
+
     if ensemble_cfg.filter_pipelines.type == "Ensemble":
         name, output_info = ensemble_infos(ensemble_cfg.filter_pipelines, logger)
-        
+
         # Save ensembled results
         ensemble_output_path = config.logging.work_dir / f"pseudo_infos_{name}_filtered.pkl"
         logger.info(f"Saving filtered and ensembled results to {ensemble_output_path}")
@@ -88,16 +88,16 @@ def trigger_auto_labeling_pipeline(config: PipelineConfig) -> None:
     logger.info("Starting tracking step...")
     tracking_input_path = ensemble_output_path  # Use output from ensemble step
     tracking_output_path = config.logging.work_dir / "pseudo_infos_with_tracking.pkl"
-    
+
     # Load dataset info
     with open(tracking_input_path, "rb") as f:
         dataset_info = pickle.load(f)
-    
+
     # Determine scene boundaries and track objects
     scene_boundaries = determine_scene_range(dataset_info)
     for scene_boundary in scene_boundaries:
         dataset_info = track_objects(dataset_info, scene_boundary, logger)
-    
+
     # Save tracked info
     with open(tracking_output_path, "wb") as f:
         pickle.dump(dataset_info, f)
@@ -106,7 +106,7 @@ def trigger_auto_labeling_pipeline(config: PipelineConfig) -> None:
     # Step 5: Create pseudo T4dataset
     logger.info("Starting create pseudo T4dataset step...")
     t4dataset_config = load_t4dataset_config(config.create_pseudo_t4dataset.config)
-    
+
     create_pseudo_t4dataset(
         pseudo_labeled_info_path=tracking_output_path,
         non_annotated_dataset_path=config.create_info.root_path,
@@ -138,7 +138,7 @@ def parse_args() -> argparse.Namespace:
 def main() -> None:
     # Initialize mmdet3d scope
     init_default_scope("mmdet3d")
-    
+
     args = parse_args()
     config_path = Path(args.config).expanduser()
     pipeline_config = load_pipeline_config(config_path)
