@@ -12,7 +12,6 @@ from tools.auto_labeling_3d.entrypoint.parse_config import (
     PipelineConfig,
     load_ensemble_config,
     load_model_config,
-    load_pipeline_config,
     load_t4dataset_config,
 )
 from tools.auto_labeling_3d.filter_objects.ensemble_infos import ensemble_infos
@@ -141,7 +140,7 @@ def main() -> None:
 
     args = parse_args()
     config_path = Path(args.config).expanduser()
-    pipeline_config = load_pipeline_config(config_path)
+    pipeline_config = PipelineConfig.from_file(config_path)
 
     effective_level = args.log_level or pipeline_config.logging.level
     logging.basicConfig(level=getattr(logging, effective_level.upper(), logging.INFO))
