@@ -120,7 +120,9 @@ class PipelineConfig:
         logging_cfg = LoggingConfig.from_cfg(raw_config.get("logging", {}), base_dir)
         create_info_cfg = CreateInfoConfig.from_cfg(raw_config.get("create_info"), base_dir)
         ensemble_infos_cfg = EnsembleInfosConfig.from_cfg(raw_config.get("ensemble_infos", {}), base_dir)
-        create_pseudo_t4dataset_cfg = CreatePseudoT4datasetConfig.from_cfg(raw_config.get("create_pseudo_t4dataset", {}), base_dir)
+        create_pseudo_t4dataset_cfg = CreatePseudoT4datasetConfig.from_cfg(
+            raw_config.get("create_pseudo_t4dataset", {}), base_dir
+        )
 
         return cls(
             logging=logging_cfg,
