@@ -44,7 +44,6 @@ class ModelConfig:
 class CreateInfoConfig:
     """Configuration for create_info step."""
 
-    root_path: Path
     output_dir: Path
     model_list: List[ModelConfig]
 
@@ -61,7 +60,7 @@ class CreateInfoConfig:
             )
             model_list.append(model_cfg)
 
-        return cls(root_path=Path(data["root_path"]), output_dir=Path(data["output_dir"]), model_list=model_list)
+        return cls(output_dir=Path(data["output_dir"]), model_list=model_list)
 
 
 @dataclass(frozen=True)
@@ -88,13 +87,26 @@ class CreatePseudoT4datasetConfig:
 
 
 @dataclass(frozen=True)
+class ChangeDirectoryStructureConfig:
+    """Configuration for change_directory_structure step."""
+
+    version_dir_name: str
+
+    @classmethod
+    def from_dict(cls, data: Dict[str, Any]) -> ChangeDirectoryStructureConfig:
+        return cls(version_dir_name=data["version_dir_name"])
+
+
+@dataclass(frozen=True)
 class PipelineConfig:
     """Complete pipeline configuration."""
 
     logging: LoggingConfig
-    create_info: CreateInfoConfig
-    ensemble_infos: EnsembleInfosConfig
-    create_pseudo_t4dataset: CreatePseudoT4datasetConfig
+    root_path: Path
+    create_info: Optional[CreateInfoConfig]
+    ensemble_infos: Optional[EnsembleInfosConfig]
+    create_pseudo_t4dataset: Optional[CreatePseudoT4datasetConfig]
+    change_directory_structure: Optional[ChangeDirectoryStructureConfig]
 
     @classmethod
     def from_file(cls, config_path: Path) -> "PipelineConfig":
@@ -124,20 +136,40 @@ class PipelineConfig:
         # Parse logging config
         logging_cfg = LoggingConfig.from_dict(data=yaml_data["logging"], base_dir=config_path.parent)
 
+        # Parse root_path
+        root_path = Path(yaml_data["root_path"])
+
         # Parse create_info config
-        create_info_cfg = CreateInfoConfig.from_dict(data=yaml_data["create_info"])
+        create_info_cfg = None
+        if "create_info" in yaml_data:
+            create_info_cfg = CreateInfoConfig.from_dict(data=yaml_data["create_info"])
 
         # Parse ensemble config
-        ensemble_infos_cfg = EnsembleInfosConfig.from_dict(data=yaml_data["ensemble_infos"])
+        ensemble_infos_cfg = None
+        if "ensemble_infos" in yaml_data:
+            ensemble_infos_cfg = EnsembleInfosConfig.from_dict(data=yaml_data["ensemble_infos"])
 
         # Parse pseudo_dataset config
-        create_pseudo_t4dataset_cfg = CreatePseudoT4datasetConfig.from_dict(data=yaml_data["create_pseudo_t4dataset"])
+        create_pseudo_t4dataset_cfg = None
+        if "create_pseudo_t4dataset" in yaml_data:
+            create_pseudo_t4dataset_cfg = CreatePseudoT4datasetConfig.from_dict(
+                data=yaml_data["create_pseudo_t4dataset"]
+            )
+
+        # Parse change_directory_structure config
+        change_directory_structure_cfg = None
+        if "change_directory_structure" in yaml_data:
+            change_directory_structure_cfg = ChangeDirectoryStructureConfig.from_dict(
+                data=yaml_data["change_directory_structure"]
+            )
 
         return cls(
             logging=logging_cfg,
+            root_path=root_path,
             create_info=create_info_cfg,
             ensemble_infos=ensemble_infos_cfg,
             create_pseudo_t4dataset=create_pseudo_t4dataset_cfg,
+            change_directory_structure=change_directory_structure_cfg,
         )
 
 

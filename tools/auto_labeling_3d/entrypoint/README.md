@@ -7,6 +7,7 @@
 3. **ensemble_infos** – Ensemble/filter pseudo labels across one or more models
 4. **attach_tracking_id** – Assign consistent tracking ID to every 3D bounding box across frames per scene
 5. **create_pseudo_t4dataset** – Write processed pseudo labels to a T4Dataset
+6. **change_directory_structure** – Change the directory structure from non-annotated T4Dataset format to pseudo-label T4Dataset format
 
 ## Quick start
 

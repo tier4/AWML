@@ -7,10 +7,12 @@ logging:
   level: INFO  # Log level: DEBUG, INFO, WARNING, ERROR, CRITICAL
   work_dir: /workspace/work_dirs/auto_labeling_3d/pipeline_example  # Directory for logs and intermediate outputs
 
+# Path to non-annotated T4dataset directory
+root_path: /workspace/data/t4dataset/t4x2_pseudo
+
 # create_info_data configuration
 # Please update here to use the latest checkpoints and model configs
 create_info:
-  root_path: /workspace/data/t4dataset/t4x2_pseudo  # Path to non-annotated T4dataset directory
   output_dir: /workspace/data/t4dataset/info  # Directory to save generated info files
   model_list:
   # Example template for adding a model:
@@ -45,3 +47,8 @@ ensemble_infos:
 create_pseudo_t4dataset:
   config: /workspace/tools/auto_labeling_3d/create_pseudo_t4dataset/config/x2.yaml # config for the sensor configuaration used when collecting non-annotated T4dataset
   overwrite: false # If true, create_pseudo_t4dataset will overwrite existing T4Dataset.
+
+# change_directory_structure configuration
+# If you do not need to change the directory structure, please comment out this section.
+change_directory_structure:
+  version_dir_name: "0"
