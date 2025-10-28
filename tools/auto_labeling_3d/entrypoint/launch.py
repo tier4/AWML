@@ -15,7 +15,7 @@ from tools.auto_labeling_3d.entrypoint.parse_config import (
     load_t4dataset_config,
 )
 from tools.auto_labeling_3d.filter_objects.ensemble_infos import ensemble_infos
-from tools.auto_labeling_3d.script.download_checkpoints import download_file
+from tools.auto_labeling_3d.utils.download_checkpoint import download_checkpoint
 
 
 def download_checkpoints(config: PipelineConfig, logger: logging.Logger) -> None:
@@ -31,7 +31,7 @@ def download_checkpoints(config: PipelineConfig, logger: logging.Logger) -> None
         url = model.checkpoint.model_zoo_url
         checkpoint_path = model.checkpoint.checkpoint_path
         if url and checkpoint_path:
-            download_file(url, checkpoint_path, logger)
+            download_checkpoint(url, checkpoint_path, logger)
         else:
             logger.warning(f"Skipping model '{model.name}': missing url or checkpoint_path")
     logger.info("Checkpoint download completed.")
