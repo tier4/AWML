@@ -1,10 +1,10 @@
+from __future__ import annotations
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
 import yaml
 from mmengine import Config
-
 
 @dataclass(frozen=True)
 class LoggingConfig:
@@ -14,12 +14,11 @@ class LoggingConfig:
     work_dir: Path
 
     @classmethod
-    def from_cfg(cls, logging_dict: Dict[str, Any], base_dir: Path) -> "LoggingConfig":
-        """Parse logging configuration from dictionary."""
-        level = logging_dict.get("level", "INFO")
-        work_dir = Path(logging_dict.get("work_dir", base_dir / "work_dirs"))
-        return cls(level=level, work_dir=work_dir)
-
+    def from_dict(cls, data: Dict[str, Any], base_dir: Path) -> LoggingConfig:
+        return cls(
+            level=data.get("level", "INFO"),
+            work_dir=Path(data.get("work_dir", base_dir / "work_dirs")),
+        )
 
 @dataclass(frozen=True)
 class CheckpointConfig:
@@ -28,14 +27,6 @@ class CheckpointConfig:
     model_zoo_url: str
     checkpoint_path: Path
 
-    @classmethod
-    def from_cfg(cls, checkpoint_dict: Dict[str, Any]) -> "CheckpointConfig":
-        """Parse checkpoint configuration from dictionary."""
-        model_zoo_url = checkpoint_dict.get("model_zoo_url", "")
-        checkpoint_path = Path(checkpoint_dict.get("checkpoint_path", ""))
-        return cls(model_zoo_url=model_zoo_url, checkpoint_path=checkpoint_path)
-
-
 @dataclass(frozen=True)
 class ModelConfig:
     """Configuration for a single model."""
@@ -43,16 +34,6 @@ class ModelConfig:
     name: str
     model_config: Path
     checkpoint: CheckpointConfig
-
-    @classmethod
-    def from_cfg(cls, model_dict: Dict[str, Any]) -> "ModelConfig":
-        """Parse model configuration from dictionary."""
-        name = model_dict.get("name", "")
-        model_config = Path(model_dict.get("model_config", ""))
-        checkpoint_dict = model_dict.get("checkpoint", {})
-        checkpoint = CheckpointConfig.from_cfg(checkpoint_dict)
-        return cls(name=name, model_config=model_config, checkpoint=checkpoint)
-
 
 @dataclass(frozen=True)
 class CreateInfoConfig:
@@ -63,18 +44,25 @@ class CreateInfoConfig:
     model_list: List[ModelConfig]
 
     @classmethod
-    def from_cfg(cls, create_info_dict: Optional[Dict[str, Any]], base_dir: Path) -> "CreateInfoConfig":
-        """Parse create_info configuration from dictionary."""
-        if not create_info_dict:
-            raise ValueError("create_info section is required in configuration")
-
-        root_path = Path(create_info_dict.get("root_path", ""))
-        output_dir = Path(create_info_dict.get("output_dir", ""))
-        model_list_raw = create_info_dict.get("model_list", [])
-        model_list = [ModelConfig.from_cfg(m) for m in model_list_raw]
-
-        return cls(root_path=root_path, output_dir=output_dir, model_list=model_list)
-
+    def from_dict(cls, data: Dict[str, Any]) -> CreateInfoConfig:
+        model_list = []
+        for model in data["model_list"]:
+            checkpoint = CheckpointConfig(
+                model_zoo_url=model["checkpoint"]["model_zoo_url"],
+                checkpoint_path=Path(model["checkpoint"]["checkpoint_path"])
+            )
+            model_cfg = ModelConfig(
+                name=model["name"],
+                model_config=Path(model["model_config"]),
+                checkpoint=checkpoint
+            )
+            model_list.append(model_cfg)
+        
+        return cls(
+            root_path=Path(data["root_path"]),
+            output_dir=Path(data["output_dir"]),
+            model_list=model_list
+        )
 
 @dataclass(frozen=True)
 class EnsembleInfosConfig:
@@ -83,11 +71,8 @@ class EnsembleInfosConfig:
     config: Path
 
     @classmethod
-    def from_cfg(cls, ensemble_dict: Dict[str, Any], base_dir: Path) -> "EnsembleInfosConfig":
-        """Parse ensemble configuration from dictionary."""
-        config = Path(ensemble_dict.get("config", ""))
-        return cls(config=config)
-
+    def from_dict(cls, data: Dict[str, Any]) -> EnsembleInfosConfig:
+        return cls(config=Path(data["config"]))
 
 @dataclass(frozen=True)
 class CreatePseudoT4datasetConfig:
@@ -97,13 +82,11 @@ class CreatePseudoT4datasetConfig:
     overwrite: bool
 
     @classmethod
-    def from_cfg(cls, pseudo_dataset_dict: Dict[str, Any], base_dir: Path) -> "CreatePseudoT4datasetConfig":
-        """Parse pseudo_dataset configuration from dictionary."""
-        config = Path(pseudo_dataset_dict.get("config", ""))
-        overwrite = pseudo_dataset_dict.get("overwrite", False)
-
-        return cls(config=config, overwrite=overwrite)
-
+    def from_dict(cls, data: Dict[str, Any]) -> CreatePseudoT4datasetConfig:
+        return cls(
+            config=Path(data["config"]),
+            overwrite=data["overwrite"]
+        )
 
 @dataclass(frozen=True)
 class PipelineConfig:
@@ -113,23 +96,6 @@ class PipelineConfig:
     create_info: CreateInfoConfig
     ensemble_infos: EnsembleInfosConfig
     create_pseudo_t4dataset: CreatePseudoT4datasetConfig
-
-    @classmethod
-    def from_cfg(cls, raw_config: Dict[str, Any], base_dir: Path) -> "PipelineConfig":
-        """Parse pipeline configuration from dictionary."""
-        logging_cfg = LoggingConfig.from_cfg(raw_config.get("logging", {}), base_dir)
-        create_info_cfg = CreateInfoConfig.from_cfg(raw_config.get("create_info"), base_dir)
-        ensemble_infos_cfg = EnsembleInfosConfig.from_cfg(raw_config.get("ensemble_infos", {}), base_dir)
-        create_pseudo_t4dataset_cfg = CreatePseudoT4datasetConfig.from_cfg(
-            raw_config.get("create_pseudo_t4dataset", {}), base_dir
-        )
-
-        return cls(
-            logging=logging_cfg,
-            create_info=create_info_cfg,
-            ensemble_infos=ensemble_infos_cfg,
-            create_pseudo_t4dataset=create_pseudo_t4dataset_cfg,
-        )
 
     @classmethod
     def from_file(cls, config_path: Path) -> "PipelineConfig":
@@ -150,16 +116,33 @@ class PipelineConfig:
         if not config_path.exists():
             raise FileNotFoundError(f"Configuration file not found: {config_path}")
 
-        with config_path.open("r", encoding="utf-8") as fp:
-            raw_config = yaml.safe_load(fp) or {}
+        with config_path.open("r", encoding="utf-8") as f:
+            yaml_data = yaml.safe_load(f) or {}
 
-        if not isinstance(raw_config, dict):
+        if not isinstance(yaml_data, dict):
             raise TypeError("Top-level configuration must be a mapping")
 
-        base_dir = config_path.parent
+        # Parse logging config
+        logging_cfg = LoggingConfig.from_dict(
+            data=yaml_data["logging"],
+            base_dir=config_path.parent
+        )
+        
+        # Parse create_info config
+        create_info_cfg = CreateInfoConfig.from_dict(data=yaml_data["create_info"])
+        
+        # Parse ensemble config
+        ensemble_infos_cfg = EnsembleInfosConfig.from_dict(data=yaml_data["ensemble_infos"])
+        
+        # Parse pseudo_dataset config
+        create_pseudo_t4dataset_cfg = CreatePseudoT4datasetConfig.from_dict(data=yaml_data["create_pseudo_t4dataset"])
 
-        return cls.from_cfg(raw_config, base_dir)
-
+        return cls(
+            logging=logging_cfg,
+            create_info=create_info_cfg,
+            ensemble_infos=ensemble_infos_cfg,
+            create_pseudo_t4dataset=create_pseudo_t4dataset_cfg,
+        )
 
 def load_model_config(model: ModelConfig, work_dir: Path) -> Config:
     """
@@ -176,7 +159,6 @@ def load_model_config(model: ModelConfig, work_dir: Path) -> Config:
     cfg.work_dir = str(work_dir / model.name)
     return cfg
 
-
 def load_ensemble_config(config_path: Path) -> Config:
     """
     Load ensemble configuration file.
@@ -188,7 +170,6 @@ def load_ensemble_config(config_path: Path) -> Config:
         Config: Loaded mmengine Config object.
     """
     return Config.fromfile(str(config_path))
-
 
 def load_t4dataset_config(config_path: Path) -> Config:
     """
