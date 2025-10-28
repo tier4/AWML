@@ -43,7 +43,7 @@ eval_class_range = {
 
 # user setting
 data_root = "data/t4dataset/"
-info_directory_path = "info/kokseang_2_3/"
+info_directory_path = "info/kokseang_2_5/"
 train_gpu_size = 4
 train_batch_size = 16
 test_batch_size = 2
@@ -51,7 +51,7 @@ num_workers = 32
 val_interval = 5
 max_epochs = 30
 work_dir = (
-    "work_dirs/centerpoint_2_3_rfs/" + _base_.dataset_type + "/second_secfpn_4xb16_121m_jpntaxi_gen2_base_high_resolution/"
+    "work_dirs/centerpoint_2_3_2_rfs/" + _base_.dataset_type + "/second_secfpn_4xb16_121m_jpntaxi_gen2_base_high_resolution/"
 )
 
 train_pipeline = [
