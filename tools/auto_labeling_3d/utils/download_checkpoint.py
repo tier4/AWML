@@ -5,8 +5,6 @@ from pathlib import Path
 import requests
 import yaml
 
-from tools.auto_labeling_3d.utils.logger import setup_logger
-
 
 def download_checkpoint(url: str, save_path: Path, logger: logging.Logger) -> None:
     """
