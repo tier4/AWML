@@ -3,6 +3,7 @@ from pathlib import Path
 from typing import Any, Dict, List, Optional
 
 import yaml
+from mmengine import Config
 
 
 @dataclass(frozen=True)
@@ -154,3 +155,45 @@ def load_pipeline_config(config_path: Path) -> PipelineConfig:
         ensemble_infos=ensemble_infos_cfg,
         create_pseudo_t4dataset=create_pseudo_t4dataset_cfg,
     )
+
+
+def load_model_config(model: ModelConfig, work_dir: Path) -> Config:
+    """
+    Load mmengine Config for a specific model.
+
+    Args:
+        model (ModelConfig): Model configuration containing path to model config file.
+        work_dir (Path): Working directory for the pipeline.
+
+    Returns:
+        Config: Loaded mmengine Config object.
+    """
+    cfg = Config.fromfile(str(model.model_config))
+    cfg.work_dir = str(work_dir / model.name)
+    return cfg
+
+
+def load_ensemble_config(config_path: Path) -> Config:
+    """
+    Load ensemble configuration file.
+
+    Args:
+        config_path (Path): Path to the ensemble configuration file.
+
+    Returns:
+        Config: Loaded mmengine Config object.
+    """
+    return Config.fromfile(str(config_path))
+
+
+def load_t4dataset_config(config_path: Path) -> Config:
+    """
+    Load T4dataset configuration file.
+
+    Args:
+        config_path (Path): Path to the T4dataset configuration file.
+
+    Returns:
+        Config: Loaded mmengine Config object.
+    """
+    return Config.fromfile(str(config_path))
