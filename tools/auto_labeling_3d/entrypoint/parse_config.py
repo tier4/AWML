@@ -1,10 +1,12 @@
 from __future__ import annotations
+
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
 import yaml
 from mmengine import Config
+
 
 @dataclass(frozen=True)
 class LoggingConfig:
@@ -20,12 +22,14 @@ class LoggingConfig:
             work_dir=Path(data.get("work_dir", base_dir / "work_dirs")),
         )
 
+
 @dataclass(frozen=True)
 class CheckpointConfig:
     """Configuration for model checkpoint."""
 
     model_zoo_url: str
     checkpoint_path: Path
+
 
 @dataclass(frozen=True)
 class ModelConfig:
@@ -34,6 +38,7 @@ class ModelConfig:
     name: str
     model_config: Path
     checkpoint: CheckpointConfig
+
 
 @dataclass(frozen=True)
 class CreateInfoConfig:
@@ -49,20 +54,15 @@ class CreateInfoConfig:
         for model in data["model_list"]:
             checkpoint = CheckpointConfig(
                 model_zoo_url=model["checkpoint"]["model_zoo_url"],
-                checkpoint_path=Path(model["checkpoint"]["checkpoint_path"])
+                checkpoint_path=Path(model["checkpoint"]["checkpoint_path"]),
             )
             model_cfg = ModelConfig(
-                name=model["name"],
-                model_config=Path(model["model_config"]),
-                checkpoint=checkpoint
+                name=model["name"], model_config=Path(model["model_config"]), checkpoint=checkpoint
             )
             model_list.append(model_cfg)
-        
-        return cls(
-            root_path=Path(data["root_path"]),
-            output_dir=Path(data["output_dir"]),
-            model_list=model_list
-        )
+
+        return cls(root_path=Path(data["root_path"]), output_dir=Path(data["output_dir"]), model_list=model_list)
+
 
 @dataclass(frozen=True)
 class EnsembleInfosConfig:
@@ -74,6 +74,7 @@ class EnsembleInfosConfig:
     def from_dict(cls, data: Dict[str, Any]) -> EnsembleInfosConfig:
         return cls(config=Path(data["config"]))
 
+
 @dataclass(frozen=True)
 class CreatePseudoT4datasetConfig:
     """Configuration for pseudo_dataset step."""
@@ -83,10 +84,8 @@ class CreatePseudoT4datasetConfig:
 
     @classmethod
     def from_dict(cls, data: Dict[str, Any]) -> CreatePseudoT4datasetConfig:
-        return cls(
-            config=Path(data["config"]),
-            overwrite=data["overwrite"]
-        )
+        return cls(config=Path(data["config"]), overwrite=data["overwrite"])
+
 
 @dataclass(frozen=True)
 class PipelineConfig:
@@ -123,17 +122,14 @@ class PipelineConfig:
             raise TypeError("Top-level configuration must be a mapping")
 
         # Parse logging config
-        logging_cfg = LoggingConfig.from_dict(
-            data=yaml_data["logging"],
-            base_dir=config_path.parent
-        )
-        
+        logging_cfg = LoggingConfig.from_dict(data=yaml_data["logging"], base_dir=config_path.parent)
+
         # Parse create_info config
         create_info_cfg = CreateInfoConfig.from_dict(data=yaml_data["create_info"])
-        
+
         # Parse ensemble config
         ensemble_infos_cfg = EnsembleInfosConfig.from_dict(data=yaml_data["ensemble_infos"])
-        
+
         # Parse pseudo_dataset config
         create_pseudo_t4dataset_cfg = CreatePseudoT4datasetConfig.from_dict(data=yaml_data["create_pseudo_t4dataset"])
 
@@ -143,6 +139,7 @@ class PipelineConfig:
             ensemble_infos=ensemble_infos_cfg,
             create_pseudo_t4dataset=create_pseudo_t4dataset_cfg,
         )
+
 
 def load_model_config(model: ModelConfig, work_dir: Path) -> Config:
     """
@@ -159,6 +156,7 @@ def load_model_config(model: ModelConfig, work_dir: Path) -> Config:
     cfg.work_dir = str(work_dir / model.name)
     return cfg
 
+
 def load_ensemble_config(config_path: Path) -> Config:
     """
     Load ensemble configuration file.
@@ -170,6 +168,7 @@ def load_ensemble_config(config_path: Path) -> Config:
         Config: Loaded mmengine Config object.
     """
     return Config.fromfile(str(config_path))
+
 
 def load_t4dataset_config(config_path: Path) -> Config:
     """
