@@ -12,11 +12,10 @@
 import torch
 from mmdet3d.models.detectors.mvx_two_stage import MVXTwoStageDetector
 from mmdet3d.registry import MODELS
-from mmdet3d.structures import CameraInstance3DBoxes, LiDARInstance3DBoxes
+from mmdet3d.structures import CameraInstance3DBoxes, Det3DDataSample, LiDARInstance3DBoxes
 from mmdet3d.structures.ops.transforms import bbox3d2result
-from mmdet3d.structures import Det3DDataSample
-from mmengine.structures import InstanceData
 from mmengine.runner.amp import autocast
+from mmengine.structures import InstanceData
 
 from projects.StreamPETR.stream_petr.models.utils.grid_mask import GridMask
 from projects.StreamPETR.stream_petr.models.utils.misc import locations
@@ -345,9 +344,9 @@ class Petr3D(MVXTwoStageDetector):
             pred_instances_3d.labels_3d = res_3d["labels_3d"]
             predictions.append(
                 Det3DDataSample(
-                    pred_instances_3d=pred_instances_3d, 
-                    pred_instances=InstanceData(), 
-                    sample_idx=img_metas[0]["sample_idx"][0]
+                    pred_instances_3d=pred_instances_3d,
+                    pred_instances=InstanceData(),
+                    sample_idx=img_metas[0]["sample_idx"][0],
                 )
             )
 
