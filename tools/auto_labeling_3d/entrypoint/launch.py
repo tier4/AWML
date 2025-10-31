@@ -19,7 +19,7 @@ from tools.auto_labeling_3d.filter_objects.ensemble_infos import ensemble_infos
 from tools.auto_labeling_3d.utils.download_checkpoint import download_checkpoint
 
 
-def trigger_download_checkpoint(config: PipelineConfig, logger: logging.Logger) -> None:
+def run_download_checkpoint(config: PipelineConfig, logger: logging.Logger) -> None:
     """
     Download checkpoints specified in the pipeline configuration.
 
@@ -28,7 +28,7 @@ def trigger_download_checkpoint(config: PipelineConfig, logger: logging.Logger) 
         logger (logging.Logger): Logger for logging messages.
     """
     if config.create_info is None:
-        raise ValueError("create_info configuration is required for trigger_download_checkpoint")
+        raise ValueError("create_info configuration is required for run_download_checkpoint")
 
     logger.info("Starting checkpoint download...")
     for model in config.create_info.model_list:
@@ -41,7 +41,7 @@ def trigger_download_checkpoint(config: PipelineConfig, logger: logging.Logger) 
     logger.info("Checkpoint download completed.")
 
 
-def trigger_create_info_data(config: PipelineConfig, logger: logging.Logger) -> None:
+def run_create_info_data(config: PipelineConfig, logger: logging.Logger) -> None:
     """
     Create info data for each model in the pipeline.
 
@@ -50,7 +50,7 @@ def trigger_create_info_data(config: PipelineConfig, logger: logging.Logger) -> 
         logger (logging.Logger): Logger for logging messages.
     """
     if config.create_info is None:
-        raise ValueError("create_info configuration is required for trigger_create_info_data")
+        raise ValueError("create_info configuration is required for run_create_info_data")
 
     logger.info("Starting create_info_data step...")
     for model in config.create_info.model_list:
@@ -73,7 +73,7 @@ def trigger_create_info_data(config: PipelineConfig, logger: logging.Logger) -> 
     logger.info("create_info_data step completed.")
 
 
-def trigger_ensemble_infos(config: PipelineConfig, logger: logging.Logger) -> Path:
+def run_ensemble_infos(config: PipelineConfig, logger: logging.Logger) -> Path:
     """
     Ensemble infos from multiple models.
 
@@ -88,7 +88,7 @@ def trigger_ensemble_infos(config: PipelineConfig, logger: logging.Logger) -> Pa
         ValueError: If ensemble_infos configuration is missing.
     """
     if config.ensemble_infos is None:
-        raise ValueError("ensemble_infos configuration is required for trigger_ensemble_infos")
+        raise ValueError("ensemble_infos configuration is required for run_ensemble_infos")
 
     logger.info("Starting ensemble step...")
     ensemble_cfg = load_ensemble_config(config.ensemble_infos.config)
@@ -110,7 +110,7 @@ def trigger_ensemble_infos(config: PipelineConfig, logger: logging.Logger) -> Pa
     return ensemble_output_path
 
 
-def trigger_attach_tracking_id(config: PipelineConfig, logger: logging.Logger, input_path: Path) -> Path:
+def run_attach_tracking_id(config: PipelineConfig, logger: logging.Logger, input_path: Path) -> Path:
     """
     Attach tracking IDs to pseudo labels.
 
@@ -142,7 +142,7 @@ def trigger_attach_tracking_id(config: PipelineConfig, logger: logging.Logger, i
     return tracking_output_path
 
 
-def trigger_create_pseudo_t4dataset(config: PipelineConfig, logger: logging.Logger, input_path: Path) -> None:
+def run_create_pseudo_t4dataset(config: PipelineConfig, logger: logging.Logger, input_path: Path) -> None:
     """
     Create pseudo T4dataset from tracked pseudo labels.
 
@@ -155,7 +155,7 @@ def trigger_create_pseudo_t4dataset(config: PipelineConfig, logger: logging.Logg
         ValueError: If create_pseudo_t4dataset or create_info configuration is missing.
     """
     if config.create_pseudo_t4dataset is None:
-        raise ValueError("create_pseudo_t4dataset configuration is required for trigger_create_pseudo_t4dataset")
+        raise ValueError("create_pseudo_t4dataset configuration is required for run_create_pseudo_t4dataset")
 
     logger.info("Starting create pseudo T4dataset step...")
     t4dataset_config = load_t4dataset_config(config.create_pseudo_t4dataset.config)
@@ -170,7 +170,7 @@ def trigger_create_pseudo_t4dataset(config: PipelineConfig, logger: logging.Logg
     logger.info("Create pseudo T4dataset step completed.")
 
 
-def trigger_change_directory_structure(config: PipelineConfig, logger: logging.Logger) -> None:
+def run_change_directory_structure(config: PipelineConfig, logger: logging.Logger) -> None:
     """
     Change directory structure for the pseudo T4dataset.
 
@@ -179,7 +179,7 @@ def trigger_change_directory_structure(config: PipelineConfig, logger: logging.L
         logger (logging.Logger): Logger for logging messages.
     """
     if config.change_directory_structure is None:
-        raise ValueError("change_directory_structure configuration is required for trigger_change_directory_structure")
+        raise ValueError("change_directory_structure configuration is required for run_change_directory_structure")
 
     logger.info("Starting change_directory_structure step...")
     process_dataset(
@@ -191,16 +191,16 @@ def trigger_change_directory_structure(config: PipelineConfig, logger: logging.L
     logger.info("Change directory structure step completed.")
 
 
-def trigger_auto_labeling_pipeline(config: PipelineConfig) -> None:
+def run_auto_labeling_pipeline(config: PipelineConfig) -> None:
     """Execute the whole auto labeling pipeline."""
     logger = logging.getLogger("auto_labeling_3d.entrypoint")
 
     if config.create_info:
         # Step 1: Download checkpoints
-        trigger_download_checkpoint(config, logger)
+        run_download_checkpoint(config, logger)
 
         # Step 2: Create info data for each model
-        trigger_create_info_data(config, logger)
+        run_create_info_data(config, logger)
     else:
         logger.warning(
             "Skipping download_checkpoint and create_info_data steps because create_info config is not contained in yaml."
@@ -208,13 +208,13 @@ def trigger_auto_labeling_pipeline(config: PipelineConfig) -> None:
 
     if config.ensemble_infos and config.create_pseudo_t4dataset:
         # Step 3: Ensemble infos (only if configured)
-        ensemble_output_path = trigger_ensemble_infos(config, logger)
+        ensemble_output_path = run_ensemble_infos(config, logger)
 
         # Step 4: Attach tracking IDs
-        tracking_output_path = trigger_attach_tracking_id(config, logger, ensemble_output_path)
+        tracking_output_path = run_attach_tracking_id(config, logger, ensemble_output_path)
 
         # Step 5: Create pseudo T4dataset
-        trigger_create_pseudo_t4dataset(config, logger, tracking_output_path)
+        run_create_pseudo_t4dataset(config, logger, tracking_output_path)
     else:
         logger.warning(
             "Skipping ensemble_infos, attach_tracking_id, and create_pseudo_t4dataset steps because ensemble_infos or create_pseudo_t4dataset config is not contained in yaml."
@@ -222,7 +222,7 @@ def trigger_auto_labeling_pipeline(config: PipelineConfig) -> None:
 
     if config.change_directory_structure:
         # Step 6: Change directory structure
-        trigger_change_directory_structure(config, logger)
+        run_change_directory_structure(config, logger)
     else:
         logger.warning(
             "Skipping change_directory_structure step because change_directory_structure config is not contained in yaml."
@@ -259,7 +259,7 @@ def main() -> None:
     logging.basicConfig(level=getattr(logging, effective_level.upper(), logging.INFO))
     logger = logging.getLogger("auto_labeling_3d.entrypoint")
 
-    trigger_auto_labeling_pipeline(pipeline_config)
+    run_auto_labeling_pipeline(pipeline_config)
 
 
 if __name__ == "__main__":
