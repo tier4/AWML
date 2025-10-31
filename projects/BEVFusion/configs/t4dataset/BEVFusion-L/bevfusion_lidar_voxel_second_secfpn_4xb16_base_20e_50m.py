@@ -10,22 +10,22 @@ custom_imports["imports"] += _base_.custom_imports["imports"]
 data_root = "data/t4dataset/"
 info_directory_path = "info/kokseang_2_3_fixed/"
 train_gpu_size = 4
-train_batch_size = 8
+train_batch_size = 16
 test_batch_size = 2
 val_interval = 5
-max_epochs = 50
+max_epochs = 20
 backend_args = None
 
 # range setting
-point_cloud_range = [-122.4, -122.4, -3.0, 122.4, 122.4, 5.0]
-voxel_size = [0.17, 0.17, 0.2]
+point_cloud_range = [-54.0, -54.0, -5.0, 54.0, 54.0, 3.0]
+voxel_size = [0.075, 0.075, 0.2]
 grid_size = [1440, 1440, 41]
 eval_class_range = {
-    "car": 120,
-    "truck": 120,
-    "bus": 120,
-    "bicycle": 120,
-    "pedestrian": 120,
+    "car": 55,
+    "truck": 55,
+    "bus": 55,
+    "bicycle": 55,
+    "pedestrian": 55,
 }
 
 # model parameter
@@ -291,18 +291,18 @@ param_scheduler = [
     # lr * 1e-4
     dict(
         type="CosineAnnealingLR",
-        T_max=15,
+        T_max=8,
         eta_min=lr * 10,
         begin=0,
-        end=15,
+        end=8,
         by_epoch=True,
         convert_to_iter_based=True,
     ),
     dict(
         type="CosineAnnealingLR",
-        T_max=(max_epochs - 15),
+        T_max=(max_epochs - 8),
         eta_min=lr * 1e-4,
-        begin=15,
+        begin=8,
         end=max_epochs,
         by_epoch=True,
         convert_to_iter_based=True,
@@ -312,18 +312,18 @@ param_scheduler = [
     # during the next epochs, momentum increases from 0.85 / 0.95 to 1
     dict(
         type="CosineAnnealingMomentum",
-        T_max=15,
+        T_max=8,
         eta_min=0.85 / 0.95,
         begin=0,
-        end=15,
+        end=8,
         by_epoch=True,
         convert_to_iter_based=True,
     ),
     dict(
         type="CosineAnnealingMomentum",
-        T_max=(max_epochs - 15),
+        T_max=(max_epochs - 8),
         eta_min=1,
-        begin=15,
+        begin=8,
         end=max_epochs,
         by_epoch=True,
         convert_to_iter_based=True,
