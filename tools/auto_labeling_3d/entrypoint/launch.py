@@ -206,8 +206,8 @@ def trigger_auto_labeling_pipeline(config: PipelineConfig) -> None:
             "Skipping download_checkpoint and create_info_data steps because create_info config is not contained in yaml."
         )
 
-    # Step 3: Ensemble infos (only if configured)
     if config.ensemble_infos and config.create_pseudo_t4dataset:
+        # Step 3: Ensemble infos (only if configured)
         ensemble_output_path = trigger_ensemble_infos(config, logger)
 
         # Step 4: Attach tracking IDs
