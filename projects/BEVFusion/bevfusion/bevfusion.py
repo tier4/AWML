@@ -34,6 +34,8 @@ class BEVFusion(Base3DDetector):
         img_neck: Optional[dict] = None,
         init_cfg: OptMultiConfig = None,
         seg_head: Optional[dict] = None,
+        img_aux_bbox_head = None,
+        img_aux_bbox_head_weight: float = 1.0
         **kwargs,
     ) -> None:
         super().__init__(data_preprocessor=data_preprocessor, init_cfg=init_cfg)
@@ -57,11 +59,14 @@ class BEVFusion(Base3DDetector):
             self.img_backbone = MODELS.build(img_backbone)
             self.img_neck = MODELS.build(img_neck)
             self.view_transform = MODELS.build(view_transform)
+            self.img_aux_bbox_head = MODELS.build(img_aux_bbox_head)
         else:
             self.img_backbone = None
             self.img_neck = None
             self.view_transform = None
-
+            self.img_aux_bbox_head =img_aux_bbox_head
+        
+        self.img_aux_bbox_head_weight = img_aux_bbox_head_weight
         if fusion_layer is not None:
             self.fusion_layer = MODELS.build(fusion_layer)
         else:
@@ -262,7 +267,7 @@ class BEVFusion(Base3DDetector):
                 contains a tensor with shape (num_instances, 7).
         """
         batch_input_metas = [item.metainfo for item in batch_data_samples]
-        feats = self.extract_feat(batch_inputs_dict, batch_input_metas)
+        feats, img_feats = self.extract_feat(batch_inputs_dict, batch_input_metas)
 
         if self.with_bbox_head:
             outputs = self.bbox_head.predict(feats, batch_input_metas)
@@ -281,6 +286,7 @@ class BEVFusion(Base3DDetector):
         imgs = batch_inputs_dict.get("imgs", None)
         points = batch_inputs_dict.get("points", None)
         features = []
+        img_feature = None
         if imgs is not None and "lidar2img" not in batch_inputs_dict:
             # NOTE(knzo25): normal training and testing
             imgs = imgs.contiguous()
@@ -362,18 +368,33 @@ class BEVFusion(Base3DDetector):
         x = self.pts_backbone(x)
         x = self.pts_neck(x)
 
-        return x
+        return x, img_feature
 
     def loss(
         self, batch_inputs_dict: Dict[str, Optional[Tensor]], batch_data_samples: List[Det3DDataSample], **kwargs
     ) -> List[Det3DDataSample]:
         batch_input_metas = [item.metainfo for item in batch_data_samples]
-        feats = self.extract_feat(batch_inputs_dict, batch_input_metas)
+        feats, img_feats = self.extract_feat(batch_inputs_dict, batch_input_metas)
 
         losses = dict()
         if self.with_bbox_head:
             bbox_loss = self.bbox_head.loss(feats, batch_data_samples)
 
         losses.update(bbox_loss)
+        
+        if self.img_aux_bbox_head:
+            img_aux_bbox_losses = self.img_aux_bbox_head.loss(feats, batch_data_samples)
+            sum_losses = 0.0
+            weighted_sum_losses = 0.0
+            for loss_key, loss in img_aux_bbox_losses.items():
+                sum_losses += loss
+                losses[loss_key] = loss * self.img_aux_bbox_head_weight
+                weighted_sum_losses += losses[loss_key]
+
+            losses["img_aux_sum"] = sum_losses
+            losses["img_aux_weighted_sum"] = weighted_sum_losses
+
+            # losses.update(img_aux_bbox_loss)
+
 
         return losses
