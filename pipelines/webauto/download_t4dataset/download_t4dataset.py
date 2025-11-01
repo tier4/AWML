@@ -2,6 +2,7 @@
 
 Setup a tool and configuration following <https://github.com/tier4/WebAutoCLI>.
 """
+from pathlib import Path 
 
 import argparse
 import json
@@ -230,6 +231,8 @@ def download_t4dataset(
         print(f"t4dataset already exists at {to_directory_with_version_id}")
         return
 
+    print(temp_dir)
+
     pull_t4dataset(
         webauto_path,
         project_id,
@@ -307,8 +310,9 @@ def main():
 
     t4dataset_ids = get_t4dataset_ids(config_path)
 
+    custom_temp_dir = "/mnt/nvme1n1/tmp"
     for t4dataset_id, t4dataset_version_id in t4dataset_ids:
-        with TemporaryDirectory() as temp_dir:
+        with TemporaryDirectory(dir=custom_temp_dir) as temp_dir:
             download_t4dataset(
                 config_path,
                 args.webauto_path,
