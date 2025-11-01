@@ -1,4 +1,5 @@
 # modify from https://github.com/mit-han-lab/bevfusion
+import uuid
 from typing import Any, Dict
 
 import numpy as np
@@ -59,6 +60,8 @@ class ImageAug3D(BaseTransform):
         if flip:
             img = img.transpose(method=Image.FLIP_LEFT_RIGHT)
         img = img.rotate(rotate, resample=Image.BICUBIC)  # Default rotation introduces artifacts.
+        # if flip:
+        # img.save(f"work_dirs/bevfusion_2/output_{uuid.uuid4().hex[:8]}.jpg")
 
         # post-homography transformation
         rotation *= resize

@@ -7,7 +7,7 @@ custom_imports = dict(imports=["projects.BEVFusion.bevfusion", "projects.CenterP
 custom_imports["imports"] += _base_.custom_imports["imports"]
 
 # user setting
-data_root = "data/t4dataset/"
+data_root = "data/t4datasets/"
 info_directory_path = "info/kokseang_2_3/"
 train_gpu_size = 4
 train_batch_size = 8
@@ -468,7 +468,7 @@ test_evaluator = dict(
 
 # learning rate
 # lr = 0.0001
-lr = 5e-5
+lr = 1e-4
 param_scheduler = [
     # learning rate scheduler
     # During the first (max_epochs * 0.4) epochs, learning rate increases from 0 to lr * 10
@@ -526,7 +526,7 @@ test_cfg = dict()
 optim_wrapper = dict(
     type="OptimWrapper",
     optimizer=dict(type="AdamW", lr=lr, weight_decay=0.01),
-    clip_grad=dict(max_norm=5.0, norm_type=2),
+    clip_grad=dict(max_norm=35.0, norm_type=2),
 )
 
 # Default setting for scaling LR automatically
