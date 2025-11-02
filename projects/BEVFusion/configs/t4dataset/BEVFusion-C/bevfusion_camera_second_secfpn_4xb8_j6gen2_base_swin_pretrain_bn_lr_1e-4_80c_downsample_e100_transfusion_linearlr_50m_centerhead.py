@@ -162,11 +162,11 @@ model = dict(
         upsample_cfg=dict(type="deconv", bias=False),
         use_conv_for_no_stride=True,
     ),
-    img_aux_bbox_head_weight=0.75,
+    img_aux_bbox_head_weight=0.30,
     img_aux_bbox_head=dict(
         type="BEVFusionCenterHead",
         # in_channels=sum([128, 128, 128]),
-        in_channels=sum([256, 256]),
+        in_channels=80,
         # (output_channel_size, num_conv_layers)
         common_heads=dict(
             reg=(2, 2),

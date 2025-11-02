@@ -301,6 +301,7 @@ class BEVFusion(Base3DDetector):
                 camera2lidar.append(meta["cam2lidar"])
                 img_aug_matrix.append(meta.get("img_aug_matrix", np.eye(4)))
                 lidar_aug_matrix.append(meta.get("lidar_aug_matrix", np.eye(4)))
+                print("Create dummy lidar2img")
 
             lidar2image = imgs.new_tensor(np.asarray(lidar2image))
             camera_intrinsics = imgs.new_tensor(np.array(camera_intrinsics))
@@ -386,7 +387,7 @@ class BEVFusion(Base3DDetector):
         losses.update(bbox_loss)
         
         if self.img_aux_bbox_head:
-            img_aux_bbox_losses = self.img_aux_bbox_head.loss(feats, batch_data_samples)
+            img_aux_bbox_losses = self.img_aux_bbox_head.loss(img_feats, batch_data_samples)
             sum_losses = 0.0
             weighted_sum_losses = 0.0
             for loss_key, loss in img_aux_bbox_losses.items():
