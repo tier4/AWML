@@ -252,7 +252,7 @@ def main():
         for split in ["train", "val", "test"]:
             print_log(f"Creating data info for split: {split}", logger="current")
             # Get 2 Hz
-            if dataset_version == 'db_jpntaxigen2_v1':
+            if split == "train" and dataset_version == 'db_jpntaxigen2_v1':
                 sample_steps = 5
             else:
                 sample_steps = 1
