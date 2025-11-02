@@ -59,7 +59,6 @@ class BEVFusion(Base3DDetector):
             self.img_backbone = MODELS.build(img_backbone)
             self.img_neck = MODELS.build(img_neck)
             self.view_transform = MODELS.build(view_transform)
-            self.img_bbox_head = MODELS.build(img_bbox_head)
         else:
             self.img_backbone = None
             self.img_neck = None
@@ -410,10 +409,5 @@ class BEVFusion(Base3DDetector):
             losses["img_aux_weighted_sum"] = weighted_sum_losses
 
             # losses.update(img_aux_bbox_loss)
-
-
-        if self.img_bbox_head:
-            img_bbox_loss = self.img_bbox_head.loss(img_bbox_head, batch_data_samples)
-            losses.update(img_bbox_loss)
 
         return losses
