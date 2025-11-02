@@ -252,11 +252,11 @@ def main():
         for split in ["train", "val", "test"]:
             print_log(f"Creating data info for split: {split}", logger="current")
             # Get 2 Hz
-            if split == "train" and dataset_version == 'db_jpntaxigen2_v1':
+            if split == "train" and dataset_version == "db_jpntaxigen2_v1":
                 sample_steps = 5
             else:
                 sample_steps = 1
-                
+
             for scene_id in dataset_list_dict.get(split, []):
                 print_log(f"Creating data info for scene: {scene_id}, steps: {sample_steps}")
                 t4_dataset_id, t4_dataset_version_id = scene_id.split("   ")

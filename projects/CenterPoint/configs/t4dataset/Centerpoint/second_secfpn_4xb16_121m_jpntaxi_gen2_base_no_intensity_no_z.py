@@ -48,7 +48,11 @@ test_batch_size = 2
 num_workers = 32
 val_interval = 1
 max_epochs = 30
-work_dir = "work_dirs/centerpoint_2_3_3/" + _base_.dataset_type + "/second_secfpn_4xb16_121m_jpntaxi_gen2_base_no_intensity_no_z/"
+work_dir = (
+    "work_dirs/centerpoint_2_3_3/"
+    + _base_.dataset_type
+    + "/second_secfpn_4xb16_121m_jpntaxi_gen2_base_no_intensity_no_z/"
+)
 
 train_pipeline = [
     dict(
@@ -410,4 +414,4 @@ custom_hooks = [
 ]
 
 # Update the load_from path accordingly
-load_from = 'work_dirs/centerpoint_2_3/T4Dataset/second_secfpn_4xb16_121m_base_amp/epoch_49.pth'
+load_from = "work_dirs/centerpoint_2_3/T4Dataset/second_secfpn_4xb16_121m_base_amp/epoch_49.pth"

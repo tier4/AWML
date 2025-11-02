@@ -2,7 +2,6 @@
 
 Setup a tool and configuration following <https://github.com/tier4/WebAutoCLI>.
 """
-from pathlib import Path 
 
 import argparse
 import json
