@@ -35,7 +35,7 @@ class BEVFusion(Base3DDetector):
         init_cfg: OptMultiConfig = None,
         seg_head: Optional[dict] = None,
         img_aux_bbox_head = None,
-        img_aux_bbox_head_weight: float = 1.0
+        img_aux_bbox_head_weight: float = 1.0,
         **kwargs,
     ) -> None:
         super().__init__(data_preprocessor=data_preprocessor, init_cfg=init_cfg)

@@ -1,8 +1,15 @@
-import torch 
+from typing import Tuple 
 
-from projects.CenterPoint.models.dense_heads.centerpoint_head import CenterHead
+import torch 
+from torch import Tensor
 from mmdet3d.models.utils import (clip_sigmoid, draw_heatmap_gaussian,
                                   gaussian_radius)
+from mmdet3d.registry import MODELS
+from mmdet.models.utils import multi_apply
+from mmengine.model import BaseModule
+from mmengine.structures import InstanceData
+
+from projects.CenterPoint.models.dense_heads.centerpoint_head import CenterHead
 
 
 @MODELS.register_module(force=True)
@@ -15,7 +22,7 @@ class BEVFusionCenterHead(CenterHead):
         loss_prefix: str = "bevfusion_img",
         **kwargs,
     ):
-        super(CenterHead, self).__init__(
+        super(BEVFusionCenterHead, self).__init__(
           freeze_shared_conv=freeze_shared_conv, 
           freeze_task_heads=freeze_task_heads, 
           loss_prefix=loss_prefix, 
