@@ -279,6 +279,9 @@ class BaseViewTransform(nn.Module):
 
         # collapse Z
         final = torch.cat(x.unbind(dim=2), 1)
+        
+        # Permute B x C x Y x X
+        # final = final.permute(0, 1, 3, 2).contiguous()
 
         # if self.main_gpu:
         #   save_bev_single(final, f"{self.debug_folder}/bev_pool_debug_{uuid.uuid4().hex[:8]}.png", mode="max")
@@ -300,6 +303,9 @@ class BaseViewTransform(nn.Module):
 
         # collapse Z
         final = torch.cat(x.unbind(dim=2), 1)
+
+        # Permute B x C x Y x X
+        # final = final.permute(0, 1, 3, 2).contiguous()
 
         return final
 

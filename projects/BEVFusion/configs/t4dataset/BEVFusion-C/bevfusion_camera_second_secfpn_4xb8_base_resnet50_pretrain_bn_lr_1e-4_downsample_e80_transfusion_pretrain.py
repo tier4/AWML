@@ -12,8 +12,8 @@ info_directory_path = "info/kokseang_2_3/"
 train_gpu_size = 4
 train_batch_size = 8
 test_batch_size = 2
-val_interval = 5
-max_epochs = 50
+val_interval = 10
+max_epochs = 100
 backend_args = None
 
 # range setting
@@ -287,13 +287,12 @@ train_pipeline = [
     dict(
         type="ImageAug3D",
         final_dim=image_size,
-        resize_lim=0.0,
+        resize_lim=0.02,
         bot_pct_lim=[0.0, 0.0],
-        # rot_lim=[-5.4, 5.4],
-        rot_lim=[0.0, 0.0],
+        rot_lim=[-5.4, 5.4],
         rand_flip=True,
+        # is_train=True,
         is_train=False,
-        # is_train=False,
     ),
     # dict(type="PointsRangeFilter", point_cloud_range=point_cloud_range),
     dict(type="ObjectRangeFilter", point_cloud_range=point_cloud_range),

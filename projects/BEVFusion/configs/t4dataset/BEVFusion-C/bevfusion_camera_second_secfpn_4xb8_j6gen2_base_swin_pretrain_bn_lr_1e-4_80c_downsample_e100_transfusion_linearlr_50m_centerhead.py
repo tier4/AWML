@@ -162,11 +162,11 @@ model = dict(
         upsample_cfg=dict(type="deconv", bias=False),
         use_conv_for_no_stride=True,
     ),
-    img_aux_bbox_head_weight=0.30,
+    img_aux_bbox_head_weight=0.3,
     img_aux_bbox_head=dict(
         type="BEVFusionCenterHead",
         # in_channels=sum([128, 128, 128]),
-        in_channels=80,
+        in_channels=sum([256, 256]),
         # (output_channel_size, num_conv_layers)
         common_heads=dict(
             reg=(2, 2),
@@ -481,7 +481,7 @@ test_evaluator = dict(
 # learning rate
 # lr = 0.0001
 lr = 1e-4
-t_max = 5
+t_max = 3
 param_scheduler = [
     # learning rate scheduler
     # During the first (max_epochs * 0.4) epochs, learning rate increases from 0 to lr * 10
