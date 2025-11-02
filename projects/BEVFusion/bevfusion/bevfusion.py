@@ -59,13 +59,16 @@ class BEVFusion(Base3DDetector):
             self.img_backbone = MODELS.build(img_backbone)
             self.img_neck = MODELS.build(img_neck)
             self.view_transform = MODELS.build(view_transform)
-            self.img_aux_bbox_head = MODELS.build(img_aux_bbox_head)
         else:
             self.img_backbone = None
             self.img_neck = None
             self.view_transform = None
-            self.img_aux_bbox_head =img_aux_bbox_head
         
+        if img_aux_bbox_head is not None:
+            self.img_aux_bbox_head = MODELS.build(img_aux_bbox_head)
+        else:
+            self.img_aux_bbox_head = None 
+
         self.img_aux_bbox_head_weight = img_aux_bbox_head_weight
         if fusion_layer is not None:
             self.fusion_layer = MODELS.build(fusion_layer)
