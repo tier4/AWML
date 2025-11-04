@@ -13,8 +13,8 @@ custom_imports["imports"] += ["autoware_ml.samplers"]
 # This is a base file for t4dataset, add the dataset config.
 # type, data_root and ann_file of data.train, data.val and data.test
 point_cloud_range = [-121.60, -121.60, -3.0, 121.60, 121.60, 5.0]
-voxel_size = [0.20, 0.20, 8.0]
-grid_size = [1216, 1216, 1]  # (121.60 / 0.32 == 380, 380 * 2 == 760)
+voxel_size = [0.16, 0.16, 8.0]
+grid_size = [1520, 1520, 1]  # (121.60 / 0.32 == 380, 380 * 2 == 760)
 sweeps_num = 1
 input_modality = dict(
     use_lidar=True,
@@ -42,9 +42,9 @@ eval_class_range = {
 
 # user setting
 data_root = "data/t4dataset/"
-info_directory_path = "info/kokseang_2_3/"
+info_directory_path = "info/jacob/"
 train_gpu_size = 4
-train_batch_size = 16
+train_batch_size = 10
 test_batch_size = 2
 num_workers = 32
 val_interval = 5
@@ -311,7 +311,7 @@ randomness = dict(seed=0, diff_rank_seed=False, deterministic=True)
 
 # learning rate
 # Since mmengine doesn't support OneCycleMomentum yet, we use CosineAnnealing from the default configs
-lr = 0.0003
+lr = 0.0001 # originally 0.0003, lower lr for amp training otherwise hit NaN loss
 param_scheduler = [
     # learning rate scheduler
     # During the first (max_epochs * 0.3) epochs, learning rate increases from 0 to lr * 10
