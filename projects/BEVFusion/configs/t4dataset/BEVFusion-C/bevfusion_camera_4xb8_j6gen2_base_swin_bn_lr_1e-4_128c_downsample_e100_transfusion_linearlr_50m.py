@@ -491,4 +491,4 @@ auto_scale_lr = dict(enable=False, base_batch_size=train_gpu_size * train_batch_
 if train_gpu_size > 1:
     sync_bn = "torch"
 
-load_from = "work_dirs/bevfusion_lidar_2_0/epoch_46.pth"
+# load_from = "work_dirs/bevfusion_lidar_2_0/epoch_46.pth"
