@@ -31,11 +31,6 @@ create_info:
     checkpoint:
       model_zoo_url: https://download.autoware-ml-model-zoo.tier4.jp/autoware-ml/models/bevfusion/bevfusion-cl/t4base/v2.0.0/best_NuScenes_metric_T4Metric_mAP_epoch_48.pth
       checkpoint_path: /workspace/work_dirs/checkpoints/example_model_bevfusion.pth
-  - name: streampetr
-    model_config: /workspace/projects/StreamPETR/configs/t4dataset/t4_base_vov_flash_480x640_baseline.py
-    checkpoint:
-      model_zoo_url: https://download.autoware-ml-model-zoo.tier4.jp/autoware-ml/models/streampetr/streampetr-vov99/t4base/v2.3/best_NuScenes_metric_T4Metric_mAP_epoch_31.pth
-      checkpoint_path: /workspace/work_dirs/checkpoints/example_model_streampetr.pth
 
 # ensemble_infos configuration
 # Please update the config file for ensemble_infos when changing the latest model_config in create_info
