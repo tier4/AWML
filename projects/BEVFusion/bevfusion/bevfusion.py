@@ -34,6 +34,7 @@ class BEVFusion(Base3DDetector):
         img_neck: Optional[dict] = None,
         init_cfg: OptMultiConfig = None,
         seg_head: Optional[dict] = None,
+				img_roi_head = None,
         img_aux_bbox_head = None,
         img_aux_bbox_head_weight: float = 1.0,
         **kwargs,
@@ -85,6 +86,9 @@ class BEVFusion(Base3DDetector):
             self.pts_neck = MODELS.build(pts_neck)
         else:
             self.pts_neck = None 
+
+				if img_roi_head is not None:
+					self.img_roi_head = MODELS.build(img_roi_head)
 
         self.bbox_head = MODELS.build(bbox_head)
         self.init_weights()
@@ -173,10 +177,12 @@ class BEVFusion(Base3DDetector):
         x = x.view(B * N, C, H, W).contiguous()
 
         x = self.img_backbone(x)
-        x = self.img_neck(x)
+        img_2d_feats = self.img_neck(x)
 
-        if not isinstance(x, torch.Tensor):
-            x = x[0]
+        if not isinstance(img_2d_feats, torch.Tensor):
+            x = img_2d_feats[0]
+				else:
+						x = img_2d_feats
 
         BN, C, H, W = x.size()
         assert BN == B * N, (BN, B * N)
@@ -198,7 +204,7 @@ class BEVFusion(Base3DDetector):
                 lidar_aug_matrix_inverse,
                 geom_feats,
             )
-        return x
+        return x, img_2d_feats
 
     def extract_pts_feat(self, feats, coords, sizes, points=None) -> torch.Tensor:
         if points is not None:
@@ -278,7 +284,7 @@ class BEVFusion(Base3DDetector):
                 contains a tensor with shape (num_instances, 7).
         """
         batch_input_metas = [item.metainfo for item in batch_data_samples]
-        feats, img_feats = self.extract_feat(batch_inputs_dict, batch_input_metas)
+        feats, img_feats, img_2d_features = self.extract_feat(batch_inputs_dict, batch_input_metas)
 
         if self.with_bbox_head:
             outputs = self.bbox_head.predict(feats, batch_input_metas)
@@ -316,7 +322,7 @@ class BEVFusion(Base3DDetector):
             camera2lidar = imgs.new_tensor(np.array(camera2lidar))
             img_aug_matrix = imgs.new_tensor(np.array(img_aug_matrix))
             lidar_aug_matrix = imgs.new_tensor(np.array(lidar_aug_matrix))
-            img_feature = self.extract_img_feat(
+            img_feature, img_2d_features = self.extract_img_feat(
                 x=imgs,
                 points=deepcopy(points),
                 lidar2image=lidar2image,
@@ -347,7 +353,7 @@ class BEVFusion(Base3DDetector):
             feats = feats.sum(dim=1, keepdim=False) / sizes.type_as(feats).view(-1, 1)
 
             geom_feats = batch_inputs_dict["geom_feats"]
-            img_feature = self.extract_img_feat(
+            img_feature, img_2d_features = self.extract_img_feat(
                 imgs,
                 [feats],
                 # points,
@@ -361,7 +367,7 @@ class BEVFusion(Base3DDetector):
             )
             features.append(img_feature)
 
-        if points is not None:
+        if points is not None and self.pts_middle_encoder is not None:
             pts_feature = self.extract_pts_feat(
                 batch_inputs_dict.get("voxels", {}).get("voxels", None),
                 batch_inputs_dict.get("voxels", {}).get("coors", None),
@@ -382,13 +388,13 @@ class BEVFusion(Base3DDetector):
         if self.pts_neck:
             x = self.pts_neck(x)
 
-        return x, img_feature
+        return x, img_feature, img_2d_features
 
     def loss(
         self, batch_inputs_dict: Dict[str, Optional[Tensor]], batch_data_samples: List[Det3DDataSample], **kwargs
     ) -> List[Det3DDataSample]:
         batch_input_metas = [item.metainfo for item in batch_data_samples]
-        feats, img_feats = self.extract_feat(batch_inputs_dict, batch_input_metas)
+        feats, img_feats, img_2d_features = self.extract_feat(batch_inputs_dict, batch_input_metas)
 
         losses = dict()
         if self.with_bbox_head:
@@ -410,4 +416,8 @@ class BEVFusion(Base3DDetector):
 
             # losses.update(img_aux_bbox_loss)
 
+				if self.img_roi_head is not None:
+					img_roi_head_losses = self.img_roi_head.loss(
+						img_2d_features, batch_input_metas 
+					)
         return losses
