@@ -344,13 +344,19 @@ python tools/auto_labeling_3d/create_pseudo_t4dataset/create_pseudo_t4dataset.py
 
 ### 4. Use for training
 
-#### 4.1. Upload to WebAuto
+#### Verify the Pseudo-T4dataset
+
+Before using the Pseudo-T4dataset for training, you can visualize and verify the generated labels using [t4-devkit](https://github.com/tier4/t4-devkit).
+
+Please refer to [t4-devkit render tutorial](https://tier4.github.io/t4-devkit/develop/tutorials/render/) for visualization instructions.
+
+#### Upload to WebAuto
 
 Please upload Pseudo-T4dataset to WebAuto to share easily for other users.
 
 Please check [Web.Auto document](https://docs.web.auto/en/user-manuals/vehicle-data-search/quick-start#register-t4-datasets) for the detail.
 
-#### 4.2. Use in local PC
+#### Use in local PC
 
 To align T4dataset directory structure, you run the script as following.
 
