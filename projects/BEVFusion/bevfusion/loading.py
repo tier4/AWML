@@ -23,7 +23,7 @@ def project_to_image(points, lidar2cam, cam2img):
     return points_img[:, :2], valid_mask
 
 
-def compute_bbox_and_centers(lidar2cam, cam2img, bboxes, labels, img_shape):
+def compute_bbox_and_centers(lidar2cam, cam2img, img_aug_matrix, bboxes, labels, img_shape):
     """
     Compute the 2D bounding box, 3D center of the projected bounding box, and 3D center in LiDAR coordinates.
 
@@ -47,6 +47,8 @@ def compute_bbox_and_centers(lidar2cam, cam2img, bboxes, labels, img_shape):
     valid_projected_centers = []
     valid_image_depth = []
     valid_labels_list = []
+
+    cam_img = img_aug_matrix @ cam2img
 
     # Loop through each bounding box
     for bbox_std, bbox, label in zip(bboxes, bboxes.corners, labels):
@@ -97,7 +99,7 @@ def compute_bbox_and_centers(lidar2cam, cam2img, bboxes, labels, img_shape):
     return bboxes_2d, projected_centers, object_depth, valid_labels
 
 
-def check_bbox_visibility_in_image(lidar2cam, cam2img, bboxes, labels, img_shape, visibility=0.1):
+def check_bbox_visibility_in_image(lidar2cam, cam2img, img_aug_matrix, bboxes, labels, img_shape, visibility=0.1):
     """
     Projects 3D bounding boxes into the image plane and determines visibility.
 
@@ -115,6 +117,7 @@ def check_bbox_visibility_in_image(lidar2cam, cam2img, bboxes, labels, img_shape
     """
     C, H, W = img_shape
     is_visible = []
+    cam2img = img_aug_matrix @ cam2img
 
     for bbox_std, bbox, label in zip(bboxes, [b.corners for b in bboxes], labels):
         # Project corners + center to image space
@@ -368,6 +371,7 @@ class StreamPETRLoadAnnotations2D(BaseTransform):
             bboxes_2d, projected_centers, depths, valid_labels = compute_bbox_and_centers(
                 results["lidar2cam"][i],
                 results["cam2img"][i],
+                results["img_aug_matrix"][i],
                 results["gt_bboxes_3d"],
                 results["gt_labels_3d"],
                 results["img"][i].shape,
@@ -394,10 +398,9 @@ class Filter3DBoxesinBlindSpot(BaseTransform):
         visibility_mask = []
         for i, k in enumerate(results["img"]):
             is_visible = check_bbox_visibility_in_image(
-								results["lidar2cam"][i],
+                results["lidar2cam"][i],
                 results["cam2img"][i],
-                # results["extrinsics"][i],
-                # results["intrinsics"][i],
+                results["img_aug_matrix"][i],
                 results["gt_bboxes_3d"],
                 results["gt_labels_3d"],
                 results["img"][i].shape,
