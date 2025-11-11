@@ -4,6 +4,7 @@ import os
 from typing import List, Optional
 
 import mmcv
+from mmcv.transforms import BaseTransform
 import numpy as np
 from mmdet3d.datasets.transforms import LoadMultiViewImageFromFiles
 from mmdet3d.registry import TRANSFORMS
@@ -18,7 +19,8 @@ def project_to_image(points, lidar2cam, cam2img):
     # Filter points behind the camera
     valid_mask = points_cam[:, 2] > 0
 
-    points_img = np.dot(cam2img, points_cam[:, :3].T).T
+    points_cam_hom = np.hstack((points_cam[:, :3], np.ones((points_cam.shape[0], 1))))
+    points_img = np.dot(cam2img, points_cam_hom.T).T
     points_img /= points_img[:, 2:3]
     return points_img[:, :2], valid_mask
 
@@ -48,7 +50,7 @@ def compute_bbox_and_centers(lidar2cam, cam2img, img_aug_matrix, bboxes, labels,
     valid_image_depth = []
     valid_labels_list = []
 
-    cam_img = img_aug_matrix @ cam2img
+    cam2img = img_aug_matrix @ cam2img
 
     # Loop through each bounding box
     for bbox_std, bbox, label in zip(bboxes, bboxes.corners, labels):
@@ -361,7 +363,7 @@ class BEVLoadMultiViewImageFromFiles(LoadMultiViewImageFromFiles):
 
 
 @TRANSFORMS.register_module()
-class StreamPETRLoadAnnotations2D(BaseTransform):
+class BEVFusionLoadAnnotations2D(BaseTransform):
 
     def transform(self, results):
 
@@ -376,6 +378,7 @@ class StreamPETRLoadAnnotations2D(BaseTransform):
                 results["gt_labels_3d"],
                 results["img"][i].shape,
             )
+            # print(f"bboxes: {bboxes_2d.shape}, centers: {projected_centers.shape}, depths: {depths.shape}, labels: {valid_labels.shape}")
             all_bboxes_2d.append(bboxes_2d)
             all_centers_2d.append(projected_centers)
             all_depths.append(depths)

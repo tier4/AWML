@@ -89,6 +89,8 @@ class BEVFusion(Base3DDetector):
 
         if img_roi_head is not None:
             self.img_roi_head = MODELS.build(img_roi_head)
+        else:
+            self.img_roi_head = None
 
         self.bbox_head = MODELS.build(bbox_head)
         self.init_weights()
@@ -398,6 +400,15 @@ class BEVFusion(Base3DDetector):
         self, batch_inputs_dict: Dict[str, Optional[Tensor]], batch_data_samples: List[Det3DDataSample], **kwargs
     ) -> List[Det3DDataSample]:
         batch_input_metas = [item.metainfo for item in batch_data_samples]
+        
+
+        print(len(gt_bboxes2d_list))
+        print(len(gt_labels2d_list))
+        print(len(centers_2d))
+        print(len(depths))
+        print(len(img_pad_shapes))
+        print(img_pad_shapes)
+
         feats, img_feats, img_roi_head_preds = self.extract_feat(batch_inputs_dict, batch_input_metas)
 
         losses = dict()
@@ -421,35 +432,37 @@ class BEVFusion(Base3DDetector):
             # losses.update(img_aux_bbox_loss)
 
         if self.img_roi_head is not None:
+                
             gt_bboxes2d_list = []
             gt_labels2d_list = []
-            centers2d = [] 
+            centers_2d = [] 
             depths = []
             img_pad_shapes = []
-            gt_bboxes_ignore = None 
+            gt_bboxes_ignore = []
 
-            for batch_data_sample in batch_data_samples:
+            for batch_data_sample, batch_input_meta in zip(batch_data_samples, batch_input_metas):
                 gt_bboxes2d_list.append(
-                    batch_data_sample.gt_bboxes
+                    batch_data_sample.gt_instances.bboxes
                 )
                 gt_labels2d_list.append(
-                    batch_data_sample.gt_labels2d
+                    batch_data_sample.gt_instances.labels
                 )
-                centers2d.append(
-                    batch_data_sample.center2d
+                centers_2d.append(
+                    batch_input_meta['centers_2d']
                 )
                 depths.append(
-                    batch_data_sample.depths
+                    batch_input_meta['depths']
                 )
-                if gt_bboxes_ignore in batch_data_sample:
-                    batch_input_metas.append(
-                        gt_bboxes_ignore
-                    ) 
-            
-            for batch_input_meta in batch_input_metas:
                 img_pad_shapes.append(
-                    batch_input_meta.pad_shape
+                    batch_input_meta['pad_shape']
                 )
+                if 'gt_bboxes_ignore' in batch_input_meta:
+                    gt_bboxes_ignore.append(
+                        batch_input_meta['gt_bboxes_ignore']
+                    ) 
+
+            if not len(gt_bboxes_ignore):
+                gt_bboxes_ignore = None 
 
             img_roi_head_losses = self.img_roi_head.aux_loss(
                 gt_bboxes2d_list=gt_bboxes2d_list,
@@ -457,7 +470,7 @@ class BEVFusion(Base3DDetector):
                 centers2d=centers2d, 
                 depths=depths, 
                 preds_dicts=img_roi_head_preds,
-                img_pad_shapes=img_pad_shapes
+                img_pad_shapes=img_pad_shapes,
                 gt_bboxes_ignore=gt_bboxes_ignore
             )
 
