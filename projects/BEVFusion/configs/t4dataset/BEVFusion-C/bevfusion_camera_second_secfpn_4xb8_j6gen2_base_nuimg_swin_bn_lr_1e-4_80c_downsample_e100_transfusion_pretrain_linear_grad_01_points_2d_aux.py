@@ -284,6 +284,26 @@ model = dict(
 			out_size_factor=8,
         ),
     ),
+    img_roi_head=dict(
+        type="mmdet.FocalHead",
+        num_classes=len(_base_.class_names),
+        in_channels=256,
+        bbox_coder=dict(type="mmdet.DistancePointBBoxCoder"),
+        loss_cls2d=dict(type="mmdet.QualityFocalLoss", use_sigmoid=True, beta=2.0, loss_weight=2.0),
+        loss_centerness=dict(type="mmdet.GaussianFocalLoss", reduction="mean", loss_weight=1.0),
+        loss_bbox2d=dict(type="mmdet.L1Loss", loss_weight=5.0),
+        loss_iou2d=dict(type="mmdet.GIoULoss", loss_weight=2.0),
+        loss_centers2d=dict(type="mmdet.L1Loss", loss_weight=10.0),
+        train_cfg=dict(
+            assigner2d=dict(
+                type="HungarianAssigner2D",
+                cls_cost=dict(type="FocalLossCostAssigner", weight=2),
+                reg_cost=dict(type="BBoxL1CostAssigner", weight=5.0, box_format="xywh"),
+                iou_cost=dict(type="IoUCostAssigner", iou_mode="giou", weight=2.0),
+                centers2d_cost=dict(type="BBox3DL1CostAssigner", weight=10.0),
+            )
+        ),
+    ),
     # Lidar pipeline
     # pts_voxel_encoder=dict(num_features=lidar_feature_dims),
 )

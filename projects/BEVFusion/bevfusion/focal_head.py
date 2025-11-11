@@ -18,10 +18,10 @@ from mmdet.utils.dist_utils import reduce_mean
 from mmengine.model import bias_init_with_prob
 from mmengine.structures import InstanceData
 
-from projects.StreamPETR.stream_petr.models.utils.misc import apply_center_offset, apply_ltrb, draw_heatmap_gaussian
+from .misc import apply_center_offset, apply_ltrb, draw_heatmap_gaussian
 
 
-@MODELS.register_module()
+@MODELS.register_module(force=True)
 class FocalHead(AnchorFreeHead):
     """Implements the DETR transformer head.
     See `paper: End-to-End Object Detection with Transformers
@@ -55,7 +55,7 @@ class FocalHead(AnchorFreeHead):
     def __init__(
         self,
         num_classes,
-        in_channels=80,
+        in_channels=256,
         embed_dims=256,
         stride=16,
         use_hybrid_tokens=False,
@@ -126,7 +126,7 @@ class FocalHead(AnchorFreeHead):
         # self.loss_bbox2d = self.loss_bbox
         # self.loss_iou2d = MODELS.build(loss_iou2d)
         # self.loss_centers2d = MODELS.build(loss_centers2d)
-        # self.loss_centerness = MODELS.build(loss_centerness)
+        self.loss_centerness = MODELS.build(loss_centerness)
 
         self._init_layers()
 
@@ -479,29 +479,35 @@ class FocalHead(AnchorFreeHead):
         bbox_preds_list = []
         centers2d_preds_list = []
 
-        labels = torch.cat(labels_list, 0)
-        label_weights = torch.cat(label_weights_list, 0)
-        bbox_targets = torch.cat(bbox_targets_list, 0)
-        bbox_weights = torch.cat(bbox_weights_list, 0)
-        centers2d_targets = torch.cat(centers2d_targets_list, 0)
+        # labels = torch.cat(labels_list, 0)
+        # label_weights = torch.cat(label_weights_list, 0)
+        # bbox_targets = torch.cat(bbox_targets_list, 0)
+        # bbox_weights = torch.cat(bbox_weights_list, 0)
+        # centers2d_targets = torch.cat(centers2d_targets_list, 0)
 
         # DETR regress the relative position of boxes (cxcywh) in the image,
         # thus the learning target is normalized by the image size. So here
         # we need to re-scale them for calculating IoU loss
         # construct factors used for rescale bboxes
-        img_h, img_w, _ = [x[0] for x in img_pad_shapes]
+        # img_h, img_w = img_pad_shapes
+        img_h = [x[0] for x in img_pad_shapes]
+        img_w = [x[1] for x in img_pad_shapes]
 
-        num_total_pos = centerness.new_tensor([num_total_pos])
-        num_total_pos = torch.clamp(reduce_mean(num_total_pos), min=1).item()
+        
+        # num_total_pos = sum([])
+        # num_total_pos = centerness.new_tensor([num_total_pos])
+        # num_total_pos = torch.clamp(reduce_mean(num_total_pos), min=1).item()
 
         # centerness BCE loss
-        img_shape = [[x[0] for x in img_pad_shapes] for _ in range(num_imgs)]
-        (heatmaps,) = multi_apply(self._get_heatmap_single, all_centers2d_list, gt_bboxes_list, img_shape)
+        # img_shape = [[x[0] for x in img_pad_shapes] for _ in range(num_imgs)]
+        img_shape = [x for x in img_pad_shapes for _ in range(num_imgs)]
+        (heatmaps, num_center_pos) = multi_apply(self._get_heatmap_single, all_centers2d_list, gt_bboxes_list, img_shape)
 
+        num_center_pos = sum(num_center_pos)
         heatmaps = torch.stack(heatmaps, dim=0)
         centerness = clip_sigmoid(centerness)
         loss_centerness = self.loss_centerness(
-            centerness, heatmaps.view(num_imgs, -1, 1), avg_factor=max(num_total_pos, 1)
+            centerness, heatmaps.view(num_imgs, -1, 1), avg_factor=max(num_center_pos, 1)
         )
 
         loss_cls = torch.zeros_like(loss_centerness)
@@ -511,8 +517,9 @@ class FocalHead(AnchorFreeHead):
         return loss_cls, loss_bbox, loss_iou, loss_centers2d, loss_centerness
 
     def _get_heatmap_single(self, obj_centers2d, obj_bboxes, img_shape):
-        img_h, img_w, _ = img_shape
+        img_h, img_w = img_shape
         heatmap = torch.zeros(img_h // self.stride, img_w // self.stride, device=obj_centers2d.device)
+        num_center_pos = 0
         if len(obj_centers2d) != 0:
             l = obj_centers2d[..., 0:1] - obj_bboxes[..., 0:1]
             t = obj_centers2d[..., 1:2] - obj_bboxes[..., 1:2]
@@ -523,7 +530,9 @@ class FocalHead(AnchorFreeHead):
             radius = torch.clamp(radius, 1.0).cpu().numpy().tolist()
             for center, r in zip(obj_centers2d, radius):
                 heatmap = draw_heatmap_gaussian(heatmap, center / 16, radius=int(r), k=1)
-        return (heatmap,)
+                num_center_pos += 1
+
+        return (heatmap, num_center_pos)
 
     def get_targets(
         self,

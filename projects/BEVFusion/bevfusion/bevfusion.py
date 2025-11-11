@@ -181,17 +181,17 @@ class BEVFusion(Base3DDetector):
         x = self.img_backbone(x)
         x = self.img_neck(x)
 
-        if self.img_roi_head is not None:
-            img_roi_head_preds = self.img_roi_head(x)
-        else:
-            img_roi_head_preds = None
-
         if not isinstance(x, torch.Tensor):
             x = x[0]
 
         BN, C, H, W = x.size()
         assert BN == B * N, (BN, B * N)
         x = x.view(B, N, C, H, W)
+        
+        if self.img_roi_head is not None:
+            img_roi_head_preds = self.img_roi_head(x)
+        else:
+            img_roi_head_preds = None
 
         with torch.cuda.amp.autocast(enabled=False):
             # with torch.autocast(device_type='cuda', dtype=torch.float32):
@@ -400,15 +400,6 @@ class BEVFusion(Base3DDetector):
         self, batch_inputs_dict: Dict[str, Optional[Tensor]], batch_data_samples: List[Det3DDataSample], **kwargs
     ) -> List[Det3DDataSample]:
         batch_input_metas = [item.metainfo for item in batch_data_samples]
-        
-
-        print(len(gt_bboxes2d_list))
-        print(len(gt_labels2d_list))
-        print(len(centers_2d))
-        print(len(depths))
-        print(len(img_pad_shapes))
-        print(img_pad_shapes)
-
         feats, img_feats, img_roi_head_preds = self.extract_feat(batch_inputs_dict, batch_input_metas)
 
         losses = dict()
@@ -467,7 +458,7 @@ class BEVFusion(Base3DDetector):
             img_roi_head_losses = self.img_roi_head.aux_loss(
                 gt_bboxes2d_list=gt_bboxes2d_list,
                 gt_labels2d_list=gt_labels2d_list,
-                centers2d=centers2d, 
+                centers2d=centers_2d, 
                 depths=depths, 
                 preds_dicts=img_roi_head_preds,
                 img_pad_shapes=img_pad_shapes,
