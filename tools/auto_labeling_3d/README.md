@@ -4,9 +4,65 @@ The pipeline of auto labeling for 3D detection.
 
 - [Support priority](https://github.com/tier4/AWML/blob/main/docs/design/autoware_ml_design.md#support-priority): Tier S
 
+```mermaid
+graph LR
+    NADATA[(non-annotated T4Dataset)]
+
+    subgraph "Model A inference"
+        INFERENCE_A[create_info]
+    end
+
+    subgraph "Model B inference"
+        INFERENCE_B[create_info]
+    end
+
+    subgraph "Model C inference"
+        INFERENCE_C[create_info]
+    end
+
+    subgraph "Ensemble"
+        ENSEMBLE[filter_objects]
+    end
+
+    subgraph "Temporal ID Consistency"
+        TRACKING[attach_tracking_id]
+    end
+
+    subgraph "Convert to T4Dataset"
+        CONVERT[create_pseudo_dataset]
+    end
+
+    DATA[(pseudo-label T4Dataset)]
+
+    NADATA --> INFERENCE_A
+    NADATA --> INFERENCE_B
+    NADATA --> INFERENCE_C
+
+    INFERENCE_A --> ENSEMBLE
+    INFERENCE_B --> ENSEMBLE
+    INFERENCE_C --> ENSEMBLE
+
+    ENSEMBLE --> TRACKING
+    TRACKING --> CONVERT
+    CONVERT --> DATA
+
+    click INFERENCE_A "https://github.com/tier4/AWML/tree/main/tools/auto_labeling_3d#2-create-info-file-from-non-annotated-t4dataset"
+    click INFERENCE_B "https://github.com/tier4/AWML/tree/main/tools/auto_labeling_3d#2-create-info-file-from-non-annotated-t4dataset"
+    click INFERENCE_C "https://github.com/tier4/AWML/tree/main/tools/auto_labeling_3d#2-create-info-file-from-non-annotated-t4dataset"
+    click ENSEMBLE "https://github.com/tier4/AWML/tree/main/tools/auto_labeling_3d#3-filter-objects-which-do-not-use-for-pseudo-t4dataset"
+    click TRACKING "https://github.com/tier4/AWML/tree/main/tools/auto_labeling_3d#4-attach-tracking-id-to-info-file"
+    click CONVERT "https://github.com/tier4/AWML/tree/main/tools/auto_labeling_3d#5-create-pseudo-t4dataset"
+```
+
+![Auto Labeling 3D Process Flow](docs/auto_labeling_3d_process_flow.drawio.svg)
+
 ## 1. Setup environment
 
+<<<<<<< HEAD
 - Please follow the [installation tutorial](/docs/tutorial/tutorial_detection_3d.md)to set up the environment.
+=======
+- Please follow the [installation tutorial](/docs/tutorial/tutorial_detection_3d.md) to set up the environment.
+>>>>>>> main
 - In addition, please follow the below setting up procedure.
 
 ### Set up environment for auto_labeling_3d
@@ -15,7 +71,7 @@ The pipeline of auto labeling for 3D detection.
   - If you build `AWML` image locally, please add `--build-arg BASE_IMAGE=autoware-ml` or `--build-arg BASE_IMAGE=autoware-ml-ros2` to build script.
 
 ```sh
-DOCKER_BUILDKIT=1 docker build -t auto_labeling_3d tools/auto_labeling_3d/
+DOCKER_BUILDKIT=1 docker build -t auto_labeling_3d -f tools/auto_labeling_3d/Dockerfile .
 ```
 
 - Run docker container.
@@ -225,7 +281,7 @@ python tools/auto_labeling_3d/attach_tracking_id/attach_tracking_id.py --input {
 - Run script
 
 ```sh
-python tools/auto_labeling_3d/create_pseudo_t4dataset.py {yaml config file about T4dataset data} --root-path {path to directory of non-annotated T4dataset} --input {path to pkl file}
+python tools/auto_labeling_3d/create_pseudo_t4dataset/create_pseudo_t4dataset.py {yaml config file about T4dataset data} --root-path {path to directory of non-annotated T4dataset} --input {path to pkl file}
 ```
 
 - As a result, pseudo-label T4dataset is made as below.
@@ -245,17 +301,24 @@ python tools/auto_labeling_3d/create_pseudo_t4dataset.py {yaml config file about
 ### 6. Use for training
 
 #### 6.1. Upload for WebAuto
+<<<<<<< HEAD
+
+Please upload Pseudo-T4dataset to WebAuto to share easily for other users.
+
+Please check [Web.Auto document](https://docs.web.auto/en/user-manuals/vehicle-data-search/quick-start#register-t4-datasets) for the detail.
+=======
+>>>>>>> main
 
 Please upload Pseudo-T4dataset to WebAuto to share easily for other users.
 
 Please check [Web.Auto document](https://docs.web.auto/en/user-manuals/vehicle-data-search/quick-start#register-t4-datasets) for the detail.
 
-#### (TBD) 6.2. Use in local PC
+#### 6.2. Use in local PC
 
 To align T4dataset directory structure, you run the script as following.
 
 ```sh
-tools/auto_labeling_3d/change_directory_structure/change_directory_structure.sh data/t4dataset/pseudo_xx1/
+python tools/auto_labeling_3d/change_directory_structure/change_directory_structure.py --dataset_dir data/t4dataset/pseudo_xx1/
 ```
 
 The result of the structure of Pseudo-T4dataset is following.
@@ -269,7 +332,7 @@ The result of the structure of Pseudo-T4dataset is following.
           - sample.json
           - ..
     - scene_1/
-      - 1/
+      - 0/
         - ..
     - ..
 ```
