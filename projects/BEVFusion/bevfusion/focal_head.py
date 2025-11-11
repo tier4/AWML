@@ -504,7 +504,7 @@ class FocalHead(AnchorFreeHead):
         (heatmaps, num_center_pos) = multi_apply(self._get_heatmap_single, all_centers2d_list, gt_bboxes_list, img_shape)
 
         num_center_pos = sum(num_center_pos)
-        heatmaps = torch.stack(heatmaps, dim=0)
+        heatmaps = torch.stack(heatmaps, dim=0).to(centerness.device)
         centerness = clip_sigmoid(centerness)
         loss_centerness = self.loss_centerness(
             centerness, heatmaps.view(num_imgs, -1, 1), avg_factor=max(num_center_pos, 1)
@@ -513,7 +513,7 @@ class FocalHead(AnchorFreeHead):
         loss_cls = torch.zeros_like(loss_centerness)
         loss_bbox = torch.zeros_like(loss_centerness)
         loss_iou = torch.zeros_like(loss_centerness)
-        loss_center2d = torch.zeros_like(loss_centerness)
+        loss_centers2d = torch.zeros_like(loss_centerness)
         return loss_cls, loss_bbox, loss_iou, loss_centers2d, loss_centerness
 
     def _get_heatmap_single(self, obj_centers2d, obj_bboxes, img_shape):
@@ -526,10 +526,10 @@ class FocalHead(AnchorFreeHead):
             r = obj_bboxes[..., 2:3] - obj_centers2d[..., 0:1]
             b = obj_bboxes[..., 3:4] - obj_centers2d[..., 1:2]
             bound = torch.cat([l, t, r, b], dim=-1)
-            radius = torch.ceil(torch.min(bound, dim=-1)[0] / 16)
+            radius = torch.ceil(torch.min(bound, dim=-1)[0] / self.stride)
             radius = torch.clamp(radius, 1.0).cpu().numpy().tolist()
             for center, r in zip(obj_centers2d, radius):
-                heatmap = draw_heatmap_gaussian(heatmap, center / 16, radius=int(r), k=1)
+                heatmap = draw_heatmap_gaussian(heatmap, center / self.stride, radius=int(r), k=1)
                 num_center_pos += 1
 
         return (heatmap, num_center_pos)

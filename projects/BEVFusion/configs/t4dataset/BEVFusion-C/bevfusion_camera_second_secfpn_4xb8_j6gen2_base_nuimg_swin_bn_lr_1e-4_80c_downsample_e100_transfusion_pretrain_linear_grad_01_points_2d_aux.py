@@ -288,6 +288,7 @@ model = dict(
         type="mmdet.FocalHead",
         num_classes=len(_base_.class_names),
         in_channels=256,
+        stride=8,
         bbox_coder=dict(type="mmdet.DistancePointBBoxCoder"),
         loss_cls2d=dict(type="mmdet.QualityFocalLoss", use_sigmoid=True, beta=2.0, loss_weight=2.0),
         loss_centerness=dict(type="mmdet.GaussianFocalLoss", reduction="mean", loss_weight=1.0),
