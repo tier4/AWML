@@ -37,7 +37,8 @@ RUN python3 -m pip --no-cache-dir install \
     numpy==1.23.5 \
     nvidia-pyindex \
     openmim \
-    nltk==3.8.1
+    nltk==3.8.1 \
+    mlflow==3.4.0
 
 # Install mim components
 RUN mim install \
