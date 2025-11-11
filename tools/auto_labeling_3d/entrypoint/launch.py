@@ -195,6 +195,9 @@ def run_auto_labeling_pipeline(config: PipelineConfig) -> None:
     """Execute the whole auto labeling pipeline."""
     logger = logging.getLogger("auto_labeling_3d.entrypoint")
 
+    # Ensure work directory exists
+    config.logging.work_dir.mkdir(parents=True, exist_ok=True)
+
     if config.create_info:
         # Step 1: Download checkpoints
         run_download_checkpoint(config, logger)
