@@ -13,8 +13,8 @@ info_directory_path = "info/kokseang_2_3_fixed/"
 train_gpu_size = 4
 train_batch_size = 8
 test_batch_size = 2
-val_interval = 5
-max_epochs = 20
+val_interval = 10
+max_epochs = 30
 backend_args = None
 
 # range setting
@@ -89,7 +89,7 @@ model = dict(
         convert_weights=True,
         init_cfg=dict(
             type="Pretrained",
-            checkpoint="work_dirs/bevfusion/pretrain/swin_tiny_patch4_window7_224.pth"  # noqa: E251  # noqa: E501
+            checkpoint="work_dirs/bevfusion/pretrain/swint_nuimages_pretrained.pth"  # noqa: E251  # noqa: E501
         ),
     ),
     img_neck=dict(
@@ -374,17 +374,18 @@ test_evaluator = dict(
 
 # learning rate
 lr = 1e-4
+t_max = 3
 param_scheduler = [
     # learning rate scheduler
     # During the first (max_epochs * 0.4) epochs, learning rate increases from 0 to lr * 10
     # during the next epochs, learning rate decreases from lr * 10 to
     # lr * 1e-4
-    dict(type="LinearLR", start_factor=1.0 / 3, begin=0, end=6, by_epoch=True),
+    dict(type="LinearLR", start_factor=1.0 / 3, begin=0, end=t_max, by_epoch=True),
     dict(
         type="CosineAnnealingLR",
-        T_max=(max_epochs - 6),
+        T_max=(max_epochs - t_max),
         eta_min=lr * 1e-4,
-        begin=6,
+        begin=t_max,
         end=max_epochs,
         by_epoch=True,
         convert_to_iter_based=True,
@@ -394,18 +395,18 @@ param_scheduler = [
     # during the next epochs, momentum increases from 0.85 / 0.95 to 1
     dict(
         type="CosineAnnealingMomentum",
-        T_max=6,
+        T_max=t_max,
         eta_min=0.85 / 0.95,
         begin=0,
-        end=6,
+        end=t_max,
         by_epoch=True,
         convert_to_iter_based=True,
     ),
     dict(
         type="CosineAnnealingMomentum",
-        T_max=(max_epochs - 6),
+        T_max=(max_epochs - t_max),
         eta_min=1,
-        begin=6,
+        begin=t_max,
         end=max_epochs,
         by_epoch=True,
         convert_to_iter_based=True,
@@ -423,15 +424,7 @@ test_cfg = dict()
 optim_wrapper = dict(
     type="OptimWrapper",
     optimizer=dict(type="AdamW", lr=lr, weight_decay=0.01),
-    clip_grad=dict(max_norm=35.0, norm_type=2),
-    paramwise_cfg=dict(
-        custom_keys={
-            "pts_voxel_encoder": dict(lr_mult=0.10, decal_mult=1.0),
-            "pts_middle_encoder": dict(lr_mult=0.10, decal_mult=1.0),
-            
-            "img_backbone": dict(lr_mult=0.5, decal_mult=1.0),
-        }
-    ),
+    clip_grad=dict(max_norm=0.1, norm_type=2),
 )
 
 # Default setting for scaling LR automatically
@@ -444,4 +437,4 @@ auto_scale_lr = dict(enable=False, base_batch_size=train_gpu_size * train_batch_
 if train_gpu_size > 1:
     sync_bn = "torch"
 
-load_from = "work_dirs/bevfusion_2_3/T4Dataset/bevfusion_lidar_voxel_second_secfpn_4xb16_base/epoch_48.pth"
+load_from = "work_dirs/bevfusion_2_3/T4Dataset/bevfusion_lidar_voxel_second_secfpn_4xb16_base/epoch_46.pth"
