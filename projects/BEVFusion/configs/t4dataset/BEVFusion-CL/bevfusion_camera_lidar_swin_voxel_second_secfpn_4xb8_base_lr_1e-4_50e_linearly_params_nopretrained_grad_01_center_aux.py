@@ -398,10 +398,6 @@ val_dataloader = dict(
         test_mode=True,
         box_type_3d="LiDAR",
         backend_args=backend_args,
-<<<<<<< HEAD
-        filter_cfg=filter_cfg,
-=======
->>>>>>> 6761c4da31fb9b474fe061d962abdce6b834ffa1
     ),
 )
 
