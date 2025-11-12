@@ -127,7 +127,7 @@ class BaseRunner:
         mean_before, variance_before = self._get_weight_statistics(model=model)
 
         # Load checkpoint
-        checkpoint_state_dict = torch.load(self._checkpoint_path, map_location=self._torch_device)
+        checkpoint_state_dict = torch.load(self._checkpoint_path, map_location=self._torch_device, weights_only=False)
 
         # Load model weights
         model.load_state_dict(checkpoint_state_dict["state_dict"])

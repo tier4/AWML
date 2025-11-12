@@ -11,7 +11,7 @@ Training and evaluation tools for 2D segmentation.
 
 ## 1. Setup environment
 
-See [setting environment](/tools/setting_environment/)
+See [installation tutorial](/docs/tutorial/tutorial_detection_3d.md).
 
 ## 2. Prepare dataset
 

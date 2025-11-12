@@ -104,7 +104,7 @@ def fuse_bn(conv, bn):
 
 def load_checkpoint(model, file, startsname=None):
     device = next(model.parameters()).device
-    ckpt = torch.load(file, map_location=device)["state_dict"]
+    ckpt = torch.load(file, map_location=device, weights_only=False)["state_dict"]
     new_ckpt = ckpt
 
     if startsname is not None:

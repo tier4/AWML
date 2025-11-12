@@ -66,6 +66,7 @@ class CenterHead(_CenterHead):
         self,
         freeze_shared_conv: bool = False,
         freeze_task_heads: bool = False,
+        loss_prefix: str = None,
         **kwargs,
     ):
         super(CenterHead, self).__init__(**kwargs)
@@ -76,6 +77,7 @@ class CenterHead(_CenterHead):
 
         self.freeze_shared_conv = freeze_shared_conv
         self.freeze_task_heads = freeze_task_heads
+        self.loss_prefix = loss_prefix
         self._freeze_parameters()
 
     def _freeze_parameters(self) -> None:
@@ -122,10 +124,16 @@ class CenterHead(_CenterHead):
                 )
                 loss_heatmap_cls = loss_heatmap_cls.sum((0, 2, 3)) / max(num_pos, 1)
                 for cls_i, class_name in enumerate(class_names):
-                    loss_dict[f"task{task_id}.loss_heatmap_{class_name}"] = loss_heatmap_cls[cls_i]
+                    loss_heatmap_name = f"task{task_id}.loss_heatmap_{class_name}"
+                    if self.loss_prefix is not None:
+                        loss_heatmap_name = f"{self.loss_prefix}_{loss_heatmap_name}"
+                    loss_dict[loss_heatmap_name] = loss_heatmap_cls[cls_i]
             else:
                 loss_heatmap = self.loss_cls(preds_dict[0]["heatmap"], heatmaps[task_id], avg_factor=max(num_pos, 1))
-                loss_dict[f"task{task_id}.loss_heatmap"] = loss_heatmap
+                loss_heatmap_name = f"task{task_id}.loss_heatmap"
+                if self.loss_prefix is not None:
+                    loss_heatmap_name = f"{self.loss_prefix}_{loss_heatmap_name}"
+                loss_dict[f"{loss_heatmap_name}"] = loss_heatmap
 
             target_box = anno_boxes[task_id]
             # reconstruct the anno_box from multiple reg heads
@@ -153,5 +161,8 @@ class CenterHead(_CenterHead):
             code_weights = self.train_cfg.get("code_weights", None)
             bbox_weights = mask * mask.new_tensor(code_weights)
             loss_bbox = self.loss_bbox(pred, target_box, bbox_weights, avg_factor=(num + 1e-4))
-            loss_dict[f"task{task_id}.loss_bbox"] = loss_bbox
+            loss_bbox_name = f"task{task_id}.loss_bbox"
+            if self.loss_prefix is not None:
+                loss_bbox_name = f"{self.loss_prefix}_{loss_bbox_name}"
+            loss_dict[f"{loss_bbox_name}"] = loss_bbox
         return loss_dict

@@ -104,6 +104,7 @@ test_pipeline = [
         pad_empty_sweeps=True,
         remove_close=True,
         backend_args=backend_args,
+        test_mode=True,
     ),
     dict(type="PointsRangeFilter", point_cloud_range=point_cloud_range),
     dict(
@@ -147,6 +148,7 @@ eval_pipeline = [
         pad_empty_sweeps=True,
         remove_close=True,
         backend_args=backend_args,
+        test_mode=True,
     ),
     dict(type="PointsRangeFilter", point_cloud_range=point_cloud_range),
     dict(type="Pack3DDetInputs", keys=["points", "gt_bboxes_3d", "gt_labels_3d"]),
@@ -237,12 +239,15 @@ val_evaluator = dict(
     type="T4MetricV2",
     data_root=data_root,
     output_dir="validation",
+    dataset_name="base",
     ann_file=data_root + info_directory_path + _base_.info_val_file_name,
     class_names={{_base_.class_names}},
     name_mapping={{_base_.name_mapping}},
     perception_evaluator_configs=perception_evaluator_configs,
     critical_object_filter_config=critical_object_filter_config,
     frame_pass_fail_config=frame_pass_fail_config,
+    num_workers=128,
+    scene_batch_size=256,
     write_metric_summary=False,
 )
 
@@ -250,12 +255,15 @@ test_evaluator = dict(
     type="T4MetricV2",
     data_root=data_root,
     output_dir="testing",
+    dataset_name="base",
     ann_file=data_root + info_directory_path + _base_.info_test_file_name,
     class_names={{_base_.class_names}},
     name_mapping={{_base_.name_mapping}},
     perception_evaluator_configs=perception_evaluator_configs,
     critical_object_filter_config=critical_object_filter_config,
     frame_pass_fail_config=frame_pass_fail_config,
+    num_workers=128,
+    scene_batch_size=256,
     write_metric_summary=True,
 )
 

@@ -82,7 +82,7 @@ model = dict(
         bbox_coder=dict(
             pc_range=point_cloud_range[0:2],
             voxel_size=voxel_size[0:2],
-            score_threshold=0.1,
+            score_threshold=0.0,
         ),
     ),
     # Lidar pipeline
