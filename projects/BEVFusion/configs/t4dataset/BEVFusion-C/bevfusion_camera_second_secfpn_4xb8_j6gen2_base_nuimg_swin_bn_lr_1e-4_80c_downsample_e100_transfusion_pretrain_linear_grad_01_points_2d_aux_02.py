@@ -291,7 +291,7 @@ model = dict(
         stride=8,
         bbox_coder=dict(type="mmdet.DistancePointBBoxCoder"),
         loss_cls2d=dict(type="mmdet.QualityFocalLoss", use_sigmoid=True, beta=2.0, loss_weight=2.0),
-        loss_centerness=dict(type="mmdet.GaussianFocalLoss", reduction="mean", loss_weight=1.0),
+        loss_centerness=dict(type="mmdet.GaussianFocalLoss", reduction="mean", loss_weight=0.2),
         loss_bbox2d=dict(type="mmdet.L1Loss", loss_weight=5.0),
         loss_iou2d=dict(type="mmdet.GIoULoss", loss_weight=2.0),
         loss_centers2d=dict(type="mmdet.L1Loss", loss_weight=10.0),
@@ -620,6 +620,6 @@ auto_scale_lr = dict(enable=False, base_batch_size=train_gpu_size * train_batch_
 if train_gpu_size > 1:
     sync_bn = "torch"
 
-load_from = "work_dirs/bevfusion_2_3/epoch_46.pth"
+load_from = "work_dirs/bevfusion_2_3/epoch_48.pth"
 
 # resume = True
