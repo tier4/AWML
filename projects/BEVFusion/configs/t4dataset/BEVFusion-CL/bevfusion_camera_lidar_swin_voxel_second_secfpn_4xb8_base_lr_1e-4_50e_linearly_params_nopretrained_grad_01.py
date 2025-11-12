@@ -447,6 +447,3 @@ auto_scale_lr = dict(enable=False, base_batch_size=train_gpu_size * train_batch_
 # Only set if the number of train_gpu_size more than 1
 if train_gpu_size > 1:
     sync_bn = "torch"
-
-# load_from = "work_dirs/bevfusion_2_3/T4Dataset/bevfusion_lidar_voxel_second_secfpn_4xb16_base/epoch_48.pth"
-resume = True
