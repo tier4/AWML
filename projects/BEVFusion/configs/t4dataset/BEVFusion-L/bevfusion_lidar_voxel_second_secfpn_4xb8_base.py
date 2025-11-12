@@ -7,8 +7,8 @@ custom_imports = dict(imports=["projects.BEVFusion.bevfusion"], allow_failed_imp
 custom_imports["imports"] += _base_.custom_imports["imports"]
 
 # user setting
-data_root = "data/t4dataset/"
-info_directory_path = "info/kokseang_2_3_fixed/"
+data_root = "data/t4datasets/"
+info_directory_path = "info/kokseang_2_3/"
 train_gpu_size = 4
 train_batch_size = 8
 test_batch_size = 2

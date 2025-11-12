@@ -53,11 +53,24 @@ backend_config = dict(
     ],
 )
 
-
-input_names = ["points", "lidar2image", "img_aug_matrix", "geom_feats", "kept", "ranks", "indices", "image_feats"]
-
-dynamic_axes = (
-    {
+onnx_config = dict(
+    type="onnx",
+    export_params=True,
+    keep_initializers_as_inputs=False,
+    opset_version=17,
+    save_file="camera_point_bev_network.onnx",
+    input_names=[
+			"points",
+			"lidar2image",
+    	"img_aug_matrix",
+    	"geom_feats",
+    	"kept",
+    	"ranks",
+    	"indices",
+    	"image_feats"
+		],
+    output_names=["bbox_pred", "score", "label_pred"],
+    dynamic_axes={
         "points": {
             0: "num_points",
         },
@@ -83,18 +96,6 @@ dynamic_axes = (
             0: "num_imgs",
         },
     },
-)
-
-
-onnx_config = dict(
-    type="onnx",
-    export_params=True,
-    keep_initializers_as_inputs=False,
-    opset_version=17,
-    save_file="camera_point_bev_network.onnx",
-    input_names=input_names,
-    output_names=["bbox_pred", "score", "label_pred"],
-    dynamic_axes=dynamic_axes,
     input_shape=None,
     verbose=True,
 )

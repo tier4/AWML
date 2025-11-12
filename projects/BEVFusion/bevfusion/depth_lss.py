@@ -308,53 +308,53 @@ class BaseViewTransform(nn.Module):
 
         return final
 
-    def voxel_pooling(self, x, geom_feats):
-        B, N, D, H, W, C = x.shape
-        Nprime = B * N * D * H * W
-        nx = self.nx.to(torch.long)
-        # flatten x
-        x = x.reshape(Nprime, C)
+    # def voxel_pooling(self, x, geom_feats):
+    #     B, N, D, H, W, C = x.shape
+    #     Nprime = B * N * D * H * W
+    #     nx = self.nx.to(torch.long)
+    #     # flatten x
+    #     x = x.reshape(Nprime, C)
 
-        # flatten indices
-        geom_feats = ((geom_feats - (self.bx - self.dx / 2.0)) / self.dx).long()
-        geom_feats = geom_feats.view(Nprime, 3)
-        batch_ix = torch.cat([torch.full([Nprime // B, 1], ix, device=x.device, dtype=torch.long) for ix in range(B)])
-        geom_feats = torch.cat((geom_feats, batch_ix), 1)
+    #     # flatten indices
+    #     geom_feats = ((geom_feats - (self.bx - self.dx / 2.0)) / self.dx).long()
+    #     geom_feats = geom_feats.view(Nprime, 3)
+    #     batch_ix = torch.cat([torch.full([Nprime // B, 1], ix, device=x.device, dtype=torch.long) for ix in range(B)])
+    #     geom_feats = torch.cat((geom_feats, batch_ix), 1)
 
-        # filter out points that are outside box
-        kept = (
-            (geom_feats[:, 0] >= 0)
-            & (geom_feats[:, 0] < self.nx[0])
-            & (geom_feats[:, 1] >= 0)
-            & (geom_feats[:, 1] < self.nx[1])
-            & (geom_feats[:, 2] >= 0)
-            & (geom_feats[:, 2] < self.nx[2])
-        )
-        x = x[kept]
-        geom_feats = geom_feats[kept]
+    #     # filter out points that are outside box
+    #     kept = (
+    #         (geom_feats[:, 0] >= 0)
+    #         & (geom_feats[:, 0] < self.nx[0])
+    #         & (geom_feats[:, 1] >= 0)
+    #         & (geom_feats[:, 1] < self.nx[1])
+    #         & (geom_feats[:, 2] >= 0)
+    #         & (geom_feats[:, 2] < self.nx[2])
+    #     )
+    #     x = x[kept]
+    #     geom_feats = geom_feats[kept]
 
-        # get tensors from the same voxel next to each other
-        ranks = (
-            geom_feats[:, 0] * (self.nx[1] * self.nx[2] * B)
-            + geom_feats[:, 1] * (self.nx[2] * B)
-            + geom_feats[:, 2] * B
-            + geom_feats[:, 3]
-        )
-        sorts = ranks.argsort()
-        x, geom_feats, ranks = x[sorts], geom_feats[sorts], ranks[sorts]
+    #     # get tensors from the same voxel next to each other
+    #     ranks = (
+    #         geom_feats[:, 0] * (self.nx[1] * self.nx[2] * B)
+    #         + geom_feats[:, 1] * (self.nx[2] * B)
+    #         + geom_feats[:, 2] * B
+    #         + geom_feats[:, 3]
+    #     )
+    #     sorts = ranks.argsort()
+    #     x, geom_feats, ranks = x[sorts], geom_feats[sorts], ranks[sorts]
 
-        # cumsum trick
-        x, geom_feats = QuickCumsum.apply(x, geom_feats, ranks)
+    #     # cumsum trick
+    #     x, geom_feats = QuickCumsum.apply(x, geom_feats, ranks)
 
-        # griddify (B x C x Z x X x Y)
-        final = torch.zeros((B, C, nx[2], nx[1], nx[0]), device=x.device)
-        final[geom_feats[:, 3], :, geom_feats[:, 2], geom_feats[:, 1], geom_feats[:, 0]] = x
-        # if self.voxel:
-        #     return final.sum(2), x, geom_feats
-        # collapse Z
-        final = torch.cat(final.unbind(dim=2), 1)
+    #     # griddify (B x C x Z x X x Y)
+    #     final = torch.zeros((B, C, nx[2], nx[1], nx[0]), device=x.device)
+    #     final[geom_feats[:, 3], :, geom_feats[:, 2], geom_feats[:, 1], geom_feats[:, 0]] = x
+    #     # if self.voxel:
+    #     #     return final.sum(2), x, geom_feats
+    #     # collapse Z
+    #     final = torch.cat(final.unbind(dim=2), 1)
 
-        return final
+    #     return final
 
     def forward(
         self,
@@ -371,21 +371,21 @@ class BaseViewTransform(nn.Module):
         lidar_aug_matrix_inverse,
         geom_feats_precomputed,
     ):
-        intrins = camera_intrinsics[..., :3, :3]
-        post_rots = img_aug_matrix[..., :3, :3]
-        post_trans = img_aug_matrix[..., :3, 3]
-        camera2lidar_rots = camera2lidar[..., :3, :3]
-        camera2lidar_trans = camera2lidar[..., :3, 3]
-
-        extra_rots = lidar_aug_matrix[..., :3, :3]
-        extra_trans = lidar_aug_matrix[..., :3, 3]
-
         if geom_feats_precomputed is not None:
             geom_feats, kept, ranks, indices = geom_feats_precomputed
             x = self.get_cam_feats(img)
             x = self.bev_pool_precomputed(x, geom_feats, kept, ranks, indices)
 
         else:
+            intrins = camera_intrinsics[..., :3, :3]
+            post_rots = img_aug_matrix[..., :3, :3]
+            post_trans = img_aug_matrix[..., :3, 3]
+            camera2lidar_rots = camera2lidar[..., :3, :3]
+            camera2lidar_trans = camera2lidar[..., :3, 3]
+
+            extra_rots = lidar_aug_matrix[..., :3, :3]
+            extra_trans = lidar_aug_matrix[..., :3, 3]
+
             # print(f"post_rots: {post_rots}, post_trans: {post_trans}")
             geom = self.get_geometry(
                 camera2lidar_rots,

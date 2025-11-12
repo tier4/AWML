@@ -23,9 +23,8 @@ MMDET3D_TASK = MMDetection3d.task_registry
 @MMDET3D_TASK.register_module(Task.VOXEL_DETECTION.value, force=True)
 class VoxelDetection(_VoxelDetection):
 
-    def __init__(self, model_cfg: mmengine.Config, deploy_cfg: mmengine.Config, device: str, extract_pts_inputs: bool = True):
+    def __init__(self, model_cfg: mmengine.Config, deploy_cfg: mmengine.Config, device: str):
         super().__init__(model_cfg, deploy_cfg, device)
-        self.extract_pts_inputs = extract_pts_inputs
 
     def extract_pts_inputs(self, collate_data):
       """
@@ -33,7 +32,6 @@ class VoxelDetection(_VoxelDetection):
       
       points = collate_data["inputs"]["points"][0]
       voxels = collate_data["inputs"]["voxels"]
-      inputs = [voxels["voxels"], voxels["num_points"], voxels["coors"]]
       
       feats = voxels["voxels"]
       num_points_per_voxel = voxels["num_points"]
@@ -57,9 +55,9 @@ class VoxelDetection(_VoxelDetection):
       img = batch["inputs"]["img"].type(torch.uint8)
 
       data_samples = collate_data["data_samples"][0]
-      lidar2image = feats.new_tensor(data_samples.lidar2img)
-      cam2image = feats.new_tensor(data_samples.cam2img)
-      camera2lidar = feats.new_tensor(data_samples.cam2lidar)
+      lidar2image = torch.tensor(data_samples.lidar2img).type(torch.float32)
+      cam2image = lidar2image.new_tensor(data_samples.cam2img)
+      camera2lidar = lidar2image.new_tensor(data_samples.cam2lidar)
 
       # NOTE(knzo25): ONNX/TensorRT do not support matrix inversion,
       # so they are taken out of the graph
@@ -68,7 +66,7 @@ class VoxelDetection(_VoxelDetection):
       # The extrinsics-related variables should only be computed once,
       # so we bring them outside the graph. Additionally, they require
       # argsort over the threshold available in TensorRT
-      img_aux_matrix = feats.new_tensor(np.stack(collate_data["data_samples"][0].img_aug_matrix))
+      img_aux_matrix = lidar2image.new_tensor(np.stack(collate_data["data_samples"][0].img_aug_matrix))
       img_aux_matrix_inverse = torch.inverse(img_aux_matrix)
       geom = model.view_transform.get_geometry(
           camera2lidar[..., :3, :3].unsqueeze(0).to(torch.device("cuda")),
@@ -100,11 +98,11 @@ class VoxelDetection(_VoxelDetection):
         batch: Union[str, Sequence[str]],
         data_preprocessor: Optional[BaseDataPreprocessor] = None,
         model: Optional[torch.nn.Module] = None,
+        extract_pts_inputs: bool = True
     ) -> Tuple[Dict, torch.Tensor]:
 
         data = [batch]
         collate_data = pseudo_collate(data)
-        data[0]["inputs"]["points"] = data[0]["inputs"]["points"].to(self.device)
 
         """ cam2img = data[0]["data_samples"].cam2img
         cam2lidar = data[0]["data_samples"].cam2lidar
@@ -127,7 +125,8 @@ class VoxelDetection(_VoxelDetection):
         assert data_preprocessor is not None
         collate_data = data_preprocessor(collate_data, False)
 
-        if self.extract_pts_inputs:
+        if extract_pts_inputs:
+          data[0]["inputs"]["points"] = data[0]["inputs"]["points"].to(self.device)
           feats, coors, num_points_per_voxel, points = self.extract_pts_inputs(
             collate_data=collate_data
           )

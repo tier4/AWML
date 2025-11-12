@@ -28,6 +28,7 @@ from mmdet3d.registry import MODELS
 from mmengine.registry import RUNNERS
 from mmengine.runner import load_checkpoint
 from torch.multiprocessing import set_start_method
+from mmdet3d.utils import register_all_modules
 
 def parse_args():
     parser = argparse.ArgumentParser(description="Export model to onnx.")
@@ -71,7 +72,7 @@ if __name__ == "__main__":
     input_names = onnx_cfg["input_names"]
     output_names = onnx_cfg["output_names"]
     
-    extract_pts_inputs = True if "points" in input_names else False
+    extract_pts_inputs = True if "points" in input_names or "voxels" in input_names else False
     data_preprocessor_cfg = deepcopy(model_cfg.model.data_preprocessor)
 
     # TODO(KokSeang): Move out from data_preprocessor
@@ -104,10 +105,10 @@ if __name__ == "__main__":
     data = runner.test_dataloader.dataset[args.sample_idx]
 
     # create model an inputs
-    task_processor = build_task_processor(model_cfg, deploy_cfg, device, extract_pts_inputs)
+    task_processor = build_task_processor(model_cfg, deploy_cfg, device)
 
     torch_model = task_processor.build_pytorch_model(checkpoint_path)
-    data, model_inputs = task_processor.create_input(data, data_preprocessor=data_preprocessor, model=torch_model)
+    data, model_inputs = task_processor.create_input(data, data_preprocessor=data_preprocessor, model=torch_model, extract_pts_inputs=extract_pts_inputs)
 
     if isinstance(model_inputs, list) and len(model_inputs) == 1:
         model_inputs = model_inputs[0]

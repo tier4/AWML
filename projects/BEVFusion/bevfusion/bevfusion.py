@@ -100,7 +100,7 @@ class BEVFusion(Base3DDetector):
 
         # NOTE(knzo25): this is used during onnx export
         batch_input_metas = [item.metainfo for item in batch_data_samples]
-        feats = self.extract_feat(batch_inputs_dict, batch_input_metas, using_image_features)
+        feats, img_feats = self.extract_feat(batch_inputs_dict, batch_input_metas, using_image_features)
 
         if self.with_bbox_head:
             outputs = self.bbox_head(feats, batch_input_metas)
@@ -312,7 +312,6 @@ class BEVFusion(Base3DDetector):
         points = batch_inputs_dict.get("points", None)
         img_feature = None
         features = []
-        img_feature = None
         if imgs is not None and "lidar2img" not in batch_inputs_dict:
             # NOTE(knzo25): normal training and testing
             imgs = imgs.contiguous()
