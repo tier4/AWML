@@ -134,7 +134,7 @@ class CenterHead(_CenterHead):
                 if self.loss_prefix is not None:
                     loss_heatmap_name = f"{self.loss_prefix}_{loss_heatmap_name}"
                 loss_dict[f"{loss_heatmap_name}"] = loss_heatmap
-
+						
             target_box = anno_boxes[task_id]
             # reconstruct the anno_box from multiple reg heads
             preds_dict[0]["anno_box"] = torch.cat(
