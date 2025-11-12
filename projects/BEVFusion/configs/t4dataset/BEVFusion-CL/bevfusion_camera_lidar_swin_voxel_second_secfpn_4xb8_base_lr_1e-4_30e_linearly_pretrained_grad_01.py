@@ -13,8 +13,8 @@ info_directory_path = "info/kokseang_2_3_fixed/"
 train_gpu_size = 4
 train_batch_size = 8
 test_batch_size = 2
-val_interval = 5
-max_epochs = 50
+val_interval = 10
+max_epochs = 30
 backend_args = None
 
 # range setting
@@ -180,12 +180,11 @@ train_pipeline = [
     ),
     dict(
         type="BEVFusionGlobalRotScaleTrans",
-        # scale_ratio_range=[0.9, 1.1],
-        # rot_range=[-0.78539816, 0.78539816],
-        rot_range=[-1.571, 1.571],
-        scale_ratio_range=[0.8, 1.2],
-        translation_std=[1.0, 1.0, 0.2],
-        # translation_std=[0.5, 0.5, 0.2],
+        scale_ratio_range=[0.9, 1.1],
+        rot_range=[-0.78539816, 0.78539816],
+        # rot_range=[-1.571, 1.571],
+        # scale_ratio_range=[0.8, 1.2],
+        translation_std=[0.5, 0.5, 0.2],
     ),
     dict(type="BEVFusionRandomFlip3D"),
     dict(type="PointsRangeFilter", point_cloud_range=point_cloud_range),
@@ -326,7 +325,6 @@ val_dataloader = dict(
         test_mode=True,
         box_type_3d="LiDAR",
         backend_args=backend_args,
-        filter_cfg=filter_cfg,
     ),
 )
 
@@ -426,15 +424,7 @@ test_cfg = dict()
 optim_wrapper = dict(
     type="OptimWrapper",
     optimizer=dict(type="AdamW", lr=lr, weight_decay=0.01),
-    clip_grad=dict(max_norm=35.0, norm_type=2),
-    # paramwise_cfg=dict(
-    #     custom_keys={
-    #         # "pts_voxel_encoder": dict(lr_mult=0.10, decal_mult=1.0),
-    #         # "pts_middle_encoder": dict(lr_mult=0.10, decal_mult=1.0),
-            
-    #         "img_backbone": dict(lr_mult=0.1),
-    #     }
-    # ),
+    clip_grad=dict(max_norm=0.1, norm_type=2),
 )
 
 # Default setting for scaling LR automatically
@@ -447,6 +437,4 @@ auto_scale_lr = dict(enable=False, base_batch_size=train_gpu_size * train_batch_
 if train_gpu_size > 1:
     sync_bn = "torch"
 
-# load_from = "work_dirs/bevfusion_2_3/T4Dataset/bevfusion_lidar_voxel_second_secfpn_4xb16_base/epoch_48.pth"
-
-resume = True
+load_from = "work_dirs/bevfusion_2_3/T4Dataset/bevfusion_lidar_voxel_second_secfpn_4xb16_base/epoch_46.pth"
