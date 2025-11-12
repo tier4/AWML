@@ -272,9 +272,13 @@ class BaseViewTransform(nn.Module):
 
         assert x.shape[0] == geom_feats.shape[0]
 
+<<<<<<< HEAD
         # x, geom_feats, ranks = x[indices], geom_feats[indices], ranks[indices]
         x = x[indices]
+=======
+        x = x[indices]
 
+>>>>>>> main
         x = bev_pool(x, geom_feats, ranks, B, self.nx[2], self.nx[0], self.nx[1], self.training)
 
         # collapse Z
@@ -381,7 +385,7 @@ class BaseViewTransform(nn.Module):
             x = self.bev_pool_precomputed(x, geom_feats, kept, ranks, indices)
 
         else:
-
+            # print(f"post_rots: {post_rots}, post_trans: {post_trans}")
             geom = self.get_geometry(
                 camera2lidar_rots,
                 camera2lidar_trans,

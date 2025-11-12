@@ -1,3 +1,4 @@
+import gzip
 import os
 import random
 from dataclasses import dataclass
@@ -60,26 +61,33 @@ class CalibrationClassificationTransform(BaseTransform):
         self,
         transform_config: Dict[str, Any],
         mode: str = "train",
+        max_depth: float = 128.0,
+        dilation_size: int = 1,
         undistort: bool = True,
+        miscalibration_probability: float = 0.5,
         enable_augmentation: bool = True,
         data_root: str = None,
         projection_vis_dir: Optional[str] = None,
         results_vis_dir: Optional[str] = None,
+        binary_save_dir: Optional[str] = None,
     ):
         """Initialize the CalibrationClassificationTransform.
         Args:
             transform_config (Dict[str, Any]): Configuration for transform parameters. Must contain:
                 - crop_ratio: Crop ratio for image augmentation (0.0, 1.0]
                 - max_distortion: Maximum distortion for affine transformation [0.0, 1.0]
-                - depth_scale: Scale factor for depth visualization (> 0.0)
-                - radius: Radius for point visualization (>= 0)
                 - rgb_weight: Weight for RGB overlay [0.0, 1.0]
             mode (str): Transform mode. Options: "train", "val", "test". Defaults to "train".
+            max_depth (float): Maximum depth (in meters) for projected LiDAR points in the camera frame.
+                               Points with depth values greater than this are considered invalid. Defaults to 128.0.
+            dilation_size (int): Size of the dilation for point cloud processing. Defaults to 1 (3x3 patch).
             undistort (bool): Whether to undistort images. Defaults to True.
+            miscalibration_probability (float): Probability of generating miscalibration. Defaults to 0.5.
             enable_augmentation (bool): Whether to enable data augmentation. Defaults to True.
             data_root (str): Root path for data files. Defaults to None.
             projection_vis_dir (Optional[str]): Directory to save projection visualization results. Defaults to None.
             results_vis_dir (Optional[str]): Directory to save results visualization results. Defaults to None.
+            binary_save_dir (Optional[str]): Directory to save processed data in binary format. Defaults to None.
         Raises:
             ValueError: If mode is invalid, data_root doesn't exist, or transform_config is invalid.
         """
@@ -96,12 +104,16 @@ class CalibrationClassificationTransform(BaseTransform):
         if data_root is not None and not os.path.exists(data_root):
             raise ValueError(f"Data root does not exist: {data_root}")
 
+        self.max_depth = max_depth
+        self.dilation_size = dilation_size
         self.undistort = undistort
+        self.miscalibration_probability = miscalibration_probability
         self.enable_augmentation = enable_augmentation
         self.transform_config = transform_config
         self.data_root = data_root
         self.projection_vis_dir = projection_vis_dir
         self.results_vis_dir = results_vis_dir
+        self.binary_save_dir = binary_save_dir
         self._validate_config()
         logger.info(f"Initialized CalibrationClassificationTransform with mode: {self.mode.value}")
         logger.info(f"Transform config: {self.transform_config}")
@@ -115,7 +127,7 @@ class CalibrationClassificationTransform(BaseTransform):
         if self.transform_config is None:
             raise ValueError("transform_config cannot be None")
 
-        required_keys = ["crop_ratio", "max_distortion", "depth_scale", "radius", "rgb_weight"]
+        required_keys = ["crop_ratio", "max_distortion", "rgb_weight"]
 
         missing_keys = [key for key in required_keys if key not in self.transform_config]
         if missing_keys:
@@ -136,12 +148,6 @@ class CalibrationClassificationTransform(BaseTransform):
 
         if not (0.0 <= self.transform_config["max_distortion"] <= 1.0):
             raise ValueError(f"max_distortion must be in [0.0, 1.0], got {self.transform_config['max_distortion']}")
-
-        if self.transform_config["depth_scale"] <= 0.0:
-            raise ValueError(f"depth_scale must be positive, got {self.transform_config['depth_scale']}")
-
-        if self.transform_config["radius"] < 0:
-            raise ValueError(f"radius must be non-negative, got {self.transform_config['radius']}")
 
         if not (0.0 <= self.transform_config["rgb_weight"] <= 1.0):
             raise ValueError(f"rgb_weight must be in [0.0, 1.0], got {self.transform_config['rgb_weight']}")
@@ -168,11 +174,10 @@ class CalibrationClassificationTransform(BaseTransform):
         """Check if augmentation is enabled for current mode."""
         return self.enable_augmentation and self.is_train
 
-    def transform(self, results: Dict[str, Any], force_generate_miscalibration: bool = False) -> Dict[str, Any]:
+    def transform(self, results: Dict[str, Any]) -> Dict[str, Any]:
         """Transform input data for calibration classification.
         Args:
             results (Dict[str, Any]): Input data dictionary containing all info.pkl fields.
-            force_generate_miscalibration (bool): Whether to force generation of miscalibration. Defaults to False.
         Returns:
             Dict[str, Any]: Transformed data dictionary with processed images and labels.
         """
@@ -185,7 +190,7 @@ class CalibrationClassificationTransform(BaseTransform):
         )
 
         undistorted_data = self._process_image(camera_data, calibration_data)
-        label = self._generate_label(force_generate_miscalibration, calibration_data)
+        label = self._generate_label(calibration_data)
         logger.debug(f"Generated label: {label} (0=miscalibrated, 1=correct)")
 
         # Apply augmentations
@@ -204,7 +209,97 @@ class CalibrationClassificationTransform(BaseTransform):
         results["fused_img"] = input_data
         results["gt_label"] = label
         logger.debug(f"Transform completed for sample {results.get('sample_idx', 'unknown')}")
+        if self.binary_save_dir is not None:
+            self.save_compressed_data(
+                label, results["sample_idx"], camera_data, lidar_data, calibration_data, undistorted_data, input_data
+            )
         return results
+
+    def save_compressed_data(
+        self,
+        label: int,
+        idx: int,
+        camera_data: npt.NDArray[np.uint8],
+        lidar_data: Dict[str, npt.NDArray[np.float32]],
+        calibration_data: CalibrationData,
+        undistorted_data: npt.NDArray[np.uint8],
+        input_data: npt.NDArray[np.float32],
+    ):
+        """Save processed data as compressed (gzip) files. Save data can be further used for unit tests in inference environment.
+
+        It saves raw inputs:
+        - image: Raw input camera image as BGR8.
+        - pointcloud: Autoware point cloud format XYZIRC (f4, f4, f4, u1, u1, u2). 'R' and 'C' are set to 0.
+        - image_undistorted: Undistorted camera image as BGR8.
+        - CameraInfo data:
+          - camera_matrix: 3x3 camera intrinsic matrix (f8)
+          - distortion_coefficients: 8-element distortion coefficients of rational model (f8)
+          - projection_matrix: 3x4 projection matrix (f8)
+        - lidar_to_camera_tf: 4x4 transformation matrix (f8)
+        - input_data: fused data for model input as RGBDI (f4)
+        Args:
+            label: Ground truth label (0=miscalibrated, 1=calibrated).
+            idx: Sample index for naming directories.
+            camera_data: Raw input camera image.
+            lidar_data: Raw LiDAR data dictionary with 'pointcloud' and 'intensities'.
+            calibration_data: Calibration data object.
+            undistorted_data: Undistorted camera image.
+            input_data: Final input data for the model
+        """
+        save_gzipped_numpy = lambda arr, path: (lambda compressed_data: open(path, "wb").write(compressed_data))(
+            gzip.compress(arr.tobytes())
+        )
+
+        # Prepare data for saving
+        image = camera_data
+        data_dtype = np.dtype(
+            [
+                ("X", np.float32),
+                ("Y", np.float32),
+                ("Z", np.float32),
+                ("I", np.uint8),
+                ("R", np.uint8),
+                ("C", np.uint16),
+            ]
+        )
+        pointcloud = np.zeros(lidar_data["pointcloud"].shape[0], dtype=data_dtype)
+        pointcloud["X"] = lidar_data["pointcloud"][:, 0]
+        pointcloud["Y"] = lidar_data["pointcloud"][:, 1]
+        pointcloud["Z"] = lidar_data["pointcloud"][:, 2]
+        pointcloud["I"] = (lidar_data["intensities"]).astype(np.uint8)
+        pointcloud["R"] = 0
+        pointcloud["C"] = 0
+        image_undistorted = undistorted_data
+        camera_matrix = calibration_data.camera_matrix.astype(np.float64)
+        distortion_coefficients = np.pad(calibration_data.distortion_coefficients, (0, 3), mode="constant").astype(
+            np.float64
+        )
+        projection_matrix = np.pad(
+            calibration_data.new_camera_matrix.astype(np.float64), ((0, 0), (0, 1)), mode="constant"
+        ).astype(np.float64)
+        lidar_to_camera_tf = calibration_data.lidar_to_camera_transformation.astype(np.float64)
+        fused_input_data = np.transpose(input_data.astype(np.float32), (2, 0, 1))
+
+        # Save data
+        suffix = "calibrated" if label == 1 else "miscalibrated"
+        directory = f"sample_{idx}"
+        save_dir = os.path.join(self.binary_save_dir, directory)
+        os.makedirs(save_dir, exist_ok=True)
+        cv2.imwrite(os.path.join(save_dir, "image.png"), image)
+        cv2.imwrite(os.path.join(save_dir, "image_undistorted.png"), image_undistorted)
+        save_gzipped_numpy(image, os.path.join(save_dir, "image.dat.gz"))
+        save_gzipped_numpy(image_undistorted, os.path.join(save_dir, "image_undistorted.dat.gz"))
+        save_gzipped_numpy(pointcloud, os.path.join(save_dir, "pointcloud.dat.gz"))
+        save_gzipped_numpy(camera_matrix, os.path.join(save_dir, f"camera_matrix_{suffix}.dat.gz"))
+        save_gzipped_numpy(distortion_coefficients, os.path.join(save_dir, f"distortion_coefficients_{suffix}.dat.gz"))
+        save_gzipped_numpy(projection_matrix, os.path.join(save_dir, f"projection_matrix_{suffix}.dat.gz"))
+        save_gzipped_numpy(lidar_to_camera_tf, os.path.join(save_dir, f"lidar_to_camera_tf_{suffix}.dat.gz"))
+        save_gzipped_numpy(fused_input_data, os.path.join(save_dir, f"input_data_{suffix}.dat.gz"))
+
+        logger.warning(
+            f"Saved binary data for sample {idx} ({suffix}) to {save_dir}. "
+            "This operation can utilize about 100 MB of disk space and should be used only for deployment script."
+        )
 
     def _load_data(
         self, sample: dict
@@ -372,23 +467,16 @@ class CalibrationClassificationTransform(BaseTransform):
         calibration_data.distortion_coefficients = np.zeros_like(calibration_data.distortion_coefficients)
         return image, calibration_data
 
-    def _generate_label(self, force_generate_miscalibration: bool, calibration_data: CalibrationData) -> int:
+    def _generate_label(self, calibration_data: CalibrationData) -> int:
         """Generate classification label and apply miscalibration if needed.
         Args:
-            force_generate_miscalibration: Whether to force miscalibration generation.
             calibration_data: Camera calibration parameters.
         Returns:
             Classification label (0 for miscalibrated, 1 for correct).
-        Raises:
-            ValueError: If force_generate_miscalibration is used in test mode.
         """
-        if self.is_test and force_generate_miscalibration:
-            raise ValueError("force_generate_miscalibration is not supported in test mode")
-
-        if self.is_test:
-            generate_miscalibration = False
-        else:
-            generate_miscalibration = force_generate_miscalibration or random.choice([True, False])
+        generate_miscalibration = (
+            random.random() < self.miscalibration_probability or self.miscalibration_probability == 1.0
+        )
 
         if generate_miscalibration:
             logger.debug("Generating miscalibration for training sample")
@@ -518,10 +606,9 @@ class CalibrationClassificationTransform(BaseTransform):
         """
         Applies a controlled affine transformation to the image and updates the calibration matrix.
         Args:
-            image (np.ndarray): Input image.
+            image: Input image.
         Returns:
-            Tuple[np.ndarray, np.ndarray]:
-                Transformed image and the 3x3 affine transformation matrix.
+            Transformed image and the 3x3 affine transformation matrix.
         """
         h, w = image.shape[:2]
         max_distortion = self.transform_config["max_distortion"]
@@ -555,7 +642,7 @@ class CalibrationClassificationTransform(BaseTransform):
         lidar_data: Dict[str, npt.NDArray[np.float32]],
         calibration_data: CalibrationData,
         augmentation_tf: Optional[npt.NDArray[np.float32]] = None,
-    ) -> npt.NDArray[np.uint8]:
+    ) -> npt.NDArray[np.float32]:
         """Generate depth and intensity images using augmented calibration.
         Args:
             image: Input camera image.
@@ -584,7 +671,7 @@ class CalibrationClassificationTransform(BaseTransform):
         if augmentation_tf is not None:
             pointcloud_ics = self._apply_augmentation_to_points(pointcloud_ics, augmentation_tf)
 
-        return self._create_lidar_images(image, pointcloud_ics, pointcloud_ccs, intensities)
+        return self._create_lidar_images(image, pointcloud_ics, pointcloud_ccs, intensities).astype(np.float32) / 255.0
 
     def _transform_points_to_camera(
         self,
@@ -666,23 +753,61 @@ class CalibrationClassificationTransform(BaseTransform):
             Combined image with BGR, depth, and intensity channels.
         """
         h, w = image.shape[:2]
-        depth_image = np.zeros((h, w), dtype=np.uint8)
-        intensity_image = np.zeros((h, w), dtype=np.uint8)
+        depth_image = np.zeros((h, w), dtype=np.float32)
+        intensity_image = np.zeros((h, w), dtype=np.float32)
 
-        depth_scale = self.transform_config["depth_scale"]
-        radius = self.transform_config["radius"]
+        valid_mask = (
+            (pointcloud_ics[:, 0] >= 0)
+            & (pointcloud_ics[:, 0] <= w - 1)
+            & (pointcloud_ics[:, 1] >= 0)
+            & (pointcloud_ics[:, 1] <= h - 1)
+            & (pointcloud_ccs[:, 2] > 0.0)
+            & (pointcloud_ccs[:, 2] < self.max_depth)
+        )
 
-        for point3d, intensity, point2d in zip(pointcloud_ccs, intensities, pointcloud_ics):
-            if np.any(np.abs(point2d) > (2**31 - 1)):
-                continue
+        valid_ics = pointcloud_ics[valid_mask]
+        valid_ccs = pointcloud_ccs[valid_mask]
+        valid_intensities = intensities[valid_mask]
 
-            distance_color = int(np.clip(255 * point3d[2] / depth_scale, 0, 255))
-            cv2.circle(depth_image, tuple(point2d.astype(int)), radius, distance_color, -1)
-            cv2.circle(intensity_image, tuple(point2d.astype(int)), radius, int(intensity), -1)
+        if valid_ics.size > 0:
+            y_offsets, x_offsets = np.mgrid[
+                -self.dilation_size : self.dilation_size + 1, -self.dilation_size : self.dilation_size + 1
+            ]
+            y_offsets = y_offsets.flatten()
+            x_offsets = x_offsets.flatten()
+
+            center_rows = valid_ics[:, 1].astype(np.int32)
+            center_cols = valid_ics[:, 0].astype(np.int32)
+
+            patch_rows = center_rows[:, np.newaxis] + y_offsets[np.newaxis, :]
+            patch_cols = center_cols[:, np.newaxis] + x_offsets[np.newaxis, :]
+
+            in_bounds_mask = (patch_rows >= 0) & (patch_rows < h) & (patch_cols >= 0) & (patch_cols < w)
+
+            center_depths = 255 * valid_ccs[:, 2] / self.max_depth
+            center_intensities = valid_intensities.squeeze()
+
+            broadcasted_depths = np.broadcast_to(center_depths[:, np.newaxis], patch_rows.shape)
+            broadcasted_intensities = np.broadcast_to(center_intensities[:, np.newaxis], patch_rows.shape)
+
+            final_rows = patch_rows[in_bounds_mask]
+            final_cols = patch_cols[in_bounds_mask]
+            final_depths = broadcasted_depths[in_bounds_mask]
+            final_intensities = broadcasted_intensities[in_bounds_mask]
+
+            sort_indices = np.argsort(final_depths)[::-1]
+
+            sorted_rows = final_rows[sort_indices]
+            sorted_cols = final_cols[sort_indices]
+            sorted_depths = final_depths[sort_indices]
+            sorted_intensities = final_intensities[sort_indices]
+
+            depth_image[sorted_rows, sorted_cols] = sorted_depths
+            intensity_image[sorted_rows, sorted_cols] = sorted_intensities
 
         depth_image = np.expand_dims(depth_image, axis=2)
         intensity_image = np.expand_dims(intensity_image, axis=2)
-        return np.concatenate([image, depth_image, intensity_image], axis=2)
+        return np.concatenate([image, depth_image, intensity_image], axis=2, dtype=np.float32)
 
     def _create_overlay_image(
         self, bgr_image: npt.NDArray[np.uint8], feature_image: npt.NDArray[np.uint8]
@@ -707,7 +832,7 @@ class CalibrationClassificationTransform(BaseTransform):
         return overlay_image
 
     def _visualize_projection(
-        self, input_data: npt.NDArray[np.uint8], label: int, results: Dict[str, Any], phase: str = "test"
+        self, input_data: npt.NDArray[np.float32], label: int, results: Dict[str, Any], phase: str = "test"
     ) -> None:
         """Visualize LiDAR projection results.
         Args:
@@ -720,8 +845,8 @@ class CalibrationClassificationTransform(BaseTransform):
         frame_idx = results.get("frame_idx", "unknown")
         sample_idx = results["sample_idx"]
 
-        camera_data = input_data[:, :, :3]
-        intensity_image = input_data[:, :, 4:5]
+        camera_data = np.clip(input_data[:, :, :3] * 255, 0, 255).astype(np.uint8)
+        intensity_image = np.clip(input_data[:, :, 4:5] * 255, 0, 255).astype(np.uint8)
         overlay_image = self._create_overlay_image(camera_data, intensity_image)
         os.makedirs(self.projection_vis_dir, exist_ok=True)
         frame_id_str = frame_id if frame_id is not None else "unknown"
@@ -734,7 +859,7 @@ class CalibrationClassificationTransform(BaseTransform):
 
     def visualize_results(
         self,
-        input_data: npt.NDArray[np.uint8],
+        input_data: npt.NDArray[np.float32],
         pred_label: int,
         gt_label: int,
         original_image: npt.NDArray[np.uint8],
@@ -757,9 +882,9 @@ class CalibrationClassificationTransform(BaseTransform):
         """
         if self.results_vis_dir is None:
             return
-        camera_data = input_data[:, :, :3]  # BGR format
-        depth_image = input_data[:, :, 3:4]
-        intensity_image = input_data[:, :, 4:5]
+        camera_data = np.clip(input_data[:, :, :3] * 255, 0, 255).astype(np.uint8)  # BGR format
+        depth_image = np.clip(input_data[:, :, 3:4] * 255, 0, 255).astype(np.uint8)
+        intensity_image = np.clip(input_data[:, :, 4:5] * 255, 0, 255).astype(np.uint8)
         overlay_image = self._create_overlay_image(camera_data, intensity_image)  # Returns BGR format
         # Determine if prediction matches ground truth
         prediction_correct = pred_label == gt_label

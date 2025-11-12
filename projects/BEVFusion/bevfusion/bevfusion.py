@@ -296,6 +296,7 @@ class BEVFusion(Base3DDetector):
     ):
         imgs = batch_inputs_dict.get("imgs", None)
         points = batch_inputs_dict.get("points", None)
+        img_feature = None
         features = []
         img_feature = None
         if imgs is not None and "lidar2img" not in batch_inputs_dict:
@@ -360,7 +361,7 @@ class BEVFusion(Base3DDetector):
             )
             features.append(img_feature)
 
-        if points is not None:
+        if points is not None and self.pts_middle_encoder is not None:
             pts_feature = self.extract_pts_feat(
                 batch_inputs_dict.get("voxels", {}).get("voxels", None),
                 batch_inputs_dict.get("voxels", {}).get("coors", None),
@@ -392,7 +393,7 @@ class BEVFusion(Base3DDetector):
         losses = dict()
         if self.with_bbox_head:
             bbox_loss = self.bbox_head.loss(feats, batch_data_samples)
-
+        
         losses.update(bbox_loss)
         
         if self.img_aux_bbox_head:
@@ -408,6 +409,5 @@ class BEVFusion(Base3DDetector):
             losses["img_aux_weighted_sum"] = weighted_sum_losses
 
             # losses.update(img_aux_bbox_loss)
-
 
         return losses
