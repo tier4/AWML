@@ -23,8 +23,9 @@ MMDET3D_TASK = MMDetection3d.task_registry
 @MMDET3D_TASK.register_module(Task.VOXEL_DETECTION.value, force=True)
 class VoxelDetection(_VoxelDetection):
 
-    def __init__(self, model_cfg: mmengine.Config, deploy_cfg: mmengine.Config, device: str):
+    def __init__(self, model_cfg: mmengine.Config, deploy_cfg: mmengine.Config, device: str, extract_pts_inputs: bool = True):
         super().__init__(model_cfg, deploy_cfg, device)
+        self.extract_pts_inputs = extract_pts_inputs
 
     def extract_pts_inputs(self, collate_data):
       """
@@ -99,7 +100,6 @@ class VoxelDetection(_VoxelDetection):
         batch: Union[str, Sequence[str]],
         data_preprocessor: Optional[BaseDataPreprocessor] = None,
         model: Optional[torch.nn.Module] = None,
-        extract_pts_inputs: bool = True
     ) -> Tuple[Dict, torch.Tensor]:
 
         data = [batch]
@@ -126,9 +126,8 @@ class VoxelDetection(_VoxelDetection):
 
         assert data_preprocessor is not None
         collate_data = data_preprocessor(collate_data, False)
-        print(extract_pts_inputs)
 
-        if extract_pts_inputs:
+        if self.extract_pts_inputs:
           feats, coors, num_points_per_voxel, points = self.extract_pts_inputs(
             collate_data=collate_data
           )

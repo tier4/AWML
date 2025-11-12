@@ -62,7 +62,6 @@ if __name__ == "__main__":
     device = args.device
     work_dir = args.work_dir
     os.makedirs(work_dir, exist_ok=True)
-    
 
     deploy_cfg, model_cfg = load_config(deploy_cfg_path, model_cfg_path)
     model_cfg.randomness = dict(seed=0, diff_rank_seed=False, deterministic=False)
@@ -73,7 +72,6 @@ if __name__ == "__main__":
     output_names = onnx_cfg["output_names"]
     
     extract_pts_inputs = True if "points" in input_names else False
-    print(extract_pts_inputs)
     data_preprocessor_cfg = deepcopy(model_cfg.model.data_preprocessor)
 
     # TODO(KokSeang): Move out from data_preprocessor
@@ -106,10 +104,10 @@ if __name__ == "__main__":
     data = runner.test_dataloader.dataset[args.sample_idx]
 
     # create model an inputs
-    task_processor = build_task_processor(model_cfg, deploy_cfg, device)
+    task_processor = build_task_processor(model_cfg, deploy_cfg, device, extract_pts_inputs)
 
     torch_model = task_processor.build_pytorch_model(checkpoint_path)
-    data, model_inputs = task_processor.create_input(data, data_preprocessor=data_preprocessor, model=torch_model, extract_pts_inputs=extract_pts_inputs)
+    data, model_inputs = task_processor.create_input(data, data_preprocessor=data_preprocessor, model=torch_model)
 
     if isinstance(model_inputs, list) and len(model_inputs) == 1:
         model_inputs = model_inputs[0]
