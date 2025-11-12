@@ -166,7 +166,7 @@ model = dict(
         ),
         share_conv_channel=64,
         loss_cls=dict(type="mmdet.GaussianFocalLoss", reduction="none", loss_weight=1.0),
-        loss_bbox=dict(type="mmdet.L1Loss", reduction="mean", loss_weight=0.25),
+        loss_bbox=dict(type="mmdet.L1Loss", reduction="mean", loss_weight=0.0),
         norm_bbox=True,
         tasks=[
             dict(num_class=5, class_names=["car", "truck", "bus", "bicycle", "pedestrian"]),
