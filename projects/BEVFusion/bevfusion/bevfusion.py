@@ -370,7 +370,7 @@ class BEVFusion(Base3DDetector):
             )
             features.append(img_feature)
 
-        if points is not None and self.pts_middle_encoder is not None:
+        if self.pts_middle_encoder is not None:
             pts_feature = self.extract_pts_feat(
                 batch_inputs_dict.get("voxels", {}).get("voxels", None),
                 batch_inputs_dict.get("voxels", {}).get("coors", None),

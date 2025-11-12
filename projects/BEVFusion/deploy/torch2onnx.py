@@ -10,7 +10,7 @@ from typing import Any
 import numpy as np
 import onnx
 import torch
-from containers import TrtBevFusionImageBackboneContainer, TrtBevFusionMainContainer
+from containers import TrtBevFusionCameraOnlyContainer, TrtBevFusionImageBackboneContainer, TrtBevFusionMainContainer
 from mmdeploy.apis import build_task_processor
 from mmdeploy.apis.onnx.passes import optimize_onnx
 from mmdeploy.core import RewriterContext, patch_model
@@ -29,6 +29,8 @@ from mmengine.registry import RUNNERS
 from mmengine.runner import load_checkpoint
 from torch.multiprocessing import set_start_method
 
+from .ops import Voxelization
+
 
 def parse_args():
     parser = argparse.ArgumentParser(description="Export model to onnx.")
@@ -44,7 +46,7 @@ def parse_args():
         help="module to export",
         required=True,
         default="main_body",
-        choices=["main_body", "image_backbone"],
+        choices=["main_body", "image_backbone", "camera_bev_only_network"],
     )
     args = parser.parse_args()
     return args
@@ -70,11 +72,11 @@ if __name__ == "__main__":
 
     data_preprocessor_cfg = deepcopy(model_cfg.model.data_preprocessor)
 
-    voxelize_cfg = data_preprocessor_cfg.pop("voxelize_cfg")
+    # TODO(KokSeang): Move out from data_preprocessor
+    voxelize_cfg = deepcopy(model_cfg.get("voxelize_cfg", None))
     voxelize_cfg.pop("voxelize_reduce")
-    data_preprocessor_cfg["voxel_layer"] = voxelize_cfg
+    data_preprocessor_cfg["voxelize_layer"] = voxelize_cfg
     data_preprocessor_cfg.voxel = True
-
     data_preprocessor = MODELS.build(data_preprocessor_cfg)
 
     # load a sample
@@ -199,16 +201,10 @@ if __name__ == "__main__":
             else:
                 image_feats = image_backbone_container(*model_inputs)
 
-        if args.module == "main_body":
-            main_container = TrtBevFusionMainContainer(patched_model)
-            model_inputs = (
-                voxels.to(device),
-                coors.to(device),
-                num_points_per_voxel.to(device),
-            )
-            if image_feats is not None:
-                model_inputs += (
-                    points.to(device).float(),
+        if args.module in ["main_body", "camera_bev_only_network"]:
+            if args.module == "camera_bev_only_network":
+                main_container = TrtBevFusionCameraOnlyContainer(patched_model)
+                model_inputs = (
                     lidar2img.to(device).float(),
                     img_aug_matrix.to(device).float(),
                     geom_feats.to(device).float(),
@@ -217,6 +213,27 @@ if __name__ == "__main__":
                     indices.to(device).long(),
                     image_feats,
                 )
+                if "points" in input_names:
+                    model_inputs += (points.to(device).float(),)
+            else:
+                main_container = TrtBevFusionMainContainer(patched_model)
+                model_inputs = (
+                    voxels.to(device),
+                    coors.to(device),
+                    num_points_per_voxel.to(device),
+                )
+                if image_feats is not None:
+                    model_inputs += (
+                        points.to(device).float(),
+                        lidar2img.to(device).float(),
+                        img_aug_matrix.to(device).float(),
+                        geom_feats.to(device).float(),
+                        kept.to(device),
+                        ranks.to(device).long(),
+                        indices.to(device).long(),
+                        image_feats,
+                    )
+
             torch.onnx.export(
                 main_container,
                 model_inputs,
