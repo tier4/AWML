@@ -29,9 +29,6 @@ from mmengine.registry import RUNNERS
 from mmengine.runner import load_checkpoint
 from torch.multiprocessing import set_start_method
 
-from .ops import Voxelization
-
-
 def parse_args():
     parser = argparse.ArgumentParser(description="Export model to onnx.")
     parser.add_argument("deploy_cfg", help="deploy config path")
@@ -64,22 +61,45 @@ if __name__ == "__main__":
     checkpoint_path = args.checkpoint
     device = args.device
     work_dir = args.work_dir
+    os.makedirs(work_dir, exist_ok=True)
+    
 
     deploy_cfg, model_cfg = load_config(deploy_cfg_path, model_cfg_path)
-
     model_cfg.randomness = dict(seed=0, diff_rank_seed=False, deterministic=False)
-    model_cfg.launcher = "none"
-
+    model_cfg.launcher = "none"    
+    
+    onnx_cfg = get_onnx_config(deploy_cfg)
+    input_names = onnx_cfg["input_names"]
+    output_names = onnx_cfg["output_names"]
+    
+    extract_pts_inputs = True if "points" in input_names else False
+    print(extract_pts_inputs)
     data_preprocessor_cfg = deepcopy(model_cfg.model.data_preprocessor)
 
     # TODO(KokSeang): Move out from data_preprocessor
     voxelize_cfg = deepcopy(model_cfg.get("voxelize_cfg", None))
-    voxelize_cfg.pop("voxelize_reduce")
-    data_preprocessor_cfg["voxelize_layer"] = voxelize_cfg
-    data_preprocessor_cfg.voxel = True
+    
+    if extract_pts_inputs and voxelize_cfg is None:
+      # TODO(KokSeang): Remove this
+      # Default voxelize_layer 
+      voxelize_cfg = dict(
+        max_num_points=10,
+        voxel_size=[0.17, 0.17, 0.2],
+        point_cloud_range=[-122.4, -122.4, -3.0, 122.4, 122.4, 5.0],
+        max_voxels=[120000, 160000],
+        deterministic=True,
+      )
+
+    if voxelize_cfg is not None: 
+      voxelize_cfg.pop("voxelize_reduce", None)
+      data_preprocessor_cfg["voxel_layer"] = voxelize_cfg
+      data_preprocessor_cfg.voxel = True
+    
     data_preprocessor = MODELS.build(data_preprocessor_cfg)
 
     # load a sample
+    if "work_dir" not in model_cfg:
+      model_cfg['work_dir'] = work_dir
     runner = RUNNERS.build(model_cfg)
     runner.load_or_resume()
 
@@ -89,7 +109,7 @@ if __name__ == "__main__":
     task_processor = build_task_processor(model_cfg, deploy_cfg, device)
 
     torch_model = task_processor.build_pytorch_model(checkpoint_path)
-    data, model_inputs = task_processor.create_input(data, data_preprocessor=data_preprocessor, model=torch_model)
+    data, model_inputs = task_processor.create_input(data, data_preprocessor=data_preprocessor, model=torch_model, extract_pts_inputs=extract_pts_inputs)
 
     if isinstance(model_inputs, list) and len(model_inputs) == 1:
         model_inputs = model_inputs[0]
@@ -116,14 +136,10 @@ if __name__ == "__main__":
     context_info = dict()
     context_info["deploy_cfg"] = deploy_cfg
     output_prefix = osp.join(work_dir, osp.splitext(osp.basename(deploy_cfg.onnx_config.save_file))[0])
-    os.makedirs(work_dir, exist_ok=True)
     backend = get_backend(deploy_cfg).value
 
-    onnx_cfg = get_onnx_config(deploy_cfg)
     opset_version = onnx_cfg.get("opset_version", 11)
 
-    input_names = onnx_cfg["input_names"]
-    output_names = onnx_cfg["output_names"]
     axis_names = input_names + output_names
     dynamic_axes = get_dynamic_axes(deploy_cfg, axis_names)
     verbose = not onnx_cfg.get("strip_doc_string", True) or onnx_cfg.get("verbose", False)

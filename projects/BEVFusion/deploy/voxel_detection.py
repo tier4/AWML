@@ -26,11 +26,80 @@ class VoxelDetection(_VoxelDetection):
     def __init__(self, model_cfg: mmengine.Config, deploy_cfg: mmengine.Config, device: str):
         super().__init__(model_cfg, deploy_cfg, device)
 
+    def extract_pts_inputs(self, collate_data):
+      """
+      """
+      
+      points = collate_data["inputs"]["points"][0]
+      voxels = collate_data["inputs"]["voxels"]
+      inputs = [voxels["voxels"], voxels["num_points"], voxels["coors"]]
+      
+      feats = voxels["voxels"]
+      num_points_per_voxel = voxels["num_points"]
+      # NOTE(knzo25): preprocessing in BEVFusion and the
+      # data_preprocessor work different.
+      # The original code/model uses [batch, x, y, z]
+      # but the data_preprocessor used here uses [batch, z, y, x]
+      # In addition, the deployment's voxelization uses [z, y, x]
+      # Since this is outside the graph we format it as [z, y, x]
+      # and convert it to [batch, x, y, z] inside the graph
+      coors = voxels["coors"]
+      coors = coors[:, 1:]
+
+      return feats, coors, num_points_per_voxel, points
+
+    def extract_img_inputs(self, batch, collate_data, model):
+      """
+      """
+      # NOTE(knzo25): we want to load images from the camera
+      # directly to the model in TensorRT
+      img = batch["inputs"]["img"].type(torch.uint8)
+
+      data_samples = collate_data["data_samples"][0]
+      lidar2image = feats.new_tensor(data_samples.lidar2img)
+      cam2image = feats.new_tensor(data_samples.cam2img)
+      camera2lidar = feats.new_tensor(data_samples.cam2lidar)
+
+      # NOTE(knzo25): ONNX/TensorRT do not support matrix inversion,
+      # so they are taken out of the graph
+      cam2image_inverse = torch.inverse(cam2image)
+
+      # The extrinsics-related variables should only be computed once,
+      # so we bring them outside the graph. Additionally, they require
+      # argsort over the threshold available in TensorRT
+      img_aux_matrix = feats.new_tensor(np.stack(collate_data["data_samples"][0].img_aug_matrix))
+      img_aux_matrix_inverse = torch.inverse(img_aux_matrix)
+      geom = model.view_transform.get_geometry(
+          camera2lidar[..., :3, :3].unsqueeze(0).to(torch.device("cuda")),
+          camera2lidar[..., :3, 3].unsqueeze(0).to(torch.device("cuda")),
+          cam2image_inverse[..., :3, :3].unsqueeze(0).to(torch.device("cuda")),
+          img_aux_matrix_inverse[..., :3, :3].unsqueeze(0).to(torch.device("cuda")),
+          img_aux_matrix[..., :3, 3].unsqueeze(0).to(torch.device("cuda")),
+      )
+
+      geom_feats, kept, ranks, indices = model.view_transform.bev_pool_aux(geom)
+      camera_mask = torch.ones((img.size(0)), device=img.device)
+      return (
+        camera_mask, 
+        img, 
+        lidar2image, 
+        # NOTE(knzo25): not used during export
+        # but needed to comply with the signature
+        cam2image, 
+        # NOTE(knzo25): not used during export
+        # but needed to comply with the signature
+        camera2lidar, 
+        geom_feats.int(), 
+        kept.bool(), # TensorRT treats bool as uint8
+        ranks, 
+        indices)
+
     def create_input(
         self,
         batch: Union[str, Sequence[str]],
         data_preprocessor: Optional[BaseDataPreprocessor] = None,
         model: Optional[torch.nn.Module] = None,
+        extract_pts_inputs: bool = True
     ) -> Tuple[Dict, torch.Tensor]:
 
         data = [batch]
@@ -57,53 +126,27 @@ class VoxelDetection(_VoxelDetection):
 
         assert data_preprocessor is not None
         collate_data = data_preprocessor(collate_data, False)
-        points = collate_data["inputs"]["points"][0]
-        voxels = collate_data["inputs"]["voxels"]
-        inputs = [voxels["voxels"], voxels["num_points"], voxels["coors"]]
+        print(extract_pts_inputs)
 
-        feats = voxels["voxels"]
-        num_points_per_voxel = voxels["num_points"]
-
-        # NOTE(knzo25): preprocessing in BEVFusion and the
-        # data_preprocessor work different.
-        # The original code/model uses [batch, x, y, z]
-        # but the data_preprocessor used here uses [batch, z, y, x]
-        # In addition, the deployment's voxelization uses [z, y, x]
-        # Since this is outside the graph we format it as [z, y, x]
-        # and convert it to [batch, x, y, z] inside the graph
-        coors = voxels["coors"]
-        coors = coors[:, 1:]
-
+        if extract_pts_inputs:
+          feats, coors, num_points_per_voxel, points = self.extract_pts_inputs(
+            collate_data=collate_data
+          )
+        else:
+          feats = None 
+          coors = None 
+          num_points_per_voxel = None 
+          points = None
+        
         if "img_backbone" not in self.model_cfg.model:
+            assert feats is not None, f"lidar feats shouldn't be None!"
             return collate_data, [feats, coors, num_points_per_voxel] + [None] * 10
 
-        # NOTE(knzo25): we want to load images from the camera
-        # directly to the model in TensorRT
-        img = batch["inputs"]["img"].type(torch.uint8)
-
-        data_samples = collate_data["data_samples"][0]
-        lidar2image = feats.new_tensor(data_samples.lidar2img)
-        cam2image = feats.new_tensor(data_samples.cam2img)
-        camera2lidar = feats.new_tensor(data_samples.cam2lidar)
-
-        # NOTE(knzo25): ONNX/TensorRT do not support matrix inversion,
-        # so they are taken out of the graph
-        cam2image_inverse = torch.inverse(cam2image)
-
-        # The extrinsics-related variables should only be computed once,
-        # so we bring them outside the graph. Additionally, they require
-        # argsort over the threshold available in TensorRT
-        img_aux_matrix = feats.new_tensor(np.stack(collate_data["data_samples"][0].img_aug_matrix))
-        img_aux_matrix_inverse = torch.inverse(img_aux_matrix)
-        geom = model.view_transform.get_geometry(
-            camera2lidar[..., :3, :3].unsqueeze(0).to(torch.device("cuda")),
-            camera2lidar[..., :3, 3].unsqueeze(0).to(torch.device("cuda")),
-            cam2image_inverse[..., :3, :3].unsqueeze(0).to(torch.device("cuda")),
-            img_aux_matrix_inverse[..., :3, :3].unsqueeze(0).to(torch.device("cuda")),
-            img_aux_matrix[..., :3, 3].unsqueeze(0).to(torch.device("cuda")),
+        camera_mask, img, lidar2image, cam2image, camera2lidar, geom_feats, kept, ranks, indices = self.extract_img_inputs(
+          batch=batch,
+          model=model,
+          collate_data=collate_data
         )
-
-        geom_feats, kept, ranks, indices = model.view_transform.bev_pool_aux(geom)
 
         # TODO(knzo25): just a test. remove
         """ import pickle
@@ -122,7 +165,7 @@ class VoxelDetection(_VoxelDetection):
             coors,
             num_points_per_voxel,
             points,
-            torch.ones((img.size(0)), device=img.device),
+            camera_mask,
             img,
             lidar2image,
             # NOTE(knzo25): not used during export
@@ -131,10 +174,12 @@ class VoxelDetection(_VoxelDetection):
             # NOTE(knzo25): not used during export
             # but needed to comply with the signature
             camera2lidar,
-            geom_feats.int(),
-            kept.bool(),  # TensorRT treats bool as uint8
+            geom_feats,
+            kept,  # TensorRT treats bool as uint8
             ranks,
             indices,
         ]
 
         return collate_data, inputs
+        
+
