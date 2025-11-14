@@ -126,6 +126,8 @@ class T4Dataset(NuScenesDataset):
 
     def _compute_category_faction_factor(self) -> Dict[str, float]:
         """Compute category fraction factor used for repeat sampling factor computation."""
+        if self.repeat_sampling_factor is None:
+            return {class_name: 1.0 for class_name in self.category_frame_number.keys()}
         category_fraction_factor = {
             class_name: max(
                 1,
@@ -199,8 +201,12 @@ class T4Dataset(NuScenesDataset):
         """
         ann_info = super().parse_ann_info(info=info)
         ann_info = self.frame_object_sampler.sample(ann_info) if self.frame_object_sampler else ann_info
+        
+        if SAMPLE_CLASS_NAME_KEY not in ann_info:
+            for label in ann_info["gt_labels_3d"]:
+                self.valid_class_name_ins[self.class_names[label]] += 1
+            return ann_info
 
-        valid_bbox_categories = {class_name: 0 for class_name in self.class_names}
         for label, sample_class_name in zip(ann_info["gt_labels_3d"], ann_info[SAMPLE_CLASS_NAME_KEY]):
 
             if sample_class_name == FILTER_CLASS_LABELS:
