@@ -141,7 +141,6 @@ model = dict(
     ),
     # Lidar pipeline
     pts_voxel_encoder=dict(num_features=lidar_feature_dims),
-    img_aux_bbox_head_weight=1.0,
     img_aux_bbox_head=dict(
         type="BEVFusionCenterHead",
         # in_channels=sum([128, 128, 128]),
