@@ -1,14 +1,16 @@
 #!/usr/bin/env python3
 import argparse
-from collections import defaultdict
+import copy
 import json
-import os.path as osp
+from pathlib import Path
 import pickle
+from collections import defaultdict
 
 import numpy as np
-from nuscenes.eval.common.utils import Box
 from pyquaternion import Quaternion
 from tqdm import tqdm
+
+from t4_devkit.dataclass import Box3D as T4Box3D, SemanticLabel, Shape, ShapeType
 
 
 def load_pseudo_label(pseudo_label_path):
@@ -30,21 +32,20 @@ def load_pseudo_label(pseudo_label_path):
 
 
 def box_lidar_2_global(
-    lidar_box: Box,
-    lidar2ego_rotation: np.ndarray,
-    lidar2ego_translation: np.ndarray,
-    ego2global_rotation: np.ndarray,
-    ego2global_translation: np.ndarray,
-) -> Box:
-    global_box: Box = lidar_box.copy()
-    global_box.rotate(Quaternion(lidar2ego_rotation))
-    global_box.translate(np.array(lidar2ego_translation))
-    global_box.rotate(Quaternion(ego2global_rotation))
-    global_box.translate(np.array(ego2global_translation))
+    lidar_box: T4Box3D,
+    ego2global: np.ndarray,
+) -> T4Box3D:
+    # ego2global: 4x4 matrix
+    global_box: T4Box3D = copy.deepcopy(lidar_box)
+    rot = ego2global[:3, :3]
+    trans = ego2global[:3, 3]
+    # Use rtol/atol to allow for small non-orthogonality
+    global_box.rotate(Quaternion(matrix=rot, rtol=1e-5, atol=1e-7))
+    global_box.translate(trans)
     return global_box
 
 
-def get_scenes_anno_dict(pseudo_label_infos, metainfo):
+def get_scenes_anno_dict(pseudo_label_infos, metainfo, dataset_id=None):
     scenes_anno_dict = defaultdict(list)
 
     # Get label mapping from metainfo
@@ -54,16 +55,13 @@ def get_scenes_anno_dict(pseudo_label_infos, metainfo):
     instance_ids_dict = {}
     label_ids_count = defaultdict(lambda: 1)
 
-    for pseudo_label_info in tqdm(pseudo_label_infos):
-        # Get scene name from various possible keys
-        dataset_id = pseudo_label_info.get("scene_name") or pseudo_label_info.get("sample_idx", "unknown")
-        
-        # Get lidar path
-        lidar_path = pseudo_label_info.get("lidar_path", "")
-        if lidar_path:
-            file_id = f"{lidar_path.split('/')[-1]}.pcd"
-        else:
-            file_id = f"{dataset_id}.pcd"
+    for idx, pseudo_label_info in enumerate(tqdm(pseudo_label_infos)):
+        # Use provided dataset_id if given, else fallback to scene_name/sample_idx
+        scene_id = dataset_id if dataset_id is not None else (
+            pseudo_label_info.get("scene_name") or pseudo_label_info.get("sample_idx", "unknown")
+        )
+        # file_id as sequential number: 0.pcd, 1.pcd, ...
+        file_id = f"{idx}.pcd"
 
         # New format: pred_instances_3d
         pred_instances = pseudo_label_info.get("pred_instances_3d", [])
@@ -75,7 +73,7 @@ def get_scenes_anno_dict(pseudo_label_infos, metainfo):
             instance_id = pred_instance["instance_id_3d"]
             bbox_label_id = pred_instance["bbox_label_3d"]
             score = pred_instance["bbox_score_3d"]
-            
+            timestamp = pseudo_label_info.get("timestamp", 0)
             # Convert label_id to label_name
             label = label_id_to_name.get(bbox_label_id, "car")
 
@@ -83,33 +81,34 @@ def get_scenes_anno_dict(pseudo_label_infos, metainfo):
                 instance_ids_dict[instance_id] = label_ids_count[label]
                 label_ids_count[label] += 1
 
-            # Create Box from bbox_3d
-            bbox = Box(
-                center=[bbox_3d[0], bbox_3d[1], bbox_3d[2]],
-                size=[bbox_3d[3], bbox_3d[4], bbox_3d[5]],
-                orientation=Quaternion(axis=[0, 0, 1], radians=-bbox_3d[6] - np.pi / 2),
-                velocity=(velocity[0], velocity[1], 0),
-                name=label,
-                score=score,
-                token=instance_id,
+            # Prepare T4Box3D arguments
+            position = [bbox_3d[0], bbox_3d[1], bbox_3d[2]]
+            rotation = Quaternion(axis=[0, 0, 1], radians=bbox_3d[6])
+            shape = Shape(shape_type=ShapeType.BOUNDING_BOX, size=(bbox_3d[4], bbox_3d[3], bbox_3d[5]))
+            velocity3d = (velocity[0], velocity[1], 0.0)
+            bbox = T4Box3D(
+                unix_time=int(timestamp),
+                frame_id="base_link",
+                semantic_label=SemanticLabel(label),
+                position=position,
+                rotation=rotation,
+                shape=shape,
+                velocity=velocity3d,
+                confidence=score,
+                uuid=instance_id,
             )
 
-            # Transform bbox from calibrated_sensor to global coordinate
-            lidar2ego_rotation = Quaternion(pseudo_label_info.get("lidar2ego_rotation", [1, 0, 0, 0]))
-            lidar2ego_translation = pseudo_label_info.get("lidar2ego_translation", [0, 0, 0])
-            ego2global_rotation = Quaternion(pseudo_label_info.get("ego2global_rotation", [1, 0, 0, 0]))
-            ego2global_translation = pseudo_label_info.get("ego2global_translation", [0, 0, 0])
-            
+            # Use ego2global matrix directly, treat lidar and ego as identical
+            ego2global = np.array(pseudo_label_info["ego2global"])  # 4x4 matrix
             bbox_global = box_lidar_2_global(
                 bbox,
-                lidar2ego_rotation,
-                lidar2ego_translation,
-                ego2global_rotation,
-                ego2global_translation,
+                ego2global,
             )
-            quaternion = bbox_global.orientation
-
-            scenes_anno_dict[dataset_id].append(
+            # Use T4Box3D's position, size, and rotation.q
+            pos = bbox_global.position
+            size = bbox_global.size
+            rot = bbox_global.rotation.q.tolist()  # [w, x, y, z]
+            scenes_anno_dict[scene_id].append(
                 {
                     "dataset_id": dataset_id,
                     "file_id": file_id,
@@ -121,17 +120,17 @@ def get_scenes_anno_dict(pseudo_label_infos, metainfo):
                     "labeller_email": "pseudo-label@AWML",
                     "sensor_id": "lidar",
                     "three_d_bbox": {
-                        "cx": float(bbox_global.center[0]),
-                        "cy": float(bbox_global.center[1]),
-                        "cz": float(bbox_global.center[2]),
-                        "h": float(bbox_global.wlh[2]),
-                        "l": float(bbox_global.wlh[1]),
-                        "w": float(bbox_global.wlh[0]),
+                        "cx": float(pos[0]),
+                        "cy": float(pos[1]),
+                        "cz": float(pos[2]),
+                        "w": float(size[0]),
+                        "l": float(size[1]),
+                        "h": float(size[2]),
                         "quaternion": {
-                            "x": float(quaternion.x),
-                            "y": float(quaternion.y),
-                            "z": float(quaternion.z),
-                            "w": float(quaternion.w),
+                            "w": float(rot[0]),
+                            "x": float(rot[1]),
+                            "y": float(rot[2]),
+                            "z": float(rot[3]),
                         },
                     },
                 }
@@ -142,10 +141,10 @@ def get_scenes_anno_dict(pseudo_label_infos, metainfo):
 def save_deepen_json(scenes_anno_dict, output_dir):
     """Save annotations in Deepen format."""
     for scene_name, scene_anno_dict in scenes_anno_dict.items():
-        file_name = osp.join(output_dir, f"{scene_name}.json")
-        print(f"Generate deepen format json: {file_name}")
+        file_path = Path(output_dir) / f"{scene_name}.json"
+        print(f"Generate deepen format json: {file_path}")
         deepen_anno_json = {"labels": scene_anno_dict}
-        with open(file_name, "w") as f:
+        with open(file_path, "w") as f:
             json.dump(deepen_anno_json, f, indent=4)
 
 
@@ -154,16 +153,17 @@ def save_segment_ai_json(scenes_anno_dict, output_dir):
     raise NotImplementedError("Segment.ai format is not yet supported")
 
 
-def convert_pseudo_to_annotation_format(pseudo_label_path, output_dir, output_format):
+def convert_pseudo_to_annotation_format(pseudo_label_path, output_dir, output_format, dataset_id=None):
     """Convert pseudo label to specified annotation tool format.
     
     Args:
         pseudo_label_path: Path to pseudo label pickle file
         output_dir: Output directory for annotation files
         output_format: Output format ('deepen' or 'segment.ai')
+        dataset_id: Dataset ID to use for all annotations (overrides scene_name/sample_idx)
     """
     pseudo_label_infos, metainfo = load_pseudo_label(pseudo_label_path)
-    scenes_anno_dict = get_scenes_anno_dict(pseudo_label_infos, metainfo)
+    scenes_anno_dict = get_scenes_anno_dict(pseudo_label_infos, metainfo, dataset_id=dataset_id)
     
     if output_format == "deepen":
         save_deepen_json(scenes_anno_dict, output_dir)
@@ -196,6 +196,13 @@ def _parse_args():
         choices=["deepen", "segment.ai"],
         help="Output format for annotation tool (currently only 'deepen' is supported)",
     )
+    parser.add_argument(
+        "--dataset-id",
+        type=str,
+        required=False,
+        default="Pseudo_DB_J6Gen2_v2_1_Shiojiri_kids_x2_dev_b3902d62-9777-496d-846b-39c3db7b9dcf_2025-04-09_11-34-42_11-35-02",
+        help="Dataset ID to use for all annotations (overrides scene_name/sample_idx)",
+    )
     args = parser.parse_args()
     return args
 
@@ -203,9 +210,10 @@ def _parse_args():
 def main():
     args = _parse_args()
     convert_pseudo_to_annotation_format(
-        args.input, 
-        args.output_dir, 
-        args.output_format
+        pseudo_label_path=args.input,
+        output_dir=args.output_dir,
+        output_format=args.output_format,
+        dataset_id=args.dataset_id
     )
 
 
