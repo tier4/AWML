@@ -35,7 +35,6 @@ class BEVFusion(Base3DDetector):
         init_cfg: OptMultiConfig = None,
         seg_head: Optional[dict] = None,
         img_aux_bbox_head = None,
-        img_aux_bbox_head_weight: float = 1.0,
         **kwargs,
     ) -> None:
         super().__init__(data_preprocessor=data_preprocessor, init_cfg=init_cfg)
@@ -69,7 +68,6 @@ class BEVFusion(Base3DDetector):
         else:
             self.img_aux_bbox_head = None 
 
-        self.img_aux_bbox_head_weight = img_aux_bbox_head_weight
         if fusion_layer is not None:
             self.fusion_layer = MODELS.build(fusion_layer)
         else:
@@ -391,23 +389,19 @@ class BEVFusion(Base3DDetector):
         feats, img_feats = self.extract_feat(batch_inputs_dict, batch_input_metas)
 
         losses = dict()
-        if self.with_bbox_head:
-            bbox_loss = self.bbox_head.loss(feats, batch_data_samples)
-        
-        losses.update(bbox_loss)
         
         if self.img_aux_bbox_head:
             img_aux_bbox_losses = self.img_aux_bbox_head.loss([img_feats], batch_data_samples)
             sum_losses = 0.0
-            weighted_sum_losses = 0.0
             for loss_key, loss in img_aux_bbox_losses.items():
                 sum_losses += loss
-                losses[loss_key] = loss * self.img_aux_bbox_head_weight
-                weighted_sum_losses += losses[loss_key]
+                losses[loss_key] = loss 
 
             losses["img_aux_sum"] = sum_losses
-            losses["img_aux_weighted_sum"] = weighted_sum_losses
 
-            # losses.update(img_aux_bbox_loss)
+				if self.with_bbox_head:
+						
+            bbox_loss = self.bbox_head.loss(feats, batch_data_samples)
+        		losses.update(bbox_loss) 
 
         return losses

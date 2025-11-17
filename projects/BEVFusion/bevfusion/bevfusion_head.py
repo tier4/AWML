@@ -146,16 +146,6 @@ class BEVFusionHead(nn.Module):
                     bias=bias,
                 )
             )
-            # self.prediction_heads.append(
-            #     CustomSeparateHead(
-            #         hidden_channel,
-            #         heads,
-            #         conv_cfg=conv_cfg,
-            #         norm_cfg=norm_cfg,
-            #         bias=bias,
-            #         init_bias=-4.595
-            #     )
-            # )
 
         self.init_weights()
         self._init_assigner_sampler()
@@ -698,7 +688,7 @@ class BEVFusionHead(nn.Module):
             heatmap[None],
         )
 
-    def loss(self, batch_feats, batch_data_samples):
+    def loss(self, batch_feats, batch_data_samples, ):
         """Loss function for CenterHead.
 
         Args:
