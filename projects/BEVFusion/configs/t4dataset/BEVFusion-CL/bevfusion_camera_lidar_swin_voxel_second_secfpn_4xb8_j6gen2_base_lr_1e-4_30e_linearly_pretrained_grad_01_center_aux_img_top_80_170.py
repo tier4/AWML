@@ -320,7 +320,7 @@ test_pipeline = [
     dict(
         type="ImageAug3D",
         final_dim=image_size,
-        resize_lim=[0.30, 0.35],    # For 1860 -> [558, 651]
+        resize_lim=[0.325, 0.325],    # For 1860 -> [558, 651]
         bot_pct_lim=[0.0, 0.0],
         rot_lim=[0.0, 0.0],
         rand_flip=False,
