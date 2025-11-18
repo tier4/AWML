@@ -23,6 +23,7 @@ class ImageAug3D(BaseTransform):
 
     def sample_augmentation(self, results):
         H, W = results["ori_shape"]
+        print(f"H: {H}, W: {W}")
         fH, fW = self.final_dim
         if self.is_train:
             if isinstance(self.resize_lim, (int, float)):
