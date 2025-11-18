@@ -1,3 +1,5 @@
+import torch 
+
 from mmcv.transforms import BaseTransform
 from mmdet3d.structures.ops import box_np_ops
 from mmengine.registry import TRANSFORMS
@@ -60,7 +62,7 @@ class ObjectRangeMinPointsFilter(BaseTransform):
 
     def __init__(self, range_radius: list[float], min_num_points: int = 5) -> None:
         assert isinstance(min_num_points, int)
-        self.range = range_radius
+        self.range_radius = range_radius
         self.min_num_points = min_num_points
         # self.remove_points = remove_points
 
