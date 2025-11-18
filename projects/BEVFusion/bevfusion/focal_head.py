@@ -122,10 +122,10 @@ class FocalHead(AnchorFreeHead):
             bbox_coder=bbox_coder,
         )
 
-        # self.loss_cls2d = self.loss_cls
-        # self.loss_bbox2d = self.loss_bbox
-        # self.loss_iou2d = MODELS.build(loss_iou2d)
-        # self.loss_centers2d = MODELS.build(loss_centers2d)
+        self.loss_cls2d = self.loss_cls
+        self.loss_bbox2d = self.loss_bbox
+        self.loss_iou2d = MODELS.build(loss_iou2d)
+        self.loss_centers2d = MODELS.build(loss_centers2d)
         self.loss_centerness = MODELS.build(loss_centerness)
 
         self._init_layers()
@@ -138,13 +138,13 @@ class FocalHead(AnchorFreeHead):
         )
 
     def _init_layers(self):
-        # self.cls = nn.Conv2d(self.embed_dims, self.num_classes, kernel_size=1)
+        self.cls = nn.Conv2d(self.embed_dims, self.num_classes, kernel_size=1)
 
-        # self.shared_reg = nn.Sequential(
-        #     nn.Conv2d(self.in_channels, self.embed_dims, kernel_size=(3, 3), padding=1),
-        #     nn.GroupNorm(32, num_channels=self.embed_dims),
-        #     nn.ReLU(),
-        # )
+        self.shared_reg = nn.Sequential(
+            nn.Conv2d(self.in_channels, self.embed_dims, kernel_size=(3, 3), padding=1),
+            nn.GroupNorm(32, num_channels=self.embed_dims),
+            nn.ReLU(),
+        )
 
         self.shared_cls = nn.Sequential(
             nn.Conv2d(self.in_channels, self.embed_dims, kernel_size=(3, 3), padding=1),
@@ -153,14 +153,14 @@ class FocalHead(AnchorFreeHead):
         )
 
         self.centerness = nn.Conv2d(self.embed_dims, 1, kernel_size=1)
-        # self.ltrb = nn.Conv2d(self.embed_dims, 4, kernel_size=1)
-        # self.center2d = nn.Conv2d(self.embed_dims, 2, kernel_size=1)
+        self.ltrb = nn.Conv2d(self.embed_dims, 4, kernel_size=1)
+        self.center2d = nn.Conv2d(self.embed_dims, 2, kernel_size=1)
 
         bias_init = bias_init_with_prob(0.01)
-        # nn.init.constant_(self.cls.bias, bias_init)
+        nn.init.constant_(self.cls.bias, bias_init)
         nn.init.constant_(self.centerness.bias, bias_init)
 
-    def forward(self, src):
+    def aux_forward(self, src):
         bs, n, c, h, w = src.shape
         num_tokens = n * h * w
 
@@ -184,8 +184,61 @@ class FocalHead(AnchorFreeHead):
 
         return outs
 
+    def forward(self, location, **data):
+        src = data["img_feats"]
+        bs, n, c, h, w = src.shape
+        num_tokens = n * h * w
+
+        # focal sampling
+        if self.training:
+            if self.use_hybrid_tokens:
+                sample_ratio = random.uniform(0.2, 1.0)
+            else:
+                sample_ratio = self.train_ratio
+            num_sample_tokens = int(num_tokens * sample_ratio)
+
+        else:
+            sample_ratio = self.infer_ratio
+            num_sample_tokens = int(num_tokens * sample_ratio)
+
+        x = src.flatten(0, 1)
+        cls_feat = self.shared_cls(x)
+        cls = self.cls(cls_feat)
+        centerness = self.centerness(cls_feat)
+        cls_logits = cls.permute(0, 2, 3, 1).reshape(bs * n, -1, self.num_classes)
+        centerness = centerness.permute(0, 2, 3, 1).reshape(bs * n, -1, 1)
+        pred_bboxes = None
+        pred_centers2d = None
+
+        reg_feat = self.shared_reg(x)
+        ltrb = self.ltrb(reg_feat).permute(0, 2, 3, 1).contiguous()
+        ltrb = ltrb.sigmoid()
+        centers2d_offset = self.center2d(reg_feat).permute(0, 2, 3, 1).contiguous()
+
+        centers2d = apply_center_offset(location, centers2d_offset)
+        bboxes = apply_ltrb(location, ltrb)
+
+        pred_bboxes = bboxes.view(bs * n, -1, 4)
+        pred_centers2d = centers2d.view(bs * n, -1, 2)
+
+        cls_score = cls_logits.topk(1, dim=2).values[..., 0].view(bs, -1, 1)
+
+        sample_weight = cls_score.detach().sigmoid() * centerness.detach().view(bs, -1, 1).sigmoid()
+
+        _, topk_indexes = torch.topk(sample_weight, num_sample_tokens, dim=1)
+
+        outs = {
+            "enc_cls_scores": cls_logits,
+            "enc_bbox_preds": pred_bboxes,
+            "pred_centers2d": pred_centers2d,
+            "centerness": centerness,
+            "topk_indexes": topk_indexes,
+        }
+
+        return outs
+        
     def loss(
-        self, gt_bboxes2d_list, gt_labels2d_list, centers2d, depths, preds_dicts, img_metas, gt_bboxes_ignore=None
+        self, gt_bboxes2d_list, gt_labels2d_list, centers2d, depths, preds_dicts, img_pad_shapes, gt_bboxes_ignore=None
     ):
         """ "Loss function.
         Args:
@@ -241,14 +294,14 @@ class FocalHead(AnchorFreeHead):
             all_gt_labels2d_list,
             all_centers2d_list,
             all_depths_list,
-            img_metas,
+            img_pad_shapes,
             gt_bboxes_ignore,
         )
         loss_dict["enc_loss_cls"] = enc_loss_cls
         loss_dict["enc_loss_bbox"] = enc_losses_bbox
         loss_dict["enc_loss_iou"] = enc_losses_iou
-        loss_dict["centers2d_losses"] = centers2d_losses
-        loss_dict["centerness_losses"] = centerness_losses
+        loss_dict["centers2d_loss"] = centers2d_losses
+        loss_dict["centerness_loss"] = centerness_losses
 
         return loss_dict
 
@@ -330,7 +383,7 @@ class FocalHead(AnchorFreeHead):
         gt_labels_list,
         all_centers2d_list,
         all_depths_list,
-        img_metas,
+        img_pad_shapes,
         gt_bboxes_ignore_list=None,
     ):
         """ "Loss function for outputs from a single decoder layer of a single
@@ -367,7 +420,7 @@ class FocalHead(AnchorFreeHead):
             gt_labels_list,
             all_centers2d_list,
             all_depths_list,
-            img_metas,
+            img_pad_shapes,
             gt_bboxes_ignore_list,
         )
         (
@@ -390,7 +443,10 @@ class FocalHead(AnchorFreeHead):
         # thus the learning target is normalized by the image size. So here
         # we need to re-scale them for calculating IoU loss
         # construct factors used for rescale bboxes
-        img_h, img_w, _ = [x[0] for x in img_metas["pad_shape"]]
+        img_h = [x[0] for x in img_pad_shapes]
+        img_w = [x[1] for x in img_pad_shapes]
+
+        # img_h, img_w, _ = [x[0] for x in img_metas["pad_shape"]]
 
         factors = []
 
@@ -421,8 +477,9 @@ class FocalHead(AnchorFreeHead):
         num_total_pos = torch.clamp(reduce_mean(num_total_pos), min=1).item()
 
         # centerness BCE loss
-        img_shape = [[x[0] for x in img_metas["pad_shape"]] for _ in range(num_imgs)]
-        (heatmaps,) = multi_apply(self._get_heatmap_single, all_centers2d_list, gt_bboxes_list, img_shape)
+        # img_shape = [[x[0] for x in img_metas["pad_shape"]] for _ in range(num_imgs)]
+        img_shape = [x for x in img_pad_shapes for _ in range(num_imgs)]
+        (heatmaps, num_center_pos) = multi_apply(self._get_heatmap_single, all_centers2d_list, gt_bboxes_list, img_shape)
 
         heatmaps = torch.stack(heatmaps, dim=0)
         centerness = clip_sigmoid(centerness)
@@ -543,7 +600,7 @@ class FocalHead(AnchorFreeHead):
         gt_labels_list,
         all_centers2d_list,
         all_depths_list,
-        img_metas,
+        img_pad_shape_list,
         gt_bboxes_ignore_list=None,
     ):
         """"Compute regression and classification targets for a batch image.
@@ -583,8 +640,11 @@ class FocalHead(AnchorFreeHead):
         assert gt_bboxes_ignore_list is None, "Only supports for gt_bboxes_ignore setting to None."
         num_imgs = len(cls_scores_list)
         gt_bboxes_ignore_list = [gt_bboxes_ignore_list for _ in range(num_imgs)]
-        img_meta = {"pad_shape": [x[0] for x in img_metas["pad_shape"]]}
-        img_meta_list = [img_meta for _ in range(num_imgs)]
+        img_pad_shape_list = [x for x in img_pad_shapes for _ in range(num_imgs)]
+
+        # img_meta = {"pad_shape": [x[0] for x in img_metas["pad_shape"]]}
+        # img_meta_list = [img_meta for _ in range(num_imgs)]
+
         # print(1)
         (
             labels_list,
@@ -603,7 +663,7 @@ class FocalHead(AnchorFreeHead):
             gt_labels_list,
             all_centers2d_list,
             all_depths_list,
-            img_meta_list,
+            img_pad_shape_list,
             gt_bboxes_ignore_list,
         )
         num_total_pos = sum((inds.numel() for inds in pos_inds_list))
@@ -627,7 +687,8 @@ class FocalHead(AnchorFreeHead):
         gt_labels,
         centers2d,
         depths,
-        img_meta,
+        img_pad_shape,
+        # img_meta,
         gt_bboxes_ignore=None,
     ):
         """ "Compute regression and classification targets for one image.
@@ -662,7 +723,7 @@ class FocalHead(AnchorFreeHead):
         num_bboxes = bbox_pred.size(0)
         # assigner and sampler
         assign_result = self.assigner2d.assign(
-            bbox_pred, cls_score, pred_centers2d, gt_bboxes, gt_labels, centers2d, img_meta, gt_bboxes_ignore
+            bbox_pred, cls_score, pred_centers2d, gt_bboxes, gt_labels, centers2d, img_pad_shape, gt_bboxes_ignore
         )
 
         predictions = InstanceData()
@@ -684,7 +745,8 @@ class FocalHead(AnchorFreeHead):
         bbox_targets = torch.zeros_like(bbox_pred)
         bbox_weights = torch.zeros_like(bbox_pred)
         bbox_weights[pos_inds] = 1.0
-        img_h, img_w, _ = img_meta["pad_shape"]
+        img_h, img_w = img_pad_shape
+        # img_h, img_w, _ = img_meta["pad_shape"]
 
         # DETR regress the relative position of boxes (cxcywh) in the image.
         # Thus the learning target should be normalized by the image size, also

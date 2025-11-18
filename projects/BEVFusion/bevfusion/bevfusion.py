@@ -36,7 +36,6 @@ class BEVFusion(Base3DDetector):
         seg_head: Optional[dict] = None,
         img_roi_head = None,
         img_aux_bbox_head = None,
-        img_aux_bbox_head_weight: float = 1.0,
         **kwargs,
     ) -> None:
         super().__init__(data_preprocessor=data_preprocessor, init_cfg=init_cfg)
@@ -70,7 +69,6 @@ class BEVFusion(Base3DDetector):
         else:
             self.img_aux_bbox_head = None 
 
-        self.img_aux_bbox_head_weight = img_aux_bbox_head_weight
         if fusion_layer is not None:
             self.fusion_layer = MODELS.build(fusion_layer)
         else:
