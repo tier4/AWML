@@ -8,8 +8,8 @@ custom_imports["imports"] += _base_.custom_imports["imports"]
 custom_imports["imports"] += ["autoware_ml.detection3d.datasets.transforms"]
 
 # user setting
-data_root = "data/t4dataset/"
-info_directory_path = "info/kokseang_2_3_fixed/"
+data_root = "data/t4datasets/"
+info_directory_path = "info/kokseang_2_3/"
 train_gpu_size = 4
 train_batch_size = 8
 test_batch_size = 2
@@ -126,7 +126,9 @@ train_pipeline = [
             "traffic_cone",
         ],
     ),
-    dict(type="ObjectMinPointsFilter", min_num_points=5),
+    dict(type="ObjectRangeMinPointsFilter", range_radius=[0, 60], min_num_points=5),
+    dict(type="ObjectRangeMinPointsFilter", range_radius=[60, 90], min_num_points=3),
+    dict(type="ObjectRangeMinPointsFilter", range_radius=[90, 130], min_num_points=1),
     dict(type="PointShuffle"),
     dict(
         type="Pack3DDetInputs",
@@ -353,4 +355,4 @@ auto_scale_lr = dict(enable=False, base_batch_size=train_gpu_size * train_batch_
 if train_gpu_size > 1:
     sync_bn = "torch"
 
-load_from = "work_dirs/bevfusion_2_3/T4Dataset/bevfusion_lidar_voxel_second_secfpn_4xb16_base/epoch_46.pth"
+load_from = "work_dirs/bevfusion_2_3//epoch_46.pth"
