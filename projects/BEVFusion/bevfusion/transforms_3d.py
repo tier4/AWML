@@ -27,7 +27,7 @@ class ImageAug3D(BaseTransform):
         if self.is_train:
             if isinstance(self.resize_lim, (int, float)):
                 aspect_ratio = max(fH / H, fW / W)
-                resize = np.random.uniform(aspect_ratio - self.resize_lim, aspect_ratio + self.resize_lim)
+                resize = np.random.uniform(aspect_ratio, aspect_ratio + self.resize_lim)
             else:
                 resize = np.random.uniform(*self.resize_lim)
 
