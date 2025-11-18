@@ -14,6 +14,7 @@ from torch import Tensor
 from torch.nn import functional as F
 
 from .ops import Voxelization
+from .misc import locations
 
 
 @MODELS.register_module()
@@ -158,6 +159,13 @@ class BEVFusion(Base3DDetector):
         """bool: Whether the detector has a segmentation head."""
         return hasattr(self, "seg_head") and self.seg_head is not None
 
+    def prepare_location(self, shape, img_feats):
+        pad_h, pad_w = shape
+        bs, n = img_feats.shape[:2]
+        x = img_feats.flatten(0, 1)
+        location = locations(x, self.img_roi_head.stride, pad_h, pad_w)[None].repeat(bs * n, 1, 1, 1)
+        return location
+
     def extract_img_feat(
         self,
         x,
@@ -185,9 +193,11 @@ class BEVFusion(Base3DDetector):
         BN, C, H, W = x.size()
         assert BN == B * N, (BN, B * N)
         x = x.view(B, N, C, H, W)
-        
+
         if self.img_roi_head is not None:
-            img_roi_head_preds = self.img_roi_head(x)
+            pad_shapes = (img_metas[0]["pad_shape"][0], img_metas[1]["pad_shape"][1])
+            location = self.prepare_location(pad_shapes, x)
+            img_roi_head_preds = self.img_roi_head(location, x)
         else:
             img_roi_head_preds = None
 
@@ -423,32 +433,33 @@ class BEVFusion(Base3DDetector):
             depths = []
             img_pad_shapes = []
             gt_bboxes_ignore = []
+            print(feats[0].device)
 
             for batch_data_sample, batch_input_meta in zip(batch_data_samples, batch_input_metas):
                 gt_bboxes2d_list.append(
-                    batch_data_sample.gt_instances.bboxes
+                    batch_data_sample.gt_instances.bboxes.to(feats[0].device)
                 )
                 gt_labels2d_list.append(
-                    batch_data_sample.gt_instances.labels
+                    batch_data_sample.gt_instances.labels.to(feats[0].device)
                 )
                 centers_2d.append(
-                    batch_input_meta['centers_2d']
+                    batch_input_meta['centers_2d'].to(feats[0].device)
                 )
                 depths.append(
-                    batch_input_meta['depths']
+                    batch_input_meta['depths'].to(feats[0].device)
                 )
                 img_pad_shapes.append(
-                    batch_input_meta['pad_shape']
+                    batch_input_meta['pad_shape'].to(feats[0].device)
                 )
                 if 'gt_bboxes_ignore' in batch_input_meta:
                     gt_bboxes_ignore.append(
-                        batch_input_meta['gt_bboxes_ignore']
+                        batch_input_meta['gt_bboxes_ignore'].to(feats[0].device)
                     ) 
 
             if not len(gt_bboxes_ignore):
                 gt_bboxes_ignore = None 
 
-            img_roi_head_losses = self.img_roi_head.aux_loss(
+            img_roi_head_losses = self.img_roi_head.loss(
                 gt_bboxes2d_list=gt_bboxes2d_list,
                 gt_labels2d_list=gt_labels2d_list,
                 centers2d=centers_2d, 

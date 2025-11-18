@@ -334,7 +334,7 @@ class HungarianAssigner2D(BaseAssigner):
         gt_bboxes,
         gt_labels,
         centers2d,
-				img_pad_shape,
+        img_pad_shape,
         img_meta,
         gt_bboxes_ignore=None,
         eps=1e-7,
@@ -384,7 +384,7 @@ class HungarianAssigner2D(BaseAssigner):
                 # No ground truth, assign all to background
                 assigned_gt_inds[:] = 0
             return AssignResult(num_gts, assigned_gt_inds, None, labels=assigned_labels)
-				img_h, img_w = img_pad_shape
+        img_h, img_w = img_pad_shape
         # img_h, img_w, _ = img_meta["pad_shape"]
         # img_meta["img_shape"] = (img_w, img_h)
         factor = gt_bboxes.new_tensor([img_w, img_h, img_w, img_h]).unsqueeze(0)

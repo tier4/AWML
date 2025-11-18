@@ -184,8 +184,7 @@ class FocalHead(AnchorFreeHead):
 
         return outs
 
-    def forward(self, location, **data):
-        src = data["img_feats"]
+    def forward(self, location, src):
         bs, n, c, h, w = src.shape
         num_tokens = n * h * w
 
@@ -600,7 +599,7 @@ class FocalHead(AnchorFreeHead):
         gt_labels_list,
         all_centers2d_list,
         all_depths_list,
-        img_pad_shape_list,
+        img_pad_shapes,
         gt_bboxes_ignore_list=None,
     ):
         """"Compute regression and classification targets for a batch image.
