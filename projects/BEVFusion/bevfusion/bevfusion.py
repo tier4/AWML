@@ -409,16 +409,11 @@ class BEVFusion(Base3DDetector):
         if self.img_aux_bbox_head:
             img_aux_bbox_losses = self.img_aux_bbox_head.loss([img_feats], batch_data_samples)
             sum_losses = 0.0
-            weighted_sum_losses = 0.0
             for loss_key, loss in img_aux_bbox_losses.items():
                 sum_losses += loss
-                losses[loss_key] = loss * self.img_aux_bbox_head_weight
-                weighted_sum_losses += losses[loss_key]
+                losses[loss_key] = loss 
 
             losses["img_aux_sum"] = sum_losses
-            losses["img_aux_weighted_sum"] = weighted_sum_losses
-
-            # losses.update(img_aux_bbox_loss)
 
         if self.img_roi_head is not None:
                 

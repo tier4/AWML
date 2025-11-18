@@ -42,7 +42,13 @@ class ImageAug3D(BaseTransform):
                 flip = True
             rotate = np.random.uniform(*self.rot_lim)
         else:
-            resize = max(fH / H, fW / W)
+            resize_lim = np.mean(self.resize_lim)
+            if isinstance(self.resize_lim, (int, float)):
+                aspect_ratio = max(fH / H, fW / W)
+                resize = aspect_ratio + resize_lim
+            else:
+                resize = resize_lim
+            
             resize_dims = (int(W * resize), int(H * resize))
             newW, newH = resize_dims
             crop_h = int((1 - np.mean(self.bot_pct_lim)) * newH) - fH
