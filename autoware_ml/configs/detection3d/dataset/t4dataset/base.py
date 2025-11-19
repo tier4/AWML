@@ -24,6 +24,7 @@ dataset_version_list = [
     "db_j6gen2_v5",
     "db_j6gen2_v6",
     "db_j6gen2_v7",
+    "db_j6gen2_v8",
     "db_largebus_v1",
     "db_largebus_v2",
     "db_jpntaxi_v1",
