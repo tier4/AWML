@@ -49,13 +49,13 @@
 		- jpntaxi_gen2: db_jpntaxigen2_v1 + db_jpntaxigen2_v2 (18,630 frames)
   - [Config file path](https://github.com/tier4/AWML/blob/c0ba7268f110062f71ee80a3469102867a63b740/projects/CenterPoint/configs/t4dataset/Centerpoint/second_secfpn_4xb16_121m_jpntaxi_gen2_base.py)
   - Deployed onnx and ROS parameter files (for internal)
-    - [WebAuto](https://evaluation.tier4.jp/evaluation/mlpackages/7156b453-2861-4ae9-b135-e24e48cc9029/releases/0e6b01fe-3f66-4bb3-be5c-4a4ded446191?project_id=zWhWRzei)
-    - [model-zoo](https://download.autoware-ml-model-zoo.tier4.jp/autoware-ml/models/centerpoint/centerpoint/jpntaxi_gen2/v2.3.1/deployment.zip)
-    - [Google drive](https://drive.google.com/file/d/1wuZ_HKMMUntCDhrUVRGe6BC0_GJvoppK/view?usp=drive_link)
+    - [WebAuto](https://evaluation.tier4.jp/evaluation/mlpackages/7156b453-2861-4ae9-b135-e24e48cc9029/releases/e2241c36-646b-4893-8fde-486c32375274?project_id=zWhWRzei)
+    - [model-zoo](https://download.autoware-ml-model-zoo.tier4.jp/autoware-ml/models/centerpoint/centerpoint/jpntaxi_gen2/v2.3.2/deployment.zip)
+    - [Google drive](https://drive.google.com/drive/u/0/folders/1hD__tIVcQ6UalgJi49jSvRZFgNxERGOA)
   - Logs (for internal)
-    - [model-zoo](https://download.autoware-ml-model-zoo.tier4.jp/autoware-ml/models/centerpoint/centerpoint/jpntaxi_gen2/v2.3.1/logs.zip)
-    - [Google drive](https://drive.google.com/file/d/18Q5FBb2duFpE3zNABPMyt2ecqjM3rkrF/view?usp=drive_link)
-  - Train time: NVIDIA H100 80GB * 4 * 30 epochs = 12 hours
+    - [model-zoo](https://download.autoware-ml-model-zoo.tier4.jp/autoware-ml/models/centerpoint/centerpoint/jpntaxi_gen2/v2.3.2/logs.zip)
+    - [Google drive](https://drive.google.com/file/d/18h0LVXbY919hlk35UOa8MedRqjUplLUt/view?usp=drive_link)
+  - Train time: NVIDIA H100 80GB * 4 * 30 epochs = 24 hours
   - Batch size: 4*16 = 64
 
 - Evaluation
