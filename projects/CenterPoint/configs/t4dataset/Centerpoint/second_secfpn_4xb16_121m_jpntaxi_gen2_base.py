@@ -41,14 +41,14 @@ eval_class_range = {
 
 # user setting
 data_root = "data/t4dataset/"
-info_directory_path = "info/kokseang_2_5/"
+info_directory_path = "info/user_name/"
 train_gpu_size = 4
 train_batch_size = 16
 test_batch_size = 2
 num_workers = 32
 val_interval = 1
 max_epochs = 30
-work_dir = "work_dirs/centerpoint_2_3_2/" + _base_.dataset_type + "/second_secfpn_4xb16_121m_jpntaxi_gen2_base/"
+work_dir = "work_dirs/centerpoint/" + _base_.dataset_type + "/second_secfpn_4xb16_121m_jpntaxi_gen2_base/"
 
 train_pipeline = [
     dict(
@@ -388,13 +388,13 @@ vis_backends = [
     dict(type="LocalVisBackend"),
     dict(type="TensorboardVisBackend"),
     # Update info accordingly
-    # dict(
-    #     type="SafeMLflowVisBackend",
-    #     exp_name="(UserName) CenterPoint",
-    #     run_name="CenterPoint base",
-    #     tracking_uri="http://localhost:5000",
-    #     artifact_suffix=(),
-    # ),
+    dict(
+        type="SafeMLflowVisBackend",
+        exp_name="(UserName) CenterPoint",
+        run_name="CenterPoint base",
+        tracking_uri="http://localhost:5000",
+        artifact_suffix=(),
+    ),
 ]
 visualizer = dict(type="Det3DLocalVisualizer", vis_backends=vis_backends, name="visualizer")
 
@@ -410,4 +410,4 @@ custom_hooks = [
 ]
 
 # Update the load_from path accordingly
-load_from = "work_dirs/centerpoint_2_3/T4Dataset/second_secfpn_4xb16_121m_base_amp/epoch_49.pth"
+load_from = "<best_checkpoint>"
