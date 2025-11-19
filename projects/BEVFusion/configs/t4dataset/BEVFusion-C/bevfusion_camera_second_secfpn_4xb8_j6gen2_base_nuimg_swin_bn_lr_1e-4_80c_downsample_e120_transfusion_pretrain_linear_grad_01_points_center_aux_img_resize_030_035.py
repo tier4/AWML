@@ -241,7 +241,7 @@ train_pipeline = [
         pad_empty_sweeps=True,
         remove_close=True,
         backend_args=backend_args,
-        test_mode=True,
+        test_mode=False,
     ),
     dict(type="LoadAnnotations3D", with_bbox_3d=True, with_label_3d=True, with_attr_label=False),
     dict(
