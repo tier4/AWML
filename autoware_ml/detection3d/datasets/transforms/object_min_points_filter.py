@@ -62,11 +62,7 @@ class ObjectRangeMinPointsFilter(BaseTransform):
 
     def __init__(self, range_radius: list[float], min_num_points: int = 5) -> None:
         assert isinstance(min_num_points, int)
-<<<<<<< HEAD
         self.range_radius = range_radius
-=======
-        self.range = range_radius
->>>>>>> 9eb0d56 (Added)
         self.min_num_points = min_num_points
         # self.remove_points = remove_points
 
