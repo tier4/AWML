@@ -92,7 +92,6 @@ class ObjectRangeMinPointsFilter(BaseTransform):
         # Out of range gt masks are all valid
         out_of_range_gt_masks = ~bev_radius_mask
 
-
         points = input_dict["points"]
         # TODO(kminoda): There is a scary comment in the original code:
         # # TODO: this function is different from PointCloud3D, be careful
