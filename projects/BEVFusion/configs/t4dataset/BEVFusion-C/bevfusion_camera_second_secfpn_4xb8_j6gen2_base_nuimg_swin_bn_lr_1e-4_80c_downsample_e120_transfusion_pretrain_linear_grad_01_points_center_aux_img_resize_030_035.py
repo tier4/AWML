@@ -14,7 +14,7 @@ train_gpu_size = 2
 train_batch_size = 8
 test_batch_size = 2
 val_interval = 15
-max_epochs = 100
+max_epochs = 120
 backend_args = None
 
 # range setting
@@ -247,8 +247,9 @@ train_pipeline = [
     dict(
         type="ImageAug3D",
         final_dim=image_size,
-        resize_lim=0.02,
-        bot_pct_lim=[0.30, 0.35],
+        resize_lim=[0.30, 0.35],
+        bot_pct_lim=[0.0, 0.0],
+        # bot_pct_lim=[0.30, 0.35],
         rot_lim=[0.0, 0.0],
         rand_flip=True,
         is_train=True,
@@ -518,6 +519,6 @@ auto_scale_lr = dict(enable=False, base_batch_size=train_gpu_size * train_batch_
 if train_gpu_size > 1:
     sync_bn = "torch"
 
-# load_from = "work_dirs/bevfusion_2_3/epoch_48.pth"
+load_from = "work_dirs/bevfusion_2_3/epoch_46.pth"
 
-resume = True
+# resume = True
