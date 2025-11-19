@@ -164,7 +164,7 @@ model = dict(
             out_size_factor=out_size_factor,
         ),
         share_conv_channel=64,
-        loss_cls=dict(type="mmdet.GaussianFocalLoss", reduction="none", loss_weight=0.6),
+        loss_cls=dict(type="mmdet.GaussianFocalLoss", reduction="none", loss_weight=1.0),
         loss_bbox=dict(type="mmdet.L1Loss", reduction="mean", loss_weight=0.0),
         norm_bbox=True,
         tasks=[
