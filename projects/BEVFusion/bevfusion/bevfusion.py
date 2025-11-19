@@ -34,7 +34,7 @@ class BEVFusion(Base3DDetector):
         img_neck: Optional[dict] = None,
         init_cfg: OptMultiConfig = None,
         seg_head: Optional[dict] = None,
-        img_aux_bbox_head = None,
+        img_aux_bbox_head=None,
         **kwargs,
     ) -> None:
         super().__init__(data_preprocessor=data_preprocessor, init_cfg=init_cfg)
@@ -62,11 +62,11 @@ class BEVFusion(Base3DDetector):
             self.img_backbone = None
             self.img_neck = None
             self.view_transform = None
-        
+
         if img_aux_bbox_head is not None:
             self.img_aux_bbox_head = MODELS.build(img_aux_bbox_head)
         else:
-            self.img_aux_bbox_head = None 
+            self.img_aux_bbox_head = None
 
         if fusion_layer is not None:
             self.fusion_layer = MODELS.build(fusion_layer)
@@ -77,12 +77,12 @@ class BEVFusion(Base3DDetector):
         if pts_backbone:
             self.pts_backbone = MODELS.build(pts_backbone)
         else:
-            self.pts_backbone = None 
-        
+            self.pts_backbone = None
+
         if pts_neck:
             self.pts_neck = MODELS.build(pts_neck)
         else:
-            self.pts_neck = None 
+            self.pts_neck = None
 
         self.bbox_head = MODELS.build(bbox_head)
         self.init_weights()
@@ -376,7 +376,7 @@ class BEVFusion(Base3DDetector):
 
         if self.pts_backbone:
             x = self.pts_backbone(x)
-        
+
         if self.pts_neck:
             x = self.pts_neck(x)
 
@@ -389,19 +389,19 @@ class BEVFusion(Base3DDetector):
         feats, img_feats = self.extract_feat(batch_inputs_dict, batch_input_metas)
 
         losses = dict()
-        
+
         if self.img_aux_bbox_head:
             img_aux_bbox_losses = self.img_aux_bbox_head.loss([img_feats], batch_data_samples)
             sum_losses = 0.0
             for loss_key, loss in img_aux_bbox_losses.items():
                 sum_losses += loss
-                losses[loss_key] = loss 
+                losses[loss_key] = loss
 
             losses["img_aux_sum"] = sum_losses
 
-				if self.with_bbox_head:
-						
+        if self.with_bbox_head:
+
             bbox_loss = self.bbox_head.loss(feats, batch_data_samples)
-        		losses.update(bbox_loss) 
+            losses.update(bbox_loss)
 
         return losses

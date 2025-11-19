@@ -8,13 +8,8 @@ custom_imports["imports"] += _base_.custom_imports["imports"]
 custom_imports["imports"] += ["autoware_ml.detection3d.datasets.transforms"]
 
 # user setting
-<<<<<<< HEAD
 data_root = "data/t4dataset/"
 info_directory_path = "info/kokseang_2_3_fixed/"
-=======
-data_root = "data/t4datasets/"
-info_directory_path = "info/kokseang_2_3/"
->>>>>>> 6761c4da31fb9b474fe061d962abdce6b834ffa1
 train_gpu_size = 4
 train_batch_size = 8
 test_batch_size = 2
@@ -95,11 +90,7 @@ model = dict(
         convert_weights=True,
         init_cfg=dict(
             type="Pretrained",
-<<<<<<< HEAD
             checkpoint="work_dirs/bevfusion/pretrain/swint_nuimages_pretrained.pth"  # noqa: E251  # noqa: E501
-=======
-            checkpoint="work_dirs/swin_transformer/swint_nuimages_pretrained.pth"  # noqa: E251  # noqa: E501
->>>>>>> 6761c4da31fb9b474fe061d962abdce6b834ffa1
         ),
     ),
     img_neck=dict(
@@ -150,7 +141,7 @@ model = dict(
     ),
     # Lidar pipeline
     pts_voxel_encoder=dict(num_features=lidar_feature_dims),
-		img_aux_bbox_head_weight=0.30,
+	img_aux_bbox_head_weight=0.30,
     img_aux_bbox_head=dict(
         type="BEVFusionCenterHead",
         # in_channels=sum([128, 128, 128]),
@@ -330,7 +321,7 @@ test_pipeline = [
     dict(
         type="ImageAug3D",
         final_dim=image_size,
-        resize_lim=0.02,
+        resize_lim=0.0,
         bot_pct_lim=[0.0, 0.0],
         rot_lim=[0.0, 0.0],
         rand_flip=False,
@@ -398,10 +389,6 @@ val_dataloader = dict(
         test_mode=True,
         box_type_3d="LiDAR",
         backend_args=backend_args,
-<<<<<<< HEAD
-        filter_cfg=filter_cfg,
-=======
->>>>>>> 6761c4da31fb9b474fe061d962abdce6b834ffa1
     ),
 )
 
@@ -522,9 +509,5 @@ auto_scale_lr = dict(enable=False, base_batch_size=train_gpu_size * train_batch_
 if train_gpu_size > 1:
     sync_bn = "torch"
 
-<<<<<<< HEAD
-# load_from = "work_dirs/bevfusion_2_3/T4Dataset/bevfusion_lidar_voxel_second_secfpn_4xb16_base/epoch_48.pth"
-=======
 # load_from = "work_dirs/bevfusion_2_3/T4Dataset/bevfusion_lidar_voxel_second_secfpn_4xb16_base/epoch_48.pth"
 # resume = True
->>>>>>> 6761c4da31fb9b474fe061d962abdce6b834ffa1
