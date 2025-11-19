@@ -278,9 +278,21 @@ class BEVFusion(Base3DDetector):
         batch_input_metas = [item.metainfo for item in batch_data_samples]
         feats, img_feats = self.extract_feat(batch_inputs_dict, batch_input_metas)
 
+        img_aux_top_proposals = dict()
+        if self.img_aux_bbox_head:
+            img_aux_top_proposals = self.img_aux_bbox_head.predict_without_decoding([img_feats], batch_data_samples)
+
         if self.with_bbox_head:
-            outputs = self.bbox_head.predict(feats, batch_input_metas)
-            # outputs = self.bbox_head.predict(feats, batch_data_samples)
+            camera_topk_indices = img_aux_top_proposals.get("heatmap_top_indices", None)
+            camera_topk_scores = img_aux_top_proposals.get("heatmap_top_scores", None)
+            camera_topk_classes = img_aux_top_proposals.get("heatmap_top_classes", None)
+            outputs = self.bbox_head.predict(
+                feats,
+                batch_input_metas,
+                camera_topk_indices=camera_topk_indices,
+                camera_topk_scores=camera_topk_scores,
+                camera_topk_classes=camera_topk_classes,
+            )
 
         res = self.add_pred_to_datasample(batch_data_samples, outputs)
 
@@ -389,9 +401,10 @@ class BEVFusion(Base3DDetector):
         feats, img_feats = self.extract_feat(batch_inputs_dict, batch_input_metas)
 
         losses = dict()
+        img_aux_top_proposals = dict()
 
         if self.img_aux_bbox_head:
-            img_aux_bbox_losses = self.img_aux_bbox_head.loss([img_feats], batch_data_samples)
+            img_aux_bbox_losses, img_aux_top_proposals = self.img_aux_bbox_head.loss([img_feats], batch_data_samples)
             sum_losses = 0.0
             for loss_key, loss in img_aux_bbox_losses.items():
                 sum_losses += loss
@@ -401,7 +414,24 @@ class BEVFusion(Base3DDetector):
 
         if self.with_bbox_head:
 
-            bbox_loss = self.bbox_head.loss(feats, batch_data_samples)
+            camera_topk_indices = img_aux_top_proposals.get("heatmap_top_indices", None)
+            camera_topk_scores = img_aux_top_proposals.get("heatmap_top_scores", None)
+            camera_topk_classes = img_aux_top_proposals.get("heatmap_top_classes", None)
+            bbox_loss = self.bbox_head.loss(
+                feats,
+                batch_data_samples,
+                camera_topk_indices=camera_topk_indices,
+                camera_topk_scores=camera_topk_scores,
+                camera_topk_classes=camera_topk_classes,
+            )
+            num_fusion_proposals = bbox_loss.pop("num_fusion_proposals", None)
+            if num_fusion_proposals is not None:
+                losses["num_fusion_proposals"] = num_fusion_proposals
+
+            num_camera_proposals = bbox_loss.pop("num_camera_proposals", None)
+            if num_camera_proposals is not None:
+                losses["num_camera_proposals"] = num_camera_proposals
+
             losses.update(bbox_loss)
 
         return losses

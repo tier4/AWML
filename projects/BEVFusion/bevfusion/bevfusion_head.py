@@ -16,6 +16,7 @@ from mmdet.models.utils import multi_apply
 from mmengine.structures import InstanceData
 from torch import nn
 
+
 def clip_sigmoid(x, eps=1e-4):
     y = torch.clamp(x.sigmoid_(), min=eps, max=1 - eps)
     return y
@@ -223,7 +224,14 @@ class BEVFusionHead(nn.Module):
         elif isinstance(self.train_cfg.assigner, list):
             self.bbox_assigner = [build_assigner(res) for res in self.train_cfg.assigner]
 
-    def forward_single(self, inputs, metas):
+    def forward_single(
+        self,
+        inputs,
+        metas,
+        camera_topk_indices: Optional[torch.Tensor] = None,
+        camera_topk_classes: Optional[torch.Tensor] = None,
+        camera_topk_scores: Optional[torch.Tensor] = None,
+    ):
         """Forward function for CenterPoint.
         Args:
             inputs (torch.Tensor): Input feature map with the shape of
@@ -276,9 +284,59 @@ class BEVFusionHead(nn.Module):
         heatmap = heatmap.view(batch_size, heatmap.shape[1], -1)
 
         # top num_proposals among all classes
-        top_proposals = heatmap.view(batch_size, -1).argsort(dim=-1, descending=True)[..., : self.num_proposals]
-        top_proposals_class = top_proposals // heatmap.shape[-1]
-        top_proposals_index = top_proposals % heatmap.shape[-1]
+        fusion_top_proposals = heatmap.view(batch_size, -1).argsort(dim=-1, descending=True)[..., : self.num_proposals]
+        fusion_top_proposals_class = fusion_top_proposals // heatmap.shape[-1]
+        fusion_top_proposals_index = fusion_top_proposals % heatmap.shape[-1]
+        fusion_top_proposals_nums = torch.ones_like(fusion_top_proposals_index)
+        num_camera_proposals = num_fusion_proposals = None
+
+        # Merge proposals with camera branch if it's enable
+        if camera_topk_indices is not None and camera_topk_classes is not None and camera_topk_scores is not None:
+            camera_top_proposals_nums = torch.zeros_like(camera_topk_indices)
+
+            merge_top_proposals_num = torch.cat([fusion_top_proposals_nums + camera_top_proposals_nums], dim=-1)
+            merge_topk_indices = torch.cat([fusion_top_proposals_index, camera_topk_indices], dim=-1)
+            merge_topk_scores = torch.cat([fusion_top_proposals, camera_topk_scores], dim=-1)
+            merge_topk_class = torch.cat([fusion_top_proposals_class, camera_topk_classes], dim=-1)
+
+            sorted_score_indices = merge_topk_scores.argsort(dim=-1, descending=True)
+
+            top_proposals_class = []
+            top_proposals_index = []
+            num_fusion_proposals = 0
+
+            # n^2, however, since both batch size and num_proposals are small, the effect is limited
+            for b in range(batch_size):
+                keep_class = []
+                keep_indices = []
+                assigned_indices = set()
+                num_proposals = 0
+                for index in sorted_score_indices[b]:
+                    idx = index.item()
+                    if idx in assigned_indices:
+                        continue
+
+                    keep_class.append(merge_topk_class[b, idx])
+                    keep_indices.append(merge_topk_indices[b, idx])
+
+                    if merge_top_proposals_num[b, idx] == 1:
+                        num_fusion_proposals += 1
+
+                    num_proposals += 1
+                    assigned_indices.add(idx)
+
+                    if num_proposals >= self.num_proposals:
+                        break
+
+                top_proposals_class.append(torch.stack(keep_class))
+                top_proposals_index.append(torch.stack(keep_indices))
+            top_proposals_class = torch.stack(top_proposals_class, dim=0)
+            top_proposals_index = torch.stack(top_proposals_index, dim=0)
+            num_camera_proposals = (batch_size * self.num_proposals) - num_fusion_proposals
+        else:
+            top_proposals_class = fusion_top_proposals_class
+            top_proposals_index = fusion_top_proposals_index
+
         query_feat = fusion_feat_flatten.gather(
             index=top_proposals_index[:, None, :].expand(-1, fusion_feat_flatten.shape[1], -1),
             dim=-1,
@@ -332,9 +390,18 @@ class BEVFusionHead(nn.Module):
                 new_res[key] = torch.cat([ret_dict[key] for ret_dict in ret_dicts], dim=-1)
             else:
                 new_res[key] = ret_dicts[0][key]
+        new_res["num_fusion_proposals"] = num_fusion_proposals
+        new_res["num_camera_proposals"] = num_camera_proposals
         return [new_res]
 
-    def forward(self, feats, metas):
+    def forward(
+        self,
+        feats,
+        metas,
+        camera_topk_indices: Optional[torch.Tensor] = None,
+        camera_topk_scores: Optional[torch.Tensor] = None,
+        camera_topk_classes: Optional[torch.Tensor] = None,
+    ):
         """Forward pass.
 
         Args:
@@ -346,12 +413,45 @@ class BEVFusionHead(nn.Module):
         """
         if isinstance(feats, torch.Tensor):
             feats = [feats]
-        res = multi_apply(self.forward_single, feats, [metas])
+
+        if camera_topk_indices is not None:
+            if isinstance(camera_topk_indices, torch.Tensor):
+                camera_topk_indices = [camera_topk_indices]
+
+        if camera_topk_classes is not None:
+            if isinstance(camera_topk_classes, torch.Tensor):
+                camera_topk_classes = [camera_topk_classes]
+
+        if camera_topk_scores is not None:
+            if isinstance(camera_topk_scores, torch.Tensor):
+                camera_topk_scores = [camera_topk_scores]
+
+        res = multi_apply(
+            self.forward_single,
+            feats,
+            [metas],
+            camera_topk_indices=camera_topk_indices,
+            camera_topk_classes=camera_topk_classes,
+            camera_topk_scores=camera_topk_scores,
+        )
         assert len(res) == 1, "only support one level features."
         return res
 
-    def predict(self, batch_feats, batch_input_metas):
-        preds_dicts = self(batch_feats, batch_input_metas)
+    def predict(
+        self,
+        batch_feats,
+        batch_input_metas,
+        camera_topk_indices: Optional[torch.Tensor] = None,
+        camera_topk_scores: Optional[torch.Tensor] = None,
+        camera_topk_classes: Optional[torch.Tensor] = None,
+    ):
+        preds_dicts = self(
+            batch_feats,
+            batch_input_metas,
+            camera_topk_indices=camera_topk_indices,
+            camera_topk_scores=camera_topk_scores,
+            camera_topk_classes=camera_topk_classes,
+        )
         res = self.predict_by_feat(preds_dicts, batch_input_metas)
         return res
 
@@ -627,7 +727,7 @@ class BEVFusionHead(nn.Module):
         # and iou loss
         if len(pos_inds) > 0:
             pos_bbox_targets = self.bbox_coder.encode(sampling_result.pos_gt_bboxes)
-            
+
             bbox_targets[pos_inds, :] = pos_bbox_targets
             bbox_weights[pos_inds, :] = 1.0
 
@@ -688,7 +788,14 @@ class BEVFusionHead(nn.Module):
             heatmap[None],
         )
 
-    def loss(self, batch_feats, batch_data_samples, ):
+    def loss(
+        self,
+        batch_feats,
+        batch_data_samples,
+        camera_topk_indices: Optional[torch.Tensor] = None,
+        camera_topk_scores: Optional[torch.Tensor] = None,
+        camera_topk_classes: Optional[torch.Tensor] = None,
+    ):
         """Loss function for CenterHead.
 
         Args:
@@ -703,8 +810,20 @@ class BEVFusionHead(nn.Module):
         for data_sample in batch_data_samples:
             batch_input_metas.append(data_sample.metainfo)
             batch_gt_instances_3d.append(data_sample.gt_instances_3d)
-        preds_dicts = self(batch_feats, batch_input_metas)
+        preds_dicts = self(
+            batch_feats,
+            batch_input_metas,
+            camera_topk_indices=camera_topk_indices,
+            camera_topk_scores=camera_topk_scores,
+            camera_topk_classes=camera_topk_classes,
+        )  # noqa: E501
         loss = self.loss_by_feat(preds_dicts, batch_gt_instances_3d)
+
+        num_fusion_proposals = preds_dicts.get("num_fusion_proposals", None)
+        loss["num_fusion_proposals"] = num_fusion_proposals
+
+        num_camera_proposals = preds_dicts.get("num_camera_proposals", None)
+        loss["num_camera_proposals"] = num_camera_proposals
 
         return loss
 
