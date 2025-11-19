@@ -1,14 +1,14 @@
-from typing import List, Tuple, Dict
+from typing import Dict, List, Tuple
 
 import torch
 import torch.nn.functional as F
-from torch import Tensor
 from mmdet3d.models.utils import clip_sigmoid, draw_heatmap_gaussian, gaussian_radius
 from mmdet3d.registry import MODELS
+from mmdet3d.structures import Det3DDataSample
 from mmdet.models.utils import multi_apply
 from mmengine.model import BaseModule
 from mmengine.structures import InstanceData
-from mmdet3d.structures import Det3DDataSample
+from torch import Tensor
 
 from projects.CenterPoint.models.dense_heads.centerpoint_head import CenterHead
 
@@ -128,7 +128,7 @@ class BEVFusionCenterHead(CenterHead):
 
             preds_dicts[task_id]["heatmap_top_scores"] = top_proposals
             preds_dicts[task_id]["heatmap_top_indices"] = top_proposals_index
-            preds_dicts[task_id]["heatmap_top_indices_classes"] = top_proposals_class
+            preds_dicts[task_id]["heatmap_top_classes"] = top_proposals_class
 
         return preds_dicts
 
@@ -269,7 +269,7 @@ class BEVFusionCenterHead(CenterHead):
             # We get only the first task's topk for simplicity
             proposals["heatmap_top_indices"] = preds_dicts[0][0]["heatmap_top_indices"]
             proposals["heatmap_top_scores"] = preds_dicts[0][0]["heatmap_top_scores"]
-            proposals["heatmap_top_indices_classes"] = preds_dicts[0][0]["heatmap_top_indices_classes"]
+            proposals["heatmap_top_classes"] = preds_dicts[0][0]["heatmap_top_classes"]
 
         return proposals
 

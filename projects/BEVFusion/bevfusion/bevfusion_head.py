@@ -293,8 +293,8 @@ class BEVFusionHead(nn.Module):
         # Merge proposals with camera branch if it's enable
         if camera_topk_indices is not None and camera_topk_classes is not None and camera_topk_scores is not None:
             camera_top_proposals_nums = torch.zeros_like(camera_topk_indices)
+            merge_top_proposals_num = torch.cat([fusion_top_proposals_nums, camera_top_proposals_nums], dim=-1)
 
-            merge_top_proposals_num = torch.cat([fusion_top_proposals_nums + camera_top_proposals_nums], dim=-1)
             merge_topk_indices = torch.cat([fusion_top_proposals_index, camera_topk_indices], dim=-1)
             merge_topk_scores = torch.cat([fusion_top_proposals, camera_topk_scores], dim=-1)
             merge_topk_class = torch.cat([fusion_top_proposals_class, camera_topk_classes], dim=-1)
@@ -430,9 +430,9 @@ class BEVFusionHead(nn.Module):
             self.forward_single,
             feats,
             [metas],
-            camera_topk_indices=camera_topk_indices,
-            camera_topk_classes=camera_topk_classes,
-            camera_topk_scores=camera_topk_scores,
+            camera_topk_indices,
+            camera_topk_classes,
+            camera_topk_scores,
         )
         assert len(res) == 1, "only support one level features."
         return res

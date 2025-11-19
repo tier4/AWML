@@ -415,6 +415,7 @@ class BEVFusion(Base3DDetector):
         if self.with_bbox_head:
 
             camera_topk_indices = img_aux_top_proposals.get("heatmap_top_indices", None)
+            print(camera_topk_indices)
             camera_topk_scores = img_aux_top_proposals.get("heatmap_top_scores", None)
             camera_topk_classes = img_aux_top_proposals.get("heatmap_top_classes", None)
             bbox_loss = self.bbox_head.loss(
