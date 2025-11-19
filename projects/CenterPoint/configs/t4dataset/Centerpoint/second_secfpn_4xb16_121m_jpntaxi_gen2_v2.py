@@ -1,6 +1,6 @@
 _base_ = [
     "../../../../../autoware_ml/configs/detection3d/default_runtime.py",
-    "../../../../../autoware_ml/configs/detection3d/dataset/t4dataset/jpntaxi_gen2_base.py",
+    "../../../../../autoware_ml/configs/detection3d/dataset/t4dataset/jpntaxi_gen2_v2.py",
     "../../default/second_secfpn_base.py",
 ]
 custom_imports = dict(imports=["projects.CenterPoint.models"], allow_failed_imports=False)
@@ -48,7 +48,7 @@ test_batch_size = 2
 num_workers = 32
 val_interval = 1
 max_epochs = 30
-work_dir = "work_dirs/centerpoint_2_3_2/" + _base_.dataset_type + "/second_secfpn_4xb16_121m_jpntaxi_gen2_base/"
+work_dir = "work_dirs/centerpoint_2_3_3/" + _base_.dataset_type + "/second_secfpn_4xb16_121m_jpntaxi_gen2_v2/"
 
 train_pipeline = [
     dict(
@@ -303,7 +303,7 @@ model = dict(
 
 randomness = dict(seed=0, diff_rank_seed=False, deterministic=True)
 
-lr = 3e-4
+lr = 1e-4
 param_scheduler = [
     # learning rate scheduler
     # During the first (max_epochs * 0.3) epochs, learning rate increases from 0 to lr * 10
@@ -369,7 +369,7 @@ optim_wrapper = dict(
     # Update it accordingly
     loss_scale={
         "init_scale": 2.0**12,  # intial_scale: 256
-        "growth_interval": 600,
+        "growth_interval": 300,
     },
 )
 

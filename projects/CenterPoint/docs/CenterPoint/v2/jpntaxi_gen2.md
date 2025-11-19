@@ -10,8 +10,9 @@
 - Detailed comparison
   - [Internal Link](https://docs.google.com/spreadsheets/d/1jkadazpbA2BUYEUdVV8Rpe54-snH1cbdJbbHsuK04-U/edit?usp=sharing)
 - Performance summary
-  - Datasets (frames: 7,727):
-			- jpntaxi_gen2: db_jpntaxigen2_v1 + db_jpntaxigen2_v2 (1,709 frames)
+  - Datasets (frames: 1,709):
+			- jpntaxi_gen2_v1: db_jpntaxigen2_v1 (1,409 frames)
+			- jpntaxi_gen2_v2: db_jpntaxigen2_v2 (230 frames)
   - Class mAP for center distance (0.5m, 1.0m, 2.0m, 4.0m):
 
 | eval range: 120m         | mAP     | car <br> (9,710)     | truck <br> (2,577) | bus <br> (2,569) | bicycle <br> (466) | pedestrian <br> (10,518) |

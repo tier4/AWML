@@ -28,7 +28,7 @@ backend_args = None
 # backend_args = dict(backend="disk")
 point_load_dim = 5  # x, y, z, intensity, ring_id
 point_use_dim = 3  # x, y, z
-lidar_sweep_dims = [0, 1, 2, 3, 4]
+lidar_sweep_dims = [0, 1, 2, 4]
 
 # eval parameter
 eval_class_range = {
@@ -48,7 +48,11 @@ test_batch_size = 2
 num_workers = 32
 val_interval = 1
 max_epochs = 30
-work_dir = "work_dirs/centerpoint_2_3_2/" + _base_.dataset_type + "/second_secfpn_4xb16_121m_jpntaxi_gen2_base/"
+work_dir = (
+    "work_dirs/centerpoint_2_3_3/"
+    + _base_.dataset_type
+    + "/second_secfpn_4xb16_121m_jpntaxi_gen2_base_no_intensity_no_z/"
+)
 
 train_pipeline = [
     dict(
@@ -230,8 +234,8 @@ model = dict(
         ),
     ),
     pts_voxel_encoder=dict(
-        type="PillarFeatureNet",
-        in_channels=5,
+        type="BackwardPillarFeatureNet",
+        in_channels=4,
         feat_channels=[32, 32],
         with_distance=False,
         with_cluster_center=True,

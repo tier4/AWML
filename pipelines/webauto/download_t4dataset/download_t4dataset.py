@@ -230,6 +230,8 @@ def download_t4dataset(
         print(f"t4dataset already exists at {to_directory_with_version_id}")
         return
 
+    print(temp_dir)
+
     pull_t4dataset(
         webauto_path,
         project_id,
