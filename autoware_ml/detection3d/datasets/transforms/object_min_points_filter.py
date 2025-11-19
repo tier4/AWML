@@ -64,7 +64,6 @@ class ObjectRangeMinPointsFilter(BaseTransform):
         assert isinstance(min_num_points, int)
         self.range_radius = range_radius
         self.min_num_points = min_num_points
-        # self.remove_points = remove_points
 
     def transform(self, input_dict: dict) -> dict:
         """Call function to filter objects the number of points in them.
@@ -91,7 +90,6 @@ class ObjectRangeMinPointsFilter(BaseTransform):
         
         # Out of range gt masks are all valid
         out_of_range_gt_masks = ~bev_radius_mask
-
 
         points = input_dict["points"]
         # TODO(kminoda): There is a scary comment in the original code:
