@@ -6,7 +6,7 @@ from typing import List, Optional, Tuple
 import numpy as np
 import torch
 import torch.nn.functional as F
-from mmcv.cnn import ConvModule, build_conv_layer
+from mmcv.cnn import ConvModule, build_conv_layer, kaiming_init
 from mmdet3d.models import circle_nms, draw_heatmap_gaussian, gaussian_radius
 from mmdet3d.models.dense_heads.centerpoint_head import SeparateHead
 from mmdet3d.models.layers import nms_bev
@@ -134,9 +134,9 @@ class BEVFusionHead(nn.Module):
         self.class_encoding = nn.Conv1d(self.num_classes, hidden_channel, 1)
 
         # transformer decoder layers for object query with LiDAR feature
-        self.decoder = nn.ModuleList()
-        for i in range(self.num_decoder_layers):
-            self.decoder.append(MODELS.build(decoder_layer))
+        # self.decoder = nn.ModuleList()
+        # for i in range(self.num_decoder_layers):
+        #     self.decoder.append(MODELS.build(decoder_layer))
 
         # Prediction Head
         self.prediction_heads = nn.ModuleList()
@@ -249,20 +249,20 @@ class BEVFusionHead(nn.Module):
             list[dict]: Output results for tasks.
         """
         batch_size = inputs.shape[0]
-        fusion_feat = self.shared_conv(inputs)
+        lidar_bev_feats = self.shared_conv(inputs)
 
         #################################
         # image to BEV
         #################################
-        fusion_feat_flatten = fusion_feat.view(batch_size, fusion_feat.shape[1], -1)  # [BS, C, H*W]
-        bev_pos = self.bev_pos.repeat(batch_size, 1, 1).to(fusion_feat.device)
+        lidar_bev_feat_flatten = lidar_bev_feats.view(batch_size, lidar_bev_feats.shape[1], -1)  # [BS, C, H*W]
+        bev_pos = self.bev_pos.repeat(batch_size, 1, 1).to(lidar_bev_feats.device)
 
         #################################
         # query initialization
         #################################
         with torch.cuda.amp.autocast(enabled=False):
             # with torch.autocast('cuda', enabled=False):
-            dense_fuse_feats = self.dense_heatmap_fuse(torch.cat([fusion_feat, img_bev_feats], dim=1))
+            dense_fuse_feats = self.dense_heatmap_fuse(torch.cat([lidar_bev_feats, img_bev_feats], dim=1))
             dense_heatmap = self.heatmap_head(dense_fuse_feats.float())
 
         heatmap = dense_heatmap.detach().sigmoid()
@@ -298,8 +298,8 @@ class BEVFusionHead(nn.Module):
         top_proposals = heatmap.view(batch_size, -1).argsort(dim=-1, descending=True)[..., : self.num_proposals]
         top_proposals_class = top_proposals // heatmap.shape[-1]
         top_proposals_index = top_proposals % heatmap.shape[-1]
-        query_feat = fusion_feat_flatten.gather(
-            index=top_proposals_index[:, None, :].expand(-1, fusion_feat_flatten.shape[1], -1),
+        lidar_query_feats = lidar_bev_feat_flatten.gather(
+            index=top_proposals_index[:, None, :].expand(-1, lidar_bev_feat_flatten.shape[1], -1),
             dim=-1,
         )
         self.query_labels = top_proposals_class
@@ -307,69 +307,104 @@ class BEVFusionHead(nn.Module):
         # add category embedding
         one_hot = F.one_hot(top_proposals_class, num_classes=self.num_classes).permute(0, 2, 1)
         query_cat_encoding = self.class_encoding(one_hot.float())
-        query_feat += query_cat_encoding
+        lidar_query_feats += query_cat_encoding
 
         query_pos = bev_pos.gather(
             index=top_proposals_index[:, None, :].permute(0, 2, 1).expand(-1, -1, bev_pos.shape[-1]),
             dim=1,
         )
-        #################################
-        # transformer decoder layer (Fusion feature as K,V) except heatmap
-        #################################
-        ret_dicts = []
-        for i in range(self.num_decoder_layers):
-            # Transformer Decoder Layer
-            # :param query: B C Pq    :param query_pos: B Pq 3/6
-            query_feat = self.decoder[i](query_feat, key=fusion_feat_flatten, query_pos=query_pos, key_pos=bev_pos)
 
-            # Prediction
-            res_layer = dict()
-            for task in self.regression_head_orders:
-                res_layer[task] = self.prediction_heads[i].__getattr__(query_feat)
-            res_layer["center"] = res_layer["center"] + query_pos.permute(0, 2, 1)
-            ret_dicts.append(res_layer)
-
-            # for next level positional embedding
-            query_pos = res_layer["center"].detach().clone().permute(0, 2, 1)
+        # Prediction
+        res = dict()
+        for task in self.regression_head_orders:
+            res[task] = self.prediction_heads[0].__getattr__(task)(lidar_query_feats)
+        res["center"] += query_pos.permute(0, 2, 1)
 
         # use the top proposals from dense heatmap to index the query heatmap scores from img_bev_feats
-        img_bev_feats_flatten = fusion_feat.view(batch_size, img_bev_feats.shape[1], -1)  # [BS, C, H*W]
+        img_bev_feats_flatten = img_bev_feats.view(batch_size, img_bev_feats.shape[1], -1)  # [BS, C, H*W]
         img_bev_feat_index = top_proposals_index.expand(-1, img_bev_feats_flatten.shape[1], -1)
         img_bev_query_feats = img_bev_feats_flatten.gather(index=img_bev_feat_index, dim=-1)
-        query_heatmap_feats = torch,cat(
-            []
-        )
-        ret_dicts[0]["query_heatmap_score"] = heatmap.gather(
+
+        query_heatmap_feats = torch.cat([lidar_query_feats, img_bev_query_feats], dim=1)
+        query_heatmap_feats = self.fusion_layer(query_heatmap_feats)
+        res["heatmap"] = self.prediction_heads[0].__getattr__("heatmap")(query_heatmap_feats)
+
+        res["query_heatmap_score"] = heatmap.gather(
             index=top_proposals_index[:, None, :].expand(-1, self.num_classes, -1),
             dim=-1,
         )  # [bs, num_classes, num_proposals]
-        ret_dicts[0]["dense_heatmap"] = dense_heatmap
+        res["dense_heatmap"] = dense_heatmap
 
-        if self.auxiliary is False:
-            # only return the results of last decoder layer
-            return [ret_dicts[-1]]
+        return [res]
+        # if self.auxiliary is False:
+        #     # only return the results of last decoder layer
+        #     return [ret_dicts[-1]]
 
-        # NOTE(knzo25): we need the query_labels for a good onnx export
-        if not self.training:
-            ret_dicts[0]["query_labels"] = self.query_labels
+        # # NOTE(knzo25): we need the query_labels for a good onnx export
+        # if not self.training:
+        #     ret_dicts[0]["query_labels"] = self.query_labels
 
-        # return all the layer's results for auxiliary superivison
-        new_res = {}
-        for key in ret_dicts[0].keys():
-            if key not in ["dense_heatmap", "dense_heatmap_old", "query_heatmap_score", "query_labels"]:
-                new_res[key] = torch.cat([ret_dict[key] for ret_dict in ret_dicts], dim=-1)
-            else:
-                new_res[key] = ret_dicts[0][key]
+        # # return all the layer's results for auxiliary superivison
+        # new_res = {}
+        # for key in ret_dicts[0].keys():
+        #     if key not in ["dense_heatmap", "dense_heatmap_old", "query_heatmap_score", "query_labels"]:
+        #         new_res[key] = torch.cat([ret_dict[key] for ret_dict in ret_dicts], dim=-1)
+        #     else:
+        #         new_res[key] = ret_dicts[0][key]
 
-        return [new_res]
+        # return [new_res]
+
+        # for i in range(self.num_decoder_layers):
+
+        #################################
+        # transformer decoder layer (Fusion feature as K,V) except heatmap
+        #################################
+        # query_feat = input_query_feat
+        # ret_dicts = []
+        # for i in range(self.num_decoder_layers):
+        #     # Transformer Decoder Layer
+        #     # :param query: B C Pq    :param query_pos: B Pq 3/6
+        #     query_feat = self.decoder[i](query_feat, key=fusion_feat_flatten, query_pos=query_pos, key_pos=bev_pos)
+
+        #     # Prediction
+        #     res_layer = dict()
+        #     for task in self.regression_head_orders:
+        #         res_layer[task] = self.prediction_heads[i].__getattr__(query_feat)
+        #     res_layer["center"] = res_layer["center"] + query_pos.permute(0, 2, 1)
+        #     ret_dicts.append(res_layer)
+
+        #     # for next level positional embedding
+        #     query_pos = res_layer["center"].detach().clone().permute(0, 2, 1)
+
+        # ret_dicts[0]["query_heatmap_score"] = heatmap.gather(
+        #     index=top_proposals_index[:, None, :].expand(-1, self.num_classes, -1),
+        #     dim=-1,
+        # )  # [bs, num_classes, num_proposals]
+        # ret_dicts[0]["dense_heatmap"] = dense_heatmap
+
+        # if self.auxiliary is False:
+        #     # only return the results of last decoder layer
+        #     return [ret_dicts[-1]]
+
+        # # NOTE(knzo25): we need the query_labels for a good onnx export
+        # if not self.training:
+        #     ret_dicts[0]["query_labels"] = self.query_labels
+
+        # # return all the layer's results for auxiliary superivison
+        # new_res = {}
+        # for key in ret_dicts[0].keys():
+        #     if key not in ["dense_heatmap", "dense_heatmap_old", "query_heatmap_score", "query_labels"]:
+        #         new_res[key] = torch.cat([ret_dict[key] for ret_dict in ret_dicts], dim=-1)
+        #     else:
+        #         new_res[key] = ret_dicts[0][key]
+
+        # return [new_res]
 
     def forward(
         self,
         feats,
         metas,
-        camera_topk_indices: Optional[torch.Tensor] = None,
-        camera_topk_scores: Optional[torch.Tensor] = None,
-        camera_topk_classes: Optional[torch.Tensor] = None,
+        img_bev_feats,
     ):
         """Forward pass.
 
@@ -383,26 +418,10 @@ class BEVFusionHead(nn.Module):
         if isinstance(feats, torch.Tensor):
             feats = [feats]
 
-        if camera_topk_indices is not None:
-            if isinstance(camera_topk_indices, torch.Tensor):
-                camera_topk_indices = [camera_topk_indices]
+        if isinstance(img_bev_feats, torch.Tensor):
+            img_bev_feats = [img_bev_feats]
 
-        if camera_topk_classes is not None:
-            if isinstance(camera_topk_classes, torch.Tensor):
-                camera_topk_classes = [camera_topk_classes]
-
-        if camera_topk_scores is not None:
-            if isinstance(camera_topk_scores, torch.Tensor):
-                camera_topk_scores = [camera_topk_scores]
-
-        res = multi_apply(
-            self.forward_single,
-            feats,
-            [metas],
-            camera_topk_indices,
-            camera_topk_classes,
-            camera_topk_scores,
-        )
+        res = multi_apply(self.forward_single, feats, [metas], img_bev_feats)
         assert len(res) == 1, "only support one level features."
         return res
 
@@ -410,17 +429,9 @@ class BEVFusionHead(nn.Module):
         self,
         batch_feats,
         batch_input_metas,
-        camera_topk_indices: Optional[torch.Tensor] = None,
-        camera_topk_scores: Optional[torch.Tensor] = None,
-        camera_topk_classes: Optional[torch.Tensor] = None,
+        batch_img_bev_feats,
     ):
-        preds_dicts = self(
-            batch_feats,
-            batch_input_metas,
-            camera_topk_indices=camera_topk_indices,
-            camera_topk_scores=camera_topk_scores,
-            camera_topk_classes=camera_topk_classes,
-        )
+        preds_dicts = self(batch_feats, batch_input_metas, batch_img_bev_feats)
         res = self.predict_by_feat(preds_dicts, batch_input_metas)
         return res
 
@@ -761,9 +772,7 @@ class BEVFusionHead(nn.Module):
         self,
         batch_feats,
         batch_data_samples,
-        camera_topk_indices: Optional[torch.Tensor] = None,
-        camera_topk_scores: Optional[torch.Tensor] = None,
-        camera_topk_classes: Optional[torch.Tensor] = None,
+        batch_img_bev_feats,
     ):
         """Loss function for CenterHead.
 
@@ -779,21 +788,9 @@ class BEVFusionHead(nn.Module):
         for data_sample in batch_data_samples:
             batch_input_metas.append(data_sample.metainfo)
             batch_gt_instances_3d.append(data_sample.gt_instances_3d)
-        preds_dicts = self(
-            batch_feats,
-            batch_input_metas,
-            camera_topk_indices=camera_topk_indices,
-            camera_topk_scores=camera_topk_scores,
-            camera_topk_classes=camera_topk_classes,
-        )  # noqa: E501
+
+        preds_dicts = self(batch_feats, batch_input_metas, batch_img_bev_feats)  # noqa: E501
         loss = self.loss_by_feat(preds_dicts, batch_gt_instances_3d)
-
-        num_fusion_proposals = preds_dicts.get("num_fusion_proposals", None)
-        loss["num_fusion_proposals"] = num_fusion_proposals
-
-        num_camera_proposals = preds_dicts.get("num_camera_proposals", None)
-        loss["num_camera_proposals"] = num_camera_proposals
-
         return loss
 
     def loss_by_feat(self, preds_dicts: Tuple[List[dict]], batch_gt_instances_3d: List[InstanceData], *args, **kwargs):

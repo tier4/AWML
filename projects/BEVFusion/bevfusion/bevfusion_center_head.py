@@ -18,12 +18,9 @@ class BEVFusionCenterHead(CenterHead):
 
     def __init__(
         self,
-        dense_heatmap_pooling_classes: List[str] = None,
         freeze_shared_conv: bool = False,
         freeze_task_heads: bool = False,
-        nms_kernel_size: int = 0,
         loss_prefix: str = "bevfusion_img",
-        num_proposals: int = 100,
         **kwargs,
     ):
         super(BEVFusionCenterHead, self).__init__(
@@ -32,9 +29,6 @@ class BEVFusionCenterHead(CenterHead):
             loss_prefix=loss_prefix,
             **kwargs,
         )
-        self.num_proposals = num_proposals
-
-        self.dense_heatmap_pooling_classes = dense_heatmap_pooling_classes
 
     def forward_single(self, x: Tensor) -> dict:
         """Forward function for CenterPoint.
