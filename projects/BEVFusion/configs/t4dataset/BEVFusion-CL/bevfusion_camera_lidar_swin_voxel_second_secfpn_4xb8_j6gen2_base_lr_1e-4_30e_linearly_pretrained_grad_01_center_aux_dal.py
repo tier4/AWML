@@ -117,8 +117,8 @@ model = dict(
         downsample=2,
         # lidar_depth_image_last_stride=4
     ),
-    fusion_layer=dict(type="ConvFuser", in_channels=[128, 80], out_channels=128),
     bbox_head=dict(
+        fusion_layer=dict(type="ConvFuser", in_channels=[128, 80], out_channels=128),
         dense_heatmap_fusion=dict(
             type="CustomResNet",
             numC_input=128 + 80,

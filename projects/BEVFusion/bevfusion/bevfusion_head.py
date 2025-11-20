@@ -24,19 +24,44 @@ def clip_sigmoid(x, eps=1e-4):
 
 
 @MODELS.register_module()
-class ConvFuser(nn.Sequential):
+class ConvFuser(nn.modules):
 
-    def __init__(self, in_channels: int, out_channels: int) -> None:
-        self.in_channels = in_channels
+    def __init__(self, in_channels: int, out_channels: int, layers: int = 2) -> None:
+        super().__init__()
+
         self.out_channels = out_channels
-        super().__init__(
-            nn.Conv2d(sum(in_channels), out_channels, 3, padding=1, bias=False),
-            nn.BatchNorm2d(out_channels),
-            nn.ReLU(True),
+        self.in_channels = sum(in_channels)
+        conv_modules = []
+        for i in range(layers - 1):
+            conv_modules.append(
+                nn.Conv1d(
+                    in_channels=self.in_channels,
+                    out_channels=self.in_channels,
+                    kernel_size=1,
+                    padding=0,
+                    bias=False,
+                )
+            )
+            conv_modules.append(nn.BatchNorm1d(self.in_channels))
+            conv_modules.append(nn.ReLU(True))
+
+        conv_modules.append(
+            nn.Conv1d(
+                in_channels=self.in_channels,
+                out_channels=self.out_channels,
+                kernel_size=1,
+                padding=0,
+                bias=False,
+            )
         )
+        conv_modules.append(nn.BatchNorm1d(self.out_channels))
+        conv_modules.append(nn.ReLU(True))
+
+        self.net = nn.Sequential(*conv_modules)
 
     def forward(self, inputs: List[torch.Tensor]) -> torch.Tensor:
-        return super().forward(torch.cat(inputs, dim=1))
+        x = torch.cat(inputs, dim=1)
+        return self.net(x)
 
 
 @MODELS.register_module()
