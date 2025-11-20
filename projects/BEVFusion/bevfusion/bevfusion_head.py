@@ -65,13 +65,29 @@ class ConvFuser(nn.modules):
 
 
 @MODELS.register_module()
+class ConvFuser2D(nn.Sequential):
+
+    def __init__(self, in_channels: int, out_channels: int) -> None:
+        self.in_channels = in_channels
+        self.out_channels = out_channels
+        super().__init__(
+            nn.Conv2d(sum(in_channels), out_channels, 3, padding=1, bias=False),
+            nn.BatchNorm2d(out_channels),
+            nn.ReLU(True),
+        )
+
+    def forward(self, inputs: List[torch.Tensor]) -> torch.Tensor:
+        return super().forward(inputs)
+
+
+@MODELS.register_module()
 class BEVFusionHead(nn.Module):
 
     def __init__(
         self,
         class_names: List[str],
-        dense_heatmap_fuse: dict,
-        img_bev_feats: int = 80,
+        # dense_heatmap_fuse: dict,
+        img_bev_feat_channels: int = 80,
         fusion_layer: Optional[dict] = None,
         dense_heatmap_pooling_classes: Optional[List[str]] = None,
         num_proposals=128,
@@ -131,7 +147,7 @@ class BEVFusionHead(nn.Module):
             padding=1,
             bias=bias,
         )
-        self.dense_heatmap_fuse = MODELS.build(dense_heatmap_fuse)
+        # self.dense_heatmap_fuse = MODELS.build(dense_heatmap_fuse)
 
         layers = []
         layers.append(
@@ -159,9 +175,9 @@ class BEVFusionHead(nn.Module):
         self.class_encoding = nn.Conv1d(self.num_classes, hidden_channel, 1)
 
         # transformer decoder layers for object query with LiDAR feature
-        # self.decoder = nn.ModuleList()
-        # for i in range(self.num_decoder_layers):
-        #     self.decoder.append(MODELS.build(decoder_layer))
+        self.decoder = nn.ModuleList()
+        for i in range(self.num_decoder_layers):
+            self.decoder.append(MODELS.build(decoder_layer))
 
         # Prediction Head
         self.prediction_heads = nn.ModuleList()
@@ -287,7 +303,7 @@ class BEVFusionHead(nn.Module):
         #################################
         with torch.cuda.amp.autocast(enabled=False):
             # with torch.autocast('cuda', enabled=False):
-            dense_fuse_feats = self.dense_heatmap_fuse(torch.cat([lidar_bev_feats, img_bev_feats], dim=1))
+            dense_fuse_feats = self.fusion_layer(torch.cat([lidar_bev_feats, img_bev_feats], dim=1))
             dense_heatmap = self.heatmap_head(dense_fuse_feats.float())
 
         heatmap = dense_heatmap.detach().sigmoid()
@@ -333,34 +349,93 @@ class BEVFusionHead(nn.Module):
         one_hot = F.one_hot(top_proposals_class, num_classes=self.num_classes).permute(0, 2, 1)
         query_cat_encoding = self.class_encoding(one_hot.float())
         lidar_query_feats += query_cat_encoding
-
         query_pos = bev_pos.gather(
             index=top_proposals_index[:, None, :].permute(0, 2, 1).expand(-1, -1, bev_pos.shape[-1]),
             dim=1,
         )
 
-        # Prediction
-        res = dict()
-        for task in self.regression_head_orders:
-            res[task] = self.prediction_heads[0].__getattr__(task)(lidar_query_feats)
-        res["center"] += query_pos.permute(0, 2, 1)
+        # dense heatmap fusion query
+        dense_fuse_feats_flatten = dense_fuse_feats.view(batch_size, dense_fuse_feats.shape[1], -1)  # [BS, C, H*W]
+        dense_fuse_feats_index = top_proposals_index.expand(-1, dense_fuse_feats_flatten.shape[1], -1)
+        dense_fuse_query_feats = dense_fuse_feats_flatten.gather(index=dense_fuse_feats_index, dim=-1)
+        dense_fuse_query_feats += query_cat_encoding
 
-        # use the top proposals from dense heatmap to index the query heatmap scores from img_bev_feats
-        img_bev_feats_flatten = img_bev_feats.view(batch_size, img_bev_feats.shape[1], -1)  # [BS, C, H*W]
-        img_bev_feat_index = top_proposals_index.expand(-1, img_bev_feats_flatten.shape[1], -1)
-        img_bev_query_feats = img_bev_feats_flatten.gather(index=img_bev_feat_index, dim=-1)
+        query_feats = torch.cat([lidar_query_feats, dense_fuse_query_feats], dim=0)
+        query_keys = torch.cat([lidar_bev_feat_flatten, dense_fuse_feats_flatten], dim=0)
+        bev_pos_cat = torch.cat([bev_pos, bev_pos], dim=0)
 
-        query_heatmap_feats = torch.cat([lidar_query_feats, img_bev_query_feats], dim=1)
-        query_heatmap_feats = self.fusion_layer(query_heatmap_feats)
-        res["heatmap"] = self.prediction_heads[0].__getattr__("heatmap")(query_heatmap_feats)
+        #################################
+        # transformer decoder layer (Fusion feature as K,V)
+        #################################
+        ret_dicts = []
+        for i in range(self.num_decoder_layers):
+            query_pos_cat = torch.cat([query_pos, query_pos], dim=0)
 
-        res["query_heatmap_score"] = heatmap.gather(
+            # Transformer Decoder Layer
+            # :param query: B C Pq    :param query_pos: B Pq 3/6
+            query_feats = self.decoder[i](query_feats, key=query_keys, query_pos=query_pos_cat, key_pos=bev_pos_cat)
+
+            # Split to two features
+            lidar_query_feats, dense_fuse_query_feats = torch.chunk(query_feats, 2, dim=0)
+
+            # Prediction
+            for task in self.regression_head_orders:
+                res_layer = self.prediction_heads[i].__getattr__(task)(lidar_query_feats)
+
+            res_layer = self.prediction_heads[i].__getattr__("heatmap")(dense_fuse_query_feats)
+
+            res_layer["center"] = res_layer["center"] + query_pos.permute(0, 2, 1)
+            ret_dicts.append(res_layer)
+
+            # for next level positional embedding
+            query_pos = res_layer["center"].detach().clone().permute(0, 2, 1)
+
+        ret_dicts[0]["query_heatmap_score"] = heatmap.gather(
             index=top_proposals_index[:, None, :].expand(-1, self.num_classes, -1),
             dim=-1,
         )  # [bs, num_classes, num_proposals]
-        res["dense_heatmap"] = dense_heatmap
+        ret_dicts[0]["dense_heatmap"] = dense_heatmap
 
-        return [res]
+        if self.auxiliary is False:
+            # only return the results of last decoder layer
+            return [ret_dicts[-1]]
+
+        # NOTE(knzo25): we need the query_labels for a good onnx export
+        if not self.training:
+            ret_dicts[0]["query_labels"] = self.query_labels
+
+        # return all the layer's results for auxiliary superivison
+        new_res = {}
+        for key in ret_dicts[0].keys():
+            if key not in ["dense_heatmap", "dense_heatmap_old", "query_heatmap_score", "query_labels"]:
+                new_res[key] = torch.cat([ret_dict[key] for ret_dict in ret_dicts], dim=-1)
+            else:
+                new_res[key] = ret_dicts[0][key]
+
+        return [new_res]
+
+        # Prediction
+        # res = dict()
+        # for task in self.regression_head_orders:
+        #     res[task] = self.prediction_heads[0].__getattr__(task)(lidar_query_feats)
+        # res["center"] += query_pos.permute(0, 2, 1)
+
+        # # use the top proposals from dense heatmap to index the query heatmap scores from img_bev_feats
+        # img_bev_feats_flatten = img_bev_feats.view(batch_size, img_bev_feats.shape[1], -1)  # [BS, C, H*W]
+        # img_bev_feat_index = top_proposals_index.expand(-1, img_bev_feats_flatten.shape[1], -1)
+        # img_bev_query_feats = img_bev_feats_flatten.gather(index=img_bev_feat_index, dim=-1)
+
+        # query_heatmap_feats = torch.cat([lidar_query_feats, img_bev_query_feats], dim=1)
+        # query_heatmap_feats = self.fusion_layer(query_heatmap_feats)
+        # res["heatmap"] = self.prediction_heads[0].__getattr__("heatmap")(query_heatmap_feats)
+
+        # res["query_heatmap_score"] = heatmap.gather(
+        #     index=top_proposals_index[:, None, :].expand(-1, self.num_classes, -1),
+        #     dim=-1,
+        # )  # [bs, num_classes, num_proposals]
+        # res["dense_heatmap"] = dense_heatmap
+
+        # return [res]
         # if self.auxiliary is False:
         #     # only return the results of last decoder layer
         #     return [ret_dicts[-1]]

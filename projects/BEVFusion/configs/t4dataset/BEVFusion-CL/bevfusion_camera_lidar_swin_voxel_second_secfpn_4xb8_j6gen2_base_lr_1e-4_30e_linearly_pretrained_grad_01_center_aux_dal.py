@@ -118,23 +118,23 @@ model = dict(
         # lidar_depth_image_last_stride=4
     ),
     bbox_head=dict(
-        fusion_layer=dict(type="ConvFuser", in_channels=[128, 80], out_channels=128),
-        dense_heatmap_fusion=dict(
-            type="CustomResNet",
-            numC_input=128 + 80,
-            num_layer=[
-                3,
-            ],
-            num_channels=[
-                128,
-            ],
-            stride=[
-                1,
-            ],
-            backbone_output_ids=[
-                0,
-            ],
-        ),
+        fusion_layer=dict(type="ConvFuser2D", in_channels=[128, 80], out_channels=128),
+        # dense_heatmap_fusion=dict(
+        #     type="CustomResNet",
+        #     numC_input=128 + 80,
+        #     num_layer=[
+        #         3,
+        #     ],
+        #     num_channels=[
+        #         128,
+        #     ],
+        #     stride=[
+        #         1,
+        #     ],
+        #     backbone_output_ids=[
+        #         0,
+        #     ],
+        # ),
         class_names=_base_.class_names,  # Use class names to identify the correct class indices
         train_cfg=dict(
             point_cloud_range=point_cloud_range,
