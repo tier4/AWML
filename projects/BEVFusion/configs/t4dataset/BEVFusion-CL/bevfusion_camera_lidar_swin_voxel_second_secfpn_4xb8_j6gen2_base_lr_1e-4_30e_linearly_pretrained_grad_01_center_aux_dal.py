@@ -85,11 +85,11 @@ model = dict(
         drop_path_rate=0.2,
         patch_norm=True,
         out_indices=[1, 2, 3],
-        with_cp=False,
+        with_cp=True,
         convert_weights=True,
         init_cfg=dict(
             type="Pretrained",
-            checkpoint="work_dirs/bevfusion/pretrain/swint_nuimages_pretrained.pth",  # noqa: E251  # noqa: E501
+            checkpoint="work_dirs/swin_transformer/swint_nuimages_pretrained.pth",  # noqa: E251  # noqa: E501
         ),
     ),
     img_neck=dict(
@@ -118,7 +118,7 @@ model = dict(
         # lidar_depth_image_last_stride=4
     ),
     bbox_head=dict(
-        fusion_layer=dict(type="ConvFuser2D", in_channels=[128, 80], out_channels=128),
+        fusion_layer=dict(type="ConvFuser", in_channels=[128, 80], out_channels=128),
         # dense_heatmap_fusion=dict(
         #     type="CustomResNet",
         #     numC_input=128 + 80,
@@ -380,7 +380,7 @@ train_dataloader = dict(
         test_mode=False,
         data_prefix=_base_.data_prefix,
         box_type_3d="LiDAR",
-        # filter_cfg=filter_cfg,
+        filter_cfg=filter_cfg,
     ),
 )
 

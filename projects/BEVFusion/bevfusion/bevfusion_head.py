@@ -6,7 +6,8 @@ from typing import List, Optional, Tuple
 import numpy as np
 import torch
 import torch.nn.functional as F
-from mmcv.cnn import ConvModule, build_conv_layer, kaiming_init
+from mmcv.cnn import ConvModule, build_conv_layer
+from mmengine.model import constant_init, kaiming_init
 from mmdet3d.models import circle_nms, draw_heatmap_gaussian, gaussian_radius
 from mmdet3d.models.dense_heads.centerpoint_head import SeparateHead
 from mmdet3d.models.layers import nms_bev
@@ -22,50 +23,8 @@ def clip_sigmoid(x, eps=1e-4):
     y = torch.clamp(x.sigmoid_(), min=eps, max=1 - eps)
     return y
 
-
 @MODELS.register_module()
-class ConvFuser(nn.modules):
-
-    def __init__(self, in_channels: int, out_channels: int, layers: int = 2) -> None:
-        super().__init__()
-
-        self.out_channels = out_channels
-        self.in_channels = sum(in_channels)
-        conv_modules = []
-        for i in range(layers - 1):
-            conv_modules.append(
-                nn.Conv1d(
-                    in_channels=self.in_channels,
-                    out_channels=self.in_channels,
-                    kernel_size=1,
-                    padding=0,
-                    bias=False,
-                )
-            )
-            conv_modules.append(nn.BatchNorm1d(self.in_channels))
-            conv_modules.append(nn.ReLU(True))
-
-        conv_modules.append(
-            nn.Conv1d(
-                in_channels=self.in_channels,
-                out_channels=self.out_channels,
-                kernel_size=1,
-                padding=0,
-                bias=False,
-            )
-        )
-        conv_modules.append(nn.BatchNorm1d(self.out_channels))
-        conv_modules.append(nn.ReLU(True))
-
-        self.net = nn.Sequential(*conv_modules)
-
-    def forward(self, inputs: List[torch.Tensor]) -> torch.Tensor:
-        x = torch.cat(inputs, dim=1)
-        return self.net(x)
-
-
-@MODELS.register_module()
-class ConvFuser2D(nn.Sequential):
+class ConvFuser(nn.Sequential):
 
     def __init__(self, in_channels: int, out_channels: int) -> None:
         self.in_channels = in_channels
@@ -76,6 +35,13 @@ class ConvFuser2D(nn.Sequential):
             nn.ReLU(True),
         )
 
+    def init_weights(self):
+      """
+      """
+      for module in self.modules():
+        if isinstance(module, nn.Conv2d):
+          kaiming_init(nn)
+    
     def forward(self, inputs: List[torch.Tensor]) -> torch.Tensor:
         return super().forward(inputs)
 
@@ -255,6 +221,8 @@ class BEVFusionHead(nn.Module):
                 nn.init.xavier_uniform_(m)
         if hasattr(self, "query"):
             nn.init.xavier_normal_(self.query)
+        
+        self.fusion_layer.init_weights()
         self.init_bn_momentum()
 
     def init_bn_momentum(self):
@@ -356,7 +324,7 @@ class BEVFusionHead(nn.Module):
 
         # dense heatmap fusion query
         dense_fuse_feats_flatten = dense_fuse_feats.view(batch_size, dense_fuse_feats.shape[1], -1)  # [BS, C, H*W]
-        dense_fuse_feats_index = top_proposals_index.expand(-1, dense_fuse_feats_flatten.shape[1], -1)
+        dense_fuse_feats_index = top_proposals_index[:, None, :].expand(-1, dense_fuse_feats_flatten.shape[1], -1)
         dense_fuse_query_feats = dense_fuse_feats_flatten.gather(index=dense_fuse_feats_index, dim=-1)
         dense_fuse_query_feats += query_cat_encoding
 
@@ -370,25 +338,41 @@ class BEVFusionHead(nn.Module):
         ret_dicts = []
         for i in range(self.num_decoder_layers):
             query_pos_cat = torch.cat([query_pos, query_pos], dim=0)
-
-            # Transformer Decoder Layer
-            # :param query: B C Pq    :param query_pos: B Pq 3/6
             query_feats = self.decoder[i](query_feats, key=query_keys, query_pos=query_pos_cat, key_pos=bev_pos_cat)
-
+            
             # Split to two features
             lidar_query_feats, dense_fuse_query_feats = torch.chunk(query_feats, 2, dim=0)
-
-            # Prediction
+            
+            res_layer = dict()
             for task in self.regression_head_orders:
-                res_layer = self.prediction_heads[i].__getattr__(task)(lidar_query_feats)
-
-            res_layer = self.prediction_heads[i].__getattr__("heatmap")(dense_fuse_query_feats)
+                res_layer[task] = self.prediction_heads[i].__getattr__(task)(lidar_query_feats)
+            
+            res_layer["heatmap"] = self.prediction_heads[i].__getattr__("heatmap")(dense_fuse_query_feats)
 
             res_layer["center"] = res_layer["center"] + query_pos.permute(0, 2, 1)
             ret_dicts.append(res_layer)
 
             # for next level positional embedding
             query_pos = res_layer["center"].detach().clone().permute(0, 2, 1)
+
+
+            # Transformer Decoder Layer
+            # :param query: B C Pq    :param query_pos: B Pq 3/6
+            # lidar_query_feats = self.decoder[i](lidar_query_feats, key=lidar_bev_feat_flatten, query_pos=query_pos, key_pos=bev_pos)
+
+            # Prediction
+            # res_layer = dict()
+            # for task in self.regression_head_orders:
+            #     res_layer[task] = self.prediction_heads[i].__getattr__(task)(lidar_query_feats)
+            
+            # dense_fuse_query_feats = self.decoder[i](dense_fuse_query_feats, key=dense_fuse_feats_flatten, query_pos=query_pos, key_pos=bev_pos)
+            # res_layer["heatmap"] = self.prediction_heads[i].__getattr__("heatmap")(dense_fuse_query_feats)
+
+            # res_layer["center"] = res_layer["center"] + query_pos.permute(0, 2, 1)
+            # ret_dicts.append(res_layer)
+
+            # # for next level positional embedding
+            # query_pos = res_layer["center"].detach().clone().permute(0, 2, 1)
 
         ret_dicts[0]["query_heatmap_score"] = heatmap.gather(
             index=top_proposals_index[:, None, :].expand(-1, self.num_classes, -1),
@@ -503,8 +487,8 @@ class BEVFusionHead(nn.Module):
     def forward(
         self,
         feats,
-        metas,
         img_bev_feats,
+        metas,
     ):
         """Forward pass.
 
@@ -528,10 +512,10 @@ class BEVFusionHead(nn.Module):
     def predict(
         self,
         batch_feats,
-        batch_input_metas,
         batch_img_bev_feats,
+        batch_input_metas,
     ):
-        preds_dicts = self(batch_feats, batch_input_metas, batch_img_bev_feats)
+        preds_dicts = self(batch_feats, batch_img_bev_feats, batch_input_metas)
         res = self.predict_by_feat(preds_dicts, batch_input_metas)
         return res
 
@@ -871,8 +855,8 @@ class BEVFusionHead(nn.Module):
     def loss(
         self,
         batch_feats,
-        batch_data_samples,
         batch_img_bev_feats,
+        batch_data_samples,
     ):
         """Loss function for CenterHead.
 
