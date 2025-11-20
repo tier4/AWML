@@ -18,8 +18,8 @@ dataset_version_list = ["db_j6gen2_v1", "db_j6gen2_v2", "db_j6gen2_v3", "db_j6ge
 
 dataset_test_groups = {
     "db_j6gen2": "t4dataset_j6gen2_infos_test.pkl",
-    "db_largebus": "t4dataset_largebus_infos_test.pkl",
-    "db_gen2_base": "t4dataset_gen2_base_infos_test.pkl",
+    # "db_largebus": "t4dataset_largebus_infos_test.pkl",
+    # "db_gen2_base": "t4dataset_gen2_base_infos_test.pkl",
 }
 
 # dataset format setting
