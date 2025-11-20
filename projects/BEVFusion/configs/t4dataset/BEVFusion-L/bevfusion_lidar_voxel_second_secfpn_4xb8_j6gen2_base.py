@@ -1,6 +1,6 @@
 _base_ = [
     "../default/bevfusion_lidar_voxel_second_secfpn_1xb1_t4base.py",
-    "../../../../../autoware_ml/configs/detection3d/dataset/t4dataset/gen2_base.py",
+    "../../../../../autoware_ml/configs/detection3d/dataset/t4dataset/j6gen2_base.py",
 ]
 
 custom_imports = dict(imports=["projects.BEVFusion.bevfusion"], allow_failed_imports=False)
@@ -9,13 +9,14 @@ custom_imports["imports"] += ["autoware_ml.detection3d.datasets.transforms"]
 
 # user setting
 data_root = "data/t4dataset/"
-info_directory_path = "info/user_name/"
+info_directory_path = "info/kokseang_2_3_fixed/"
 train_gpu_size = 4
 train_batch_size = 8
 test_batch_size = 2
 val_interval = 5
 max_epochs = 30
 backend_args = None
+work_dir = "work_dirs/bevfusion_2_3_full/" + _base_.dataset_type + "/bevfusion_lidar_voxel_second_secfpn_4xb8_j6gen2_base/"
 
 # range setting
 point_cloud_range = [-122.4, -122.4, -3.0, 122.4, 122.4, 5.0]
@@ -101,9 +102,11 @@ train_pipeline = [
     dict(type="LoadAnnotations3D", with_bbox_3d=True, with_label_3d=True, with_attr_label=False),
     dict(
         type="GlobalRotScaleTrans",
-        rot_range=[-1.571, 1.571],
-        scale_ratio_range=[0.8, 1.2],
-        translation_std=[1.0, 1.0, 0.2],
+        scale_ratio_range=[0.9, 1.1],
+        rot_range=[-0.78539816, 0.78539816],
+        # rot_range=[-1.571, 1.571],
+        # scale_ratio_range=[0.8, 1.2],
+        translation_std=[0.5, 0.5, 0.2],
     ),
     dict(type="BEVFusionRandomFlip3D"),
     dict(type="PointsRangeFilter", point_cloud_range=point_cloud_range),
@@ -123,7 +126,9 @@ train_pipeline = [
             "traffic_cone",
         ],
     ),
-    dict(type="ObjectMinPointsFilter", min_num_points=5),
+    # dict(type="ObjectRangeMinPointsFilter", range_radius=[0, 60], min_num_points=5),
+    # dict(type="ObjectRangeMinPointsFilter", range_radius=[60, 90], min_num_points=3),
+    # dict(type="ObjectRangeMinPointsFilter", range_radius=[90, 130], min_num_points=1),
     dict(type="PointShuffle"),
     dict(
         type="Pack3DDetInputs",
@@ -350,4 +355,4 @@ auto_scale_lr = dict(enable=False, base_batch_size=train_gpu_size * train_batch_
 if train_gpu_size > 1:
     sync_bn = "torch"
 
-load_from = "<best_model_path>"
+load_from = "work_dirs/bevfusion_2_3/T4Dataset/bevfusion_lidar_voxel_second_secfpn_4xb16_base/epoch_46.pth"
