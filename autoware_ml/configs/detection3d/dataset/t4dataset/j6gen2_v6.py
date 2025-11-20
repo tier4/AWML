@@ -8,16 +8,16 @@ custom_imports = dict(
 
 # dataset type setting
 dataset_type = "T4Dataset"
-info_train_file_name = "t4dataset_j6gen2_v6_train.pkl"
-info_val_file_name = "t4dataset_j6gen2_v6_val.pkl"
-info_test_file_name = "t4dataset_j6gen2_v6_test.pkl"
+info_train_file_name = "t4dataset_j6gen2_v6_infos_train.pkl"
+info_val_file_name = "t4dataset_j6gen2_v6_infos_val.pkl"
+info_test_file_name = "t4dataset_j6gen2_v6_infos_test.pkl"
 
 # dataset scene setting
 dataset_version_config_root = "autoware_ml/configs/t4dataset/"
 dataset_version_list = ["db_j6gen2_v6"]
 
 dataset_test_groups = {
-    "db_j6gen2_v6": "t4dataset_j6gen2_v6_test.pkl",
+    "db_j6gen2_v6": "t4dataset_j6gen2_v6_infos_test.pkl",
     # "db_largebus": "t4dataset_largebus_infos_test.pkl",
     # "db_gen2_base": "t4dataset_gen2_base_infos_test.pkl",
 }
