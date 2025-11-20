@@ -46,7 +46,7 @@ class FrameObjectSampler:
 
 @DATA_SAMPLERS.register_module()
 class ObjectBEVDistanceSampler(ObjectSampler):
-    """Sampling strategy for low pedestrian category."""
+    """Sampling strategy for neaerer objects."""
 
     def __init__(self, bev_distance_thresholds: Tuple[float, float, float, float]):
         super().__init__()
@@ -62,8 +62,8 @@ class ObjectBEVDistanceSampler(ObjectSampler):
 
 
 @DATA_SAMPLERS.register_module()
-class LowPedestrianObjectSampler(ObjectSampler):
-    """Sampling strategy for low pedestrian category."""
+class NearerLowPedestrianObjectSampler(ObjectSampler):
+    """Sampling strategy for nearer low pedestrian category."""
 
     MAPPING_CATEGORY_NAME = "pedestrian"
     CATEGORY_NAME = "low_pedestrian"
