@@ -8,30 +8,18 @@ custom_imports = dict(
 
 # dataset type setting
 dataset_type = "T4Dataset"
-info_train_file_name = "t4dataset_j6gen2_base_infos_train.pkl"
-info_val_file_name = "t4dataset_j6gen2_base_infos_val.pkl"
-info_test_file_name = "t4dataset_j6gen2_base_infos_test.pkl"
+info_train_file_name = "t4dataset_j6gen2_v7_infos_train.pkl"
+info_val_file_name = "t4dataset_j6gen2_v7_infos_val.pkl"
+info_test_file_name = "t4dataset_j6gen2_v7_infos_test.pkl"
 
 # dataset scene setting
 dataset_version_config_root = "autoware_ml/configs/t4dataset/"
 dataset_version_list = [
-    "db_j6gen2_v1",
-    "db_j6gen2_v2",
-    "db_j6gen2_v3",
-    "db_j6gen2_v4",
-    "db_j6gen2_v5",
-    "db_j6gen2_v6",
     "db_j6gen2_v7",
-    "db_j6gen2_v8",
-    "db_largebus_v1",
-    "db_largebus_v2",
 ]
 
 dataset_test_groups = {
-    "db_j6_gen2_v7": "t4dataset_j6gen2_v7_infos_test.pkl",
-    "db_j6gen2": "t4dataset_j6gen2_infos_test.pkl",
-    "db_largebus": "t4dataset_largebus_infos_test.pkl",
-    "db_j6_gen2_base": "t4dataset_j6gen2_base_infos_test.pkl",
+    "db_j6gen2_v7": "t4dataset_j6gen2_infos_test.pkl",
 }
 
 # dataset format setting
