@@ -21,8 +21,8 @@ In addition to ML model deployment, `AWML` supports active learning framework in
 `AWML` supports following environment.
 
 - All tools are tested by [Docker environment](Dockerfile) on Ubuntu 22.04LTS
-- NVIDIA dependency: CUDA 12.1 + cuDNN 8
-  - Need > 530.xx.xx NVIDIA device driver
+- NVIDIA dependency: CUDA 12.9 + cuDNN 9
+  - Need >= 575.xx.xx NVIDIA device driver
 
 If you use this project in your research, please use [the arXiv paper of AWML](https://arxiv.org/abs/2506.00645) and [the arXiv paper for fine-tuning strategy](https://arxiv.org/abs/2509.04711).
 And please use consider citation as below.
@@ -126,19 +126,18 @@ If you want to know about `AWML`, you should read following pages.
 
 - :star: is recommended to use
 
-| Task              | Model                                         | Use for Autoware   |
-| ----------------- | --------------------------------------------- | ------------------ |
-| 3D detection      | [CenterPoint](/projects/CenterPoint/)         | :star:             |
-| 3D detection      | [TransFusion](/projects/TransFusion/)         | :white_check_mark: |
-| 3D detection      | [BEVFusion](/projects/BEVFusion/)             | :white_check_mark: |
-| 3D segmentation   | [FRNet](/projects/FRNet/)                     | (Reviewing now)    |
-| 2D detection      | [YOLOX](/projects/YOLOX/)                     |                    |
-| 2D detection      | [YOLOX_opt](/projects/YOLOX_opt/)             | :star:             |
-| 2D detection      | [GLIP](/projects/GLIP/)                       |                    |
-| 2D detection      | [SwinTransformer](/projects/SwinTransformer/) |                    |
-| 2D classification | [MobileNetv2](/projects/MobileNetv2/)         | :white_check_mark: |
-| Vision language   | [BLIP-2](/projects/BLIP-2/)                   |                    |
-|                   |                                               |                    |
+| Task              | Model                                 | Use for Autoware   |
+| ----------------- | ------------------------------------- | ------------------ |
+| 3D detection      | [CenterPoint](/projects/CenterPoint/) | :star:             |
+| 3D detection      | [TransFusion](/projects/TransFusion/) | :white_check_mark: |
+| 3D detection      | [BEVFusion](/projects/BEVFusion/)     | :white_check_mark: |
+| 3D segmentation   | [FRNet](/projects/FRNet/)             | (Reviewing now)    |
+| 2D detection      | [YOLOX](/projects/YOLOX/)             |                    |
+| 2D detection      | [YOLOX_opt](/projects/YOLOX_opt/)     | :star:             |
+| 2D detection      | [GLIP](/projects/GLIP/)               |                    |
+| 2D classification | [MobileNetv2](/projects/MobileNetv2/) | :white_check_mark: |
+| Vision language   | [BLIP-2](/projects/BLIP-2/)           |                    |
+|                   |                                       |                    |
 
 - Additional plug-ins
   - [SparseConvolutions](/projects/SparseConvolution/)

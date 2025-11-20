@@ -51,7 +51,9 @@ num_workers = 32
 val_interval = 5
 max_epochs = 30
 work_dir = (
-    "work_dirs/centerpoint_2_3_2_rfs/" + _base_.dataset_type + "/second_secfpn_4xb16_121m_jpntaxi_gen2_base_high_resolution/"
+    "work_dirs/centerpoint_2_3_rfs/"
+    + _base_.dataset_type
+    + "/second_secfpn_4xb16_121m_jpntaxi_gen2_base_high_resolution/"
 )
 
 train_pipeline = [
@@ -138,6 +140,30 @@ eval_pipeline = [
     dict(type="Pack3DDetInputs", keys=["points", "gt_bboxes_3d", "gt_labels_3d"]),
 ]
 
+train_frame_object_sampler = dict(
+    type="FrameObjectSampler",
+    object_samplers=[
+        dict(
+            type="ObjectBEVDistanceSampler",
+            bev_distance_thresholds=[
+                point_cloud_range[0],
+                point_cloud_range[1],
+                point_cloud_range[3],
+                point_cloud_range[4],
+            ],
+        ),
+        dict(
+            type="LowPedestrianObjectSampler",
+            height_threshold=1.5,
+            bev_distance_thresholds=[
+                -50.0,
+                -50.0,
+                50.0,
+                50.0,
+            ],
+        ),
+    ],
+)
 train_dataloader = dict(
     batch_size=train_batch_size,
     num_workers=num_workers,
@@ -155,8 +181,8 @@ train_dataloader = dict(
         test_mode=False,
         data_prefix=_base_.data_prefix,
         box_type_3d="LiDAR",
-        point_cloud_range=point_cloud_range,
         repeat_sampling_factory_t=0.25,
+        frame_object_sampler=train_frame_object_sampler,
     ),
 )
 val_dataloader = dict(
@@ -176,7 +202,6 @@ val_dataloader = dict(
         test_mode=True,
         box_type_3d="LiDAR",
         backend_args=backend_args,
-        point_cloud_range=point_cloud_range,
     ),
 )
 test_dataloader = dict(
@@ -196,7 +221,6 @@ test_dataloader = dict(
         test_mode=True,
         box_type_3d="LiDAR",
         backend_args=backend_args,
-        point_cloud_range=point_cloud_range,
     ),
 )
 
@@ -418,6 +442,8 @@ custom_hooks = [
 ]
 
 # Update the load_from path accordingly
-load_from = "work_dirs/centerpoint_2_3_rfs/T4Dataset/second_secfpn_4xb16_121m_base_amp_high_resolution_rfs/epoch_49.pth"
+load_from = (
+    "work_dirs/centerpoint_2_3_rfs/T4Dataset/second_secfpn_4xb16_121m_base_amp_high_resolution_rfs/epoch_49.pth"
+)
 
 activation_checkpointing = ["pts_backbone"]
