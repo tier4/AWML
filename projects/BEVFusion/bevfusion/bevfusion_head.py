@@ -1,5 +1,6 @@
 # modify from https://github.com/mit-han-lab/bevfusion
 import copy
+from operator import index
 from typing import List, Optional, Tuple
 
 import numpy as np
@@ -44,6 +45,9 @@ class BEVFusionHead(nn.Module):
     def __init__(
         self,
         class_names: List[str],
+        dense_heatmap_fuse: dict,
+        img_bev_feats: int = 80,
+        fusion_layer: Optional[dict] = None,
         dense_heatmap_pooling_classes: Optional[List[str]] = None,
         num_proposals=128,
         auxiliary=True,
@@ -102,6 +106,7 @@ class BEVFusionHead(nn.Module):
             padding=1,
             bias=bias,
         )
+        self.dense_heatmap_fuse = MODELS.build(dense_heatmap_fuse)
 
         layers = []
         layers.append(
@@ -135,6 +140,7 @@ class BEVFusionHead(nn.Module):
 
         # Prediction Head
         self.prediction_heads = nn.ModuleList()
+        self.regression_head_orders = list(common_heads.keys())
         for i in range(self.num_decoder_layers):
             heads = copy.deepcopy(common_heads)
             heads.update(dict(heatmap=(self.num_classes, num_heatmap_convs)))
@@ -147,6 +153,11 @@ class BEVFusionHead(nn.Module):
                     bias=bias,
                 )
             )
+
+        if fusion_layer is not None:
+            self.fusion_layer = MODELS.build(fusion_layer)
+        else:
+            self.fusion_layer = None
 
         self.init_weights()
         self._init_assigner_sampler()
@@ -227,10 +238,8 @@ class BEVFusionHead(nn.Module):
     def forward_single(
         self,
         inputs,
+        img_bev_feats,
         metas,
-        camera_topk_indices: Optional[torch.Tensor] = None,
-        camera_topk_classes: Optional[torch.Tensor] = None,
-        camera_topk_scores: Optional[torch.Tensor] = None,
     ):
         """Forward function for CenterPoint.
         Args:
@@ -253,7 +262,9 @@ class BEVFusionHead(nn.Module):
         #################################
         with torch.cuda.amp.autocast(enabled=False):
             # with torch.autocast('cuda', enabled=False):
-            dense_heatmap = self.heatmap_head(fusion_feat.float())
+            dense_fuse_feats = self.dense_heatmap_fuse(torch.cat([fusion_feat, img_bev_feats], dim=1))
+            dense_heatmap = self.heatmap_head(dense_fuse_feats.float())
+
         heatmap = dense_heatmap.detach().sigmoid()
         local_max = torch.zeros_like(heatmap)
         # equals to nms radius = voxel_size * out_size_factor * kenel_size
@@ -284,59 +295,9 @@ class BEVFusionHead(nn.Module):
         heatmap = heatmap.view(batch_size, heatmap.shape[1], -1)
 
         # top num_proposals among all classes
-        fusion_top_proposals = heatmap.view(batch_size, -1).argsort(dim=-1, descending=True)[..., : self.num_proposals]
-        fusion_top_proposals_class = fusion_top_proposals // heatmap.shape[-1]
-        fusion_top_proposals_index = fusion_top_proposals % heatmap.shape[-1]
-        fusion_top_proposals_nums = torch.ones_like(fusion_top_proposals_index)
-        num_camera_proposals = num_fusion_proposals = None
-
-        # Merge proposals with camera branch if it's enable
-        if camera_topk_indices is not None and camera_topk_classes is not None and camera_topk_scores is not None:
-            camera_top_proposals_nums = torch.zeros_like(camera_topk_indices)
-            merge_top_proposals_num = torch.cat([fusion_top_proposals_nums, camera_top_proposals_nums], dim=-1)
-
-            merge_topk_indices = torch.cat([fusion_top_proposals_index, camera_topk_indices], dim=-1)
-            merge_topk_scores = torch.cat([fusion_top_proposals, camera_topk_scores], dim=-1)
-            merge_topk_class = torch.cat([fusion_top_proposals_class, camera_topk_classes], dim=-1)
-
-            sorted_score_indices = merge_topk_scores.argsort(dim=-1, descending=True)
-
-            top_proposals_class = []
-            top_proposals_index = []
-            num_fusion_proposals = 0
-
-            # n^2, however, since both batch size and num_proposals are small, the effect is limited
-            for b in range(batch_size):
-                keep_class = []
-                keep_indices = []
-                assigned_indices = set()
-                num_proposals = 0
-                for index in sorted_score_indices[b]:
-                    idx = index.item()
-                    if idx in assigned_indices:
-                        continue
-
-                    keep_class.append(merge_topk_class[b, idx])
-                    keep_indices.append(merge_topk_indices[b, idx])
-
-                    if merge_top_proposals_num[b, idx] == 1:
-                        num_fusion_proposals += 1
-
-                    num_proposals += 1
-                    assigned_indices.add(idx)
-
-                    if num_proposals >= self.num_proposals:
-                        break
-
-                top_proposals_class.append(torch.stack(keep_class))
-                top_proposals_index.append(torch.stack(keep_indices))
-            top_proposals_class = torch.stack(top_proposals_class, dim=0)
-            top_proposals_index = torch.stack(top_proposals_index, dim=0)
-            num_camera_proposals = (batch_size * self.num_proposals) - num_fusion_proposals
-        else:
-            top_proposals_class = fusion_top_proposals_class
-            top_proposals_index = fusion_top_proposals_index
-
+        top_proposals = heatmap.view(batch_size, -1).argsort(dim=-1, descending=True)[..., : self.num_proposals]
+        top_proposals_class = top_proposals // heatmap.shape[-1]
+        top_proposals_index = top_proposals % heatmap.shape[-1]
         query_feat = fusion_feat_flatten.gather(
             index=top_proposals_index[:, None, :].expand(-1, fusion_feat_flatten.shape[1], -1),
             dim=-1,
@@ -353,7 +314,7 @@ class BEVFusionHead(nn.Module):
             dim=1,
         )
         #################################
-        # transformer decoder layer (Fusion feature as K,V)
+        # transformer decoder layer (Fusion feature as K,V) except heatmap
         #################################
         ret_dicts = []
         for i in range(self.num_decoder_layers):
@@ -362,13 +323,22 @@ class BEVFusionHead(nn.Module):
             query_feat = self.decoder[i](query_feat, key=fusion_feat_flatten, query_pos=query_pos, key_pos=bev_pos)
 
             # Prediction
-            res_layer = self.prediction_heads[i](query_feat)
+            res_layer = dict()
+            for task in self.regression_head_orders:
+                res_layer[task] = self.prediction_heads[i].__getattr__(query_feat)
             res_layer["center"] = res_layer["center"] + query_pos.permute(0, 2, 1)
             ret_dicts.append(res_layer)
 
             # for next level positional embedding
             query_pos = res_layer["center"].detach().clone().permute(0, 2, 1)
 
+        # use the top proposals from dense heatmap to index the query heatmap scores from img_bev_feats
+        img_bev_feats_flatten = fusion_feat.view(batch_size, img_bev_feats.shape[1], -1)  # [BS, C, H*W]
+        img_bev_feat_index = top_proposals_index.expand(-1, img_bev_feats_flatten.shape[1], -1)
+        img_bev_query_feats = img_bev_feats_flatten.gather(index=img_bev_feat_index, dim=-1)
+        query_heatmap_feats = torch,cat(
+            []
+        )
         ret_dicts[0]["query_heatmap_score"] = heatmap.gather(
             index=top_proposals_index[:, None, :].expand(-1, self.num_classes, -1),
             dim=-1,
@@ -390,8 +360,7 @@ class BEVFusionHead(nn.Module):
                 new_res[key] = torch.cat([ret_dict[key] for ret_dict in ret_dicts], dim=-1)
             else:
                 new_res[key] = ret_dicts[0][key]
-        new_res["num_fusion_proposals"] = num_fusion_proposals
-        new_res["num_camera_proposals"] = num_camera_proposals
+
         return [new_res]
 
     def forward(

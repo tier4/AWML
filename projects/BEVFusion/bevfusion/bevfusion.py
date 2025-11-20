@@ -28,7 +28,6 @@ class BEVFusion(Base3DDetector):
         data_preprocessor: OptConfigType = None,
         pts_voxel_encoder: Optional[dict] = None,
         pts_middle_encoder: Optional[dict] = None,
-        fusion_layer: Optional[dict] = None,
         img_backbone: Optional[dict] = None,
         view_transform: Optional[dict] = None,
         img_neck: Optional[dict] = None,
@@ -67,11 +66,6 @@ class BEVFusion(Base3DDetector):
             self.img_aux_bbox_head = MODELS.build(img_aux_bbox_head)
         else:
             self.img_aux_bbox_head = None
-
-        if fusion_layer is not None:
-            self.fusion_layer = MODELS.build(fusion_layer)
-        else:
-            self.fusion_layer = None
 
         # BEV Backbone and Neck
         if pts_backbone:
@@ -276,26 +270,20 @@ class BEVFusion(Base3DDetector):
                 contains a tensor with shape (num_instances, 7).
         """
         batch_input_metas = [item.metainfo for item in batch_data_samples]
-        feats, img_feats = self.extract_feat(batch_inputs_dict, batch_input_metas)
+        feats, img_bev_feats = self.extract_feat(batch_inputs_dict, batch_input_metas)
 
-        img_aux_top_proposals = dict()
-        if self.img_aux_bbox_head:
-            img_aux_top_proposals = self.img_aux_bbox_head.predict_without_decoding([img_feats], batch_data_samples)
+        # img_aux_top_proposals = dict()
+        # if self.img_aux_bbox_head:
+        # img_aux_top_proposals = self.img_aux_bbox_head.predict([img_feats], batch_data_samples)
 
         if self.with_bbox_head:
-            camera_topk_indices = img_aux_top_proposals.get("heatmap_top_indices", None)
-            camera_topk_scores = img_aux_top_proposals.get("heatmap_top_scores", None)
-            camera_topk_classes = img_aux_top_proposals.get("heatmap_top_classes", None)
             outputs = self.bbox_head.predict(
                 feats,
+                img_bev_feats,
                 batch_input_metas,
-                camera_topk_indices=camera_topk_indices,
-                camera_topk_scores=camera_topk_scores,
-                camera_topk_classes=camera_topk_classes,
             )
 
         res = self.add_pred_to_datasample(batch_data_samples, outputs)
-
         return res
 
     def extract_feat(
@@ -307,8 +295,9 @@ class BEVFusion(Base3DDetector):
         imgs = batch_inputs_dict.get("imgs", None)
         points = batch_inputs_dict.get("points", None)
         img_feature = None
-        features = []
-        img_feature = None
+        pts_feature = None
+        # features = []
+        # img_feature = None
         if imgs is not None and "lidar2img" not in batch_inputs_dict:
             # NOTE(knzo25): normal training and testing
             imgs = imgs.contiguous()
@@ -336,7 +325,7 @@ class BEVFusion(Base3DDetector):
                 lidar_aug_matrix=lidar_aug_matrix,
                 img_metas=batch_input_metas,
             )
-            features.append(img_feature)
+            # features.append(img_feature)
         elif imgs is not None:
             # NOTE(knzo25): onnx inference
             lidar2image = batch_inputs_dict["lidar2img"]
@@ -369,7 +358,7 @@ class BEVFusion(Base3DDetector):
                 batch_input_metas,
                 geom_feats=geom_feats,
             )
-            features.append(img_feature)
+            # features.append(img_feature)
 
         if points is not None and self.pts_middle_encoder is not None:
             pts_feature = self.extract_pts_feat(
@@ -378,14 +367,14 @@ class BEVFusion(Base3DDetector):
                 batch_inputs_dict.get("voxels", {}).get("num_points_per_voxel", None),
                 points=points,
             )
-            features.append(pts_feature)
+            # features.append(pts_feature)
 
-        if self.fusion_layer is not None:
-            x = self.fusion_layer(features)
+        if pts_feature is not None:
+            x = pts_feature
         else:
-            assert len(features) == 1, features
-            x = features[0]
+            x = img_feature
 
+        # assert len(features) == 1, features
         if self.pts_backbone:
             x = self.pts_backbone(x)
 
@@ -398,13 +387,11 @@ class BEVFusion(Base3DDetector):
         self, batch_inputs_dict: Dict[str, Optional[Tensor]], batch_data_samples: List[Det3DDataSample], **kwargs
     ) -> List[Det3DDataSample]:
         batch_input_metas = [item.metainfo for item in batch_data_samples]
-        feats, img_feats = self.extract_feat(batch_inputs_dict, batch_input_metas)
+        feats, img_bev_feats = self.extract_feat(batch_inputs_dict, batch_input_metas)
 
         losses = dict()
-        img_aux_top_proposals = dict()
-
         if self.img_aux_bbox_head:
-            img_aux_bbox_losses, img_aux_top_proposals = self.img_aux_bbox_head.loss([img_feats], batch_data_samples)
+            img_aux_bbox_losses = self.img_aux_bbox_head.loss([img_bev_feats], batch_data_samples)
             sum_losses = 0.0
             for loss_key, loss in img_aux_bbox_losses.items():
                 sum_losses += loss
@@ -413,26 +400,11 @@ class BEVFusion(Base3DDetector):
             losses["img_aux_sum"] = sum_losses
 
         if self.with_bbox_head:
-
-            camera_topk_indices = img_aux_top_proposals.get("heatmap_top_indices", None)
-            print(camera_topk_indices)
-            camera_topk_scores = img_aux_top_proposals.get("heatmap_top_scores", None)
-            camera_topk_classes = img_aux_top_proposals.get("heatmap_top_classes", None)
             bbox_loss = self.bbox_head.loss(
                 feats,
+                img_bev_feats,
                 batch_data_samples,
-                camera_topk_indices=camera_topk_indices,
-                camera_topk_scores=camera_topk_scores,
-                camera_topk_classes=camera_topk_classes,
             )
-            num_fusion_proposals = bbox_loss.pop("num_fusion_proposals", None)
-            if num_fusion_proposals is not None:
-                losses["num_fusion_proposals"] = num_fusion_proposals
-
-            num_camera_proposals = bbox_loss.pop("num_camera_proposals", None)
-            if num_camera_proposals is not None:
-                losses["num_camera_proposals"] = num_camera_proposals
-
             losses.update(bbox_loss)
 
         return losses

@@ -35,33 +35,6 @@ class BEVFusionCenterHead(CenterHead):
         self.num_proposals = num_proposals
 
         self.dense_heatmap_pooling_classes = dense_heatmap_pooling_classes
-        self.dense_heatmap_pooling_class_indices = []
-        self.dense_heatmap_exclude_pooling_classes = []
-
-        for task_id, class_names in enumerate(self.class_names):
-            if self.dense_heatmap_pooling_classes is not None:
-                class_names = self.class_names[task_id]
-                class_name_to_indices = {class_name: i for i, class_name in enumerate(class_names)}
-
-                # Map class names to indices for processing
-                # TODO (KokSeang): This will increase latency if we don't pool for some classes
-                dense_heatmap_pooling_class_indices = [
-                    class_name_to_indices[class_name] for class_name in self.dense_heatmap_pooling_classes
-                ]
-
-                # Sort it
-                dense_heatmap_pooling_class_indices = sorted(dense_heatmap_pooling_class_indices)
-                dense_heatmap_exclude_pooling_classes = sorted(
-                    list(set(class_name_to_indices.values()) - set(dense_heatmap_pooling_class_indices))
-                )
-                self.dense_heatmap_exclude_pooling_classes.append(dense_heatmap_exclude_pooling_classes)
-                self.dense_heatmap_pooling_class_indices.append(dense_heatmap_pooling_class_indices)
-            else:
-                self.dense_heatmap_pooling_class_indices.append(None)
-                self.dense_heatmap_exclude_pooling_classes.append(None)
-
-        self.nms_kernel_size = nms_kernel_size
-        self.local_heatmap_padding = self.nms_kernel_size // 2
 
     def forward_single(self, x: Tensor) -> dict:
         """Forward function for CenterPoint.
@@ -80,57 +53,7 @@ class BEVFusionCenterHead(CenterHead):
         for task in self.task_heads:
             ret_dicts.append(task(x))
 
-        if self.nms_kernel_size > 0:
-            ret_dicts = self.top_k_heatmaps(ret_dicts)
         return ret_dicts
-
-    def top_k_heatmaps(self, preds_dicts: List[dict]):
-        """"""
-        for task_id, preds_dict in enumerate(preds_dicts):
-            batch_size = preds_dict["heatmap"].shape[0]
-            heatmaps = preds_dict["heatmap"].detach().sigmoid()
-            local_max = torch.zeros_like(heatmaps)
-
-            dense_heatmap_pooling_class_indices = self.dense_heatmap_exclude_pooling_classes[task_id]
-            if dense_heatmap_pooling_class_indices is not None:
-                dense_heatmap_exclude_pooling_classes = self.dense_heatmap_exclude_pooling_classes[task_id]
-
-                # Pooling
-                selected_heatmap = heatmaps[:, dense_heatmap_pooling_class_indices, :, :]
-                local_max_inner = F.max_pool2d(
-                    selected_heatmap,
-                    kernel_size=self.nms_kernel_size,
-                    stride=1,
-                    padding=0,
-                )
-                local_max[
-                    :,
-                    dense_heatmap_pooling_class_indices,
-                    self.local_heatmap_padding : (-self.local_heatmap_padding),
-                    self.local_heatmap_padding : (-self.local_heatmap_padding),
-                ] = local_max_inner
-
-                # Non-pooling classes
-                if dense_heatmap_exclude_pooling_classes:
-                    local_max[:, dense_heatmap_exclude_pooling_classes] = heatmaps[
-                        :, dense_heatmap_exclude_pooling_classes
-                    ]
-            else:
-                local_max = heatmaps
-
-            heatmaps = heatmaps * (heatmaps == local_max)
-            heatmaps = heatmaps.view(batch_size, heatmaps.shape[1], -1)
-
-            # top num_proposals among all classes
-            top_proposals = heatmaps.view(batch_size, -1).argsort(dim=-1, descending=True)[..., : self.num_proposals]
-            top_proposals_class = top_proposals // heatmaps.shape[-1]
-            top_proposals_index = top_proposals % heatmaps.shape[-1]
-
-            preds_dicts[task_id]["heatmap_top_scores"] = top_proposals
-            preds_dicts[task_id]["heatmap_top_indices"] = top_proposals_index
-            preds_dicts[task_id]["heatmap_top_classes"] = top_proposals_class
-
-        return preds_dicts
 
     def get_targets_single(self, gt_instances_3d: InstanceData) -> Tuple[Tensor]:
         """Generate training targets for a single sample.
@@ -254,91 +177,3 @@ class BEVFusionCenterHead(CenterHead):
             masks.append(mask)
             inds.append(ind)
         return heatmaps, anno_boxes, inds, masks
-
-    def _gather_topk_proposals(self, preds_dicts: dict) -> dict:
-        """Gathers topk proposals from the heatmap predictions.
-
-        Args:
-            preds_dict (dict): Prediction results from a single task head.
-        Returns:
-            dict: The gathered topk proposals including indices and scores.
-        """
-        proposals = dict()
-        # Add top proposals
-        if self.nms_kernel_size:
-            # We get only the first task's topk for simplicity
-            proposals["heatmap_top_indices"] = preds_dicts[0][0]["heatmap_top_indices"]
-            proposals["heatmap_top_scores"] = preds_dicts[0][0]["heatmap_top_scores"]
-            proposals["heatmap_top_classes"] = preds_dicts[0][0]["heatmap_top_classes"]
-
-        return proposals
-
-    def loss(
-        self, pts_feats: List[Tensor], batch_data_samples: List[Det3DDataSample], *args, **kwargs
-    ) -> Dict[str, Tensor]:
-        """Forward function for point cloud branch.
-
-        Args:
-            pts_feats (list[torch.Tensor]): Features of point cloud branch
-            batch_data_samples (List[:obj:`Det3DDataSample`]): The Data
-                Samples. It usually includes information such as
-                `gt_instance_3d`, .
-
-        Returns:
-            dict: Losses of each branch.
-        """
-        outs = self(pts_feats)
-        batch_gt_instance_3d = []
-        for data_sample in batch_data_samples:
-            batch_gt_instance_3d.append(data_sample.gt_instances_3d)
-        losses = self.loss_by_feat(outs, batch_gt_instance_3d)
-        proposals = self._gather_topk_proposals(outs)
-        return losses, proposals
-
-    def predict(
-        self, pts_feats: Dict[str, torch.Tensor], batch_data_samples: List[Det3DDataSample], rescale=True, **kwargs
-    ) -> List[InstanceData]:
-        """
-        Args:
-            pts_feats (dict): Point features..
-            batch_data_samples (List[:obj:`Det3DDataSample`]): The Data
-                Samples. It usually includes meta information of data.
-            rescale (bool): Whether rescale the resutls to
-                the original scale.
-
-        Returns:
-            list[:obj:`InstanceData`]: List of processed predictions. Each
-            InstanceData contains 3d Bounding boxes and corresponding
-            scores and labels.
-        """
-
-        preds_dict = self(pts_feats)
-        batch_size = len(batch_data_samples)
-        batch_input_metas = []
-        for batch_index in range(batch_size):
-            metainfo = batch_data_samples[batch_index].metainfo
-            batch_input_metas.append(metainfo)
-
-        results_list = self.predict_by_feat(preds_dict, batch_input_metas, rescale=rescale, **kwargs)
-        proposals = self._gather_topk_proposals(preds_dict)
-        return results_list, proposals
-
-    def predict_without_decoding(
-        self, pts_feats: Dict[str, torch.Tensor], batch_data_samples: List[Det3DDataSample], rescale=True, **kwargs
-    ) -> List[InstanceData]:
-        """
-        Args:
-            pts_feats (dict): Point features..
-            batch_data_samples (List[:obj:`Det3DDataSample`]): The Data
-                Samples. It usually includes meta information of data.
-            rescale (bool): Whether rescale the resutls to
-                the original scale.
-
-        Returns:
-            list[:obj:`InstanceData`]: List of processed predictions. Each
-            InstanceData contains 3d Bounding boxes and corresponding
-            scores and labels.
-        """
-        preds_dict = self(pts_feats)
-        proposals = self._gather_topk_proposals(preds_dict)
-        return proposals
