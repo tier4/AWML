@@ -17,7 +17,8 @@
 
 | eval range: 120m         | mAP     | car <br> (9,710)     | truck <br> (2,577) | bus <br> (2,569) | bicycle <br> (466) | pedestrian <br> (10,518) |
 | ---------------------    | ---- | ----------------- | ------------------- | ---------------- | ----------------- | ---------------- |
-| CenterPoint JPNTaxi_Gen2/2.4.1   | 58.20 | 86.10            | 38.00               | 56.10         | 39.20                 | 71.70                   |
+| CenterPoint JPNTaxi_Gen2/2.4.1  | 58.20 | 86.10            | 38.00               | 56.10         | 39.20                 | 71.70                   |
+| centerpoint jpntaxi_gen2/2.3.2  | 56.70 | 86.60            | 37.00               | 57.60         | 33.80                 | 68.50            |
 | CenterPoint JPNTaxi_Gen2/2.3.1  | 57.20 | 86.40            | 37.80               | 56.90         | 34.50                 | 70.20                   |
 
 ### Datasets
@@ -31,6 +32,7 @@
 | eval range: 120m         | mAP     | car <br> (9,710)     | truck <br> (2,577) | bus <br> (2,569) | bicycle <br> (466) | pedestrian <br> (10,518) |
 | -------------------------| ----    | -------------------- | ------------------- | ---------------- | -------------------- | ------------------------ |
 | CenterPoint JPNTaxi_Gen2/2.4.1   | 58.20 | 86.10            | 38.00               | 56.10         | 39.20                 | 71.70                   |
+| centerpoint jpntaxi_gen2/2.3.2 | 56.70 | 86.60            | 37.00               | 57.60         | 33.80                 | 68.50            |
 | CenterPoint JPNTaxi_Gen2/2.3.1  | 57.20 | 86.40            | 37.80               | 56.90         | 34.50                 | 70.20                   |
 
 </details>
@@ -44,10 +46,12 @@
 - Overall:
   - Performance is still worse than `CenterPoint base/2.4.0`, it's likely still due to the data diversity
 
+<details>
+
 - Model
   - Training Datasets (frames: 18,630):
 		- jpntaxi_gen2: db_jpntaxigen2_v1 + db_jpntaxigen2_v2 (18,630 frames)
-  - [Config file path](https://github.com/tier4/AWML/blob/c0ba7268f110062f71ee80a3469102867a63b740/projects/CenterPoint/configs/t4dataset/Centerpoint/second_secfpn_4xb16_121m_jpntaxi_gen2_base.py)
+  - [Config file path](https://github.com/tier4/AWML/blob/834dc15c414be9fa0851187a56d3686fa8f9e126/autoware_ml/configs/detection3d/dataset/t4dataset/jpntaxi_gen2_base.py)
   - Deployed onnx and ROS parameter files (for internal)
     - [WebAuto](https://evaluation.tier4.jp/evaluation/mlpackages/7156b453-2861-4ae9-b135-e24e48cc9029/releases/e2241c36-646b-4893-8fde-486c32375274?project_id=zWhWRzei)
     - [model-zoo](https://download.autoware-ml-model-zoo.tier4.jp/autoware-ml/models/centerpoint/centerpoint/jpntaxi_gen2/v2.3.2/deployment.zip)
@@ -58,9 +62,8 @@
   - Train time: NVIDIA H100 80GB * 4 * 30 epochs = 24 hours
   - Batch size: 4*16 = 64
 
-- Evaluation
-
-- jpntaxi_gen2: db_jpntaxigen2_v1 + db_jpntaxigen2_v2 (1,709 frames)
+	- Evaluation
+	- jpntaxi_gen2: db_jpntaxigen2_v1 + db_jpntaxigen2_v2 (1,709 frames)
   - Total mAP (eval range = 120m): 0.582
 
 | class_name | Count     | mAP  | AP@0.5m | AP@1.0m | AP@2.0m | AP@4.0m |
@@ -72,6 +75,44 @@
 | pedestrian |  10,518   | 71.7 | 70.3    | 71.2    | 72.1    | 73.1    |
 
 </details>
+
+### CenterPoint JPNTaxi_Gen2/2.3.2
+- Changes:
+  - Finetune from `CenterPoint base/2.3.0` with more data in `db_jpntaxi_gen2`
+	- Include intensity as an extra feature
+
+- Overall:
+  - Performance is worse than `CenterPoint base/2.3.0`, likely the training and test set still are not diverse
+
+<details>
+
+- Model
+  - Training Datasets (frames: 22,971):
+			- jpntaxi_gen2: db_jpntaxigen2_v1 + db_jpntaxigen2_v2 (22.971 frames)
+  - [Config file path](https://github.com/tier4/AWML/blob/834dc15c414be9fa0851187a56d3686fa8f9e126/autoware_ml/configs/detection3d/dataset/t4dataset/jpntaxi_gen2_base.py)
+  - Deployed onnx and ROS parameter files (for internal)
+    - [WebAuto](https://evaluation.tier4.jp/evaluation/mlpackages/7156b453-2861-4ae9-b135-e24e48cc9029/releases/e2241c36-646b-4893-8fde-486c32375274?project_id=zWhWRzei)
+    - [model-zoo](https://download.autoware-ml-model-zoo.tier4.jp/autoware-ml/models/centerpoint/centerpoint/jpntaxi_gen2/v2.3.2/deployment.zip)
+    - [Google drive](https://drive.google.com/drive/u/0/folders/1hD__tIVcQ6UalgJi49jSvRZFgNxERGOA)
+  - Logs (for internal)
+    - [model-zoo](https://download.autoware-ml-model-zoo.tier4.jp/autoware-ml/models/centerpoint/centerpoint/jpntaxi_gen2/v2.3.2/logs.zip)
+    - [Google drive](https://drive.google.com/file/d/18h0LVXbY919hlk35UOa8MedRqjUplLUt/view?usp=drive_link)
+  - Train time: NVIDIA H100 80GB * 4 * 30 epochs = 24 hours
+  - Batch size: 4*16 = 64
+
+- Evaluation
+- jpntaxi_gen2: db_jpntaxigen2_v1 + db_jpntaxigen2_v2 (1,709 frames)
+  - Total mAP (eval range = 120m): 0.5620
+| class_name | Count      | mAP  | AP@0.5m | AP@1.0m | AP@2.0m | AP@4.0m |
+| ----       | ---------- | ---- | ---- | ---- | ---- | ---- |
+| car        |  9,710     | 86.6 | 81.5    | 87.4    | 88.6    | 88.9    |
+| truck      |  2,577     | 37.0 | 25.9    | 34.3    | 37.7    | 50.2    |
+| bus        |  2,569     | 57.6 | 43.1    | 56.7    | 64.4    | 66.0    |
+| bicycle    |    466     | 33.8 | 29.0    | 34.7    | 35.8    | 35.9    |
+| pedestrian |  10,518    | 68.5 | 66.8    | 67.9    | 68.9    | 70.4    |
+
+</details>
+
 
 ### CenterPoint JPNTaxi_Gen2/2.3.1
 - Changes:
