@@ -214,7 +214,7 @@ train_dataloader = dict(
         test_mode=False,
         data_prefix=_base_.data_prefix,
         box_type_3d="LiDAR",
-        filter_cfg=filter_cfg,
+        # filter_cfg=filter_cfg,
     ),
 )
 
