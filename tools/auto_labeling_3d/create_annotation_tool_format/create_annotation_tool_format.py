@@ -29,15 +29,15 @@ DATASET_FACTORIES: Dict[str, Type[AnnotationToolDataset]] = {
 
 
 def convert_pseudo_to_annotation_format(
-    pseudo_label_path: str | Path,
+    info_path: str | Path,
     output_dir: str | Path,
     output_format: str,
     dataset_id: str | None = None,
 ) -> None:
     """Convert pseudo label to the specified annotation tool format."""
 
-    print(f"Load pseudo label from {pseudo_label_path}")
-    info = AWML3DInfo.load(pseudo_label_path, dataset_id=dataset_id)
+    print(f"Load pseudo label from {info_path}")
+    info = AWML3DInfo.load(info_path, dataset_id=dataset_id)
 
     if output_format not in DATASET_FACTORIES:
         supported = ", ".join(DATASET_FACTORIES.keys())
@@ -87,7 +87,7 @@ def _parse_args():
 def main():
     args = _parse_args()
     convert_pseudo_to_annotation_format(
-        pseudo_label_path=args.input,
+        info_path=args.input,
         output_dir=args.output_dir,
         output_format=args.output_format,
         dataset_id=args.dataset_id
