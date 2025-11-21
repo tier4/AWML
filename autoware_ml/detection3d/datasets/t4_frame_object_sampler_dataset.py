@@ -94,37 +94,6 @@ class T4FrameObjectSamplerDataset(T4Dataset):
         print_log(f"Category fraction factor: {self.category_fraction_factors}", logger="current")
         print_log(f"First 10 dataset frame weights: {self.frame_weights[:10]}", logger="current")
 
-    def filter_data(self) -> List[dict]:
-        """
-        Overriding from superclass.
-
-        Filter annotations according to filter_cfg. Defaults return all
-        ``data_list``in Superclass.
-
-        If some ``data_list`` could be filtered according to specific logic,
-        the subclass should override this method.
-
-        Returns:
-            List[dict]: Filtered results.
-        """
-        if not self.filter_cfg:
-            return self.data_list
-        filtered_data_list = []
-        for entry in self.data_list:
-            if self.filter_cfg.get("filter_frames_with_missing_image", False) and not all(
-                [x["img_path"] and osp.exists(x["img_path"]) for x in entry["images"].values()]
-            ):
-                continue
-            filtered_data_list.append(entry)
-
-        if len(filtered_data_list) != len(self.data_list):
-            print_log(
-                f"Filtered {len(self.data_list)-len(filtered_data_list)}/{len(self.data_list)} frames without images.",
-                logger="current",
-            )
-
-        return filtered_data_list
-
     def _compute_category_faction_factors(self) -> Dict[str, float]:
         """Compute category fraction factor used for repeat sampling factor computation."""
         category_fraction_factor = {
