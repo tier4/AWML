@@ -205,10 +205,10 @@ model = dict(
 )
 
 train_pipeline = [
-		dict(
-			type="SyncFlipping",
-			is_train=True
-		),
+	dict(
+		type="SyncFlipping",
+		is_train=True
+	),
     dict(
         type="BEVLoadMultiViewImageFromFiles",
         to_float32=True,
@@ -252,10 +252,10 @@ train_pipeline = [
         # scale_ratio_range=[0.8, 1.2],
         translation_std=[0.5, 0.5, 0.2],
     ),
-    dict(type="BEVFusionRandomFlip3D"),
+    dict(type="BEVFusionRandomFlip3D", flip_vertical=False),
     dict(type="PointsRangeFilter", point_cloud_range=point_cloud_range),
     dict(type="ObjectRangeFilter", point_cloud_range=point_cloud_range),
-		dict(type="ObjectRangeMinPointsFilter", range_radius=[0, 60], min_num_points=2),
+	dict(type="ObjectRangeMinPointsFilter", range_radius=[0, 60], min_num_points=2),
     dict(type="ObjectRangeMinPointsFilter", range_radius=[60, 130], min_num_points=1),
     dict(
         type="ObjectNameFilter",
@@ -505,4 +505,4 @@ auto_scale_lr = dict(enable=False, base_batch_size=train_gpu_size * train_batch_
 if train_gpu_size > 1:
     sync_bn = "torch"
 
-load_from = "work_dirs/bevfusion_2_3_full/T4Dataset/bevfusion_lidar_voxel_second_secfpn_4xb8_j6gen2_base/epoch_28.pth"
+load_from = "work_dirs/bevfusion_2_3/T4Dataset/bevfusion_lidar_voxel_second_secfpn_4xb8_j6gen2_base/epoch_28.pth"
