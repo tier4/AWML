@@ -12,7 +12,7 @@ from autoware_ml.samplers.frame_object_sampler import FILTER_CLASS_LABELS, SAMPL
 
 
 @DATASETS.register_module()
-class T4FrameObjectSamplerDataset(T4Dataset):
+class T4FrameSamplerDataset(T4Dataset):
     """T4Dataset with FrameObjectSampler to sample objects in certain frames to support frame weighting.
 
     This dataset class extends NuScenesDataset to provide specialized functionality
