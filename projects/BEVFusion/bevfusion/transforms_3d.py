@@ -75,8 +75,6 @@ class ImageAug3D(BaseTransform):
         if flip:
             img = img.transpose(method=Image.FLIP_LEFT_RIGHT)
         img = img.rotate(rotate, resample=Image.BICUBIC)  # Default rotation introduces artifacts.
-        # if flip:
-        # img.save(f"work_dirs/bevfusion_2/output_{uuid.uuid4().hex[:8]}.jpg")
 
         # post-homography transformation
         rotation *= resize
@@ -93,8 +91,7 @@ class ImageAug3D(BaseTransform):
                 [-np.sin(theta), np.cos(theta)],
             ]
         )
-        # print(f"flip: {flip}, resize: {resize}, crop: {crop}, rotation: {rotation}, translation: {translation}, theta: {theta}, A: {A}")
-        # print(f"crop: {crop}")
+        
         b = torch.Tensor([(crop[2] - crop[0]), (crop[3] - crop[1])]) / 2
         b = A.matmul(-b) + b
         rotation = A.matmul(rotation)
@@ -109,7 +106,7 @@ class ImageAug3D(BaseTransform):
         if not self.is_train:
           flip = False 
         else:
-          sync_flip = results.get('sync_flip', False)
+          sync_flip = data.get('sync_flip', None)
           if sync_flip is None:
               flip = False
               if self.rand_flip and np.random.choice([0, 1]):
@@ -147,6 +144,10 @@ class BEVFusionRandomFlip3D:
     """Compared with `RandomFlip3D`, this class directly records the lidar
     augmentation matrix in the `data`."""
 
+    def __init__(self, flip_vertical: bool = True):
+        """"""
+        self.flip_vertical = flip_vertical
+
     def __call__(self, data: Dict[str, Any]) -> Dict[str, Any]:
         # flip_vertical = np.random.choice([0, 1])
 
@@ -166,14 +167,19 @@ class BEVFusionRandomFlip3D:
             if "gt_masks_bev" in data:
                 data["gt_masks_bev"] = data["gt_masks_bev"][:, :, ::-1].copy()
 
-        # if flip_vertical:
-        #     rotation = np.array([[-1, 0, 0], [0, 1, 0], [0, 0, 1]]) @ rotation
-        #     if "points" in data:
-        #         data["points"].flip("vertical")
-        #     if "gt_bboxes_3d" in data:
-        #         data["gt_bboxes_3d"].flip("vertical")
-        #     if "gt_masks_bev" in data:
-        #         data["gt_masks_bev"] = data["gt_masks_bev"][:, ::-1, :].copy()
+        if self.flip_vertical:
+            flip_vertical = np.random.choice([0, 1])
+        else:
+            flip_vertical = False 
+
+        if flip_vertical:
+            rotation = np.array([[-1, 0, 0], [0, 1, 0], [0, 0, 1]]) @ rotation
+            if "points" in data:
+                data["points"].flip("vertical")
+            if "gt_bboxes_3d" in data:
+                data["gt_bboxes_3d"].flip("vertical")
+            if "gt_masks_bev" in data:
+                data["gt_masks_bev"] = data["gt_masks_bev"][:, ::-1, :].copy()
 
         if "lidar_aug_matrix" not in data:
             data["lidar_aug_matrix"] = np.eye(4)
