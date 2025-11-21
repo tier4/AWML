@@ -13,7 +13,7 @@ info_directory_path = "info/kokseang_2_3/"
 train_gpu_size = 2
 train_batch_size = 8
 test_batch_size = 2
-val_interval = 15
+val_interval = 16
 max_epochs = 100
 backend_args = None
 
@@ -368,8 +368,8 @@ train_pipeline = [
     dict(type="BEVFusionLoadAnnotations2D"),
     dict(
         type="Pack3DDetInputs",
-        # keys=["img", "points",  "gt_bboxes_3d", "gt_labels_3d", "gt_bboxes", "gt_bboxes_labels", "centers_2d", "depths"],
         keys=["img", "points",  "gt_bboxes_3d", "gt_labels_3d", "gt_bboxes", "gt_bboxes_labels"],
+        # keys=["img", "points",  "gt_bboxes_3d", "gt_labels_3d", "gt_bboxes", "gt_bboxes_labels"],
         meta_keys=[
             "cam2img",
             "ori_cam2img",
@@ -419,6 +419,7 @@ test_pipeline = [
         backend_args=backend_args,
         test_mode=False,
     ),
+    # dict(type="LoadAnnotations3D", with_bbox_3d=True, with_label_3d=True, with_attr_label=False),
     dict(
         type="ImageAug3D",
         final_dim=image_size,
@@ -430,10 +431,11 @@ test_pipeline = [
         is_train=False,
     ),
     dict(type="PointsRangeFilter", point_cloud_range=point_cloud_range),
-    dict(type="BEVFusionLoadAnnotations2D"),
+    # dict(type="BEVFusionLoadAnnotations2D"),
     dict(
         type="Pack3DDetInputs",
-        keys=["img", "points", "gt_bboxes_3d", "gt_labels_3d", "gt_bboxes", "gt_bboxes_labels", "centers_2d", "depths"],
+        keys=["img", "points", "gt_bboxes_3d", "gt_labels_3d"],
+        # keys=["img", "points", "gt_bboxes_3d", "gt_labels_3d", "gt_bboxes", "gt_bboxes_labels", "centers_2d", "depths"],
         meta_keys=[
             "cam2img",
             "ori_cam2img",
@@ -448,7 +450,9 @@ test_pipeline = [
             "img_path",
             "num_pts_feats",
             "num_views",
-            "pad_shape"
+            "pad_shape",
+            # "depths",
+            # "centers_2d"
         ],
     ),
 ]
@@ -620,4 +624,5 @@ auto_scale_lr = dict(enable=False, base_batch_size=train_gpu_size * train_batch_
 if train_gpu_size > 1:
     sync_bn = "torch"
 
-load_from = "work_dirs/bevfusion_2_3/epoch_46.pth"
+# load_from = "work_dirs/bevfusion_2_3/epoch_46.pth"
+resume = True
