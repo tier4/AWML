@@ -4,7 +4,6 @@ import sys
 from pathlib import Path
 from typing import Dict, Type
 
-
 CURRENT_DIR = Path(__file__).resolve().parent
 PROJECT_ROOT = CURRENT_DIR.parent
 
@@ -20,7 +19,6 @@ from utils.dataset.annotation_tool_dataset import (
     DeepenDataset,
     SegmentAIDataset,
 )
-
 
 DATASET_FACTORIES: Dict[str, Type[AnnotationToolDataset]] = {
     "deepen": DeepenDataset,
@@ -41,9 +39,7 @@ def convert_pseudo_to_annotation_format(
 
     if output_format not in DATASET_FACTORIES:
         supported = ", ".join(DATASET_FACTORIES.keys())
-        raise ValueError(
-            f"Unsupported output format: {output_format}. Supported formats: {supported}"
-        )
+        raise ValueError(f"Unsupported output format: {output_format}. Supported formats: {supported}")
 
     dataset_cls = DATASET_FACTORIES[output_format]
     dataset = dataset_cls.load_from_info(info)
@@ -87,10 +83,7 @@ def _parse_args():
 def main():
     args = _parse_args()
     convert_pseudo_to_annotation_format(
-        info_path=args.input,
-        output_dir=args.output_dir,
-        output_format=args.output_format,
-        dataset_id=args.dataset_id
+        info_path=args.input, output_dir=args.output_dir, output_format=args.output_format, dataset_id=args.dataset_id
     )
 
 

@@ -3,13 +3,14 @@ from __future__ import annotations
 import copy
 import json
 from collections import defaultdict
-from dataclasses import dataclass, field, asdict
+from dataclasses import asdict, dataclass, field
 from pathlib import Path
 from typing import Dict, Iterable, List, Optional
 
 import numpy as np
 from pyquaternion import Quaternion
-from t4_devkit.dataclass import Box3D as T4Box3D, SemanticLabel, Shape, ShapeType
+from t4_devkit.dataclass import Box3D as T4Box3D
+from t4_devkit.dataclass import SemanticLabel, Shape, ShapeType
 
 from ..dataclass.awml_info import AWML3DInfo
 
@@ -82,15 +83,17 @@ class DeepenDataset(AnnotationToolDataset):
     @staticmethod
     def _build_scene_annotations(info: AWML3DInfo) -> Dict[str, List[Dict]]:
         scenes_anno_dict: Dict[str, List[Dict]] = defaultdict(list)
-        label_id_to_name = {
-            label_id: class_name for label_id, class_name in enumerate(info.classes)
-        }
+        label_id_to_name = {label_id: class_name for label_id, class_name in enumerate(info.classes)}
 
         instance_ids_dict: Dict[str, int] = {}
         label_ids_count: defaultdict[str, int] = defaultdict(lambda: 1)
 
         for idx, pseudo_label_info in enumerate(info.iter_frames()):
-            scene_id = info.dataset_id or pseudo_label_info.get("scene_name") or pseudo_label_info.get("sample_idx", "unknown")
+            scene_id = (
+                info.dataset_id
+                or pseudo_label_info.get("scene_name")
+                or pseudo_label_info.get("sample_idx", "unknown")
+            )
             file_id = f"{idx}.pcd"
             pred_instances = pseudo_label_info.get("pred_instances_3d", [])
 
