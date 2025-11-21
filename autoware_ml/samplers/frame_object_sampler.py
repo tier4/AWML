@@ -3,7 +3,7 @@ from typing import List, Tuple
 
 from mmengine.registry import DATA_SAMPLERS
 
-SAMPLE_CLASS_NAME_KEY = "sample_class_name"
+SAMPLE_CLASS_NAME_KEY = "SAMPLE_CLASS_NAME"
 FILTER_CLASS_LABELS = "FILTERED"
 
 
@@ -12,7 +12,7 @@ class ObjectSampler(ABC):
     """Base class for sampling strategies for objects."""
 
     @property
-    def category_name(self) -> str:
+    def sampler_category_name(self) -> str:
         return ""
 
     @abstractmethod
@@ -28,8 +28,8 @@ class FrameObjectSampler:
         self.object_samplers = object_samplers
 
     @property
-    def category_names(self) -> List[str]:
-        return [sampler.category_name for sampler in self.object_samplers if sampler.category_name]
+    def sampler_category_names(self) -> List[str]:
+        return [sampler.sampler_category_name for sampler in self.object_samplers if sampler.sampler_category_name]
 
     def sample(self, frame_ann_info: dict):
 
@@ -65,19 +65,16 @@ class ObjectBEVDistanceSampler(ObjectSampler):
 class NearerLowPedestrianObjectSampler(ObjectSampler):
     """Sampling strategy for nearer low pedestrian category."""
 
-    MAPPING_CATEGORY_NAME = "pedestrian"
-    CATEGORY_NAME = "low_pedestrian"
-
     def __init__(self, height_threshold: float, bev_distance_thresholds: Tuple[float, float, float, float]):
         super().__init__()
         self.height_threshold = height_threshold
         self.bev_distance_thresholds = bev_distance_thresholds
         self.mapping_category_name = "pedestrian"
-        self.category_name = "low_pedestrian"
+        self.sampler_category_name = "low_pedestrian"
 
     @property
-    def category_name(self) -> str:
-        return self.category_name
+    def sampler_category_name(self) -> str:
+        return self.sampler_category_name
 
     def sample(self, frame_ann_info: dict):
         # Implement the sampling logic for low pedestrian category
