@@ -11,6 +11,20 @@ from PIL import Image
 
 
 @TRANSFORMS.register_module()
+class SyncFlipping(BaseTransform):
+
+    def __init__(self, is_train):
+        self.is_train = is_train
+  
+    def transform(self, data: Dict[str, Any]) -> Dict[str, Any]:
+      flip = False
+      if self.is_train and np.random.choice([0, 1]):
+        flip = True
+      data["sync_flip"] = flip
+      return data 
+
+
+@TRANSFORMS.register_module()
 class ImageAug3D(BaseTransform):
 
     def __init__(self, final_dim, resize_lim, bot_pct_lim, rot_lim, rand_flip, is_train):
@@ -36,10 +50,6 @@ class ImageAug3D(BaseTransform):
             crop_h = int((1 - np.random.uniform(*self.bot_pct_lim)) * newH) - fH
             crop_w = int(np.random.uniform(0, max(0, newW - fW)))
             crop = (crop_w, crop_h, crop_w + fW, crop_h + fH)
-            # print(f"ori_shape: {(H, W)}, resize: {resize}, resize_dims: {resize_dims}, crop: {crop}, crop_h: {crop_h}, crop_w: {crop_w}, fH: {fH}, fW: {fW}")
-            flip = False
-            if self.rand_flip and np.random.choice([0, 1]):
-                flip = True
             rotate = np.random.uniform(*self.rot_lim)
         else:
             resize_lim = np.mean(self.resize_lim)
@@ -54,9 +64,8 @@ class ImageAug3D(BaseTransform):
             crop_h = int((1 - np.mean(self.bot_pct_lim)) * newH) - fH
             crop_w = int(max(0, newW - fW) / 2)
             crop = (crop_w, crop_h, crop_w + fW, crop_h + fH)
-            flip = False
             rotate = 0
-        return resize, resize_dims, crop, flip, rotate
+        return resize, resize_dims, crop, rotate
 
     def img_transform(self, img, rotation, translation, resize, resize_dims, crop, flip, rotate):
         # adjust image
@@ -97,8 +106,19 @@ class ImageAug3D(BaseTransform):
         imgs = data["img"]
         new_imgs = []
         transforms = []
-        resize, resize_dims, crop, flip, rotate = self.sample_augmentation(data)
+        if not self.is_train:
+          flip = False 
+        else:
+          sync_flip = results.get('sync_flip', False)
+          if sync_flip is None:
+              flip = False
+              if self.rand_flip and np.random.choice([0, 1]):
+                  flip = True
+          else:
+              flip = sync_flip
+
         for img in imgs:
+            resize, resize_dims, crop, rotate = self.sample_augmentation(data)
             post_rot = torch.eye(2)
             post_tran = torch.zeros(2)
             new_img, rotation, translation = self.img_transform(
@@ -128,10 +148,15 @@ class BEVFusionRandomFlip3D:
     augmentation matrix in the `data`."""
 
     def __call__(self, data: Dict[str, Any]) -> Dict[str, Any]:
-        flip_horizontal = np.random.choice([0, 1])
-        flip_vertical = np.random.choice([0, 1])
+        # flip_vertical = np.random.choice([0, 1])
 
         rotation = np.eye(3)
+        sync_flip = data.get("sync_flip", None)
+        if sync_flip is None:
+          flip_horizontal = np.random.choice([0, 1])
+        else:
+          flip_horizontal = sync_flip
+          
         if flip_horizontal:
             rotation = np.array([[1, 0, 0], [0, -1, 0], [0, 0, 1]]) @ rotation
             if "points" in data:
@@ -141,14 +166,14 @@ class BEVFusionRandomFlip3D:
             if "gt_masks_bev" in data:
                 data["gt_masks_bev"] = data["gt_masks_bev"][:, :, ::-1].copy()
 
-        if flip_vertical:
-            rotation = np.array([[-1, 0, 0], [0, 1, 0], [0, 0, 1]]) @ rotation
-            if "points" in data:
-                data["points"].flip("vertical")
-            if "gt_bboxes_3d" in data:
-                data["gt_bboxes_3d"].flip("vertical")
-            if "gt_masks_bev" in data:
-                data["gt_masks_bev"] = data["gt_masks_bev"][:, ::-1, :].copy()
+        # if flip_vertical:
+        #     rotation = np.array([[-1, 0, 0], [0, 1, 0], [0, 0, 1]]) @ rotation
+        #     if "points" in data:
+        #         data["points"].flip("vertical")
+        #     if "gt_bboxes_3d" in data:
+        #         data["gt_bboxes_3d"].flip("vertical")
+        #     if "gt_masks_bev" in data:
+        #         data["gt_masks_bev"] = data["gt_masks_bev"][:, ::-1, :].copy()
 
         if "lidar_aug_matrix" not in data:
             data["lidar_aug_matrix"] = np.eye(4)
