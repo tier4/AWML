@@ -1,6 +1,5 @@
 import gc
 import math
-from os import path as osp
 from typing import Dict, List, Optional
 
 import numpy as np
@@ -57,7 +56,7 @@ class T4FrameSamplerDataset(T4Dataset):
             DATA_SAMPLERS.build(frame_object_sampler) if frame_object_sampler is not None else None
         )
         # Number of frames for each category that contains at least one of the category
-        self.category_frame_numbers = {class_name: 0 for class_name in class_names}
+        self.category_frame_numbers = {class_name: 0 for class_name in self.augmented_class_names}
 
         super().__init__(
             metainfo=metainfo,
@@ -150,7 +149,7 @@ class T4FrameSamplerDataset(T4Dataset):
             if sample_class_name == FILTER_CLASS_LABELS:
                 continue
 
-            class_name = self.class_names[label] if not sample_class_name else sample_class_name
+            class_name = self.augmented_class_names[label] if not sample_class_name else sample_class_name
             self.valid_class_name_ins[class_name] += 1
             # Set to 1 if a category exists in this frame
             valid_bbox_categories[class_name] = 1

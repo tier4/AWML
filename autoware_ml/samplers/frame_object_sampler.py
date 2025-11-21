@@ -79,17 +79,13 @@ class NearerLowPedestrianObjectSampler(ObjectSampler):
     def sample(self, frame_ann_info: dict):
         # Implement the sampling logic for low pedestrian category
         gt_bbox_height_mask = frame_ann_info["gt_bboxes_3d"].height < self.height_threshold
-        nearer_bbox_in_ranges = frame_ann_info["gt_bboxes_3d"].in_range_bev(self.bev_distance_thresholds)
         labels = frame_ann_info["gt_labels_3d"]
-        for index, (label, gt_bbox_height_mask, nearer_bbox_mask) in enumerate(
-            zip(labels, gt_bbox_height_mask, nearer_bbox_in_ranges)
-        ):
+        for index, (label, gt_bbox_height_mask) in enumerate(zip(labels, gt_bbox_height_mask)):
             if (
                 frame_ann_info[SAMPLE_CLASS_NAME_KEY][index] == FILTER_CLASS_LABELS
                 or label != self.mapping_category_name
                 or not gt_bbox_height_mask
-                or not nearer_bbox_mask
             ):
                 continue
 
-            frame_ann_info[SAMPLE_CLASS_NAME_KEY][index] = self.category_name
+            frame_ann_info[SAMPLE_CLASS_NAME_KEY][index] = self.sampler_category_name

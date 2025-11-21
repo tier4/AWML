@@ -44,7 +44,7 @@ eval_class_range = {
 data_root = "data/t4dataset/"
 info_directory_path = "info/kokseang_2_3/"
 train_gpu_size = 4
-train_batch_size = 16
+train_batch_size = 2
 test_batch_size = 2
 num_workers = 32
 val_interval = 5
@@ -162,13 +162,14 @@ train_frame_object_sampler = dict(
         ),
     ],
 )
+
 train_dataloader = dict(
     batch_size=train_batch_size,
     num_workers=num_workers,
     persistent_workers=True,
     sampler=dict(type="DistributedWeightedRandomSampler", shuffle=True),
     dataset=dict(
-        type=_base_.dataset_type,
+        type="T4FrameSamplerDataset",
         pipeline=train_pipeline,
         modality=input_modality,
         backend_args=backend_args,
