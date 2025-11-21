@@ -505,7 +505,7 @@ class BEVFusionHead(nn.Module):
         if isinstance(img_bev_feats, torch.Tensor):
             img_bev_feats = [img_bev_feats]
 
-        res = multi_apply(self.forward_single, feats, [metas], img_bev_feats)
+        res = multi_apply(self.forward_single, feats, img_bev_feats, [metas])
         assert len(res) == 1, "only support one level features."
         return res
 
@@ -873,7 +873,7 @@ class BEVFusionHead(nn.Module):
             batch_input_metas.append(data_sample.metainfo)
             batch_gt_instances_3d.append(data_sample.gt_instances_3d)
 
-        preds_dicts = self(batch_feats, batch_input_metas, batch_img_bev_feats)  # noqa: E501
+        preds_dicts = self(batch_feats, batch_img_bev_feats, batch_input_metas)  # noqa: E501
         loss = self.loss_by_feat(preds_dicts, batch_gt_instances_3d)
         return loss
 

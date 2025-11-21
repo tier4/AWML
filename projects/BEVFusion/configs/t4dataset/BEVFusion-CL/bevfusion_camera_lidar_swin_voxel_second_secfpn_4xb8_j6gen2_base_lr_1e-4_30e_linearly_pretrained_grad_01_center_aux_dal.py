@@ -516,3 +516,4 @@ if train_gpu_size > 1:
 load_from = "work_dirs/bevfusion_2_3/T4Dataset/bevfusion_lidar_voxel_second_secfpn_4xb8_j6gen2_base/epoch_30.pth"
 
 # resume = True
+# activation_checkpointing = ["pts_backbone"]
