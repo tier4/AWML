@@ -12,9 +12,9 @@ custom_imports["imports"] += ["autoware_ml.samplers"]
 
 # This is a base file for t4dataset, add the dataset config.
 # type, data_root and ann_file of data.train, data.val and data.test
-point_cloud_range = [-121.60, -121.60, -3.0, 121.60, 121.60, 5.0]
-voxel_size = [0.20, 0.20, 8.0]
-grid_size = [1216, 1216, 1]  # (121.60 / 0.32 == 380, 380 * 2 == 760)
+point_cloud_range = [-122.40, -122.40, -3.0, 122.40, 122.40, 5.0]
+voxel_size = [0.24, 0.24, 8.0]
+grid_size = [1020, 1020, 1]  # (122.40 / 0.24 == 510, 510 * 2 == 1020)
 sweeps_num = 1
 input_modality = dict(
     use_lidar=True,
@@ -50,7 +50,7 @@ num_workers = 32
 val_interval = 5
 max_epochs = 50
 work_dir = (
-    "work_dirs/centerpoint_2_3_rfs/" + _base_.dataset_type + "/second_secfpn_4xb16_121m_base_amp_high_resolution_rfs/"
+    "work_dirs/centerpoint_2_5/" + _base_.dataset_type + "/second_secfpn_4xb16_121m_base_amp_high_resolution_rfs/"
 )
 
 train_pipeline = [
@@ -257,7 +257,7 @@ model = dict(
             max_num_points=32,
             voxel_size=voxel_size,
             point_cloud_range=point_cloud_range,
-            max_voxels=(128000, 128000),
+            max_voxels=(96000, 96000),
             deterministic=True,
         ),
     ),
