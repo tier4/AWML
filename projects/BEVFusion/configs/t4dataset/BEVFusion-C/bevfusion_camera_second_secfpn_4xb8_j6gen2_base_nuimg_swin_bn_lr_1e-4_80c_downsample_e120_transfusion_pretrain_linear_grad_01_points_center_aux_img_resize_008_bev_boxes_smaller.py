@@ -256,7 +256,7 @@ train_pipeline = [
     dict(
         type="BEVFusionGlobalRotScaleTrans",
         scale_ratio_range=[0.95, 1.05],
-				rot_range=[-0.3925, 0.3925]
+		rot_range=[-0.3925, 0.3925],
         # rot_range=[-1.571, 1.571],
         # scale_ratio_range=[0.8, 1.2],
         # translation_std=[1.0, 1.0, 0.2],
