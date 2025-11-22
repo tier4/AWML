@@ -87,7 +87,7 @@ model = dict(
         convert_weights=True,
         init_cfg=dict(
             type="Pretrained",
-            checkpoint="work_dirs/swin_transformer/swint_nuimages_pretrained.pth"  # noqa: E251  # noqa: E501
+            checkpoint="work_dirs/bevfusion/pretrain/swint_nuimages_pretrained.pth"  # noqa: E251  # noqa: E501
         ),
     ),
     img_neck=dict(
@@ -220,6 +220,10 @@ model = dict(
 
 train_pipeline = [
     dict(
+		type="SyncFlipping",
+		is_train=True
+	),
+    dict(
         type="BEVLoadMultiViewImageFromFiles",
         to_float32=True,
         color_type="color",
@@ -256,6 +260,8 @@ train_pipeline = [
     # dict(type="BEVFusionRandomFlip3D"),
     dict(type="PointsRangeFilter", point_cloud_range=point_cloud_range),
     dict(type="ObjectRangeFilter", point_cloud_range=point_cloud_range),
+    dict(type="ObjectRangeMinPointsFilter", range_radius=[0, 60], min_num_points=2),
+    dict(type="ObjectRangeMinPointsFilter", range_radius=[60, 130], min_num_points=1),
     dict(
         type="ObjectNameFilter",
         classes=[
@@ -271,7 +277,7 @@ train_pipeline = [
             "traffic_cone",
         ],
     ),
-		dict(type="PointShuffle"),
+	dict(type="PointShuffle"),
     # dict(type="ObjectMinPointsFilter", min_num_points=5, remove_points=True),
     dict(
         type="Pack3DDetInputs",
@@ -518,6 +524,6 @@ auto_scale_lr = dict(enable=False, base_batch_size=train_gpu_size * train_batch_
 if train_gpu_size > 1:
     sync_bn = "torch"
 
-load_from = "work_dirs/bevfusion_2_3/epoch_46.pth"
+load_from = "work_dirs/bevfusion_2_3/T4Dataset/bevfusion_lidar_voxel_second_secfpn_4xb16_base/epoch_46.pth"
 
 # resume = True
