@@ -220,6 +220,10 @@ model = dict(
 
 train_pipeline = [
     dict(
+		type="SyncFlipping",
+		is_train=True
+	),
+    dict(
         type="BEVLoadMultiViewImageFromFiles",
         to_float32=True,
         color_type="color",
@@ -256,7 +260,7 @@ train_pipeline = [
     dict(
         type="BEVFusionGlobalRotScaleTrans",
         scale_ratio_range=[0.95, 1.05],
-				rot_range=[-0.3925, 0.3925]
+		rot_range=[-0.3925, 0.3925],
         # rot_range=[-1.571, 1.571],
         # scale_ratio_range=[0.8, 1.2],
         # translation_std=[1.0, 1.0, 0.2],
@@ -280,7 +284,7 @@ train_pipeline = [
             "traffic_cone",
         ],
     ),
-		dict(type="PointShuffle"),
+	dict(type="PointShuffle"),
     # dict(type="ObjectMinPointsFilter", min_num_points=5, remove_points=True),
     dict(
         type="Pack3DDetInputs",
