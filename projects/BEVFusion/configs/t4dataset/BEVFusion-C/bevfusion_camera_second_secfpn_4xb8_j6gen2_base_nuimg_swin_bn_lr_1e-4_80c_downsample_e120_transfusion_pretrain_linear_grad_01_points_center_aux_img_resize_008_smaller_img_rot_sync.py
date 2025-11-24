@@ -220,13 +220,17 @@ model = dict(
 
 train_pipeline = [
     dict(
+        type="SyncFlipping",
+        is_train=True
+    ),
+    dict(
         type="BEVLoadMultiViewImageFromFiles",
         to_float32=True,
         color_type="color",
         backend_args=backend_args,
         camera_order=camera_order,
     ),
-		dict(
+	dict(
         type="LoadPointsFromFile",
         coord_type="LIDAR",
         load_dim=point_load_dim,
@@ -249,22 +253,24 @@ train_pipeline = [
         final_dim=image_size,
         resize_lim=0.08,
         bot_pct_lim=[0.0, 0.0],
-        rot_lim=[0.0, 0.0],
+        rot_lim=[-5.4, 5.4],
         rand_flip=True,
         is_train=True,
     ),
+    dict(type="BEVFusionRandomFlip3D", flip_vertical=False),
     dict(
         type="BEVFusionGlobalRotScaleTrans",
         scale_ratio_range=[0.95, 1.05],
-		rot_range=[-0.3925, 0.3925],
+		rot_range=[-0.087, 0.087],  # +-5
         # rot_range=[-1.571, 1.571],
         # scale_ratio_range=[0.8, 1.2],
         # translation_std=[1.0, 1.0, 0.2],
         translation_std=[0.0, 0.0, 0.0],
     ),
-    # dict(type="BEVFusionRandomFlip3D"),
     dict(type="PointsRangeFilter", point_cloud_range=point_cloud_range),
     dict(type="ObjectRangeFilter", point_cloud_range=point_cloud_range),
+    dict(type="ObjectRangeMinPointsFilter", range_radius=[0, 60], min_num_points=2),
+    dict(type="ObjectRangeMinPointsFilter", range_radius=[60, 130], min_num_points=1),
     dict(
         type="ObjectNameFilter",
         classes=[

@@ -1,5 +1,6 @@
 # modify from https://github.com/mit-han-lab/bevfusion
 import uuid
+from copy import deepcopy
 from typing import Any, Dict
 
 import numpy as np

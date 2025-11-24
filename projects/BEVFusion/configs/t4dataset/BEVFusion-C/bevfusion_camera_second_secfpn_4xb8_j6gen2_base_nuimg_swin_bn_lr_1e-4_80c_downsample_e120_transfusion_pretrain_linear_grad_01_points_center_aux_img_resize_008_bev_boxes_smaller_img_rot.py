@@ -249,14 +249,14 @@ train_pipeline = [
         final_dim=image_size,
         resize_lim=0.08,
         bot_pct_lim=[0.0, 0.0],
-        rot_lim=[0.0, 0.0],
+        rot_lim=[-5.4, 5.4],
         rand_flip=True,
         is_train=True,
     ),
     dict(
         type="BEVFusionGlobalRotScaleTrans",
-        scale_ratio_range=[0.95, 1.05],
-		rot_range=[-0.3925, 0.3925],
+        scale_ratio_range=[1.0, 1.00],
+		rot_range=[-0.19625, 0.19625],
         # rot_range=[-1.571, 1.571],
         # scale_ratio_range=[0.8, 1.2],
         # translation_std=[1.0, 1.0, 0.2],
@@ -265,6 +265,9 @@ train_pipeline = [
     # dict(type="BEVFusionRandomFlip3D"),
     dict(type="PointsRangeFilter", point_cloud_range=point_cloud_range),
     dict(type="ObjectRangeFilter", point_cloud_range=point_cloud_range),
+    dict(type="ObjectRangeMinPointsFilter", range_radius=[0, 60], min_num_points=2),
+    dict(type="ObjectRangeMinPointsFilter", range_radius=[60, 130], min_num_points=1),
+
     dict(
         type="ObjectNameFilter",
         classes=[
