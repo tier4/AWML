@@ -443,6 +443,9 @@ class BaseDepthTransform(BaseViewTransform):
 
         batch_size = len(points)
         depth = torch.zeros(batch_size, img.shape[1], 1, *self.image_size).to(points[0].device)
+        depth_batch_size, num_imgs, channels, height, width = depth.shape
+        assert channels == 1
+        
         for b in range(batch_size):
             cur_coords = points[b][:, :3]
             cur_img_aug_matrix = img_aug_matrix[b]
@@ -452,11 +455,15 @@ class BaseDepthTransform(BaseViewTransform):
             # inverse aug
             cur_coords -= cur_lidar_aug_matrix[:3, 3]
             cur_coords = lidar_aug_matrix_inverse[b, :3, :3].matmul(cur_coords.transpose(1, 0))
-            # lidar2image
+
+             # lidar2image
             cur_coords = cur_lidar2image[:, :3, :3].matmul(cur_coords)
             cur_coords += cur_lidar2image[:, :3, 3].reshape(-1, 3, 1)
+            
             # get 2d coords
             dist = cur_coords[:, 2, :]
+            valid_dist_mask = dist > 0
+
             cur_coords[:, 2, :] = torch.clamp(cur_coords[:, 2, :], 1e-5, 1e5)
             cur_coords[:, :2, :] /= cur_coords[:, 2:3, :]
 
@@ -467,12 +474,11 @@ class BaseDepthTransform(BaseViewTransform):
 
             # normalize coords for grid sample
             cur_coords = cur_coords[..., [1, 0]]
-
             on_img = (
                 (cur_coords[..., 0] < self.image_size[0])
                 & (cur_coords[..., 0] >= 0)
                 & (cur_coords[..., 1] < self.image_size[1])
-                & (cur_coords[..., 1] >= 0)
+                & (cur_coords[..., 1] >= 0) & valid_dist_mask
             )
 
             # NOTE(knzo25): in the original code, a per-image loop was
@@ -491,9 +497,8 @@ class BaseDepthTransform(BaseViewTransform):
             masked_coords = cur_coords[camera_indices, point_indices].long()
             masked_dist = dist[camera_indices, point_indices]
             depth = depth.to(masked_dist.dtype)
-            batch_size, num_imgs, channels, height, width = depth.shape
+            # batch_size, num_imgs, channels, height, width = depth.shape
             # Depth tensor should have only one channel in this implementation
-            assert channels == 1
 
             depth_flat = depth.view(batch_size, num_imgs, channels, -1)
 
