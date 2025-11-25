@@ -522,4 +522,4 @@ if train_gpu_size > 1:
 
 # load_from = "work_dirs/bevfusion_2_3/epoch_48.pth"
 
-resume = True
+# resume = True

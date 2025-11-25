@@ -99,6 +99,9 @@ if __name__ == "__main__":
     # load a sample
     if "work_dir" not in model_cfg:
       model_cfg['work_dir'] = work_dir
+
+    # Deattach auxillary heads
+    model_cfg["model"]["img_aux_bbox_head"] = None
     runner = RUNNERS.build(model_cfg)
     runner.load_or_resume()
 

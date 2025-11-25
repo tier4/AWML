@@ -63,6 +63,7 @@ class BEVFusion(Base3DDetector):
             self.img_neck = None
             self.view_transform = None
 
+        # Detach it during onnx inference
         if img_aux_bbox_head is not None:
             self.img_aux_bbox_head = MODELS.build(img_aux_bbox_head)
         else:
