@@ -429,44 +429,31 @@ class BEVFusion(Base3DDetector):
                 
             gt_bboxes2d_list = []
             gt_labels2d_list = []
-            centers_2d = [] 
-            depths = []
+            centers_2d_list = [] 
+            depths_list = []
             img_pad_shapes = []
-            gt_bboxes_ignore = []
-            print(feats[0].device)
 
-            for batch_data_sample, batch_input_meta in zip(batch_data_samples, batch_input_metas):
-                gt_bboxes2d_list.append(
-                    batch_data_sample.gt_instances.bboxes.to(feats[0].device)
-                )
-                gt_labels2d_list.append(
-                    batch_data_sample.gt_instances.labels.to(feats[0].device)
-                )
-                centers_2d.append(
-                    batch_input_meta['centers_2d'].to(feats[0].device)
-                )
-                depths.append(
-                    batch_input_meta['depths'].to(feats[0].device)
-                )
-                img_pad_shapes.append(
-                    batch_input_meta['pad_shape'].to(feats[0].device)
-                )
-                if 'gt_bboxes_ignore' in batch_input_meta:
-                    gt_bboxes_ignore.append(
-                        batch_input_meta['gt_bboxes_ignore'].to(feats[0].device)
-                    ) 
+            for index, (batch_data_sample, batch_input_meta) in enumerate(zip(batch_data_samples, batch_input_metas)):
+                # bboxes_2d = torch.tensor(batch_data_sample.gt_instances.bboxes).to(device)
+                # labels_2d = torch.tensor(batch_data_sample.gt_instances.labels).to(device)
+                # centers_2d = torch.tensor(batch_input_meta['centers_2d']).to(device)
+                # depths = torch.tensor(batch_input_meta['depths']).to(device)
+                # img_pad = torch.tensor(batch_input_meta['pad_shape']).to(device)
 
-            if not len(gt_bboxes_ignore):
-                gt_bboxes_ignore = None 
+                gt_bboxes2d_list.append(batch_data_sample.gt_instances.bboxes)
+                gt_labels2d_list.append(batch_data_sample.gt_instances.labels)
+                centers_2d_list.append(batch_input_meta['centers_2d'])
+                depths_list.append(batch_input_meta['depths'])
+                img_pad_shapes.append(batch_input_meta['pad_shape'])
 
             img_roi_head_losses = self.img_roi_head.loss(
                 gt_bboxes2d_list=gt_bboxes2d_list,
                 gt_labels2d_list=gt_labels2d_list,
-                centers2d=centers_2d, 
-                depths=depths, 
+                centers2d=centers_2d_list, 
+                depths=depths_list, 
                 preds_dicts=img_roi_head_preds,
                 img_pad_shapes=img_pad_shapes,
-                gt_bboxes_ignore=gt_bboxes_ignore
+                gt_bboxes_ignore=None
             )
 
             losses.update(

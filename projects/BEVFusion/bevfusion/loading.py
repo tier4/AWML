@@ -1,19 +1,29 @@
 # Copyright (c) OpenMMLab. All rights reserved.
 import copy
 import os
+import cv2
 from typing import List, Optional
 
 import mmcv
 from mmcv.transforms import BaseTransform
 import numpy as np
+import torch 
+
 from mmdet3d.datasets.transforms import LoadMultiViewImageFromFiles
 from mmdet3d.registry import TRANSFORMS
 from mmengine.fileio import get
 from mmengine.logging import print_log
+from PIL import Image 
+import uuid
+import matplotlib.pyplot as plt
 
 
-def project_to_image(points, lidar2cam, cam2img):
+def project_to_image(points, lidar2cam, cam2img, img_aug_matrix, lidar_aug_matrix):
     """Transform points from LiDAR to image coordinates."""
+    # Undo lidar_aug
+    points -= lidar_aug_matrix[:3, 3]
+    points = (np.linalg.inv(lidar_aug_matrix[:3, :3]) @ points.T).T
+
     points_hom = np.hstack((points, np.ones((points.shape[0], 1))))
     points_cam = np.dot(lidar2cam, points_hom.T).T
 
@@ -22,11 +32,16 @@ def project_to_image(points, lidar2cam, cam2img):
 
     points_cam_hom = np.hstack((points_cam[:, :3], np.ones((points_cam.shape[0], 1))))
     points_img = np.dot(cam2img, points_cam_hom.T).T
-    points_img /= points_img[:, 2:3]
+    points_img[:, :2] /= points_img[:, 2:3]
+
+    # imgaug
+    points_img = (img_aug_matrix[:3, :3] @ points_img[:, :3].T).T
+    points_img += img_aug_matrix[:3, 3]
+
     return points_img[:, :2], valid_mask
 
 
-def compute_bbox_and_centers(lidar2cam, cam2img, img_aug_matrix, bboxes, labels, img_shape):
+def compute_bbox_and_centers(lidar2cam, cam2img, img_aug_matrix, lidar_aug_matrix, bboxes, labels, img_shape):
     """
     Compute the 2D bounding box, 3D center of the projected bounding box, and 3D center in LiDAR coordinates.
 
@@ -44,21 +59,21 @@ def compute_bbox_and_centers(lidar2cam, cam2img, img_aug_matrix, bboxes, labels,
             - valid_labels: np.ndarray of shape (N,) containing labels for valid boxes
     """
 
-    C, H, W = img_shape
+    H, W, C = img_shape
     # Initialize lists to store valid results
     valid_bboxes_2d = []
     valid_projected_centers = []
     valid_image_depth = []
     valid_labels_list = []
 
-    cam2img = img_aug_matrix @ cam2img
+    # cam2img = img_aug_matrix @ cam2img 
 
     # Loop through each bounding box
     for bbox_std, bbox, label in zip(bboxes, bboxes.corners, labels):
         # Project corners to image
         center_3d_lidar = bbox_std[:3].numpy()
         corners_img, valid_mask = project_to_image(
-            np.concatenate([bbox, bbox.mean(0).reshape(1, 3)]), lidar2cam, cam2img
+            np.concatenate([bbox, bbox.mean(0).reshape(1, 3)]), lidar2cam, cam2img, img_aug_matrix, lidar_aug_matrix
         )
         projected_center = corners_img[-1]
 
@@ -120,7 +135,7 @@ def check_bbox_visibility_in_image(lidar2cam, cam2img, img_aug_matrix, bboxes, l
     """
     C, H, W = img_shape
     is_visible = []
-    cam2img = img_aug_matrix @ cam2img
+    # cam2img = img_aug_matrix @ cam2img
 
     for bbox_std, bbox, label in zip(bboxes, [b.corners for b in bboxes], labels):
         # Project corners + center to image space
@@ -370,12 +385,15 @@ class BEVFusionLoadAnnotations2D(BaseTransform):
     def transform(self, results):
 
         all_bboxes_2d, all_centers_2d, all_depths, all_labels = [], [], [], []
+        vis_images = []
+        lidar_aug_matrix = results.get("lidar_aug_matrix", np.eye(4))
 
         for i, k in enumerate(results["img"]):
             bboxes_2d, projected_centers, depths, valid_labels = compute_bbox_and_centers(
                 results["lidar2cam"][i],
                 results["cam2img"][i],
                 results["img_aug_matrix"][i],
+                lidar_aug_matrix,
                 results["gt_bboxes_3d"],
                 results["gt_labels_3d"],
                 results["img"][i].shape,
@@ -385,6 +403,57 @@ class BEVFusionLoadAnnotations2D(BaseTransform):
             all_centers_2d.append(projected_centers)
             all_depths.append(depths)
             all_labels.append(valid_labels)
+
+            # ------------------------------
+            # 🔵  Draw bounding boxes on image
+            # ------------------------------
+            # img = results["img"][i]
+            # img_draw = img.copy()
+            # for box, center, depth, label in zip(bboxes_2d, projected_centers, depths, valid_labels):
+            
+            #     # box = [x1, y1, x2, y2]
+            #     x1, y1, x2, y2 = map(int, box)
+
+            #     # draw bbox rectangle
+            #     cv2.rectangle(img_draw, (x1, y1), (x2, y2), (0, 255, 0), 2)
+
+            #     # draw center point
+            #     cx, cy = map(int, center)
+            #     cv2.circle(img_draw, (cx, cy), 3, (0, 0, 255), -1)
+
+            #     # write depth and class label
+            #     text = f"{label}, {depth:.1f}m"
+            #     cv2.putText(
+            #         img_draw, text, (x1, max(0, y1 - 5)),
+            #         cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 0), 1
+            #     )
+            # img_draw = Image.fromarray(img_draw.astype("uint8"), mode="RGB")
+            # vis_images.append(img_draw)
+
+        
+        # Visualize image 
+        # -----------------------------
+        # 🔵 Save as subplot with 5 images
+        # -----------------------------
+        # num_images = len(vis_images)
+        # cols = 5
+        # rows = int(np.ceil(num_images / cols))
+
+        # fig = plt.figure(figsize=(20, 4 * rows))
+
+        # for idx, img in enumerate(vis_images):
+        #     ax = fig.add_subplot(rows, cols, idx + 1)
+        #     ax.imshow(img)
+        #     ax.axis("off")
+        #     ax.set_title(f"Camera {idx}")
+
+        # fig.tight_layout()
+
+        # Save figure to memory (as ndarray) or file
+        # fig_path = f"work_dirs/bevfusion_image_2d_debug/2/debug_vis_{uuid.uuid4().hex}.png"
+        # fig.savefig(fig_path, dpi=150)
+        # plt.close(fig)
+
         results["depths"] = all_depths
         results["centers_2d"] = all_centers_2d
         results["gt_bboxes"] = all_bboxes_2d
@@ -401,11 +470,13 @@ class Filter3DBoxesinBlindSpot(BaseTransform):
 
     def transform(self, results):
         visibility_mask = []
+        lidar_aug_matrix = results.get("lidar_aug_matrix", np.eye(4))
         for i, k in enumerate(results["img"]):
             is_visible = check_bbox_visibility_in_image(
                 results["lidar2cam"][i],
                 results["cam2img"][i],
                 results["img_aug_matrix"][i],
+                lidar_aug_matrix,
                 results["gt_bboxes_3d"],
                 results["gt_labels_3d"],
                 results["img"][i].shape,

@@ -13,7 +13,7 @@ info_directory_path = "info/kokseang_2_3/"
 train_gpu_size = 2
 train_batch_size = 8
 test_batch_size = 2
-val_interval = 15
+val_interval = 5
 max_epochs = 100
 backend_args = None
 
@@ -153,67 +153,69 @@ model = dict(
             )
         ),
     ),
-    img_aux_bbox_head=dict(
-        type="BEVFusionCenterHead",
-        # in_channels=sum([128, 128, 128]),
-        in_channels=80,
-        # (output_channel_size, num_conv_layers)
-        common_heads=dict(
-            reg=(2, 2),
-            height=(1, 2),
-            dim=(3, 2),
-            rot=(2, 2),
-            vel=(2, 2),
-        ),
-        bbox_coder=dict(
-            type="CenterPointBBoxCoder",
-            max_num=500,
-            score_threshold=0.1,
-            code_size=9,
-            voxel_size=voxel_size,
-            pc_range=point_cloud_range,
-            post_center_range=[-200.0, -200.0, -10.0, 200.0, 200.0, 10.0],
-            out_size_factor=out_size_factor,
-        ),
-        share_conv_channel=64,
-        loss_cls=dict(type="mmdet.GaussianFocalLoss", reduction="none", loss_weight=1.0),
-        loss_bbox=dict(type="mmdet.L1Loss", reduction="mean", loss_weight=0.0),
-        norm_bbox=True,
-        tasks=[
-            dict(num_class=5, class_names=["car", "truck", "bus", "bicycle", "pedestrian"]),
-        ],
-        # sigmoid(-4.595) = 0.01 for initial small values
-        separate_head=dict(type="CustomSeparateHead", init_bias=-4.595, final_kernel=1),
-        train_cfg=dict(
-            out_size_factor=out_size_factor,
-            dense_reg=1,
-            gaussian_overlap=0.1,
-            max_objs=500,
-            min_radius=2,
-            # (Reg x 2, height x 1, dim 3, rot x 2, vel x 2)
-            code_weights=[1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 0.2, 0.2],
-            grid_size=grid_size,
-            voxel_size=voxel_size,
-            point_cloud_range=point_cloud_range,
-        ),
-        test_cfg=dict(
-            nms_type="circle",
-            min_radius=[1.0],
-            post_max_size=100,
-            grid_size=grid_size,
-            out_size_factor=out_size_factor,
-            pc_range=point_cloud_range,
-            voxel_size=voxel_size,
-            # No filter by range
-            post_center_limit_range=[-200.0, -200.0, -10.0, 200.0, 200.0, 10.0],
-            # nms_type="rotate",
-            # post_center_limit_range=[-90.0, -90.0, -10.0, 90.0, 90.0, 10.0],
-            # score_threshold=0.1,
-            # nms_thr=0.2,
-            # pre_max_size=1000,
-            # post_max_size=100,
-        ),
-    ),
+    img_aux_bbox_head=None,
+    # img_aux_bbox_head=dict(
+    #     type="BEVFusionCenterHead",
+    #     # in_channels=sum([128, 128, 128]),
+    #     in_channels=80,
+    #     # (output_channel_size, num_conv_layers)
+    #     common_heads=dict(
+    #         reg=(2, 2),
+    #         height=(1, 2),
+    #         dim=(3, 2),
+    #         rot=(2, 2),
+    #         vel=(2, 2),
+    #     ),
+    #     bbox_coder=dict(
+    #         type="CenterPointBBoxCoder",
+    #         max_num=500,
+    #         score_threshold=0.1,
+    #         code_size=9,
+    #         voxel_size=voxel_size,
+    #         pc_range=point_cloud_range,
+    #         post_center_range=[-200.0, -200.0, -10.0, 200.0, 200.0, 10.0],
+    #         out_size_factor=out_size_factor,
+    #     ),
+    #     share_conv_channel=64,
+    #     loss_cls=dict(type="mmdet.GaussianFocalLoss", reduction="none", loss_weight=1.0),
+    #     loss_bbox=dict(type="mmdet.L1Loss", reduction="mean", loss_weight=0.0),
+    #     norm_bbox=True,
+    #     tasks=[
+    #         dict(num_class=5, class_names=["car", "truck", "bus", "bicycle", "pedestrian"]),
+    #     ],
+    #     # sigmoid(-4.595) = 0.01 for initial small values
+    #     separate_head=dict(type="CustomSeparateHead", init_bias=-4.595, final_kernel=1),
+    #     train_cfg=dict(
+    #         out_size_factor=out_size_factor,
+    #         dense_reg=1,
+    #         gaussian_overlap=0.1,
+    #         max_objs=500,
+    #         min_radius=2,
+    #         # (Reg x 2, height x 1, dim 3, rot x 2, vel x 2)
+    #         code_weights=[1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 0.2, 0.2],
+    #         grid_size=grid_size,
+    #         voxel_size=voxel_size,
+    #         point_cloud_range=point_cloud_range,
+    #     ),
+    #     test_cfg=dict(
+    #         nms_type="circle",
+    #         min_radius=[1.0],
+    #         post_max_size=100,
+    #         grid_size=grid_size,
+    #         out_size_factor=out_size_factor,
+    #         pc_range=point_cloud_range,
+    #         voxel_size=voxel_size,
+    #         # No filter by range
+    #         post_center_limit_range=[-200.0, -200.0, -10.0, 200.0, 200.0, 10.0],
+    #         # nms_type="rotate",
+    #         # post_center_limit_range=[-90.0, -90.0, -10.0, 90.0, 90.0, 10.0],
+    #         # score_threshold=0.1,
+    #         # nms_thr=0.2,
+    #         # pre_max_size=1000,
+    #         # post_max_size=100,
+    #     ),
+    # ),
+
     bbox_head=dict(
         num_proposals=num_proposals,
         class_names=_base_.class_names,  # Use class names to identify the correct class indices
@@ -240,6 +242,10 @@ model = dict(
 )
 
 train_pipeline = [
+    # dict(
+    #     type="SyncFlipping",
+    #     is_train=True
+    # ),
     dict(
         type="BEVLoadMultiViewImageFromFiles",
         to_float32=True,
@@ -268,13 +274,19 @@ train_pipeline = [
     dict(
         type="ImageAug3D",
         final_dim=image_size,
-        resize_lim=0.02,
+        resize_lim=0.08,
         bot_pct_lim=[0.0, 0.0],
         rot_lim=[0.0, 0.0],
         rand_flip=True,
         is_train=True,
     ),
-    # dict(type="BEVFusionRandomFlip3D"),
+    dict(
+        type="BEVFusionGlobalRotScaleTrans",
+        scale_ratio_range=[0.95, 1.05],
+		rot_range=[-0.3925, 0.3925],
+        translation_std=[0.0, 0.0, 0.0],
+    ),
+    dict(type="BEVFusionRandomFlip3D", flip_vertical=True),
     dict(type="PointsRangeFilter", point_cloud_range=point_cloud_range),
     dict(type="ObjectRangeFilter", point_cloud_range=point_cloud_range),
     dict(
@@ -292,11 +304,13 @@ train_pipeline = [
             "traffic_cone",
         ],
     ),
-		dict(type="PointShuffle"),
-		dict(type="BEVFusionLoadAnnotations2D"),
+    dict(type="ObjectRangeMinPointsFilter", range_radius=[0, 60], min_num_points=2),
+    dict(type="ObjectRangeMinPointsFilter", range_radius=[60, 130], min_num_points=1),
+    dict(type="PointShuffle"),
+	dict(type="BEVFusionLoadAnnotations2D"),
     dict(
         type="Pack3DDetInputs",
-				keys=["img", "points",  "gt_bboxes_3d", "gt_labels_3d", "gt_bboxes", "gt_bboxes_labels"],
+		keys=["img", "points",  "gt_bboxes_3d", "gt_labels_3d", "gt_bboxes", "gt_bboxes_labels"],
         # keys=["img", "points",  "gt_bboxes_3d", "gt_labels_3d", "gt_bboxes", "gt_labels"],
         meta_keys=[
             "cam2img",
@@ -315,7 +329,7 @@ train_pipeline = [
             "pcd_scale_factor",
             "pcd_trans",
             "lidar_aug_matrix",
-						"pad_shape",
+			"pad_shape",
             "depths",
             "centers_2d"
         ],
@@ -350,7 +364,7 @@ test_pipeline = [
     dict(
         type="ImageAug3D",
         final_dim=image_size,
-        resize_lim=0.00,
+        resize_lim=0.04,
         bot_pct_lim=[0.0, 0.0],
         rot_lim=[0.0, 0.0],
         rand_flip=False,

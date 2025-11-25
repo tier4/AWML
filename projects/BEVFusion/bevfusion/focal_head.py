@@ -278,11 +278,12 @@ class FocalHead(AnchorFreeHead):
         # loss of proposal generated from encode feature map.
         img_counts = len(gt_bboxes2d_list)
         bs = len(gt_bboxes2d_list[0])
+        device = pred_centers2d.device
 
-        all_gt_bboxes2d_list = [gt_bboxes2d_list[i][j] for j in range(bs) for i in range(img_counts)]
-        all_gt_labels2d_list = [gt_labels2d_list[i][j] for j in range(bs) for i in range(img_counts)]
-        all_centers2d_list = [centers2d[i][j] for j in range(bs) for i in range(img_counts)]
-        all_depths_list = [depths[i][j] for j in range(bs) for i in range(img_counts)]
+        all_gt_bboxes2d_list = [gt_bboxes2d_list[i][j].to(device) for j in range(bs) for i in range(img_counts)]
+        all_gt_labels2d_list = [gt_labels2d_list[i][j].to(device) for j in range(bs) for i in range(img_counts)]
+        all_centers2d_list = [centers2d[i][j].to(device) for j in range(bs) for i in range(img_counts)]
+        all_depths_list = [depths[i][j].to(device) for j in range(bs) for i in range(img_counts)]
 
         enc_loss_cls, enc_losses_bbox, enc_losses_iou, centers2d_losses, centerness_losses = self.loss_single(
             enc_cls_scores,
@@ -442,15 +443,15 @@ class FocalHead(AnchorFreeHead):
         # thus the learning target is normalized by the image size. So here
         # we need to re-scale them for calculating IoU loss
         # construct factors used for rescale bboxes
-        img_h = [x[0] for x in img_pad_shapes]
-        img_w = [x[1] for x in img_pad_shapes]
+        img_shapes = [x for x in img_pad_shapes for _ in range(num_imgs)]
+        img_h = [x[0] for x in img_shapes]
+        img_w = [x[1] for x in img_shapes]
 
         # img_h, img_w, _ = [x[0] for x in img_metas["pad_shape"]]
 
         factors = []
-
-        for bbox_pred in bbox_preds:
-            factor = bbox_pred.new_tensor([img_w, img_h, img_w, img_h]).unsqueeze(0).repeat(bbox_pred.size(0), 1)
+        for index, bbox_pred in enumerate(bbox_preds):
+            factor = bbox_pred.new_tensor([img_w[index], img_h[index], img_w[index], img_h[index]]).unsqueeze(0).repeat(bbox_pred.size(0), 1)
             factors.append(factor)
         factors = torch.cat(factors, 0)
         bbox_preds = bbox_preds.reshape(-1, 4)
@@ -477,8 +478,7 @@ class FocalHead(AnchorFreeHead):
 
         # centerness BCE loss
         # img_shape = [[x[0] for x in img_metas["pad_shape"]] for _ in range(num_imgs)]
-        img_shape = [x for x in img_pad_shapes for _ in range(num_imgs)]
-        (heatmaps, num_center_pos) = multi_apply(self._get_heatmap_single, all_centers2d_list, gt_bboxes_list, img_shape)
+        (heatmaps, num_center_pos) = multi_apply(self._get_heatmap_single, all_centers2d_list, gt_bboxes_list, img_shapes)
 
         heatmaps = torch.stack(heatmaps, dim=0)
         centerness = clip_sigmoid(centerness)
