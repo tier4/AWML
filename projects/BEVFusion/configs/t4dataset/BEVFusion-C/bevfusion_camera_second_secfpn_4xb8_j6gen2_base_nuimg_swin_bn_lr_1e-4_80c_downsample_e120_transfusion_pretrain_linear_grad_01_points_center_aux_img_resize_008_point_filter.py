@@ -3,13 +3,15 @@ _base_ = [
     "../../../../../autoware_ml/configs/detection3d/dataset/t4dataset/j6gen2_base.py",
 ]
 
-custom_imports = dict(imports=["projects.BEVFusion.bevfusion", "projects.CenterPoint.models"], allow_failed_imports=False)
+custom_imports = dict(
+    imports=["projects.BEVFusion.bevfusion", "projects.CenterPoint.models"], allow_failed_imports=False
+)
 custom_imports["imports"] += _base_.custom_imports["imports"]
 custom_imports["imports"] += ["autoware_ml.detection3d.datasets.transforms"]
 
 # user setting
-data_root = "data/t4dataset/"
-info_directory_path = "info/kokseang_2_3_fixed/"
+data_root = "data/t4datasets/"
+info_directory_path = "info/kokseang_2_3/"
 train_gpu_size = 4
 train_batch_size = 8
 test_batch_size = 2
@@ -66,7 +68,7 @@ model = dict(
         mean=[123.675, 116.28, 103.53],
         std=[58.395, 57.12, 57.375],
         bgr_to_rgb=False,
-        rgb_to_bgr=False
+        rgb_to_bgr=False,
     ),
     pts_middle_encoder=None,
     img_backbone=dict(
@@ -87,7 +89,7 @@ model = dict(
         convert_weights=True,
         init_cfg=dict(
             type="Pretrained",
-            checkpoint="work_dirs/bevfusion/pretrain/swint_nuimages_pretrained.pth"  # noqa: E251  # noqa: E501
+            checkpoint="work_dirs/bevfusion/pretrain/swint_nuimages_pretrained.pth",  # noqa: E251  # noqa: E501
         ),
     ),
     img_neck=dict(
@@ -114,7 +116,7 @@ model = dict(
         downsample=2,
         # downsample=1,
     ),
-	pts_backbone=dict(
+    pts_backbone=dict(
         type="SECOND",
         in_channels=80,
         out_channels=[128, 256],
@@ -201,28 +203,25 @@ model = dict(
             grid_size=grid_size,
             voxel_size=voxel_size,
             code_weights=[1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 0.2, 0.2],
-			out_size_factor=8,
+            out_size_factor=8,
         ),
         test_cfg=dict(
             dataset="t4datasets",
             grid_size=grid_size,
             voxel_size=voxel_size[0:2],
             pc_range=point_cloud_range[0:2],
-			out_size_factor=8,
+            out_size_factor=8,
         ),
         bbox_coder=dict(
             pc_range=point_cloud_range[0:2],
             voxel_size=voxel_size[0:2],
-			out_size_factor=8,
+            out_size_factor=8,
         ),
     ),
 )
 
 train_pipeline = [
-    dict(
-		type="SyncFlipping",
-		is_train=True
-	),
+    dict(type="SyncFlipping", is_train=True),
     dict(
         type="BEVLoadMultiViewImageFromFiles",
         to_float32=True,
@@ -230,7 +229,7 @@ train_pipeline = [
         backend_args=backend_args,
         camera_order=camera_order,
     ),
-		dict(
+    dict(
         type="LoadPointsFromFile",
         coord_type="LIDAR",
         load_dim=point_load_dim,
@@ -277,11 +276,11 @@ train_pipeline = [
             "traffic_cone",
         ],
     ),
-	dict(type="PointShuffle"),
+    dict(type="PointShuffle"),
     # dict(type="ObjectMinPointsFilter", min_num_points=5, remove_points=True),
     dict(
         type="Pack3DDetInputs",
-        keys=["img", "points",  "gt_bboxes_3d", "gt_labels_3d", "gt_bboxes", "gt_labels"],
+        keys=["img", "points", "gt_bboxes_3d", "gt_labels_3d", "gt_bboxes", "gt_labels"],
         meta_keys=[
             "cam2img",
             "ori_cam2img",
@@ -311,7 +310,7 @@ test_pipeline = [
         backend_args=backend_args,
         camera_order=camera_order,
     ),
-	dict(
+    dict(
         type="LoadPointsFromFile",
         coord_type="LIDAR",
         load_dim=point_load_dim,
@@ -466,7 +465,7 @@ param_scheduler = [
     #     by_epoch=True,
     #     convert_to_iter_based=True,
     # ),
-	dict(type="LinearLR", start_factor=1.0 / 3, begin=0, end=t_max, by_epoch=True),
+    dict(type="LinearLR", start_factor=1.0 / 3, begin=0, end=t_max, by_epoch=True),
     dict(
         type="CosineAnnealingLR",
         T_max=(max_epochs - t_max),
