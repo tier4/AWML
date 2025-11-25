@@ -1,5 +1,6 @@
 # modify from https://github.com/mit-han-lab/bevfusion
 import uuid
+from copy import deepcopy
 from typing import Any, Dict
 
 import numpy as np
@@ -8,6 +9,20 @@ from mmcv.transforms import BaseTransform
 from mmdet3d.datasets import GlobalRotScaleTrans
 from mmdet3d.registry import TRANSFORMS
 from PIL import Image
+
+
+@TRANSFORMS.register_module()
+class SyncFlipping(BaseTransform):
+
+    def __init__(self, is_train):
+        self.is_train = is_train
+  
+    def transform(self, data: Dict[str, Any]) -> Dict[str, Any]:
+      flip = False
+      if self.is_train and np.random.choice([0, 1]):
+        flip = True
+      data["sync_flip"] = flip
+      return data 
 
 
 @TRANSFORMS.register_module()
@@ -27,7 +42,7 @@ class ImageAug3D(BaseTransform):
         if self.is_train:
             if isinstance(self.resize_lim, (int, float)):
                 aspect_ratio = max(fH / H, fW / W)
-                resize = np.random.uniform(aspect_ratio - self.resize_lim, aspect_ratio + self.resize_lim)
+                resize = np.random.uniform(aspect_ratio, aspect_ratio + self.resize_lim)
             else:
                 resize = np.random.uniform(*self.resize_lim)
 
@@ -36,21 +51,22 @@ class ImageAug3D(BaseTransform):
             crop_h = int((1 - np.random.uniform(*self.bot_pct_lim)) * newH) - fH
             crop_w = int(np.random.uniform(0, max(0, newW - fW)))
             crop = (crop_w, crop_h, crop_w + fW, crop_h + fH)
-            # print(f"ori_shape: {(H, W)}, resize: {resize}, resize_dims: {resize_dims}, crop: {crop}, crop_h: {crop_h}, crop_w: {crop_w}, fH: {fH}, fW: {fW}")
-            flip = False
-            if self.rand_flip and np.random.choice([0, 1]):
-                flip = True
             rotate = np.random.uniform(*self.rot_lim)
         else:
-            resize = max(fH / H, fW / W)
+            resize_lim = np.mean(self.resize_lim)
+            if isinstance(self.resize_lim, (int, float)):
+                aspect_ratio = max(fH / H, fW / W)
+                resize = aspect_ratio + resize_lim
+            else:
+                resize = resize_lim
+            
             resize_dims = (int(W * resize), int(H * resize))
             newW, newH = resize_dims
             crop_h = int((1 - np.mean(self.bot_pct_lim)) * newH) - fH
             crop_w = int(max(0, newW - fW) / 2)
             crop = (crop_w, crop_h, crop_w + fW, crop_h + fH)
-            flip = False
             rotate = 0
-        return resize, resize_dims, crop, flip, rotate
+        return resize, resize_dims, crop, rotate
 
     def img_transform(self, img, rotation, translation, resize, resize_dims, crop, flip, rotate):
         # adjust image
@@ -60,8 +76,6 @@ class ImageAug3D(BaseTransform):
         if flip:
             img = img.transpose(method=Image.FLIP_LEFT_RIGHT)
         img = img.rotate(rotate, resample=Image.BICUBIC)  # Default rotation introduces artifacts.
-        # if flip:
-        # img.save(f"work_dirs/bevfusion_2/output_{uuid.uuid4().hex[:8]}.jpg")
 
         # post-homography transformation
         rotation *= resize
@@ -78,8 +92,7 @@ class ImageAug3D(BaseTransform):
                 [-np.sin(theta), np.cos(theta)],
             ]
         )
-        # print(f"flip: {flip}, resize: {resize}, crop: {crop}, rotation: {rotation}, translation: {translation}, theta: {theta}, A: {A}")
-        # print(f"crop: {crop}")
+        
         b = torch.Tensor([(crop[2] - crop[0]), (crop[3] - crop[1])]) / 2
         b = A.matmul(-b) + b
         rotation = A.matmul(rotation)
@@ -91,8 +104,19 @@ class ImageAug3D(BaseTransform):
         imgs = data["img"]
         new_imgs = []
         transforms = []
-        resize, resize_dims, crop, flip, rotate = self.sample_augmentation(data)
+        if not self.is_train:
+          flip = False 
+        else:
+          sync_flip = data.get('sync_flip', None)
+          if sync_flip is None:
+              flip = False
+              if self.rand_flip and np.random.choice([0, 1]):
+                  flip = True
+          else:
+              flip = sync_flip
+
         for img in imgs:
+            resize, resize_dims, crop, rotate = self.sample_augmentation(data)
             post_rot = torch.eye(2)
             post_tran = torch.zeros(2)
             new_img, rotation, translation = self.img_transform(
@@ -121,11 +145,20 @@ class BEVFusionRandomFlip3D:
     """Compared with `RandomFlip3D`, this class directly records the lidar
     augmentation matrix in the `data`."""
 
+    def __init__(self, flip_vertical: bool = True):
+        """"""
+        self.flip_vertical = flip_vertical
+
     def __call__(self, data: Dict[str, Any]) -> Dict[str, Any]:
-        flip_horizontal = np.random.choice([0, 1])
-        flip_vertical = np.random.choice([0, 1])
+        # flip_vertical = np.random.choice([0, 1])
 
         rotation = np.eye(3)
+        sync_flip = data.get("sync_flip", None)
+        if sync_flip is None:
+          flip_horizontal = np.random.choice([0, 1])
+        else:
+          flip_horizontal = sync_flip
+          
         if flip_horizontal:
             rotation = np.array([[1, 0, 0], [0, -1, 0], [0, 0, 1]]) @ rotation
             if "points" in data:
@@ -134,6 +167,11 @@ class BEVFusionRandomFlip3D:
                 data["gt_bboxes_3d"].flip("horizontal")
             if "gt_masks_bev" in data:
                 data["gt_masks_bev"] = data["gt_masks_bev"][:, :, ::-1].copy()
+
+        if self.flip_vertical:
+            flip_vertical = np.random.choice([0, 1])
+        else:
+            flip_vertical = False 
 
         if flip_vertical:
             rotation = np.array([[-1, 0, 0], [0, 1, 0], [0, 0, 1]]) @ rotation

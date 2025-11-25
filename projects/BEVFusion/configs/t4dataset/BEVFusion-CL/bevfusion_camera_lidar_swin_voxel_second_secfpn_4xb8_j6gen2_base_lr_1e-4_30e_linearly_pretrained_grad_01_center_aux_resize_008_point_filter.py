@@ -1,6 +1,6 @@
 _base_ = [
     "../default/bevfusion_lidar_voxel_second_secfpn_1xb1_t4base.py",
-    "../../../../../autoware_ml/configs/detection3d/dataset/t4dataset/base.py",
+    "../../../../../autoware_ml/configs/detection3d/dataset/t4dataset/j6gen2_base.py",
 ]
 
 custom_imports = dict(imports=["projects.BEVFusion.bevfusion"], allow_failed_imports=False)
@@ -8,14 +8,15 @@ custom_imports["imports"] += _base_.custom_imports["imports"]
 custom_imports["imports"] += ["autoware_ml.detection3d.datasets.transforms"]
 
 # user setting
-data_root = "data/t4datasets/"
-info_directory_path = "info/kokseang_2_3/"
+data_root = "data/t4dataset/"
+info_directory_path = "info/kokseang_2_3_fixed/"
 train_gpu_size = 4
 train_batch_size = 8
 test_batch_size = 2
 val_interval = 5
-max_epochs = 50
+max_epochs = 30
 backend_args = None
+out_size_factor = 8
 
 # range setting
 point_cloud_range = [-122.4, -122.4, -3.0, 122.4, 122.4, 5.0]
@@ -38,11 +39,10 @@ max_voxels = [120000, 160000]
 num_proposals = 500
 # image_size = [384, 576]  # height, width
 image_size = [480, 640]  # height, width
-out_size_factor = 8
 
 num_workers = 32
-lidar_sweep_dims = [0, 1, 2, 4]  # x, y, z, time_lag
-lidar_feature_dims = 4
+lidar_sweep_dims = [0, 1, 2, 3, 4]  # x, y, z, time_lag
+lidar_feature_dims = 5
 camera_order = ["CAM_FRONT", "CAM_FRONT_LEFT", "CAM_BACK_LEFT", "CAM_FRONT_RIGHT", "CAM_BACK_RIGHT"]
 
 model = dict(
@@ -108,9 +108,11 @@ model = dict(
         out_channels=80,
         image_size=image_size,
         feature_size=[60, 80],
+        # feature_size=[30, 40],
         xbound=[-122.4, 122.4, 0.68],
         ybound=[-122.4, 122.4, 0.68],
         zbound=[-10.0, 10.0, 20.0],
+        # dbound=[1.0, 134, 1.4],
         dbound=[1.0, 130, 1.0],
         downsample=2,
         # lidar_depth_image_last_stride=4
@@ -138,7 +140,6 @@ model = dict(
     ),
     # Lidar pipeline
     pts_voxel_encoder=dict(num_features=lidar_feature_dims),
-    img_aux_bbox_head_weight=0.30,
     img_aux_bbox_head=dict(
         type="BEVFusionCenterHead",
         # in_channels=sum([128, 128, 128]),
@@ -200,31 +201,6 @@ model = dict(
             # post_max_size=100,
         ),
     ),
-    bbox_head=dict(
-        num_proposals=num_proposals,
-        class_names=_base_.class_names,  # Use class names to identify the correct class indices
-        train_cfg=dict(
-            point_cloud_range=point_cloud_range,
-            grid_size=grid_size,
-            voxel_size=voxel_size,
-            code_weights=[1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 0.2, 0.2],
-            out_size_factor=8,
-        ),
-        test_cfg=dict(
-            dataset="t4datasets",
-            grid_size=grid_size,
-            voxel_size=voxel_size[0:2],
-            pc_range=point_cloud_range[0:2],
-            out_size_factor=8,
-        ),
-        bbox_coder=dict(
-            pc_range=point_cloud_range[0:2],
-            voxel_size=voxel_size[0:2],
-            out_size_factor=8,
-        ),
-    ),
-    # Lidar pipeline
-    pts_voxel_encoder=dict(num_features=lidar_feature_dims),
 )
 
 train_pipeline = [
@@ -256,7 +232,7 @@ train_pipeline = [
     dict(
         type="ImageAug3D",
         final_dim=image_size,
-        resize_lim=0.02,
+        resize_lim=0.08,
         bot_pct_lim=[0.0, 0.0],
         # rot_lim=[-5.4, 5.4],
         rot_lim=[0.0, 0.0],
@@ -265,16 +241,17 @@ train_pipeline = [
     ),
     dict(
         type="BEVFusionGlobalRotScaleTrans",
-        # scale_ratio_range=[0.9, 1.1],
-        # rot_range=[-0.78539816, 0.78539816],
-        rot_range=[-1.571, 1.571],
-        scale_ratio_range=[0.8, 1.2],
-        translation_std=[1.0, 1.0, 0.2],
-        # translation_std=[0.5, 0.5, 0.2],
+        scale_ratio_range=[0.9, 1.1],
+        rot_range=[-0.78539816, 0.78539816],
+        # rot_range=[-1.571, 1.571],
+        # scale_ratio_range=[0.8, 1.2],
+        translation_std=[0.5, 0.5, 0.2],
     ),
     dict(type="BEVFusionRandomFlip3D"),
     dict(type="PointsRangeFilter", point_cloud_range=point_cloud_range),
     dict(type="ObjectRangeFilter", point_cloud_range=point_cloud_range),
+    dict(type="ObjectRangeMinPointsFilter", range_radius=[0, 60], min_num_points=2),
+    dict(type="ObjectRangeMinPointsFilter", range_radius=[60, 130], min_num_points=1),
     dict(
         type="ObjectNameFilter",
         classes=[
@@ -343,7 +320,7 @@ test_pipeline = [
     dict(
         type="ImageAug3D",
         final_dim=image_size,
-        resize_lim=0.0,
+        resize_lim=0.04,
         bot_pct_lim=[0.0, 0.0],
         rot_lim=[0.0, 0.0],
         rand_flip=False,
@@ -460,7 +437,7 @@ test_evaluator = dict(
 
 # learning rate
 lr = 1e-4
-t_max = 5
+t_max = 3
 param_scheduler = [
     # learning rate scheduler
     # During the first (max_epochs * 0.4) epochs, learning rate increases from 0 to lr * 10
@@ -511,13 +488,6 @@ optim_wrapper = dict(
     type="OptimWrapper",
     optimizer=dict(type="AdamW", lr=lr, weight_decay=0.01),
     clip_grad=dict(max_norm=0.1, norm_type=2),
-    # paramwise_cfg=dict(
-    #     custom_keys={
-    #         # "pts_voxel_encoder": dict(lr_mult=0.10, decal_mult=1.0),
-    #         # "pts_middle_encoder": dict(lr_mult=0.10, decal_mult=1.0),
-    #         "img_backbone": dict(lr_mult=0.1),
-    #     }
-    # ),
 )
 
 # Default setting for scaling LR automatically
@@ -530,5 +500,4 @@ auto_scale_lr = dict(enable=False, base_batch_size=train_gpu_size * train_batch_
 if train_gpu_size > 1:
     sync_bn = "torch"
 
-# load_from = "work_dirs/bevfusion_2_3/T4Dataset/bevfusion_lidar_voxel_second_secfpn_4xb16_base/epoch_48.pth"
-# resume = True
+load_from = "work_dirs/bevfusion_2_3_cl_j6gen2_point_filters/epoch_28.pth"
