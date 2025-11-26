@@ -66,7 +66,7 @@ class ObjectBEVDistanceSampler(ObjectSampler):
 class LowPedestriansObjectSampler(ObjectSampler):
     """Sampling strategy for low pedestrians category."""
 
-    mapping_category_name = "pedestrian"
+    MAPPING_CATEGORY_NAME = "pedestrian"
     SAMPLER_CATEGORY_NAME = "low_pedestrian"
 
     def __init__(self, height_threshold: float, bev_distance_thresholds: Tuple[float, float, float, float]):
@@ -88,7 +88,7 @@ class LowPedestriansObjectSampler(ObjectSampler):
         ):
             if (
                 frame_ann_info[SAMPLE_CLASS_NAME_KEY][index] == FILTER_CLASS_LABELS
-                or label != LowPedestriansObjectSampler.mapping_category_name
+                or label != LowPedestriansObjectSampler.MAPPING_CATEGORY_NAME
                 or not gt_bbox_height_mask
                 or not nearer_bbox_mask
             ):
