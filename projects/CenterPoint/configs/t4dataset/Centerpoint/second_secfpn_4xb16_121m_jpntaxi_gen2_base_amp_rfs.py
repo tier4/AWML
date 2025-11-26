@@ -1,5 +1,5 @@
 _base_ = [
-    "second_secfpn_4xb16_121m_j6gen2_base_amp.py",
+    "second_secfpn_4xb16_121m_jpntaxi_gen2_base_amp.py",
 ]
 
 point_cloud_range = [-122.40, -122.40, -3.0, 122.40, 122.40, 5.0]
@@ -8,7 +8,7 @@ grid_size = [1020, 1020, 1]  # (122.40 / 0.24 == 510, 510 * 2 == 1020)
 out_size_factor = 2
 
 # user setting
-work_dir = "work_dirs/centerpoint/" + _base_.dataset_type + "/second_secfpn_4xb16_121m_j6gen2_base_amp_rfs/"
+work_dir = "work_dirs/centerpoint/" + _base_.dataset_type + "/second_secfpn_4xb16_121m_jpntaxi_gen2_base_amp_rfs/"
 
 train_pipeline = [
     dict(

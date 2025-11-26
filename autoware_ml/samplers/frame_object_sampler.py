@@ -82,8 +82,7 @@ class LowPedestriansObjectSampler(ObjectSampler):
         # Implement the sampling logic for low pedestrian category
         nearer_bbox_in_ranges = frame_ann_info["gt_bboxes_3d"].in_range_bev(self.bev_distance_thresholds)
         gt_bbox_height_mask = frame_ann_info["gt_bboxes_3d"].height < self.height_threshold
-        # labels = frame_ann_info["gt_nusc_name"]
-        labels = frame_ann_info["gt_labels_3d"]
+        labels = frame_ann_info["gt_nusc_name"]
         for index, (label, gt_bbox_height_mask, nearer_bbox_mask) in enumerate(
             zip(labels, gt_bbox_height_mask, nearer_bbox_in_ranges)
         ):
