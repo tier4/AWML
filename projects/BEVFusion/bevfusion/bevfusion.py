@@ -195,7 +195,7 @@ class BEVFusion(Base3DDetector):
         x = x.view(B, N, C, H, W)
 
         if self.img_roi_head is not None:
-            pad_shapes = (img_metas[0]["pad_shape"][0], img_metas[1]["pad_shape"][1])
+            pad_shapes = img_metas[0]["pad_shape"]
             location = self.prepare_location(pad_shapes, x)
             img_roi_head_preds = self.img_roi_head(location, x)
         else:

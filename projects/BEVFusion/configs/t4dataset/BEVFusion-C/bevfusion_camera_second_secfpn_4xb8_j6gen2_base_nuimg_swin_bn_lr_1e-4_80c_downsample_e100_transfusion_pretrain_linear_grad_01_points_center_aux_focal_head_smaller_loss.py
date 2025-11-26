@@ -389,6 +389,7 @@ test_pipeline = [
             "img_path",
             "num_pts_feats",
             "num_views",
+            "pad_shape"
         ],
     ),
 ]
