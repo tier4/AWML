@@ -8,8 +8,8 @@ custom_imports["imports"] += _base_.custom_imports["imports"]
 custom_imports["imports"] += ["autoware_ml.detection3d.datasets.transforms"]
 
 # user setting
-data_root = "data/t4datasets/"
-info_directory_path = "info/kokseang_2_3/"
+data_root = "data/t4dataset/"
+info_directory_path = "info/kokseang_2_3_fixed/"
 train_gpu_size = 4
 train_batch_size = 8
 test_batch_size = 2
@@ -53,7 +53,7 @@ model = dict(
         mean=[123.675, 116.28, 103.53],
         std=[58.395, 57.12, 57.375],
         bgr_to_rgb=False,
-        rgb_to_bgr=False,
+        rgb_to_bgr=False
     ),
     voxelize_cfg=dict(
         max_num_points=max_num_points,
@@ -66,6 +66,7 @@ model = dict(
     # data_preprocessor=dict(
     #     type="Det3DDataPreprocessor",
     #     pad_size_divisor=32,
+        
     #     mean=[123.675, 116.28, 103.53],
     #     std=[58.395, 57.12, 57.375],
     #     bgr_to_rgb=False,
@@ -89,7 +90,8 @@ model = dict(
         convert_weights=True,
         init_cfg=dict(
             type="Pretrained",
-            checkpoint="work_dirs/bevfusion/pretrain/swint_nuimages_pretrained.pth",  # noqa: E251  # noqa: E501
+            checkpoint="work_dirs/bevfusion/pretrain/swint_nuimages_pretrained.pth"  # noqa: E251  # noqa: E501
+            # checkpoint="work_dirs/swin_transformer/swint_nuimages_pretrained.pth"  # noqa: E251  # noqa: E501
         ),
     ),
     img_neck=dict(
@@ -204,6 +206,10 @@ model = dict(
 )
 
 train_pipeline = [
+	dict(
+		type="SyncFlipping",
+		is_train=True
+	),
     dict(
         type="BEVLoadMultiViewImageFromFiles",
         to_float32=True,
@@ -241,16 +247,17 @@ train_pipeline = [
     ),
     dict(
         type="BEVFusionGlobalRotScaleTrans",
-        scale_ratio_range=[0.9, 1.1],
-        rot_range=[-0.78539816, 0.78539816],
+        scale_ratio_range=[1.0, 1.0],
+        # rot_range=[-0.78539816, 0.78539816],
+        rot_range=[-0.3925, 0.3925],
         # rot_range=[-1.571, 1.571],
         # scale_ratio_range=[0.8, 1.2],
-        translation_std=[0.5, 0.5, 0.2],
+        translation_std=[0.0, 0.0, 0.0],
     ),
-    dict(type="BEVFusionRandomFlip3D"),
+    # dict(type="BEVFusionRandomFlip3D", flip_vertical=False),
     dict(type="PointsRangeFilter", point_cloud_range=point_cloud_range),
     dict(type="ObjectRangeFilter", point_cloud_range=point_cloud_range),
-    dict(type="ObjectRangeMinPointsFilter", range_radius=[0, 60], min_num_points=2),
+	dict(type="ObjectRangeMinPointsFilter", range_radius=[0, 60], min_num_points=2),
     dict(type="ObjectRangeMinPointsFilter", range_radius=[60, 130], min_num_points=1),
     dict(
         type="ObjectNameFilter",
@@ -500,4 +507,5 @@ auto_scale_lr = dict(enable=False, base_batch_size=train_gpu_size * train_batch_
 if train_gpu_size > 1:
     sync_bn = "torch"
 
-load_from = "work_dirs/bevfusion_2_3_cl_j6gen2_point_filters/epoch_28.pth"
+# load_from = "work_dirs/bevfusion_2_3/T4Dataset/bevfusion_lidar_voxel_second_secfpn_4xb8_j6gen2_base/epoch_28.pth"
+load_from = "work_dirs/bevfusion_2_3_full/T4Dataset/bevfusion_lidar_voxel_second_secfpn_4xb8_j6gen2_base_shorter_point_filter/epoch_28.pth"
