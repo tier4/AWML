@@ -53,6 +53,15 @@ train_frame_object_sampler = dict(
     type="FrameObjectSampler",
     object_samplers=[
         dict(
+            type="ObjectBEVDistanceSampler",
+            bev_distance_thresholds=[
+                point_cloud_range[0],
+                point_cloud_range[1],
+                point_cloud_range[3],
+                point_cloud_range[4],
+            ],
+        ),
+        dict(
             type="LowPedestriansObjectSampler",
             height_threshold=1.5,
             bev_distance_thresholds=[
