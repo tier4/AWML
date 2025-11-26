@@ -48,13 +48,13 @@ class T4FrameSamplerDataset(T4Dataset):
         self.ann_info = []
 
         self.augmented_class_names = class_names
-        if self.frame_object_sampler is not None:
-            self.augmented_class_names += self.frame_object_sampler.sampler_category_names
         self.valid_class_name_ins = {class_name: 0 for class_name in class_names}
 
         self.frame_object_sampler: Optional[FrameObjectSampler] = (
             DATA_SAMPLERS.build(frame_object_sampler) if frame_object_sampler is not None else None
         )
+        if self.frame_object_sampler is not None:
+            self.augmented_class_names += self.frame_object_sampler.sampler_category_names
         # Number of frames for each category that contains at least one of the category
         self.category_frame_numbers = {class_name: 0 for class_name in self.augmented_class_names}
 
@@ -70,6 +70,12 @@ class T4FrameSamplerDataset(T4Dataset):
         # Total valid bbox
         total_bboxes = sum(self.valid_class_name_ins.values())
 
+        # Compute fraction of frames containing each category
+        self.category_frame_numbers = {
+            class_name: frame_number / len(self.ann_info)
+            for class_name, frame_number in self.category_frame_numbers.items()
+        }
+
         # Compute bbox fraction
         self.valid_class_bbox_fraction = {
             class_name: class_bbox_num / total_bboxes
@@ -77,7 +83,7 @@ class T4FrameSamplerDataset(T4Dataset):
         }
 
         # Compute category frame fraction
-        self.category_fraction_factors = self._compute_category_faction_factors()
+        self.category_fraction_factors = self._compute_category_fraction_factors()
         self.frame_weights = self._compute_frame_repeat_sampling_factors()
 
         # Print dataset statistics and clean up
@@ -87,25 +93,23 @@ class T4FrameSamplerDataset(T4Dataset):
 
     def print_dataset_statistics(self) -> None:
         """Print dataset statistics."""
-        print_log(f"Valid dataset instances: {self.valid_class_name_ins}", logger="current")
         print_log(f"Category frame fraction: {self.category_frame_numbers}", logger="current")
         print_log(f"Valid bbox fraction: {self.valid_class_bbox_fraction}", logger="current")
         print_log(f"Category fraction factor: {self.category_fraction_factors}", logger="current")
         print_log(f"First 10 dataset frame weights: {self.frame_weights[:10]}", logger="current")
 
-    def _compute_category_faction_factors(self) -> Dict[str, float]:
+    def _compute_category_fraction_factors(self) -> Dict[str, float]:
         """Compute category fraction factor used for repeat sampling factor computation."""
-        category_fraction_factor = {
-            class_name: max(
-                1,
-                math.sqrt(
-                    self.repeat_sampling_factor
-                    / math.sqrt((number_frame * self.valid_class_bbox_fraction[class_name]))
-                ),
+        category_fraction_factors = {}
+        for class_name, number_frame in self.category_frame_numbers.items():
+            category_instance_fraction = math.sqrt(number_frame * self.valid_class_bbox_fraction[class_name])
+            if category_instance_fraction == 0:
+                category_instance_fraction = 1.0
+
+            category_fraction_factors[class_name] = max(
+                1, math.sqrt(self.repeat_sampling_factor / category_instance_fraction)
             )
-            for class_name, number_frame in self.category_frame_numbers.items()
-        }
-        return category_fraction_factor
+        return category_fraction_factors
 
     def _compute_frame_repeat_sampling_factors(self) -> List[float]:
         """Compute repeat sampling factor for every frame in the dataset."""

@@ -24,15 +24,14 @@ class ObjectSampler(ABC):
 class FrameObjectSampler:
     """Base class for sampling strategies."""
 
-    def __init__(self, object_samplers: List[ObjectSampler]):
-        self.object_samplers = object_samplers
+    def __init__(self, object_samplers: List[dict]):
+        self.object_samplers: List[ObjectSampler] = [DATA_SAMPLERS.build(sampler) for sampler in object_samplers]
 
     @property
     def sampler_category_names(self) -> List[str]:
         return [sampler.sampler_category_name for sampler in self.object_samplers if sampler.sampler_category_name]
 
-    def sample(self, frame_ann_info: dict):
-
+    def sample(self, frame_ann_info: dict) -> dict:
         # Assign empty sample class name
         if SAMPLE_CLASS_NAME_KEY not in frame_ann_info:
             frame_ann_info[SAMPLE_CLASS_NAME_KEY] = ["" for _ in range(len(frame_ann_info["gt_labels_3d"]))]
@@ -42,6 +41,8 @@ class FrameObjectSampler:
         # by assinging to a new class name. Please to make sure that the samplers are compatible with each other.
         for object_sampler in self.object_samplers:
             object_sampler.sample(frame_ann_info)
+
+        return frame_ann_info
 
 
 @DATA_SAMPLERS.register_module()
@@ -62,29 +63,35 @@ class ObjectBEVDistanceSampler(ObjectSampler):
 
 
 @DATA_SAMPLERS.register_module()
-class NearerLowPedestrianObjectSampler(ObjectSampler):
-    """Sampling strategy for nearer low pedestrian category."""
+class LowPedestriansObjectSampler(ObjectSampler):
+    """Sampling strategy for low pedestrians category."""
+
+    mapping_category_name = "pedestrian"
+    SAMPLER_CATEGORY_NAME = "low_pedestrian"
 
     def __init__(self, height_threshold: float, bev_distance_thresholds: Tuple[float, float, float, float]):
         super().__init__()
         self.height_threshold = height_threshold
         self.bev_distance_thresholds = bev_distance_thresholds
-        self.mapping_category_name = "pedestrian"
-        self.sampler_category_name = "low_pedestrian"
 
     @property
     def sampler_category_name(self) -> str:
-        return self.sampler_category_name
+        return LowPedestriansObjectSampler.SAMPLER_CATEGORY_NAME
 
     def sample(self, frame_ann_info: dict):
         # Implement the sampling logic for low pedestrian category
+        nearer_bbox_in_ranges = frame_ann_info["gt_bboxes_3d"].in_range_bev(self.bev_distance_thresholds)
         gt_bbox_height_mask = frame_ann_info["gt_bboxes_3d"].height < self.height_threshold
+        # labels = frame_ann_info["gt_nusc_name"]
         labels = frame_ann_info["gt_labels_3d"]
-        for index, (label, gt_bbox_height_mask) in enumerate(zip(labels, gt_bbox_height_mask)):
+        for index, (label, gt_bbox_height_mask, nearer_bbox_mask) in enumerate(
+            zip(labels, gt_bbox_height_mask, nearer_bbox_in_ranges)
+        ):
             if (
                 frame_ann_info[SAMPLE_CLASS_NAME_KEY][index] == FILTER_CLASS_LABELS
-                or label != self.mapping_category_name
+                or label != LowPedestriansObjectSampler.mapping_category_name
                 or not gt_bbox_height_mask
+                or not nearer_bbox_mask
             ):
                 continue
 
