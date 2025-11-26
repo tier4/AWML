@@ -8,9 +8,9 @@ custom_imports["imports"] += _base_.custom_imports["imports"]
 custom_imports["imports"] += ["autoware_ml.detection3d.datasets.transforms"]
 
 # user setting
-data_root = "data/t4datasets/"
-info_directory_path = "info/kokseang_2_3/"
-train_gpu_size = 2
+data_root = "data/t4dataset/"
+info_directory_path = "info/kokseang_2_3_fixed/"
+train_gpu_size = 4
 train_batch_size = 8
 test_batch_size = 2
 val_interval = 15

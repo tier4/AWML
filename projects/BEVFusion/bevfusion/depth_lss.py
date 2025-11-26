@@ -497,6 +497,8 @@ class BaseDepthTransform(BaseViewTransform):
             cur_coords += cur_lidar2image[:, :3, 3].reshape(-1, 3, 1)
             # get 2d coords
             dist = cur_coords[:, 2, :]
+            valid_depth_mask = dist > 0
+
             cur_coords[:, 2, :] = torch.clamp(cur_coords[:, 2, :], 1e-5, 1e5)
             cur_coords[:, :2, :] /= cur_coords[:, 2:3, :]
 
@@ -512,7 +514,7 @@ class BaseDepthTransform(BaseViewTransform):
                 (cur_coords[..., 0] < self.image_size[0])
                 & (cur_coords[..., 0] >= 0)
                 & (cur_coords[..., 1] < self.image_size[1])
-                & (cur_coords[..., 1] >= 0)
+                & (cur_coords[..., 1] >= 0) & valid_depth_mask
             )
 
             # NOTE(knzo25): in the original code, a per-image loop was

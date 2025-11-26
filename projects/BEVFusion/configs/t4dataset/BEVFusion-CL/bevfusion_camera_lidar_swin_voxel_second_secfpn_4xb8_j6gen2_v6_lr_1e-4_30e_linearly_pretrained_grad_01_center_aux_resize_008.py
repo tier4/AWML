@@ -1,6 +1,6 @@
 _base_ = [
     "../default/bevfusion_lidar_voxel_second_secfpn_1xb1_t4base.py",
-    "../../../../../autoware_ml/configs/detection3d/dataset/t4dataset/j6gen2_base.py",
+    "../../../../../autoware_ml/configs/detection3d/dataset/t4dataset/j6gen2_v6.py",
 ]
 
 custom_imports = dict(imports=["projects.BEVFusion.bevfusion"], allow_failed_imports=False)
@@ -8,8 +8,8 @@ custom_imports["imports"] += _base_.custom_imports["imports"]
 custom_imports["imports"] += ["autoware_ml.detection3d.datasets.transforms"]
 
 # user setting
-data_root = "data/t4dataset/"
-info_directory_path = "info/kokseang_2_3_fixed/"
+data_root = "data/t4datasets/"
+info_directory_path = "info/kokseang_2_5/"
 train_gpu_size = 4
 train_batch_size = 8
 test_batch_size = 2
@@ -53,7 +53,7 @@ model = dict(
         mean=[123.675, 116.28, 103.53],
         std=[58.395, 57.12, 57.375],
         bgr_to_rgb=False,
-        rgb_to_bgr=False
+        rgb_to_bgr=False,
     ),
     voxelize_cfg=dict(
         max_num_points=max_num_points,
@@ -66,7 +66,6 @@ model = dict(
     # data_preprocessor=dict(
     #     type="Det3DDataPreprocessor",
     #     pad_size_divisor=32,
-        
     #     mean=[123.675, 116.28, 103.53],
     #     std=[58.395, 57.12, 57.375],
     #     bgr_to_rgb=False,
@@ -90,7 +89,7 @@ model = dict(
         convert_weights=True,
         init_cfg=dict(
             type="Pretrained",
-            checkpoint="work_dirs/bevfusion/pretrain/swint_nuimages_pretrained.pth"  # noqa: E251  # noqa: E501
+            checkpoint="work_dirs/bevfusion/pretrain/swint_nuimages_pretrained.pth",  # noqa: E251  # noqa: E501
         ),
     ),
     img_neck=dict(
@@ -499,4 +498,4 @@ auto_scale_lr = dict(enable=False, base_batch_size=train_gpu_size * train_batch_
 if train_gpu_size > 1:
     sync_bn = "torch"
 
-load_from = "work_dirs/bevfusion_2_3_full/T4Dataset/bevfusion_lidar_voxel_second_secfpn_4xb8_j6gen2_base/epoch_30.pth"
+# load_from = "work_dirs/bevfusion_2_3_full/T4Dataset/bevfusion_lidar_voxel_second_secfpn_4xb8_j6gen2_base/epoch_30.pth"

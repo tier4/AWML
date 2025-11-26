@@ -91,6 +91,7 @@ model = dict(
         init_cfg=dict(
             type="Pretrained",
             checkpoint="work_dirs/bevfusion/pretrain/swint_nuimages_pretrained.pth"  # noqa: E251  # noqa: E501
+            # checkpoint="work_dirs/swin_transformer/swint_nuimages_pretrained.pth"  # noqa: E251  # noqa: E501
         ),
     ),
     img_neck=dict(
@@ -164,7 +165,7 @@ model = dict(
             out_size_factor=out_size_factor,
         ),
         share_conv_channel=64,
-        loss_cls=dict(type="mmdet.GaussianFocalLoss", reduction="none", loss_weight=0.6),
+        loss_cls=dict(type="mmdet.GaussianFocalLoss", reduction="none", loss_weight=1.0),
         loss_bbox=dict(type="mmdet.L1Loss", reduction="mean", loss_weight=0.0),
         norm_bbox=True,
         tasks=[
@@ -233,7 +234,7 @@ train_pipeline = [
     dict(
         type="ImageAug3D",
         final_dim=image_size,
-        resize_lim=0.02,
+        resize_lim=0.08,
         bot_pct_lim=[0.0, 0.0],
         # rot_lim=[-5.4, 5.4],
         rot_lim=[0.0, 0.0],
@@ -242,18 +243,16 @@ train_pipeline = [
     ),
     dict(
         type="BEVFusionGlobalRotScaleTrans",
-        scale_ratio_range=[0.9, 1.1],
+        scale_ratio_range=[0.95, 1.05],
+        # rot_range=[-0.3925, 0.3925],
         rot_range=[-0.78539816, 0.78539816],
-        # rot_range=[-1.571, 1.571],
-        # scale_ratio_range=[0.8, 1.2],
         translation_std=[0.5, 0.5, 0.2],
     ),
-    dict(type="BEVFusionRandomFlip3D"),
+    dict(type="BEVFusionRandomFlip3D", flip_vertical=True),
     dict(type="PointsRangeFilter", point_cloud_range=point_cloud_range),
     dict(type="ObjectRangeFilter", point_cloud_range=point_cloud_range),
-    dict(type="ObjectRangeMinPointsFilter", range_radius=[0, 60], min_num_points=5),
-    dict(type="ObjectRangeMinPointsFilter", range_radius=[60, 90], min_num_points=3),
-    dict(type="ObjectRangeMinPointsFilter", range_radius=[90, 130], min_num_points=1),
+	dict(type="ObjectRangeMinPointsFilter", range_radius=[0, 60], min_num_points=2),
+    dict(type="ObjectRangeMinPointsFilter", range_radius=[60, 130], min_num_points=1),
     dict(
         type="ObjectNameFilter",
         classes=[
@@ -322,7 +321,7 @@ test_pipeline = [
     dict(
         type="ImageAug3D",
         final_dim=image_size,
-        resize_lim=0.0,
+        resize_lim=0.04,
         bot_pct_lim=[0.0, 0.0],
         rot_lim=[0.0, 0.0],
         rand_flip=False,
@@ -502,4 +501,5 @@ auto_scale_lr = dict(enable=False, base_batch_size=train_gpu_size * train_batch_
 if train_gpu_size > 1:
     sync_bn = "torch"
 
-load_from = "work_dirs/bevfusion_2_3/epoch_46.pth"
+# load_from = "work_dirs/bevfusion_2_3/T4Dataset/bevfusion_lidar_voxel_second_secfpn_4xb8_j6gen2_base/epoch_28.pth"
+load_from = "work_dirs/bevfusion_2_3_full/T4Dataset/bevfusion_lidar_voxel_second_secfpn_4xb8_j6gen2_base_shorter_point_filter/epoch_28.pth"
