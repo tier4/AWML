@@ -44,7 +44,7 @@ eval_class_range = {
 data_root = "data/t4dataset/"
 info_directory_path = "info/user_name/"
 train_gpu_size = 4
-train_batch_size = 2
+train_batch_size = 16
 test_batch_size = 2
 num_workers = 32
 val_interval = 1
@@ -389,13 +389,13 @@ vis_backends = [
     dict(type="LocalVisBackend"),
     dict(type="TensorboardVisBackend"),
     # Update info accordingly
-    # dict(
-    #     type="SafeMLflowVisBackend",
-    #     exp_name="(UserName) CenterPoint",
-    #     run_name="CenterPoint base",
-    #     tracking_uri="http://localhost:5000",
-    #     artifact_suffix=(),
-    # ),
+    dict(
+        type="SafeMLflowVisBackend",
+        exp_name="(UserName) CenterPoint",
+        run_name="CenterPoint base",
+        tracking_uri="http://localhost:5000",
+        artifact_suffix=(),
+    ),
 ]
 visualizer = dict(type="Det3DLocalVisualizer", vis_backends=vis_backends, name="visualizer")
 
