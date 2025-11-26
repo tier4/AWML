@@ -102,7 +102,7 @@
 ## Release
 ### CenterPoint base/2.4
 - Decrease voxelization size from `0.32` to `0.20`
-- Train with Repeat Sampling Factor (RFS) and low pedestrians (< 1.5m and distance < 50m>)
+- Train with Repeat Sampling Factor (RFS) and low pedestrians (< 1.5m and distance < 50m)
 - Enable `activation_checkpointing` for `backbone` to decrease GPU memory while training
 
 <details>

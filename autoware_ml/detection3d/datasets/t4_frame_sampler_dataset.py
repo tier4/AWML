@@ -102,7 +102,8 @@ class T4FrameSamplerDataset(T4Dataset):
         """Compute category fraction factor used for repeat sampling factor computation."""
         category_fraction_factors = {}
         for class_name, number_frame in self.category_frame_numbers.items():
-            category_instance_fraction = math.sqrt(number_frame * self.valid_class_bbox_fraction[class_name])
+            valid_bbox_fraction = self.valid_class_bbox_fraction.get(class_name, 1.0)
+            category_instance_fraction = math.sqrt(number_frame * valid_bbox_fraction)
             if category_instance_fraction == 0:
                 category_instance_fraction = 1.0
 

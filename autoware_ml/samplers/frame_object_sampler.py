@@ -47,7 +47,7 @@ class FrameObjectSampler:
 
 @DATA_SAMPLERS.register_module()
 class ObjectBEVDistanceSampler(ObjectSampler):
-    """Sampling strategy for neaerer objects."""
+    """Sampling strategy for objects in a certain BEV distance range."""
 
     def __init__(self, bev_distance_thresholds: Tuple[float, float, float, float]):
         super().__init__()

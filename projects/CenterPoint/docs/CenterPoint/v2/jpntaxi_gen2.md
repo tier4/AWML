@@ -101,6 +101,7 @@
   - Batch size: 4*16 = 64
 
 - Evaluation
+
 - jpntaxi_gen2: db_jpntaxigen2_v1 + db_jpntaxigen2_v2 (1,709 frames)
   - Total mAP (eval range = 120m): 0.5620
 | class_name | Count      | mAP  | AP@0.5m | AP@1.0m | AP@2.0m | AP@4.0m |
