@@ -1,20 +1,10 @@
 #!/usr/bin/env python3
 import argparse
-import sys
 from pathlib import Path
 from typing import Dict, Type
 
-CURRENT_DIR = Path(__file__).resolve().parent
-PROJECT_ROOT = CURRENT_DIR.parent
-
-for path in (PROJECT_ROOT, CURRENT_DIR):
-    path_str = str(path)
-    if path_str not in sys.path:
-        sys.path.insert(0, path_str)
-
-
-from utils.dataclass.awml_info import AWML3DInfo
-from utils.dataset.annotation_tool_dataset import (
+from tools.auto_labeling_3d.utils.dataclass.awml_info import AWML3DInfo
+from tools.auto_labeling_3d.utils.dataset.annotation_tool_dataset import (
     AnnotationToolDataset,
     DeepenDataset,
     SegmentAIDataset,
