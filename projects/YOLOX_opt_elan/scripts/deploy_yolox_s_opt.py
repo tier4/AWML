@@ -46,7 +46,7 @@ def create_yolox_checkpoint(autoware_ml_ckpt: str, work_dir: str):
         # request.urlretrieve(url, tier4_ckpt_save_path)
         print("tier4 ckpt {} does not exist.".format(tier4_ckpt_save_path))
 
-    tier4_ckpt = torch.load(tier4_ckpt_save_path)
+    tier4_ckpt = torch.load(tier4_ckpt_save_path, weights_only=False)
 
     mmdet_ckpt = torch.load(autoware_ml_ckpt, map_location="cuda:0")
 
