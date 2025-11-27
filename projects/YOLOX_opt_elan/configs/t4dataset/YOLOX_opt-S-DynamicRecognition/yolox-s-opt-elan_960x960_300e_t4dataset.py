@@ -14,10 +14,8 @@ custom_imports = dict(
     allow_failed_imports=False,
 )
 
-IMG_SCALE = (960, 960)
-
 # parameter settings
-img_scale = (960, 960)
+IMG_SCALE = (960, 960)
 max_epochs = 300
 num_last_epochs = 15
 resume_from = None
@@ -71,8 +69,7 @@ model = dict(
 )
 
 data_root = ""
-# anno_file_root = "./data/t4dataset/x2/db_v2_0_v1_1_cleaned/"
-anno_file_root = "./data/t4dataset/samrat/"
+anno_file_root = "./data/t4dataset/"
 dataset_type = "T4Dataset"
 
 backend_args = None
@@ -123,7 +120,7 @@ train_dataset = dict(
 
 test_pipeline = [
     dict(type="LoadImageFromFile", backend_args=backend_args),
-    dict(type="Resize", scale=img_scale, keep_ratio=True),
+    dict(type="Resize", scale=IMG_SCALE, keep_ratio=True),
     dict(type="Pad", pad_to_square=True, pad_val=dict(img=(114.0, 114.0, 114.0))),
     dict(type="LoadAnnotations", with_bbox=True),
     dict(
