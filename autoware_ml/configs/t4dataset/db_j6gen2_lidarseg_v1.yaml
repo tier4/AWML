@@ -1,0 +1,7 @@
+version: 1
+dataset_version: db-lidarseg-v0.1
+train:
+- 3dd3db09-cc54-4b1a-aa5f-5fd8a513b4d9   0
+- 89683927-75d1-4c38-8d69-03176ffe02cf   0
+val: []
+test: []
