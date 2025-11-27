@@ -48,7 +48,7 @@ def create_yolox_checkpoint(autoware_ml_ckpt: str, work_dir: str):
 
     tier4_ckpt = torch.load(tier4_ckpt_save_path, weights_only=False)
 
-    mmdet_ckpt = torch.load(autoware_ml_ckpt, map_location="cuda:0")
+    mmdet_ckpt = torch.load(autoware_ml_ckpt, map_location="cuda:0", weights_only=False)
 
     if "state_dict" in mmdet_ckpt.keys():
         mmdet_ckpt = mmdet_ckpt["state_dict"]
