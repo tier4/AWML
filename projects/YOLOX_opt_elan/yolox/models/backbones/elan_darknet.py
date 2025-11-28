@@ -42,9 +42,9 @@ class ELANDarknet(BaseModule):
         init_cfg (dict or list[dict], optional): Initialization config dict.
             Default: None.
     Example:
-        >>> from awml_det2d.models import CSPDarknet
+        >>> from awml_det2d.models import ELANDarknet
         >>> import torch
-        >>> self = CSPDarknetOpt()
+        >>> self = ELANDarknet()
         >>> self.eval()
         >>> inputs = torch.rand(1, 3, 960, 960)
         >>> level_outputs = self.forward(inputs)
