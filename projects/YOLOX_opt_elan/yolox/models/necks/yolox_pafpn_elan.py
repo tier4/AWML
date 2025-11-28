@@ -19,7 +19,7 @@ class YOLOXPAFPN_ELAN(BaseModule):
     Args:
         in_channels (List[int]): Number of input channels per scale.
         out_channels (int): Number of output channels (used at each scale)
-        num_elan_blocks (int): Number of bottlenecks in CSPLayer. Default: 2
+        num_elan_blocks (int): Number of bottlenecks in ELAN blocks. Default: 2
         use_depthwise (bool): Whether to depthwise separable convolution in
             blocks. Default: False
         upsample_cfg (dict): Config dict for interpolate layer.
