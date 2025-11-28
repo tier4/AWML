@@ -21,7 +21,7 @@ class ELANDarknet(BaseModule):
         arch (str): Architecture of CSP-Darknet, from {P5, P6}.
             Default: P5.
         deepen_factor (float): Depth multiplier, multiply number of
-            blocks in CSP layer by this amount. Default: 2.0.
+            blocks in ELAN block by this amount. Default: 2.0.
         widen_factor (float): Width multiplier, multiply number of
             channels in each layer by this amount. Default: 1.0.
         out_indices (Sequence[int]): Output from which stages.
