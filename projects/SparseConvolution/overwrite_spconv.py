@@ -2,7 +2,7 @@
 # Partially copied from https://github.com/open-mmlab/mmdetection3d/blob/v1.4.0/mmdet3d/models/layers/spconv/overwrite_spconv/write_spconv2.py
 # NOTE(knzo25): needed to overwrite our custom deployment oriented operations
 
-from mmdet3d.models.layers.spconv.overwrite_spconv.write_spconv2 import _load_from_state_dict
+# from mmdet3d.models.layers.spconv.overwrite_spconv.write_spconv2 import _load_from_state_dict
 from mmengine.registry import MODELS
 
 
@@ -40,5 +40,5 @@ def register_spconv2() -> bool:
         MODELS._register_module(SubMConv3d, "SubMConv3d", force=True)
         MODELS._register_module(SubMConv4d, "SubMConv4d", force=True)
         SparseModule._version = 2
-        SparseModule._load_from_state_dict = _load_from_state_dict
+        # SparseModule._load_from_state_dict = _load_from_state_dict #NOTE(knzo25): this is the original function
         return True

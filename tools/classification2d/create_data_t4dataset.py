@@ -158,7 +158,7 @@ def main() -> None:
 
                 if not osp.isdir(scene_root_dir_path):
                     raise ValueError(f"{scene_root_dir_path} does not exist.")
-                t4 = Tier4(version="annotation", data_root=scene_root_dir_path, verbose=False)
+                t4 = Tier4(data_root=scene_root_dir_path, verbose=False)
 
                 data_list: Dict[str, DataEntry] = {}
                 for tmp in t4.sample_data:

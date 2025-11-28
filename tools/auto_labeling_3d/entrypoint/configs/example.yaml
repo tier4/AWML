@@ -1,0 +1,49 @@
+# Sample configuration for auto_labeling_pipeline.py
+# Update every path to match the workspace before running.
+
+# logging configuration
+# Controls logging behavior and output directory for pipeline execution
+logging:
+  level: INFO  # Log level: DEBUG, INFO, WARNING, ERROR, CRITICAL
+  work_dir: /workspace/work_dirs/auto_labeling_3d/pipeline_example  # Directory for logs and intermediate outputs
+
+# Path to non-annotated T4dataset directory
+root_path: /workspace/data/t4dataset/t4x2_pseudo
+
+# create_info_data configuration
+# Please update here to use the latest checkpoints and model configs
+create_info:
+  output_dir: /workspace/data/t4dataset/info  # Directory to save generated info files
+  model_list:
+  # Example template for adding a model:
+  # - name: model_name
+  #   model_config: /path/to/model/config.py
+  #   checkpoint:
+  #     model_zoo_url: https://url/to/download/checkpoint.pth
+  #     checkpoint_path: /path/to/save/checkpoint.pth
+  - name: centerpoint
+    model_config: /workspace/projects/CenterPoint/configs/t4dataset/Centerpoint/second_secfpn_4xb16_121m_j6gen2_base_t4metric_v2.py
+    checkpoint:
+      model_zoo_url: https://download.autoware-ml-model-zoo.tier4.jp/autoware-ml/models/centerpoint/centerpoint/j6gen2/v2.3.1/best_NuScenes_metric_T4Metric_mAP_epoch_29.pth
+      checkpoint_path: /workspace/work_dirs/checkpoints/example_model.pth
+  - name: bevfusion
+    model_config: /workspace/projects/BEVFusion/configs/t4dataset/BEVFusion-CL/bevfusion_camera_lidar_voxel_second_secfpn_4xb8_gen2_base.py
+    checkpoint:
+      model_zoo_url: https://download.autoware-ml-model-zoo.tier4.jp/autoware-ml/models/bevfusion/bevfusion-cl/t4base/v2.0.0/best_NuScenes_metric_T4Metric_mAP_epoch_48.pth
+      checkpoint_path: /workspace/work_dirs/checkpoints/example_model_bevfusion.pth
+
+# ensemble_infos configuration
+# Please update the config file for ensemble_infos when changing the latest model_config in create_info
+ensemble_infos:
+  config: /workspace/tools/auto_labeling_3d/filter_objects/config/ensemble_base.py
+
+# create_pseudo_t4dataset configuration
+# Please update here when using auto_labeling_3d for the dataset collected in the new sensor configuration
+create_pseudo_t4dataset:
+  config: /workspace/tools/auto_labeling_3d/create_pseudo_t4dataset/config/x2.yaml # config for the sensor configuaration used when collecting non-annotated T4dataset
+  overwrite: false # If true, create_pseudo_t4dataset will overwrite existing T4Dataset.
+
+# change_directory_structure configuration
+# If you do not need to change the directory structure, please comment out this section.
+change_directory_structure:
+  version_dir_name: "0"

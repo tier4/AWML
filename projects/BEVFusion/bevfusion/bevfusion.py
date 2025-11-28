@@ -168,11 +168,9 @@ class BEVFusion(Base3DDetector):
             )
         return x
 
-    def extract_pts_feat(self, batch_inputs_dict) -> torch.Tensor:
-
-        if "points" in batch_inputs_dict:
+    def extract_pts_feat(self, feats, coords, sizes, points=None) -> torch.Tensor:
+        if points is not None:
             # NOTE(knzo25): training and normal inference
-            points = batch_inputs_dict["points"]
             with torch.cuda.amp.autocast(enabled=False):
                 # with torch.autocast('cuda', enabled=False):
                 points = [point.float() for point in points]
@@ -182,18 +180,14 @@ class BEVFusion(Base3DDetector):
             # NOTE(knzo25): onnx inference. Voxelization happens outside the graph
             with torch.cuda.amp.autocast(enabled=False):
                 # with torch.autocast('cuda', enabled=False):
-                feats = batch_inputs_dict["voxels"]["voxels"]
-                coords = batch_inputs_dict["voxels"]["coors"]
-                sizes = batch_inputs_dict["voxels"]["num_points_per_voxel"]
 
                 # NOTE(knzo25): onnx demmands this
                 # batch_size = coords[-1, 0] + 1
                 batch_size = 1
-
+                print("Run onnx point_eSpConvst")
                 assert self.voxelize_reduce
                 if self.voxelize_reduce:
                     feats = feats.sum(dim=1, keepdim=False) / sizes.type_as(feats).view(-1, 1)
-
         x = self.pts_middle_encoder(feats, coords, batch_size)
         return x
 
@@ -332,7 +326,12 @@ class BEVFusion(Base3DDetector):
             )
             features.append(img_feature)
 
-        pts_feature = self.extract_pts_feat(batch_inputs_dict)
+        pts_feature = self.extract_pts_feat(
+            batch_inputs_dict.get("voxels", {}).get("voxels", None),
+            batch_inputs_dict.get("voxels", {}).get("coors", None),
+            batch_inputs_dict.get("voxels", {}).get("num_points_per_voxel", None),
+            points=points,
+        )
         features.append(pts_feature)
 
         if self.fusion_layer is not None:

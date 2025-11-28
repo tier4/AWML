@@ -1,7 +1,7 @@
 # autoware-ml
 /data
 /work_dirs
-tests/samplefiles/data
+
 *.bin
 *.onnx
 *.engine

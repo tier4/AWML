@@ -215,6 +215,11 @@ def parse_args():
         required=True,
         help="output directory of info file",
     )
+    parser.add_argument(
+        "--use_available_dataset_version",
+        action="store_true",
+        help="Will resort to using the available dataset version if the one specified in the config file does not exist.",
+    )
     args = parser.parse_args()
     return args
 
@@ -246,18 +251,27 @@ def main():
 
         for split in ["train", "val", "test"]:
             print_log(f"Creating data info for split: {split}", logger="current")
-            for scene_id in dataset_list_dict.get(split, []):
-                print_log(f"Creating data info for scene: {scene_id}")
-                scene_root_dir_path = get_scene_root_dir_path(
-                    args.root_path,
-                    dataset_version,
-                    scene_id,
-                )
+            # Get 2 Hz
+            if split == "train" and dataset_version == "db_jpntaxigen2_v1":
+                sample_steps = 5
+            else:
+                sample_steps = 1
 
-                if not osp.isdir(scene_root_dir_path):
-                    raise ValueError(f"{scene_root_dir_path} does not exist.")
-                t4 = Tier4(version="annotation", data_root=scene_root_dir_path, verbose=False)
-                for i, sample in enumerate(t4.sample):
+            for scene_id in dataset_list_dict.get(split, []):
+                print_log(f"Creating data info for scene: {scene_id}, steps: {sample_steps}")
+                t4_dataset_id, t4_dataset_version_id = scene_id.split("   ")
+                scene_root_dir_path = osp.join(args.root_path, dataset_version, t4_dataset_id, t4_dataset_version_id)
+                if not os.path.exists(scene_root_dir_path):
+                    if args.use_available_dataset_version:
+                        print(
+                            "Warning: The version of the dataset specified in the config file does not exist. Will use whatever is available locally."
+                        )
+                        scene_root_dir_path = get_scene_root_dir_path(args.root_path, dataset_version, t4_dataset_id)
+                    else:
+                        raise ValueError(f"{t4_dataset_id} does not exist.")
+                t4 = Tier4(data_root=scene_root_dir_path, verbose=False)
+                for i in range(0, len(t4.sample), sample_steps):
+                    sample = t4.sample[i]
                     info = get_info(cfg, t4, sample, i, args.max_sweeps)
                     # info["version"] = dataset_version             # used for visualizations during debugging.
                     t4_infos[split].append(info)
