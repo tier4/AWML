@@ -457,7 +457,6 @@ class BEVFusion(Base3DDetector):
             )
 
             sum_roi_losses = sum([value for key, value in img_roi_head_losses.items() if "loss" in key])
-
             losses.update(
                 img_roi_head_losses
             )

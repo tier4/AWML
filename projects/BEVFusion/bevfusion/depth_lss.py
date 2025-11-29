@@ -23,13 +23,13 @@ class DepthLSSNet(nn.Module):
     def __init__(self, in_channels: int, out_channels: int) -> None:
         super().__init__()
         self.net = nn.Sequential(
-            nn.Conv2d(in_channels=in_channels, out_channels=in_channels, kernel_size=3, padding=1),
+            nn.Conv2d(in_channels=in_channels, out_channels=in_channels, kernel_size=3, padding=1, bias=False),
             nn.BatchNorm2d(num_features=in_channels),
             nn.ReLU(True),
-            nn.Conv2d(in_channels=in_channels, out_channels=in_channels, kernel_size=3, padding=1),
+            nn.Conv2d(in_channels=in_channels, out_channels=in_channels, kernel_size=3, padding=1, bias=False),
             nn.BatchNorm2d(num_features=in_channels),
             nn.ReLU(True),
-            nn.Conv2d(in_channels=in_channels, out_channels=out_channels, kernel_size=1),
+            nn.Conv2d(in_channels=in_channels, out_channels=out_channels, kernel_size=1, bias=True),
         )
 
     def forward(self, x):
@@ -76,13 +76,13 @@ class LidarDepthImageNet(nn.Module):
         self.out_channels = out_channels
 
         self.net = nn.Sequential(
-            nn.Conv2d(in_channels=in_channels, out_channels=8, kernel_size=1),
+            nn.Conv2d(in_channels=in_channels, out_channels=8, kernel_size=1, bias=False),
             nn.BatchNorm2d(num_features=8),
             nn.ReLU(True),
-            nn.Conv2d(in_channels=8, out_channels=32, kernel_size=5, stride=4, padding=2),
+            nn.Conv2d(in_channels=8, out_channels=32, kernel_size=5, stride=4, padding=2, bias=False),
             nn.BatchNorm2d(num_features=32),
             nn.ReLU(True),
-            nn.Conv2d(in_channels=32, out_channels=out_channels, kernel_size=5, stride=last_stride, padding=2),
+            nn.Conv2d(in_channels=32, out_channels=out_channels, kernel_size=5, stride=last_stride, padding=2, bias=False),
             nn.BatchNorm2d(num_features=out_channels),
             nn.ReLU(True),
         )
@@ -207,10 +207,6 @@ class BaseViewTransform(nn.Module):
         geom_feats = geom_feats[kept]
 
         ranks = geom_feats[:, 0] * (W * D * B) + geom_feats[:, 1] * (D * B) + geom_feats[:, 2] * B + geom_feats[:, 3]
-        # ranks = geom_feats[:, 0] * (self.nx[1] * self.nx[2] * B) \
-        #         + geom_feats[:, 1] * (self.nx[2] * B) \
-        #         + geom_feats[:, 2] * B \
-        #         + geom_feats[:, 3]
         indices = ranks.argsort()
 
         ranks = ranks[indices]
@@ -239,11 +235,6 @@ class BaseViewTransform(nn.Module):
         # collapse Z
         final = torch.cat(x.unbind(dim=2), 1)
         
-        # Permute B x C x Y x X
-        # final = final.permute(0, 1, 3, 2).contiguous()
-
-        # if self.main_gpu:
-        #   save_bev_single(final, f"{self.debug_folder}/bev_pool_debug_{uuid.uuid4().hex[:8]}.png", mode="max")
         return final
 
     def bev_pool_precomputed(self, x, geom_feats, kept, ranks, indices):
@@ -265,48 +256,6 @@ class BaseViewTransform(nn.Module):
 
         # Permute B x C x Y x X
         # final = final.permute(0, 1, 3, 2).contiguous()
-
-        return final
-
-    def voxel_pooling(self, x, geom_feats):
-        B, N, D, H, W, C = x.shape
-        Nprime = B * N * D * H * W
-        nx = self.nx.to(torch.long)
-        # flatten x
-        x = x.reshape(Nprime, C)
-
-        # flatten indices
-        geom_feats = ((geom_feats - (self.bx - self.dx / 2.)) / self.dx).long()
-        geom_feats = geom_feats.view(Nprime, 3)
-        batch_ix = torch.cat([torch.full([Nprime // B, 1], ix,
-                                         device=x.device, dtype=torch.long) for ix in range(B)])
-        geom_feats = torch.cat((geom_feats, batch_ix), 1)
-
-        # filter out points that are outside box
-        kept = (geom_feats[:, 0] >= 0) & (geom_feats[:, 0] < self.nx[0]) \
-               & (geom_feats[:, 1] >= 0) & (geom_feats[:, 1] < self.nx[1]) \
-               & (geom_feats[:, 2] >= 0) & (geom_feats[:, 2] < self.nx[2])
-        x = x[kept]
-        geom_feats = geom_feats[kept]
-
-        # get tensors from the same voxel next to each other
-        ranks = geom_feats[:, 0] * (self.nx[1] * self.nx[2] * B) \
-                + geom_feats[:, 1] * (self.nx[2] * B) \
-                + geom_feats[:, 2] * B \
-                + geom_feats[:, 3]
-        sorts = ranks.argsort()
-        x, geom_feats, ranks = x[sorts], geom_feats[sorts], ranks[sorts]
-
-        # cumsum trick
-        x, geom_feats = QuickCumsum.apply(x, geom_feats, ranks)
-
-        # griddify (B x C x Z x X x Y)
-        final = torch.zeros((B, C, nx[2], nx[1], nx[0]), device=x.device)
-        final[geom_feats[:, 3], :, geom_feats[:, 2], geom_feats[:, 1], geom_feats[:, 0]] = x
-        # if self.voxel:
-        #     return final.sum(2), x, geom_feats
-        # collapse Z
-        final = torch.cat(final.unbind(dim=2), 1)
 
         return final
 
@@ -355,7 +304,6 @@ class BaseViewTransform(nn.Module):
             # is also flattened_indices
             x = self.get_cam_feats(img)
             x = self.bev_pool(x, geom)
-            # x = self.voxel_pooling(x, geom)
 
         return x
 

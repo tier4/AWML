@@ -117,7 +117,7 @@ def compute_bbox_and_centers(lidar2cam, cam2img, img_aug_matrix, lidar_aug_matri
     return bboxes_2d, projected_centers, object_depth, valid_labels
 
 
-def check_bbox_visibility_in_image(lidar2cam, cam2img, img_aug_matrix, bboxes, labels, img_shape, visibility=0.1):
+def check_bbox_visibility_in_image(lidar2cam, cam2img, img_aug_matrix, lidar_aug_matrix, bboxes, labels, img_shape, visibility=0.1):
     """
     Projects 3D bounding boxes into the image plane and determines visibility.
 
@@ -133,14 +133,14 @@ def check_bbox_visibility_in_image(lidar2cam, cam2img, img_aug_matrix, bboxes, l
     Returns:
         list: A list of booleans indicating if each bounding box is sufficiently visible.
     """
-    C, H, W = img_shape
+    H, W, C = img_shape
     is_visible = []
     # cam2img = img_aug_matrix @ cam2img
 
     for bbox_std, bbox, label in zip(bboxes, [b.corners for b in bboxes], labels):
         # Project corners + center to image space
         all_points = np.concatenate([bbox, bbox.mean(0).reshape(1, 3)], axis=0)
-        corners_img, valid_mask = project_to_image(all_points, lidar2cam, cam2img)
+        corners_img, valid_mask = project_to_image(all_points, lidar2cam, cam2img, img_aug_matrix, lidar_aug_matrix)
         projected_center = corners_img[-1]
         corners_img = corners_img[:-1][valid_mask[:-1]]
 
