@@ -13,7 +13,7 @@ info_directory_path = "info/kokseang_2_3/"
 train_gpu_size = 2
 train_batch_size = 8
 test_batch_size = 2
-val_interval = 15
+val_interval = 5
 max_epochs = 120
 backend_args = None
 
@@ -32,6 +32,7 @@ eval_class_range = {
 out_size_factor = 8
 point_load_dim = 5  # x, y, z, intensity, ring_id
 sweeps_num = 1
+focal_head_loss_weight = 0.40 
 
 # model parameter
 input_modality = dict(
@@ -103,7 +104,7 @@ model = dict(
     view_transform=dict(
         type="DepthLSSTransform",
         in_channels=256,
-        out_channels=80,
+        out_channels=128,
         image_size=image_size,
         # feature_size=[48, 72],
         feature_size=[60, 80],
@@ -116,7 +117,7 @@ model = dict(
     ),
 	pts_backbone=dict(
         type="SECOND",
-        in_channels=80,
+        in_channels=128,
         out_channels=[128, 256],
         layer_nums=[5, 5],
         layer_strides=[1, 2],
@@ -132,10 +133,32 @@ model = dict(
         upsample_cfg=dict(type="deconv", bias=False),
         use_conv_for_no_stride=True,
     ),
+		img_roi_head=dict(
+        type="mmdet.FocalHead",
+        num_classes=len(_base_.class_names),
+        in_channels=256,
+        stride=8,
+        bbox_coder=dict(type="mmdet.DistancePointBBoxCoder"),
+        loss_cls2d=dict(type="mmdet.QualityFocalLoss", use_sigmoid=True, beta=2.0, loss_weight=1.0*focal_head_loss_weight),
+        loss_centerness=dict(type="mmdet.GaussianFocalLoss", reduction="mean", loss_weight=1.0*focal_head_loss_weight),
+        loss_bbox2d=dict(type="mmdet.L1Loss", loss_weight=5.0*focal_head_loss_weight),
+        loss_iou2d=dict(type="mmdet.GIoULoss", loss_weight=2.0*focal_head_loss_weight),
+        loss_centers2d=dict(type="mmdet.L1Loss", loss_weight=10.0*focal_head_loss_weight),
+        train_cfg=dict(
+            assigner2d=dict(
+                type="HungarianAssigner2D",
+                cls_cost=dict(type="FocalLossCostAssigner", weight=2),
+                reg_cost=dict(type="BBoxL1CostAssigner", weight=5.0, box_format="xywh"),
+                iou_cost=dict(type="IoUCostAssigner", iou_mode="giou", weight=2.0),
+                centers2d_cost=dict(type="BBox3DL1CostAssigner", weight=10.0),
+            )
+        ),
+    ),
+    # img_aux_bbox_head=None,
     img_aux_bbox_head=dict(
         type="BEVFusionCenterHead",
         # in_channels=sum([128, 128, 128]),
-        in_channels=80,
+        in_channels=128,
         # (output_channel_size, num_conv_layers)
         common_heads=dict(
             reg=(2, 2),
@@ -193,7 +216,9 @@ model = dict(
             # post_max_size=100,
         ),
     ),
+		conv_fuser=None,
     bbox_head=dict(
+        in_channels=128,
         num_proposals=num_proposals,
         class_names=_base_.class_names,  # Use class names to identify the correct class indices
         train_cfg=dict(
@@ -219,6 +244,10 @@ model = dict(
 )
 
 train_pipeline = [
+    # dict(
+    #     type="SyncFlipping",
+    #     is_train=True
+    # ),
     dict(
         type="BEVLoadMultiViewImageFromFiles",
         to_float32=True,
@@ -226,7 +255,7 @@ train_pipeline = [
         backend_args=backend_args,
         camera_order=camera_order,
     ),
-		dict(
+	dict(
         type="LoadPointsFromFile",
         coord_type="LIDAR",
         load_dim=point_load_dim,
@@ -249,25 +278,19 @@ train_pipeline = [
         final_dim=image_size,
         resize_lim=0.08,
         bot_pct_lim=[0.0, 0.0],
-        rot_lim=[-5.4, 5.4],
+        rot_lim=[0.0, 0.0],
         rand_flip=True,
         is_train=True,
     ),
-    dict(
-        type="BEVFusionGlobalRotScaleTrans",
-        scale_ratio_range=[1.0, 1.00],
-		rot_range=[-0.19625, 0.19625],
-        # rot_range=[-1.571, 1.571],
-        # scale_ratio_range=[0.8, 1.2],
-        # translation_std=[1.0, 1.0, 0.2],
-        translation_std=[0.0, 0.0, 0.0],
-    ),
-    # dict(type="BEVFusionRandomFlip3D"),
+    # dict(
+    #     type="BEVFusionGlobalRotScaleTrans",
+    #     scale_ratio_range=[0.95, 1.05],
+	# 	rot_range=[-0.3925, 0.3925],
+    #     translation_std=[0.0, 0.0, 0.0],
+    # ),
+    # dict(type="BEVFusionRandomFlip3D", flip_vertical=True),
     dict(type="PointsRangeFilter", point_cloud_range=point_cloud_range),
     dict(type="ObjectRangeFilter", point_cloud_range=point_cloud_range),
-    dict(type="ObjectRangeMinPointsFilter", range_radius=[0, 60], min_num_points=2),
-    dict(type="ObjectRangeMinPointsFilter", range_radius=[60, 130], min_num_points=1),
-
     dict(
         type="ObjectNameFilter",
         classes=[
@@ -283,11 +306,14 @@ train_pipeline = [
             "traffic_cone",
         ],
     ),
-		dict(type="PointShuffle"),
-    # dict(type="ObjectMinPointsFilter", min_num_points=5, remove_points=True),
+    dict(type="ObjectRangeMinPointsFilter", range_radius=[0, 60], min_num_points=2),
+    dict(type="ObjectRangeMinPointsFilter", range_radius=[60, 130], min_num_points=1),
+    dict(type="PointShuffle"),
+	dict(type="BEVFusionLoadAnnotations2D"),
     dict(
         type="Pack3DDetInputs",
-        keys=["img", "points",  "gt_bboxes_3d", "gt_labels_3d", "gt_bboxes", "gt_labels"],
+		keys=["img", "points",  "gt_bboxes_3d", "gt_labels_3d", "gt_bboxes", "gt_bboxes_labels"],
+        # keys=["img", "points",  "gt_bboxes_3d", "gt_labels_3d", "gt_bboxes", "gt_labels"],
         meta_keys=[
             "cam2img",
             "ori_cam2img",
@@ -305,6 +331,9 @@ train_pipeline = [
             "pcd_scale_factor",
             "pcd_trans",
             "lidar_aug_matrix",
+			"pad_shape",
+            "depths",
+            "centers_2d"
         ],
     ),
 ]
@@ -317,7 +346,7 @@ test_pipeline = [
         backend_args=backend_args,
         camera_order=camera_order,
     ),
-	dict(
+		dict(
         type="LoadPointsFromFile",
         coord_type="LIDAR",
         load_dim=point_load_dim,
@@ -361,6 +390,7 @@ test_pipeline = [
             "img_path",
             "num_pts_feats",
             "num_views",
+            "pad_shape"
         ],
     ),
 ]
@@ -407,6 +437,7 @@ val_dataloader = dict(
         test_mode=True,
         box_type_3d="LiDAR",
         backend_args=backend_args,
+        # filter_cfg=filter_cfg
     ),
 )
 
@@ -427,6 +458,7 @@ test_dataloader = dict(
         test_mode=True,
         box_type_3d="LiDAR",
         backend_args=backend_args,
+        # filter_cfg=filter_cfg
     ),
 )
 

@@ -14,7 +14,7 @@ train_gpu_size = 2
 train_batch_size = 8
 test_batch_size = 2
 val_interval = 5
-max_epochs = 100
+max_epochs = 120
 backend_args = None
 
 # range setting
@@ -179,7 +179,7 @@ model = dict(
         ),
         share_conv_channel=64,
         loss_cls=dict(type="mmdet.GaussianFocalLoss", reduction="none", loss_weight=1.0),
-        loss_bbox=dict(type="mmdet.L1Loss", reduction="mean", loss_weight=0.0),
+        loss_bbox=dict(type="mmdet.L1Loss", reduction="mean", loss_weight=0.25),
         norm_bbox=True,
         tasks=[
             dict(num_class=5, class_names=["car", "truck", "bus", "bicycle", "pedestrian"]),
@@ -218,6 +218,7 @@ model = dict(
     ),
 		conv_fuser=None,
     bbox_head=dict(
+        in_channels=512,
         num_proposals=num_proposals,
         class_names=_base_.class_names,  # Use class names to identify the correct class indices
         train_cfg=dict(
@@ -281,12 +282,12 @@ train_pipeline = [
         rand_flip=True,
         is_train=True,
     ),
-    dict(
-        type="BEVFusionGlobalRotScaleTrans",
-        scale_ratio_range=[0.95, 1.05],
-		rot_range=[-0.3925, 0.3925],
-        translation_std=[0.0, 0.0, 0.0],
-    ),
+    # dict(
+    #     type="BEVFusionGlobalRotScaleTrans",
+    #     scale_ratio_range=[0.95, 1.05],
+	# 	rot_range=[-0.3925, 0.3925],
+    #     translation_std=[0.0, 0.0, 0.0],
+    # ),
     # dict(type="BEVFusionRandomFlip3D", flip_vertical=True),
     dict(type="PointsRangeFilter", point_cloud_range=point_cloud_range),
     dict(type="ObjectRangeFilter", point_cloud_range=point_cloud_range),

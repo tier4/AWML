@@ -122,6 +122,10 @@ class BEVFusionCenterHead(CenterHead):
                     x, y, z = task_boxes[idx][k][0], task_boxes[idx][k][
                         1], task_boxes[idx][k][2]
 
+                    dx, dy, dz = task_boxes[idx][k][3], task_boxes[idx][k][4], task_boxes[idx][k][5]
+                    # Move to surface depth
+                    # x = x - dx/2
+
                     coor_x = (
                         x - pc_range[0]
                     ) / voxel_size[0] / self.train_cfg['out_size_factor']
