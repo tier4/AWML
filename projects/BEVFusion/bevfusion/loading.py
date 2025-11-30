@@ -28,6 +28,7 @@ def project_to_image(points, lidar2cam, cam2img, img_aug_matrix, lidar_aug_matri
     points_cam = np.dot(lidar2cam, points_hom.T).T
 
     # Filter points behind the camera
+    # points_cam[:, 2] = np.maximum(1e-5, points_cam[:, 2])
     valid_mask = points_cam[:, 2] > 0
 
     points_cam_hom = np.hstack((points_cam[:, :3], np.ones((points_cam.shape[0], 1))))
@@ -41,7 +42,7 @@ def project_to_image(points, lidar2cam, cam2img, img_aug_matrix, lidar_aug_matri
     return points_img[:, :2], valid_mask
 
 
-def compute_bbox_and_centers(lidar2cam, cam2img, img_aug_matrix, lidar_aug_matrix, bboxes, labels, img_shape):
+def compute_bbox_and_centers(lidar2cam, cam2img, img_aug_matrix, lidar_aug_matrix, bboxes, labels, img_shape, visibility = 0.05):
     """
     Compute the 2D bounding box, 3D center of the projected bounding box, and 3D center in LiDAR coordinates.
 
@@ -85,17 +86,31 @@ def compute_bbox_and_centers(lidar2cam, cam2img, img_aug_matrix, lidar_aug_matri
         # Compute 2D bbox
         x_min, y_min = np.min(corners_img, axis=0)
         x_max, y_max = np.max(corners_img, axis=0)
+        # visibility
+        full_area = max(x_max - x_min, 0) * max(y_max - y_min, 0)
+        if full_area == 0:
+            continue
 
         # Clip to image boundaries
         x_min = np.clip(x_min, 0, W)
         x_max = np.clip(x_max, 0, W)
         y_min = np.clip(y_min, 0, H)
         y_max = np.clip(y_max, 0, H)
+        # visible_area = max(x_max - x_min, 0) * max(y_max - y_min, 0)
 
         x_center = np.clip(projected_center[0], 0, W)
         y_center = np.clip(projected_center[1], 0, H)
         if x_min == x_max or y_min == y_max:
             continue
+
+        # visible_ratio = visible_area / full_area
+        # if visibility > 0 and visible_ratio < visibility:
+        #     continue 
+        
+        # Pedestrian and area more than 3.0, then sth wrong 
+        # depth = np.sqrt((center_3d_lidar**2).sum())
+        # if label == 4 and visible_area > 3.0 and depth < 5.0:
+        #     continue 
 
         valid_bboxes_2d.append([x_min, y_min, x_max, y_max])
         valid_projected_centers.append([x_center, y_center])
@@ -449,8 +464,8 @@ class BEVFusionLoadAnnotations2D(BaseTransform):
 
         # fig.tight_layout()
 
-        # Save figure to memory (as ndarray) or file
-        # fig_path = f"work_dirs/bevfusion_image_2d_debug/2/debug_vis_{uuid.uuid4().hex}.png"
+        # # Save figure to memory (as ndarray) or file
+        # fig_path = f"work_dirs/bevfusion_image_2d_debug/4/debug_vis_{uuid.uuid4().hex}.png"
         # fig.savefig(fig_path, dpi=150)
         # plt.close(fig)
 
