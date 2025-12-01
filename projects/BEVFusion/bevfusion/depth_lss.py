@@ -4,9 +4,10 @@ from pathlib import Path
 from typing import Optional, Tuple
 
 import torch
+import torch.distributed as dist
 from mmdet3d.registry import MODELS
 from torch import Tensor, nn
-import torch.distributed as dist
+from torch.nn.functional import kl_div
 
 # from .visualize import save_bev_single
 from .ops import bev_pool
@@ -17,6 +18,7 @@ def gen_dx_bx(xbound, ybound, zbound):
     bx = torch.Tensor([row[0] + row[2] / 2.0 for row in [xbound, ybound, zbound]])
     nx = torch.LongTensor([(row[1] - row[0]) / row[2] for row in [xbound, ybound, zbound]])
     return dx, bx, nx
+
 
 class DepthLSSNet(nn.Module):
 
@@ -82,7 +84,9 @@ class LidarDepthImageNet(nn.Module):
             nn.Conv2d(in_channels=8, out_channels=32, kernel_size=5, stride=4, padding=2, bias=False),
             nn.BatchNorm2d(num_features=32),
             nn.ReLU(True),
-            nn.Conv2d(in_channels=32, out_channels=out_channels, kernel_size=5, stride=last_stride, padding=2, bias=False),
+            nn.Conv2d(
+                in_channels=32, out_channels=out_channels, kernel_size=5, stride=last_stride, padding=2, bias=False
+            ),
             nn.BatchNorm2d(num_features=out_channels),
             nn.ReLU(True),
         )
@@ -234,7 +238,7 @@ class BaseViewTransform(nn.Module):
 
         # collapse Z
         final = torch.cat(x.unbind(dim=2), 1)
-        
+
         return final
 
     def bev_pool_precomputed(self, x, geom_feats, kept, ranks, indices):
@@ -393,7 +397,7 @@ class BaseDepthTransform(BaseViewTransform):
         depth = torch.zeros(batch_size, img.shape[1], 1, *self.image_size).to(points[0].device)
         depth_batch_size, num_imgs, channels, height, width = depth.shape
         assert channels == 1
-        
+
         for b in range(batch_size):
             cur_coords = points[b][:, :3]
             cur_img_aug_matrix = img_aug_matrix[b]
@@ -404,10 +408,10 @@ class BaseDepthTransform(BaseViewTransform):
             cur_coords -= cur_lidar_aug_matrix[:3, 3]
             cur_coords = lidar_aug_matrix_inverse[b, :3, :3].matmul(cur_coords.transpose(1, 0))
 
-             # lidar2image
+            # lidar2image
             cur_coords = cur_lidar2image[:, :3, :3].matmul(cur_coords)
             cur_coords += cur_lidar2image[:, :3, 3].reshape(-1, 3, 1)
-            
+
             # get 2d coords
             dist = cur_coords[:, 2, :]
             valid_dist_mask = dist > 0
@@ -426,7 +430,8 @@ class BaseDepthTransform(BaseViewTransform):
                 (cur_coords[..., 0] < self.image_size[0])
                 & (cur_coords[..., 0] >= 0)
                 & (cur_coords[..., 1] < self.image_size[1])
-                & (cur_coords[..., 1] >= 0) & valid_dist_mask
+                & (cur_coords[..., 1] >= 0)
+                & valid_dist_mask
             )
 
             # NOTE(knzo25): in the original code, a per-image loop was
@@ -479,22 +484,27 @@ class BaseDepthTransform(BaseViewTransform):
                 extra_trans=extra_trans,
             )
 
-            x, est_depth_distr, gt_depth_distr, counts_3d = self.get_cam_feats(img, depth)
+            x, est_depth_distr, gt_depth_distr, counts_3d, gt_gaussian_depths = self.get_cam_feats(img, depth)
             x = self.bev_pool(x, geom)
-
-            if self.training:
-                mask_flat = counts_3d.sum(dim=-1).view(-1) > 0
-                
-                gt_depth_distr_flat = gt_depth_distr.view(-1, self.D)
-                est_depth_distr_flat = est_depth_distr.reshape(-1, self.D)
-                
-                cross_ent = -torch.sum(gt_depth_distr_flat * torch.log(est_depth_distr_flat + 1e-8), dim=-1)
-                cross_ent_masked = cross_ent * mask_flat.float()
-                depth_loss = torch.sum(cross_ent_masked) / (mask_flat.sum() + 1e-8) # Increase the
-            else:
-                depth_loss = 0.0
+            # depth_loss = self.depth_loss_with_one_hot_target(est_depth_distr, gt_depth_distr, counts_3d)
+            depth_loss = self.depth_loss_with_prob_dists(est_depth_distr, gt_gaussian_depths, counts_3d)
 
         return x, depth_loss
+
+    def depth_loss_with_prob_dists(self, est_depth_distr, gt_depth_distr, counts_3d):
+        if self.training:
+            mask_flat = counts_3d.sum(dim=-1).view(-1) > 0
+
+            gt_depth_distr_flat = gt_depth_distr.view(-1, self.D)
+            est_depth_distr_flat = est_depth_distr.reshape(-1, self.D)
+
+            cross_ent = -torch.sum(gt_depth_distr_flat * torch.log(est_depth_distr_flat + 1e-8), dim=-1)
+            cross_ent_masked = cross_ent * mask_flat.float()
+            depth_loss = torch.sum(cross_ent_masked) / (mask_flat.sum() + 1e-8)  # Increase the
+        else:
+            depth_loss = 0.0
+
+        return depth_loss
 
 
 @MODELS.register_module()
@@ -512,7 +522,8 @@ class DepthLSSTransform(BaseDepthTransform):
         dbound: Tuple[float, float, float],
         downsample: int = 1,
         aux_depth_alpha: float = 0.2,
-        lidar_depth_image_last_stride: int = 2
+        lidar_depth_image_last_stride: int = 2,
+        gaussian_sigma: float = 0.25,
     ) -> None:
         """Compared with `LSSTransform`, `DepthLSSTransform` adds sparse depth
         information from lidar points into the inputs of the `depthnet`."""
@@ -526,18 +537,42 @@ class DepthLSSTransform(BaseDepthTransform):
             zbound=zbound,
             dbound=dbound,
         )
-        
+
         self.aux_depth_alpha = aux_depth_alpha
+        self.gaussian_sigma = gaussian_sigma
         self.dtransform = LidarDepthImageNet(in_channels=1, out_channels=64, last_stride=lidar_depth_image_last_stride)
         self.depthnet = DepthLSSNet(
             in_channels=in_channels + self.dtransform.out_channels, out_channels=self.D + self.C
         )
         self.downsample = DownSampleNet(downsample=downsample, in_channels=out_channels, out_channels=out_channels)
 
-    def get_depth_gt_bins(self, d, B, N, C, fH, fW):
-        
+    def get_gaussian_depths(self, counts_3d, d, B, N, C, fH, fW):
         if self.training:
-            BN = B * N 
+            d_min, d_max, d_steps = self.dbound
+            centers = d_min + (torch.arange(self.D, device=counts_3d.device) + 0.5) * d_steps
+            diff = centers.view(self.D, 1) - centers.view(1, self.D)
+            gaussian_values = torch.exp(-0.5 * (diff**2 / self.gaussian_sigma**2))
+
+            counts_flat = counts_3d.reshape(-1, self.D)
+            gaussian_counts = counts_flat @ gaussian_values.T
+            gaussian_probs = gaussian_counts / (gaussian_counts.sum(dim=-1, keepdim=True) + 1e-8)
+            gaussian_probs = gaussian_probs.view(B, N, fH, fW, self.D)
+
+            print(gaussian_probs[0, 0, 0, 0, :])
+            print(gaussian_probs[0, 0, 5, 5, :])
+            print(gaussian_probs[0, 0, 10, 10, :])
+            print(gaussian_probs[0, 0, 20, 20, :])
+            print(gaussian_probs[0, 0, 30, 30, :])
+
+        else:
+            gaussian_probs = None
+
+        return gaussian_probs
+
+    def get_depth_gt_bins(self, d, B, N, C, fH, fW):
+
+        if self.training:
+            BN = B * N
             h, w = self.image_size
 
             camera_id = torch.arange(BN).view(-1, 1, 1).expand(BN, h, w)
@@ -574,13 +609,14 @@ class DepthLSSTransform(BaseDepthTransform):
 
             # gt_depth_distr = torch.softmax(counts_3d, dim=-1)
             gt_depth_distr = counts_3d / (counts_3d.sum(dim=-1, keepdim=True) + 1e-8)
+
+            gt_gaussian_probs = self.get_gaussian_depths(counts_3d=counts_3d, d=d, B=B, N=N, C=C, fH=fH, fW=fW)
             # gt_depth_distr_flat = gt_depth_distr.view(-1, self.D)
             # =================== TEST
         else:
             gt_depth_distr = None
             counts_3d = None
-    
-        return gt_depth_distr, counts_3d 
+        return gt_depth_distr, counts_3d, gt_gaussian_probs
 
     def get_cam_feats(self, x, d):
         B, N, C, fH, fW = x.shape
@@ -588,14 +624,7 @@ class DepthLSSTransform(BaseDepthTransform):
         x = x.view(B * N, C, fH, fW)
         d = d.view(B * N, *d.shape[2:])
 
-        gt_depth_distr, counts_3d = self.get_depth_gt_bins(
-            d=d,
-            B=B, 
-            N=N, 
-            C=C, 
-            fH=fH, 
-            fW=fW
-        )
+        gt_depth_distr, counts_3d, gt_gaussian_probs = self.get_depth_gt_bins(d=d, B=B, N=N, C=C, fH=fH, fW=fW)
 
         d = self.dtransform(d)
         x = torch.cat([d, x], dim=1)
@@ -607,13 +636,13 @@ class DepthLSSTransform(BaseDepthTransform):
         if self.training:
             depth_aux = gt_depth_distr.view(B * N, fH, fW, self.D).permute(0, 3, 1, 2)
             # use only 0.2, otherwise it overfitted to the perfect depth
-            depth = depth + (self.aux_depth_alpha * (torch.maximum(depth_aux, depth) - depth)).detach()    
+            depth = depth + (self.aux_depth_alpha * (torch.maximum(depth_aux, depth) - depth)).detach()
 
         x = depth.unsqueeze(1) * x[:, self.D : (self.D + self.C)].unsqueeze(2)
 
         x = x.view(B, N, self.C, self.D, fH, fW)
         x = x.permute(0, 1, 3, 4, 5, 2)
-        return x, est_depth_distr, gt_depth_distr, counts_3d
+        return x, est_depth_distr, gt_depth_distr, counts_3d, gt_gaussian_probs
 
     def forward(self, *args, **kwargs):
         x, depth_loss = super().forward(*args, **kwargs)
