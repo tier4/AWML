@@ -479,11 +479,22 @@ class BaseDepthTransform(BaseViewTransform):
                 extra_trans=extra_trans,
             )
 
-            x = self.get_cam_feats(img, depth)
+            x, est_depth_distr, gt_depth_distr, counts_3d = self.get_cam_feats(img, depth)
             x = self.bev_pool(x, geom)
-            # x = self.voxel_pooling(x, geom)
 
-        return x
+            if self.training:
+                mask_flat = counts_3d.sum(dim=-1).view(-1) > 0
+                
+                gt_depth_distr_flat = gt_depth_distr.view(-1, self.D)
+                est_depth_distr_flat = est_depth_distr.reshape(-1, self.D)
+                
+                cross_ent = -torch.sum(gt_depth_distr_flat * torch.log(est_depth_distr_flat + 1e-8), dim=-1)
+                cross_ent_masked = cross_ent * mask_flat.float()
+                depth_loss = torch.sum(cross_ent_masked) / (mask_flat.sum() + 1e-8) # Increase the
+            else:
+                depth_loss = 0.0
+
+        return x, depth_loss
 
 
 @MODELS.register_module()
@@ -500,6 +511,7 @@ class DepthLSSTransform(BaseDepthTransform):
         zbound: Tuple[float, float, float],
         dbound: Tuple[float, float, float],
         downsample: int = 1,
+        aux_depth_alpha: float = 0.2,
         lidar_depth_image_last_stride: int = 2
     ) -> None:
         """Compared with `LSSTransform`, `DepthLSSTransform` adds sparse depth
@@ -514,33 +526,99 @@ class DepthLSSTransform(BaseDepthTransform):
             zbound=zbound,
             dbound=dbound,
         )
-
+        
+        self.aux_depth_alpha = aux_depth_alpha
         self.dtransform = LidarDepthImageNet(in_channels=1, out_channels=64, last_stride=lidar_depth_image_last_stride)
         self.depthnet = DepthLSSNet(
             in_channels=in_channels + self.dtransform.out_channels, out_channels=self.D + self.C
         )
         self.downsample = DownSampleNet(downsample=downsample, in_channels=out_channels, out_channels=out_channels)
 
+    def get_depth_gt_bins(self, d, B, N, C, fH, fW):
+        
+        if self.training:
+            BN = B * N 
+            h, w = self.image_size
+
+            camera_id = torch.arange(BN).view(-1, 1, 1).expand(BN, h, w)
+            rows = torch.arange(h).view(1, -1, 1).expand(BN, h, w)
+            cols = torch.arange(w).view(1, 1, -1).expand(BN, h, w)
+
+            cell_j = rows // (h // fH)
+            cell_i = cols // (w // fW)
+
+            cell_id = camera_id * fH * fW + cell_j * fW + cell_i
+            cell_id = cell_id.to(device=d.device)
+
+            dist_bins = (
+                d.clamp(min=self.dbound[0], max=self.dbound[1] - 0.5 * self.dbound[2])
+                + 0.5 * self.dbound[2]
+                - self.dbound[0]
+            ) / self.dbound[2]
+            dist_bins = dist_bins.long()
+
+            flat_cell_id = cell_id.view(-1)
+            flat_dist_bin = dist_bins.view(-1)
+
+            flat_index = flat_cell_id * self.D + flat_dist_bin
+
+            counts_flat = torch.zeros(BN * fH * fW * self.D, dtype=torch.float, device=d.device)
+            counts_flat.scatter_add_(
+                0, flat_index, torch.ones_like(flat_index, dtype=torch.float, device=flat_index.device)
+            )
+
+            counts_3d = counts_flat.view(B, N, fH, fW, self.D)
+            counts_3d[..., 0] = 0.0
+
+            # mask_flat = counts_3d.sum(dim=-1).view(-1) > 0
+
+            # gt_depth_distr = torch.softmax(counts_3d, dim=-1)
+            gt_depth_distr = counts_3d / (counts_3d.sum(dim=-1, keepdim=True) + 1e-8)
+            # gt_depth_distr_flat = gt_depth_distr.view(-1, self.D)
+            # =================== TEST
+        else:
+            gt_depth_distr = None
+            counts_3d = None
+    
+        return gt_depth_distr, counts_3d 
+
     def get_cam_feats(self, x, d):
         B, N, C, fH, fW = x.shape
 
         x = x.view(B * N, C, fH, fW)
         d = d.view(B * N, *d.shape[2:])
+
+        gt_depth_distr, counts_3d = self.get_depth_gt_bins(
+            d=d,
+            B=B, 
+            N=N, 
+            C=C, 
+            fH=fH, 
+            fW=fW
+        )
+
         d = self.dtransform(d)
         x = torch.cat([d, x], dim=1)
         x = self.depthnet(x)
 
         depth = x[:, : self.D].softmax(dim=1)
+        est_depth_distr = depth.permute(0, 2, 3, 1).reshape(B, N, fH, fW, self.D)
+
+        if self.training:
+            depth_aux = gt_depth_distr.view(B * N, fH, fW, self.D).permute(0, 3, 1, 2)
+            # use only 0.2, otherwise it overfitted to the perfect depth
+            depth = depth + (self.aux_depth_alpha * (torch.maximum(depth_aux, depth) - depth)).detach()    
+
         x = depth.unsqueeze(1) * x[:, self.D : (self.D + self.C)].unsqueeze(2)
 
         x = x.view(B, N, self.C, self.D, fH, fW)
         x = x.permute(0, 1, 3, 4, 5, 2)
-        return x
+        return x, est_depth_distr, gt_depth_distr, counts_3d
 
     def forward(self, *args, **kwargs):
-        x = super().forward(*args, **kwargs)
+        x, depth_loss = super().forward(*args, **kwargs)
         x = self.downsample(x)
-        return x
+        return x, depth_loss
 
 
 @MODELS.register_module()

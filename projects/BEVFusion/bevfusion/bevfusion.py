@@ -146,7 +146,7 @@ class BEVFusion(Base3DDetector):
         return loss, log_vars  # type: ignore
 
     def init_weights(self) -> None:
-        if self.img_backbone is not None:
+        if self.img_backbone is not None and self.img_backbone.init_cfg.checkpoint is not None:
             self.img_backbone.init_weights()
 
     @property
@@ -203,7 +203,7 @@ class BEVFusion(Base3DDetector):
 
         with torch.cuda.amp.autocast(enabled=False):
             # with torch.autocast(device_type='cuda', dtype=torch.float32):
-            x = self.view_transform(
+            x, depth_loss = self.view_transform(
                 x,
                 points,
                 lidar2image,
@@ -218,7 +218,7 @@ class BEVFusion(Base3DDetector):
                 geom_feats,
             )
 
-        return x, img_roi_head_preds
+        return x, img_roi_head_preds, depth_loss
 
     def extract_pts_feat(self, feats, coords, sizes, points=None) -> torch.Tensor:
         if points is not None:
@@ -298,7 +298,7 @@ class BEVFusion(Base3DDetector):
                 contains a tensor with shape (num_instances, 7).
         """
         batch_input_metas = [item.metainfo for item in batch_data_samples]
-        feats, img_feats, img_roi_head_preds = self.extract_feat(batch_inputs_dict, batch_input_metas)
+        feats, img_feats, img_roi_head_preds, depth_loss = self.extract_feat(batch_inputs_dict, batch_input_metas)
 
         if self.with_bbox_head:
             outputs = self.bbox_head.predict(feats, batch_input_metas)
@@ -336,7 +336,7 @@ class BEVFusion(Base3DDetector):
             camera2lidar = imgs.new_tensor(np.array(camera2lidar))
             img_aug_matrix = imgs.new_tensor(np.array(img_aug_matrix))
             lidar_aug_matrix = imgs.new_tensor(np.array(lidar_aug_matrix))
-            img_feature, img_roi_head_preds = self.extract_img_feat(
+            img_feature, img_roi_head_preds, depth_loss = self.extract_img_feat(
                 x=imgs,
                 points=deepcopy(points),
                 lidar2image=lidar2image,
@@ -367,7 +367,7 @@ class BEVFusion(Base3DDetector):
             feats = feats.sum(dim=1, keepdim=False) / sizes.type_as(feats).view(-1, 1)
 
             geom_feats = batch_inputs_dict["geom_feats"]
-            img_feature, img_roi_head_preds = self.extract_img_feat(
+            img_feature, img_roi_head_preds, depth_loss = self.extract_img_feat(
                 imgs,
                 [feats],
                 # points,
@@ -402,19 +402,20 @@ class BEVFusion(Base3DDetector):
         if self.pts_neck:
             x = self.pts_neck(x)
 
-        return x, img_feature, img_roi_head_preds
+        return x, img_feature, img_roi_head_preds, depth_loss
 
     def loss(
         self, batch_inputs_dict: Dict[str, Optional[Tensor]], batch_data_samples: List[Det3DDataSample], **kwargs
     ) -> List[Det3DDataSample]:
         batch_input_metas = [item.metainfo for item in batch_data_samples]
-        feats, img_feats, img_roi_head_preds = self.extract_feat(batch_inputs_dict, batch_input_metas)
+        feats, img_feats, img_roi_head_preds, depth_loss = self.extract_feat(batch_inputs_dict, batch_input_metas)
 
         losses = dict()
         if self.with_bbox_head:
             bbox_loss = self.bbox_head.loss(feats, batch_data_samples)
         
         losses.update(bbox_loss)
+        losses["depth_loss"] = depth_loss
         
         if self.img_aux_bbox_head:
             img_aux_bbox_losses = self.img_aux_bbox_head.loss([img_feats], batch_data_samples)
