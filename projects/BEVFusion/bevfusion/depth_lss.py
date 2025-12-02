@@ -410,7 +410,7 @@ class BaseDepthTransform(BaseViewTransform):
             
             # get 2d coords
             dist = cur_coords[:, 2, :]
-            valid_dist_mask = dist > 0
+            valid_dist_mask = dist >= 1.0
 
             cur_coords[:, 2, :] = torch.clamp(cur_coords[:, 2, :], 1e-5, 1e5)
             cur_coords[:, :2, :] /= cur_coords[:, 2:3, :]
@@ -443,7 +443,7 @@ class BaseDepthTransform(BaseViewTransform):
             point_indices = indices[:, 1]
 
             masked_coords = cur_coords[camera_indices, point_indices].long()
-            masked_dist = dist[camera_indices, point_indices]
+            masked_dist = dist[camera_indices, point_indices] / self.dbound[1]
             depth = depth.to(masked_dist.dtype)
             # batch_size, num_imgs, channels, height, width = depth.shape
             # Depth tensor should have only one channel in this implementation

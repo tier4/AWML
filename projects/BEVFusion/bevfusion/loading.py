@@ -396,12 +396,26 @@ class BEVLoadMultiViewImageFromFiles(LoadMultiViewImageFromFiles):
 
 @TRANSFORMS.register_module()
 class BEVFusionLoadAnnotations2D(BaseTransform):
+    
+    def __init__(self, filter_bev_range=None, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.filter_bev_range = filter_bev_range
 
     def transform(self, results):
 
         all_bboxes_2d, all_centers_2d, all_depths, all_labels = [], [], [], []
         vis_images = []
         lidar_aug_matrix = results.get("lidar_aug_matrix", np.eye(4))
+        gt_bboxes_3d = results["gt_bboxes_3d"]
+        gt_labels_3d = results["gt_labels_3d"]
+        if self.filter_bev_range is not None:
+          mask = gt_bboxes_3d.in_range_bev(self.filter_bev_range)
+          gt_bboxes_3d = gt_bboxes_3d[mask]
+          # mask is a torch tensor but gt_labels_3d is still numpy array
+          # using mask to index gt_labels_3d will cause bug when
+          # len(gt_labels_3d) == 1, where mask=1 will be interpreted
+          # as gt_labels_3d[1] and cause out of index error
+          gt_labels_3d = gt_labels_3d[mask.numpy().astype(bool)]
 
         for i, k in enumerate(results["img"]):
             bboxes_2d, projected_centers, depths, valid_labels = compute_bbox_and_centers(
@@ -409,8 +423,8 @@ class BEVFusionLoadAnnotations2D(BaseTransform):
                 results["cam2img"][i],
                 results["img_aug_matrix"][i],
                 lidar_aug_matrix,
-                results["gt_bboxes_3d"],
-                results["gt_labels_3d"],
+                gt_bboxes_3d,
+                gt_labels_3d,
                 results["img"][i].shape,
             )
             # print(f"bboxes: {bboxes_2d.shape}, centers: {projected_centers.shape}, depths: {depths.shape}, labels: {valid_labels.shape}")
