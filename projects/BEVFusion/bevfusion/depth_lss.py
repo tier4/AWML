@@ -557,13 +557,6 @@ class DepthLSSTransform(BaseDepthTransform):
             gaussian_counts = counts_flat @ gaussian_values.T
             gaussian_probs = gaussian_counts / (gaussian_counts.sum(dim=-1, keepdim=True) + 1e-8)
             gaussian_probs = gaussian_probs.view(B, N, fH, fW, self.D)
-
-            print(gaussian_probs[0, 0, 0, 0, :])
-            print(gaussian_probs[0, 0, 5, 5, :])
-            print(gaussian_probs[0, 0, 10, 10, :])
-            print(gaussian_probs[0, 0, 20, 20, :])
-            print(gaussian_probs[0, 0, 30, 30, :])
-
         else:
             gaussian_probs = None
 
@@ -616,6 +609,8 @@ class DepthLSSTransform(BaseDepthTransform):
         else:
             gt_depth_distr = None
             counts_3d = None
+            gt_gaussian_probs = None 
+            
         return gt_depth_distr, counts_3d, gt_gaussian_probs
 
     def get_cam_feats(self, x, d):
