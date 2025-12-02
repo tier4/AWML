@@ -610,7 +610,7 @@ class DepthLSSTransform(BaseDepthTransform):
             gt_depth_distr = None
             counts_3d = None
             gt_gaussian_probs = None 
-            
+
         return gt_depth_distr, counts_3d, gt_gaussian_probs
 
     def get_cam_feats(self, x, d):
@@ -628,10 +628,10 @@ class DepthLSSTransform(BaseDepthTransform):
         depth = x[:, : self.D].softmax(dim=1)
         est_depth_distr = depth.permute(0, 2, 3, 1).reshape(B, N, fH, fW, self.D)
 
-        if self.training:
-            depth_aux = gt_depth_distr.view(B * N, fH, fW, self.D).permute(0, 3, 1, 2)
-            # use only 0.2, otherwise it overfitted to the perfect depth
-            depth = depth + (self.aux_depth_alpha * (torch.maximum(depth_aux, depth) - depth)).detach()
+        # if self.training:
+        #     depth_aux = gt_depth_distr.view(B * N, fH, fW, self.D).permute(0, 3, 1, 2)
+        #     # use only 0.2, otherwise it overfitted to the perfect depth
+        #     depth = depth + (self.aux_depth_alpha * (torch.maximum(depth_aux, depth) - depth)).detach()
 
         x = depth.unsqueeze(1) * x[:, self.D : (self.D + self.C)].unsqueeze(2)
 
