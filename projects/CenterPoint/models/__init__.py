@@ -1,8 +1,9 @@
 from .backbones.second import SECOND
-from .dense_heads.centerpoint_head import CenterHead
+from .dense_heads.centerpoint_head import CenterHead, CustomSeparateHead
 from .dense_heads.centerpoint_head_onnx import CenterHeadONNX, SeparateHeadONNX
 from .detectors.centerpoint import CenterPoint
 from .detectors.centerpoint_onnx import CenterPointONNX
+from .losses.amp_gaussian_focal_loss import AmpGaussianFocalLoss
 from .necks.second_fpn import SECONDFPN
 from .task_modules.coders.centerpoint_bbox_coders import CenterPointBBoxCoder
 from .voxel_encoders.pillar_encoder import BackwardPillarFeatureNet
@@ -13,6 +14,7 @@ __all__ = [
     "SECONDFPN",
     "CenterPoint",
     "CenterHead",
+    "CustomSeparateHead",
     "BackwardPillarFeatureNet",
     "PillarFeatureNetONNX",
     "BackwardPillarFeatureNetONNX",
@@ -20,4 +22,5 @@ __all__ = [
     "CenterHeadONNX",
     "SeparateHeadONNX",
     "CenterPointBBoxCoder",
+    "AmpGaussianFocalLoss",
 ]

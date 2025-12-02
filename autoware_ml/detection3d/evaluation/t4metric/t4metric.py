@@ -1,3 +1,4 @@
+import csv
 import os
 import tempfile
 from os import path as osp
@@ -32,6 +33,8 @@ class T4Metric(NuScenesMetric):
         self,
         data_root: str,
         ann_file: str,
+        save_csv: bool = False,
+        dataset_name: str = "base",
         filter_attributes: Optional[List[Tuple[str, str]]] = None,
         metric: Union[str, List[str]] = "bbox",
         modality: dict = dict(use_camera=False, use_lidar=True),
@@ -52,6 +55,9 @@ class T4Metric(NuScenesMetric):
                 Path of dataset root.
             ann_file (str):
                 Path of annotation file.
+            save_csv (bool): Set True to save metrics to csv files.
+            dataset_name (str):
+                Dataset name running this T4Metric.
             filter_attributes (str)
                 Filter out GTs with certain attributes. For example, [['vehicle.bicycle',
                 'vehicle_state.parked']].
@@ -106,7 +112,8 @@ class T4Metric(NuScenesMetric):
             collect_device=collect_device,
             backend_args=backend_args,
         )
-
+        self.save_csv = save_csv
+        self.dataset_name = dataset_name
         self.class_names = class_names
         self.version = version
 
@@ -285,7 +292,7 @@ class T4Metric(NuScenesMetric):
             )
             # record metrics
             metrics = load(os.path.join(output_dir, "metrics_summary.json"))
-            detail = self._create_detail(metrics, classes)
+            detail = self._create_detail(metrics=metrics, classes=classes, logger=logger, save_csv=self.save_csv)
             all_detail.update(detail)
         return all_detail
 
@@ -339,19 +346,21 @@ class T4Metric(NuScenesMetric):
         output_dir = os.path.join(*os.path.split(result_path)[:-1])
         nusc = self.loaded_scenes[scene_token]
 
-        gt_boxes = t4metric_load_gt(
-            nusc,
-            self.eval_detection_configs,
-            scene_token,
-            post_mapping_dict=self.name_mapping,
-            filter_attributions=self.filter_attributes,
-        )
         preds, _ = t4metric_load_prediction(
             nusc,
             self.eval_detection_configs,
             result_path,
             self.eval_detection_configs.max_boxes_per_sample,
             verbose=True,
+        )
+
+        gt_boxes = t4metric_load_gt(
+            nusc,
+            self.eval_detection_configs,
+            scene_token,
+            post_mapping_dict=self.name_mapping,
+            filter_attributions=self.filter_attributes,
+            predicted_tokens=preds.sample_tokens,
         )
 
         evaluator = T4DetectionEvaluation(
@@ -367,11 +376,22 @@ class T4Metric(NuScenesMetric):
 
         # record metrics
         metrics = load(os.path.join(output_dir, "metrics_summary.json"))
-        detail = self._create_detail(metrics, classes)
+        detail = self._create_detail(metrics=metrics, classes=classes, save_csv=False)
 
         return detail, preds, gt_boxes
 
-    def _create_detail(self, metrics: dict, classes: Optional[List[str]]) -> Dict[str, float]:
+    def _write_to_csv(self, header, data, csv_filename: str, logger) -> None:
+        """"""
+        with open(csv_filename, "w") as f:
+            writer = csv.writer(f)
+            writer.writerow(header)
+            for row in data:
+                writer.writerow(row)
+        print_log(f"Saved in {csv_filename}", logger=logger)
+
+    def _create_detail(
+        self, metrics: dict, classes: Optional[List[str]], logger=None, save_csv: bool = False
+    ) -> Dict[str, float]:
         """Create a dictionary to store the details of the evaluation.
 
         Returns:
@@ -393,6 +413,51 @@ class T4Metric(NuScenesMetric):
 
         detail[f"{metric_prefix}/NDS"] = metrics["nd_score"]
         detail[f"{metric_prefix}/mAP"] = metrics["mean_ap"]
+
+        if save_csv:
+            log_file_path = logger.handlers[1].baseFilename
+            log_dir = os.path.dirname(log_file_path)
+
+            score_headers = ["NDS", "mAP"]
+            score_data = [float(f"{metrics['nd_score']:.4f}"), float(f"{metrics['mean_ap']:.4f}")]
+            for k, v in metrics["tp_errors"].items():
+                val = float(f"{v:.4f}")
+                score_headers.append(self.ErrNameMapping[k])
+                score_data.append(val)
+
+            csv_filename = osp.join(log_dir, f"scores_{self.dataset_name}.csv")
+            self._write_to_csv(header=score_headers, data=[score_data], csv_filename=csv_filename, logger=logger)
+
+            class_ap_headers = ["class", "mAP"]
+            mean_ap = metrics["mean_dist_aps"]
+            class_ap_data = []
+            if classes is not None:
+                first_class = classes[0]
+                for k in metrics["label_aps"][first_class].keys():
+                    header = f"AP_dist_{k}"
+                    class_ap_headers.append(header)
+
+                for k in metrics["label_tp_errors"][first_class].keys():
+                    class_ap_headers.append(k)
+
+                for name in classes:
+                    ap_data = [name, float(f"{mean_ap[name] * 100.0:.4f}")]
+
+                    for k, v in metrics["label_aps"][name].items():
+                        val = float(f"{v*100:.4f}")
+                        ap_data.append(val)
+
+                    for k, v in metrics["label_tp_errors"][name].items():
+                        val = float(f"{v:.4f}")
+                        ap_data.append(val)
+
+                    class_ap_data.append(ap_data)
+
+                csv_filename = osp.join(log_dir, f"class_ap_{self.dataset_name}.csv")
+                self._write_to_csv(
+                    header=class_ap_headers, data=class_ap_data, csv_filename=csv_filename, logger=logger
+                )
+
         return detail
 
     def format_results(
