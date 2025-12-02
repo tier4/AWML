@@ -523,7 +523,7 @@ class DepthLSSTransform(BaseDepthTransform):
         downsample: int = 1,
         aux_depth_alpha: float = 0.2,
         lidar_depth_image_last_stride: int = 2,
-        gaussian_sigma: float = 0.25,
+        gaussian_sigma: float = 1.0,
     ) -> None:
         """Compared with `LSSTransform`, `DepthLSSTransform` adds sparse depth
         information from lidar points into the inputs of the `depthnet`."""
