@@ -13,6 +13,47 @@
 
 ## Release
 
+### pretrain/1.0
+
+- This model is trained with BDD100K.
+
+<details>
+<summary> The link of data and evaluation result </summary>
+
+- Model
+  - Training dataset: BDD100K and db_gsm8_v2 + db_jpntaxi_v1 (total frames: 104356)
+  - [Config file path](https://github.com/tier4/AWML/blob/e898b070538db4e78a2b0f21babae822b2a90422/projects/YOLOX_opt_elan/configs/bdd100k/YOLOX_opt-S-DynamicRecognition/yolox-s-opt-elan_960x960_300e_bdd100k.py)
+  - Training results [model-zoo]
+    - [logs.zip](https://download.autoware-ml-model-zoo.tier4.jp/autoware-ml/models/yolox-opt-elan/yolox-s-roi/pretrain/v1.0/log.zip)
+    - [checkpoint_best.pth](https://download.autoware-ml-model-zoo.tier4.jp/autoware-ml/models/yolox-opt-elan/yolox-s-roi/pretrain/v1.0/yolox-s-opt-elan_960x960_300e_bdd100k_epoch_300.pth)
+    - [config.py](https://download.autoware-ml-model-zoo.tier4.jp/autoware-ml/models/yolox-opt-elan/yolox-s-roi/pretrain/v1.0/yolox-s-opt-elan_960x960_300e_bdd100k.py)
+  - train time: NVIDIA RTX 6000 4GB * 1 * 300 epochs = 6 days
+- Evaluation result with BDD100K val split:
+
+```python
+---------------iou_thr: 0.5---------------
++---------------+--------+--------+--------+-------+
+| class         | gts    | dets   | recall | ap    |
++---------------+--------+--------+--------+-------+
+| pedestrian    | 13425  | 71116  | 0.853  | 0.675 |
+| rider         | 658    | 1719   | 0.581  | 0.459 |
+| car           | 102837 | 293140 | 0.906  | 0.820 |
+| truck         | 4243   | 18883  | 0.847  | 0.639 |
+| bus           | 1660   | 5592   | 0.778  | 0.604 |
+| train         | 15     | 0      | 0.000  | 0.000 |
+| motorcycle    | 460    | 2248   | 0.620  | 0.458 |
+| bicycle       | 1039   | 6166   | 0.706  | 0.502 |
+| traffic light | 26884  | 75564  | 0.824  | 0.687 |
+| traffic sign  | 34724  | 133046 | 0.882  | 0.711 |
++---------------+--------+--------+--------+-------+
+| mAP           |        |        |        | 0.556 |
++---------------+--------+--------+--------+-------+
+
+```
+
+</details>
+
+
 ### base/1.0
 
 - This model is pretrained with BDD100K and finetuned with TIER IV's in-house dataset.
