@@ -414,7 +414,7 @@ class BaseDepthTransform(BaseViewTransform):
 
             # get 2d coords
             dist = cur_coords[:, 2, :]
-            valid_dist_mask = dist > 0
+            valid_dist_mask = dist >= 1.0
 
             cur_coords[:, 2, :] = torch.clamp(cur_coords[:, 2, :], 1e-5, 1e5)
             cur_coords[:, :2, :] /= cur_coords[:, 2:3, :]
@@ -487,7 +487,7 @@ class BaseDepthTransform(BaseViewTransform):
             x, est_depth_distr, gt_depth_distr, counts_3d, gt_gaussian_depths = self.get_cam_feats(img, depth)
             x = self.bev_pool(x, geom)
             # depth_loss = self.depth_loss_with_one_hot_target(est_depth_distr, gt_depth_distr, counts_3d)
-            depth_loss = self.depth_loss_with_prob_dists(est_depth_distr, gt_gaussian_depths, counts_3d)
+            depth_loss = 5.0 * self.depth_loss_with_prob_dists(est_depth_distr, gt_gaussian_depths, counts_3d)
 
         return x, depth_loss
 
