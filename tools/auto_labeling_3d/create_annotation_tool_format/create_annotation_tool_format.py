@@ -62,8 +62,7 @@ def _parse_args():
     parser.add_argument(
         "--dataset-id",
         type=str,
-        required=False,
-        default="Pseudo_DB_J6Gen2_v2_1_Shiojiri_kids_x2_dev_b3902d62-9777-496d-846b-39c3db7b9dcf_2025-04-09_11-34-42_11-35-02",
+        required=True,
         help="Dataset ID to use for all annotations (overrides scene_name/sample_idx)",
     )
     args = parser.parse_args()
