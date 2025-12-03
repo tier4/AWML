@@ -65,6 +65,29 @@ class DeepenAnnotationFields:
     sensor_id: str
     three_d_bbox: Deepen3DBBoxFields
 
+class DeepenUniqueId:
+    """Manages the state for generating unique IDs for object tracking across frames."""
+
+    def __init__(self) -> None:
+        self._instance_uuid_to_unique_id: dict[str, str] = {}
+        self._label_name_counts: defaultdict[str, int] = defaultdict(lambda: 1)
+
+    def assign_id(self, uuid: str, label: str) -> str:
+        """
+        Assign a unique ID to the given UUID and label.
+        If an ID has already been assigned to the UUID, it returns the existing one.
+        A unique ID is in the format 'label_name:number', e.g., 'car:1'.
+        """
+        if uuid in self._instance_uuid_to_unique_id:
+            return self._instance_uuid_to_unique_id[uuid]
+
+        unique_id_num = self._label_name_counts[label]
+        unique_label_id = f"{label}:{unique_id_num}"
+
+        self._instance_uuid_to_unique_id[uuid] = unique_label_id
+        self._label_name_counts[label] += 1
+
+        return unique_label_id
 
 @dataclass(frozen=True)
 class AnnotationToolDataset:
@@ -158,27 +181,3 @@ class SegmentAIDataset(AnnotationToolDataset):
     ) -> "SegmentAIDataset":
         raise NotImplementedError("Segment.ai format is not yet supported")
 
-
-class DeepenUniqueId:
-    """Manages the state for generating unique IDs for object tracking across frames."""
-
-    def __init__(self) -> None:
-        self._instance_uuid_to_unique_id: dict[str, str] = {}
-        self._label_name_counts: defaultdict[str, int] = defaultdict(lambda: 1)
-
-    def assign_id(self, uuid: str, label: str) -> str:
-        """
-        Assign a unique ID to the given UUID and label.
-        If an ID has already been assigned to the UUID, it returns the existing one.
-        A unique ID is in the format 'label_name:number', e.g., 'car:1'.
-        """
-        if uuid in self._instance_uuid_to_unique_id:
-            return self._instance_uuid_to_unique_id[uuid]
-
-        unique_id_num = self._label_name_counts[label]
-        unique_label_id = f"{label}:{unique_id_num}"
-
-        self._instance_uuid_to_unique_id[uuid] = unique_label_id
-        self._label_name_counts[label] += 1
-
-        return unique_label_id
