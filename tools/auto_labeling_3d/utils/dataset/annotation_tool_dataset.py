@@ -13,6 +13,8 @@ from ..dataclass.awml_info import AWML3DInfo
 
 @dataclass(frozen=True)
 class DeepenQuaternionFields:
+    """Represents the quaternion for 3D bounding box orientation in Deepen format."""
+
     w: float
     x: float
     y: float
@@ -21,6 +23,8 @@ class DeepenQuaternionFields:
 
 @dataclass(frozen=True)
 class Deepen3DBBoxFields:
+    """Represents a 3D bounding box in the global coordinate system, formatted for Deepen."""
+
     cx: float
     cy: float
     cz: float
@@ -31,7 +35,14 @@ class Deepen3DBBoxFields:
 
     @classmethod
     def from_global_t4box(cls, global_box: T4Box3D) -> "Deepen3DBBoxFields":
-        """Create Deepen3DBBoxFields from a T4Box3D in the global coordinate system."""
+        """Create Deepen3DBBoxFields from a T4Box3D in the global coordinate system.
+
+        Args:
+            global_box (T4Box3D): A T4Box3D object in the global coordinate system.
+
+        Returns:
+            Deepen3DBBoxFields: An instance of Deepen3DBBoxFields.
+        """
         pos = global_box.position
         size = global_box.size
         quat = global_box.rotation.q
@@ -54,6 +65,8 @@ class Deepen3DBBoxFields:
 
 @dataclass(frozen=True)
 class DeepenAnnotationFields:
+    """Represents a single t4dataset annotation record in Deepen format."""
+
     dataset_id: str
     file_id: str
     label_category_id: str
@@ -73,10 +86,17 @@ class DeepenUniqueId:
         self._label_name_counts: defaultdict[str, int] = defaultdict(lambda: 1)
 
     def assign_id(self, uuid: str, label: str) -> str:
-        """
-        Assign a unique ID to the given UUID and label.
+        """Assign a unique ID to the given UUID and label.
+
         If an ID has already been assigned to the UUID, it returns the existing one.
         A unique ID is in the format 'label_name:number', e.g., 'car:1'.
+
+        Args:
+            uuid (str): The instance UUID of the object.
+            label (str): The semantic label of the object (e.g., 'car', 'pedestrian').
+
+        Returns:
+            str: The assigned unique ID for tracking.
         """
         if uuid in self._instance_uuid_to_unique_id:
             return self._instance_uuid_to_unique_id[uuid]
@@ -112,6 +132,8 @@ class AnnotationToolDataset:
 
 @dataclass(frozen=True)
 class DeepenDataset(AnnotationToolDataset):
+    """Represents a dataset in Deepen's JSON format, containing annotations for a scene."""
+
     scene_annotations: list[dict] = field(default_factory=list)
 
     @classmethod
@@ -122,7 +144,21 @@ class DeepenDataset(AnnotationToolDataset):
         ann_tool_id: str,
         output_dir: Path,
     ) -> "DeepenDataset":
-        """Factory method to create and save the Deepen dataset."""
+        """Create a DeepenDataset from an AWML3DInfo object and save it to a file.
+
+        This class method orchestrates the conversion of raw AWML 3D data into the Deepen
+        JSON format. It generates annotations, creates an instance of the class, and
+        saves the resulting JSON file.
+
+        Args:
+            info (AWML3DInfo): The AWML3DInfo object containing the source data.
+            t4_dataset_name (str): The name of the T4 dataset being processed.
+            ann_tool_id (str): The unique identifier for this dataset in the annotation tool.
+            output_dir (Path): The directory where the output JSON file will be saved.
+
+        Returns:
+            DeepenDataset: An instance of the DeepenDataset class, representing the converted data.
+        """
         scene_annotations: list[dict] = cls._create_annotations_from_info(info, ann_tool_id)
         ann_tool_file_path: Path = output_dir / f"Pseudo_{t4_dataset_name}.json"
         output_dir.mkdir(parents=True, exist_ok=True)
@@ -136,13 +172,27 @@ class DeepenDataset(AnnotationToolDataset):
         return instance
 
     def dump_json(self) -> None:
-        """Dumps the scene annotations to a JSON file."""
+        """Serialize the scene annotations to a JSON file in the Deepen format.
+
+        This method creates a payload dictionary with a "labels" key and writes the
+        `scene_annotations` list to the file specified by `self.ann_tool_file_path`.
+        The JSON is formatted with an indent of 4 for readability.
+        """
         deepen_payload: dict[str, list[dict]] = {"labels": self.scene_annotations}
         with self.ann_tool_file_path.open("w") as handle:
             json.dump(deepen_payload, handle, indent=4)
 
     @staticmethod
     def _create_annotations_from_info(info: AWML3DInfo, tool_id: str) -> list[dict]:
+        """Creates a list of Deepen-formatted annotations from AWML3DInfo.
+
+        Args:
+            info (AWML3DInfo): The AWML3DInfo object containing the raw dataset.
+            tool_id (str): The dataset ID for the annotation tool.
+
+        Returns:
+            list[dict]: A list of dictionaries, where each represents a Deepen annotation.
+        """
         annotations: list[dict] = []
         id_generator = DeepenUniqueId()
 

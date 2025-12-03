@@ -29,9 +29,23 @@ def create_annotation_tool_format(
     dataname_to_anntool_id: Optional[dict[str, str]] = None,
     annotation_tool_classes: dict[str, Type[AnnotationToolDataset]] = ANNOTATION_TOOL_CLASSES,
 ) -> list[AnnotationToolDataset]:
-    """
-    Load info.pkl, create annotation files for each dataset, and return the results.
+    """Load info.pkl, create annotation tool format files for each dataset, and return the results.
+
     This function is the central executor for the conversion process.
+
+    Args:
+        info_path (str | Path): Path to the input pickle file (info.pkl).
+        output_dir (str | Path): Directory to save the output annotation tool format files.
+        output_format (str): The format for the annotation tool (e.g., 'deepen', 'segment.ai').
+        logger (logging.Logger): The logger to use for logging messages.
+        dataname_to_anntool_id (Optional[dict[str, str]]):
+            An optional dictionary mapping non annotated dataset names to annotation tool format IDs.
+            If not provided, new UUIDs will be generated.
+        annotation_tool_classes (dict[str, Type[AnnotationToolDataset]]):
+            A dictionary mapping format names to dataset classes.
+
+    Returns:
+        list[AnnotationToolDataset]: A list of AnnotationToolDataset objects.
     """
     # 1. Load and group data from info.pkl in a single pass
     logger.info(f"Loading and grouping data from: {info_path}")
@@ -106,7 +120,6 @@ def parse_args():
 
 
 def main():
-    """A thin wrapper that prepares arguments, calls the central executor, and formats the final output."""
     args = parse_args()
 
     logging.basicConfig(level=args.log_level.upper())
