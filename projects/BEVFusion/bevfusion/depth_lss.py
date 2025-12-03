@@ -487,7 +487,7 @@ class BaseDepthTransform(BaseViewTransform):
             x, est_depth_distr, gt_depth_distr, counts_3d, gt_gaussian_depths = self.get_cam_feats(img, depth)
             x = self.bev_pool(x, geom)
             # depth_loss = self.depth_loss_with_one_hot_target(est_depth_distr, gt_depth_distr, counts_3d)
-            depth_loss = 5.0 * self.depth_loss_with_prob_dists(est_depth_distr, gt_gaussian_depths, counts_3d)
+            depth_loss = 1.5 * self.depth_loss_with_prob_dists(est_depth_distr, gt_depth_distr, counts_3d)
 
         return x, depth_loss
 
@@ -565,6 +565,11 @@ class DepthLSSTransform(BaseDepthTransform):
     def get_depth_gt_bins(self, d, B, N, C, fH, fW):
 
         if self.training:
+            valid_depth_mask = torch.ones_like(d)
+            zero_mask = depth == 0
+            valid_depth_mask[zero_mask] = 0.0
+
+            B, N, C, fH, fW = x.shape
             BN = B * N
             h, w = self.image_size
 
@@ -614,8 +619,7 @@ class DepthLSSTransform(BaseDepthTransform):
         return gt_depth_distr, counts_3d, gt_gaussian_probs
 
     def get_cam_feats(self, x, d):
-        B, N, C, fH, fW = x.shape
-
+        
         x = x.view(B * N, C, fH, fW)
         d = d.view(B * N, *d.shape[2:])
 
