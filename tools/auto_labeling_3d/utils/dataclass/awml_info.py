@@ -14,6 +14,7 @@ def _load_info(path: Path) -> dict[str, Any]:
 @dataclass
 class AWMLInfo:
     """Container for inference results stored in info.pkl"""
+
     t4_dataset_name: str
     data_list: list[dict[str, Any]] = field(default_factory=list)
     metainfo: dict[str, Any] = field(default_factory=dict)
@@ -59,6 +60,7 @@ class AWMLInfo:
     @property
     def sorted_data_list(self) -> list[dict[str, Any]]:
         return self._sorted_data_list
+
 
 @dataclass
 class AWML3DInfo(AWMLInfo):
