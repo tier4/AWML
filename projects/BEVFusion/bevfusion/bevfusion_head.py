@@ -304,6 +304,8 @@ class BEVFusionHead(nn.Module):
             index=top_proposals_index[:, None, :].permute(0, 2, 1).expand(-1, -1, bev_pos.shape[-1]),
             dim=1,
         )
+        print(fusion_feat_flatten.shape, " ", heatmap.shape, " ", bev_pos.shape, " ", query_pos.shape)
+
         #################################
         # transformer decoder layer (Fusion feature as K,V)
         #################################
