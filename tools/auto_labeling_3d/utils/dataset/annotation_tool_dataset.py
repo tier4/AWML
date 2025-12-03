@@ -117,7 +117,7 @@ class DeepenDataset(AnnotationToolDataset):
 
         for idx, pseudo_label_info in enumerate(info.iter_frames()):
             file_id = f"{idx}.pcd"
-            pred_instances = pseudo_label_info.get("pred_instances_3d", [])
+            pred_instances = pseudo_label_info["pred_instances_3d"]
 
             ego2global = np.array(pseudo_label_info["ego2global"])
 
@@ -127,8 +127,8 @@ class DeepenDataset(AnnotationToolDataset):
                 instance_uuid = pred_instance["instance_id_3d"]
                 bbox_label_id = pred_instance["bbox_label_3d"]
                 score = pred_instance["bbox_score_3d"]
-                timestamp = pseudo_label_info.get("timestamp", 0)
-                label_name = label_id_to_name.get(bbox_label_id, "car")
+                timestamp = pseudo_label_info["timestamp"]
+                label_name = label_id_to_name[bbox_label_id]
 
                 if instance_uuid not in instance_ids_dict:
                     instance_ids_dict[instance_uuid] = label_ids_count[label_name]
