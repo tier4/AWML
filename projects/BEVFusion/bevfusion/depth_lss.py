@@ -570,8 +570,6 @@ class DepthLSSTransform(BaseDepthTransform):
             # zero_mask = depth == 0
 
             # valid_depth_mask[zero_mask] = 0.0
-
-            B, N, C, fH, fW = x.shape
             BN = B * N
             h, w = self.image_size
 
@@ -595,7 +593,7 @@ class DepthLSSTransform(BaseDepthTransform):
             ) / self.dbound[2]
             depth_bins = self.D + 1
 
-            dist_bins = torch.max(dist_bins, self.D)
+            dist_bins = dist_bins.clamp(max=self.D)
             dist_bins = dist_bins.long()
 
             flat_cell_id = cell_id.view(-1)
@@ -628,6 +626,7 @@ class DepthLSSTransform(BaseDepthTransform):
         return gt_depth_distr, counts_3d, gt_gaussian_probs
 
     def get_cam_feats(self, x, d):
+        B, N, C, fH, fW = x.shape
         
         x = x.view(B * N, C, fH, fW)
         d = d.view(B * N, *d.shape[2:])

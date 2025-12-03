@@ -1,6 +1,6 @@
 _base_ = [
     "../default/bevfusion_lidar_voxel_second_secfpn_1xb1_t4base.py",
-    "../../../../../autoware_ml/configs/detection3d/dataset/t4dataset/j6gen2_v6.py",
+    "../../../../../autoware_ml/configs/detection3d/dataset/t4dataset/j6gen2_base.py",
 ]
 
 custom_imports = dict(
@@ -11,9 +11,9 @@ custom_imports["imports"] += ["autoware_ml.detection3d.datasets.transforms"]
 
 # user setting
 data_root = "data/t4datasets/"
-info_directory_path = "info/kokseang_2_5/"
-train_gpu_size = 2
-train_batch_size = 2
+info_directory_path = "info/kokseang_2_3/"
+train_gpu_size = 4
+train_batch_size = 8
 test_batch_size = 2
 val_interval = 5
 max_epochs = 120
@@ -414,8 +414,8 @@ train_dataloader = dict(
         modality=input_modality,
         backend_args=backend_args,
         data_root=data_root,
-        # ann_file=info_directory_path + _base_.info_train_file_name,
-        ann_file=info_directory_path + _base_.info_val_file_name,
+        ann_file=info_directory_path + _base_.info_train_file_name,
+        # ann_file=info_directory_path + _base_.info_val_file_name,
         metainfo=_base_.metainfo,
         class_names=_base_.class_names,
         test_mode=False,
@@ -568,6 +568,6 @@ auto_scale_lr = dict(enable=False, base_batch_size=train_gpu_size * train_batch_
 if train_gpu_size > 1:
     sync_bn = "torch"
 
-# load_from = "work_dirs/bevfusion_2_3/epoch_46.pth"
+load_from = "work_dirs/bevfusion_2_3/epoch_46.pth"
 
 # resume = True
