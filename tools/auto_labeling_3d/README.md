@@ -379,3 +379,54 @@ The result of the structure of Pseudo-T4dataset is following.
         - ..
     - ..
 ```
+
+### How to train with the pseudo-label T4Dataset
+
+#### 1. Add a YAML config for your pseudo-label T4Dataset
+
+Create a YAML under `autoware_ml/configs/t4dataset/` describing your pseudo-label T4Dataset.
+
+Example: [`autoware_ml/configs/t4dataset/pseudo_j6_v1.yaml`](../../autoware_ml/configs/t4dataset/pseudo_j6_v1.yaml)
+
+#### 2. Run docker and mount the pseudo-label T4Dataset
+
+Ensure your pseudo-label T4Dataset is mounted under `./data/t4dataset` inside the container.
+
+Example:
+
+```sh
+docker run -it --gpus '"device=0"' --name auto_labeling_3d --shm-size=64g -d -v {path to autoware-ml}:/workspace -v {path to pseudo-label T4Dataset}:/workspace/data auto_labeling_3d bash
+```
+
+#### 3. Update `dataset.py` used in training config
+
+Add the name of your pseudo-label T4Dataset directory to the `dataset_version_list` in the dataset config file used by your training configuration.
+
+<details>
+<summary>Example Case</summary>
+
+- **Example Case:**
+  - **If your training config is:** [`Centerpoint/second_secfpn_4xb16_121m_j6gen2_base.py`](../../projects/CenterPoint/configs/t4dataset/Centerpoint/second_secfpn_4xb16_121m_j6gen2_base.py)
+    - This config uses: [`j6gen2_base.py`](../../autoware_ml/configs/detection3d/dataset/t4dataset/j6gen2_base.py)
+  - **And your pseudo-label dataset directory is named:** `pseudo_x2`
+- **To Do:**
+  - Add `pseudo_x2` to the `dataset_version_list` in the `j6gen2_base.py` file.
+
+```python
+dataset_version_list = [
+    "db_j6gen2_v1",
+    "db_j6gen2_v2",
+    "db_j6gen2_v3",
+    "db_j6gen2_v4",
+    "db_j6gen2_v5",
+    "db_largebus_v1",
+    "db_largebus_v2",
+    "pseudo_x2",
+]
+```
+
+</details>
+
+#### 4. Prepare T4Dataset info and train
+
+Follow [the dataset preparation](../detection3d/README.md#2-prepare-t4dataset) and generate info files and start training using your chosen model and the YAML you added in [Step 1](#1-add-a-yaml-config-for-your-pseudo-label-t4dataset).
