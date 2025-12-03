@@ -73,7 +73,6 @@ class AnnotationToolDataset:
     t4_dataset_name: str
     ann_tool_id: str
     ann_tool_file_path: Path
-    scene_annotations: list[dict] = field(default_factory=list)
 
     @classmethod
     def create_from_info(
@@ -89,6 +88,8 @@ class AnnotationToolDataset:
 
 @dataclass(frozen=True)
 class DeepenDataset(AnnotationToolDataset):
+    scene_annotations: list[dict] = field(default_factory=list)
+
     @classmethod
     def create_from_info(
         cls,
