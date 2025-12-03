@@ -107,12 +107,14 @@ class DeepenDataset(AnnotationToolDataset):
             ann_tool_id=ann_tool_id,
             ann_tool_file_path=ann_tool_file_path,
         )
-
-        deepen_payload = {"labels": instance.scene_annotations}
-        with ann_tool_file_path.open("w") as handle:
-            json.dump(deepen_payload, handle, indent=4)
-
+        instance.dump_json()
         return instance
+
+    def dump_json(self) -> None:
+        """Dumps the scene annotations to a JSON file."""
+        deepen_payload: dict[str, list[dict]] = {"labels": self.scene_annotations}
+        with self.ann_tool_file_path.open("w") as handle:
+            json.dump(deepen_payload, handle, indent=4)
 
     @staticmethod
     def _build_scene_annotations(info: AWML3DInfo, tool_id: str) -> list[dict]:
