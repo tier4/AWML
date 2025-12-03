@@ -33,6 +33,28 @@ class Deepen3DBBoxFields:
     h: float
     quaternion: DeepenQuaternionFields
 
+    @classmethod
+    def from_global_t4box(cls, global_box: T4Box3D) -> "Deepen3DBBoxFields":
+        """Create Deepen3DBBoxFields from a T4Box3D in the global coordinate system."""
+        pos = global_box.position
+        size = global_box.size
+        quat = global_box.rotation.q
+
+        return cls(
+            cx=float(pos[0]),
+            cy=float(pos[1]),
+            cz=float(pos[2]),
+            w=float(size[0]),
+            l=float(size[1]),
+            h=float(size[2]),
+            quaternion=DeepenQuaternionFields(
+                w=float(quat[0]),
+                x=float(quat[1]),
+                y=float(quat[2]),
+                z=float(quat[3]),
+            ),
+        )
+
 
 @dataclass
 class DeepenAnnotationFields:
@@ -154,9 +176,7 @@ class DeepenDataset(AnnotationToolDataset):
                 )
 
                 bbox_global = _box_lidar_to_global(box, ego2global)
-                pos = bbox_global.position
-                size = bbox_global.size
-                quat = bbox_global.rotation.q.tolist()
+                three_d_bbox = Deepen3DBBoxFields.from_global_t4box(bbox_global)
 
                 annotation_fields = DeepenAnnotationFields(
                     dataset_id=tool_id,
@@ -168,20 +188,7 @@ class DeepenDataset(AnnotationToolDataset):
                     attributes={"pseudo-label": "auto-labeled"},
                     labeller_email="pseudo-label@AWML",
                     sensor_id="lidar",
-                    three_d_bbox=Deepen3DBBoxFields(
-                        cx=float(pos[0]),
-                        cy=float(pos[1]),
-                        cz=float(pos[2]),
-                        w=float(size[0]),
-                        l=float(size[1]),
-                        h=float(size[2]),
-                        quaternion=DeepenQuaternionFields(
-                            w=float(quat[0]),
-                            x=float(quat[1]),
-                            y=float(quat[2]),
-                            z=float(quat[3]),
-                        ),
-                    ),
+                    three_d_bbox=three_d_bbox,
                 )
 
                 scenes_anno_dict[tool_id].append(asdict(annotation_fields))
