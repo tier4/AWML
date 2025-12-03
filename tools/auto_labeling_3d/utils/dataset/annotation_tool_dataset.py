@@ -11,7 +11,7 @@ from t4_devkit.dataclass import Box3D as T4Box3D
 from ..dataclass.awml_info import AWML3DInfo
 
 
-@dataclass
+@dataclass(frozen=True)
 class DeepenQuaternionFields:
     w: float
     x: float
@@ -19,7 +19,7 @@ class DeepenQuaternionFields:
     z: float
 
 
-@dataclass
+@dataclass(frozen=True)
 class Deepen3DBBoxFields:
     cx: float
     cy: float
@@ -52,7 +52,7 @@ class Deepen3DBBoxFields:
         )
 
 
-@dataclass
+@dataclass(frozen=True)
 class DeepenAnnotationFields:
     dataset_id: Optional[str]
     file_id: str
@@ -66,7 +66,7 @@ class DeepenAnnotationFields:
     three_d_bbox: Deepen3DBBoxFields
 
 
-@dataclass
+@dataclass(frozen=True)
 class AnnotationToolDataset:
     """Base class for annotation datasets generated from AWML pseudo labels."""
 
@@ -87,7 +87,7 @@ class AnnotationToolDataset:
         raise NotImplementedError
 
 
-@dataclass
+@dataclass(frozen=True)
 class DeepenDataset(AnnotationToolDataset):
     @classmethod
     def create_from_info(
@@ -144,7 +144,7 @@ class DeepenDataset(AnnotationToolDataset):
         return annotations
 
 
-@dataclass
+@dataclass(frozen=True)
 class SegmentAIDataset(AnnotationToolDataset):
     @classmethod
     def create_from_info(
