@@ -4,7 +4,10 @@ import pickle
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, Iterable, Optional
+from pyquaternion import Quaternion
 
+from t4_devkit.dataclass import Box3D as T4Box3D
+from t4_devkit.dataclass import SemanticLabel, Shape, ShapeType
 
 def _load_info(path: Path) -> dict[str, Any]:
     with path.open("rb") as handle:
@@ -79,3 +82,34 @@ class AWML3DInfo(AWMLInfo):
     def iter_frames(self) -> Iterable[dict[str, Any]]:
         for info in self.sorted_data_list:
             yield info
+
+    def iter_t4boxes_per_frame(self) -> Iterable[list[T4Box3D]]:
+        """
+        Generator that yields a list of T4Box3D objects for each frame.
+        This method encapsulates the logic for converting raw prediction data into T4Box3D objects.
+        """
+        label_id_to_name = {label_id: class_name for label_id, class_name in enumerate(self.classes)}
+
+        for frame_info in self.iter_frames():
+            boxes_in_frame: list[T4Box3D] = []
+            for pred_instance in frame_info["pred_instances_3d"]:
+                bbox_3d = pred_instance["bbox_3d"]
+                velocity = pred_instance["velocity"]
+                label_name = label_id_to_name[pred_instance["bbox_label_3d"]]
+
+                box = T4Box3D(
+                    unix_time=int(frame_info["timestamp"]),
+                    frame_id="base_link",
+                    semantic_label=SemanticLabel(label_name),
+                    position=[bbox_3d[0], bbox_3d[1], bbox_3d[2]],
+                    rotation=Quaternion(axis=[0, 0, 1], radians=bbox_3d[6]),
+                    shape=Shape(
+                        shape_type=ShapeType.BOUNDING_BOX,
+                        size=(bbox_3d[4], bbox_3d[3], bbox_3d[5]),
+                    ),
+                    velocity=(velocity[0], velocity[1], 0.0),
+                    confidence=pred_instance["bbox_score_3d"],
+                    uuid=pred_instance["instance_id_3d"],
+                )
+                boxes_in_frame.append(box)
+            yield boxes_in_frame
