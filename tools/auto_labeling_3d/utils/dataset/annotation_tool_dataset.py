@@ -125,9 +125,7 @@ class DeepenDataset(AnnotationToolDataset):
             file_id = f"{idx}.pcd"
 
             for box_global in boxes_in_frame_global:
-                unique_label_id = id_generator.assign_id(
-                    box_global.uuid, str(box_global.semantic_label)
-                )
+                unique_label_id = id_generator.assign_id(box_global.uuid, str(box_global.semantic_label))
 
                 annotation_fields = DeepenAnnotationFields(
                     dataset_id=tool_id,
