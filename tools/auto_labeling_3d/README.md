@@ -380,27 +380,27 @@ The result of the structure of Pseudo-T4dataset is following.
     - ..
 ```
 
-### How to train with the pseudo-label T4Dataset
+### How to train with the auto-labeled T4Dataset
 
-#### 1. Add a YAML config for your pseudo-label T4Dataset
+#### 1. Add a YAML config for your auto-labeled T4Dataset
 
-Create a YAML under `autoware_ml/configs/t4dataset/` describing your pseudo-label T4Dataset.
+Create a YAML under `autoware_ml/configs/t4dataset/` describing your auto-labeled T4Dataset.
 
 Example: [`autoware_ml/configs/t4dataset/pseudo_j6_v1.yaml`](../../autoware_ml/configs/t4dataset/pseudo_j6_v1.yaml)
 
-#### 2. Run docker and mount the pseudo-label T4Dataset
+#### 2. Run docker and mount the auto-labeled T4Dataset
 
-Ensure your pseudo-label T4Dataset is mounted under `./data/t4dataset` inside the container.
+Ensure your auto-labeled T4Dataset is mounted under `./data/t4dataset` inside the container.
 
 Example:
 
 ```sh
-docker run -it --gpus '"device=0"' --name auto_labeling_3d --shm-size=64g -d -v {path to autoware-ml}:/workspace -v {path to pseudo-label T4Dataset}:/workspace/data auto_labeling_3d bash
+docker run -it --gpus '"device=0"' --name auto_labeling_3d --shm-size=64g -d -v {path to autoware-ml}:/workspace -v {path to auto-labeled T4Dataset}:/workspace/data auto_labeling_3d bash
 ```
 
 #### 3. Update `dataset.py` used in training config
 
-Add the name of your pseudo-label T4Dataset directory to the `dataset_version_list` in the dataset config file used by your training configuration.
+Add the name of your auto-labeled T4Dataset directory to the `dataset_version_list` in the dataset config file used by your training configuration.
 
 <details>
 <summary>Example Case</summary>
