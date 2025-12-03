@@ -60,6 +60,7 @@ def _box_lidar_to_global(lidar_box: T4Box3D, ego2global: np.ndarray) -> T4Box3D:
 @dataclass
 class AnnotationToolDataset:
     """Base class for annotation datasets generated from AWML pseudo labels."""
+
     t4_dataset_name: str
     ann_tool_id: str
     ann_tool_file_path: Path
@@ -185,6 +186,7 @@ class DeepenDataset(AnnotationToolDataset):
 
                 scenes_anno_dict[tool_id].append(asdict(annotation_fields))
         return scenes_anno_dict
+
 
 @dataclass
 class SegmentAIDataset(AnnotationToolDataset):
