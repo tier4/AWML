@@ -565,9 +565,11 @@ class DepthLSSTransform(BaseDepthTransform):
     def get_depth_gt_bins(self, d, B, N, C, fH, fW):
 
         if self.training:
-            valid_depth_mask = torch.ones_like(d)
-            zero_mask = depth == 0
-            valid_depth_mask[zero_mask] = 0.0
+            # valid_depth_mask = torch.ones_like(d)
+            # BN, H, W
+            # zero_mask = depth == 0
+
+            # valid_depth_mask[zero_mask] = 0.0
 
             B, N, C, fH, fW = x.shape
             BN = B * N
@@ -583,10 +585,14 @@ class DepthLSSTransform(BaseDepthTransform):
             cell_id = camera_id * fH * fW + cell_j * fW + cell_i
             cell_id = cell_id.to(device=d.device)
 
+            # dist_bins = (
+            #     d.clamp(min=self.dbound[0], max=self.dbound[1] - 0.5 * self.dbound[2])
+            #     + 0.5 * self.dbound[2]
+            #     - self.dbound[0]
+            # ) / self.dbound[2]
             dist_bins = (
-                d.clamp(min=self.dbound[0], max=self.dbound[1] - 0.5 * self.dbound[2])
+                d.clamp(min=0, max=self.dbound[1] - 0.5 * self.dbound[2])
                 + 0.5 * self.dbound[2]
-                - self.dbound[0]
             ) / self.dbound[2]
             dist_bins = dist_bins.long()
 
@@ -594,15 +600,18 @@ class DepthLSSTransform(BaseDepthTransform):
             flat_dist_bin = dist_bins.view(-1)
 
             flat_index = flat_cell_id * self.D + flat_dist_bin
-
+            
             counts_flat = torch.zeros(BN * fH * fW * self.D, dtype=torch.float, device=d.device)
             counts_flat.scatter_add_(
                 0, flat_index, torch.ones_like(flat_index, dtype=torch.float, device=flat_index.device)
             )
 
             counts_3d = counts_flat.view(B, N, fH, fW, self.D)
-            counts_3d[..., 0] = 0.0
+            counts_3d = counts_3d[:, :, :, :, self.dbound[0]:]
+            # counts_3d[..., 0] = 0.0
 
+            zero_counts = torch.zeros(BN * fH * fW, dtype=torch.float, device=d.device)
+            
             # mask_flat = counts_3d.sum(dim=-1).view(-1) > 0
 
             # gt_depth_distr = torch.softmax(counts_3d, dim=-1)
