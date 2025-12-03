@@ -117,42 +117,29 @@ class DeepenDataset(AnnotationToolDataset):
         return instance
 
     @staticmethod
-    def _build_scene_annotations(info: AWML3DInfo, tool_id: str) -> dict[str, list[Dict]]:
-        scenes_anno_dict: dict[str, list[Dict]] = defaultdict(list)
-
-        # --- State management for generating unique IDs ---
-        instance_uuid_to_unique_id: dict[str, str] = {}
-        label_name_counts: defaultdict[str, int] = defaultdict(lambda: 1)
-        # ---
+    def _build_scene_annotations(info: AWML3DInfo, tool_id: str) -> dict[str, list[dict]]:
+        scenes_anno_dict: dict[str, list[dict]] = defaultdict(list)
+        id_generator = DeepenUniqueId()
 
         for idx, boxes_in_frame_global in enumerate(info.iter_t4boxes_per_frame(global_frame=True)):
             file_id = f"{idx}.pcd"
 
             for box_global in boxes_in_frame_global:
-                instance_uuid = box_global.uuid
-                label_name = str(box_global.semantic_label)
-
-                # Generate a unique ID like "car:1", "pedestrian:3"
-                if instance_uuid not in instance_uuid_to_unique_id:
-                    unique_id_num = label_name_counts[label_name]
-                    instance_uuid_to_unique_id[instance_uuid] = f"{label_name}:{unique_id_num}"
-                    label_name_counts[label_name] += 1
-                unique_label_id = instance_uuid_to_unique_id[instance_uuid]
-
-                # Create Deepen fields directly from the global box
-                three_d_bbox = Deepen3DBBoxFields.from_global_t4box(box_global)
+                unique_label_id = id_generator.assign_id(
+                    box_global.uuid, str(box_global.semantic_label)
+                )
 
                 annotation_fields = DeepenAnnotationFields(
                     dataset_id=tool_id,
                     file_id=file_id,
-                    label_category_id=label_name,
+                    label_category_id=str(box_global.semantic_label),
                     label_id=unique_label_id,
-                    instance_id=instance_uuid,
+                    instance_id=box_global.uuid,
                     label_type="3d_bbox",
                     attributes={"pseudo-label": "auto-labeled"},
                     labeller_email="pseudo-label@AWML",
                     sensor_id="lidar",
-                    three_d_bbox=three_d_bbox,
+                    three_d_bbox=Deepen3DBBoxFields.from_global_t4box(box_global),
                 )
 
                 scenes_anno_dict[tool_id].append(asdict(annotation_fields))
@@ -171,3 +158,28 @@ class SegmentAIDataset(AnnotationToolDataset):
         ann_tool_file_path: Path,
     ) -> "SegmentAIDataset":
         raise NotImplementedError("Segment.ai format is not yet supported")
+
+
+class DeepenUniqueId:
+    """Manages the state for generating unique IDs for object tracking across frames."""
+
+    def __init__(self) -> None:
+        self._instance_uuid_to_unique_id: dict[str, str] = {}
+        self._label_name_counts: defaultdict[str, int] = defaultdict(lambda: 1)
+
+    def assign_id(self, uuid: str, label: str) -> str:
+        """
+        Assign a unique ID to the given UUID and label.
+        If an ID has already been assigned to the UUID, it returns the existing one.
+        A unique ID is in the format 'label_name:number', e.g., 'car:1'.
+        """
+        if uuid in self._instance_uuid_to_unique_id:
+            return self._instance_uuid_to_unique_id[uuid]
+
+        unique_id_num = self._label_name_counts[label]
+        unique_label_id = f"{label}:{unique_id_num}"
+
+        self._instance_uuid_to_unique_id[uuid] = unique_label_id
+        self._label_name_counts[label] += 1
+
+        return unique_label_id
