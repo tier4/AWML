@@ -3,10 +3,10 @@ from __future__ import annotations
 import pickle
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Any, Dict, Iterable, List, Optional
+from typing import Any, Iterable, Optional
 
 
-def _load_info(path: Path) -> Dict[str, Any]:
+def _load_info(path: Path) -> dict[str, Any]:
     with path.open("rb") as handle:
         return pickle.load(handle)
 
@@ -15,18 +15,18 @@ def _load_info(path: Path) -> Dict[str, Any]:
 class AWMLInfo:
     """Container for inference results stored in info.pkl"""
 
-    data_list: List[Dict[str, Any]] = field(default_factory=list)
-    metainfo: Dict[str, Any] = field(default_factory=dict)
+    data_list: list[dict[str, Any]] = field(default_factory=list)
+    metainfo: dict[str, Any] = field(default_factory=dict)
     t4_dataset_name: str = ""
 
     def __post_init__(self) -> None:
-        self._sorted_data_list: List[Dict[str, Any]] = sorted(
+        self._sorted_data_list: list[dict[str, Any]] = sorted(
             self.data_list,
             key=lambda info: info.get("timestamp", 0),
         )
 
     @classmethod
-    def load(cls, info_path: str | Path) -> List["AWMLInfo"]:
+    def load(cls, info_path: str | Path) -> list["AWMLInfo"]:
         """
         info.pklを読み込み、単一パスでデータセット名ごとにグループ化し、
         AWMLInfoオブジェクトのリストを返す。
@@ -39,13 +39,11 @@ class AWMLInfo:
         data_list = info_data.get("data_list", info_data.get("infos", []))
         metainfo = info_data.get("metainfo", {})
 
-        # 1. 単一パスでデータをグループ化
-        grouped_data: Dict[str, List[Dict]] = {}
+        grouped_data: dict[str, list[dict]] = {}
         for record in data_list:
             t4_dataset_name: str = record["scene_name"]
             grouped_data.setdefault(t4_dataset_name, []).append(record)
 
-        # 2. グループ化したデータからAWMLInfoオブジェクトのリストを作成 (リスト内包表記)
         return [
             cls(
                 data_list=records,
@@ -56,11 +54,11 @@ class AWMLInfo:
         ]
 
     @property
-    def classes(self) -> List[str]:
+    def classes(self) -> list[str]:
         return list(self.metainfo.get("classes", ["car", "pedestrian", "bicycle"]))
 
     @property
-    def sorted_data_list(self) -> List[Dict[str, Any]]:
+    def sorted_data_list(self) -> list[dict[str, Any]]:
         return self._sorted_data_list
 
     def get_label_name(self, label_id: int, default: str = "car") -> str:
@@ -75,7 +73,7 @@ class AWML3DInfo(AWMLInfo):
     """Container for 3D object inference results stored in info.pkl"""
 
     @classmethod
-    def load(cls, info_path: str | Path) -> List["AWML3DInfo"]:
+    def load(cls, info_path: str | Path) -> list["AWML3DInfo"]:
         """
         info.pklを読み込み、単一パスでデータセット名ごとにグループ化し、
         AWML3DInfoオブジェクトのリストを返す。
@@ -84,6 +82,6 @@ class AWML3DInfo(AWMLInfo):
         # and get a list of AWML3DInfo instances.
         return super().load(info_path)  # type: ignore
 
-    def iter_frames(self) -> Iterable[Dict[str, Any]]:
+    def iter_frames(self) -> Iterable[dict[str, Any]]:
         for info in self.sorted_data_list:
             yield info

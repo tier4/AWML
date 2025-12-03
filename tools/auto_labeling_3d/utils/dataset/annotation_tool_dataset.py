@@ -5,7 +5,7 @@ import json
 from collections import defaultdict
 from dataclasses import asdict, dataclass, field
 from pathlib import Path
-from typing import Dict, Iterable, List, Optional
+from typing import Iterable, Optional
 
 import numpy as np
 from pyquaternion import Quaternion
@@ -42,7 +42,7 @@ class DeepenAnnotationFields:
     label_id: str
     instance_id: str
     label_type: str
-    attributes: Dict[str, str]
+    attributes: dict[str, str]
     labeller_email: str
     sensor_id: str
     three_d_bbox: Deepen3DBBoxFields
@@ -63,7 +63,7 @@ class AnnotationToolDataset:
     t4_dataset_name: str
     ann_tool_id: str
     ann_tool_file_path: Path
-    scene_annotations: Dict[str, List[Dict]] = field(default_factory=dict)
+    scene_annotations: dict[str, list[Dict]] = field(default_factory=dict)
 
     @classmethod
     def create_from_info(
@@ -107,11 +107,11 @@ class DeepenDataset(AnnotationToolDataset):
         return instance
 
     @staticmethod
-    def _build_scene_annotations(info: AWML3DInfo, tool_id: str) -> Dict[str, List[Dict]]:
-        scenes_anno_dict: Dict[str, List[Dict]] = defaultdict(list)
+    def _build_scene_annotations(info: AWML3DInfo, tool_id: str) -> dict[str, list[Dict]]:
+        scenes_anno_dict: dict[str, list[Dict]] = defaultdict(list)
         label_id_to_name = {label_id: class_name for label_id, class_name in enumerate(info.classes)}
 
-        instance_ids_dict: Dict[str, int] = {}
+        instance_ids_dict: dict[str, int] = {}
         label_ids_count: defaultdict[str, int] = defaultdict(lambda: 1)
 
         for idx, pseudo_label_info in enumerate(info.iter_frames()):
