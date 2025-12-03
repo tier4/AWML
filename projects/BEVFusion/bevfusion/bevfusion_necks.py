@@ -78,6 +78,7 @@ class GeneralizedLSSFPN(BaseModule):
 
         # build laterals
         laterals = [inputs[i + self.start_level] for i in range(len(inputs))]
+        # print([lateral.shape for lateral in laterals])
 
         # build top-down path
         used_backbone_levels = len(laterals) - 1
