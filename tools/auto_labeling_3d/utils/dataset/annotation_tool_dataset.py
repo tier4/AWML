@@ -73,7 +73,7 @@ class AnnotationToolDataset:
     t4_dataset_name: str
     ann_tool_id: str
     ann_tool_file_path: Path
-    scene_annotations: dict[str, list[Dict]] = field(default_factory=dict)
+    scene_annotations: list[dict] = field(default_factory=list)
 
     @classmethod
     def create_from_info(
@@ -109,7 +109,7 @@ class DeepenDataset(AnnotationToolDataset):
             ann_tool_file_path=ann_tool_file_path,
         )
 
-        deepen_payload = {"labels": scene_annotations[ann_tool_id]}
+        deepen_payload = {"labels": instance.scene_annotations}
         with ann_tool_file_path.open("w") as handle:
             json.dump(deepen_payload, handle, indent=4)
 
@@ -117,8 +117,8 @@ class DeepenDataset(AnnotationToolDataset):
         return instance
 
     @staticmethod
-    def _build_scene_annotations(info: AWML3DInfo, tool_id: str) -> dict[str, list[dict]]:
-        scenes_anno_dict: dict[str, list[dict]] = defaultdict(list)
+    def _build_scene_annotations(info: AWML3DInfo, tool_id: str) -> list[dict]:
+        annotations: list[dict] = []
         id_generator = DeepenUniqueId()
 
         for idx, boxes_in_frame_global in enumerate(info.iter_t4boxes_per_frame(global_frame=True)):
@@ -140,8 +140,8 @@ class DeepenDataset(AnnotationToolDataset):
                     three_d_bbox=Deepen3DBBoxFields.from_global_t4box(box_global),
                 )
 
-                scenes_anno_dict[tool_id].append(asdict(annotation_fields))
-        return scenes_anno_dict
+                annotations.append(asdict(annotation_fields))
+        return annotations
 
 
 @dataclass
