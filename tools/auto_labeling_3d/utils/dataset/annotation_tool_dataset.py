@@ -139,9 +139,7 @@ class DeepenDataset(AnnotationToolDataset):
         # ---
 
         # Use zip to get both frame info (for ego2global) and the list of T4Box3D objects
-        for idx, (frame_info, boxes_in_frame) in enumerate(
-            zip(info.iter_frames(), info.iter_t4boxes_per_frame())
-        ):
+        for idx, (frame_info, boxes_in_frame) in enumerate(zip(info.iter_frames(), info.iter_t4boxes_per_frame())):
             file_id = f"{idx}.pcd"
             ego2global = np.array(frame_info["ego2global"])
 

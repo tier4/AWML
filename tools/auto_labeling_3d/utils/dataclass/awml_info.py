@@ -4,10 +4,11 @@ import pickle
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, Iterable, Optional
-from pyquaternion import Quaternion
 
+from pyquaternion import Quaternion
 from t4_devkit.dataclass import Box3D as T4Box3D
 from t4_devkit.dataclass import SemanticLabel, Shape, ShapeType
+
 
 def _load_info(path: Path) -> dict[str, Any]:
     with path.open("rb") as handle:
