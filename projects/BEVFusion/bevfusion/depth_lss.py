@@ -591,26 +591,26 @@ class DepthLSSTransform(BaseDepthTransform):
             #     - self.dbound[0]
             # ) / self.dbound[2]
             dist_bins = (
-                d.clamp(min=0, max=self.dbound[1] - 0.5 * self.dbound[2])
-                + 0.5 * self.dbound[2]
+                d.clamp(min=0, max=self.dbound[1])
             ) / self.dbound[2]
+            depth_bins = self.D + 1
+
+            dist_bins = torch.max(dist_bins, self.D)
             dist_bins = dist_bins.long()
 
             flat_cell_id = cell_id.view(-1)
             flat_dist_bin = dist_bins.view(-1)
 
-            flat_index = flat_cell_id * self.D + flat_dist_bin
+            flat_index = flat_cell_id * depth_bins + flat_dist_bin
             
-            counts_flat = torch.zeros(BN * fH * fW * self.D, dtype=torch.float, device=d.device)
+            counts_flat = torch.zeros(BN * fH * fW * depth_bins, dtype=torch.float, device=d.device)
             counts_flat.scatter_add_(
                 0, flat_index, torch.ones_like(flat_index, dtype=torch.float, device=flat_index.device)
             )
 
-            counts_3d = counts_flat.view(B, N, fH, fW, self.D)
-            counts_3d = counts_3d[:, :, :, :, self.dbound[0]:]
+            counts_3d = counts_flat.view(B, N, fH, fW, depth_bins)
+            counts_3d = counts_3d[:, :, :, :, 1:]
             # counts_3d[..., 0] = 0.0
-
-            zero_counts = torch.zeros(BN * fH * fW, dtype=torch.float, device=d.device)
             
             # mask_flat = counts_3d.sum(dim=-1).view(-1) > 0
 
