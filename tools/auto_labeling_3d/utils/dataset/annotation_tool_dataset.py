@@ -1,16 +1,12 @@
 from __future__ import annotations
 
-import copy
 import json
 from collections import defaultdict
 from dataclasses import asdict, dataclass, field
 from pathlib import Path
-from typing import Iterable, Optional
+from typing import Optional
 
-import numpy as np
-from pyquaternion import Quaternion
 from t4_devkit.dataclass import Box3D as T4Box3D
-from t4_devkit.dataclass import SemanticLabel, Shape, ShapeType
 
 from ..dataclass.awml_info import AWML3DInfo
 
@@ -68,15 +64,6 @@ class DeepenAnnotationFields:
     labeller_email: str
     sensor_id: str
     three_d_bbox: Deepen3DBBoxFields
-
-
-def _box_ego_to_global(lidar_box: T4Box3D, ego2global: np.ndarray) -> T4Box3D:
-    global_box: T4Box3D = copy.deepcopy(lidar_box)
-    rotation = ego2global[:3, :3]
-    translation = ego2global[:3, 3]
-    global_box.rotate(Quaternion(matrix=rotation, rtol=1e-5, atol=1e-7))
-    global_box.translate(translation)
-    return global_box
 
 
 @dataclass
@@ -138,16 +125,12 @@ class DeepenDataset(AnnotationToolDataset):
         label_name_counts: defaultdict[str, int] = defaultdict(lambda: 1)
         # ---
 
-        # Use zip to get both frame info (for ego2global) and the list of T4Box3D objects
-        for idx, (frame_info, boxes_in_frame) in enumerate(
-            zip(info.iter_frames(), info.iter_t4boxes_per_frame())
-        ):
+        for idx, boxes_in_frame_global in enumerate(info.iter_t4boxes_per_frame(global_frame=True)):
             file_id = f"{idx}.pcd"
-            ego2global = np.array(frame_info["ego2global"])
 
-            for box_ego in boxes_in_frame:
-                instance_uuid = box_ego.uuid
-                label_name = str(box_ego.semantic_label)
+            for box_global in boxes_in_frame_global:
+                instance_uuid = box_global.uuid
+                label_name = str(box_global.semantic_label)
 
                 # Generate a unique ID like "car:1", "pedestrian:3"
                 if instance_uuid not in instance_uuid_to_unique_id:
@@ -156,10 +139,7 @@ class DeepenDataset(AnnotationToolDataset):
                     label_name_counts[label_name] += 1
                 unique_label_id = instance_uuid_to_unique_id[instance_uuid]
 
-                # Transform box to global coordinate system
-                box_global = _box_ego_to_global(box_ego, ego2global)
-
-                # Create Deepen fields from the global box
+                # Create Deepen fields directly from the global box
                 three_d_bbox = Deepen3DBBoxFields.from_global_t4box(box_global)
 
                 annotation_fields = DeepenAnnotationFields(

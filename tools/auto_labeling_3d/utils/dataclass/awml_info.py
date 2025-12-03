@@ -1,17 +1,30 @@
 from __future__ import annotations
 
+import copy
 import pickle
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Any, Iterable, Optional
-from pyquaternion import Quaternion
+from typing import Any, Iterable
 
+import numpy as np
+from pyquaternion import Quaternion
 from t4_devkit.dataclass import Box3D as T4Box3D
 from t4_devkit.dataclass import SemanticLabel, Shape, ShapeType
+
 
 def _load_info(path: Path) -> dict[str, Any]:
     with path.open("rb") as handle:
         return pickle.load(handle)
+
+
+def _box_ego_to_global(ego_box: T4Box3D, ego2global: np.ndarray) -> T4Box3D:
+    """Convert a T4Box3D from the ego frame to the global frame."""
+    global_box: T4Box3D = copy.deepcopy(ego_box)
+    rotation = ego2global[:3, :3]
+    translation = ego2global[:3, 3]
+    global_box.rotate(Quaternion(matrix=rotation, rtol=1e-5, atol=1e-7))
+    global_box.translate(translation)
+    return global_box
 
 
 @dataclass
@@ -83,21 +96,23 @@ class AWML3DInfo(AWMLInfo):
         for info in self.sorted_data_list:
             yield info
 
-    def iter_t4boxes_per_frame(self) -> Iterable[list[T4Box3D]]:
+    def iter_t4boxes_per_frame(self, global_frame: bool = False) -> Iterable[list[T4Box3D]]:
         """
         Generator that yields a list of T4Box3D objects for each frame.
-        This method encapsulates the logic for converting raw prediction data into T4Box3D objects.
+        If global_frame is True, it converts boxes to the global coordinate system.
         """
         label_id_to_name = {label_id: class_name for label_id, class_name in enumerate(self.classes)}
 
         for frame_info in self.iter_frames():
             boxes_in_frame: list[T4Box3D] = []
+            ego2global = np.array(frame_info["ego2global"])
+
             for pred_instance in frame_info["pred_instances_3d"]:
                 bbox_3d = pred_instance["bbox_3d"]
                 velocity = pred_instance["velocity"]
                 label_name = label_id_to_name[pred_instance["bbox_label_3d"]]
 
-                box = T4Box3D(
+                box_ego = T4Box3D(
                     unix_time=int(frame_info["timestamp"]),
                     frame_id="base_link",
                     semantic_label=SemanticLabel(label_name),
@@ -111,5 +126,10 @@ class AWML3DInfo(AWMLInfo):
                     confidence=pred_instance["bbox_score_3d"],
                     uuid=pred_instance["instance_id_3d"],
                 )
-                boxes_in_frame.append(box)
+
+                if global_frame:
+                    box_global = _box_ego_to_global(box_ego, ego2global)
+                    boxes_in_frame.append(box_global)
+                else:
+                    boxes_in_frame.append(box_ego)
             yield boxes_in_frame
