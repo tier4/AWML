@@ -65,6 +65,7 @@ class DeepenAnnotationFields:
     sensor_id: str
     three_d_bbox: Deepen3DBBoxFields
 
+
 class DeepenUniqueId:
     """Manages the state for generating unique IDs for object tracking across frames."""
 
@@ -88,6 +89,7 @@ class DeepenUniqueId:
         self._label_name_counts[label] += 1
 
         return unique_label_id
+
 
 @dataclass(frozen=True)
 class AnnotationToolDataset:
@@ -180,4 +182,3 @@ class SegmentAIDataset(AnnotationToolDataset):
         ann_tool_file_path: Path,
     ) -> "SegmentAIDataset":
         raise NotImplementedError("Segment.ai format is not yet supported")
-
