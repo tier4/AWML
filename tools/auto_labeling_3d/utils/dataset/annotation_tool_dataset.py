@@ -60,28 +60,54 @@ def _box_lidar_to_global(lidar_box: T4Box3D, ego2global: np.ndarray) -> T4Box3D:
 @dataclass
 class AnnotationToolDataset:
     """Base class for annotation datasets generated from AWML pseudo labels."""
-
+    t4_dataset_name: str
+    ann_tool_id: str
+    ann_tool_file_path: Path
     scene_annotations: Dict[str, List[Dict]] = field(default_factory=dict)
 
     @classmethod
-    def load_from_info(cls, info: AWML3DInfo) -> "AnnotationToolDataset":  # pragma: no cover - abstract
-        raise NotImplementedError
-
-    def save(self, output_dir: str | Path) -> None:  # pragma: no cover - abstract
+    def create_from_info(
+        cls,
+        info: "AWML3DInfo",
+        t4_dataset_name: str,
+        ann_tool_id: str,
+        ann_tool_file_path: Path,
+    ) -> "AnnotationToolDataset":  # pragma: no cover - abstract
+        """Factory method to create and save the dataset."""
         raise NotImplementedError
 
 
 @dataclass
 class DeepenDataset(AnnotationToolDataset):
-    dataset_id: Optional[str] = None
-
     @classmethod
-    def load_from_info(cls, info: AWML3DInfo) -> "DeepenDataset":
-        scene_annotations = cls._build_scene_annotations(info)
-        return cls(scene_annotations=scene_annotations, dataset_id=info.dataset_id)
+    def create_from_info(
+        cls,
+        info: "AWML3DInfo",
+        t4_dataset_name: str,
+        ann_tool_id: str,
+        output_dir: Path,
+    ) -> "DeepenDataset":
+        """Factory method to create and save the Deepen dataset."""
+        scene_annotations = cls._build_scene_annotations(info, ann_tool_id)
+        output_filename = f"Pseudo_{t4_dataset_name}.json"
+        ann_tool_file_path = output_dir / output_filename
+        output_dir.mkdir(parents=True, exist_ok=True)
+        instance = cls(
+            scene_annotations=scene_annotations,
+            t4_dataset_name=t4_dataset_name,
+            ann_tool_id=ann_tool_id,
+            ann_tool_file_path=ann_tool_file_path,
+        )
+
+        deepen_payload = {"labels": scene_annotations[ann_tool_id]}
+        with ann_tool_file_path.open("w") as handle:
+            json.dump(deepen_payload, handle, indent=4)
+
+        instance.ann_tool_file_path = ann_tool_file_path
+        return instance
 
     @staticmethod
-    def _build_scene_annotations(info: AWML3DInfo) -> Dict[str, List[Dict]]:
+    def _build_scene_annotations(info: AWML3DInfo, tool_id: str) -> Dict[str, List[Dict]]:
         scenes_anno_dict: Dict[str, List[Dict]] = defaultdict(list)
         label_id_to_name = {label_id: class_name for label_id, class_name in enumerate(info.classes)}
 
@@ -89,11 +115,6 @@ class DeepenDataset(AnnotationToolDataset):
         label_ids_count: defaultdict[str, int] = defaultdict(lambda: 1)
 
         for idx, pseudo_label_info in enumerate(info.iter_frames()):
-            scene_id = (
-                info.dataset_id
-                or pseudo_label_info.get("scene_name")
-                or pseudo_label_info.get("sample_idx", "unknown")
-            )
             file_id = f"{idx}.pcd"
             pred_instances = pseudo_label_info.get("pred_instances_3d", [])
 
@@ -137,7 +158,7 @@ class DeepenDataset(AnnotationToolDataset):
                 quat = bbox_global.rotation.q.tolist()
 
                 annotation_fields = DeepenAnnotationFields(
-                    dataset_id=info.dataset_id,
+                    dataset_id=tool_id,
                     file_id=file_id,
                     label_category_id=label_name,
                     label_id=f"{label_name}:{instance_ids_dict[instance_uuid]}",
@@ -162,25 +183,20 @@ class DeepenDataset(AnnotationToolDataset):
                     ),
                 )
 
-                scenes_anno_dict[scene_id].append(asdict(annotation_fields))
+                scenes_anno_dict[tool_id].append(asdict(annotation_fields))
         return scenes_anno_dict
-
-    def save(self, output_dir: str | Path) -> None:
-        output_path = Path(output_dir)
-        output_path.mkdir(parents=True, exist_ok=True)
-
-        for scene_name, annotations in self.scene_annotations.items():
-            file_path = output_path / f"{scene_name}.json"
-            print(f"Generate deepen format json: {file_path}")
-            deepen_payload = {"labels": annotations}
-            with file_path.open("w") as handle:
-                json.dump(deepen_payload, handle, indent=4)
-
 
 @dataclass
 class SegmentAIDataset(AnnotationToolDataset):
     @classmethod
-    def load_from_info(cls, info: AWML3DInfo) -> "SegmentAIDataset":
+    def create_from_info(
+        cls,
+        info: "AWML3DInfo",
+        output_dir: Path,
+        t4_dataset_name: str,
+        ann_tool_id: str,
+        ann_tool_file_path: Path,
+    ) -> "SegmentAIDataset":
         raise NotImplementedError("Segment.ai format is not yet supported")
 
     def save(self, output_dir: str | Path) -> None:
