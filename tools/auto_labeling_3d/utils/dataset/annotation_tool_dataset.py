@@ -124,8 +124,8 @@ class DeepenDataset(AnnotationToolDataset):
         output_dir: Path,
     ) -> "DeepenDataset":
         """Factory method to create and save the Deepen dataset."""
-        scene_annotations = cls._build_scene_annotations(info, ann_tool_id)
-        ann_tool_file_path = output_dir / f"Pseudo_{t4_dataset_name}.json"
+        scene_annotations: list[dict] = cls._build_scene_annotations(info, ann_tool_id)
+        ann_tool_file_path: Path = output_dir / f"Pseudo_{t4_dataset_name}.json"
         output_dir.mkdir(parents=True, exist_ok=True)
         instance = cls(
             scene_annotations=scene_annotations,
