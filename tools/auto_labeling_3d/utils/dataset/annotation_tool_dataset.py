@@ -113,7 +113,6 @@ class DeepenDataset(AnnotationToolDataset):
         with ann_tool_file_path.open("w") as handle:
             json.dump(deepen_payload, handle, indent=4)
 
-        instance.ann_tool_file_path = ann_tool_file_path
         return instance
 
     @staticmethod
