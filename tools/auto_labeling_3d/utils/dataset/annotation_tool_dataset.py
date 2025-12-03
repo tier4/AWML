@@ -200,6 +200,3 @@ class SegmentAIDataset(AnnotationToolDataset):
         ann_tool_file_path: Path,
     ) -> "SegmentAIDataset":
         raise NotImplementedError("Segment.ai format is not yet supported")
-
-    def save(self, output_dir: str | Path) -> None:
-        raise NotImplementedError("Segment.ai format is not yet supported")
