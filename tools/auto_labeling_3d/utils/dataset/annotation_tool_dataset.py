@@ -54,11 +54,10 @@ class Deepen3DBBoxFields:
 
 @dataclass(frozen=True)
 class DeepenAnnotationFields:
-    dataset_id: Optional[str]
+    dataset_id: str
     file_id: str
     label_category_id: str
     label_id: str
-    instance_id: str
     label_type: str
     attributes: dict[str, str]
     labeller_email: str
@@ -158,7 +157,6 @@ class DeepenDataset(AnnotationToolDataset):
                     file_id=file_id,
                     label_category_id=str(box_global.semantic_label),
                     label_id=unique_label_id,
-                    instance_id=box_global.uuid,
                     label_type="3d_bbox",
                     attributes={"pseudo-label": "auto-labeled"},
                     labeller_email="pseudo-label@AWML",
