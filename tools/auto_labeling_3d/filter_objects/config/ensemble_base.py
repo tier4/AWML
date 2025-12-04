@@ -31,12 +31,26 @@ bevfusion_pipeline = [
     ),
 ]
 
+streampetr_pipeline = [
+    dict(
+        type="ThresholdFilter",
+        confidence_thresholds={
+            "car": 0.35,
+            "truck": 0.35,
+            "bus": 0.35,
+            "bicycle": 0.35,
+            "pedestrian": 0.35,
+        },
+        use_label=["car", "truck", "bus", "bicycle", "pedestrian"],
+    ),
+]
+
 filter_pipelines = dict(
     type="Ensemble",
     config=dict(
         type="NMSEnsembleModel",
         ensemble_setting=dict(
-            weights=[1.0, 1.0],
+            weights=[1.0, 1.0, 1.0],
             iou_threshold=0.55,
             # Ensemble label groups. Each group is processed as one ensemble unit.
             ensemble_label_groups=[
@@ -58,6 +72,11 @@ filter_pipelines = dict(
             name="bevfusion",
             info_path="./data/t4dataset/info/pseudo_infos_raw_bevfusion.pkl",
             filter_pipeline=bevfusion_pipeline,
+        ),
+        dict(
+            name="streampetr",
+            info_path="./data/t4dataset/info/pseudo_infos_raw_streampetr.pkl",
+            filter_pipeline=streampetr_pipeline,
         ),
     ],
 )
