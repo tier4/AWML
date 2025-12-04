@@ -392,6 +392,7 @@ class BaseDepthTransform(BaseViewTransform):
         batch_size = len(points)
         depth = torch.zeros(batch_size, img.shape[1], 1, *self.image_size).to(points[0].device)
         depth_batch_size, num_imgs, channels, height, width = depth.shape
+        height, width = self.image_size
         
         for b in range(batch_size):
             cur_coords = points[b][:, :3]
@@ -427,12 +428,27 @@ class BaseDepthTransform(BaseViewTransform):
                 & (cur_coords[..., 1] < self.image_size[1])
                 & (cur_coords[..., 1] >= 0) & valid_dist_mask
             )
+
             for c in range(on_img.shape[0]):
                 masked_coords = cur_coords[c, on_img[c]].long()
                 masked_dist = dist[c, on_img[c]]
-                depth = depth.to(masked_dist.dtype)
-                depth[b, c, 0, masked_coords[:, 0],
-                      masked_coords[:, 1]] = masked_dist
+
+                ranks = masked_coords[:, 1] + masked_coords[:, 0] * width
+                sort = (ranks + masked_dist / 100.0).argsort()
+                masked_coords, masked_dist, ranks = masked_coords[sort], masked_dist[sort], ranks[sort]
+
+                kept2 = torch.ones(masked_coords.shape[0], device=masked_coords.device, dtype=torch.bool)
+                kept2[1:] = ranks[1:] != ranks[:-1]
+                masked_coords, masked_dist = masked_coords[kept2], masked_dist[kept2]
+                masked_coords = masked_coords.to(torch.long)
+                depth[b, c, 0, masked_coords[:, 0], masked_coords[:, 1]] = masked_dist
+
+            # for c in range(on_img.shape[0]):
+            #     masked_coords = cur_coords[c, on_img[c]].long()
+            #     masked_dist = dist[c, on_img[c]]
+            #     depth = depth.to(masked_dist.dtype)
+            #     depth[b, c, 0, masked_coords[:, 0],
+            #           masked_coords[:, 1]] = masked_dist
 
             # NOTE(knzo25): in the original code, a per-image loop was
             # implemented to compute the depth. However, it fixes the number
