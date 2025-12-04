@@ -563,6 +563,7 @@ class BEVFusionHead(nn.Module):
         else:
             vel = None
 
+				# Height is in bottom center after decoding
         boxes_dict = self.bbox_coder.decode(
             score, rot, dim, center, height, vel
         )  # decode the prediction to real world metric bbox

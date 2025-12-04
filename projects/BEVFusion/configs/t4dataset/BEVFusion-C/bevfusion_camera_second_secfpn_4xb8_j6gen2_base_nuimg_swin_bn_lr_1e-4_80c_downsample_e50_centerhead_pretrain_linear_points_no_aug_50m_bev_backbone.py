@@ -14,7 +14,7 @@ train_gpu_size = 2
 train_batch_size = 8
 test_batch_size = 2
 val_interval = 5
-max_epochs = 120
+max_epochs = 50
 backend_args = None
 
 # range setting
@@ -513,23 +513,23 @@ test_evaluator = dict(
 
 # learning rate
 # lr = 0.0001
-lr = 2e-4
+lr = 1e-4
 t_max = 2
 param_scheduler = [
     # learning rate scheduler
     # During the first (max_epochs * 0.4) epochs, learning rate increases from 0 to lr * 10
     # during the next epochs, learning rate decreases from lr * 10 to
     # lr * 1e-4
-    # dict(
-    #     type="CosineAnnealingLR",
-    #     T_max=30,
-    #     eta_min=lr * 10,
-    #     begin=0,
-    #     end=30,
-    #     by_epoch=True,
-    #     convert_to_iter_based=True,
-    # ),
-	dict(type="LinearLR", start_factor=1.0 / 3, begin=0, end=t_max, by_epoch=True),
+    dict(
+        type="CosineAnnealingLR",
+        T_max=t_max,
+        eta_min=lr * 10,
+        begin=0,
+        end=t_max,
+        by_epoch=True,
+        convert_to_iter_based=True,
+    ),
+	# dict(type="LinearLR", start_factor=1.0 / 3, begin=0, end=t_max, by_epoch=True),
     dict(
         type="CosineAnnealingLR",
         T_max=(max_epochs - t_max),
@@ -589,4 +589,4 @@ if train_gpu_size > 1:
 
 # load_from = "work_dirs/bevfusion_2_3/epoch_46.pth"
 
-# resume = True
+resume = True

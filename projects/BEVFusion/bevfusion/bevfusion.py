@@ -126,40 +126,40 @@ class BEVFusion(Base3DDetector):
 
         return outputs[0][0]
 
-    def parse_losses(self, losses: Dict[str, torch.Tensor]) -> Tuple[torch.Tensor, Dict[str, torch.Tensor]]:
-        """Parses the raw outputs (losses) of the network.
+    # def parse_losses(self, losses: Dict[str, torch.Tensor]) -> Tuple[torch.Tensor, Dict[str, torch.Tensor]]:
+    #     """Parses the raw outputs (losses) of the network.
 
-        Args:
-            losses (dict): Raw output of the network, which usually contain
-                losses and other necessary information.
+    #     Args:
+    #         losses (dict): Raw output of the network, which usually contain
+    #             losses and other necessary information.
 
-        Returns:
-            tuple[Tensor, dict]: There are two elements. The first is the
-            loss tensor passed to optim_wrapper which may be a weighted sum
-            of all losses, and the second is log_vars which will be sent to
-            the logger.
-        """
-        log_vars = []
-        for loss_name, loss_value in losses.items():
-            if isinstance(loss_value, torch.Tensor):
-                log_vars.append([loss_name, loss_value.mean()])
-            elif is_list_of(loss_value, torch.Tensor):
-                log_vars.append([loss_name, sum(_loss.mean() for _loss in loss_value)])
-            else:
-                raise TypeError(f"{loss_name} is not a tensor or list of tensors")
+    #     Returns:
+    #         tuple[Tensor, dict]: There are two elements. The first is the
+    #         loss tensor passed to optim_wrapper which may be a weighted sum
+    #         of all losses, and the second is log_vars which will be sent to
+    #         the logger.
+    #     """
+    #     log_vars = []
+    #     for loss_name, loss_value in losses.items():
+    #         if isinstance(loss_value, torch.Tensor):
+    #             log_vars.append([loss_name, loss_value.mean()])
+    #         elif is_list_of(loss_value, torch.Tensor):
+    #             log_vars.append([loss_name, sum(_loss.mean() for _loss in loss_value)])
+    #         else:
+    #             raise TypeError(f"{loss_name} is not a tensor or list of tensors")
 
-        loss = sum(value for key, value in log_vars if "loss" in key)
-        log_vars.insert(0, ["loss", loss])
-        log_vars = OrderedDict(log_vars)  # type: ignore
+    #     loss = sum(value for key, value in log_vars if "loss" in key)
+    #     log_vars.insert(0, ["loss", loss])
+    #     log_vars = OrderedDict(log_vars)  # type: ignore
 
-        for loss_name, loss_value in log_vars.items():
-            # reduce loss when distributed training
-            if dist.is_available() and dist.is_initialized():
-                loss_value = loss_value.data.clone()
-                dist.all_reduce(loss_value.div_(dist.get_world_size()))
-            log_vars[loss_name] = loss_value.item()
+    #     for loss_name, loss_value in log_vars.items():
+    #         # reduce loss when distributed training
+    #         if dist.is_available() and dist.is_initialized():
+    #             loss_value = loss_value.data.clone()
+    #             dist.all_reduce(loss_value.div_(dist.get_world_size()))
+    #         log_vars[loss_name] = loss_value.item()
 
-        return loss, log_vars  # type: ignore
+    #     return loss, log_vars  # type: ignore
 
     def init_weights(self) -> None:
         if self.img_backbone is not None:
@@ -320,7 +320,7 @@ class BEVFusion(Base3DDetector):
             outputs = self.bbox_head.predict(feats, batch_input_metas)
             # outputs = self.bbox_head.predict(feats, batch_data_samples)
         elif self.img_aux_bbox_head:
-            outputs = self.img_aux_bbox_head.predict([img_feats], batch_input_metas)
+            outputs = self.img_aux_bbox_head.predict([img_feats], batch_data_samples)
 
         res = self.add_pred_to_datasample(batch_data_samples, outputs)
 
@@ -440,12 +440,12 @@ class BEVFusion(Base3DDetector):
         
         if self.img_aux_bbox_head:
             img_aux_bbox_losses = self.img_aux_bbox_head.loss([img_feats], batch_data_samples)
-            sum_losses = 0.0
+            # sum_losses = 0.0
             for loss_key, loss in img_aux_bbox_losses.items():
-                sum_losses += loss
+                # sum_losses += loss
                 losses[loss_key] = loss 
 
-            losses["img_aux_sum"] = sum_losses
+            # losses["img_aux_sum"] = sum_losses
 
         if self.img_roi_head is not None:
                 
