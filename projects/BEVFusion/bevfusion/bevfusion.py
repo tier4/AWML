@@ -24,7 +24,7 @@ class BEVFusion(Base3DDetector):
         self,
         pts_backbone: dict,
         pts_neck: dict,
-        bbox_head: dict,
+        bbox_head: Optional[dict] = None,
         img_bev_encoder_backbone: Optional[dict] = None,
         img_bev_encoder_neck: Optional[dict] = None,
         voxelize_cfg: Optional[dict] = None,
@@ -103,7 +103,11 @@ class BEVFusion(Base3DDetector):
         else:
             self.img_roi_head = None
 
-        self.bbox_head = MODELS.build(bbox_head)
+        if bbox_head is not None:
+            self.bbox_head = MODELS.build(bbox_head)
+        else:
+            self.bbox_head = None 
+
         self.init_weights()
 
     def _forward(self, batch_inputs_dict: Tensor, batch_data_samples: OptSampleList = None, **kwargs):
@@ -315,6 +319,8 @@ class BEVFusion(Base3DDetector):
         if self.with_bbox_head:
             outputs = self.bbox_head.predict(feats, batch_input_metas)
             # outputs = self.bbox_head.predict(feats, batch_data_samples)
+        elif self.img_aux_bbox_head:
+            outputs = self.img_aux_bbox_head.predict([img_feats], batch_input_metas)
 
         res = self.add_pred_to_datasample(batch_data_samples, outputs)
 
@@ -430,8 +436,7 @@ class BEVFusion(Base3DDetector):
         losses = dict()
         if self.with_bbox_head:
             bbox_loss = self.bbox_head.loss(feats, batch_data_samples)
-        
-        losses.update(bbox_loss)
+            losses.update(bbox_loss)
         
         if self.img_aux_bbox_head:
             img_aux_bbox_losses = self.img_aux_bbox_head.loss([img_feats], batch_data_samples)

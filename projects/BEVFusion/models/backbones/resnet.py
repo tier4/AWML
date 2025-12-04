@@ -81,6 +81,7 @@ class CustomResNet(nn.Module):
             else:
                 x_tmp = layer(x_tmp)
             if lid in self.backbone_output_ids:
+                # print(x_tmp.shape)
                 feats.append(x_tmp)
         return feats
 
