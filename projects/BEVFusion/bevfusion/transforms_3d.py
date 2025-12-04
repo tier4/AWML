@@ -11,9 +11,6 @@ from mmdet3d.registry import TRANSFORMS
 from PIL import Image
 import matplotlib.pyplot as plt
 
-import uuid
-
-
 @TRANSFORMS.register_module()
 class SyncFlipping(BaseTransform):
 
