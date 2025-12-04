@@ -16,17 +16,17 @@ from numpy.typing import NDArray
 def get_identifier_from_sample(sample: Dict[str, Any]) -> str:
     """
     Create unique identifier from sample data.
-    
+
     Args:
         sample (Dict[str, Any]): Sample data containing token, sample_idx, and/or lidar_path
-        
+
     Returns:
         str: Unique identifier for the sample
     """
-    sample_token = sample.get('token', None)
-    sample_idx = sample.get('sample_idx', None)
-    lidar_path = sample.get('lidar_path', None)
-    
+    sample_token = sample.get("token", None)
+    sample_idx = sample.get("sample_idx", None)
+    lidar_path = sample.get("lidar_path", None)
+
     # Use token as primary identifier, fallback to sample_idx_lidar_path
     identifier = sample_token or f"{sample_idx}_{lidar_path}"
     return identifier
@@ -79,7 +79,7 @@ def _predict_one_frame(model: Any, data: Dict[str, Any]) -> Tuple[NDArray, NDArr
 def get_filtered_data_mapping(dataset_instance, dataloader) -> Dict[str, int]:
     """
     Get mapping between original sample identifiers and filtered indices.
-    
+
     Returns:
         Dict[str, int]: Maps original sample identifier to filtered index
     """
@@ -87,23 +87,23 @@ def get_filtered_data_mapping(dataset_instance, dataloader) -> Dict[str, int]:
     print(f"Dataset length: {len(dataset_instance)}")
     print(f"Extracting sample mapping from dataloader...")
     original_to_filtered_map = {}
-    
+
     # Create a temporary iterator to extract sample metadata
     temp_dataloader = iter(dataloader)
-    
+
     for filtered_idx in range(len(dataloader)):
         batch_data = next(temp_dataloader)
-        
+
         # Get data info for this filtered index
         data_info = dataset_instance.get_data_info(filtered_idx)
-        
+
         # Create unique identifier for matching
         identifier = get_identifier_from_sample(data_info)
         original_to_filtered_map[identifier] = filtered_idx
     # Verify lengths
     print(f"Dataloader length: {len(dataloader)}")
     print(f"Mapping created for: {len(original_to_filtered_map)} samples")
-    
+
     if len(original_to_filtered_map) != len(dataloader):
         raise ValueError(f"Mapping mismatch - dataloader: {len(dataloader)}, mapping: {len(original_to_filtered_map)}")
 
@@ -119,26 +119,23 @@ def _results_to_info(
     Convert non annotated dataset info and inference results to pseudo labeled info.
     """
     # Create pseudo labeled dataset info using original metadata
-    pseudo_labeled_dataset_info = {
-        "metainfo": non_annotated_dataset_info.get("metainfo", {}),
-        "data_list": []
-    }
-    
+    pseudo_labeled_dataset_info = {"metainfo": non_annotated_dataset_info.get("metainfo", {}), "data_list": []}
+
     # Get original data_list
     original_data_list = non_annotated_dataset_info["data_list"]
-    
+
     # Process all original samples
     for frame_index, original_sample in enumerate(original_data_list):
-        
+
         # Create identifier for this original sample
         identifier = get_identifier_from_sample(original_sample)
-        
+
         if identifier in original_to_filtered_map:
             # This sample has inference results
             filtered_idx = original_to_filtered_map[identifier]
-            
+
             bboxes, scores, labels = inference_results[filtered_idx]
-            
+
             pred_instances_3d: List[Dict[str, Any]] = []
             for instance_index, (bbox, score, label) in enumerate(zip(bboxes, scores, labels)):
                 pred_instance_3d: Dict[str, Any] = {}
@@ -152,16 +149,16 @@ def _results_to_info(
                 pred_instance_3d["bbox_score_3d"]: float = float(score)
 
                 pred_instances_3d.append(pred_instance_3d)
-            
+
             non_annotated_dataset_info["data_list"][frame_index]["pred_instances_3d"] = pred_instances_3d
 
         else:
             # This sample was filtered out - add empty prediction
             non_annotated_dataset_info["data_list"][frame_index]["pred_instances_3d"] = []
             print(f"Sample {frame_index} was filtered out - setting empty prediction")
-        
+
         pseudo_labeled_dataset_info["data_list"].append(non_annotated_dataset_info["data_list"][frame_index])
-    
+
     print(f"Final pseudo_labeled_dataset_info length: {len(pseudo_labeled_dataset_info['data_list'])}")
     return pseudo_labeled_dataset_info
 
@@ -189,7 +186,7 @@ def inference(
     )
     model_config.test_dataloader.batch_size: int = batch_size
     dataset = Runner.build_dataloader(model_config.test_dataloader)
-    
+
     # Get the mapping from the dataset
     original_to_filtered_map = get_filtered_data_mapping(dataset.dataset, dataset)
 
@@ -212,12 +209,10 @@ def inference(
     )
     with open(non_annotated_info_file_path, "rb") as f:
         non_annotated_dataset_info: Dict[str, Any] = pickle.load(f)
-    
+
     # Convert to info with full dataset mapping
     pseudo_labeled_dataset_info: Dict[str, Any] = _results_to_info(
-        non_annotated_dataset_info,
-        inference_results, 
-        original_to_filtered_map
+        non_annotated_dataset_info, inference_results, original_to_filtered_map
     )
 
     return pseudo_labeled_dataset_info
