@@ -120,7 +120,7 @@ model = dict(
         xbound=[-54.0, 54.0, 0.3],
         ybound=[-54.0, 54.0, 0.3],
         zbound=[-10.0, 10.0, 20.0],
-        dbound=[1.0, 60, 1.0],
+        dbound=[1.0, 60, 0.5],
         downsample=2,
         # downsample=1,
     ),
@@ -287,16 +287,16 @@ train_pipeline = [
         use_dim=point_load_dim,
         backend_args=backend_args,
     ),
-    dict(
-        type="LoadPointsFromMultiSweeps",
-        sweeps_num=sweeps_num,
-        load_dim=point_load_dim,
-        use_dim=lidar_sweep_dims,
-        pad_empty_sweeps=True,
-        remove_close=True,
-        backend_args=backend_args,
-        test_mode=False,
-    ),
+    # dict(
+    #     type="LoadPointsFromMultiSweeps",
+    #     sweeps_num=sweeps_num,
+    #     load_dim=point_load_dim,
+    #     use_dim=lidar_sweep_dims,
+    #     pad_empty_sweeps=True,
+    #     remove_close=True,
+    #     backend_args=backend_args,
+    #     test_mode=False,
+    # ),
     dict(type="LoadAnnotations3D", with_bbox_3d=True, with_label_3d=True, with_attr_label=False),
     dict(
         type="ImageAug3D",
@@ -378,16 +378,16 @@ test_pipeline = [
         use_dim=point_load_dim,
         backend_args=backend_args,
     ),
-    dict(
-        type="LoadPointsFromMultiSweeps",
-        sweeps_num=sweeps_num,
-        load_dim=point_load_dim,
-        use_dim=lidar_sweep_dims,
-        pad_empty_sweeps=True,
-        remove_close=True,
-        backend_args=backend_args,
-        test_mode=True,
-    ),
+    # dict(
+    #     type="LoadPointsFromMultiSweeps",
+    #     sweeps_num=sweeps_num,
+    #     load_dim=point_load_dim,
+    #     use_dim=lidar_sweep_dims,
+    #     pad_empty_sweeps=True,
+    #     remove_close=True,
+    #     backend_args=backend_args,
+    #     test_mode=True,
+    # ),
     dict(
         type="ImageAug3D",
         final_dim=image_size,
@@ -513,8 +513,8 @@ test_evaluator = dict(
 
 # learning rate
 # lr = 0.0001
-lr = 1e-4
-t_max = 2
+lr = 2e-4
+t_max = 5
 param_scheduler = [
     # learning rate scheduler
     # During the first (max_epochs * 0.4) epochs, learning rate increases from 0 to lr * 10
