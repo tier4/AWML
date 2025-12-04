@@ -391,6 +391,7 @@ class BaseDepthTransform(BaseViewTransform):
 
         batch_size = len(points)
         depth = torch.zeros(batch_size, img.shape[1], 1, *self.image_size).to(points[0].device)
+        depth_batch_size, num_imgs, channels, height, width = depth.shape
         
         for b in range(batch_size):
             cur_coords = points[b][:, :3]
@@ -408,7 +409,7 @@ class BaseDepthTransform(BaseViewTransform):
             
             # get 2d coords
             dist = cur_coords[:, 2, :]
-            valid_dist_mask = dist > 0.0
+            valid_dist_mask = dist > 0
 
             cur_coords[:, 2, :] = torch.clamp(cur_coords[:, 2, :], 1e-5, 1e5)
             cur_coords[:, :2, :] /= cur_coords[:, 2:3, :]
@@ -433,7 +434,6 @@ class BaseDepthTransform(BaseViewTransform):
                 depth[b, c, 0, masked_coords[:, 0],
                       masked_coords[:, 1]] = masked_dist
 
-
             # NOTE(knzo25): in the original code, a per-image loop was
             # implemented to compute the depth. However, it fixes the number
             # of images, which is not desired for deployment (the number
@@ -448,21 +448,13 @@ class BaseDepthTransform(BaseViewTransform):
             # point_indices = indices[:, 1]
 
             # masked_coords = cur_coords[camera_indices, point_indices].long()
-            # masked_dist = dist[camera_indices, point_indices] 
-            # depth = depth.to(masked_dist.dtype)
-            # # batch_size, num_imgs, channels, height, width = depth.shape
-            # # Depth tensor should have only one channel in this implementation
-
-            # depth_flat = depth.view(batch_size, num_imgs, channels, -1)
+            # masked_dist = dist[camera_indices, point_indices]
 
             # flattened_indices = camera_indices * height * width + masked_coords[:, 0] * width + masked_coords[:, 1]
             # updates_flat = torch.zeros((num_imgs * channels * height * width), device=depth.device)
-
             # updates_flat.scatter_(dim=0, index=flattened_indices, src=masked_dist)
 
-            # depth_flat[b] = updates_flat.view(num_imgs, channels, height * width)
-
-            # depth = depth_flat.view(batch_size, num_imgs, channels, height, width)
+            # depth[b] = updates_flat.view(num_imgs, channels, height, width)
 
         extra_rots = lidar_aug_matrix[..., :3, :3]
         extra_trans = lidar_aug_matrix[..., :3, 3]
@@ -531,6 +523,12 @@ class DepthLSSTransform(BaseDepthTransform):
 
         x = x.view(B * N, C, fH, fW)
         d = d.view(B * N, *d.shape[2:])
+        
+        # valid_d_mask = torch.ones_like(d)
+        # zero_mask = d == 0
+        # valid_d_mask[zero_maks] = 0
+        # d = torch.cat([d, valid_d_mask], dim=1)
+
         d = self.dtransform(d)
         x = torch.cat([d, x], dim=1)
         x = self.depthnet(x)
