@@ -3,7 +3,7 @@ _base_ = [
     "../../../../../autoware_ml/configs/detection3d/dataset/t4dataset/j6gen2_base.py",
 ]
 
-custom_imports = dict(imports=["projects.BEVFusion.bevfusion", "projects.CenterPoint.models"], allow_failed_imports=False)
+custom_imports = dict(imports=["projects.BEVFusion.bevfusion", "projects.CenterPoint.models", "projects.BEVFusion.models"], allow_failed_imports=False)
 custom_imports["imports"] += _base_.custom_imports["imports"]
 custom_imports["imports"] += ["autoware_ml.detection3d.datasets.transforms"]
 
@@ -28,7 +28,7 @@ voxel_size = [0.075, 0.075, 0.2]
 
 # grid_size = [1440, 1440, 41]
 # grid_size = [360, 360, 41]
-grid_size = [128, 128, 41]
+grid_size = [1440, 1440, 41]
 
 eval_class_range = {
     "car": 54.0,
@@ -80,6 +80,7 @@ model = dict(
     pts_middle_encoder=None,
     img_backbone=dict(
         type="mmdet.SwinTransformer",
+        pretrain_img_size=(256, 704),
         embed_dims=96,
         depths=[2, 2, 6, 2],
         num_heads=[3, 6, 12, 24],
@@ -123,6 +124,16 @@ model = dict(
         downsample=2,
         # downsample=1,
     ),
+
+    img_bev_encoder_backbone=dict(
+        type='CustomResNet',
+        numC_input=80,
+        num_channels=[80 * 2, 80 * 4, 80 * 8]),
+    img_bev_encoder_neck=dict(
+        type='FPN_LSS',
+        in_channels=80 * 8 + 80 * 2,
+        out_channels=256),
+    
 	# pts_backbone=dict(
   #       type="SECOND",
   #       in_channels=128,
@@ -229,7 +240,7 @@ model = dict(
     # ),
 		conv_fuser=None,
     bbox_head=dict(
-        in_channels=80,
+        in_channels=256,
         num_proposals=num_proposals,
         class_names=_base_.class_names,  # Use class names to identify the correct class indices
         train_cfg=dict(
@@ -320,11 +331,11 @@ train_pipeline = [
     ),
     dict(type="ObjectRangeMinPointsFilter", range_radius=[0, 60], min_num_points=2),
     dict(type="ObjectRangeMinPointsFilter", range_radius=[60, 130], min_num_points=1),
-    dict(type="PointShuffle"),
-	dict(type="BEVFusionLoadAnnotations2D"),
+    # dict(type="PointShuffle"),
+	# dict(type="BEVFusionLoadAnnotations2D"),
     dict(
         type="Pack3DDetInputs",
-		keys=["img", "points",  "gt_bboxes_3d", "gt_labels_3d", "gt_bboxes", "gt_bboxes_labels"],
+		keys=["img", "points",  "gt_bboxes_3d", "gt_labels_3d"],
         # keys=["img", "points",  "gt_bboxes_3d", "gt_labels_3d", "gt_bboxes", "gt_labels"],
         meta_keys=[
             "cam2img",
@@ -343,9 +354,9 @@ train_pipeline = [
             "pcd_scale_factor",
             "pcd_trans",
             "lidar_aug_matrix",
-			"pad_shape",
-            "depths",
-            "centers_2d"
+						"pad_shape",
+            # "depths",
+            # "centers_2d"
         ],
     ),
 ]
@@ -500,7 +511,7 @@ test_evaluator = dict(
 
 # learning rate
 # lr = 0.0001
-lr = 1e-4
+lr = 2e-4
 t_max = 5
 param_scheduler = [
     # learning rate scheduler
@@ -560,7 +571,7 @@ test_cfg = dict()
 optim_wrapper = dict(
     type="OptimWrapper",
     optimizer=dict(type="AdamW", lr=lr, weight_decay=0.01),
-    clip_grad=dict(max_norm=0.1, norm_type=2),
+    clip_grad=dict(max_norm=5.0, norm_type=2),
     # paramwise_cfg=dict(custom_keys={'img_backbone': dict(lr_mult=0.1)}),
 )
 

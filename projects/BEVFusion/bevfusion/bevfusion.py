@@ -25,6 +25,8 @@ class BEVFusion(Base3DDetector):
         pts_backbone: dict,
         pts_neck: dict,
         bbox_head: dict,
+        img_bev_encoder_backbone: Optional[dict] = None,
+        img_bev_encoder_neck: Optional[dict] = None,
         voxelize_cfg: Optional[dict] = None,
         data_preprocessor: OptConfigType = None,
         pts_voxel_encoder: Optional[dict] = None,
@@ -76,6 +78,16 @@ class BEVFusion(Base3DDetector):
             self.fusion_layer = None
 
         # BEV Backbone and Neck
+        if img_bev_encoder_backbone:
+            self.img_bev_encoder_backbone = MODELS.build(img_bev_encoder_backbone)
+        else:
+            self.img_bev_encoder_backbone = None 
+
+        if img_bev_encoder_neck:
+            self.img_bev_encoder_neck = MODELS.build(img_bev_encoder_neck)
+        else:
+            self.img_bev_encoder_neck = None 
+
         if pts_backbone:
             self.pts_backbone = MODELS.build(pts_backbone)
         else:
@@ -346,7 +358,6 @@ class BEVFusion(Base3DDetector):
                 lidar_aug_matrix=lidar_aug_matrix,
                 img_metas=batch_input_metas,
             )
-            features.append(img_feature)
         elif imgs is not None:
             # NOTE(knzo25): onnx inference
             lidar2image = batch_inputs_dict["lidar2img"]
@@ -379,8 +390,14 @@ class BEVFusion(Base3DDetector):
                 batch_input_metas,
                 geom_feats=geom_feats,
             )
-            features.append(img_feature)
-
+        
+        if self.img_bev_encoder_backbone:
+            img_feature = self.img_bev_encoder_backbone(img_feature)
+        
+        if self.img_bev_encoder_neck:
+            img_feature = self.img_bev_encoder_neck(img_feature)
+        
+        features.append(img_feature)
         if points is not None and self.pts_middle_encoder is not None:
             pts_feature = self.extract_pts_feat(
                 batch_inputs_dict.get("voxels", {}).get("voxels", None),
