@@ -48,7 +48,7 @@ image_size = [480, 640]  # height, width
 num_workers = 32
 lidar_sweep_dims = [0, 1, 2, 4]  # x, y, z, time_lag
 lidar_feature_dims = 4
-camera_order = ["CAM_FRONT", "CAM_FRONT_LEFT", "CAM_FRONT_RIGHT", "CAM_BACK_LEFT", "CAM_BACK_RIGHT"]
+camera_order = ["CAM_FRONT", "CAM_BACK", "CAM_FRONT_LEFT", "CAM_FRONT_RIGHT", "CAM_BACK_LEFT", "CAM_BACK_RIGHT"]
 
 
 model = dict(
@@ -72,6 +72,8 @@ model = dict(
     pts_middle_encoder=None,
     img_backbone=dict(
         type="mmdet.SwinTransformer",
+        pretrain_img_size=(256, 704),
+        use_abs_pos_embed=True,
         embed_dims=96,
         depths=[2, 2, 6, 2],
         num_heads=[3, 6, 12, 24],
@@ -115,26 +117,24 @@ model = dict(
         downsample=2,
         # downsample=1,
     ),
-		pts_backbone=None,
-		pts_neck=None,
-	# pts_backbone=dict(
-  #       type="SECOND",
-  #       in_channels=128,
-  #       out_channels=[128, 256],
-  #       layer_nums=[5, 5],
-  #       layer_strides=[1, 2],
-  #       norm_cfg=dict(type="BN", eps=0.001, momentum=0.01),
-  #       conv_cfg=dict(type="Conv2d", bias=False),
-  #   ),
-  #   pts_neck=dict(
-  #       type="SECONDFPN",
-  #       in_channels=[128, 256],
-  #       out_channels=[256, 256],
-  #       upsample_strides=[1, 2],
-  #       norm_cfg=dict(type="BN", eps=0.001, momentum=0.01),
-  #       upsample_cfg=dict(type="deconv", bias=False),
-  #       use_conv_for_no_stride=True,
-  #   ),
+	pts_backbone=dict(
+        type="SECOND",
+        in_channels=128,
+        out_channels=[128, 256],
+        layer_nums=[5, 5],
+        layer_strides=[1, 2],
+        norm_cfg=dict(type="BN", eps=0.001, momentum=0.01),
+        conv_cfg=dict(type="Conv2d", bias=False),
+    ),
+    pts_neck=dict(
+        type="SECONDFPN",
+        in_channels=[128, 256],
+        out_channels=[256, 256],
+        upsample_strides=[1, 2],
+        norm_cfg=dict(type="BN", eps=0.001, momentum=0.01),
+        upsample_cfg=dict(type="deconv", bias=False),
+        use_conv_for_no_stride=True,
+    ),
 		# img_roi_head=dict(
     #     type="mmdet.FocalHead",
     #     num_classes=len(_base_.class_names),
@@ -335,7 +335,7 @@ train_pipeline = [
             "pcd_scale_factor",
             "pcd_trans",
             "lidar_aug_matrix",
-						"pad_shape",
+			"pad_shape",
         ],
     ),
 ]
@@ -491,7 +491,7 @@ test_evaluator = dict(
 # learning rate
 # lr = 0.0001
 lr = 1e-4
-t_max = 5
+t_max = 2
 param_scheduler = [
     # learning rate scheduler
     # During the first (max_epochs * 0.4) epochs, learning rate increases from 0 to lr * 10
@@ -565,3 +565,5 @@ if train_gpu_size > 1:
     sync_bn = "torch"
 
 # resume = True
+
+load_from = "work_dirs/bevfusion_2_3/epoch_46.pth"
