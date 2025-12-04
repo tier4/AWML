@@ -363,7 +363,6 @@ class VoVNet(BaseModule):
             x = getattr(self, name)(x)
             if name in self._out_features:
                 outputs.append(x)
-
         return outputs
 
     def _freeze_stages(self):
