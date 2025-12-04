@@ -16,6 +16,7 @@ from mmdet.models.utils import multi_apply
 from mmengine.structures import InstanceData
 from torch import nn
 
+
 def clip_sigmoid(x, eps=1e-4):
     y = torch.clamp(x.sigmoid_(), min=eps, max=1 - eps)
     return y
@@ -304,7 +305,6 @@ class BEVFusionHead(nn.Module):
             index=top_proposals_index[:, None, :].permute(0, 2, 1).expand(-1, -1, bev_pos.shape[-1]),
             dim=1,
         )
-        print(fusion_feat_flatten.shape, " ", heatmap.shape, " ", bev_pos.shape, " ", query_pos.shape)
 
         #################################
         # transformer decoder layer (Fusion feature as K,V)
@@ -639,7 +639,7 @@ class BEVFusionHead(nn.Module):
         # and iou loss
         if len(pos_inds) > 0:
             pos_bbox_targets = self.bbox_coder.encode(sampling_result.pos_gt_bboxes)
-            
+
             bbox_targets[pos_inds, :] = pos_bbox_targets
             bbox_weights[pos_inds, :] = 1.0
 

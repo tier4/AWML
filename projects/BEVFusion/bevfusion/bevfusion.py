@@ -35,8 +35,8 @@ class BEVFusion(Base3DDetector):
         img_neck: Optional[dict] = None,
         init_cfg: OptMultiConfig = None,
         seg_head: Optional[dict] = None,
-        img_roi_head = None,
-        img_aux_bbox_head = None,
+        img_roi_head=None,
+        img_aux_bbox_head=None,
         **kwargs,
     ) -> None:
         super().__init__(data_preprocessor=data_preprocessor, init_cfg=init_cfg)
@@ -64,11 +64,11 @@ class BEVFusion(Base3DDetector):
             self.img_backbone = None
             self.img_neck = None
             self.view_transform = None
-        
+
         if img_aux_bbox_head is not None:
             self.img_aux_bbox_head = MODELS.build(img_aux_bbox_head)
         else:
-            self.img_aux_bbox_head = None 
+            self.img_aux_bbox_head = None
 
         if fusion_layer is not None:
             self.fusion_layer = MODELS.build(fusion_layer)
@@ -79,12 +79,12 @@ class BEVFusion(Base3DDetector):
         if pts_backbone:
             self.pts_backbone = MODELS.build(pts_backbone)
         else:
-            self.pts_backbone = None 
-        
+            self.pts_backbone = None
+
         if pts_neck:
             self.pts_neck = MODELS.build(pts_neck)
         else:
-            self.pts_neck = None 
+            self.pts_neck = None
 
         if img_roi_head is not None:
             self.img_roi_head = MODELS.build(img_roi_head)
@@ -398,7 +398,7 @@ class BEVFusion(Base3DDetector):
 
         if self.pts_backbone:
             x = self.pts_backbone(x)
-        
+
         if self.pts_neck:
             x = self.pts_neck(x)
 
@@ -413,23 +413,23 @@ class BEVFusion(Base3DDetector):
         losses = dict()
         if self.with_bbox_head:
             bbox_loss = self.bbox_head.loss(feats, batch_data_samples)
-        
+
         losses.update(bbox_loss)
-        
+
         if self.img_aux_bbox_head:
             img_aux_bbox_losses = self.img_aux_bbox_head.loss([img_feats], batch_data_samples)
             sum_losses = 0.0
             for loss_key, loss in img_aux_bbox_losses.items():
                 sum_losses += loss
-                losses[loss_key] = loss 
+                losses[loss_key] = loss
 
             losses["img_aux_sum"] = sum_losses
 
         if self.img_roi_head is not None:
-                
+
             gt_bboxes2d_list = []
             gt_labels2d_list = []
-            centers_2d_list = [] 
+            centers_2d_list = []
             depths_list = []
             img_pad_shapes = []
 
@@ -442,25 +442,22 @@ class BEVFusion(Base3DDetector):
 
                 gt_bboxes2d_list.append(batch_data_sample.gt_instances.bboxes)
                 gt_labels2d_list.append(batch_data_sample.gt_instances.labels)
-                centers_2d_list.append(batch_input_meta['centers_2d'])
-                depths_list.append(batch_input_meta['depths'])
-                img_pad_shapes.append(batch_input_meta['pad_shape'])
+                centers_2d_list.append(batch_input_meta["centers_2d"])
+                depths_list.append(batch_input_meta["depths"])
+                img_pad_shapes.append(batch_input_meta["pad_shape"])
 
             img_roi_head_losses = self.img_roi_head.loss(
                 gt_bboxes2d_list=gt_bboxes2d_list,
                 gt_labels2d_list=gt_labels2d_list,
-                centers2d=centers_2d_list, 
-                depths=depths_list, 
+                centers2d=centers_2d_list,
+                depths=depths_list,
                 preds_dicts=img_roi_head_preds,
                 img_pad_shapes=img_pad_shapes,
-                gt_bboxes_ignore=None
+                gt_bboxes_ignore=None,
             )
 
             sum_roi_losses = sum([value for key, value in img_roi_head_losses.items() if "loss" in key])
-            losses.update(
-                img_roi_head_losses
-            )
-            losses['sum_img_roi'] = sum_roi_losses
-
+            losses.update(img_roi_head_losses)
+            losses["sum_img_roi"] = sum_roi_losses
 
         return losses

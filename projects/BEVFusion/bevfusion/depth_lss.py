@@ -18,6 +18,7 @@ def gen_dx_bx(xbound, ybound, zbound):
     nx = torch.LongTensor([(row[1] - row[0]) / row[2] for row in [xbound, ybound, zbound]])
     return dx, bx, nx
 
+
 class DepthLSSNet(nn.Module):
 
     def __init__(self, in_channels: int, out_channels: int) -> None:
@@ -82,7 +83,9 @@ class LidarDepthImageNet(nn.Module):
             nn.Conv2d(in_channels=8, out_channels=32, kernel_size=5, stride=4, padding=2, bias=False),
             nn.BatchNorm2d(num_features=32),
             nn.ReLU(True),
-            nn.Conv2d(in_channels=32, out_channels=out_channels, kernel_size=5, stride=last_stride, padding=2, bias=False),
+            nn.Conv2d(
+                in_channels=32, out_channels=out_channels, kernel_size=5, stride=last_stride, padding=2, bias=False
+            ),
             nn.BatchNorm2d(num_features=out_channels),
             nn.ReLU(True),
         )
@@ -234,7 +237,7 @@ class BaseViewTransform(nn.Module):
 
         # collapse Z
         final = torch.cat(x.unbind(dim=2), 1)
-        
+
         return final
 
     def bev_pool_precomputed(self, x, geom_feats, kept, ranks, indices):
@@ -391,7 +394,7 @@ class BaseDepthTransform(BaseViewTransform):
 
         batch_size = len(points)
         depth = torch.zeros(batch_size, img.shape[1], 1, *self.image_size).to(points[0].device)
-        
+
         for b in range(batch_size):
             cur_coords = points[b][:, :3]
             cur_img_aug_matrix = img_aug_matrix[b]
@@ -402,10 +405,10 @@ class BaseDepthTransform(BaseViewTransform):
             cur_coords -= cur_lidar_aug_matrix[:3, 3]
             cur_coords = lidar_aug_matrix_inverse[b, :3, :3].matmul(cur_coords.transpose(1, 0))
 
-             # lidar2image
+            # lidar2image
             cur_coords = cur_lidar2image[:, :3, :3].matmul(cur_coords)
             cur_coords += cur_lidar2image[:, :3, 3].reshape(-1, 3, 1)
-            
+
             # get 2d coords
             dist = cur_coords[:, 2, :]
             valid_dist_mask = dist > 0.0
@@ -424,15 +427,15 @@ class BaseDepthTransform(BaseViewTransform):
                 (cur_coords[..., 0] < self.image_size[0])
                 & (cur_coords[..., 0] >= 0)
                 & (cur_coords[..., 1] < self.image_size[1])
-                & (cur_coords[..., 1] >= 0) & valid_dist_mask
+                & (cur_coords[..., 1] >= 0)
+                & valid_dist_mask
             )
+
             for c in range(on_img.shape[0]):
                 masked_coords = cur_coords[c, on_img[c]].long()
                 masked_dist = dist[c, on_img[c]]
-                depth = depth.to(masked_dist.dtype)
-                depth[b, c, 0, masked_coords[:, 0],
-                      masked_coords[:, 1]] = masked_dist
 
+                depth[b, c, 0, masked_coords[:, 0], masked_coords[:, 1]] = masked_dist
 
             # NOTE(knzo25): in the original code, a per-image loop was
             # implemented to compute the depth. However, it fixes the number
@@ -448,7 +451,7 @@ class BaseDepthTransform(BaseViewTransform):
             # point_indices = indices[:, 1]
 
             # masked_coords = cur_coords[camera_indices, point_indices].long()
-            # masked_dist = dist[camera_indices, point_indices] 
+            # masked_dist = dist[camera_indices, point_indices]
             # depth = depth.to(masked_dist.dtype)
             # # batch_size, num_imgs, channels, height, width = depth.shape
             # # Depth tensor should have only one channel in this implementation
@@ -505,7 +508,7 @@ class DepthLSSTransform(BaseDepthTransform):
         zbound: Tuple[float, float, float],
         dbound: Tuple[float, float, float],
         downsample: int = 1,
-        lidar_depth_image_last_stride: int = 2
+        lidar_depth_image_last_stride: int = 2,
     ) -> None:
         """Compared with `LSSTransform`, `DepthLSSTransform` adds sparse depth
         information from lidar points into the inputs of the `depthnet`."""
