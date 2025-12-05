@@ -18,9 +18,9 @@ max_epochs = 50
 backend_args = None
 
 # range setting
-point_cloud_range = [-54.0, -54.0, -3.0, 54.0, 54.0, 5.0]
+point_cloud_range = [-51.2, -51.2, -3.0, 51.2, 51.2, 5.0]
 # voxel_size = [0.17, 0.17, 0.2]
-voxel_size = [0.075, 0.075, 0.2]
+voxel_size = [0.1, 0.1, 0.2]
 # voxel_size = [0.075, 0.075, 0.2]
 
 # point_cloud_range = [-122.4, -122.4, -3.0, 122.4, 122.4, 5.0]
@@ -28,7 +28,7 @@ voxel_size = [0.075, 0.075, 0.2]
 
 # grid_size = [1440, 1440, 41]
 # grid_size = [360, 360, 41]
-grid_size = [1440, 1440, 41]
+grid_size = [1024, 1024, 41]
 
 eval_class_range = {
     "car": 54.0,
@@ -37,7 +37,7 @@ eval_class_range = {
     "bicycle": 54.0,
     "pedestrian": 54.0,
 }
-out_size_factor = 8
+out_size_factor = 16
 point_load_dim = 5  # x, y, z, intensity, ring_id
 sweeps_num = 1
 focal_head_loss_weight = 0.40 
@@ -117,10 +117,10 @@ model = dict(
         image_size=image_size,
         # feature_size=[48, 72],
         feature_size=[60, 80],
-        xbound=[-54.0, 54.0, 0.3],
-        ybound=[-54.0, 54.0, 0.3],
+        xbound=[-51.2, 51.2, 0.8],
+        ybound=[-51.2, 51.2, 0.8],
         zbound=[-10.0, 10.0, 20.0],
-        dbound=[1.0, 60, 1.0],
+        dbound=[1.0, 60, 0.5],
         downsample=2,
         # downsample=1,
     ),
@@ -307,12 +307,12 @@ train_pipeline = [
         rand_flip=True,
         is_train=True,
     ),
-    # dict(
-    #     type="BEVFusionGlobalRotScaleTrans",
-    #     scale_ratio_range=[0.95, 1.05],
-	# 	rot_range=[-0.3925, 0.3925],
-    #     translation_std=[0.0, 0.0, 0.0],
-    # ),
+    dict(
+        type="BEVFusionGlobalRotScaleTrans",
+        scale_ratio_range=[0.95, 1.05],
+				rot_range=[-0.3925, 0.3925],
+        translation_std=[0.2, 0.2, 0.2],
+    ),
     # dict(type="BEVFusionRandomFlip3D", flip_vertical=True),
     dict(type="PointsRangeFilter", point_cloud_range=point_cloud_range),
     dict(type="ObjectRangeFilter", point_cloud_range=point_cloud_range),
@@ -332,7 +332,6 @@ train_pipeline = [
         ],
     ),
     dict(type="ObjectRangeMinPointsFilter", range_radius=[0, 60], min_num_points=2),
-    dict(type="ObjectRangeMinPointsFilter", range_radius=[60, 130], min_num_points=1),
     # dict(type="PointShuffle"),
 	# dict(type="BEVFusionLoadAnnotations2D"),
     dict(
@@ -356,7 +355,7 @@ train_pipeline = [
             "pcd_scale_factor",
             "pcd_trans",
             "lidar_aug_matrix",
-			"pad_shape",
+						"pad_shape",
             # "depths",
             # "centers_2d"
         ],
@@ -391,7 +390,7 @@ test_pipeline = [
     dict(
         type="ImageAug3D",
         final_dim=image_size,
-        resize_lim=0.04,
+        resize_lim=0.0,
         bot_pct_lim=[0.0, 0.0],
         rot_lim=[0.0, 0.0],
         rand_flip=False,
@@ -514,27 +513,27 @@ test_evaluator = dict(
 # learning rate
 # lr = 0.0001
 lr = 1e-4
-t_max = 2
+t_max = 5
 param_scheduler = [
     # learning rate scheduler
     # During the first (max_epochs * 0.4) epochs, learning rate increases from 0 to lr * 10
     # during the next epochs, learning rate decreases from lr * 10 to
     # lr * 1e-4
+    # dict(
+    #     type="CosineAnnealingLR",
+    #     T_max=t_max,
+    #     eta_min=lr * 10,
+    #     begin=0,
+    #     end=t_max,
+    #     by_epoch=True,
+    #     convert_to_iter_based=True,
+    # ),
+	dict(type="LinearLR", start_factor=1.0 / 3, begin=0, end=500, by_epoch=False),
     dict(
         type="CosineAnnealingLR",
-        T_max=t_max,
-        eta_min=lr * 10,
-        begin=0,
-        end=t_max,
-        by_epoch=True,
-        convert_to_iter_based=True,
-    ),
-	# dict(type="LinearLR", start_factor=1.0 / 3, begin=0, end=t_max, by_epoch=True),
-    dict(
-        type="CosineAnnealingLR",
-        T_max=(max_epochs - t_max),
+        T_max=(max_epochs - 0),
         eta_min=lr * 1e-4,
-        begin=t_max,
+        begin=0,
         end=max_epochs,
         by_epoch=True,
         convert_to_iter_based=True,
