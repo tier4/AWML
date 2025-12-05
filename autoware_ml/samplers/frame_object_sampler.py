@@ -36,7 +36,7 @@ class FrameObjectSampler:
         if SAMPLE_CLASS_NAME_KEY not in frame_ann_info:
             frame_ann_info[SAMPLE_CLASS_NAME_KEY] = ["" for _ in range(len(frame_ann_info["gt_labels_3d"]))]
 
-        # Note that ObJectSampler modifies frame_ann_info in place, and it affects subsequent samplers.
+        # Note that ObjectSampler modifies frame_ann_info in place, and it affects subsequent samplers.
         # For example, if an object is sampled by the first sampler, it may be sampled by the second sampler again
         # by assinging to a new class name. Please to make sure that the samplers are compatible with each other.
         for object_sampler in self.object_samplers:
