@@ -164,7 +164,7 @@ class ImageAug3D(BaseTransform):
         # fig.tight_layout()
 
         # # # Save figure to memory (as ndarray) or file
-        # fig_path = f"work_dirs/demo_work/2/debug_vis_{uuid.uuid4().hex}.png"
+        # fig_path = f"work_dirs/demo_work/3/debug_vis_{uuid.uuid4().hex}.png"
         # fig.savefig(fig_path, dpi=150)
         # plt.close(fig)
 
