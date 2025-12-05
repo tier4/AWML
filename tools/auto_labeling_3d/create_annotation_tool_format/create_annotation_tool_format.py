@@ -15,19 +15,13 @@ from tools.auto_labeling_3d.utils.dataset.annotation_tool_dataset import (
     SegmentsAIDataset,
 )
 
-ANNOTATION_TOOL_CLASSES: dict[str, Type[AnnotationToolDataset]] = {
-    "deepen": DeepenDataset,
-    "segments.ai": SegmentsAIDataset,
-}
-
 
 def create_annotation_tool_format(
     info_path: str | Path,
     output_dir: str | Path,
-    output_format: str,
+    dataset_cls: Type[AnnotationToolDataset],
     logger: logging.Logger,
     dataname_to_anntool_id: Optional[dict[str, str]] = None,
-    annotation_tool_classes: dict[str, Type[AnnotationToolDataset]] = ANNOTATION_TOOL_CLASSES,
 ) -> list[AnnotationToolDataset]:
     """Load info.pkl, create annotation tool format files for each dataset, and return the results.
 
@@ -36,13 +30,11 @@ def create_annotation_tool_format(
     Args:
         info_path (str | Path): Path to the input pickle file (info.pkl).
         output_dir (str | Path): Directory to save the output annotation tool format files.
-        output_format (str): The format for the annotation tool (e.g., 'deepen', 'segment.ai').
-        logger (logging.Logger): The logger to use for logging messages.
+        dataset_cls (Type[AnnotationToolDataset]): The dataset class to use for conversion.
+        logger (loggingging.Logger): The logger to use for logging messages.
         dataname_to_anntool_id (Optional[dict[str, str]]):
             An optional dictionary mapping non annotated dataset names to annotation tool format IDs.
             If not provided, new UUIDs will be generated.
-        annotation_tool_classes (dict[str, Type[AnnotationToolDataset]]):
-            A dictionary mapping format names to dataset classes.
 
     Returns:
         list[AnnotationToolDataset]: A list of AnnotationToolDataset objects.
@@ -58,7 +50,6 @@ def create_annotation_tool_format(
 
     # 3. Execute conversion and saving for each dataset
     annotation_tool_format_datasets: list[AnnotationToolDataset] = []
-    dataset_cls = annotation_tool_classes[output_format]
 
     for dataset_info in awml_datasets:
         dataset_name = dataset_info.t4_dataset_name
@@ -131,10 +122,23 @@ def main():
         with open(args.dataname_to_anntool_id, "r") as f:
             dataname_to_anntool_id = yaml.safe_load(f)
 
+    # Select the dataset class based on the output format argument
+    annotation_tool_classes: dict[str, Type[AnnotationToolDataset]] = {
+        "deepen": DeepenDataset,
+        "segments.ai": SegmentsAIDataset,
+    }
+    if args.output_format in annotation_tool_classes:
+        dataset_cls = annotation_tool_classes[args.output_format]
+    else:
+        logger.error(
+            f"Unsupported output format: {args.output_format}. We support: {list(annotation_tool_classes.keys())}"
+        )
+        return
+
     result_datasets = create_annotation_tool_format(
         info_path=args.input,
         output_dir=args.output_dir,
-        output_format=args.output_format,
+        dataset_cls=dataset_cls,
         logger=logger,
         dataname_to_anntool_id=dataname_to_anntool_id,
     )
