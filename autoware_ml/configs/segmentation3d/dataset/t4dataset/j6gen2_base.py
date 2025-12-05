@@ -1,10 +1,3 @@
-custom_imports = dict(
-    imports=[
-        "autoware_ml.detection3d.datasets.t4dataset",
-    ],
-    allow_failed_imports=False,
-)
-
 # dataset type setting
 dataset_type = "T4Dataset"
 info_train_file_name = "t4dataset_j6gen2_base_infos_train.pkl"
@@ -14,18 +7,9 @@ info_test_file_name = "t4dataset_j6gen2_base_infos_test.pkl"
 # dataset scene setting
 dataset_version_config_root = "autoware_ml/configs/t4dataset/"
 dataset_version_list = [
-    "db_j6gen2_lidarseg_v1",
+    "db_semseg_demo",
 ]
 
-dataset_test_groups = {
-    "db_j6gen2": "t4dataset_j6gen2_base_infos_test.pkl",
-}
-
-# dataset format setting
-data_prefix = dict(
-    pts="",
-    pts_semantic_mask="",
-)
 camera_types = {}
 
 # segmentation only uses lidar
@@ -33,68 +17,38 @@ input_modality = dict(use_lidar=True, use_camera=False)
 
 # class setting
 class_names = [
+    "unknown",
+    "driveable_surface",
+    "manmade",
+    "other_flat_surface",
+    "vegetation",
+    "sidewalk",
     "car",
+    "pedestrian",
     "emergency_vehicle",
-    "motorcycle",
+    "truck",
     "tractor_unit",
     "semi_trailer",
-    "truck",
-    "bicycle",
     "bus",
-    "forklift",
-    "kart",
+    "bicycle",
+    "motorcycle",
     "construction_vehicle",
-    "train",
-    "pedestrian",
-    "personal_mobility",
-    "stroller",
-    "animal",
+    "other_stuff",
+    "noise",
     "traffic_cone",
     "debris",
+    "forklift",
+    "kart",
+    "stroller",
+    "personal_mobility",
     "pushable_pullable",
-    "vegetation",
-    "manmade",
-    "other_stuff",
-    "driveable_surface",
-    "sidewalk",
-    "other_flat_surface",
-    "noise",
+    "animal",
+    "train",
     "ghost_point",
     "out_of_sync",
 ]
 
 num_class = len(class_names)
-
-name_mapping = {
-    "car": "car",
-    "emergency_vehicle": "emergency_vehicle",
-    "motorcycle": "motorcycle",
-    "tractor_unit": "tractor_unit",
-    "semi_trailer": "semi_trailer",
-    "truck": "truck",
-    "bicycle": "bicycle",
-    "bus": "bus",
-    "forklift": "forklift",
-    "kart": "kart",
-    "construction_vehicle": "construction_vehicle",
-    "train": "train",
-    "pedestrian": "pedestrian",
-    "personal_mobility": "personal_mobility",
-    "stroller": "stroller",
-    "animal": "animal",
-    "traffic_cone": "traffic_cone",
-    "debris": "debris",
-    "pushable_pullable": "pushable_pullable",
-    "vegetation": "vegetation",
-    "manmade": "manmade",
-    "other_stuff": "other_stuff",
-    "driveable_surface": "driveable_surface",
-    "sidewalk": "sidewalk",
-    "other_flat_surface": "other_flat_surface",
-    "noise": "noise",
-    "ghost_point": "ghost_point",
-    "out_of_sync": "out_of_sync",
-}
 
 metainfo = dict(
     classes=class_names,
@@ -105,34 +59,35 @@ merge_type = None
 
 # visualization
 class_colors = {
-    "car": (30, 144, 255),  # Dodger Blue
-    "emergency_vehicle": (255, 0, 0),  # Red
-    "motorcycle": (100, 0, 30),  # Dark Red
-    "tractor_unit": (180, 0, 255),  # Purple
-    "semi_trailer": (0, 255, 255),  # Cyan
-    "truck": (140, 0, 255),  # Purple
-    "bicycle": (255, 0, 30),  # Red
-    "bus": (111, 255, 111),  # Light Green
-    "forklift": (255, 165, 0),  # Orange
-    "kart": (255, 192, 203),  # Pink
-    "construction_vehicle": (255, 255, 0),  # Yellow
-    "train": (70, 130, 180),  # Steel Blue
-    "pedestrian": (255, 200, 200),  # Light Pink
-    "personal_mobility": (255, 150, 150),  # Pink
-    "stroller": (200, 100, 100),  # Dark Pink
-    "animal": (150, 75, 0),  # Brown
-    "traffic_cone": (120, 120, 120),  # Gray
-    "debris": (80, 80, 80),  # Dark Gray
-    "pushable_pullable": (100, 100, 100),  # Gray
-    "vegetation": (0, 255, 0),  # Green
-    "manmade": (128, 128, 128),  # Gray
-    "other_stuff": (60, 60, 60),  # Dark Gray
-    "driveable_surface": (50, 50, 50),  # Very Dark Gray
-    "sidewalk": (150, 150, 150),  # Light Gray
-    "other_flat_surface": (100, 100, 100),  # Gray
-    "noise": (0, 0, 0),  # Black
-    "ghost_point": (128, 0, 128),  # Purple
-    "out_of_sync": (255, 0, 255),  # Magenta
+    "unknown": (0, 0, 0),  # Black
+    "driveable_surface": (0, 255, 255),  # Cyan / Aqua
+    "manmade": (233, 233, 229),  # Light Beige/Grey
+    "other_flat_surface": (110, 110, 110),  # Dark Grey
+    "vegetation": (0, 175, 0),  # Green
+    "sidewalk": (232, 35, 244),  # Magenta
+    "car": (255, 158, 0),  # Orange
+    "pedestrian": (0, 0, 230),  # Blue
+    "emergency_vehicle": (255, 0, 0),  # Bright Red
+    "truck": (255, 127, 80),  # Coral
+    "tractor_unit": (160, 60, 60),  # Brownish Red
+    "semi_trailer": (255, 140, 0),  # Dark Orange
+    "bus": (255, 215, 0),  # Gold
+    "bicycle": (220, 20, 60),  # Crimson
+    "motorcycle": (255, 61, 99),  # Reddish Pink
+    "construction_vehicle": (230, 230, 0),  # Yellow
+    "other_stuff": (128, 128, 128),  # Medium Grey
+    "noise": (255, 0, 255),  # Bright Fuchsia
+    "traffic_cone": (47, 79, 79),  # Dark Slate Grey
+    "debris": (139, 69, 19),  # Saddle Brown
+    "forklift": (218, 165, 32),  # Goldenrod
+    "kart": (128, 0, 128),  # Purple
+    "stroller": (135, 206, 235),  # Sky Blue
+    "personal_mobility": (0, 0, 128),  # Navy Blue
+    "pushable_pullable": (170, 170, 170),  # Light Grey
+    "animal": (205, 133, 63),  # Peru
+    "train": (255, 99, 71),  # Tomato Red
+    "ghost_point": (50, 50, 50),  # Very Dark Grey
+    "out_of_sync": (255, 255, 255),  # White
 }
 
 filter_attributes = None
