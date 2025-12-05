@@ -121,10 +121,9 @@ class AnnotationToolDataset:
     @classmethod
     def create_from_info(
         cls,
-        info: "AWML3DInfo",
+        info: AWML3DInfo,
         t4_dataset_name: str,
         ann_tool_id: str,
-        ann_tool_file_path: Path,
     ) -> "AnnotationToolDataset":  # pragma: no cover - abstract
         """Factory method to create and save the dataset."""
         raise NotImplementedError
@@ -139,7 +138,7 @@ class DeepenDataset(AnnotationToolDataset):
     @classmethod
     def create_from_info(
         cls,
-        info: "AWML3DInfo",
+        info: AWML3DInfo,
         t4_dataset_name: str,
         ann_tool_id: str,
         output_dir: Path,
@@ -223,7 +222,7 @@ class SegmentsAIDataset(AnnotationToolDataset):
     @classmethod
     def create_from_info(
         cls,
-        info: "AWML3DInfo",
+        info: AWML3DInfo,
         output_dir: Path,
         t4_dataset_name: str,
         ann_tool_id: str,
