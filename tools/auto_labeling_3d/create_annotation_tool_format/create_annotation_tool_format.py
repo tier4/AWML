@@ -12,12 +12,12 @@ from tools.auto_labeling_3d.utils.dataclass.awml_info import AWML3DInfo
 from tools.auto_labeling_3d.utils.dataset.annotation_tool_dataset import (
     AnnotationToolDataset,
     DeepenDataset,
-    SegmentAIDataset,
+    SegmentsAIDataset,
 )
 
 ANNOTATION_TOOL_CLASSES: dict[str, Type[AnnotationToolDataset]] = {
     "deepen": DeepenDataset,
-    "segment.ai": SegmentAIDataset,
+    "segments.ai": SegmentsAIDataset,
 }
 
 
@@ -81,7 +81,7 @@ def create_annotation_tool_format(
 
 def parse_args():
     parser = argparse.ArgumentParser(
-        description="Convert pseudo label to annotation tool format (e.g., Deepen, Segment.ai)"
+        description="Convert pseudo label to annotation tool format (e.g., Deepen, Segments.ai)"
     )
     parser.add_argument(
         "--input",
@@ -99,7 +99,7 @@ def parse_args():
         "--output-format",
         type=str,
         required=True,
-        choices=["deepen", "segment.ai"],
+        choices=["deepen", "segments.ai"],
         help="Output format for annotation tool (currently only 'deepen' is supported)",
     )
     parser.add_argument(

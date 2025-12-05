@@ -219,7 +219,7 @@ class DeepenDataset(AnnotationToolDataset):
 
 
 @dataclass(frozen=True)
-class SegmentAIDataset(AnnotationToolDataset):
+class SegmentsAIDataset(AnnotationToolDataset):
     @classmethod
     def create_from_info(
         cls,
@@ -227,6 +227,5 @@ class SegmentAIDataset(AnnotationToolDataset):
         output_dir: Path,
         t4_dataset_name: str,
         ann_tool_id: str,
-        ann_tool_file_path: Path,
-    ) -> "SegmentAIDataset":
-        raise NotImplementedError("Segment.ai format is not yet supported")
+    ) -> "SegmentsAIDataset":
+        raise NotImplementedError("Segments.ai format is not yet supported")
