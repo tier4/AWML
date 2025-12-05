@@ -205,8 +205,14 @@ class BaseViewTransform(nn.Module):
         )
 
         geom_feats = geom_feats[kept]
-
-        ranks = geom_feats[:, 0] * (W * D * B) + geom_feats[:, 1] * (D * B) + geom_feats[:, 2] * B + geom_feats[:, 3]
+				
+				# nx[0] is Height, nx[1] is width, nx[2] is depth
+        ranks = (
+            geom_feats[:, 0] * (self.nx[1] * self.nx[2] * B)
+            + geom_feats[:, 1] * (self.nx[2] * B)
+            + geom_feats[:, 2] * B
+            + geom_feats[:, 3]
+        )
         indices = ranks.argsort()
 
         ranks = ranks[indices]
@@ -432,15 +438,6 @@ class BaseDepthTransform(BaseViewTransform):
             for c in range(on_img.shape[0]):
                 masked_coords = cur_coords[c, on_img[c]].long()
                 masked_dist = dist[c, on_img[c]]
-
-                ranks = masked_coords[:, 1] + masked_coords[:, 0] * width
-                sort = (ranks + masked_dist / 100.0).argsort()
-                masked_coords, masked_dist, ranks = masked_coords[sort], masked_dist[sort], ranks[sort]
-
-                kept2 = torch.ones(masked_coords.shape[0], device=masked_coords.device, dtype=torch.bool)
-                kept2[1:] = ranks[1:] != ranks[:-1]
-                masked_coords, masked_dist = masked_coords[kept2], masked_dist[kept2]
-                masked_coords = masked_coords.to(torch.long)
                 depth[b, c, 0, masked_coords[:, 0], masked_coords[:, 1]] = masked_dist
 
             # for c in range(on_img.shape[0]):

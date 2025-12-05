@@ -56,7 +56,7 @@ image_size = [480, 640]  # height, width
 num_workers = 32
 lidar_sweep_dims = [0, 1, 2, 4]  # x, y, z, time_lag
 lidar_feature_dims = 4
-camera_order = ["CAM_FRONT", "CAM_FRONT_LEFT", "CAM_FRONT_RIGHT", "CAM_BACK", "CAM_BACK_LEFT", "CAM_BACK_RIGHT"]
+camera_order = ["CAM_FRONT", "CAM_FRONT_LEFT", "CAM_FRONT_RIGHT", "CAM_BACK_LEFT", "CAM_BACK_RIGHT"]
 
 
 model = dict(
@@ -202,8 +202,8 @@ model = dict(
             out_size_factor=out_size_factor,
         ),
         share_conv_channel=64,
-        loss_cls=dict(type="mmdet.GaussianFocalLoss", reduction="none", loss_weight=3.0),
-        loss_bbox=dict(type="mmdet.L1Loss", reduction="mean", loss_weight=0.50),
+        loss_cls=dict(type="mmdet.GaussianFocalLoss", reduction="none", loss_weight=1.0),
+        loss_bbox=dict(type="mmdet.L1Loss", reduction="mean", loss_weight=0.25),
         norm_bbox=True,
         tasks=[
             dict(num_class=5, class_names=["car", "truck", "bus", "bicycle", "pedestrian"]),
@@ -287,21 +287,21 @@ train_pipeline = [
         use_dim=point_load_dim,
         backend_args=backend_args,
     ),
-    # dict(
-    #     type="LoadPointsFromMultiSweeps",
-    #     sweeps_num=sweeps_num,
-    #     load_dim=point_load_dim,
-    #     use_dim=lidar_sweep_dims,
-    #     pad_empty_sweeps=True,
-    #     remove_close=True,
-    #     backend_args=backend_args,
-    #     test_mode=False,
-    # ),
+    dict(
+        type="LoadPointsFromMultiSweeps",
+        sweeps_num=sweeps_num,
+        load_dim=point_load_dim,
+        use_dim=lidar_sweep_dims,
+        pad_empty_sweeps=True,
+        remove_close=True,
+        backend_args=backend_args,
+        test_mode=False,
+    ),
     dict(type="LoadAnnotations3D", with_bbox_3d=True, with_label_3d=True, with_attr_label=False),
     dict(
         type="ImageAug3D",
         final_dim=image_size,
-        resize_lim=[0.35, 0.45],
+        resize_lim=0.08,
         bot_pct_lim=[0.0, 0.0],
         rot_lim=[0.0, 0.0],
         rand_flip=True,
@@ -356,7 +356,7 @@ train_pipeline = [
             "pcd_scale_factor",
             "pcd_trans",
             "lidar_aug_matrix",
-			"pad_shape",
+						"pad_shape",
             # "depths",
             # "centers_2d"
         ],
@@ -378,20 +378,20 @@ test_pipeline = [
         use_dim=point_load_dim,
         backend_args=backend_args,
     ),
-    # dict(
-    #     type="LoadPointsFromMultiSweeps",
-    #     sweeps_num=sweeps_num,
-    #     load_dim=point_load_dim,
-    #     use_dim=lidar_sweep_dims,
-    #     pad_empty_sweeps=True,
-    #     remove_close=True,
-    #     backend_args=backend_args,
-    #     test_mode=True,
-    # ),
+    dict(
+        type="LoadPointsFromMultiSweeps",
+        sweeps_num=sweeps_num,
+        load_dim=point_load_dim,
+        use_dim=lidar_sweep_dims,
+        pad_empty_sweeps=True,
+        remove_close=True,
+        backend_args=backend_args,
+        test_mode=True,
+    ),
     dict(
         type="ImageAug3D",
         final_dim=image_size,
-        resize_lim=[0.40, 0.40],
+        resize_lim=0.0,
         bot_pct_lim=[0.0, 0.0],
         rot_lim=[0.0, 0.0],
         rand_flip=False,
@@ -513,7 +513,7 @@ test_evaluator = dict(
 
 # learning rate
 # lr = 0.0001
-lr = 2e-4
+lr = 1e-4
 t_max = 5
 param_scheduler = [
     # learning rate scheduler
