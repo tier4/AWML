@@ -1,20 +1,20 @@
 _base_ = [
     "../../../../../autoware_ml/configs/detection3d/default_runtime.py",
-    "../../../../../autoware_ml/configs/detection3d/dataset/t4dataset/j6gen2_v6.py",
+    "../../../../../autoware_ml/configs/detection3d/dataset/t4dataset/j6gen2_base.py",
     "../../default/second_secfpn_base.py",
 ]
 custom_imports = dict(imports=["projects.CenterPoint.models"], allow_failed_imports=False)
 custom_imports["imports"] += _base_.custom_imports["imports"]
 custom_imports["imports"] += ["autoware_ml.detection3d.datasets.transforms"]
 custom_imports["imports"] += ["autoware_ml.hooks"]
-custom_imports["imports"] += ["autoware_ml.backends.mlflowbackend"]
+# custom_imports["imports"] += ["autoware_ml.backends.mlflowbackend"]
 custom_imports["imports"] += ["autoware_ml.samplers"]
 
 # This is a base file for t4dataset, add the dataset config.
 # type, data_root and ann_file of data.train, data.val and data.test
-point_cloud_range = [-121.60, -121.60, -3.0, 121.60, 121.60, 5.0]
-voxel_size = [0.32, 0.32, 8.0]
-grid_size = [760, 760, 1]  # (121.60 / 0.32 == 380, 380 * 2 == 760)
+point_cloud_range = [-122.40, -122.40, -3.0, 122.40, 122.40, 5.0]
+voxel_size = [0.24, 0.24, 8.0]
+grid_size = [1020, 1020, 1]  # (122.40 / 0.24 == 510, 510 * 2 == 1020)
 sweeps_num = 1
 input_modality = dict(
     use_lidar=True,
@@ -23,7 +23,7 @@ input_modality = dict(
     use_map=False,
     use_external=False,
 )
-out_size_factor = 1
+out_size_factor = 2
 
 backend_args = None
 # backend_args = dict(backend="disk")
@@ -42,7 +42,7 @@ eval_class_range = {
 
 # user setting
 data_root = "data/t4dataset/"
-info_directory_path = "info/user_name/"
+info_directory_path = "info/kokseang_2_5/"
 train_gpu_size = 4
 train_batch_size = 16
 test_batch_size = 2
@@ -389,13 +389,13 @@ vis_backends = [
     dict(type="LocalVisBackend"),
     dict(type="TensorboardVisBackend"),
     # Update info accordingly
-    dict(
-        type="SafeMLflowVisBackend",
-        exp_name="(UserName) CenterPoint",
-        run_name="CenterPoint base",
-        tracking_uri="http://localhost:5000",
-        artifact_suffix=(),
-    ),
+    # dict(
+    #     type="SafeMLflowVisBackend",
+    #     exp_name="(UserName) CenterPoint",
+    #     run_name="CenterPoint base",
+    #     tracking_uri="http://localhost:5000",
+    #     artifact_suffix=(),
+    # ),
 ]
 visualizer = dict(type="Det3DLocalVisualizer", vis_backends=vis_backends, name="visualizer")
 
@@ -411,4 +411,4 @@ custom_hooks = [
 ]
 
 # Update the load_from path accordingly
-# load_from = "<best_checkpoint>"
+load_from = "work_dirs/centerpoint_2_5/T4Dataset/second_secfpn_4xb16_121m_base_amp_rfs/epoch_49.pth"

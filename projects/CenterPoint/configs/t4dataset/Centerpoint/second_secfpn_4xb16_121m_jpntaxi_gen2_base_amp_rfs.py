@@ -8,7 +8,7 @@ grid_size = [1020, 1020, 1]  # (122.40 / 0.24 == 510, 510 * 2 == 1020)
 out_size_factor = 2
 
 # user setting
-work_dir = "work_dirs/centerpoint/" + _base_.dataset_type + "/second_secfpn_4xb16_121m_jpntaxi_gen2_base_amp_rfs/"
+work_dir = "work_dirs/centerpoint_2_5/" + _base_.dataset_type + "/second_secfpn_4xb16_121m_jpntaxi_gen2_base_amp_rfs/"
 
 train_pipeline = [
     dict(
@@ -52,6 +52,15 @@ train_pipeline = [
 train_frame_object_sampler = dict(
     type="FrameObjectSampler",
     object_samplers=[
+        dict(
+            type="ObjectBEVDistanceSampler",
+            bev_distance_thresholds=[
+                point_cloud_range[0],
+                point_cloud_range[1],
+                point_cloud_range[3],
+                point_cloud_range[4],
+            ],
+        ),
         dict(
             type="LowPedestriansObjectSampler",
             height_threshold=1.5,

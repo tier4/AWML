@@ -141,4 +141,3 @@ model = dict(
 )
 
 activation_checkpointing = ["pts_backbone"]
-resume = True
