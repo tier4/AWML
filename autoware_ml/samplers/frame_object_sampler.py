@@ -34,7 +34,7 @@ class FrameObjectSampler:
     def sample(self, frame_ann_info: dict) -> dict:
         # Assign empty sample class name
         if SAMPLE_CLASS_NAME_KEY not in frame_ann_info:
-            frame_ann_info[SAMPLE_CLASS_NAME_KEY] = ["" for _ in range(len(frame_ann_info["gt_labels_3d"]))]
+            frame_ann_info[SAMPLE_CLASS_NAME_KEY] = [""] * len(frame_ann_info["gt_labels_3d"])
 
         # Note that ObjectSampler modifies frame_ann_info in place, and it affects subsequent samplers.
         # For example, if an object is sampled by the first sampler, it may be sampled by the second sampler again
