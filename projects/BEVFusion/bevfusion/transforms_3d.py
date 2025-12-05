@@ -147,26 +147,6 @@ class ImageAug3D(BaseTransform):
 
             new_imgs.append(np.array(new_img).astype(np.float32))
             transforms.append(transform.numpy())
-        
-        # num_images = len(new_imgs)
-        # cols = 5
-        # rows = int(np.ceil(num_images / cols))
-
-        # fig = plt.figure(figsize=(20, 4 * rows))
-
-        # for idx, img in enumerate(new_imgs):
-        #     ax = fig.add_subplot(rows, cols, idx + 1)
-        #     img_draw = Image.fromarray(img.astype("uint8"), mode="RGB")
-        #     ax.imshow(img_draw)
-        #     ax.axis("off")
-        #     ax.set_title(f"Camera {idx}")
-
-        # fig.tight_layout()
-
-        # # # Save figure to memory (as ndarray) or file
-        # fig_path = f"work_dirs/demo_work/3/debug_vis_{uuid.uuid4().hex}.png"
-        # fig.savefig(fig_path, dpi=150)
-        # plt.close(fig)
 
         data["img"] = new_imgs
         # update the calibration matrices
