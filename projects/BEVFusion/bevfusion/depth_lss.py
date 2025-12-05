@@ -403,7 +403,7 @@ class BaseDepthTransform(BaseViewTransform):
 
         batch_size = len(points)
         depth = torch.zeros(batch_size, img.shape[1], 1, *self.image_size).to(points[0].device)
-        height, width = self.image_size
+        depth_batch_size, num_imgs, channels, height, width = depth.shape
 
         for b in range(batch_size):
             cur_coords = points[b][:, :3]
@@ -421,7 +421,7 @@ class BaseDepthTransform(BaseViewTransform):
 
             # get 2d coords
             dist = cur_coords[:, 2, :]
-            valid_dist_mask = dist > 0.0
+            valid_dist_mask = dist > 0
 
             cur_coords[:, 2, :] = torch.clamp(cur_coords[:, 2, :], 1e-5, 1e5)
             cur_coords[:, :2, :] /= cur_coords[:, 2:3, :]
@@ -446,38 +446,6 @@ class BaseDepthTransform(BaseViewTransform):
                 masked_dist = dist[c, on_img[c]]
                 depth[b, c, 0, masked_coords[:, 0], masked_coords[:, 1]] = masked_dist
 
-            # num_cams = 5
-            # fig, axes = plt.subplots(num_cams, figsize=(8, 3 * num_cams))
-            # # if num_cams == 1:
-            # #     axes = axes.reshape(1, 2)
-
-            # for i in range(num_cams):
-            #     # ---------- RGB ----------
-            #     # print(f"img shape: {img.shape}")  # --- IGNORE ---
-            #     # img_i = img[i].detach().cpu()  # (C, H, W)
-            #     # img_i = img_i.permute(1, 2, 0)  # (H, W, C)
-            #     # img_np = img_i.float().clamp(0, 1).numpy()
-
-            #     # axes[i, 0].imshow(img_np)
-            #     # axes[i, 0].set_title(f"Cam {i} - RGB")
-            #     # axes[i, 0].axis("off")
-
-            #     # ---------- Depth ----------
-            #     depth_i = depth[b, i].detach().cpu().numpy()  # (H, W)
-            #     axes[i].imshow(depth_i[0], cmap="magma")
-            #     axes[i].set_title(f"Cam {i} - Depth")
-            #     axes[i].axis("off")
-
-            # plt.tight_layout()
-            # # Generate UUID filename
-            # file_uuid = str(uuid.uuid4())
-            # filename = f"{file_uuid}.png"
-            # out_dir = Path("work_dirs/demo/3")
-            # filepath = os.path.join(out_dir, filename)
-            # # Save and close
-            # fig.savefig(filepath, dpi=150)
-            # plt.close(fig)
-
             # NOTE(knzo25): in the original code, a per-image loop was
             # implemented to compute the depth. However, it fixes the number
             # of images, which is not desired for deployment (the number
@@ -493,20 +461,12 @@ class BaseDepthTransform(BaseViewTransform):
 
             # masked_coords = cur_coords[camera_indices, point_indices].long()
             # masked_dist = dist[camera_indices, point_indices]
-            # depth = depth.to(masked_dist.dtype)
-            # # batch_size, num_imgs, channels, height, width = depth.shape
-            # # Depth tensor should have only one channel in this implementation
-
-            # depth_flat = depth.view(batch_size, num_imgs, channels, -1)
 
             # flattened_indices = camera_indices * height * width + masked_coords[:, 0] * width + masked_coords[:, 1]
             # updates_flat = torch.zeros((num_imgs * channels * height * width), device=depth.device)
-
             # updates_flat.scatter_(dim=0, index=flattened_indices, src=masked_dist)
 
-            # depth_flat[b] = updates_flat.view(num_imgs, channels, height * width)
-
-            # depth = depth_flat.view(batch_size, num_imgs, channels, height, width)
+            # depth[b] = updates_flat.view(num_imgs, channels, height, width)
 
         extra_rots = lidar_aug_matrix[..., :3, :3]
         extra_trans = lidar_aug_matrix[..., :3, 3]
@@ -519,18 +479,17 @@ class BaseDepthTransform(BaseViewTransform):
             x = self.bev_pool_precomputed(x, geom_feats, kept, ranks, indices)
         else:
             geom = self.get_geometry(
-                camera2lidar_rots,
-                camera2lidar_trans,
-                intrins_inverse,
-                post_rots_inverse,
-                post_trans,
+                camera2lidar_rots=camera2lidar_rots,
+                camera2lidar_trans=camera2lidar_trans,
+                intrins_inverse=intrins_inverse,
+                post_rots_inverse=post_rots_inverse,
+                post_trans=post_trans,
                 extra_rots=extra_rots,
                 extra_trans=extra_trans,
             )
 
             x = self.get_cam_feats(img, depth)
             x = self.bev_pool(x, geom)
-            # x = self.voxel_pooling(x, geom)
 
         return x
 
@@ -575,6 +534,7 @@ class DepthLSSTransform(BaseDepthTransform):
 
         x = x.view(B * N, C, fH, fW)
         d = d.view(B * N, *d.shape[2:])
+
         d = self.dtransform(d)
         x = torch.cat([d, x], dim=1)
         x = self.depthnet(x)

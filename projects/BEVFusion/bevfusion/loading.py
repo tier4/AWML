@@ -412,6 +412,7 @@ class BEVFusionLoadAnnotations2D(BaseTransform):
         all_bboxes_2d, all_centers_2d, all_depths, all_labels = [], [], [], []
         vis_images = []
         lidar_aug_matrix = results.get("lidar_aug_matrix", np.eye(4))
+        num_images = len(results["img"])
         gt_bboxes_3d = results["gt_bboxes_3d"]
         gt_labels_3d = results["gt_labels_3d"]
         if self.filter_bev_range is not None:
@@ -518,4 +519,100 @@ class Filter3DBoxesinBlindSpot(BaseTransform):
             visibility_mask.append(is_visible)
         visibility_mask = np.stack(visibility_mask).mean(0)
 
+        return results
+
+
+@TRANSFORMS.register_module()
+class Filter3DBoxesImageFOV(BaseTransform):
+
+    def __init__(self, filter_bev_range=None, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.filter_bev_range = filter_bev_range
+
+    def transform(self, results):
+
+        all_bboxes_2d, all_centers_2d, all_depths, all_labels = [], [], [], []
+        vis_images = []
+        lidar_aug_matrix = results.get("lidar_aug_matrix", np.eye(4))
+        num_images = len(results["img"])
+        gt_bboxes_3d = results["gt_bboxes_3d"]
+        gt_labels_3d = results["gt_labels_3d"]
+        if self.filter_bev_range is not None:
+            mask = gt_bboxes_3d.in_range_bev(self.filter_bev_range)
+            gt_bboxes_3d = gt_bboxes_3d[mask]
+            # mask is a torch tensor but gt_labels_3d is still numpy array
+            # using mask to index gt_labels_3d will cause bug when
+            # len(gt_labels_3d) == 1, where mask=1 will be interpreted
+            # as gt_labels_3d[1] and cause out of index error
+            gt_labels_3d = gt_labels_3d[mask.numpy().astype(bool)]
+
+        for i, k in enumerate(results["img"]):
+            bboxes_2d, projected_centers, depths, valid_labels = compute_bbox_and_centers(
+                results["lidar2cam"][i],
+                results["cam2img"][i],
+                results["img_aug_matrix"][i],
+                lidar_aug_matrix,
+                gt_bboxes_3d,
+                gt_labels_3d,
+                results["img"][i].shape,
+            )
+            # print(f"bboxes: {bboxes_2d.shape}, centers: {projected_centers.shape}, depths: {depths.shape}, labels: {valid_labels.shape}")
+            all_bboxes_2d.append(bboxes_2d)
+            all_centers_2d.append(projected_centers)
+            all_depths.append(depths)
+            all_labels.append(valid_labels)
+
+            # ------------------------------
+            # 🔵  Draw bounding boxes on image
+            # ------------------------------
+            # img = results["img"][i]
+            # img_draw = img.copy()
+            # for box, center, depth, label in zip(bboxes_2d, projected_centers, depths, valid_labels):
+
+            #     # box = [x1, y1, x2, y2]
+            #     x1, y1, x2, y2 = map(int, box)
+
+            #     # draw bbox rectangle
+            #     cv2.rectangle(img_draw, (x1, y1), (x2, y2), (0, 255, 0), 2)
+
+            #     # draw center point
+            #     cx, cy = map(int, center)
+            #     cv2.circle(img_draw, (cx, cy), 3, (0, 0, 255), -1)
+
+            #     # write depth and class label
+            #     text = f"{label}, {depth:.1f}m"
+            #     cv2.putText(
+            #         img_draw, text, (x1, max(0, y1 - 5)),
+            #         cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 0), 1
+            #     )
+            # img_draw = Image.fromarray(img_draw.astype("uint8"), mode="RGB")
+            # vis_images.append(img_draw)
+
+        # Visualize image
+        # -----------------------------
+        # 🔵 Save as subplot with 5 images
+        # -----------------------------
+        # num_images = len(vis_images)
+        # cols = 5
+        # rows = int(np.ceil(num_images / cols))
+
+        # fig = plt.figure(figsize=(20, 4 * rows))
+
+        # for idx, img in enumerate(vis_images):
+        #     ax = fig.add_subplot(rows, cols, idx + 1)
+        #     ax.imshow(img)
+        #     ax.axis("off")
+        #     ax.set_title(f"Camera {idx}")
+
+        # fig.tight_layout()
+
+        # # Save figure to memory (as ndarray) or file
+        # fig_path = f"work_dirs/bevfusion_image_2d_debug/4/debug_vis_{uuid.uuid4().hex}.png"
+        # fig.savefig(fig_path, dpi=150)
+        # plt.close(fig)
+
+        results["depths"] = all_depths
+        results["centers_2d"] = all_centers_2d
+        results["gt_bboxes"] = all_bboxes_2d
+        results["gt_bboxes_labels"] = all_labels
         return results
