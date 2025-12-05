@@ -57,7 +57,7 @@ for root_dir in "${subdirs[@]}"; do
         structure_dir="$root_dir/0"
         used_placeholder=false
     else
-        echo "  -> No 'WEBAUTO_STRUCTURE_0' or '0' directory, cannot restore structure. Skipping."
+        echo "  -> No 'WEBAUTO_STRUCTURE_0' or '0' directory found (maybe deleted during flatten). Skipping dataset."
         echo
         continue
     fi

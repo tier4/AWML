@@ -3,8 +3,9 @@ set -euo pipefail
 
 # Default options
 FLATTEN=true
+DELETE_OLD_STRUCTURE=true
 
-# --- Option parsing (only --flatten=...) ---
+# --- Option parsing (only --flatten=... --delete-old-structure=...) ---
 
 POSITIONAL=()
 while [ "$#" -gt 0 ]; do
@@ -21,12 +22,27 @@ while [ "$#" -gt 0 ]; do
             esac
             shift
             ;;
+        --delete-old-structure=*)
+            val="${1#*=}"
+            case "$val" in
+                true|TRUE|1|yes|y) DELETE_OLD_STRUCTURE=true ;;
+                false|FALSE|0|no|n) DELETE_OLD_STRUCTURE=false ;;
+                *)
+                    echo "Invalid value for --delete-old-structure: $val (use true/false)" >&2
+                    exit 1
+                    ;;
+            esac
+            shift
+            ;;
         --help|-h)
             echo "Usage: $0 [--flatten=true|false] ID_FILE OUTPUT_DIR [PROJECT_ID] [MAX_JOBS]" >&2
             echo "  ID_FILE     : Text file with one annotation-dataset-id per line" >&2
             echo "  OUTPUT_DIR  : Destination directory for downloaded assets" >&2
             echo "  PROJECT_ID  : (optional) WebAuto project-id, default: x2_dev" >&2
             echo "  MAX_JOBS    : (optional) parallel downloads, default: 5" >&2
+            echo "Options:" >&2
+            echo "  --flatten=true|false              : Flatten artifact structure after download (default true)" >&2
+            echo "  --delete-old-structure=true|false : Remove original '0/' dir after flattening (default true)" >&2
             exit 0
             ;;
         *)
@@ -39,7 +55,7 @@ done
 set -- "${POSITIONAL[@]}"
 
 if [ "$#" -lt 2 ] || [ "$#" -gt 4 ]; then
-    echo "Usage: $0 [--flatten=true|false] ID_FILE OUTPUT_DIR [PROJECT_ID := x2_dev] [MAX_JOBS := 5]" >&2
+    echo "Usage: $0 [--flatten=true|false] [--delete-old-structure=true|false] ID_FILE OUTPUT_DIR [PROJECT_ID := x2_dev] [MAX_JOBS := 5]" >&2
     exit 1
 fi
 
@@ -72,6 +88,7 @@ echo "Type         : $TYPE"
 echo "Parallel jobs: $MAX_JOBS"
 echo "Total IDs    : $TOTAL"
 echo "Flatten      : $FLATTEN"
+echo "Delete 0/    : $DELETE_OLD_STRUCTURE"
 echo
 
 # Temp file to track completion status
@@ -207,16 +224,21 @@ flatten_one() {
         echo "  -> No status.json found in artifact dir."
     fi
 
-    # After flattening, rename 0/ → WEBAUTO_STRUCTURE_0 (if applicable)
+    # After flattening, either delete the old 0/ dir or rename it (for unflattening)
     if [ -d "$root_dir/0" ]; then
-        if [ -e "$root_dir/WEBAUTO_STRUCTURE_0" ]; then
-            echo "  -> 'WEBAUTO_STRUCTURE_0' already exists, not renaming '0/'."
+        if [ "$DELETE_OLD_STRUCTURE" = true ]; then
+            echo "  -> Removing obsolete '0/' structure directory."
+            rm -rf -- "$root_dir/0"
         else
-            echo "  -> Renaming '0/' to 'WEBAUTO_STRUCTURE_0/'."
-            mv "$root_dir/0" "$root_dir/WEBAUTO_STRUCTURE_0"
+            if [ -e "$root_dir/WEBAUTO_STRUCTURE_0" ]; then
+                echo "  -> 'WEBAUTO_STRUCTURE_0' already exists, not renaming '0/'."
+            else
+                echo "  -> Renaming '0/' to 'WEBAUTO_STRUCTURE_0/'."
+                mv "$root_dir/0" "$root_dir/WEBAUTO_STRUCTURE_0"
+            fi
         fi
     else
-        echo "  -> Structure dir is already 'WEBAUTO_STRUCTURE_0', leaving as-is."
+        echo "  -> No '0/' directory present after flatten (already removed or renamed)."
     fi
 }
 
