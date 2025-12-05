@@ -1,21 +1,20 @@
 # Copyright (c) OpenMMLab. All rights reserved.
 import copy
 import os
-import cv2
+import uuid
 from typing import List, Optional
 
+import cv2
+import matplotlib.pyplot as plt
 import mmcv
-from mmcv.transforms import BaseTransform
 import numpy as np
-import torch 
-
+import torch
+from mmcv.transforms import BaseTransform
 from mmdet3d.datasets.transforms import LoadMultiViewImageFromFiles
 from mmdet3d.registry import TRANSFORMS
 from mmengine.fileio import get
 from mmengine.logging import print_log
-from PIL import Image 
-import uuid
-import matplotlib.pyplot as plt
+from PIL import Image
 
 
 def project_to_image(points, lidar2cam, cam2img, img_aug_matrix, lidar_aug_matrix):
@@ -42,7 +41,9 @@ def project_to_image(points, lidar2cam, cam2img, img_aug_matrix, lidar_aug_matri
     return points_img[:, :2], valid_mask
 
 
-def compute_bbox_and_centers(lidar2cam, cam2img, img_aug_matrix, lidar_aug_matrix, bboxes, labels, img_shape, visibility = 0.05):
+def compute_bbox_and_centers(
+    lidar2cam, cam2img, img_aug_matrix, lidar_aug_matrix, bboxes, labels, img_shape, visibility=0.05
+):
     """
     Compute the 2D bounding box, 3D center of the projected bounding box, and 3D center in LiDAR coordinates.
 
@@ -67,7 +68,7 @@ def compute_bbox_and_centers(lidar2cam, cam2img, img_aug_matrix, lidar_aug_matri
     valid_image_depth = []
     valid_labels_list = []
 
-    # cam2img = img_aug_matrix @ cam2img 
+    # cam2img = img_aug_matrix @ cam2img
 
     # Loop through each bounding box
     for bbox_std, bbox, label in zip(bboxes, bboxes.corners, labels):
@@ -105,12 +106,12 @@ def compute_bbox_and_centers(lidar2cam, cam2img, img_aug_matrix, lidar_aug_matri
 
         # visible_ratio = visible_area / full_area
         # if visibility > 0 and visible_ratio < visibility:
-        #     continue 
-        
-        # Pedestrian and area more than 3.0, then sth wrong 
+        #     continue
+
+        # Pedestrian and area more than 3.0, then sth wrong
         # depth = np.sqrt((center_3d_lidar**2).sum())
         # if label == 4 and visible_area > 3.0 and depth < 5.0:
-        #     continue 
+        #     continue
 
         valid_bboxes_2d.append([x_min, y_min, x_max, y_max])
         valid_projected_centers.append([x_center, y_center])
@@ -132,7 +133,9 @@ def compute_bbox_and_centers(lidar2cam, cam2img, img_aug_matrix, lidar_aug_matri
     return bboxes_2d, projected_centers, object_depth, valid_labels
 
 
-def check_bbox_visibility_in_image(lidar2cam, cam2img, img_aug_matrix, lidar_aug_matrix, bboxes, labels, img_shape, visibility=0.1):
+def check_bbox_visibility_in_image(
+    lidar2cam, cam2img, img_aug_matrix, lidar_aug_matrix, bboxes, labels, img_shape, visibility=0.1
+):
     """
     Projects 3D bounding boxes into the image plane and determines visibility.
 
@@ -316,13 +319,13 @@ class BEVLoadMultiViewImageFromFiles(LoadMultiViewImageFromFiles):
         for camera_type in self.camera_order:
             if camera_type not in results["images"]:
                 continue
-            
+
             cam_item = results["images"][camera_type]
             # TODO (KokSeang): This sometime causes an error when we set num_workers > 1 during training,
             # it's likely due to multiprocessing in CPU. We should probably process this part when creating info files
             if cam_item["img_path"] is None:
                 # print_log(f"Warning: None data for cam: {camera_type} in {results['images']}")
-                # continue 
+                # continue
                 cam_item = self.before_camera_info[camera_type]
                 print_log("Warning: fill None data")
             else:
@@ -368,10 +371,12 @@ class BEVLoadMultiViewImageFromFiles(LoadMultiViewImageFromFiles):
             pad_shape = img_shape_max[:2]
         else:
             pad_shape = None
+
         if pad_shape is not None:
             imgs = [mmcv.impad(img, shape=pad_shape, pad_val=0) for img in imgs]
         img = np.stack(imgs, axis=-1)
-        # print(f"image_shape: {img.shape}")
+
+        # Height, width, channels, num_views
         if self.to_float32:
             img = img.astype(np.float32)
 
@@ -379,6 +384,7 @@ class BEVLoadMultiViewImageFromFiles(LoadMultiViewImageFromFiles):
         # unravel to list, see `DefaultFormatBundle` in formating.py
         # which will transpose each image separately and then stack into array
         results["img"] = [img[..., i] for i in range(img.shape[-1])]
+
         results["img_shape"] = img.shape[:2]
         results["ori_shape"] = img.shape[:2]
         # Set initial values for default meta_keys
@@ -396,7 +402,7 @@ class BEVLoadMultiViewImageFromFiles(LoadMultiViewImageFromFiles):
 
 @TRANSFORMS.register_module()
 class BEVFusionLoadAnnotations2D(BaseTransform):
-    
+
     def __init__(self, filter_bev_range=None, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.filter_bev_range = filter_bev_range
@@ -409,13 +415,13 @@ class BEVFusionLoadAnnotations2D(BaseTransform):
         gt_bboxes_3d = results["gt_bboxes_3d"]
         gt_labels_3d = results["gt_labels_3d"]
         if self.filter_bev_range is not None:
-          mask = gt_bboxes_3d.in_range_bev(self.filter_bev_range)
-          gt_bboxes_3d = gt_bboxes_3d[mask]
-          # mask is a torch tensor but gt_labels_3d is still numpy array
-          # using mask to index gt_labels_3d will cause bug when
-          # len(gt_labels_3d) == 1, where mask=1 will be interpreted
-          # as gt_labels_3d[1] and cause out of index error
-          gt_labels_3d = gt_labels_3d[mask.numpy().astype(bool)]
+            mask = gt_bboxes_3d.in_range_bev(self.filter_bev_range)
+            gt_bboxes_3d = gt_bboxes_3d[mask]
+            # mask is a torch tensor but gt_labels_3d is still numpy array
+            # using mask to index gt_labels_3d will cause bug when
+            # len(gt_labels_3d) == 1, where mask=1 will be interpreted
+            # as gt_labels_3d[1] and cause out of index error
+            gt_labels_3d = gt_labels_3d[mask.numpy().astype(bool)]
 
         for i, k in enumerate(results["img"]):
             bboxes_2d, projected_centers, depths, valid_labels = compute_bbox_and_centers(
@@ -439,7 +445,7 @@ class BEVFusionLoadAnnotations2D(BaseTransform):
             # img = results["img"][i]
             # img_draw = img.copy()
             # for box, center, depth, label in zip(bboxes_2d, projected_centers, depths, valid_labels):
-            
+
             #     # box = [x1, y1, x2, y2]
             #     x1, y1, x2, y2 = map(int, box)
 
@@ -459,8 +465,7 @@ class BEVFusionLoadAnnotations2D(BaseTransform):
             # img_draw = Image.fromarray(img_draw.astype("uint8"), mode="RGB")
             # vis_images.append(img_draw)
 
-        
-        # Visualize image 
+        # Visualize image
         # -----------------------------
         # 🔵 Save as subplot with 5 images
         # -----------------------------

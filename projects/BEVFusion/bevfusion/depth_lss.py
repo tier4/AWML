@@ -1,12 +1,15 @@
 # modify from https://github.com/mit-han-lab/bevfusion
+import os
 import uuid
 from pathlib import Path
 from typing import Optional, Tuple
 
+import matplotlib.pyplot as plt
 import torch
+import torch.distributed as dist
 from mmdet3d.registry import MODELS
 from torch import Tensor, nn
-import torch.distributed as dist
+from torchvision.utils import make_grid
 
 # from .visualize import save_bev_single
 from .ops import bev_pool
@@ -209,7 +212,13 @@ class BaseViewTransform(nn.Module):
 
         geom_feats = geom_feats[kept]
 
-        ranks = geom_feats[:, 0] * (W * D * B) + geom_feats[:, 1] * (D * B) + geom_feats[:, 2] * B + geom_feats[:, 3]
+        # nx[0] is Height, nx[1] is width, nx[2] is depth
+        ranks = (
+            geom_feats[:, 0] * (self.nx[1] * self.nx[2] * B)
+            + geom_feats[:, 1] * (self.nx[2] * B)
+            + geom_feats[:, 2] * B
+            + geom_feats[:, 3]
+        )
         indices = ranks.argsort()
 
         ranks = ranks[indices]
@@ -232,12 +241,12 @@ class BaseViewTransform(nn.Module):
         assert x.shape[0] == geom_feats.shape[0]
 
         x = x[indices]
+        print(x.shape)
 
         x = bev_pool(x, geom_feats, ranks, B, self.nx[2], self.nx[0], self.nx[1], self.training)
 
         # collapse Z
         final = torch.cat(x.unbind(dim=2), 1)
-
         return final
 
     def bev_pool_precomputed(self, x, geom_feats, kept, ranks, indices):
@@ -380,20 +389,21 @@ class BaseDepthTransform(BaseViewTransform):
         camera2lidar_trans = camera2lidar[..., :3, 3]
 
         if camera_intrinsics_inverse is None:
-            intrins_inverse = torch.inverse(cam_intrinsic)[..., :3, :3]
+            intrins_inverse = torch.inverse(cam_intrinsic[..., :3, :3])
         else:
             intrins_inverse = camera_intrinsics_inverse[..., :3, :3]
 
         if img_aug_matrix_inverse is None:
-            post_rots_inverse = torch.inverse(img_aug_matrix)[..., :3, :3]
+            post_rots_inverse = torch.inverse(img_aug_matrix[..., :3, :3])
         else:
-            img_aug_matrix_inverse = img_aug_matrix_inverse[..., :3, :3]
+            post_rots_inverse = img_aug_matrix_inverse[..., :3, :3]
 
         if lidar_aug_matrix_inverse is None:
-            lidar_aug_matrix_inverse = torch.inverse(lidar_aug_matrix)
+            lidar_aug_matrix_inverse = torch.inverse(lidar_aug_matrix[..., :3, :3])
 
         batch_size = len(points)
         depth = torch.zeros(batch_size, img.shape[1], 1, *self.image_size).to(points[0].device)
+        height, width = self.image_size
 
         for b in range(batch_size):
             cur_coords = points[b][:, :3]
@@ -434,8 +444,39 @@ class BaseDepthTransform(BaseViewTransform):
             for c in range(on_img.shape[0]):
                 masked_coords = cur_coords[c, on_img[c]].long()
                 masked_dist = dist[c, on_img[c]]
-
                 depth[b, c, 0, masked_coords[:, 0], masked_coords[:, 1]] = masked_dist
+
+            # num_cams = 5
+            # fig, axes = plt.subplots(num_cams, figsize=(8, 3 * num_cams))
+            # # if num_cams == 1:
+            # #     axes = axes.reshape(1, 2)
+
+            # for i in range(num_cams):
+            #     # ---------- RGB ----------
+            #     # print(f"img shape: {img.shape}")  # --- IGNORE ---
+            #     # img_i = img[i].detach().cpu()  # (C, H, W)
+            #     # img_i = img_i.permute(1, 2, 0)  # (H, W, C)
+            #     # img_np = img_i.float().clamp(0, 1).numpy()
+
+            #     # axes[i, 0].imshow(img_np)
+            #     # axes[i, 0].set_title(f"Cam {i} - RGB")
+            #     # axes[i, 0].axis("off")
+
+            #     # ---------- Depth ----------
+            #     depth_i = depth[b, i].detach().cpu().numpy()  # (H, W)
+            #     axes[i].imshow(depth_i[0], cmap="magma")
+            #     axes[i].set_title(f"Cam {i} - Depth")
+            #     axes[i].axis("off")
+
+            # plt.tight_layout()
+            # # Generate UUID filename
+            # file_uuid = str(uuid.uuid4())
+            # filename = f"{file_uuid}.png"
+            # out_dir = Path("work_dirs/demo/3")
+            # filepath = os.path.join(out_dir, filename)
+            # # Save and close
+            # fig.savefig(filepath, dpi=150)
+            # plt.close(fig)
 
             # NOTE(knzo25): in the original code, a per-image loop was
             # implemented to compute the depth. However, it fixes the number

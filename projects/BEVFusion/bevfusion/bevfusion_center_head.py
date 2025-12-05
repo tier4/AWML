@@ -1,12 +1,12 @@
 from typing import Tuple
 
 import torch
-from torch import Tensor
 from mmdet3d.models.utils import clip_sigmoid, draw_heatmap_gaussian, gaussian_radius
 from mmdet3d.registry import MODELS
 from mmdet.models.utils import multi_apply
 from mmengine.model import BaseModule
 from mmengine.structures import InstanceData
+from torch import Tensor
 
 from projects.CenterPoint.models.dense_heads.centerpoint_head import CenterHead
 
@@ -130,7 +130,6 @@ class BEVFusionCenterHead(CenterHead):
                     assert y * feature_map_size[0] + x < feature_map_size[0] * feature_map_size[1]
 
                     ind[new_idx] = y * feature_map_size[0] + x
-                    print(f"x: {x}, y: {y}, ind: {ind[new_idx]}")
                     mask[new_idx] = 1
                     # TODO: support other outdoor dataset
                     vx, vy = task_boxes[idx][k][7:]
