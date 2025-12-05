@@ -311,9 +311,9 @@ train_pipeline = [
         type="BEVFusionGlobalRotScaleTrans",
         scale_ratio_range=[0.95, 1.05],
 				rot_range=[-0.3925, 0.3925],
-        translation_std=[0.2, 0.2, 0.2],
+        translation_std=[0.5, 0.5, 0.2],
     ),
-    # dict(type="BEVFusionRandomFlip3D", flip_vertical=True),
+    dict(type="BEVFusionRandomFlip3D", flip_vertical=True),
     dict(type="PointsRangeFilter", point_cloud_range=point_cloud_range),
     dict(type="ObjectRangeFilter", point_cloud_range=point_cloud_range),
     dict(
