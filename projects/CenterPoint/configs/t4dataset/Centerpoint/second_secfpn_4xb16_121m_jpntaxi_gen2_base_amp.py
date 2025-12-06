@@ -226,7 +226,7 @@ model = dict(
             max_num_points=32,
             voxel_size=voxel_size,
             point_cloud_range=point_cloud_range,
-            max_voxels=(64000, 64000),
+            max_voxels=(96000, 96000),
             deterministic=True,
         ),
     ),
@@ -256,7 +256,7 @@ model = dict(
         type="SECONDFPN",
         in_channels=[64, 128, 256],
         out_channels=[128, 128, 128],
-        upsample_strides=[1, 2, 4],
+        upsample_strides=[0.5, 1, 2],
         norm_cfg=dict(type="BN", eps=0.001, momentum=0.01),
         upsample_cfg=dict(type="deconv", bias=False),
         use_conv_for_no_stride=True,
@@ -412,3 +412,5 @@ custom_hooks = [
 
 # Update the load_from path accordingly
 load_from = "<best_checkpoint>"
+
+activation_checkpointing = ["pts_backbone"]
