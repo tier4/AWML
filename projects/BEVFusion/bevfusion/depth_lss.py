@@ -187,7 +187,6 @@ class BaseViewTransform(nn.Module):
         raise NotImplementedError
 
     def bev_pool_aux(self, geom_feats):
-
         B, N, D, H, W, C = geom_feats.shape
         Nprime = B * N * D * H * W
         assert C == 3
@@ -241,7 +240,6 @@ class BaseViewTransform(nn.Module):
         assert x.shape[0] == geom_feats.shape[0]
 
         x = x[indices]
-        print(x.shape)
 
         x = bev_pool(x, geom_feats, ranks, B, self.nx[2], self.nx[0], self.nx[1], self.training)
 
