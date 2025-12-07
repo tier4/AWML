@@ -11,41 +11,13 @@ class TrtBevFusionImageBackboneContainer(torch.nn.Module):
         self.images_mean = mean
         self.images_std = std
 
-    def forward(
-        self,
-        imgs,
-        points,
-        lidar2image,
-        cam2image,
-        cam2image_inverse,
-        camera2lidar,
-        img_aug_matrix,
-        img_aug_matrix_inverse,
-        lidar_aug_matrix,
-        lidar_aug_matrix_inverse,
-        geom_feats,
-        kept,
-        ranks,
-        indices,
-    ):
+    def forward(self, imgs):
 
         mod = self.mod
-        imgs = (imgs - self.images_mean) / self.images_std
+        imgs = (imgs.float().unsqueeze(0) - self.images_mean) / self.images_std
 
-        return mod.extract_img_feat(
-            imgs,
-            points,
-            lidar2image,
-            cam2image,
-            camera2lidar,
-            img_aug_matrix,
-            lidar_aug_matrix,
-            img_metas=None,
-            img_aug_matrix_inverse=img_aug_matrix_inverse,
-            camera_intrinsics_inverse=cam2image_inverse,
-            lidar_aug_matrix_inverse=lidar_aug_matrix_inverse,
-            geom_feats=(geom_feats, kept, ranks, indices),
-        )
+        # No lidar augmentations expected during inference.
+        return mod.get_image_backbone_features(imgs)[0]
 
 
 class TrtBevFusionMainContainer(torch.nn.Module):
@@ -53,33 +25,57 @@ class TrtBevFusionMainContainer(torch.nn.Module):
         super().__init__(*args, **kwargs)
         self.mod = mod
 
-    def forward(self, voxels, coors, num_points_per_voxel, image_feats=None):
+    def forward(
+        self,
+        voxels,
+        coors,
+        num_points_per_voxel,
+        points=None,
+        lidar2img=None,
+        img_aug_matrix=None,
+        geom_feats=None,
+        kept=None,
+        ranks=None,
+        indices=None,
+        image_feats=None,
+    ):
         mod = self.mod
-
-        features = []
-
-        if image_feats is not None:
-            features.append(image_feats)
-
         if coors.shape[1] == 3:
             num_points = coors.shape[0]
             coors = coors.flip(dims=[-1]).contiguous()  # [x, y, z]
             batch_coors = torch.zeros(num_points, 1).to(coors.device)
             coors = torch.cat([batch_coors, coors], dim=1).contiguous()
 
-        pts_feature = mod.extract_pts_feat(voxels, coors, num_points_per_voxel)
-        features.append(pts_feature)
+        batch_inputs_dict = {
+            "voxels": {"voxels": voxels, "coors": coors, "num_points_per_voxel": num_points_per_voxel},
+        }
 
-        if mod.fusion_layer is not None:
-            x = mod.fusion_layer(features)
-        else:
-            assert len(features) == 1, features
-            x = features[0]
-        x = mod.pts_backbone(x)
-        x = mod.pts_neck(x)
+        if points is not None:
+            batch_inputs_dict["points"] = [points]
 
-        outputs = mod.bbox_head(x, None)[0][0]
+        if image_feats is not None:
 
+            lidar_aug_matrix = torch.eye(4).unsqueeze(0).to(image_feats.device)
+
+            batch_inputs_dict.update(
+                {
+                    "imgs": image_feats.unsqueeze(0),
+                    "lidar2img": lidar2img.unsqueeze(0),
+                    "cam2img": None,
+                    "cam2lidar": None,
+                    "img_aug_matrix": img_aug_matrix.unsqueeze(0),
+                    "img_aug_matrix_inverse": None,
+                    "lidar_aug_matrix": lidar_aug_matrix,
+                    "lidar_aug_matrix_inverse": lidar_aug_matrix,
+                    "geom_feats": (geom_feats, kept, ranks, indices),
+                }
+            )
+
+        outputs = mod._forward(batch_inputs_dict, using_image_features=True)
+
+        # The following code is taken from
+        # projects/BEVFusion/bevfusion/bevfusion_head.py
+        # It is used to simplify the post process in deployment
         score = outputs["heatmap"].sigmoid()
         one_hot = F.one_hot(outputs["query_labels"], num_classes=score.size(1)).permute(0, 2, 1)
         score = score * outputs["query_heatmap_score"] * one_hot
@@ -89,4 +85,5 @@ class TrtBevFusionMainContainer(torch.nn.Module):
             [outputs["center"][0], outputs["height"][0], outputs["dim"][0], outputs["rot"][0], outputs["vel"][0]],
             dim=0,
         )
+
         return bbox_pred, score, outputs["query_labels"][0]
