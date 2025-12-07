@@ -1,13 +1,12 @@
-from typing import Tuple 
+from typing import Tuple
 
-import torch 
-from torch import Tensor
-from mmdet3d.models.utils import (clip_sigmoid, draw_heatmap_gaussian,
-                                  gaussian_radius)
+import torch
+from mmdet3d.models.utils import clip_sigmoid, draw_heatmap_gaussian, gaussian_radius
 from mmdet3d.registry import MODELS
 from mmdet.models.utils import multi_apply
 from mmengine.model import BaseModule
 from mmengine.structures import InstanceData
+from torch import Tensor
 
 from projects.CenterPoint.models.dense_heads.centerpoint_head import CenterHead
 
@@ -15,7 +14,7 @@ from projects.CenterPoint.models.dense_heads.centerpoint_head import CenterHead
 @MODELS.register_module(force=True)
 class BEVFusionCenterHead(CenterHead):
 
-  def __init__(
+    def __init__(
         self,
         freeze_shared_conv: bool = False,
         freeze_task_heads: bool = False,
@@ -23,14 +22,13 @@ class BEVFusionCenterHead(CenterHead):
         **kwargs,
     ):
         super(BEVFusionCenterHead, self).__init__(
-          freeze_shared_conv=freeze_shared_conv, 
-          freeze_task_heads=freeze_task_heads, 
-          loss_prefix=loss_prefix, 
-          **kwargs
-          )
+            freeze_shared_conv=freeze_shared_conv,
+            freeze_task_heads=freeze_task_heads,
+            loss_prefix=loss_prefix,
+            **kwargs,
+        )
 
-  def get_targets_single(self,
-                           gt_instances_3d: InstanceData) -> Tuple[Tensor]:
+    def get_targets_single(self, gt_instances_3d: InstanceData) -> Tuple[Tensor]:
         """Generate training targets for a single sample.
 
         Args:
@@ -52,24 +50,19 @@ class BEVFusionCenterHead(CenterHead):
         gt_labels_3d = gt_instances_3d.labels_3d
         gt_bboxes_3d = gt_instances_3d.bboxes_3d
         device = gt_labels_3d.device
-        gt_bboxes_3d = torch.cat(
-            (gt_bboxes_3d.gravity_center, gt_bboxes_3d.tensor[:, 3:]),
-            dim=1).to(device)
-        max_objs = self.train_cfg['max_objs'] * self.train_cfg['dense_reg']
-        grid_size = torch.tensor(self.train_cfg['grid_size']).to(device)
-        pc_range = torch.tensor(self.train_cfg['point_cloud_range'])
-        voxel_size = torch.tensor(self.train_cfg['voxel_size'])
+        gt_bboxes_3d = torch.cat((gt_bboxes_3d.gravity_center, gt_bboxes_3d.tensor[:, 3:]), dim=1).to(device)
+        max_objs = self.train_cfg["max_objs"] * self.train_cfg["dense_reg"]
+        grid_size = torch.tensor(self.train_cfg["grid_size"]).to(device)
+        pc_range = torch.tensor(self.train_cfg["point_cloud_range"])
+        voxel_size = torch.tensor(self.train_cfg["voxel_size"])
 
-        feature_map_size = grid_size[:2] // self.train_cfg['out_size_factor']
+        feature_map_size = grid_size[:2] // self.train_cfg["out_size_factor"]
 
         # reorganize the gt_dict by tasks
         task_masks = []
         flag = 0
         for class_name in self.class_names:
-            task_masks.append([
-                torch.where(gt_labels_3d == class_name.index(i) + flag)
-                for i in class_name
-            ])
+            task_masks.append([torch.where(gt_labels_3d == class_name.index(i) + flag) for i in class_name])
             flag += len(class_name)
 
         task_boxes = []
@@ -89,12 +82,9 @@ class BEVFusionCenterHead(CenterHead):
         heatmaps, anno_boxes, inds, masks = [], [], [], []
 
         for idx, task_head in enumerate(self.task_heads):
-            heatmap = gt_bboxes_3d.new_zeros(
-                (len(self.class_names[idx]), feature_map_size[1],
-                 feature_map_size[0]))
+            heatmap = gt_bboxes_3d.new_zeros((len(self.class_names[idx]), feature_map_size[1], feature_map_size[0]))
 
-            anno_box = gt_bboxes_3d.new_zeros((max_objs, 10),
-                                              dtype=torch.float32)
+            anno_box = gt_bboxes_3d.new_zeros((max_objs, 10), dtype=torch.float32)
 
             ind = gt_labels_3d.new_zeros((max_objs), dtype=torch.int64)
             mask = gt_bboxes_3d.new_zeros((max_objs), dtype=torch.uint8)
@@ -106,42 +96,30 @@ class BEVFusionCenterHead(CenterHead):
 
                 length = task_boxes[idx][k][3]
                 width = task_boxes[idx][k][4]
-                length = length / voxel_size[0] / self.train_cfg[
-                    'out_size_factor']
-                width = width / voxel_size[1] / self.train_cfg[
-                    'out_size_factor']
+                length = length / voxel_size[0] / self.train_cfg["out_size_factor"]
+                width = width / voxel_size[1] / self.train_cfg["out_size_factor"]
 
                 if width > 0 and length > 0:
-                    radius = gaussian_radius(
-                        (width, length),
-                        min_overlap=self.train_cfg['gaussian_overlap'])
-                    radius = max(self.train_cfg['min_radius'], int(radius))
+                    radius = gaussian_radius((width, length), min_overlap=self.train_cfg["gaussian_overlap"])
+                    radius = max(self.train_cfg["min_radius"], int(radius))
 
                     # be really careful for the coordinate system of
                     # your box annotation.
-                    x, y, z = task_boxes[idx][k][0], task_boxes[idx][k][
-                        1], task_boxes[idx][k][2]
+                    x, y, z = task_boxes[idx][k][0], task_boxes[idx][k][1], task_boxes[idx][k][2]
 
                     dx, dy, dz = task_boxes[idx][k][3], task_boxes[idx][k][4], task_boxes[idx][k][5]
                     # Move to surface depth
                     # x = x - dx/2
 
-                    coor_x = (
-                        x - pc_range[0]
-                    ) / voxel_size[0] / self.train_cfg['out_size_factor']
-                    coor_y = (
-                        y - pc_range[1]
-                    ) / voxel_size[1] / self.train_cfg['out_size_factor']
+                    coor_x = (x - pc_range[0]) / voxel_size[0] / self.train_cfg["out_size_factor"]
+                    coor_y = (y - pc_range[1]) / voxel_size[1] / self.train_cfg["out_size_factor"]
 
-                    center = torch.tensor([coor_x, coor_y],
-                                          dtype=torch.float32,
-                                          device=device)
+                    center = torch.tensor([coor_x, coor_y], dtype=torch.float32, device=device)
                     center_int = center.to(torch.int32)
 
                     # throw out not in range objects to avoid out of array
                     # area when creating the heatmap
-                    if not (0 <= center_int[0] < feature_map_size[0]
-                            and 0 <= center_int[1] < feature_map_size[1]):
+                    if not (0 <= center_int[0] < feature_map_size[0] and 0 <= center_int[1] < feature_map_size[1]):
                         continue
 
                     draw_gaussian(heatmap[cls_id], center_int[[1, 0]], radius)
@@ -149,8 +127,7 @@ class BEVFusionCenterHead(CenterHead):
                     new_idx = k
                     x, y = center_int[0], center_int[1]
 
-                    assert (y * feature_map_size[0] + x <
-                            feature_map_size[0] * feature_map_size[1])
+                    assert y * feature_map_size[0] + x < feature_map_size[0] * feature_map_size[1]
 
                     ind[new_idx] = y * feature_map_size[0] + x
                     mask[new_idx] = 1
@@ -160,14 +137,17 @@ class BEVFusionCenterHead(CenterHead):
                     box_dim = task_boxes[idx][k][3:6]
                     if self.norm_bbox:
                         box_dim = box_dim.log()
-                    anno_box[new_idx] = torch.cat([
-                        center - torch.tensor([x, y], device=device),
-                        z.unsqueeze(0), box_dim,
-                        torch.sin(rot).unsqueeze(0),
-                        torch.cos(rot).unsqueeze(0),
-                        vx.unsqueeze(0),
-                        vy.unsqueeze(0)
-                    ])
+                    anno_box[new_idx] = torch.cat(
+                        [
+                            center - torch.tensor([x, y], device=device),
+                            z.unsqueeze(0),
+                            box_dim,
+                            torch.sin(rot).unsqueeze(0),
+                            torch.cos(rot).unsqueeze(0),
+                            vx.unsqueeze(0),
+                            vy.unsqueeze(0),
+                        ]
+                    )
 
             heatmaps.append(heatmap)
             anno_boxes.append(anno_box)

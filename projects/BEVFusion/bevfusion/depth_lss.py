@@ -1,15 +1,15 @@
 # modify from https://github.com/mit-han-lab/bevfusion
+import os
 import uuid
 from pathlib import Path
 from typing import Optional, Tuple
 
+import matplotlib.pyplot as plt
 import torch
 import torch.distributed as dist
 from mmdet3d.registry import MODELS
 from torch import Tensor, nn
-from torch.nn.functional import kl_div
-
-# from .visualize import save_bev_single
+from torchvision.utils import make_grid
 from .ops import bev_pool
 
 
@@ -185,7 +185,6 @@ class BaseViewTransform(nn.Module):
         raise NotImplementedError
 
     def bev_pool_aux(self, geom_feats):
-
         B, N, D, H, W, C = geom_feats.shape
         Nprime = B * N * D * H * W
         assert C == 3
@@ -210,7 +209,13 @@ class BaseViewTransform(nn.Module):
 
         geom_feats = geom_feats[kept]
 
-        ranks = geom_feats[:, 0] * (W * D * B) + geom_feats[:, 1] * (D * B) + geom_feats[:, 2] * B + geom_feats[:, 3]
+        # nx[0] is Height, nx[1] is width, nx[2] is depth
+        ranks = (
+            geom_feats[:, 0] * (self.nx[1] * self.nx[2] * B)
+            + geom_feats[:, 1] * (self.nx[2] * B)
+            + geom_feats[:, 2] * B
+            + geom_feats[:, 3]
+        )
         indices = ranks.argsort()
 
         ranks = ranks[indices]
@@ -238,7 +243,10 @@ class BaseViewTransform(nn.Module):
 
         # collapse Z
         final = torch.cat(x.unbind(dim=2), 1)
+<<<<<<< HEAD
 
+=======
+>>>>>>> feat/bevfusion_camera_2d_aux
         return final
 
     def bev_pool_precomputed(self, x, geom_feats, kept, ranks, indices):
@@ -381,22 +389,21 @@ class BaseDepthTransform(BaseViewTransform):
         camera2lidar_trans = camera2lidar[..., :3, 3]
 
         if camera_intrinsics_inverse is None:
-            intrins_inverse = torch.inverse(cam_intrinsic)[..., :3, :3]
+            intrins_inverse = torch.inverse(cam_intrinsic[..., :3, :3])
         else:
             intrins_inverse = camera_intrinsics_inverse[..., :3, :3]
 
         if img_aug_matrix_inverse is None:
-            post_rots_inverse = torch.inverse(img_aug_matrix)[..., :3, :3]
+            post_rots_inverse = torch.inverse(img_aug_matrix[..., :3, :3])
         else:
-            img_aug_matrix_inverse = img_aug_matrix_inverse[..., :3, :3]
+            post_rots_inverse = img_aug_matrix_inverse[..., :3, :3]
 
         if lidar_aug_matrix_inverse is None:
-            lidar_aug_matrix_inverse = torch.inverse(lidar_aug_matrix)
+            lidar_aug_matrix_inverse = torch.inverse(lidar_aug_matrix[..., :3, :3])
 
         batch_size = len(points)
         depth = torch.zeros(batch_size, img.shape[1], 1, *self.image_size).to(points[0].device)
-        depth_batch_size, num_imgs, channels, height, width = depth.shape
-        assert channels == 1
+        _, num_imgs, channels, height, width = depth.shape
 
         for b in range(batch_size):
             cur_coords = points[b][:, :3]
@@ -414,7 +421,7 @@ class BaseDepthTransform(BaseViewTransform):
 
             # get 2d coords
             dist = cur_coords[:, 2, :]
-            valid_dist_mask = dist > 0.0
+            valid_dist_mask = dist > 0
 
             cur_coords[:, 2, :] = torch.clamp(cur_coords[:, 2, :], 1e-5, 1e5)
             cur_coords[:, :2, :] /= cur_coords[:, 2:3, :]
@@ -434,6 +441,11 @@ class BaseDepthTransform(BaseViewTransform):
                 & valid_dist_mask
             )
 
+            # for c in range(on_img.shape[0]):
+            #     masked_coords = cur_coords[c, on_img[c]].long()
+            #     masked_dist = dist[c, on_img[c]]
+            #     depth[b, c, 0, masked_coords[:, 0], masked_coords[:, 1]] = masked_dist
+
             # NOTE(knzo25): in the original code, a per-image loop was
             # implemented to compute the depth. However, it fixes the number
             # of images, which is not desired for deployment (the number
@@ -448,21 +460,13 @@ class BaseDepthTransform(BaseViewTransform):
             point_indices = indices[:, 1]
 
             masked_coords = cur_coords[camera_indices, point_indices].long()
-            masked_dist = dist[camera_indices, point_indices] 
-            depth = depth.to(masked_dist.dtype)
-            # batch_size, num_imgs, channels, height, width = depth.shape
-            # Depth tensor should have only one channel in this implementation
-
-            depth_flat = depth.view(batch_size, num_imgs, channels, -1)
+            masked_dist = dist[camera_indices, point_indices]
 
             flattened_indices = camera_indices * height * width + masked_coords[:, 0] * width + masked_coords[:, 1]
             updates_flat = torch.zeros((num_imgs * channels * height * width), device=depth.device)
-
             updates_flat.scatter_(dim=0, index=flattened_indices, src=masked_dist)
 
-            depth_flat[b] = updates_flat.view(num_imgs, channels, height * width)
-
-            depth = depth_flat.view(batch_size, num_imgs, channels, height, width)
+            depth[b] = updates_flat.view(num_imgs, channels, height, width)
 
         extra_rots = lidar_aug_matrix[..., :3, :3]
         extra_trans = lidar_aug_matrix[..., :3, 3]
@@ -475,19 +479,18 @@ class BaseDepthTransform(BaseViewTransform):
             x = self.bev_pool_precomputed(x, geom_feats, kept, ranks, indices)
         else:
             geom = self.get_geometry(
-                camera2lidar_rots,
-                camera2lidar_trans,
-                intrins_inverse,
-                post_rots_inverse,
-                post_trans,
+                camera2lidar_rots=camera2lidar_rots,
+                camera2lidar_trans=camera2lidar_trans,
+                intrins_inverse=intrins_inverse,
+                post_rots_inverse=post_rots_inverse,
+                post_trans=post_trans,
                 extra_rots=extra_rots,
                 extra_trans=extra_trans,
             )
 
             x, est_depth_distr, gt_depth_distr, counts_3d, gt_gaussian_depths = self.get_cam_feats(img, depth)
             x = self.bev_pool(x, geom)
-            # depth_loss = self.depth_loss_with_one_hot_target(est_depth_distr, gt_depth_distr, counts_3d)
-            depth_loss = 1.5 * self.depth_loss_with_prob_dists(est_depth_distr, gt_depth_distr, counts_3d)
+            depth_loss = self.depth_loss_with_prob_dists(est_depth_distr, gt_depth_distr, counts_3d)
 
         return x, depth_loss
 
@@ -521,7 +524,6 @@ class DepthLSSTransform(BaseDepthTransform):
         zbound: Tuple[float, float, float],
         dbound: Tuple[float, float, float],
         downsample: int = 1,
-        aux_depth_alpha: float = 0.2,
         lidar_depth_image_last_stride: int = 2,
         gaussian_sigma: float = 1.0,
     ) -> None:
@@ -538,7 +540,6 @@ class DepthLSSTransform(BaseDepthTransform):
             dbound=dbound,
         )
 
-        self.aux_depth_alpha = aux_depth_alpha
         self.gaussian_sigma = gaussian_sigma
         self.dtransform = LidarDepthImageNet(in_channels=1, out_channels=64, last_stride=lidar_depth_image_last_stride)
         self.depthnet = DepthLSSNet(

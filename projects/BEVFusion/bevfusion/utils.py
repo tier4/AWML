@@ -38,6 +38,7 @@ class TransFusionBBoxCoder(BaseBBoxCoder):
         targets[:, 3] = dst_boxes[:, 3].log()
         targets[:, 4] = dst_boxes[:, 4].log()
         targets[:, 5] = dst_boxes[:, 5].log()
+				# T4Dataset follows nuScenes, and after the Dataset transformation, the box is in the bottom center
         # bottom center to gravity center
         targets[:, 2] = dst_boxes[:, 2] + dst_boxes[:, 5] * 0.5
         targets[:, 6] = torch.sin(dst_boxes[:, 6])
