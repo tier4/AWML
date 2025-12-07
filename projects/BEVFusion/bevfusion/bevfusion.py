@@ -426,6 +426,42 @@ class BEVFusion(Base3DDetector):
             x = self.pts_neck(x)
 
         return x, img_feature, img_roi_head_preds, depth_loss
+    
+    def img_roi_losses(
+        self, batch_inputs_dict: Dict[str, Optional[Tensor]], batch_data_samples: List[Det3DDataSample], **kwargs
+    ) -> dict:
+
+        losses = dict()
+        assert self.img_roi_head is not None, "Img roi head should be initialized!" 
+
+        gt_bboxes2d_list = []
+        gt_labels2d_list = []
+        centers_2d_list = []
+        depths_list = []
+        img_pad_shapes = []
+
+        for index, (batch_data_sample, batch_input_meta) in enumerate(zip(batch_data_samples, batch_input_metas)):
+            gt_bboxes2d_list.append(batch_data_sample.gt_instances.bboxes)
+            gt_labels2d_list.append(batch_data_sample.gt_instances.labels)
+            centers_2d_list.append(batch_input_meta["centers_2d"])
+            depths_list.append(batch_input_meta["depths"])
+            img_pad_shapes.append(batch_input_meta["pad_shape"])
+
+        img_roi_head_losses = self.img_roi_head.loss(
+            gt_bboxes2d_list=gt_bboxes2d_list,
+            gt_labels2d_list=gt_labels2d_list,
+            centers2d=centers_2d_list,
+            depths=depths_list,
+            preds_dicts=img_roi_head_preds,
+            img_pad_shapes=img_pad_shapes,
+            gt_bboxes_ignore=None,
+        )
+
+        sum_roi_losses = sum([value for key, value in img_roi_head_losses.items() if "loss" in key])
+        losses.update(img_roi_head_losses)
+        losses["sum_img_roi"] = sum_roi_losses
+        
+        return losses 
 
     def loss(
         self, batch_inputs_dict: Dict[str, Optional[Tensor]], batch_data_samples: List[Det3DDataSample], **kwargs
@@ -443,36 +479,13 @@ class BEVFusion(Base3DDetector):
         
         if self.img_aux_bbox_head:
             img_aux_bbox_losses = self.img_aux_bbox_head.loss([img_feats], batch_data_samples)
-            for loss_key, loss in img_aux_bbox_losses.items():
-                losses[loss_key] = loss
+            losses.update(img_aux_bbox_losses)
 
         if self.img_roi_head is not None:
-
-            gt_bboxes2d_list = []
-            gt_labels2d_list = []
-            centers_2d_list = []
-            depths_list = []
-            img_pad_shapes = []
-
-            for index, (batch_data_sample, batch_input_meta) in enumerate(zip(batch_data_samples, batch_input_metas)):
-                gt_bboxes2d_list.append(batch_data_sample.gt_instances.bboxes)
-                gt_labels2d_list.append(batch_data_sample.gt_instances.labels)
-                centers_2d_list.append(batch_input_meta["centers_2d"])
-                depths_list.append(batch_input_meta["depths"])
-                img_pad_shapes.append(batch_input_meta["pad_shape"])
-
-            img_roi_head_losses = self.img_roi_head.loss(
-                gt_bboxes2d_list=gt_bboxes2d_list,
-                gt_labels2d_list=gt_labels2d_list,
-                centers2d=centers_2d_list,
-                depths=depths_list,
-                preds_dicts=img_roi_head_preds,
-                img_pad_shapes=img_pad_shapes,
-                gt_bboxes_ignore=None,
+            img_roi_losses = self.img_roi_losses(
+                batch_inputs_dict=batch_inputs_dict.
+                batch_data_samples=batch_data_samples
             )
-
-            sum_roi_losses = sum([value for key, value in img_roi_head_losses.items() if "loss" in key])
-            losses.update(img_roi_head_losses)
-            losses["sum_img_roi"] = sum_roi_losses
+            losses.update(img_roi_losses)
 
         return losses

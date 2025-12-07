@@ -632,12 +632,17 @@ class DepthLSSTransform(BaseDepthTransform):
         x = self.depthnet(x)
 
         depth = x[:, : self.D].softmax(dim=1)
-        est_depth_distr = depth.permute(0, 2, 3, 1).reshape(B, N, fH, fW, self.D)
 
         x = depth.unsqueeze(2) * x[:, self.D : (self.D + self.C)].unsqueeze(2)
 
         x = x.view(B, N, self.C, self.D, fH, fW)
         x = x.permute(0, 1, 3, 4, 5, 2)
+        
+        if self.training:
+            est_depth_distr = depth.permute(0, 2, 3, 1).reshape(B, N, fH, fW, self.D)
+        else:
+            est_depth_distr = None 
+            
         return x, est_depth_distr, gt_depth_distr, counts_3d, gt_gaussian_probs
 
     def forward(self, *args, **kwargs):
