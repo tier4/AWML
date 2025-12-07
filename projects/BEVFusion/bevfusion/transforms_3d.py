@@ -11,19 +11,6 @@ from mmdet3d.registry import TRANSFORMS
 from PIL import Image
 import matplotlib.pyplot as plt
 
-@TRANSFORMS.register_module()
-class SyncFlipping(BaseTransform):
-
-    def __init__(self, is_train):
-        self.is_train = is_train
-  
-    def transform(self, data: Dict[str, Any]) -> Dict[str, Any]:
-      flip = False
-      if self.is_train and np.random.choice([0, 1]):
-        flip = True
-      data["sync_flip"] = flip
-      return data 
-
 
 @TRANSFORMS.register_module()
 class ImageAug3D(BaseTransform):
