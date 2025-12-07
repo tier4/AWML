@@ -1,7 +1,13 @@
 # Samplers
-This folder conists of `Sampler` implementation
+This folder conists of custom implementations for `Sampler`. `Sampler` is a class to implement different sampling strategies in an experiment.  
 
-#### 2.3 Train CenterPoint model with Repeat Factor Sampling (RFS)
+### 2.1 DistributedWeightedRandomSampler
+`DistributedWeightedRandomSampler` is the implementation of `WeightedRandomSampler` in a distributed manner across several gpus. `Dataloader` will select frame randomly based on their `weights`, and the weights can be determined by either initialization or `frame_weights` from a `Dataset`. By deafult, frames with higher weights are possible to be selected more than once in an epoch.  
+
+### 2.2 ObjectSampler
+`ObjectSampler` is the base class to sample certain objects in frame-level, for example, sample pedestrians that are close to the ego vehicle. To implement a new `ObjectSampler`, please inherit `ObjectSampler` and define the strategy in the function: `sample`
+
+#### 2.3 Repeat Factor Sampling (RFS)
 - To use RFS in an experiment, please use dataset: `T4FrameSamplerDataset`, `DistributedWeightedRandomSampler`, and add corresponding `ObjectSampler` to `T4FrameSamplerDataset`, for example:
 
 ```python
