@@ -401,7 +401,7 @@ class BaseDepthTransform(BaseViewTransform):
 
         batch_size = len(points)
         depth = torch.zeros(batch_size, img.shape[1], 1, *self.image_size).to(points[0].device)
-        depth_batch_size, num_imgs, channels, height, width = depth.shape
+        _, num_imgs, channels, height, width = depth.shape
 
         for b in range(batch_size):
             cur_coords = points[b][:, :3]
@@ -439,10 +439,10 @@ class BaseDepthTransform(BaseViewTransform):
                 & valid_dist_mask
             )
 
-            for c in range(on_img.shape[0]):
-                masked_coords = cur_coords[c, on_img[c]].long()
-                masked_dist = dist[c, on_img[c]]
-                depth[b, c, 0, masked_coords[:, 0], masked_coords[:, 1]] = masked_dist
+            # for c in range(on_img.shape[0]):
+            #     masked_coords = cur_coords[c, on_img[c]].long()
+            #     masked_dist = dist[c, on_img[c]]
+            #     depth[b, c, 0, masked_coords[:, 0], masked_coords[:, 1]] = masked_dist
 
             # NOTE(knzo25): in the original code, a per-image loop was
             # implemented to compute the depth. However, it fixes the number
@@ -453,18 +453,18 @@ class BaseDepthTransform(BaseViewTransform):
             # duplicates !. In practce, only about 0.01% of the elements will
             # have different results...
 
-            # indices = torch.nonzero(on_img, as_tuple=False)
-            # camera_indices = indices[:, 0]
-            # point_indices = indices[:, 1]
+            indices = torch.nonzero(on_img, as_tuple=False)
+            camera_indices = indices[:, 0]
+            point_indices = indices[:, 1]
 
-            # masked_coords = cur_coords[camera_indices, point_indices].long()
-            # masked_dist = dist[camera_indices, point_indices]
+            masked_coords = cur_coords[camera_indices, point_indices].long()
+            masked_dist = dist[camera_indices, point_indices]
 
-            # flattened_indices = camera_indices * height * width + masked_coords[:, 0] * width + masked_coords[:, 1]
-            # updates_flat = torch.zeros((num_imgs * channels * height * width), device=depth.device)
-            # updates_flat.scatter_(dim=0, index=flattened_indices, src=masked_dist)
+            flattened_indices = camera_indices * height * width + masked_coords[:, 0] * width + masked_coords[:, 1]
+            updates_flat = torch.zeros((num_imgs * channels * height * width), device=depth.device)
+            updates_flat.scatter_(dim=0, index=flattened_indices, src=masked_dist)
 
-            # depth[b] = updates_flat.view(num_imgs, channels, height, width)
+            depth[b] = updates_flat.view(num_imgs, channels, height, width)
 
         extra_rots = lidar_aug_matrix[..., :3, :3]
         extra_trans = lidar_aug_matrix[..., :3, 3]
