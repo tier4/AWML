@@ -23,7 +23,7 @@ from utils.misc import (
     make_dirs,
 )
 from utils.registry import Registry
-from utils.visualization import visualize_point_cloud, get_segmentation_colors
+from utils.visualization import get_segmentation_colors, visualize_point_cloud
 
 from .defaults import create_ddp_model
 
