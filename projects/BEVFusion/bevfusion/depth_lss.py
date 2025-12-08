@@ -518,7 +518,7 @@ class DepthLSSTransform(BaseDepthTransform):
         dbound: Tuple[float, float, float],
         downsample: int = 1,
         lidar_depth_image_last_stride: int = 2,
-        gaussian_sigma: float = 1.0,
+        gaussian_sigma: float = 0.5,
     ) -> None:
         """Compared with `LSSTransform`, `DepthLSSTransform` adds sparse depth
         information from lidar points into the inputs of the `depthnet`."""
@@ -582,7 +582,6 @@ class DepthLSSTransform(BaseDepthTransform):
                 d.clamp(min=0, max=self.dbound[1] - 0.5 * self.dbound[2])
             ) / self.dbound[2]
             depth_bins = self.D + 1
-						print(depth_bins)
             dist_bins = dist_bins.long()
 
             flat_cell_id = cell_id.view(-1)
