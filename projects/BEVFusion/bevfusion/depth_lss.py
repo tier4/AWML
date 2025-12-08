@@ -27,7 +27,7 @@ class DepthLSSNet(nn.Module):
             in_channels: int, the number of input channels.
             out_channels: int, the number of output channels.
         Returns:
-            None
+            None.
         """
         super().__init__()
         self.net = nn.Sequential(
@@ -45,7 +45,9 @@ class DepthLSSNet(nn.Module):
         Args:
             x: torch.Tensor, the input feature map.
         Returns:
-            torch.Tensor, the output feature maps in shape (B, D + C, H, W).
+            torch.Tensor, the output feature maps in shape (B * N, D + C, H, W), where B is the batch size, N is
+            the number of images, D is the number of depth bins, C is the number of output channels of of the network,
+            H is the height, and W is the width.
         """
         return self.net(x)
 
@@ -63,7 +65,7 @@ class DownSampleNet(nn.Module):
             in_channels: int, the number of input channels.
             out_channels: int, the number of output channels.
         Returns:
-            None
+            None.
         """
         super().__init__()
 
@@ -95,7 +97,8 @@ class DownSampleNet(nn.Module):
         Args:
             x: torch.Tensor, the input feature map.
         Returns:
-            torch.Tensor, the output feature maps in shape (B, N, C, H, W).
+            torch.Tensor, the output feature maps in shape (B, C, H / downsample, W / downsample), where B is the
+            batch size, C is the number of output channels of the network, H is the height, and W is the width.
         """
         return self.net(x)
 
@@ -113,7 +116,7 @@ class LidarDepthImageNet(nn.Module):
             out_channels: int, the number of output channels.
             last_stride: int, the stride of the last convolutional layer.
         Returns:
-            None
+            None.
         """
         super().__init__()
         self.in_channels = in_channels
@@ -138,7 +141,9 @@ class LidarDepthImageNet(nn.Module):
         Args:
             x: torch.Tensor, the input feature map.
         Returns:
-            torch.Tensor, the output feature maps in shape (B, N, C, H, W).
+            torch.Tensor, the output feature maps in shape (B * N, C, H, W), where B is the batch size, N is
+            the number of images, C is the number of output channels of the network,
+            H is the height, and W is the width.
         """
         return self.net(x)
 
