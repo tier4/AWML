@@ -3,13 +3,13 @@ import uuid
 from copy import deepcopy
 from typing import Any, Dict
 
+import matplotlib.pyplot as plt
 import numpy as np
 import torch
 from mmcv.transforms import BaseTransform
 from mmdet3d.datasets import GlobalRotScaleTrans
 from mmdet3d.registry import TRANSFORMS
 from PIL import Image
-import matplotlib.pyplot as plt
 
 
 @TRANSFORMS.register_module()
@@ -44,7 +44,7 @@ class ImageAug3D(BaseTransform):
                 resize = np.random.uniform(aspect_ratio, aspect_ratio + self.resize_lim)
             else:
                 resize = np.random.uniform(*self.resize_lim)
-            
+
             yh_resized = yh * resize
 
             resize_dims = (int(W * resize), int(H * resize))
@@ -63,7 +63,7 @@ class ImageAug3D(BaseTransform):
                 resize = aspect_ratio + resize_lim
             else:
                 resize = resize_lim
-            
+
             yh_resized = yh * resize
 
             resize_dims = (int(W * resize), int(H * resize))
@@ -99,7 +99,7 @@ class ImageAug3D(BaseTransform):
                 [-np.sin(theta), np.cos(theta)],
             ]
         )
-        
+
         b = torch.Tensor([(crop[2] - crop[0]), (crop[3] - crop[1])]) / 2
         b = A.matmul(-b) + b
         rotation = A.matmul(rotation)
@@ -111,13 +111,10 @@ class ImageAug3D(BaseTransform):
         imgs = data["img"]
         new_imgs = []
         transforms = []
-        for camera_index, img in enumerate(imgs):
-            flip = False
-            if self.rand_flip and np.random.choice([0, 1]):
-                  flip = True
-            resize, resize_dims, crop, rotate = self.sample_augmentation(data, camera_index)
+        for img in imgs:
             post_rot = torch.eye(2)
             post_tran = torch.zeros(2)
+            resize, resize_dims, crop, flip, rotate = self.sample_augmentation(data)
             new_img, rotation, translation = self.img_transform(
                 img,
                 post_rot,
@@ -156,10 +153,10 @@ class BEVFusionRandomFlip3D:
         rotation = np.eye(3)
         sync_flip = data.get("sync_flip", None)
         if sync_flip is None:
-          flip_horizontal = np.random.choice([0, 1])
+            flip_horizontal = np.random.choice([0, 1])
         else:
-          flip_horizontal = sync_flip
-          
+            flip_horizontal = sync_flip
+
         if flip_horizontal:
             rotation = np.array([[1, 0, 0], [0, -1, 0], [0, 0, 1]]) @ rotation
             if "points" in data:
@@ -172,7 +169,7 @@ class BEVFusionRandomFlip3D:
         if self.flip_vertical:
             flip_vertical = np.random.choice([0, 1])
         else:
-            flip_vertical = False 
+            flip_vertical = False
 
         if flip_vertical:
             rotation = np.array([[-1, 0, 0], [0, 1, 0], [0, 0, 1]]) @ rotation
