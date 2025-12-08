@@ -45,7 +45,7 @@ To test the model, use the following commands:
 ```sh
 python projects/PTv3/tools/test.py --config-file projects/PTv3/configs/semseg-pt-v3m1-0-t4dataset.py --num-gpus 1 \
   --options \
-  save_path=data/experiment \
+  save_path=work_dirs/experiment \
   weight=work_dirs/ptv3/model/model_best.pth \
   show=True
 ```
@@ -57,7 +57,7 @@ Export the model:
 ```sh
 python projects/PTv3/tools/export.py --config-file projects/PTv3/configs/semseg-pt-v3m1-0-t4dataset.py --num-gpus 1 \
   --options \
-  save_path=data/experiment \
+  save_path=work_dirs/experiment \
   weight=work_dirs/ptv3/model/model_best.pth
 ```
 
