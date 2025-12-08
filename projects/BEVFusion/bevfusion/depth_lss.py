@@ -559,11 +559,6 @@ class DepthLSSTransform(BaseDepthTransform):
     def get_depth_gt_bins(self, d, B, N, C, fH, fW):
 
         if self.training:
-            # valid_depth_mask = torch.ones_like(d)
-            # BN, H, W
-            # zero_mask = depth == 0
-
-            # valid_depth_mask[zero_mask] = 0.0
             BN = B * N
             h, w = self.image_size
 
@@ -582,12 +577,12 @@ class DepthLSSTransform(BaseDepthTransform):
             #     + 0.5 * self.dbound[2]
             #     - self.dbound[0]
             # ) / self.dbound[2]
+						# Max depth will be dbound[1] - 0.5 * dbound[2] to make the last bin index
             dist_bins = (
-                d.clamp(min=0, max=self.dbound[1])
+                d.clamp(min=0, max=self.dbound[1] - 0.5 * self.dbound[2])
             ) / self.dbound[2]
             depth_bins = self.D + 1
-
-            dist_bins = dist_bins.clamp(max=self.D)
+						print(depth_bins)
             dist_bins = dist_bins.long()
 
             flat_cell_id = cell_id.view(-1)
