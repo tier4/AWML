@@ -12,6 +12,8 @@ num_workers = 16
 num_epochs = 35
 val_interval = 5
 
+model = dict(pts_bbox_head=dict(use_bottom_center=True))
+
 train_dataloader = dict(
     batch_size=batch_size,
     num_workers=num_workers,
