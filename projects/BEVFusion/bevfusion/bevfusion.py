@@ -1,6 +1,6 @@
 from collections import OrderedDict
 from copy import deepcopy
-from typing import Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Optional, Tuple
 
 import numpy as np
 import torch
@@ -13,6 +13,7 @@ from mmengine.utils import is_list_of
 from torch import Tensor
 from torch.nn import functional as F
 
+from .misc import locations
 from .ops import Voxelization
 
 
@@ -23,7 +24,7 @@ class BEVFusion(Base3DDetector):
         self,
         pts_backbone: dict,
         pts_neck: dict,
-        bbox_head: dict,
+        bbox_head: Optional[dict] = None,
         voxelize_cfg: Optional[dict] = None,
         data_preprocessor: OptConfigType = None,
         pts_voxel_encoder: Optional[dict] = None,
@@ -34,7 +35,8 @@ class BEVFusion(Base3DDetector):
         img_neck: Optional[dict] = None,
         init_cfg: OptMultiConfig = None,
         seg_head: Optional[dict] = None,
-        img_aux_bbox_head = None,
+        img_roi_head=None,
+        img_bev_bbox_head=None,
         **kwargs,
     ) -> None:
         super().__init__(data_preprocessor=data_preprocessor, init_cfg=init_cfg)
@@ -64,17 +66,16 @@ class BEVFusion(Base3DDetector):
             self.view_transform = None
 
         # Detach it during onnx inference
-        if img_aux_bbox_head is not None:
-            self.img_aux_bbox_head = MODELS.build(img_aux_bbox_head)
+        if img_bev_bbox_head is not None:
+            self.img_bev_bbox_head = MODELS.build(img_bev_bbox_head)
         else:
-            self.img_aux_bbox_head = None
+            self.img_bev_bbox_head = None
 
         if fusion_layer is not None:
             self.fusion_layer = MODELS.build(fusion_layer)
         else:
             self.fusion_layer = None
 
-        # BEV Backbone and Neck
         if pts_backbone:
             self.pts_backbone = MODELS.build(pts_backbone)
         else:
@@ -85,7 +86,16 @@ class BEVFusion(Base3DDetector):
         else:
             self.pts_neck = None
 
-        self.bbox_head = MODELS.build(bbox_head)
+        if img_roi_head is not None:
+            self.img_roi_head = MODELS.build(img_roi_head)
+        else:
+            self.img_roi_head = None
+
+        if bbox_head is not None:
+            self.bbox_head = MODELS.build(bbox_head)
+        else:
+            self.bbox_head = None
+
         self.init_weights()
 
     def _forward(
@@ -170,6 +180,13 @@ class BEVFusion(Base3DDetector):
         x = x.view(B, N, C, H, W)
         return x
 
+    def prepare_location(self, shape, img_feats):
+        pad_h, pad_w = shape
+        bs, n = img_feats.shape[:2]
+        x = img_feats.flatten(0, 1)
+        location = locations(x, self.img_roi_head.stride, pad_h, pad_w)[None].repeat(bs * n, 1, 1, 1)
+        return location
+
     def extract_img_feat(
         self,
         x,
@@ -190,6 +207,13 @@ class BEVFusion(Base3DDetector):
         if not using_image_features:
             x = self.get_image_backbone_features(x)
 
+        if self.img_roi_head is not None:
+            pad_shapes = img_metas[0]["pad_shape"]
+            location = self.prepare_location(pad_shapes, x)
+            img_roi_head_preds = self.img_roi_head(location, x)
+        else:
+            img_roi_head_preds = None
+
         with torch.cuda.amp.autocast(enabled=False):
             # with torch.autocast(device_type='cuda', dtype=torch.float32):
             x = self.view_transform(
@@ -206,7 +230,8 @@ class BEVFusion(Base3DDetector):
                 lidar_aug_matrix_inverse,
                 geom_feats,
             )
-        return x
+
+        return x, img_roi_head_preds
 
     def extract_pts_feat(self, feats, coords, sizes, points=None) -> torch.Tensor:
         if points is not None:
@@ -290,11 +315,13 @@ class BEVFusion(Base3DDetector):
                 contains a tensor with shape (num_instances, 7).
         """
         batch_input_metas = [item.metainfo for item in batch_data_samples]
-        feats, img_feats = self.extract_feat(batch_inputs_dict, batch_input_metas)
+        feats, img_feats, img_roi_head_preds = self.extract_feat(batch_inputs_dict, batch_input_metas)
 
         if self.with_bbox_head:
             outputs = self.bbox_head.predict(feats, batch_input_metas)
             # outputs = self.bbox_head.predict(feats, batch_data_samples)
+        elif self.img_bev_bbox_head:
+            outputs = self.img_bev_bbox_head.predict([img_feats], batch_data_samples)
 
         res = self.add_pred_to_datasample(batch_data_samples, outputs)
 
@@ -309,7 +336,7 @@ class BEVFusion(Base3DDetector):
     ):
         imgs = batch_inputs_dict.get("imgs", None)
         points = batch_inputs_dict.get("points", None)
-        img_feature = None
+        img_bev_features = None
         features = []
         if imgs is not None and "lidar2img" not in batch_inputs_dict:
             # NOTE(knzo25): normal training and testing
@@ -328,7 +355,7 @@ class BEVFusion(Base3DDetector):
             camera2lidar = imgs.new_tensor(np.array(camera2lidar))
             img_aug_matrix = imgs.new_tensor(np.array(img_aug_matrix))
             lidar_aug_matrix = imgs.new_tensor(np.array(lidar_aug_matrix))
-            img_feature = self.extract_img_feat(
+            img_bev_features, img_roi_head_preds = self.extract_img_feat(
                 x=imgs,
                 points=deepcopy(points),
                 lidar2image=lidar2image,
@@ -338,7 +365,6 @@ class BEVFusion(Base3DDetector):
                 lidar_aug_matrix=lidar_aug_matrix,
                 img_metas=batch_input_metas,
             )
-            features.append(img_feature)
         elif imgs is not None:
             # NOTE(knzo25): onnx inference
             is_onnx_inference = True
@@ -354,7 +380,7 @@ class BEVFusion(Base3DDetector):
             # sizes = batch_inputs_dict["voxels"]["num_points_per_voxel"]
             # feats = feats.sum(dim=1, keepdim=False) / sizes.type_as(feats).view(-1, 1)
 
-            img_feature = self.extract_img_feat(
+            img_bev_features, img_roi_head_preds = self.extract_img_feat(
                 imgs,
                 points,
                 lidar2image,
@@ -366,9 +392,11 @@ class BEVFusion(Base3DDetector):
                 geom_feats=geom_feats,
                 using_image_features=using_image_features,
             )
-            features.append(img_feature)
 
-        if self.pts_middle_encoder is not None:
+        if img_bev_features is not None:
+            features.append(img_bev_features)
+
+        if points is not None and self.pts_middle_encoder is not None:
             pts_feature = self.extract_pts_feat(
                 batch_inputs_dict.get("voxels", {}).get("voxels", None),
                 batch_inputs_dict.get("voxels", {}).get("coors", None),
@@ -389,7 +417,62 @@ class BEVFusion(Base3DDetector):
         if self.pts_neck:
             x = self.pts_neck(x)
 
-        return x, img_feature
+        return x, img_bev_features, img_roi_head_preds
+
+    def img_roi_losses(
+        self,
+        batch_inputs_dict: Dict[str, Optional[Tensor]],
+        batch_data_samples: List[Det3DDataSample],
+        batch_input_metas: List[Dict[str, Any]],
+        img_roi_head_preds,
+    ) -> dict:
+
+        losses = dict()
+        assert self.img_roi_head is not None, "img_roi_head should be initialized!"
+
+        gt_bboxes2d_list = []
+        gt_labels2d_list = []
+        centers_2d_list = []
+        depths_list = []
+        img_pad_shapes = []
+
+        for index, (batch_data_sample, batch_input_meta) in enumerate(zip(batch_data_samples, batch_input_metas)):
+            gt_bboxes2d_list.append(batch_data_sample.gt_instances.bboxes)
+            gt_labels2d_list.append(batch_data_sample.gt_instances.labels)
+            centers_2d_list.append(batch_input_meta["centers_2d"])
+            depths_list.append(batch_input_meta["depths"])
+            img_pad_shapes.append(batch_input_meta["pad_shape"])
+
+        img_roi_head_losses = self.img_roi_head.loss(
+            gt_bboxes2d_list=gt_bboxes2d_list,
+            gt_labels2d_list=gt_labels2d_list,
+            centers2d=centers_2d_list,
+            depths=depths_list,
+            preds_dicts=img_roi_head_preds,
+            img_pad_shapes=img_pad_shapes,
+            gt_bboxes_ignore=None,
+        )
+
+        sum_roi_losses = sum([value for key, value in img_roi_head_losses.items() if "loss" in key])
+        losses.update(img_roi_head_losses)
+        losses["sum_img_roi"] = sum_roi_losses
+
+        return losses
+
+    def img_bev_losses(
+        self,
+        batch_data_samples: List[Det3DDataSample],
+        img_bev_feats,
+    ) -> dict:
+
+        losses = dict()
+        assert self.img_bev_bbox_head is not None, "img_bev_bbox_head should be initialized!"
+
+        img_bev_bbox_losses = self.img_bev_bbox_head.loss([img_bev_feats], batch_data_samples)
+        sum_losses = sum([value for value in img_bev_bbox_losses.values()])
+        losses.update(img_bev_bbox_losses)
+        losses["sum_img_bev"] = sum_losses
+        return losses
 
     def loss(
         self,
@@ -399,21 +482,29 @@ class BEVFusion(Base3DDetector):
         **kwargs,
     ) -> List[Det3DDataSample]:
         batch_input_metas = [item.metainfo for item in batch_data_samples]
-        feats, img_feats = self.extract_feat(batch_inputs_dict, batch_input_metas)
+        feats, img_bev_feats, img_roi_head_preds = self.extract_feat(
+            batch_inputs_dict, batch_input_metas, using_image_features=using_image_features
+        )
 
         losses = dict()
         if self.with_bbox_head:
             bbox_loss = self.bbox_head.loss(feats, batch_data_samples)
+            losses.update(bbox_loss)
 
-        losses.update(bbox_loss)
+        if self.img_bev_bbox_head:
+            img_bev_bbox_losses = self.img_bev_losses(
+                batch_data_samples=batch_data_samples,
+                img_bev_feats=img_bev_feats,
+            )
+            losses.update(img_bev_bbox_losses)
 
-        if self.img_aux_bbox_head:
-            img_aux_bbox_losses = self.img_aux_bbox_head.loss([img_feats], batch_data_samples)
-            sum_losses = 0.0
-            for loss_key, loss in img_aux_bbox_losses.items():
-                sum_losses += loss
-                losses[loss_key] = loss 
-
-            losses["img_aux_sum"] = sum_losses
+        if self.img_roi_head is not None:
+            img_roi_losses = self.img_roi_losses(
+                batch_inputs_dict=batch_inputs_dict,
+                batch_data_samples=batch_data_samples,
+                batch_input_metas=batch_input_metas,
+                img_roi_head_preds=img_roi_head_preds,
+            )
+            losses.update(img_roi_losses)
 
         return losses

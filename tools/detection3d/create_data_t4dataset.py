@@ -251,8 +251,14 @@ def main():
 
         for split in ["train", "val", "test"]:
             print_log(f"Creating data info for split: {split}", logger="current")
+            # Get 2 Hz
+            if split == "train" and dataset_version == "db_jpntaxigen2_v1":
+                sample_steps = 5
+            else:
+                sample_steps = 1
+
             for scene_id in dataset_list_dict.get(split, []):
-                print_log(f"Creating data info for scene: {scene_id}")
+                print_log(f"Creating data info for scene: {scene_id}, steps: {sample_steps}")
                 t4_dataset_id, t4_dataset_version_id = scene_id.split("   ")
                 scene_root_dir_path = osp.join(args.root_path, dataset_version, t4_dataset_id, t4_dataset_version_id)
                 if not os.path.exists(scene_root_dir_path):
@@ -264,7 +270,8 @@ def main():
                     else:
                         raise ValueError(f"{t4_dataset_id} does not exist.")
                 t4 = Tier4(data_root=scene_root_dir_path, verbose=False)
-                for i, sample in enumerate(t4.sample):
+                for i in range(0, len(t4.sample), sample_steps):
+                    sample = t4.sample[i]
                     info = get_info(cfg, t4, sample, i, args.max_sweeps)
                     # info["version"] = dataset_version             # used for visualizations during debugging.
                     t4_infos[split].append(info)

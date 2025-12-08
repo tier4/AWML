@@ -155,7 +155,8 @@ default_hooks = dict(
     logger=dict(type="LoggerHook", interval=50),
     checkpoint=dict(type="CheckpointHook", interval=1, max_keep_ckpts=10, save_best="NuScenes metric/T4Metric/mAP"),
 )
-custom_hooks = [dict(type="DisableObjectSampleHook", disable_after_epoch=15)]
+# custom_hooks = [dict(type="DisableObjectSampleHook", disable_after_epoch=15)]
+custom_hooks = []
 log_processor = dict(window_size=50)
 
 randomness = dict(seed=0, diff_rank_seed=True, deterministic=True)
