@@ -5,7 +5,6 @@ import torch
 from mmdet3d.registry import MODELS
 from torch import nn
 
-# from .visualize import save_bev_single
 from .ops import bev_pool
 
 
@@ -258,9 +257,6 @@ class BaseViewTransform(nn.Module):
         # collapse Z
         final = torch.cat(x.unbind(dim=2), 1)
 
-        # Permute B x C x Y x X
-        # final = final.permute(0, 1, 3, 2).contiguous()
-
         return final
 
     def forward(
@@ -293,7 +289,6 @@ class BaseViewTransform(nn.Module):
             x = self.bev_pool_precomputed(x, geom_feats, kept, ranks, indices)
 
         else:
-            # print(f"post_rots: {post_rots}, post_trans: {post_trans}")
             geom = self.get_geometry(
                 camera2lidar_rots,
                 camera2lidar_trans,
@@ -303,6 +298,7 @@ class BaseViewTransform(nn.Module):
                 extra_rots=extra_rots,
                 extra_trans=extra_trans,
             )
+
             # depth is not connected to the calibration
             # on_img is
             # is also flattened_indices
@@ -432,11 +428,6 @@ class BaseDepthTransform(BaseViewTransform):
                 & (cur_coords[..., 1] >= 0)
                 & valid_dist_mask
             )
-
-            # for c in range(on_img.shape[0]):
-            #     masked_coords = cur_coords[c, on_img[c]].long()
-            #     masked_dist = dist[c, on_img[c]]
-            #     depth[b, c, 0, masked_coords[:, 0], masked_coords[:, 1]] = masked_dist
 
             # NOTE(knzo25): in the original code, a per-image loop was
             # implemented to compute the depth. However, it fixes the number
