@@ -6,10 +6,52 @@ mix_prob = 0.8
 empty_cache = False
 enable_amp = True
 
+# dataset settings
+dataset_type = "NuScenesDataset"
+data_root = "data/nuscenes"
+ignore_index = -1
+class_names = [
+    "barrier",
+    "bicycle",
+    "bus",
+    "car",
+    "construction_vehicle",
+    "motorcycle",
+    "pedestrian",
+    "traffic_cone",
+    "trailer",
+    "truck",
+    "driveable_surface",
+    "other_flat",
+    "sidewalk",
+    "terrain",
+    "manmade",
+    "vegetation",
+]
+class_mapping = {
+    0: 0,
+    1: 1,
+    2: 2,
+    3: 3,
+    4: 4,
+    5: 5,
+    6: 6,
+    7: 7,
+    8: 8,
+    9: 9,
+    10: 10,
+    11: 11,
+    12: 12,
+    13: 13,
+    14: 14,
+    15: 15,
+}
+num_classes = 16
+
 # model settings
 model = dict(
     type="DefaultSegmentorV2",
-    num_classes=16,
+    num_classes=num_classes,
     backbone_out_channels=64,
     backbone=dict(
         type="PT-v3m1",
@@ -64,33 +106,10 @@ scheduler = dict(
 )
 param_dicts = [dict(keyword="block", lr=0.0002)]
 
-# dataset settings
-dataset_type = "NuScenesDataset"
-data_root = "data/nuscenes"
-ignore_index = -1
-names = [
-    "barrier",
-    "bicycle",
-    "bus",
-    "car",
-    "construction_vehicle",
-    "motorcycle",
-    "pedestrian",
-    "traffic_cone",
-    "trailer",
-    "truck",
-    "driveable_surface",
-    "other_flat",
-    "sidewalk",
-    "terrain",
-    "manmade",
-    "vegetation",
-]
 
 data = dict(
-    num_classes=16,
+    num_classes=num_classes,
     ignore_index=ignore_index,
-    names=names,
     train=dict(
         type=dataset_type,
         split="train",
@@ -125,6 +144,7 @@ data = dict(
         ],
         test_mode=False,
         ignore_index=ignore_index,
+        class_mapping=class_mapping,
     ),
     val=dict(
         type=dataset_type,
@@ -150,6 +170,7 @@ data = dict(
         ],
         test_mode=False,
         ignore_index=ignore_index,
+        class_mapping=class_mapping,
     ),
     test=dict(
         type=dataset_type,
@@ -211,5 +232,6 @@ data = dict(
             ],
         ),
         ignore_index=ignore_index,
+        class_mapping=class_mapping,
     ),
 )

@@ -72,7 +72,7 @@ class SemSegEvaluator(HookBase):
             self.trainer.logger.info(
                 "Class_{idx}-{name} Result: iou/accuracy {iou:.4f}/{accuracy:.4f}".format(
                     idx=i,
-                    name=self.trainer.cfg.data.names[i],
+                    name=self.trainer.cfg.class_names[i],
                     iou=iou_class[i],
                     accuracy=acc_class[i],
                 )

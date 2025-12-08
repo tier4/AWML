@@ -1,4 +1,8 @@
-_base_ = ["./_base_/default_runtime.py"]
+_base_ = [
+    "../../../autoware_ml/configs/detection3d/default_runtime.py",
+    "./_base_/default_runtime.py",
+    "../../../autoware_ml/configs/segmentation3d/dataset/t4dataset/j6gen2_base.py",
+]
 
 # misc custom setting
 batch_size = 8  # bs: total bs in all gpus
@@ -8,9 +12,45 @@ empty_cache = False
 enable_amp = True  # NOTE: set to False if NaN loss occurs
 
 grid_size = 0.1  # original is 0.05
-num_classes = 6
 
 point_cloud_range = [-76.8, -76.8, -4, 76.8, 76.8, 8]
+
+# dataset settings
+dataset_type = "T4Dataset"
+data_root = "data/t4dataset"
+ignore_index = -1
+class_mapping = {
+    0: ignore_index,  # ignore unknown
+    1: 1,
+    2: 2,
+    3: 3,
+    4: 4,
+    5: 5,
+    6: 6,
+    7: 7,
+    8: 8,
+    9: 9,
+    10: 10,
+    11: 11,
+    12: 12,
+    13: 13,
+    14: 14,
+    15: 15,
+    16: 16,
+    17: 17,
+    18: 18,
+    19: 19,
+    20: 20,
+    21: 21,
+    22: 22,
+    23: 23,
+    24: 24,
+    25: 25,
+    26: 26,
+    27: 17,  # ghost point as noise
+    28: 17,  # out of sync as noise
+}
+num_classes = 27
 
 # model settings
 model = dict(
@@ -51,8 +91,8 @@ model = dict(
         pdnorm_conditions=("nuScenes", "SemanticKITTI", "Waymo"),
     ),
     criteria=[
-        dict(type="CrossEntropyLoss", loss_weight=1.0, ignore_index=-1),
-        dict(type="LovaszLoss", mode="multiclass", loss_weight=1.0, ignore_index=-1),
+        dict(type="CrossEntropyLoss", loss_weight=1.0, ignore_index=ignore_index),
+        dict(type="LovaszLoss", mode="multiclass", loss_weight=1.0, ignore_index=ignore_index),
     ],
 )
 
@@ -70,23 +110,9 @@ scheduler = dict(
 )
 param_dicts = [dict(keyword="block", lr=0.0002)]
 
-# dataset settings
-dataset_type = "T4Dataset"
-data_root = "data/t4dataset"
-ignore_index = -1
-names = [
-    "vehicle",
-    "bicycle",
-    "pedestrian",
-    "road",
-    "vegetation",
-    "obstacle",
-]
-
 data = dict(
     num_classes=num_classes,
     ignore_index=ignore_index,
-    names=names,
     train=dict(
         type=dataset_type,
         split="train",
@@ -125,6 +151,7 @@ data = dict(
         ],
         test_mode=False,
         ignore_index=ignore_index,
+        class_mapping=class_mapping,
     ),
     val=dict(
         type=dataset_type,
@@ -154,6 +181,7 @@ data = dict(
         ],
         test_mode=False,
         ignore_index=ignore_index,
+        class_mapping=class_mapping,
     ),
     test=dict(
         type=dataset_type,
@@ -215,5 +243,6 @@ data = dict(
             ],
         ),
         ignore_index=ignore_index,
+        class_mapping=class_mapping,
     ),
 )
