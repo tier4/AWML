@@ -70,7 +70,11 @@ class DownSampleNet(nn.Module):
         super().__init__()
 
         if downsample > 1:
-            assert downsample == 2, downsample
+            assert downsample == 2, f"DownSampleNet only supports downsample == 2, but got downsample: {downsample}"
+            assert (
+                in_channels == out_channels
+            ), f"DownSampleNet only supports in_channels == out_channels, but got in_channels: {in_channels}, and out_channels: {out_channels}"
+
             self.net = nn.Sequential(
                 nn.Conv2d(in_channels=in_channels, out_channels=out_channels, kernel_size=3, padding=1, bias=False),
                 nn.BatchNorm2d(num_features=out_channels),
