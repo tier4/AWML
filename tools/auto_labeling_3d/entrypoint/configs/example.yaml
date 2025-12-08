@@ -22,7 +22,7 @@ create_info:
   #     model_zoo_url: https://url/to/download/checkpoint.pth
   #     checkpoint_path: /path/to/save/checkpoint.pth
   - name: streampetr
-    model_config: /workspace/projects/StreamPETR/configs/t4dataset/t4_base_vov_flash_480x640_baseline.py
+    model_config: /workspace/projects/StreamPETR/configs/t4dataset/t4_base_vov_flash_480x640_bottom_center.py
     checkpoint:
       model_zoo_url: https://download.autoware-ml-model-zoo.tier4.jp/autoware-ml/models/streampetr/streampetr-vov99/t4base/v2.3/best_NuScenes_metric_T4Metric_mAP_epoch_31.pth
       checkpoint_path: /workspace/work_dirs/checkpoints/example_model_streampetr.pth
