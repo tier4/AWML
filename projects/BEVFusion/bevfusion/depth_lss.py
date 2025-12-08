@@ -16,8 +16,19 @@ def gen_dx_bx(xbound, ybound, zbound):
 
 
 class DepthLSSNet(nn.Module):
+    """
+    DepthLSSNet is a small convolutional network that takes in image and LiDAR depthmap features, and outputs
+    fused feature maps. It is used to extract depth information from the image features and LiDAR depth maps.
+    """
 
     def __init__(self, in_channels: int, out_channels: int) -> None:
+        """
+        Args:
+            in_channels: int, the number of input channels.
+            out_channels: int, the number of output channels.
+        Returns:
+            None
+        """
         super().__init__()
         self.net = nn.Sequential(
             nn.Conv2d(in_channels=in_channels, out_channels=in_channels, kernel_size=3, padding=1, bias=False),
@@ -29,13 +40,31 @@ class DepthLSSNet(nn.Module):
             nn.Conv2d(in_channels=in_channels, out_channels=out_channels, kernel_size=1, bias=True),
         )
 
-    def forward(self, x):
+    def forward(self, x) -> torch.Tensor:
+        """
+        Args:
+            x: torch.Tensor, the input feature map.
+        Returns:
+            torch.Tensor, the output feature maps in shape (B, D + C, H, W).
+        """
         return self.net(x)
 
 
 class DownSampleNet(nn.Module):
+    """
+    DownSampleNet is a small convolutional network that takes in a BEV feature map and outputs a downsampled BEV
+    feature map. It is used to downsample the BEV feature map to reduce the resolution of the BEV feature map.
+    """
 
     def __init__(self, downsample: int, in_channels: int, out_channels: int) -> None:
+        """
+        Args:
+            downsample: int, the downsampling factor.
+            in_channels: int, the number of input channels.
+            out_channels: int, the number of output channels.
+        Returns:
+            None
+        """
         super().__init__()
 
         if downsample > 1:
@@ -61,13 +90,31 @@ class DownSampleNet(nn.Module):
         else:
             self.net = nn.Identity()
 
-    def forward(self, x):
+    def forward(self, x) -> torch.Tensor:
+        """
+        Args:
+            x: torch.Tensor, the input feature map.
+        Returns:
+            torch.Tensor, the output feature maps in shape (B, N, C, H, W).
+        """
         return self.net(x)
 
 
 class LidarDepthImageNet(nn.Module):
+    """
+    LidarDepthImageNet is a small convolutional network that takes in a LiDAR depthmap, and outputs LiDAR
+    depthmap feature maps. It is used to extract depth information from the LiDAR depthmaps.
+    """
 
     def __init__(self, in_channels: int = 1, out_channels: int = 64, last_stride: int = 2) -> None:
+        """
+        Args:
+            in_channels: int, the number of input channels.
+            out_channels: int, the number of output channels.
+            last_stride: int, the stride of the last convolutional layer.
+        Returns:
+            None
+        """
         super().__init__()
         self.in_channels = in_channels
         self.out_channels = out_channels
@@ -87,6 +134,12 @@ class LidarDepthImageNet(nn.Module):
         )
 
     def forward(self, x):
+        """
+        Args:
+            x: torch.Tensor, the input feature map.
+        Returns:
+            torch.Tensor, the output feature maps in shape (B, N, C, H, W).
+        """
         return self.net(x)
 
 
@@ -204,7 +257,8 @@ class BaseViewTransform(nn.Module):
 
         geom_feats = geom_feats[kept]
 
-        # nx[0] is Height, nx[1] is width, nx[2] is depth
+        # nx is the total number of voxels/cells in the BEV grid
+        # nx[0] is x, nx[1] is y, nx[2] is z
         ranks = (
             geom_feats[:, 0] * (self.nx[1] * self.nx[2] * B)
             + geom_feats[:, 1] * (self.nx[2] * B)
