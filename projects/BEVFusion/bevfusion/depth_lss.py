@@ -136,7 +136,7 @@ class LidarDepthImageNet(nn.Module):
             nn.ReLU(True),
         )
 
-    def forward(self, x):
+    def forward(self, x) -> torch.Tensor:
         """
         Args:
             x: torch.Tensor, the input feature map.
