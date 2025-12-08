@@ -46,7 +46,7 @@ class DepthLSSNet(nn.Module):
             x: torch.Tensor, the input feature map.
         Returns:
             torch.Tensor, the output feature maps in shape (B * N, D + C, H, W), where B is the batch size, N is
-            the number of images, D is the number of depth bins, C is the number of output channels of of the network,
+            the number of images, D is the number of depth bins, C is the number of output channels of the network,
             H is the height, and W is the width.
         """
         return self.net(x)
