@@ -98,9 +98,12 @@ class ObjectRangeMinPointsFilter(BaseTransform):
         out_of_range_gt_masks = ~bev_radius_mask
 
         points = input_dict["points"]
-        # TODO(kminoda): There is a scary comment in the original code:
-        # # TODO: this function is different from PointCloud3D, be careful
-        # # when start to use nuscene, check the input
+        # NOTE: box_np_ops.points_in_rbbox may differ from PointCloud3D in terms of input format and output mask shape.
+        # For nuScenes compatibility, ensure that:
+        # - The input points are in the expected coordinate system (e.g., lidar vs. camera coordinates).
+        # - The bounding box tensor shape matches the expected format (N, 7) for [x, y, z, dx, dy, dz, heading].
+        # - The output mask correctly identifies points inside each bounding box for nuScenes data.
+        # See https://github.com/open-mmlab/mmdetection3d/blob/main/mmdet3d/structures/ops/box_np_ops.py for details.
         indices = box_np_ops.points_in_rbbox(
             points.tensor.numpy()[:, :3],
             gt_bboxes_3d.tensor.numpy()[:, :7],
