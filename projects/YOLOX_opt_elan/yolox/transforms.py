@@ -1,6 +1,9 @@
 import torch
 import torch.nn.functional as F
 from mmdet.registry import TRANSFORMS
+from mmcv.transforms import BaseTransform
+
+import os.path as osp
 
 @TRANSFORMS.register_module()
 class ResizeSegMask:
@@ -13,4 +16,26 @@ class ResizeSegMask:
             seg = torch.from_numpy(seg).unsqueeze(0).unsqueeze(0).float()  # (1,1,H,W)
             seg = F.interpolate(seg, size=self.size, mode='nearest')
             results['gt_seg_map'] = seg.squeeze(0).squeeze(0).long().numpy()  # back to (H_out,W_out)
+        return results
+
+@TRANSFORMS.register_module()
+class FixCityscapesPath(BaseTransform):
+    """
+    通过图片路径推导 Cityscapes 的语义分割 Mask 路径。
+    假设目录结构为标准 Cityscapes 格式。
+    """
+    def __init__(self, data_root, split='train'):
+        self.data_root = data_root
+        self.split = split
+
+    def transform(self, results):
+        img_path = results['img_path']
+        filename = osp.basename(img_path)
+        
+        seg_filename = filename.replace('_leftImg8bit.png', '_gtFine_labelTrainIds.png')
+        city = filename.split('_')[0]
+        seg_path = osp.join(self.data_root, 'gtFine', self.split, city, seg_filename)
+        
+        results['seg_map_path'] = seg_path
+        
         return results
