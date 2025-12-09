@@ -13,7 +13,7 @@ from t4_devkit.typing import CameraIntrinsicLike
 
 @dataclass(frozen=True)
 class Tier4SampleData:
-    """Data class to save a sample in the Nuscene format."""
+    """Data class to save a sample in the T4Dataset format."""
 
     pose_record: EgoPose
     cs_record: CalibratedSensor
