@@ -37,9 +37,7 @@ def get_camera_token(sample_rec: Sample) -> Optional[dict[str, str]]:
     :return: The list of camera tokens if exists, else None.
     """
     data_dict = sample_rec.data
-    camera_token_map = {
-        name: token for name, token in data_dict.items() if "CAM" in name
-    }
+    camera_token_map = {name: token for name, token in data_dict.items() if "CAM" in name}
     if len(camera_token_map) == 0:
         return None
     return camera_token_map
