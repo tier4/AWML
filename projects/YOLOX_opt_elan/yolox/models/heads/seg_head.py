@@ -6,7 +6,7 @@ from typing import Dict, List, Tuple, Union
 from torch import Tensor
 
 from mmdet.models.seg_heads.base_semantic_head import BaseSemanticHead
-from ..layers.network_blocks import BaseConv, CSPLayer, DWConv  # 根据你项目调整导入
+from ..layers.network_blocks import BaseConv, CSPLayer, DWConv
 
 from mmengine.registry import MODELS
 
@@ -54,23 +54,18 @@ class YOLOXSegHead(nn.Module):
 
     def forward(self, feats):
         """
-        支持多尺度特征融合
         Args:
             feats (list[Tensor] or Tensor): features from backbone+neck
         Returns:
             seg_pred (Tensor): [B, num_classes, H, W]
         """
         if isinstance(feats, (list, tuple)):
-            # 找到最高分辨率（假设 feats[0] 是最大 HxW）
-            print("Log: Seg head received feature maps with shapes:", [f.shape for f in feats])
             target_size = feats[0].shape[2:]
-            # 上采样到最高分辨率
             up_feats = [F.interpolate(f, size=target_size, mode='bilinear', align_corners=False) for f in feats]
-            # concat 或相加融合
             x = torch.cat(up_feats, dim=1)  # [B, sum(C_i), H, W]
         else:
             x = feats
-        print(f"Seg head input feature shape: {x.shape}")
+
         x = self.conv1(x)
         x = self.conv2(x)
         x = self.up1(x)
@@ -91,7 +86,6 @@ class YOLOXSegHead(nn.Module):
         """
         return dict(loss_mask=F.cross_entropy(seg_pred, gt_masks.long(), ignore_index=255))
 
-    # 在 YOLOXSegHead 类中
     def predict(self,
                 x: Union[Tensor, Tuple[Tensor]],
                 batch_data_samples,
@@ -102,7 +96,6 @@ class YOLOXSegHead(nn.Module):
         ]
         seg_preds = self.forward(x)
 
-        # 1. 上采样对齐到 Input Size (比如 960x960)
         input_shape = batch_img_metas[0]['batch_input_shape']
         seg_preds = F.interpolate(
             seg_preds,
@@ -113,10 +106,8 @@ class YOLOXSegHead(nn.Module):
         result_list = []
         for i in range(len(batch_img_metas)):
             img_meta = batch_img_metas[i]
-            h, w = img_meta['img_shape'] # 有效区域大小
-            
-            # 2. 截取有效区域 (去除 padding)
-            # seg_preds[i] shape: [C, H_pad, W_pad]
+            h, w = img_meta['img_shape']
+
             seg_pred = seg_preds[i][:, :h, :w]
 
             if rescale:
@@ -126,9 +117,7 @@ class YOLOXSegHead(nn.Module):
                     size=(ori_h, ori_w),
                     mode='bilinear',
                     align_corners=False).squeeze(0)
-            
-            # 3. 【关键修改】执行 Argmax，将 (C, H, W) -> (H, W)
-            # 必须转为 Long 类型以符合 metric 要求
+
             seg_pred = seg_pred.argmax(dim=0).to(torch.int64)
             
             result_list.append(seg_pred)
