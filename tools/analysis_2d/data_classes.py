@@ -20,22 +20,26 @@ class SampleData2D(SampleData):
     """Dataclass to save data for a sample, for example, 2D bounding boxes."""
 
     sample_token: str
+    camera_name: str
     detection_boxes: List[Detection2DBox]
 
     @classmethod
     def create_sample_data(
         cls,
         sample_token: str,
+        camera_name: str,
         boxes: List[Box2D],
     ) -> SampleData2D:
         """
         Create a SampleData2D given the params.
         :param sample_token: Sample token to represent a sample (lidar frame).
+        :param camera_name: Name of the camera sensor.
         :param boxes: List of 2D bounding boxes for the given sample token.
         """
         detection_2d_boxes = [Detection2DBox(box=box, attrs=box.semantic_label.attributes) for box in boxes]
 
         return cls(
             sample_token=sample_token,
+            camera_name=camera_name,
             detection_boxes=detection_2d_boxes,
         )

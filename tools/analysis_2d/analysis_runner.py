@@ -97,11 +97,15 @@ class AnalysisRunner2D(AnalysisRunner):
         sample_data = {}
         for sample in t4.sample:
             # Extract sample data
-            tier4_sample_data = extract_tier4_sample_data(sample=sample, t4=t4)
+            tier4_sample_data_list = extract_tier4_sample_data(sample=sample, t4=t4)
 
             # Convert to SampleData
-            sample_data[sample.token] = SampleData2D.create_sample_data(
-                sample_token=sample.token,
-                boxes=tier4_sample_data.boxes,
-            )
+            if tier4_sample_data_list is None:
+                continue
+            for tier4_sample_data in tier4_sample_data_list:
+                sample_data[f"{sample.token},{tier4_sample_data.camera_name}"] = SampleData2D.create_sample_data(
+                    sample_token=sample.token,
+                    camera_name=tier4_sample_data.camera_name,
+                    boxes=tier4_sample_data.boxes,
+                )
         return sample_data
