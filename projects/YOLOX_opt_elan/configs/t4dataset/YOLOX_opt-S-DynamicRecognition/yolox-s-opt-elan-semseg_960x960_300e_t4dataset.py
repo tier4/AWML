@@ -104,7 +104,6 @@ train_pipeline = [
         pad_val=dict(img=(114.0, 114.0, 114.0), seg=255),
     ),
     dict(type="FilterAnnotations", min_gt_bbox_wh=(1, 1), keep_empty=False),
-    
     # dict(type="ResizeSegMask", size=IMG_SCALE),
     dict(type="PackDetInputs"),
 ]
@@ -154,45 +153,45 @@ classes = (
 )
 
 palette = [
-    (150, 120, 90),   # 0: animal (褐色)
-    (119, 11, 32),    # 1: bicycle (深红)
-    (70, 70, 70),     # 2: building (深灰)
-    (0, 60, 100),     # 3: bus (深蓝)
-    (0, 0, 142),      # 4: car (蓝)
-    (250, 170, 30),   # 5: cone (橙色)
+    (150, 120, 90),  # 0: animal (褐色)
+    (119, 11, 32),  # 1: bicycle (深红)
+    (70, 70, 70),  # 2: building (深灰)
+    (0, 60, 100),  # 3: bus (深蓝)
+    (0, 0, 142),  # 4: car (蓝)
+    (250, 170, 30),  # 5: cone (橙色)
     (230, 150, 140),  # 6: construction (浅红)
     (140, 140, 200),  # 7: crosswalk (淡紫)
     (255, 255, 255),  # 8: dashed_lane_marking (白)
     (200, 200, 200),  # 9: deceleration_line (银灰)
     (190, 153, 153),  # 10: gate (浅褐)
-    (250, 170, 30),   # 11: guide_post (橙)
+    (250, 170, 30),  # 11: guide_post (橙)
     (255, 255, 255),  # 12: laneline_dash_white (白)
-    (255, 255, 0),    # 13: laneline_dash_yellow (黄)
-    (0, 255, 0),      # 14: laneline_solid_green (绿)
-    (255, 0, 0),      # 15: laneline_solid_red (红)
+    (255, 255, 0),  # 13: laneline_dash_yellow (黄)
+    (0, 255, 0),  # 14: laneline_solid_green (绿)
+    (255, 0, 0),  # 15: laneline_solid_red (红)
     (255, 255, 255),  # 16: laneline_solid_white (白)
-    (255, 215, 0),    # 17: laneline_solid_yellow (金黄)
-    (0, 255, 255),    # 18: marking_arrow (青)
-    (200, 0, 200),    # 19: marking_character (紫红)
-    (150, 0, 150),    # 20: marking_other (紫)
-    (0, 0, 230),      # 21: motorcycle (亮蓝)
-    (80, 80, 80),     # 22: other_obstacle (灰)
+    (255, 215, 0),  # 17: laneline_solid_yellow (金黄)
+    (0, 255, 255),  # 18: marking_arrow (青)
+    (200, 0, 200),  # 19: marking_character (紫红)
+    (150, 0, 150),  # 20: marking_other (紫)
+    (0, 0, 230),  # 21: motorcycle (亮蓝)
+    (80, 80, 80),  # 22: other_obstacle (灰)
     (250, 170, 160),  # 23: other_pedestrian (肉色)
-    (100, 80, 200),   # 24: other_vehicle (紫蓝)
+    (100, 80, 200),  # 24: other_vehicle (紫蓝)
     (180, 165, 180),  # 25: parking_lot (浅灰紫)
-    (220, 20, 60),    # 26: pedestrian (鲜红)
+    (220, 20, 60),  # 26: pedestrian (鲜红)
     (153, 153, 153),  # 27: pole (中灰)
-    (128, 64, 128),   # 28: road (紫色 - 标准道路色)
+    (128, 64, 128),  # 28: road (紫色 - 标准道路色)
     (110, 110, 110),  # 29: road_debris (灰)
-    (244, 35, 232),   # 30: sidewalk (粉色 - 标准人行道色)
-    (70, 130, 180),   # 31: sky (天蓝)
+    (244, 35, 232),  # 30: sidewalk (粉色 - 标准人行道色)
+    (70, 130, 180),  # 31: sky (天蓝)
     (220, 220, 220),  # 32: stopline (亮灰)
     (160, 150, 180),  # 33: striped_road_marking (淡蓝灰)
-    (250, 170, 30),   # 34: traffic_light (橙)
-    (220, 220, 0),    # 35: traffic_sign (黄)
-    (0, 80, 100),     # 36: train (蓝绿)
-    (0, 0, 70),       # 37: truck (暗蓝)
-    (107, 142, 35),   # 38: vegetation/terrain (植物绿)
+    (250, 170, 30),  # 34: traffic_light (橙)
+    (220, 220, 0),  # 35: traffic_sign (黄)
+    (0, 80, 100),  # 36: train (蓝绿)
+    (0, 0, 70),  # 37: truck (暗蓝)
+    (107, 142, 35),  # 38: vegetation/terrain (植物绿)
     (102, 102, 156),  # 39: wall/fence (蓝紫灰)
 ]
 metainfo = dict(classes=classes, palette=palette)
@@ -219,7 +218,6 @@ test_pipeline = [
     dict(type="LoadAnnotations", with_bbox=True, with_seg=True),
     dict(type="Resize", scale=img_scale, keep_ratio=False),
     dict(type="Pad", pad_to_square=True, pad_val=dict(img=(114.0, 114.0, 114.0), seg=255)),
-    
     # dict(type="ResizeSegMask", size=(IMG_SCALE)),
     dict(
         type="PackDetInputs",
@@ -263,10 +261,9 @@ test_dataloader = val_dataloader
 val_evaluator = [
     # 检测指标，日志里会显示 det/mAP
     dict(type="VOCMetric", metric="mAP", prefix="det"),
-    
     # 分割指标，日志里会显示 seg/mIoU
     # 注意：这里 type 最好加上 mmseg. 前缀以防万一
-    dict(type='mmseg.IoUMetric', ignore_index=255, iou_metrics=['mIoU'], prefix="seg")
+    dict(type="mmseg.IoUMetric", ignore_index=255, iou_metrics=["mIoU"], prefix="seg"),
 ]
 test_evaluator = val_evaluator
 
@@ -318,12 +315,12 @@ log_config = dict(
 default_hooks = dict(
     checkpoint=dict(interval=interval, max_keep_ckpts=3),
     visualization=dict(
-        type='DetVisualizationHook',
-        draw=True,             # 【关键】必须设为 True，否则只记录日志不画图
-        interval=50,            # 验证/测试时，每隔多少个样本画一张（设为 1 则每张都画，设为 50 则抽样画）
-        show=False,            # 服务器端设为 False
+        type="DetVisualizationHook",
+        draw=True,  # 【关键】必须设为 True，否则只记录日志不画图
+        interval=50,  # 验证/测试时，每隔多少个样本画一张（设为 1 则每张都画，设为 50 则抽样画）
+        show=False,  # 服务器端设为 False
         wait_time=2,
-        test_out_dir='vis_data' # (可选) 也会把图片保存在本地这个文件夹下
+        test_out_dir="vis_data",  # (可选) 也会把图片保存在本地这个文件夹下
     ),
 )
 
@@ -348,8 +345,8 @@ vis_backends = [
 ]
 
 visualizer = dict(
-    type='DetLocalVisualizer',
-    vis_backends=[dict(type='LocalVisBackend'), dict(type='TensorboardVisBackend')],
-    name='visualizer',
+    type="DetLocalVisualizer",
+    vis_backends=[dict(type="LocalVisBackend"), dict(type="TensorboardVisBackend")],
+    name="visualizer",
     alpha=0.5,  # 设置透明度，方便看清 mask 下的原图
 )
