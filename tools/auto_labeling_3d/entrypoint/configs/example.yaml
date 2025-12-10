@@ -24,7 +24,7 @@ create_info:
   - name: streampetr
     model_config: /workspace/projects/StreamPETR/configs/t4dataset/t4_base_vov_flash_480x640_baseline.py
     checkpoint:
-      model_zoo_url: https://download.autoware-ml-model-zoo.tier4.jp/autoware-ml/models/streampetr/streampetr-vov99/t4base/v2.3/best_NuScenes_metric_T4Metric_mAP_epoch_31.pth
+      model_zoo_url: https://download.autoware-ml-model-zoo.tier4.jp/autoware-ml/models/streampetr/streampetr-vov99/t4base/v2.5/best_NuScenesmetric_T4Metric_mAP_epoch_34.pth
       checkpoint_path: /workspace/work_dirs/checkpoints/example_model_streampetr.pth
   - name: centerpoint
     model_config: /workspace/projects/CenterPoint/configs/t4dataset/Centerpoint/second_secfpn_4xb16_121m_j6gen2_base_t4metric_v2.py
