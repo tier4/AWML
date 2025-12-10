@@ -46,7 +46,7 @@ ensemble_infos:
 # Please update here when using auto_labeling_3d for the dataset collected in the new sensor configuration
 create_pseudo_t4dataset:
   config: /workspace/tools/auto_labeling_3d/create_pseudo_t4dataset/config/x2.yaml # config for the sensor configuaration used when collecting non-annotated T4dataset
-  overwrite: true # If true, create_pseudo_t4dataset will overwrite existing T4Dataset.
+  overwrite: false # If true, create_pseudo_t4dataset will overwrite existing T4Dataset.
 
 # change_directory_structure configuration
 # If you do not need to change the directory structure, please comment out this section.
