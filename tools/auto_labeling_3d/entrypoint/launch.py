@@ -215,7 +215,9 @@ def run_create_annotation_tool_format(config: PipelineConfig, logger: logging.Lo
         ValueError: If create_annotation_tool_format configuration is missing.
     """
     if config.create_annotation_tool_format is None:
-        raise ValueError("create_annotation_tool_format configuration is required for run_create_annotation_tool_format")
+        raise ValueError(
+            "create_annotation_tool_format configuration is required for run_create_annotation_tool_format"
+        )
 
     logger.info("Starting create annotation tool format step...")
 
