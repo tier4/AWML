@@ -22,7 +22,7 @@ create_info:
   #     model_zoo_url: https://url/to/download/checkpoint.pth
   #     checkpoint_path: /path/to/save/checkpoint.pth
   - name: streampetr
-    model_config: /workspace/projects/StreamPETR/configs/t4dataset/t4_base_vov_flash_480x640_bottom_center.py
+    model_config: /workspace/projects/StreamPETR/configs/t4dataset/t4_base_vov_flash_480x640_baseline.py
     checkpoint:
       model_zoo_url: https://download.autoware-ml-model-zoo.tier4.jp/autoware-ml/models/streampetr/streampetr-vov99/t4base/v2.3/best_NuScenes_metric_T4Metric_mAP_epoch_31.pth
       checkpoint_path: /workspace/work_dirs/checkpoints/example_model_streampetr.pth
@@ -46,7 +46,7 @@ ensemble_infos:
 # Please update here when using auto_labeling_3d for the dataset collected in the new sensor configuration
 create_pseudo_t4dataset:
   config: /workspace/tools/auto_labeling_3d/create_pseudo_t4dataset/config/x2.yaml # config for the sensor configuaration used when collecting non-annotated T4dataset
-  overwrite: false # If true, create_pseudo_t4dataset will overwrite existing T4Dataset.
+  overwrite: true # If true, create_pseudo_t4dataset will overwrite existing T4Dataset.
 
 # change_directory_structure configuration
 # If you do not need to change the directory structure, please comment out this section.

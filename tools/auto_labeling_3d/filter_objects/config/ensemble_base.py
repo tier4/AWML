@@ -35,11 +35,11 @@ streampetr_pipeline = [
     dict(
         type="ThresholdFilter",
         confidence_thresholds={
-            "car": 0.35,
-            "truck": 0.35,
-            "bus": 0.35,
-            "bicycle": 0.35,
-            "pedestrian": 0.35,
+            "car": 0.36,
+            "truck": 0.39,
+            "bus": 0.38,
+            "bicycle": 0.41,
+            "pedestrian": 0.43,
         },
         use_label=["car", "truck", "bus", "bicycle", "pedestrian"],
     ),
