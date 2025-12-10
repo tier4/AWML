@@ -502,11 +502,6 @@ class BaseDepthTransform(BaseViewTransform):
                 & valid_dist_mask
             )
 
-            # for c in range(on_img.shape[0]):
-            #     masked_coords = cur_coords[c, on_img[c]].long()
-            #     masked_dist = dist[c, on_img[c]]
-            #     depth[b, c, 0, masked_coords[:, 0], masked_coords[:, 1]] = masked_dist
-
             # NOTE(knzo25): in the original code, a per-image loop was
             # implemented to compute the depth. However, it fixes the number
             # of images, which is not desired for deployment (the number
@@ -590,10 +585,7 @@ class DepthLSSTransform(BaseDepthTransform):
         )
         self.downsample = DownSampleNet(downsample=downsample, in_channels=out_channels, out_channels=out_channels)
 
-        self.depthnet = DepthLSSNet(in_channels=in_channels, out_channels=self.D + self.C)
-        self.downsample = DownSampleNet(downsample=downsample, in_channels=out_channels, out_channels=out_channels)
-
-    def get_cam_feats(self, x):
+    def get_cam_feats(self, x, d):
         B, N, C, fH, fW = x.shape
 
         x = x.view(B * N, C, fH, fW)
