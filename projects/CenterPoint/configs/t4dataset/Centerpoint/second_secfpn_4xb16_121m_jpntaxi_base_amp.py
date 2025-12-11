@@ -42,7 +42,7 @@ eval_class_range = {
 
 # user setting
 data_root = "data/t4dataset/"
-info_directory_path = "info/kokseang_2_5/"
+info_directory_path = "info/user_name/"
 train_gpu_size = 4
 train_batch_size = 16
 test_batch_size = 2
@@ -411,7 +411,6 @@ custom_hooks = [
 ]
 
 # Update the load_from path accordingly
-# load_from = "<best_checkpoint>"
-load_from = "work_dirs/centerpoint_2_5/T4Dataset/second_secfpn_4xb16_121m_base_amp_rfs/epoch_49.pth"
+load_from = "<best_checkpoint>"
 
 activation_checkpointing = ["pts_backbone"]
