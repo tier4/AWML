@@ -1,11 +1,11 @@
-# Deployed model for CenterPoint J6Gen2/1.X
+# Deployed model for CenterPoint J6Gen2/2.X
 ## Summary
 
 ### Overview
 - Main parameter
-  - range = 121.60m
-  - voxel_size = [0.32, 0.32, 8.0]
-  - grid_size = [760, 760, 1]
+  - range = 122.40m
+  - voxel_size = [0.24, 0.24, 8.0]
+  - grid_size = [510, 510, 1]
 	- **With Intensity**
 - Detailed comparison
 - Performance summary
