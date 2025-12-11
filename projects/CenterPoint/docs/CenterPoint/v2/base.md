@@ -10,7 +10,7 @@
 	- Datasets (frames: 8,453):
 	    - jpntaxi: db_jpntaxi_v1 + db_jpntaxi_v2 + db_jpntaxi_v4 (1,507 frames)
 			- j6: db_gsm8_v1 + db_j6_v1 + db_j6_v2 + db_j6_v3 + db_j6_v5 (2,435 frames)
-			- j6gen2: db_j6gen2_v1 + db_j6gen2_v2 + db_j6gen2_v3 + db_j6gen2_v4 + db_j6gen2_v5 (1,943 frames)
+			- j6gen2: db_j6gen2_v1 + db_j6gen2_v2 + db_j6gen2_v3 + db_j6gen2_v4 + db_j6gen2_v5 + db_j6gen2_v6 (1,943 frames)
 			- largebus: db_largebus_v1 + db_largebus_v2 (859 frames)
 			- jpntaxi_gen2: db_jpntaxigen2_v1 + db_jpntaxigen2_v2 (1,709 frames)
 
@@ -111,7 +111,9 @@
 | CenterPoint base/2.4.0       | 68.20 | 82.00            | 55.60               | 74.60         | 60.80                 | 67.80                   |
 
 </details>
+
 ## Release
+
 ### CenterPoint base/2.5
 - Voxelization increase from `0.20` to `0.24`
 - Adjust `[x, y]` range of pointclouds from `[-121.60, 121.60]` to `[-122.40, 122.40]`
@@ -151,6 +153,57 @@
     - Train time: NVIDIA H100 80GB * 4 * 50 epochs = 7 days
     - Batch size: 4*16 = 64
 
+- Evaluation
+   - Datasets (frames: 8,453):
+	    - jpntaxi: db_jpntaxi_v1 + db_jpntaxi_v2 + db_jpntaxi_v4 (1,507 frames)
+			- j6: db_gsm8_v1 + db_j6_v1 + db_j6_v2 + db_j6_v3 + db_j6_v5 (2,435 frames)
+			- j6gen2: db_j6gen2_v1 + db_j6gen2_v2 + db_j6gen2_v3 + db_j6gen2_v4 + db_j6gen2_v5 + db_j6gen2_v6 (1,943 frames)
+			- largebus: db_largebus_v1 + db_largebus_v2 (859 frames)
+			- jpntaxi_gen2: db_jpntaxigen2_v1 + db_jpntaxigen2_v2 (1,709 frames)
+
+  - Total mAP (eval range = 120m): 0.6870
+| class_name | Count         | mAP  | AP@0.5m | AP@1.0m | AP@2.0m | AP@4.0m |
+| ----       | --------------| ---- | ---- | ---- | ---- | ---- |
+| car        | 171,648       | 83.9 | 76.9    | 84.7    | 86.8    | 87.2    |
+| truck      |  21,415       | 54.2 | 38.3    | 52.8    | 59.3    | 66.2    |
+| bus        |   8,895       | 73.3 | 62.2    | 73.9    | 78.0    | 79.2    |
+| bicycle    |   5,601       | 63.1 | 60.5    | 63.4    | 64.0    | 64.2    |
+| pedestrian |  55,486       | 68.9 | 66.8    | 68.2    | 69.5    | 71.3    |
+
+- db_largebus_v1 + db_largebus_v2 (859 frames):
+  - Total mAP (eval range = 120m): 0.717
+
+| class_name | Count        | mAP  | AP@0.5m | AP@1.0m | AP@2.0m | AP@4.0m |
+| ----       | -------------| ---- | ---- | ---- | ---- | ---- |
+| car        | 16,604       | 90.1 | 85.0    | 90.5    | 92.3    | 92.6    |
+| truck      |  1,961       | 64.0 | 52.2    | 64.3    | 68.6    | 70.7    |
+| bus        |    171       | 69.3 | 49.3    | 74.8    | 76.5    | 76.5    |
+| bicycle    |    863       | 67.7 | 63.7    | 68.8    | 69.1    | 69.1    |
+| pedestrian |   4,659      | 67.7 | 66.0    | 67.3    | 68.0    | 69.5    |
+
+- j6gen2: db_j6gen2_v1 + db_j6gen2_v2 + db_j6gen2_v3 + db_j6gen2_v4 + db_j6gen2_v5 + db_j6gen2_v6 (1,943 frames):
+  - Total mAP (eval range = 120m): 0.7340
+
+| class_name | Count          | mAP  | AP@0.5m | AP@1.0m | AP@2.0m | AP@4.0m |
+| ----       | ---------------|| ---- | ---- | ---- | ---- | ---- |
+| car        | 66,293         | 85.0 | 78.4    | 85.5    | 87.9    | 88.3    |
+| truck      |  4,417         | 54.1 | 43.2    | 52.4    | 56.3    | 64.4    |
+| bus        |  2,353         | 82.9 | 75.5    | 82.6    | 86.3    | 87.1    |
+| bicycle    |    500         | 76.8 | 75.4    | 77.2    | 77.2    | 77.2    |
+| pedestrian |   11,417        | 68.0 | 66.3    | 67.5    | 68.3    | 69.8    |
+
+- db_jpntaxigen2_v1 + db_jpntaxigen2_v2 (1,709 frames):
+  - Total mAP (eval range = 120m): 0.607
+
+| class_name | Count      | mAP  | AP@0.5m | AP@1.0m | AP@2.0m | AP@4.0m |
+| ----       | ---------- | ---- | ---- | ---- | ---- | ---- |
+| car        |  9,710     | 86.1 | 78.1    | 87.6    | 88.9    | 89.7    |
+| truck      |  2,577     | 41.0 | 30.0    | 38.5    | 41.6    | 53.9    |
+| bus        |  2,569     | 58.2 | 39.1    | 58.8    | 66.7    | 68.4    |
+| bicycle    |    466     | 45.7 | 36.3    | 48.2    | 48.9    | 49.2    |
+| pedestrian |  10,518    | 72.3 | 70.0    | 71.3    | 72.8    | 75.0    |
+
+</details>
 
 ### CenterPoint base/2.4
 - Decrease voxelization size from `0.32` to `0.20`
