@@ -152,7 +152,6 @@
     - Batch size: 4*16 = 64
 
 
-## Release
 ### CenterPoint base/2.4
 - Decrease voxelization size from `0.32` to `0.20`
 - Train with Repeat Sampling Factor (RFS) and low pedestrians (< 1.5m and distance < 50m)
