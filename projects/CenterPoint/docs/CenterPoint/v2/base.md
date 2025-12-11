@@ -142,7 +142,7 @@
       - jpntaxi: db_jpntaxi_v1 + db_jpntaxi_v2 + db_jpntaxi_v4 (26,100 frames)
       - j6: db_gsm8_v1 + db_j6_v1 + db_j6_v2 + db_j6_v3 + db_j6_v5 (24,756 frames)
       - j6gen2: db_j6gen2_v1 + db_j6gen2_v2 + db_j6gen2_v3 + db_j6gen2_v4 + db_j6gen2_v5 + db_j6gen2_v6 + db_j6gen2_v7 + db_j6gen2_v8 (37,002 frames)
-      - largebus: db_largebus_v1 + db_largebus_v2 (111,06 frames)
+      - largebus: db_largebus_v1 + db_largebus_v2 (11,106 frames)
       - jpntaxi_gen2: db_jpntaxigen2_v1 + db_jpntaxigen2_v2 (24,992 frames)
     - [Config file path](https://github.com/tier4/AWML/blob/e2bc8a2da0ea8db296314efb51d420e550fb7790/projects/CenterPoint/configs/t4dataset/Centerpoint/second_secfpn_4xb16_121m_base_amp_rfs.py)
     - Deployed onnx and ROS parameter files (for internal)
