@@ -118,6 +118,8 @@
 - Voxelization increase from `0.20` to `0.24`
 - Adjust `[x, y]` range of pointclouds from `[-121.60, 121.60]` to `[-122.40, 122.40]`
 - Train with Repeat Sampling Factor (RFS) and low pedestrians (< 1.5m and distance < 50m)
+- Reduce the grid size of final heatmaps from `[608, 608]` to `[510, 510]`
+- Reduce the maximum size of training and evaluation pointclous from `128000` to `96000`
 - Train more data with:
     - `db_largebus_v1`
 		- `db_largebus_v2`
