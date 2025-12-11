@@ -118,7 +118,7 @@
 - Voxelization increase from `0.20` to `0.24`
 - Adjust `[x, y]` range of pointclouds from `[-121.60, 121.60]` to `[-122.40, 122.40]`
 - Train with Repeat Sampling Factor (RFS) and low pedestrians (< 1.5m and distance < 50m)
-- Train more data with: 
+- Train more data with:
     - `db_largebus_v1`
 		- `db_largebus_v2`
 		- `db_j6gen2_v1`
@@ -130,7 +130,7 @@
 - Train with new datatasets:
     - `db_j6gen2_v6`
 		- `db_j6gen2_v7`
-		- `db_j6gen2_v8` 
+		- `db_j6gen2_v8`
 
 <details>
 <summary> The link of data and evaluation result </summary>
