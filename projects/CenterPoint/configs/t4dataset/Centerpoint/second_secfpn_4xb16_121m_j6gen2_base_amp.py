@@ -1,6 +1,6 @@
 _base_ = [
     "../../../../../autoware_ml/configs/detection3d/default_runtime.py",
-    "../../../../../autoware_ml/configs/detection3d/dataset/t4dataset/j6gen2_base.py",
+    "../../../../../autoware_ml/configs/detection3d/dataset/t4dataset/j6gen2_v6.py",
     "../../default/second_secfpn_base.py",
 ]
 custom_imports = dict(imports=["projects.CenterPoint.models"], allow_failed_imports=False)
@@ -411,6 +411,10 @@ custom_hooks = [
 ]
 
 # Update the load_from path accordingly
+<<<<<<< HEAD
 load_from = "<best_checkpoint>"
 
 activation_checkpointing = ["pts_backbone"]
+=======
+# load_from = "<best_checkpoint>"
+>>>>>>> main
