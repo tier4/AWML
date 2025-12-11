@@ -50,4 +50,3 @@ test_evaluator = dict(
     scene_batch_size=256,
     write_metric_summary=True,
 )
-
