@@ -23,20 +23,9 @@ class ImageAug3D(BaseTransform):
         self.rot_lim = rot_lim
         self.is_train = is_train
 
-    def sample_augmentation(self, results, camera_index):
+    def sample_augmentation(self, results):
         H, W = results["ori_shape"]
         fH, fW = self.final_dim
-
-        cam2image = results["cam2img"][camera_index]
-        fx = cam2image[0, 0]
-        fy = cam2image[1, 1]
-        cx = cam2image[0, 2]
-        cy = cam2image[1, 2]
-
-        r31, r32, r33 = results["cam2lidar"][camera_index, 2, :3]
-        yl = cy + cx * (fy / fx) * (r31 / r32) - fy * (r33 / r32)
-        yr = cy + (cx - W + 1) * (fy / fx) * (r31 / r32) - fy * (r33 / r32)
-        yh = max(0, max(yr, yl))
 
         if self.is_train:
             if isinstance(self.resize_lim, (int, float)):
@@ -45,16 +34,15 @@ class ImageAug3D(BaseTransform):
             else:
                 resize = np.random.uniform(*self.resize_lim)
 
-            yh_resized = yh * resize
-
             resize_dims = (int(W * resize), int(H * resize))
             newW, newH = resize_dims
 
-            # crop_h = int(min(newH - fH, yh_resized))
-            # print(yh, " ", yh_resized, " ", crop_h, " ", newH-fH)
             crop_h = int((1 - np.random.uniform(*self.bot_pct_lim)) * newH) - fH
             crop_w = int(np.random.uniform(0, max(0, newW - fW)))
             crop = (crop_w, crop_h, crop_w + fW, crop_h + fH)
+            flip = False
+            if self.rand_flip and np.random.choice([0, 1]):
+                flip = True
             rotate = np.random.uniform(*self.rot_lim)
         else:
             resize_lim = np.mean(self.resize_lim)
@@ -64,16 +52,14 @@ class ImageAug3D(BaseTransform):
             else:
                 resize = resize_lim
 
-            yh_resized = yh * resize
-
             resize_dims = (int(W * resize), int(H * resize))
             newW, newH = resize_dims
             crop_h = int((1 - np.mean(self.bot_pct_lim)) * newH) - fH
-            # crop_h = int(min(newH - fH, yh_resized))
             crop_w = int(max(0, newW - fW) / 2)
             crop = (crop_w, crop_h, crop_w + fW, crop_h + fH)
             rotate = 0
-        return resize, resize_dims, crop, rotate
+            flip = False
+        return resize, resize_dims, crop, flip, rotate
 
     def img_transform(self, img, rotation, translation, resize, resize_dims, crop, flip, rotate):
         # adjust image

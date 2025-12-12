@@ -547,7 +547,7 @@ class BaseDepthTransform(BaseViewTransform):
 
             x, est_depth_distr, gt_depth_distr, counts_3d, gt_gaussian_depths = self.get_cam_feats(img, depth)
             x = self.bev_pool(x, geom)
-            depth_loss = self.depth_loss_with_prob_dists(est_depth_distr, gt_depth_distr, counts_3d)
+            depth_loss = self.depth_loss_with_prob_dists(est_depth_distr, gt_gaussian_depths, counts_3d)
 
         return x, depth_loss
 
@@ -582,7 +582,7 @@ class DepthLSSTransform(BaseDepthTransform):
         dbound: Tuple[float, float, float],
         downsample: int = 1,
         lidar_depth_image_last_stride: int = 2,
-        gaussian_sigma: float = 0.5,
+        gaussian_sigma: float = 1.0,
     ) -> None:
         """Compared with `LSSTransform`, `DepthLSSTransform` adds sparse depth
         information from lidar points into the inputs of the `depthnet`."""
