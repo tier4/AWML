@@ -498,11 +498,6 @@ class BaseDepthTransform(BaseViewTransform):
                 & valid_dist_mask
             )
 
-            # for c in range(on_img.shape[0]):
-            #     masked_coords = cur_coords[c, on_img[c]].long()
-            #     masked_dist = dist[c, on_img[c]]
-            #     depth[b, c, 0, masked_coords[:, 0], masked_coords[:, 1]] = masked_dist
-
             # NOTE(knzo25): in the original code, a per-image loop was
             # implemented to compute the depth. However, it fixes the number
             # of images, which is not desired for deployment (the number
@@ -604,6 +599,7 @@ class DepthLSSTransform(BaseDepthTransform):
         )
         self.downsample = DownSampleNet(downsample=downsample, in_channels=out_channels, out_channels=out_channels)
 
+<<<<<<< HEAD
     def get_gaussian_depths(self, counts_3d, d, B, N, C, fH, fW):
         if self.training:
             d_min, d_max, d_steps = self.dbound
@@ -675,6 +671,8 @@ class DepthLSSTransform(BaseDepthTransform):
 
         return gt_depth_distr, counts_3d, gt_gaussian_probs
 
+=======
+>>>>>>> feat/bevfusion_camera_2d_aux
     def get_cam_feats(self, x, d):
         B, N, C, fH, fW = x.shape
 

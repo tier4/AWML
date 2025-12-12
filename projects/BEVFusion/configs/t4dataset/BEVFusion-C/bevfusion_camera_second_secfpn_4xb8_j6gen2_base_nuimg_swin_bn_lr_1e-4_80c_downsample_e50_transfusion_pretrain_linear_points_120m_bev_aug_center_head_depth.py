@@ -132,7 +132,11 @@ model = dict(
         upsample_cfg=dict(type="deconv", bias=False),
         use_conv_for_no_stride=True,
     ),
+<<<<<<<< HEAD:projects/BEVFusion/configs/t4dataset/BEVFusion-C/bevfusion_camera_second_secfpn_4xb8_j6gen2_base_nuimg_swin_bn_lr_1e-4_80c_downsample_e50_transfusion_pretrain_linear_points_120m_bev_aug_center_head_depth.py
 	img_roi_head=None,
+========
+    img_roi_head=None,
+>>>>>>>> feat/bevfusion_camera_2d_aux:projects/BEVFusion/configs/t4dataset/BEVFusion-C/bevfusion_camera_second_secfpn_4xb8_j6gen2_base_nuimg_swin_50m.py
 		# img_roi_head=dict(
     #     type="mmdet.FocalHead",
     #     num_classes=len(_base_.class_names),
@@ -154,7 +158,13 @@ model = dict(
     #         )
     #     ),
     # ),
+<<<<<<<< HEAD:projects/BEVFusion/configs/t4dataset/BEVFusion-C/bevfusion_camera_second_secfpn_4xb8_j6gen2_base_nuimg_swin_bn_lr_1e-4_80c_downsample_e50_transfusion_pretrain_linear_points_120m_bev_aug_center_head_depth.py
     img_bev_bbox_head=dict(
+========
+    # img_aux_bbox_head=None,
+	conv_fuser=None,
+    img_aux_bbox_head=dict(
+>>>>>>>> feat/bevfusion_camera_2d_aux:projects/BEVFusion/configs/t4dataset/BEVFusion-C/bevfusion_camera_second_secfpn_4xb8_j6gen2_base_nuimg_swin_50m.py
         type="BEVFusionCenterHead",
         in_channels=80,
         # (output_channel_size, num_conv_layers)
@@ -177,7 +187,7 @@ model = dict(
         ),
         share_conv_channel=64,
         loss_cls=dict(type="mmdet.GaussianFocalLoss", reduction="none", loss_weight=1.0),
-        loss_bbox=dict(type="mmdet.L1Loss", reduction="mean", loss_weight=0.0), # Dont need to learn regression in this aux head
+        loss_bbox=dict(type="mmdet.L1Loss", reduction="mean", loss_weight=0.0),
         norm_bbox=True,
         tasks=[
             dict(num_class=5, class_names=["car", "truck", "bus", "bicycle", "pedestrian"]),
@@ -205,7 +215,7 @@ model = dict(
             pc_range=point_cloud_range,
             voxel_size=voxel_size,
             # No filter by range
-            post_center_range=[-61.2, -61.2, -10.0, 61.2, 61.2, 10.0],
+            post_center_range=[-200.0, -200.0, -10.0, 200.0, 200.0, 10.0],
             # nms_type="rotate",
             # post_center_limit_range=[-90.0, -90.0, -10.0, 90.0, 90.0, 10.0],
             # score_threshold=0.1,
@@ -224,14 +234,14 @@ model = dict(
             grid_size=grid_size,
             voxel_size=voxel_size,
             code_weights=[1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 0.2, 0.2],
-						out_size_factor=out_size_factor,
+			out_size_factor=out_size_factor,
         ),
         test_cfg=dict(
             dataset="t4datasets",
             grid_size=grid_size,
             voxel_size=voxel_size[0:2],
             pc_range=point_cloud_range[0:2],
-						out_size_factor=out_size_factor,
+			out_size_factor=out_size_factor,
         ),
         bbox_coder=dict(
             pc_range=point_cloud_range[0:2],
@@ -304,7 +314,6 @@ train_pipeline = [
     dict(type="ObjectRangeMinPointsFilter", range_radius=[0, 60], min_num_points=2),
     dict(type="ObjectRangeMinPointsFilter", range_radius=[60, 130], min_num_points=1),
     dict(type="PointShuffle"),
-	# dict(type="BEVFusionLoadAnnotations2D"),
     dict(
         type="Pack3DDetInputs",
 		keys=["img", "points",  "gt_bboxes_3d", "gt_labels_3d"],
@@ -327,8 +336,6 @@ train_pipeline = [
             "pcd_trans",
             "lidar_aug_matrix",
 			"pad_shape",
-            # "depths",
-            # "centers_2d"
         ],
     ),
 ]
@@ -404,7 +411,6 @@ train_dataloader = dict(
         backend_args=backend_args,
         data_root=data_root,
         ann_file=info_directory_path + _base_.info_train_file_name,
-        # ann_file=info_directory_path + _base_.info_val_file_name,
         metainfo=_base_.metainfo,
         class_names=_base_.class_names,
         test_mode=False,
@@ -423,7 +429,6 @@ val_dataloader = dict(
         type=_base_.dataset_type,
         data_root=data_root,
         ann_file=info_directory_path + _base_.info_val_file_name,
-        # ann_file=info_directory_path + _base_.info_train_file_name,
         pipeline=test_pipeline,
         metainfo=_base_.metainfo,
         class_names=_base_.class_names,
@@ -432,7 +437,6 @@ val_dataloader = dict(
         test_mode=True,
         box_type_3d="LiDAR",
         backend_args=backend_args,
-        # filter_cfg=filter_cfg
     ),
 )
 
@@ -453,7 +457,6 @@ test_dataloader = dict(
         test_mode=True,
         box_type_3d="LiDAR",
         backend_args=backend_args,
-        # filter_cfg=filter_cfg
     ),
 )
 
