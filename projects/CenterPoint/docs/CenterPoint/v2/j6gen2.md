@@ -76,7 +76,7 @@
 ## Release
 
 ### CenterPoint J6Gen2/2.5.1
-- Finetune from `CenterPoint base/2.4.0` with j6gen2 base dataset
+- Finetune from `CenterPoint base/2.5.0` with j6gen2 base dataset
 - Include intensity as an extra feature and Repeat Sampling Factor (RFS)
 - Train with new datatasets:
   - `db_j6gen2_v6`

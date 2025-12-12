@@ -42,7 +42,7 @@ vehicle and sensor setups.
 
 - Test datases: db_jpntaxigen2_v2 (total frames: 230)
 
-| eval range: 120m                 | mAP     | car <br> (3,449)     | truck <br> (726) | bus <br> (251) | bicycle <br> (157) | pedestrian <br> (2,42) |
+| eval range: 120m                 | mAP     | car <br> (3,449)     | truck <br> (726) | bus <br> (251) | bicycle <br> (157) | pedestrian <br> (2,443) |
 | ---------------------            | ----    | ----------------- | ------------------- | ---------------- | ----------------- | ---------------- |
 | CenterPoint JPNTaxi_Base/2.5.1   | 73.33 | 90.00            | 53.80               | 85.40         | 63.60                 | 73.80                   |
 | CenterPoint JPNTaxi_Gen2/2.5.1   | 72.20 | 89.50            | 51.60               | 86.00         | 60.10                 | 73.60                   |
@@ -55,7 +55,7 @@ vehicle and sensor setups.
 
 - Test datases: jpntaxi_gen2: db_jpntaxigen2_v1 + db_jpntaxigen2_v2 + db_jpntaxi_v1 + db_jpntaxi_v2 + db_jpntaxi_v4 (total frames: 3,216)
 
-| eval range: 120m           | mAP     | car <br> (25,852) | truck <br> (7,155) | bus <br> (4.026) | bicycle <br> (1,506) | pedestrian <br> (22,489) |
+| eval range: 120m           | mAP     | car <br> (25,852) | truck <br> (7,155) | bus <br> (4,026) | bicycle <br> (1,506) | pedestrian <br> (22,489) |
 | -------------------------  | ----    | ----------------- | ------------------- | ---------------- | -------------------- | ------------------------ |
 | CenterPoint JPNTaxi_Base/2.5.1   | 66.66 | 81.50            | 49.90               | 67.90         | 62.20                 | 71.50                   |
 | CenterPoint JPNTaxi_Gen2/2.4.1   | 59.10 | 73.40            | 42.90               | 59.10         | 51.50                 | 68.70                   |
