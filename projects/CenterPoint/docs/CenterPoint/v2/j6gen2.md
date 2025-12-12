@@ -86,7 +86,7 @@
 
 - Overall:
   - Performance is generally better than `CenterPoint base/2.5.0` and `CenterPoint J6Gen2/2.5.1`
-	- However, the performance in `largebus` slightly degrades, and it suggests that it needs to add more validation/test sets
+	- However, the performance in `largebus` slightly degrades
 
 <details>
 <summary> The link of data and evaluation result </summary>
