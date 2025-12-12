@@ -83,10 +83,10 @@ vehicle and sensor setups.
   - Deployed onnx and ROS parameter files (for internal)
     - [WebAuto](https://evaluation.tier4.jp/evaluation/mlpackages/7156b453-2861-4ae9-b135-e24e48cc9029/releases/41e733b4-a778-4281-ba5b-6ee9ab7c89dc?project_id=zWhWRzei)
     - [model-zoo](https://download.autoware-ml-model-zoo.tier4.jp/autoware-ml/models/centerpoint/centerpoint/jpntaxi_base/v2.5.1/deployment.zip)
-    - [Google drive](https://drive.google.com/drive/u/0/folders/1hD__tIVcQ6UalgJi49jSvRZFgNxERGOA)
+    - [Google drive](https://drive.google.com/file/d/1wI5lIv1E4Ysg5d1jWj-e9f8CBFB5cM2m/view?usp=drive_link)
   - Logs (for internal)
     - [model-zoo](https://download.autoware-ml-model-zoo.tier4.jp/autoware-ml/models/centerpoint/centerpoint/jpntaxi_base/v2.5.1/logs.zip)
-    - [Google drive](https://drive.google.com/file/d/18h0LVXbY919hlk35UOa8MedRqjUplLUt/view?usp=drive_link)
+    - [Google drive](https://drive.google.com/file/d/1nHuc0u_9UWAJZWIol_xnJWgODIeFJv0g/view?usp=drive_link)
   - Train time: NVIDIA H100 80GB * 4 * 30 epochs = 1 day and 20 hours
   - Batch size: 4*16 = 64
 
