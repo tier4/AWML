@@ -244,7 +244,6 @@ def assign_ids_and_save_detection_data(
                     }
                     for instance in entry.instances
                 ],
-                # 如果不保存mask，这里将是 None (JSON中显示为 null)
                 "seg_map_path": entry.gt_semantic_seg,
             }
             for i, entry in enumerate(detection_data.data_list)
