@@ -6,9 +6,9 @@ import warnings
 from dataclasses import dataclass, field
 from typing import Dict, List, Optional
 
+import cv2
 import mmengine
 import numpy as np
-import cv2
 import yaml
 from mmengine.config import Config
 from mmengine.logging import print_log
@@ -23,6 +23,7 @@ class Instance:
     mask: List[List[int]] = field(default_factory=list)
     extra_anns: List[str] = field(default_factory=list)
 
+
 @dataclass
 class DataEntry:
     img_path: str
@@ -30,18 +31,21 @@ class DataEntry:
     height: int
     instances: List[Instance] = field(default_factory=list)
     surfaces: List[Instance] = field(default_factory=list)
-    gt_semantic_seg: Optional[str] = None 
+    gt_semantic_seg: Optional[str] = None
+
 
 @dataclass
 class DetectionData:
     metainfo: Dict[str, str]
     data_list: List[DataEntry] = field(default_factory=list)
 
+
 def save_semantic_mask_png(semantic_mask, output_path):
 
     os.makedirs(os.path.dirname(output_path), exist_ok=True)
 
     cv2.imwrite(output_path, semantic_mask.astype(np.uint8))
+
 
 def convert_entry_instances_to_semantic(entry, allowed_classes):
     height, width = entry.height, entry.width
@@ -52,7 +56,7 @@ def convert_entry_instances_to_semantic(entry, allowed_classes):
     for surf in entry.surfaces:
         cls_id = surf.bbox_label
         for poly_flat in surf.mask:
-            if len(poly_flat) < 6: 
+            if len(poly_flat) < 6:
                 continue
             poly = np.array(poly_flat, dtype=np.int32).reshape(-1, 2)
             cv2.fillPoly(semantic_mask, [poly], color=cls_id)
@@ -61,17 +65,19 @@ def convert_entry_instances_to_semantic(entry, allowed_classes):
     for inst in entry.instances:
         cls_id = inst.bbox_label
         for poly_flat in inst.mask:
-            if len(poly_flat) < 6: 
+            if len(poly_flat) < 6:
                 continue
             poly = np.array(poly_flat, dtype=np.int32).reshape(-1, 2)
             cv2.fillPoly(semantic_mask, [poly], color=cls_id)
-    
+
     return semantic_mask
+
 
 def generate_colormap(num_classes):
     np.random.seed(42)
     colors = np.random.randint(0, 256, size=(num_classes, 3), dtype=np.uint8)
     return colors
+
 
 def save_colored_mask(semantic_mask, output_path, colormap):
     height, width = semantic_mask.shape
@@ -82,6 +88,7 @@ def save_colored_mask(semantic_mask, output_path, colormap):
 
     os.makedirs(os.path.dirname(output_path), exist_ok=True)
     cv2.imwrite(output_path, color_mask[:, :, ::-1])  # OpenCV BGR
+
 
 def update_detection_data_annotations(
     data_list: Dict[str, DataEntry],
@@ -96,7 +103,7 @@ def update_detection_data_annotations(
     save_semantic_segmentation: bool = False,
 ) -> None:
 
-    # Instance (Objects) 
+    # Instance (Objects)
     for ann in object_ann:
         class_name = class_mappings.get(categories[ann.category_token], None)
         if class_name not in allowed_classes:
@@ -110,9 +117,9 @@ def update_detection_data_annotations(
 
         flat_polygons = []
         for cnt in contours:
-            if len(cnt) >= 3:  
+            if len(cnt) >= 3:
                 poly = cnt.reshape(-1, 2).tolist()  # [[x1,y1], [x2,y2], ...]
-                poly_flat = [coord for point in poly for coord in point]  
+                poly_flat = [coord for point in poly for coord in point]
                 flat_polygons.append(poly_flat)
 
         instance = Instance(
@@ -127,10 +134,10 @@ def update_detection_data_annotations(
     if save_semantic_segmentation:
         for ann in surface_ann:
             class_name = class_mappings.get(categories[ann.category_token], None)
-            
+
             if class_name not in allowed_classes:
                 continue
-                
+
             bbox_label = allowed_classes.index(class_name)
 
             binary = ann.mask.decode().astype(np.uint8)
@@ -144,10 +151,10 @@ def update_detection_data_annotations(
                     flat_polygons.append(poly_flat)
 
             surface_instance = Instance(
-                bbox=ann.bbox if hasattr(ann, 'bbox') else [0,0,0,0], 
+                bbox=ann.bbox if hasattr(ann, "bbox") else [0, 0, 0, 0],
                 bbox_label=bbox_label,
                 mask=flat_polygons,
-                extra_anns=[] 
+                extra_anns=[],
             )
 
             if ann.sample_data_token in data_list:
@@ -166,6 +173,7 @@ def update_detection_data_annotations(
             if save_colored_masks:
                 color_file = f"{root_path}/masks_color/{(entry.img_path).split('/')[-5] +'_' +(entry.img_path).split('/')[-2] +'_' + (entry.img_path).split('/')[-1]}.png"
                 save_colored_mask(gray_mask, color_file, colormap)
+
 
 def get_scene_root_dir_path(
     root_path: str,
@@ -284,19 +292,19 @@ def main() -> None:
                     t4_dataset_id = scene_id.strip()
                     t4_dataset_version_id = None
 
-                if t4_dataset_version_id and os.path.exists(osp.join(args.root_path, t4_dataset_id, t4_dataset_version_id)):
+                if t4_dataset_version_id and os.path.exists(
+                    osp.join(args.root_path, t4_dataset_id, t4_dataset_version_id)
+                ):
                     scene_root_dir_path = osp.join(args.root_path, t4_dataset_id, t4_dataset_version_id)
                 elif os.path.exists(osp.join(args.root_path, dataset_version, t4_dataset_id)):
                     print(
                         f"Warning: {t4_dataset_id} has no t4_dataset_version_id or the specified version is missing. "
                         "Using the available version on disk."
                     )
-                    
+
                     scene_root_dir_path = get_scene_root_dir_path(args.root_path, dataset_version, t4_dataset_id)
                 else:
-                    raise ValueError(
-                        f"{t4_dataset_id} does not exist."
-                    )
+                    raise ValueError(f"{t4_dataset_id} does not exist.")
 
                 t4 = Tier4(
                     data_root=scene_root_dir_path,
