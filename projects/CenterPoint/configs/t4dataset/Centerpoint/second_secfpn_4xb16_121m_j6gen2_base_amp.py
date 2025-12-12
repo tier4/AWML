@@ -409,10 +409,6 @@ custom_hooks = [
 ]
 
 # Update the load_from path accordingly
-<<<<<<< HEAD
 load_from = "<best_checkpoint>"
 
 activation_checkpointing = ["pts_backbone"]
-=======
-# load_from = "<best_checkpoint>"
->>>>>>> main
