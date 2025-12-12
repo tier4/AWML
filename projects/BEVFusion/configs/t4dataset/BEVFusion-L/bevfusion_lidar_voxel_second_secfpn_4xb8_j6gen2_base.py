@@ -8,8 +8,8 @@ custom_imports["imports"] += _base_.custom_imports["imports"]
 custom_imports["imports"] += ["autoware_ml.detection3d.datasets.transforms"]
 
 # user setting
-data_root = "data/t4datasets/"
-info_directory_path = "info/kokseang_2_3/"
+data_root = "data/t4dataset/"
+info_directory_path = "info/kokseang_2_5/"
 train_gpu_size = 4
 train_batch_size = 8
 test_batch_size = 2
@@ -17,9 +17,9 @@ val_interval = 5
 max_epochs = 30
 backend_args = None
 work_dir = (
-    "work_dirs/bevfusion_2_3_full/"
+    "work_dirs/bevfusion_2_5/"
     + _base_.dataset_type
-    + "/bevfusion_lidar_voxel_second_secfpn_4xb8_j6gen2_base_shorter_point_filter/"
+    + "/bevfusion_lidar_voxel_second_secfpn_4xb8_j6gen2_base/"
 )
 
 # range setting
@@ -108,8 +108,6 @@ train_pipeline = [
         type="GlobalRotScaleTrans",
         scale_ratio_range=[0.9, 1.1],
         rot_range=[-0.78539816, 0.78539816],
-        # rot_range=[-1.571, 1.571],
-        # scale_ratio_range=[0.8, 1.2],
         translation_std=[0.5, 0.5, 0.2],
     ),
     dict(type="BEVFusionRandomFlip3D"),
@@ -132,7 +130,6 @@ train_pipeline = [
     ),
     dict(type="ObjectRangeMinPointsFilter", range_radius=[0, 60], min_num_points=2),
     dict(type="ObjectRangeMinPointsFilter", range_radius=[60, 130], min_num_points=1),
-    # dict(type="ObjectRangeMinPointsFilter", range_radius=[90, 130], min_num_points=1),
     dict(type="PointShuffle"),
     dict(
         type="Pack3DDetInputs",
@@ -359,4 +356,4 @@ auto_scale_lr = dict(enable=False, base_batch_size=train_gpu_size * train_batch_
 if train_gpu_size > 1:
     sync_bn = "torch"
 
-load_from = "work_dirs/bevfusion_2_3/T4Dataset/bevfusion_lidar_voxel_second_secfpn_4xb16_base/epoch_46.pth"
+load_from = "work_dirs/bevfusion_2_5/T4Dataset/bevfusion_lidar_voxel_second_secfpn_4xb8_base/epoch_50.pth"
