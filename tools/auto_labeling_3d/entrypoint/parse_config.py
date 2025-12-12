@@ -201,7 +201,7 @@ def load_model_config(model: ModelConfig, work_dir: Path) -> Config:
     Returns:
         Config: Loaded mmengine Config object.
     """
-    cfg = Config.fromfile(str(model.model_config))
+    cfg = Config.fromfile(str(model.model_config.config_path))
     cfg.work_dir = str(work_dir / model.name)
     return cfg
 
