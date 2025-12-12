@@ -18,7 +18,7 @@
 | eval range: 120m         | mAP     | car <br> (82,897) | truck <br> (6,378) | bus <br> (2,524) | bicycle <br> (1,363) | pedestrian <br> (16,076) |
 | -------------------------    | ---- | ----------------- | ------------------- | ---------------- | -------------------- | ------------------------ |
 | CenterPoint J6Gen2/2.5.1     | 74.20 | 86.00            | 59.90               | 80.40         | 74.50                 | 70.10                   |
-| CenterPoint J6Gen2/2.4.1     | 74.10 | 85.40            | 59.70               | 80.80         | 76.80                 | 68.70                   |
+| CenterPoint J6Gen2/2.4.1     | 74.20 | 85.40            | 59.70               | 80.80         | 76.80                 | 68.70                   |
 
 
 ### Deprecated results
@@ -91,7 +91,7 @@
 <details>
 <summary> The link of data and evaluation result </summary>
 
-- Model
+#### Model
   - Training Dataset (frames: 48,108):
       - j6gen2: j6gen2: db_j6gen2_v1 + db_j6gen2_v2 + db_j6gen2_v3 + db_j6gen2_v4 + db_j6gen2_v5 + db_j6gen2_v6 + db_j6gen2_v7 + db_j6gen2_v8 (37,002 frames)
 			- largebus: db_largebus_v1 + db_largebus_v2 (11,106 frames)
@@ -106,42 +106,50 @@
   - Train time: NVIDIA H100 80GB * 4 * 30 epochs = 1 day 3 hours
   - Batch size: 4*16 = 64
 
-- Evaluation
+##### Evaluation Summary
 
-- db_largebus_v1 + db_largebus_v2 (859 frames):
-  - Total mAP (eval range = 120m): 0.765
+**LargeBus**: db_largebus_v1 + db_largebus_v2 (859 frames)  
+**Total mAP (eval range = 120m): 0.765**
 
 | class_name | Count        | mAP  | AP@0.5m | AP@1.0m | AP@2.0m | AP@4.0m |
 | ----       | -------------| ---- | ---- | ---- | ---- | ---- |
-| car        | 16,604       | 90.8 | 85.9    | 91.4    | 92.8    | 93.1    |
-| truck      |  1,961       | 69.1 | 56.2    | 69.3    | 74.6    | 76.5    |
-| bus        |    171       | 77.9 | 63.0    | 82.8    | 82.9    | 82.9    |
-| bicycle    |    863       | 73.4 | 69.4    | 73.9    | 75.1    | 75.3    |
-| pedestrian |   4,659      | 71.1 | 69.7    | 70.7    | 71.3    | 72.7    |
+| car        | 16,604       | 90.8 | 85.9 | 91.4 | 92.8 | 93.1 |
+| truck      |  1,961       | 69.1 | 56.2 | 69.3 | 74.6 | 76.5 |
+| bus        |    171       | 77.9 | 63.0 | 82.8 | 82.9 | 82.9 |
+| bicycle    |    863       | 73.4 | 69.4 | 73.9 | 75.1 | 75.3 |
+| pedestrian |   4,659      | 71.1 | 69.7 | 70.7 | 71.3 | 72.7 |
 
-- db_j6gen2_v6 (636 frames):
-  - Total mAP (eval range = 120m): 0.734
+---
 
-| class_name | Count      | mAP  | AP@0.5m | AP@1.0m | AP@2.0m | AP@4.0m |
-| ----       | ---------- | ---- | ---- | ---- | ---- | ---- |
-| car        | 23,898     | 85.5 | 79.3    | 85.6    | 88.3    | 88.6    |
-| truck      |  1,534     | 59.2 | 48.5    | 56.1    | 60.2    | 72.0    |
-| bus        |    957     | 74.0 | 66.6    | 74.3    | 77.4    | 77.6    |
-| bicycle    |    163     | 79.3 | 76.4    | 80.3    | 80.3    | 80.3    |
-| pedestrian |  4,556     | 69.1 | 67.6    | 68.7    | 69.4    | 70.8    |
 
-- j6gen2: db_j6gen2_v1 + db_j6gen2_v2 + db_j6gen2_v3 + db_j6gen2_v4 + db_j6gen2_v5 + db_j6gen2_v6 (1,943 frames):
-  - Total mAP (eval range = 120m): 0.752
+**J6Gen2_V6**: db_j6gen2_v6 (636 frames)  
+**Total mAP (eval range = 120m): 0.734**
 
 | class_name | Count      | mAP  | AP@0.5m | AP@1.0m | AP@2.0m | AP@4.0m |
 | ----       | ---------- | ---- | ---- | ---- | ---- | ---- |
-| car        | 66,293     | 84.8 | 78.6    | 84.9    | 87.3    | 88.2    |
-| truck      |  4,417     | 56.2 | 46.1    | 54.5    | 57.9    | 66.5    |
-| bus        |  2,353     | 80.7 | 75.6    | 80.6    | 83.0    | 83.7    |
-| bicycle    |    500     | 84.7 | 83.3    | 85.1    | 85.1    | 85.5    |
-| pedestrian |  11,417    | 69.7 | 67.8    | 69.3    | 70.1    | 71.4    |
+| car        | 23,898     | 85.5 | 79.3 | 85.6 | 88.3 | 88.6 |
+| truck      |  1,534     | 59.2 | 48.5 | 56.1 | 60.2 | 72.0 |
+| bus        |    957     | 74.0 | 66.6 | 74.3 | 77.4 | 77.6 |
+| bicycle    |    163     | 79.3 | 76.4 | 80.3 | 80.3 | 80.3 |
+| pedestrian |  4,556     | 69.1 | 67.6 | 68.7 | 69.4 | 70.8 |
+
+---
+
+
+**J6Gen2:** db_j6gen2_v1 + db_j6gen2_v2 + db_j6gen2_v3 + db_j6gen2_v4 + db_j6gen2_v5 + db_j6gen2_v6  
+**Total mAP (eval range = 120m): 0.752**
+
+| class_name | Count      | mAP  | AP@0.5m | AP@1.0m | AP@2.0m | AP@4.0m |
+| ----       | ---------- | ---- | ---- | ---- | ---- | ---- |
+| car        | 66,293     | 84.8 | 78.6 | 84.9 | 87.3 | 88.2 |
+| truck      |  4,417     | 56.2 | 46.1 | 54.5 | 57.9 | 66.5 |
+| bus        |  2,353     | 80.7 | 75.6 | 80.6 | 83.0 | 83.7 |
+| bicycle    |    500     | 84.7 | 83.3 | 85.1 | 85.1 | 85.5 |
+| pedestrian |  11,417    | 69.7 | 67.8 | 69.3 | 70.1 | 71.4 |
 
 </details>
+
+---
 
 ### CenterPoint J6Gen2/2.4.1
 - Changes:
@@ -172,37 +180,18 @@
 - Evaluation
 
 - db_largebus_v1 + db_largebus_v2 (859 frames):
-  - Total mAP (eval range = 120m): 0.754
+  - Total mAP (eval range = 120m): 0.765
 
 | class_name | Count        | mAP  | AP@0.5m | AP@1.0m | AP@2.0m | AP@4.0m |
 | ----       | -------------| ---- | ---- | ---- | ---- | ---- |
-| car        | 16,604       | 90.8 | 86.0    | 91.2    | 93.0    | 93.2    |
-| truck      |  1,961       | 68.7 | 56.3    | 68.8    | 74.3    | 75.6    |
-| bus        |    171       | 77.6 | 61.9    | 82.0    | 83.3    | 83.3    |
-| bicycle    |    863       | 68.6 | 61.9    | 70.2    | 71.2    | 71.2    |
-| pedestrian |   4,659      | 70.9 | 69.3    | 70.5    | 71.4    | 72.6    |
+| car        | 16,604       | 90.8 | 85.9    | 91.4    | 92.8    | 93.1    |
+| truck      |  1,961       | 69.1 | 56.2    | 69.3    | 74.6    | 76.5    |
+| bus        |    171       | 77.9 | 63.0    | 82.8    | 82.9    | 82.9    |
+| bicycle    |    863       | 73.4 | 69.4    | 73.9    | 75.1    | 75.3    |
+| pedestrian |   4,659      | 71.1 | 69.7    | 70.7    | 71.3    | 72.7    |
 
-- db_j6gen2_v6: db_j6gen2_v6 (636 frames):
-  - Total mAP (eval range = 120m): 0.734
-
-| class_name | Count        | mAP  | AP@0.5m | AP@1.0m | AP@2.0m | AP@4.0m |
-| ----       | -------------| ---- | ---- | ---- | ---- | ---- |
-| car        | 23,898       | 85.5 | 79.3    | 85.6    | 88.3    | 88.6    |
-| truck      |  1,534       | 59.2 | 48.5    | 56.1    | 60.2    | 72.0    |
-| bus        |    957       | 74.0 | 66.6    | 74.3    | 77.4    | 77.6    |
-| bicycle    |    163       | 79.3 | 76.4    | 80.3    | 80.3    | 80.3    |
-| pedestrian |   4,556      | 69.1 | 67.6    | 68.7    | 69.4    | 70.8    |
-
-- j6gen2: db_j6gen2_v1 + db_j6gen2_v2 + db_j6gen2_v3 + db_j6gen2_v4 + db_j6gen2_v5 + db_j6gen2_v6 (1,943 frames):
-  - Total mAP (eval range = 120m): 0.742
-
-| class_name | mAP  | AP@0.5m | AP@1.0m | AP@2.0m | AP@4.0m |
-| ---- | ---- | ---- | ---- | ---- | ---- |
-| car        | 86.0 | 80.0    | 86.2    | 88.5    | 89.3    |
-| truck      | 59.9 | 49.0    | 58.7    | 62.6    | 69.2    |
-| bus        | 80.4 | 74.3    | 80.5    | 83.3    | 83.5    |
-| bicycle    | 74.5 | 69.6    | 75.8    | 76.2    | 76.2    |
-| pedestrian | 70.1 | 68.2    | 69.7    | 70.5    | 71.8    |
+- j6gen2: db_j6gen2_v1 + db_j6gen2_v2 + db_j6gen2_v3 + db_j6gen2_v4 + db_j6gen2_v5 (1,217 frames):
+  - Total mAP (eval range = 120m): 0.767
 
 | class_name | Count      | mAP  | AP@0.5m | AP@1.0m | AP@2.0m | AP@4.0m |
 | ----       | ---------- | ---- | ---- | ---- | ---- | ---- |
