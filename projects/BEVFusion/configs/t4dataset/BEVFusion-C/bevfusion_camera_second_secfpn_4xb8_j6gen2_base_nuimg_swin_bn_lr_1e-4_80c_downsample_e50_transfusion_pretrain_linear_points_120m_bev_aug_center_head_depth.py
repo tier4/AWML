@@ -132,11 +132,7 @@ model = dict(
         upsample_cfg=dict(type="deconv", bias=False),
         use_conv_for_no_stride=True,
     ),
-<<<<<<<< HEAD:projects/BEVFusion/configs/t4dataset/BEVFusion-C/bevfusion_camera_second_secfpn_4xb8_j6gen2_base_nuimg_swin_bn_lr_1e-4_80c_downsample_e50_transfusion_pretrain_linear_points_120m_bev_aug_center_head_depth.py
-	img_roi_head=None,
-========
     img_roi_head=None,
->>>>>>>> feat/bevfusion_camera_2d_aux:projects/BEVFusion/configs/t4dataset/BEVFusion-C/bevfusion_camera_second_secfpn_4xb8_j6gen2_base_nuimg_swin_50m.py
 		# img_roi_head=dict(
     #     type="mmdet.FocalHead",
     #     num_classes=len(_base_.class_names),
@@ -158,13 +154,9 @@ model = dict(
     #         )
     #     ),
     # ),
-<<<<<<<< HEAD:projects/BEVFusion/configs/t4dataset/BEVFusion-C/bevfusion_camera_second_secfpn_4xb8_j6gen2_base_nuimg_swin_bn_lr_1e-4_80c_downsample_e50_transfusion_pretrain_linear_points_120m_bev_aug_center_head_depth.py
-    img_bev_bbox_head=dict(
-========
     # img_aux_bbox_head=None,
 	conv_fuser=None,
-    img_aux_bbox_head=dict(
->>>>>>>> feat/bevfusion_camera_2d_aux:projects/BEVFusion/configs/t4dataset/BEVFusion-C/bevfusion_camera_second_secfpn_4xb8_j6gen2_base_nuimg_swin_50m.py
+    img_bev_bbox_head=dict(
         type="BEVFusionCenterHead",
         in_channels=80,
         # (output_channel_size, num_conv_layers)

@@ -29,11 +29,7 @@
 ## Get started
 ### 1. Setup
 
-<<<<<<< HEAD
 - Please follow the [installation tutorial](/docs/tutorial/tutorial_detection_3d.md)to set up the environment.
-=======
-- Please follow the [installation tutorial](/docs/tutorial/tutorial_detection_3d.md) to set up the environment.
->>>>>>> main
 - Docker build for TransFusion
 
 ```sh
