@@ -44,8 +44,7 @@ class FrameSkipAlignmentResolver:
 
         if len(self.token_to_id_for_inference) != len(dataloader):
             raise ValueError(
-                "Mapping mismatch - dataloader: "
-                f"{len(dataloader)}, mapping: {len(self.token_to_id_for_inference)}"
+                "Mapping mismatch - dataloader: " f"{len(dataloader)}, mapping: {len(self.token_to_id_for_inference)}"
             )
 
     def is_skipped(self, token: str) -> bool:
