@@ -1,3 +1,4 @@
+import logging
 import pickle
 import uuid
 from pathlib import Path
@@ -95,6 +96,7 @@ def _results_to_info(
     non_annotated_dataset_info: Dict[str, Any],
     inference_results: List[Tuple[NDArray, NDArray, NDArray]],
     resolver: FrameSkipAlignmentResolver,
+    logger: logging.Logger,
 ) -> Dict[str, Any]:
     """Convert non annotated dataset info and inference results to pseudo labeled info.
 
@@ -140,11 +142,14 @@ def _results_to_info(
         else:
             # This sample was skipped - add empty prediction
             non_annotated_dataset_info["data_list"][frame_index]["pred_instances_3d"] = []
-            print(f"Sample {frame_index} was skipped - setting empty prediction")
+            logger.info("Sample %s was skipped - setting empty prediction", frame_index)
 
         pseudo_labeled_dataset_info["data_list"].append(non_annotated_dataset_info["data_list"][frame_index])
 
-    print(f"Final pseudo_labeled_dataset_info length: {len(pseudo_labeled_dataset_info['data_list'])}")
+    logger.info(
+        "Final pseudo_labeled_dataset_info length: %d",
+        len(pseudo_labeled_dataset_info["data_list"]),
+    )
     return pseudo_labeled_dataset_info
 
 
@@ -152,6 +157,7 @@ def inference(
     model_config: Config,
     model_checkpoint_path: str,
     non_annotated_info_file_name: str,
+    logger: logging.Logger,
     batch_size: int = 1,
     device: str = "cuda:0",
 ) -> Dict[str, Any]:
@@ -162,6 +168,7 @@ def inference(
         non_annotated_info_file_name (str): Name of the non-annotated info file.
         batch_size (int, optional): Batch size for inference. Defaults to 1
         device (str, optional): Device to run the model on. Defaults to "cuda:0"
+        logger (logging.Logger): Logger used for status messages.
     Returns:
         Dict[str, Any]: inference results. This should be info file format.
     """
@@ -197,7 +204,7 @@ def inference(
 
     # Convert to info with full dataset mapping
     pseudo_labeled_dataset_info: Dict[str, Any] = _results_to_info(
-        non_annotated_dataset_info, inference_results, frame_skip_resolver
+        non_annotated_dataset_info, inference_results, frame_skip_resolver, logger
     )
 
     return pseudo_labeled_dataset_info
