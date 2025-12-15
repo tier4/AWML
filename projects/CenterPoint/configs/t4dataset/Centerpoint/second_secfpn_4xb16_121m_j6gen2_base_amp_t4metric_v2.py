@@ -1,8 +1,8 @@
 _base_ = [
-    "./second_secfpn_4xb16_121m_base_amp.py",
+    "second_secfpn_4xb16_121m_j6gen2_base_amp.py",
 ]
 
-work_dir = "work_dirs/centerpoint/" + _base_.dataset_type + "/second_secfpn_4xb16_121m_base_amp_t4metric_v2/"
+work_dir = "work_dirs/centerpoint/" + _base_.dataset_type + "/second_secfpn_4xb16_121m_j6gen2_base_t4metric_v2/"
 
 # Add evaluator configs
 perception_evaluator_configs = dict(
@@ -30,7 +30,7 @@ frame_pass_fail_config = dict(
 val_evaluator = dict(
     type="T4MetricV2",
     output_dir="validation",
-    dataset_name="base",
+    dataset_name="j6gen2_base",
     perception_evaluator_configs=perception_evaluator_configs,
     critical_object_filter_config=critical_object_filter_config,
     frame_pass_fail_config=frame_pass_fail_config,
@@ -42,7 +42,7 @@ val_evaluator = dict(
 test_evaluator = dict(
     type="T4MetricV2",
     output_dir="testing",
-    dataset_name="base",
+    dataset_name="j6gen2_base",
     perception_evaluator_configs=perception_evaluator_configs,
     critical_object_filter_config=critical_object_filter_config,
     frame_pass_fail_config=frame_pass_fail_config,

@@ -1,9 +1,9 @@
 _base_ = [
-    "second_secfpn_4xb16_121m_j6gen2_base_amp.py",
+    "second_secfpn_4xb16_121m_jpntaxi_base_amp.py",
 ]
 
 # user setting
-work_dir = "work_dirs/centerpoint/" + _base_.dataset_type + "/second_secfpn_4xb16_121m_j6gen2_base_amp_rfs/"
+work_dir = "work_dirs/centerpoint/" + _base_.dataset_type + "/second_secfpn_4xb16_121m_jpntaxi_base_amp_rfs/"
 
 train_frame_object_sampler = dict(
     type="FrameObjectSampler",
