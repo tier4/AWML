@@ -43,9 +43,10 @@ def _predict_one_frame(model: Any, data: Dict[str, Any]) -> Tuple[NDArray, NDArr
     bboxes: NDArray = outputs[0].pred_instances_3d["bboxes_3d"].tensor.detach().cpu()
     scores: NDArray = outputs[0].pred_instances_3d["scores_3d"].detach().cpu().numpy()
     labels: NDArray = outputs[0].pred_instances_3d["labels_3d"].detach().cpu().numpy()
+
     bboxes = LiDARInstance3DBoxes(bboxes, box_dim=9)
-    box_dims: NDArray = bboxes.dims.numpy().astype(np.float64)
     box_gravity_centers: NDArray = bboxes.gravity_center.numpy().astype(np.float64)
+    box_dims: NDArray = bboxes.dims.numpy().astype(np.float64)
     box_yaws: NDArray = bboxes.yaw.numpy().astype(np.float64)
     box_velocities: NDArray = bboxes.tensor.numpy().astype(np.float64)[:, 7:9]
 
