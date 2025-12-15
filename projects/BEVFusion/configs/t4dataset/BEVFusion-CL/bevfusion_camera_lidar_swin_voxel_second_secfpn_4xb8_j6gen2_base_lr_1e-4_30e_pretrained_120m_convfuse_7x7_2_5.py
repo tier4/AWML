@@ -45,7 +45,7 @@ lidar_sweep_dims = [0, 1, 2, 3, 4]  # x, y, z, time_lag
 lidar_feature_dims = 5
 camera_order = ["CAM_FRONT", "CAM_FRONT_LEFT", "CAM_BACK_LEFT", "CAM_FRONT_RIGHT", "CAM_BACK_RIGHT"]
 
-work_dir = "work_dirs/bevfusion_2_5/" + _base_.dataset_type + "/bevfusion_camera_lidar_swin_voxel_second_secfpn_4xb8_j6gen2_base_lr_1e-4_30e_pretrained_120m_convfuse_5x5/"
+work_dir = "work_dirs/bevfusion_2_5/" + _base_.dataset_type + "/bevfusion_camera_lidar_swin_voxel_second_secfpn_4xb8_j6gen2_base_lr_1e-4_30e_pretrained_120m_convfuse_7x7/"
 
 
 model = dict(
@@ -118,7 +118,7 @@ model = dict(
         dbound=[1.0, 130, 1.0],
         downsample=2,
     ),
-    fusion_layer=dict(type="ConvFuser", in_channels=[80, 256], out_channels=256, kernel_size=5, padding=2),
+    fusion_layer=dict(type="ConvFuser", in_channels=[80, 256], out_channels=256, kernel_size=7, padding=3),
     bbox_head=dict(
         num_proposals=num_proposals,
         class_names=_base_.class_names,  # Use class names to identify the correct class indices
