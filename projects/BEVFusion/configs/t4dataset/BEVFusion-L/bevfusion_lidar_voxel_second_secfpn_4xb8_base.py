@@ -9,11 +9,11 @@ custom_imports["imports"] += ["autoware_ml.detection3d.datasets.transforms"]
 
 # user setting
 data_root = "data/t4dataset/"
-info_directory_path = "info/kokseang_2_3_fixed/"
+info_directory_path = "info/kokseang_2_5/"
 train_gpu_size = 4
-train_batch_size = 16
+train_batch_size = 8
 test_batch_size = 2
-val_interval = 5
+val_interval = 15
 max_epochs = 50
 backend_args = None
 
@@ -40,7 +40,7 @@ image_size = [256, 704]
 num_workers = 32
 lidar_sweep_dims = [0, 1, 2, 4]  # x, y, z, time_lag
 lidar_feature_dims = 4
-work_dir = "work_dirs/bevfusion_2_3/" + _base_.dataset_type + "/bevfusion_lidar_voxel_second_secfpn_4xb16_base/"
+work_dir = "work_dirs/bevfusion_2_5/" + _base_.dataset_type + "/bevfusion_lidar_voxel_second_secfpn_4xb8_base/"
 
 model = dict(
     type="BEVFusion",
@@ -102,15 +102,15 @@ train_pipeline = [
     dict(type="LoadAnnotations3D", with_bbox_3d=True, with_label_3d=True, with_attr_label=False),
     dict(
         type="BEVFusionGlobalRotScaleTrans",
-        scale_ratio_range=[0.9, 1.1],
+        scale_ratio_range=[0.95, 1.05],
         rot_range=[-0.78539816, 0.78539816],
-        # rot_range=[-1.571, 1.571],
-        # scale_ratio_range=[0.8, 1.2],
         translation_std=[0.5, 0.5, 0.2],
     ),
     dict(type="BEVFusionRandomFlip3D"),
     dict(type="PointsRangeFilter", point_cloud_range=point_cloud_range),
     dict(type="ObjectRangeFilter", point_cloud_range=point_cloud_range),
+    dict(type="ObjectRangeMinPointsFilter", range_radius=[0, 60], min_num_points=2),
+    dict(type="ObjectRangeMinPointsFilter", range_radius=[60, 130], min_num_points=1),
     dict(
         type="ObjectNameFilter",
         classes=[
@@ -126,7 +126,6 @@ train_pipeline = [
             "traffic_cone",
         ],
     ),
-    # dict(type="ObjectMinPointsFilter", min_num_points=5),
     dict(type="PointShuffle"),
     dict(
         type="Pack3DDetInputs",
@@ -211,7 +210,6 @@ train_dataloader = dict(
         test_mode=False,
         data_prefix=_base_.data_prefix,
         box_type_3d="LiDAR",
-        # filter_cfg=filter_cfg,
     ),
 )
 
@@ -280,7 +278,8 @@ test_evaluator = dict(
 )
 
 # learning rate
-lr = 0.0001
+lr = 1e-4
+t_max = 8 
 param_scheduler = [
     # learning rate scheduler
     # During the first (max_epochs * 0.4) epochs, learning rate increases from 0 to lr * 10
@@ -288,18 +287,18 @@ param_scheduler = [
     # lr * 1e-4
     dict(
         type="CosineAnnealingLR",
-        T_max=15,
+        T_max=t_max,
         eta_min=lr * 10,
         begin=0,
-        end=15,
+        end=t_max,
         by_epoch=True,
         convert_to_iter_based=True,
     ),
     dict(
         type="CosineAnnealingLR",
-        T_max=(max_epochs - 15),
+        T_max=(max_epochs - t_max),
         eta_min=lr * 1e-4,
-        begin=15,
+        begin=t_max,
         end=max_epochs,
         by_epoch=True,
         convert_to_iter_based=True,
@@ -309,18 +308,18 @@ param_scheduler = [
     # during the next epochs, momentum increases from 0.85 / 0.95 to 1
     dict(
         type="CosineAnnealingMomentum",
-        T_max=15,
+        T_max=t_max,
         eta_min=0.85 / 0.95,
         begin=0,
-        end=15,
+        end=t_max,
         by_epoch=True,
         convert_to_iter_based=True,
     ),
     dict(
         type="CosineAnnealingMomentum",
-        T_max=(max_epochs - 15),
+        T_max=(max_epochs - t_max),
         eta_min=1,
-        begin=15,
+        begin=t_max,
         end=max_epochs,
         by_epoch=True,
         convert_to_iter_based=True,
@@ -351,3 +350,5 @@ auto_scale_lr = dict(enable=False, base_batch_size=train_gpu_size * train_batch_
 # Only set if the number of train_gpu_size more than 1
 if train_gpu_size > 1:
     sync_bn = "torch"
+
+resume = True
