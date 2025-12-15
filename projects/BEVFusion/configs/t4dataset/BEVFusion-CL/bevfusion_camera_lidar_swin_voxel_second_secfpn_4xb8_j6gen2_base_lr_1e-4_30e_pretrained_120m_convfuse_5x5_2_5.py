@@ -9,7 +9,7 @@ custom_imports["imports"] += ["autoware_ml.detection3d.datasets.transforms"]
 
 # user setting
 data_root = "data/t4dataset/"
-info_directory_path = "info/kokseang_2_3_fixed/"
+info_directory_path = "info/kokseang_2_5/"
 train_gpu_size = 4
 train_batch_size = 8
 test_batch_size = 2
@@ -44,6 +44,9 @@ num_workers = 32
 lidar_sweep_dims = [0, 1, 2, 3, 4]  # x, y, z, time_lag
 lidar_feature_dims = 5
 camera_order = ["CAM_FRONT", "CAM_FRONT_LEFT", "CAM_BACK_LEFT", "CAM_FRONT_RIGHT", "CAM_BACK_RIGHT"]
+
+work_dir = "work_dirs/bevfusion_2_5/" + _base_.dataset_type + "/bevfusion_camera_lidar_swin_voxel_second_secfpn_4xb8_j6gen2_base_lr_1e-4_30e_pretrained_120m_convfuse_5x5/"
+
 
 model = dict(
     type="BEVFusion",
@@ -90,6 +93,7 @@ model = dict(
         init_cfg=dict(
             type="Pretrained",
             checkpoint="work_dirs/bevfusion/pretrain/swint_nuimages_pretrained.pth"  # noqa: E251  # noqa: E501
+            # checkpoint="work_dirs/swin_transformer/swint_nuimages_pretrained.pth"  # noqa: E251  # noqa: E501
         ),
     ),
     img_neck=dict(
@@ -114,7 +118,7 @@ model = dict(
         dbound=[1.0, 130, 1.0],
         downsample=2,
     ),
-    fusion_layer=dict(type="ConvFuser", in_channels=[80, 256], out_channels=256),
+    fusion_layer=dict(type="ConvFuser", in_channels=[80, 256], out_channels=256, kernel_size=5, padding=2),
     bbox_head=dict(
         num_proposals=num_proposals,
         class_names=_base_.class_names,  # Use class names to identify the correct class indices
@@ -495,4 +499,4 @@ auto_scale_lr = dict(enable=False, base_batch_size=train_gpu_size * train_batch_
 if train_gpu_size > 1:
     sync_bn = "torch"
 
-load_from = "work_dirs/bevfusion_2_3_merge/lidar_camera_merge_base_fixed.pth"
+load_from = "work_dirs/bevfusion_2_5/T4Dataset/bevfusion_lidar_voxel_second_secfpn_4xb8_j6gen2_base/epoch_30.pth"

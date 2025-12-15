@@ -9,7 +9,7 @@ custom_imports["imports"] += ["autoware_ml.detection3d.datasets.transforms"]
 
 # user setting
 data_root = "data/t4dataset/"
-info_directory_path = "info/kokseang_2_3_fixed/"
+info_directory_path = "info/kokseang_2_5"
 train_gpu_size = 4
 train_batch_size = 8
 test_batch_size = 2
@@ -90,6 +90,7 @@ model = dict(
         init_cfg=dict(
             type="Pretrained",
             checkpoint="work_dirs/bevfusion/pretrain/swint_nuimages_pretrained.pth"  # noqa: E251  # noqa: E501
+            # checkpoint="work_dirs/swin_transformer/swint_nuimages_pretrained.pth"  # noqa: E251  # noqa: E501
         ),
     ),
     img_neck=dict(
@@ -495,4 +496,4 @@ auto_scale_lr = dict(enable=False, base_batch_size=train_gpu_size * train_batch_
 if train_gpu_size > 1:
     sync_bn = "torch"
 
-load_from = "work_dirs/bevfusion_2_3_merge/lidar_camera_merge_base_fixed.pth"
+load_from = "work_dirs/bevfusion_2_3_cl_j6gen2_point_filters/epoch_28.pth"
