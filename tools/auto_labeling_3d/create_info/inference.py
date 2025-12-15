@@ -13,23 +13,48 @@ from mmengine.utils import ProgressBar
 from numpy.typing import NDArray
 
 
-def get_identifier_from_sample(sample: Dict[str, Any]) -> str:
+class FrameSkipAlignmentResolver:
+    """Resolve frame alignment when dataset skips samples during inference.
+
+    This helper covers situations where:
+
+    1. The dataset class silently drops frames that are present in the info
+       file (for example, when a camera image is missing or corrupted).
+
+    2. Different modalities therefore produce inference outputs of different
+       lengths.
+
+       For example, a LiDAR-only model might yield 100 predictions while a
+       camera-only model emits 50, yet the LiDAR result at index 98 and the
+       camera result at index 49 still share the same token.
+
+    3. Ensemble pipelines must recover the original ordering: skipped tokens get
+       empty predictions so every modality ends up with aligned arrays.
     """
-    Create unique identifier from sample data.
 
-    Args:
-        sample (Dict[str, Any]): Sample data containing token, sample_idx, and/or lidar_path
+    def __init__(self, dataset_instance, dataloader) -> None:
+        self.token_to_id_for_inference: Dict[str, int] = {}
 
-    Returns:
-        str: Unique identifier for the sample
-    """
-    sample_token = sample["token"]
-    sample_idx = sample["sample_idx"]
-    lidar_path = sample["lidar_path"]
+        temp_dataloader = iter(dataloader)
+        for frame_index_for_inference in range(len(dataloader)):
+            _ = next(temp_dataloader)
+            data_info = dataset_instance.get_data_info(frame_index_for_inference)
+            token = data_info["token"]
+            self.token_to_id_for_inference[token] = frame_index_for_inference
 
-    # Use token as primary identifier, fallback to sample_idx_lidar_path
-    identifier = sample_token or f"{sample_idx}_{lidar_path}"
-    return identifier
+        if len(self.token_to_id_for_inference) != len(dataloader):
+            raise ValueError(
+                "Mapping mismatch - dataloader: "
+                f"{len(dataloader)}, mapping: {len(self.token_to_id_for_inference)}"
+            )
+
+    def is_skipped(self, token: str) -> bool:
+        """Return True if the token was skipped during inference."""
+        return token not in self.token_to_id_for_inference
+
+    def get_inference_index(self, token: str) -> int:
+        """Return the inference index associated with the token."""
+        return self.token_to_id_for_inference[token]
 
 
 def _predict_one_frame(model: Any, data: Dict[str, Any]) -> Tuple[NDArray, NDArray, NDArray]:
@@ -67,50 +92,20 @@ def _predict_one_frame(model: Any, data: Dict[str, Any]) -> Tuple[NDArray, NDArr
     return bboxes, scores, labels
 
 
-def get_filtered_data_mapping(dataset_instance, dataloader) -> Dict[str, int]:
-    """
-    Get mapping between original sample identifiers and filtered indices.
-
-    Returns:
-        Dict[str, int]: Maps original sample identifier to filtered index
-    """
-    print(f"Dataset type: {type(dataset_instance)}")
-    print(f"Dataset length: {len(dataset_instance)}")
-    print(f"Extracting sample mapping from dataloader...")
-    original_to_filtered_map = {}
-
-    # Create a temporary iterator to extract sample metadata
-    temp_dataloader = iter(dataloader)
-
-    for filtered_idx in range(len(dataloader)):
-        batch_data = next(temp_dataloader)
-
-        # Get data info for this filtered index
-        data_info = dataset_instance.get_data_info(filtered_idx)
-
-        # Create unique identifier for matching
-        identifier = get_identifier_from_sample(data_info)
-        original_to_filtered_map[identifier] = filtered_idx
-    # Verify lengths
-    print(f"Dataloader length: {len(dataloader)}")
-    print(f"Mapping created for: {len(original_to_filtered_map)} samples")
-
-    if len(original_to_filtered_map) != len(dataloader):
-        raise ValueError(f"Mapping mismatch - dataloader: {len(dataloader)}, mapping: {len(original_to_filtered_map)}")
-
-    return original_to_filtered_map
-
-
 def _results_to_info(
     non_annotated_dataset_info: Dict[str, Any],
     inference_results: List[Tuple[NDArray, NDArray, NDArray]],
-    original_to_filtered_map: Dict[str, int],
+    resolver: FrameSkipAlignmentResolver,
 ) -> Dict[str, Any]:
-    """
-    Convert non annotated dataset info and inference results to pseudo labeled info.
+    """Convert non annotated dataset info and inference results to pseudo labeled info.
+
+    Uses :class:`FrameSkipAlignmentResolver` so that tokens shared between
+    filtered and unfiltered modalities line up. Frames skipped by the dataset
+    receive empty prediction lists to keep array lengths consistent for
+    downstream ensemble stages.
     """
     # Create pseudo labeled dataset info using original metadata
-    pseudo_labeled_dataset_info = {"metainfo": non_annotated_dataset_info.get("metainfo", {}), "data_list": []}
+    pseudo_labeled_dataset_info = {"metainfo": non_annotated_dataset_info["metainfo"], "data_list": []}
 
     # Get original data_list
     original_data_list = non_annotated_dataset_info["data_list"]
@@ -118,14 +113,14 @@ def _results_to_info(
     # Process all original samples
     for frame_index, original_sample in enumerate(original_data_list):
 
-        # Create identifier for this original sample
-        identifier = get_identifier_from_sample(original_sample)
+        # Create token for this original sample
+        token = original_sample["token"]
 
-        if identifier in original_to_filtered_map:
+        if not resolver.is_skipped(token):
             # This sample has inference results
-            filtered_idx = original_to_filtered_map[identifier]
+            frame_index_for_inference = resolver.get_inference_index(token)
 
-            bboxes, scores, labels = inference_results[filtered_idx]
+            bboxes, scores, labels = inference_results[frame_index_for_inference]
 
             pred_instances_3d: List[Dict[str, Any]] = []
             for instance_index, (bbox, score, label) in enumerate(zip(bboxes, scores, labels)):
@@ -144,9 +139,9 @@ def _results_to_info(
             non_annotated_dataset_info["data_list"][frame_index]["pred_instances_3d"] = pred_instances_3d
 
         else:
-            # This sample was filtered out - add empty prediction
+            # This sample was skipped - add empty prediction
             non_annotated_dataset_info["data_list"][frame_index]["pred_instances_3d"] = []
-            print(f"Sample {frame_index} was filtered out - setting empty prediction")
+            print(f"Sample {frame_index} was skipped - setting empty prediction")
 
         pseudo_labeled_dataset_info["data_list"].append(non_annotated_dataset_info["data_list"][frame_index])
 
@@ -179,7 +174,7 @@ def inference(
     dataset = Runner.build_dataloader(model_config.test_dataloader)
 
     # Get the mapping from the dataset
-    original_to_filtered_map = get_filtered_data_mapping(dataset.dataset, dataset)
+    frame_skip_resolver = FrameSkipAlignmentResolver(dataset.dataset, dataset)
 
     # build model
     model = MODELS.build(model_config.model)
@@ -203,7 +198,7 @@ def inference(
 
     # Convert to info with full dataset mapping
     pseudo_labeled_dataset_info: Dict[str, Any] = _results_to_info(
-        non_annotated_dataset_info, inference_results, original_to_filtered_map
+        non_annotated_dataset_info, inference_results, frame_skip_resolver
     )
 
     return pseudo_labeled_dataset_info
