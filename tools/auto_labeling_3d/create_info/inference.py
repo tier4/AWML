@@ -23,9 +23,9 @@ def get_identifier_from_sample(sample: Dict[str, Any]) -> str:
     Returns:
         str: Unique identifier for the sample
     """
-    sample_token = sample.get("token", None)
-    sample_idx = sample.get("sample_idx", None)
-    lidar_path = sample.get("lidar_path", None)
+    sample_token = sample["token"]
+    sample_idx = sample["sample_idx"]
+    lidar_path = sample["lidar_path"]
 
     # Use token as primary identifier, fallback to sample_idx_lidar_path
     identifier = sample_token or f"{sample_idx}_{lidar_path}"
