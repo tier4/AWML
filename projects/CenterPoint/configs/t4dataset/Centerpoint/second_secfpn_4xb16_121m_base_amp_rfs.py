@@ -1,5 +1,5 @@
 _base_ = [
-    "./second_secfpn_4xb16_121m_base_amp.py",
+    "./second_secfpn_4xb16_121m_base_amp",
 ]
 
 point_cloud_range = [-122.40, -122.40, -3.0, 122.40, 122.40, 5.0]
@@ -9,7 +9,7 @@ sweeps_num = 1
 out_size_factor = 2
 
 # user setting
-work_dir = "work_dirs/centerpoint_2_5/" + _base_.dataset_type + "/second_secfpn_4xb16_121m_base_amp_rfs/"
+work_dir = "work_dirs/centerpoint/" + _base_.dataset_type + "/second_secfpn_4xb16_121m_base_amp_rfs/"
 
 train_pipeline = [
     dict(
@@ -141,4 +141,3 @@ model = dict(
 )
 
 activation_checkpointing = ["pts_backbone"]
-resume = True
