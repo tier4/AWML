@@ -1,5 +1,3 @@
-import gc
-import pickle
 from os import path as osp
 from typing import List
 
@@ -55,20 +53,22 @@ class T4Dataset(NuScenesDataset):
 
         filter_frames_with_camera_order = self.filter_cfg.get("filter_frames_with_camera_order", None)
         if filter_frames_with_camera_order is None:
-          return self.data_list
-        
+            return self.data_list
+
         filtered_data_list = []
         for entry in self.data_list:
             filtered = False
             for camera_order in filter_frames_with_camera_order:
                 if camera_order not in entry["images"]:
-                    filtered = True 
+                    filtered = True
                     break
 
-                if entry["images"][camera_order]["img_path"] is None or not osp.exists(entry["images"][camera_order]["img_path"]):
-                    filtered = True 
+                if entry["images"][camera_order]["img_path"] is None or not osp.exists(
+                    entry["images"][camera_order]["img_path"]
+                ):
+                    filtered = True
                     break
-            
+
             if not filtered:
                 filtered_data_list.append(entry)
 

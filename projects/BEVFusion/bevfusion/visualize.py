@@ -1,6 +1,7 @@
 # save_bev.py
 import torch
 import numpy as np
+import pickle as pkl
 from PIL import Image
 import matplotlib.pyplot as plt
 
@@ -82,3 +83,119 @@ def save_bev_single(
 
     Image.fromarray(rgb).save(out_png)
     print(f"Saved {out_png} ({mode})")
+
+
+def sample_augmentation(img, resize_lim, final_dim, bot_pct_lim, rot_lim):
+    W, H = img.size
+    print(f"H: {H}, W: {W}")
+    fH, fW = final_dim
+
+    if isinstance(resize_lim, (int, float)):
+        aspect_ratio = max(fH / H, fW / W)
+        resize = np.random.uniform(aspect_ratio, aspect_ratio + resize_lim)
+    else:
+        resize = np.random.uniform(*resize_lim)
+
+    resize_dims = (int(W * resize), int(H * resize))
+    newW, newH = resize_dims
+
+    crop_h = int((1 - np.random.uniform(*bot_pct_lim)) * newH) - fH
+    crop_w = int(np.random.uniform(0, max(0, newW - fW)))
+    crop = (crop_w, crop_h, crop_w + fW, crop_h + fH)
+    flip = False
+    # if self.rand_flip and np.random.choice([0, 1]):
+    #     flip = True
+    rotate = np.random.uniform(*rot_lim)
+    return resize, resize_dims, crop, flip, rotate
+
+def img_transform(img, rotation, translation, resize, resize_dims, crop, flip, rotate):
+    # adjust image
+    img = img.resize(resize_dims)
+    img = img.crop(crop)
+    if flip:
+        img = img.transpose(method=Image.FLIP_LEFT_RIGHT)
+    img = img.rotate(rotate, resample=Image.BICUBIC)  # Default rotation introduces artifacts.
+
+    # post-homography transformation
+    rotation *= resize
+    translation -= torch.Tensor(crop[:2])
+    if flip:
+        A = torch.Tensor([[-1, 0], [0, 1]])
+        b = torch.Tensor([(crop[2] - crop[0]), 0])
+        rotation = A.matmul(rotation)
+        translation = A.matmul(translation) + b
+    theta = rotate / 180 * np.pi
+    A = torch.Tensor(
+        [
+            [np.cos(theta), np.sin(theta)],
+            [-np.sin(theta), np.cos(theta)],
+        ]
+    )
+
+    b = torch.Tensor([(crop[2] - crop[0]), (crop[3] - crop[1])]) / 2
+    b = A.matmul(-b) + b
+    rotation = A.matmul(rotation)
+    translation = A.matmul(translation) + b
+
+    return img, rotation, translation
+
+if __name__ == "__main__":
+
+    pickle_file = "data/t4dataset/info/kokseang_2_5/t4dataset_j6gen2_base_infos_train.pkl"
+
+    with open(pickle_file, "rb") as fp:
+        data = pkl.load(fp)
+    
+    resize_lim = [0.35, 0.35]
+    final_dim = [384, 768]
+    bot_pct_lim = [0.0, 0.0]
+    rot_lim = [0.0, 0.0]
+    camera_order = ["CAM_FRONT", "CAM_FRONT_LEFT", "CAM_FRONT_RIGHT", "CAM_BACK_LEFT", "CAM_BACK_RIGHT"]    
+    for index, data_list in enumerate(data["data_list"]):
+        imgs = []
+        for camera_type in camera_order:
+            if camera_type not in data_list["images"]:
+                continue
+
+            cam_item = data_list["images"][camera_type]
+            img_path = "data/t4dataset/" + cam_item["img_path"]
+            with Image.open(img_path, "r") as im:
+                img = im.convert("RGB") 
+                resize, resize_dims, crop, flip, rotate = sample_augmentation(im, resize_lim, final_dim, bot_pct_lim, rot_lim)
+                post_rot = torch.eye(2)
+                post_tran = torch.zeros(2)
+
+                img, rotation, translation = img_transform(
+                    img, 
+                    post_rot, 
+                    post_tran,
+                    resize,
+                    resize_dims,
+                    crop,
+                    flip, 
+                    rotate
+                )
+                imgs.append(img)
+        
+        # Visualize image
+        # -----------------------------
+        # 🔵 Save as subplot with 5 images
+        # -----------------------------
+        num_images = len(imgs)
+        cols = 5
+        rows = int(np.ceil(num_images / cols))
+
+        fig = plt.figure(figsize=(20, 4 * rows))
+
+        for idx, img in enumerate(imgs):
+            ax = fig.add_subplot(rows, cols, idx + 1)
+            ax.imshow(img)
+            ax.axis("off")
+            ax.set_title(f"Camera {idx}")
+
+        fig.tight_layout()
+
+        # # Save figure to memory (as ndarray) or file
+        fig_path = f"work_dirs/bevfusion_image_2d_debug/4/{index}.png"
+        fig.savefig(fig_path, dpi=150)
+        plt.close(fig)

@@ -10,6 +10,7 @@ import torch.distributed as dist
 from mmdet3d.registry import MODELS
 from torch import Tensor, nn
 from torchvision.utils import make_grid
+
 from .ops import bev_pool
 
 
@@ -21,8 +22,19 @@ def gen_dx_bx(xbound, ybound, zbound):
 
 
 class DepthLSSNet(nn.Module):
+    """
+    DepthLSSNet is a small convolutional network that takes in image and LiDAR depthmap features, and outputs
+    fused feature maps. It is used to extract depth information from the image features and LiDAR depth maps.
+    """
 
     def __init__(self, in_channels: int, out_channels: int) -> None:
+        """
+        Args:
+            in_channels: int, the number of input channels.
+            out_channels: int, the number of output channels.
+        Returns:
+            None.
+        """
         super().__init__()
         self.net = nn.Sequential(
             nn.Conv2d(in_channels=in_channels, out_channels=in_channels, kernel_size=3, padding=1, bias=False),
@@ -34,17 +46,41 @@ class DepthLSSNet(nn.Module):
             nn.Conv2d(in_channels=in_channels, out_channels=out_channels, kernel_size=1, bias=True),
         )
 
-    def forward(self, x):
+    def forward(self, x) -> torch.Tensor:
+        """
+        Args:
+            x: torch.Tensor, the input feature map.
+        Returns:
+            torch.Tensor, the output feature maps in shape (B * N, D + C, H, W), where B is the batch size, N is
+            the number of images, D is the number of depth bins, C is the number of output channels of the network,
+            H is the height, and W is the width.
+        """
         return self.net(x)
 
 
 class DownSampleNet(nn.Module):
+    """
+    DownSampleNet is a small convolutional network that takes in a BEV feature map and outputs a downsampled BEV
+    feature map. It is used to downsample the BEV feature map to reduce the resolution of the BEV feature map.
+    """
 
     def __init__(self, downsample: int, in_channels: int, out_channels: int) -> None:
+        """
+        Args:
+            downsample: int, the downsampling factor.
+            in_channels: int, the number of input channels.
+            out_channels: int, the number of output channels.
+        Returns:
+            None.
+        """
         super().__init__()
 
         if downsample > 1:
-            assert downsample == 2, downsample
+            assert downsample == 2, f"DownSampleNet only supports downsample == 2, but got downsample: {downsample}"
+            assert (
+                in_channels == out_channels
+            ), f"DownSampleNet only supports in_channels == out_channels, but got in_channels: {in_channels}, and out_channels: {out_channels}"
+
             self.net = nn.Sequential(
                 nn.Conv2d(in_channels=in_channels, out_channels=out_channels, kernel_size=3, padding=1, bias=False),
                 nn.BatchNorm2d(num_features=out_channels),
@@ -66,13 +102,32 @@ class DownSampleNet(nn.Module):
         else:
             self.net = nn.Identity()
 
-    def forward(self, x):
+    def forward(self, x) -> torch.Tensor:
+        """
+        Args:
+            x: torch.Tensor, the input feature map.
+        Returns:
+            torch.Tensor, the output feature maps in shape (B, C, H / downsample, W / downsample), where B is the
+            batch size, C is the number of output channels of the network, H is the height, and W is the width.
+        """
         return self.net(x)
 
 
 class LidarDepthImageNet(nn.Module):
+    """
+    LidarDepthImageNet is a small convolutional network that takes in a LiDAR depthmap, and outputs LiDAR
+    depthmap feature maps. It is used to extract depth information from the LiDAR depthmaps.
+    """
 
     def __init__(self, in_channels: int = 1, out_channels: int = 64, last_stride: int = 2) -> None:
+        """
+        Args:
+            in_channels: int, the number of input channels.
+            out_channels: int, the number of output channels.
+            last_stride: int, the stride of the last convolutional layer.
+        Returns:
+            None.
+        """
         super().__init__()
         self.in_channels = in_channels
         self.out_channels = out_channels
@@ -91,7 +146,15 @@ class LidarDepthImageNet(nn.Module):
             nn.ReLU(True),
         )
 
-    def forward(self, x):
+    def forward(self, x) -> torch.Tensor:
+        """
+        Args:
+            x: torch.Tensor, the input feature map.
+        Returns:
+            torch.Tensor, the output feature maps in shape (B * N, C, H, W), where B is the batch size, N is
+            the number of images, C is the number of output channels of the network,
+            H is the height, and W is the width.
+        """
         return self.net(x)
 
 
@@ -209,7 +272,8 @@ class BaseViewTransform(nn.Module):
 
         geom_feats = geom_feats[kept]
 
-        # nx[0] is Height, nx[1] is width, nx[2] is depth
+        # nx is the total number of voxels/cells in the BEV grid
+        # nx[0] is x, nx[1] is y, nx[2] is z
         ranks = (
             geom_feats[:, 0] * (self.nx[1] * self.nx[2] * B)
             + geom_feats[:, 1] * (self.nx[2] * B)
@@ -294,7 +358,6 @@ class BaseViewTransform(nn.Module):
             x = self.bev_pool_precomputed(x, geom_feats, kept, ranks, indices)
 
         else:
-            # print(f"post_rots: {post_rots}, post_trans: {post_trans}")
             geom = self.get_geometry(
                 camera2lidar_rots,
                 camera2lidar_trans,
@@ -304,6 +367,7 @@ class BaseViewTransform(nn.Module):
                 extra_rots=extra_rots,
                 extra_trans=extra_trans,
             )
+
             # depth is not connected to the calibration
             # on_img is
             # is also flattened_indices
@@ -434,11 +498,6 @@ class BaseDepthTransform(BaseViewTransform):
                 & valid_dist_mask
             )
 
-            # for c in range(on_img.shape[0]):
-            #     masked_coords = cur_coords[c, on_img[c]].long()
-            #     masked_dist = dist[c, on_img[c]]
-            #     depth[b, c, 0, masked_coords[:, 0], masked_coords[:, 1]] = masked_dist
-
             # NOTE(knzo25): in the original code, a per-image loop was
             # implemented to compute the depth. However, it fixes the number
             # of images, which is not desired for deployment (the number
@@ -483,7 +542,7 @@ class BaseDepthTransform(BaseViewTransform):
 
             x, est_depth_distr, gt_depth_distr, counts_3d, gt_gaussian_depths = self.get_cam_feats(img, depth)
             x = self.bev_pool(x, geom)
-            depth_loss = self.depth_loss_with_prob_dists(est_depth_distr, gt_depth_distr, counts_3d)
+            depth_loss = self.depth_loss_with_prob_dists(est_depth_distr, gt_gaussian_depths, counts_3d)
 
         return x, depth_loss
 
@@ -559,11 +618,6 @@ class DepthLSSTransform(BaseDepthTransform):
     def get_depth_gt_bins(self, d, B, N, C, fH, fW):
 
         if self.training:
-            # valid_depth_mask = torch.ones_like(d)
-            # BN, H, W
-            # zero_mask = depth == 0
-
-            # valid_depth_mask[zero_mask] = 0.0
             BN = B * N
             h, w = self.image_size
 
@@ -582,19 +636,16 @@ class DepthLSSTransform(BaseDepthTransform):
             #     + 0.5 * self.dbound[2]
             #     - self.dbound[0]
             # ) / self.dbound[2]
-            dist_bins = (
-                d.clamp(min=0, max=self.dbound[1])
-            ) / self.dbound[2]
+            # Max depth will be dbound[1] - 0.5 * dbound[2] to make the last bin index
+            dist_bins = (d.clamp(min=0, max=self.dbound[1] - 0.5 * self.dbound[2])) / self.dbound[2]
             depth_bins = self.D + 1
-
-            dist_bins = dist_bins.clamp(max=self.D)
             dist_bins = dist_bins.long()
 
             flat_cell_id = cell_id.view(-1)
             flat_dist_bin = dist_bins.view(-1)
 
             flat_index = flat_cell_id * depth_bins + flat_dist_bin
-            
+
             counts_flat = torch.zeros(BN * fH * fW * depth_bins, dtype=torch.float, device=d.device)
             counts_flat.scatter_add_(
                 0, flat_index, torch.ones_like(flat_index, dtype=torch.float, device=flat_index.device)
@@ -603,7 +654,7 @@ class DepthLSSTransform(BaseDepthTransform):
             counts_3d = counts_flat.view(B, N, fH, fW, depth_bins)
             counts_3d = counts_3d[:, :, :, :, 1:]
             # counts_3d[..., 0] = 0.0
-            
+
             # mask_flat = counts_3d.sum(dim=-1).view(-1) > 0
 
             # gt_depth_distr = torch.softmax(counts_3d, dim=-1)
@@ -615,13 +666,13 @@ class DepthLSSTransform(BaseDepthTransform):
         else:
             gt_depth_distr = None
             counts_3d = None
-            gt_gaussian_probs = None 
+            gt_gaussian_probs = None
 
         return gt_depth_distr, counts_3d, gt_gaussian_probs
 
     def get_cam_feats(self, x, d):
         B, N, C, fH, fW = x.shape
-        
+
         x = x.view(B * N, C, fH, fW)
         d = d.view(B * N, *d.shape[2:])
 
@@ -632,70 +683,19 @@ class DepthLSSTransform(BaseDepthTransform):
         x = self.depthnet(x)
 
         depth = x[:, : self.D].softmax(dim=1)
-
-        x = depth.unsqueeze(2) * x[:, self.D : (self.D + self.C)].unsqueeze(2)
+        x = depth.unsqueeze(1) * x[:, self.D : (self.D + self.C)].unsqueeze(2)
 
         x = x.view(B, N, self.C, self.D, fH, fW)
         x = x.permute(0, 1, 3, 4, 5, 2)
-        
+
         if self.training:
             est_depth_distr = depth.permute(0, 2, 3, 1).reshape(B, N, fH, fW, self.D)
         else:
-            est_depth_distr = None 
-            
+            est_depth_distr = None
+
         return x, est_depth_distr, gt_depth_distr, counts_3d, gt_gaussian_probs
 
     def forward(self, *args, **kwargs):
         x, depth_loss = super().forward(*args, **kwargs)
         x = self.downsample(x)
         return x, depth_loss
-
-
-@MODELS.register_module()
-class NonLinearLSSTransform(BaseViewTransform):
-
-    def __init__(
-        self,
-        in_channels: int,
-        out_channels: int,
-        image_size: Tuple[int, int],
-        feature_size: Tuple[int, int],
-        xbound: Tuple[float, float, float],
-        ybound: Tuple[float, float, float],
-        zbound: Tuple[float, float, float],
-        dbound: Tuple[float, float, float],
-        downsample: int = 1,
-    ) -> None:
-        """Compared with `LSSTransform`, `DepthLSSTransform` adds sparse depth
-        information from lidar points into the inputs of the `depthnet`."""
-        super().__init__(
-            in_channels=in_channels,
-            out_channels=out_channels,
-            image_size=image_size,
-            feature_size=feature_size,
-            xbound=xbound,
-            ybound=ybound,
-            zbound=zbound,
-            dbound=dbound,
-        )
-
-        self.depthnet = DepthLSSNet(in_channels=in_channels, out_channels=self.D + self.C)
-        self.downsample = DownSampleNet(downsample=downsample, in_channels=out_channels, out_channels=out_channels)
-
-    def get_cam_feats(self, x):
-        B, N, C, fH, fW = x.shape
-
-        x = x.view(B * N, C, fH, fW)
-        x = self.depthnet(x)
-
-        depth = x[:, : self.D].softmax(dim=1)
-        x = depth.unsqueeze(1) * x[:, self.D : (self.D + self.C)].unsqueeze(2)
-
-        x = x.view(B, N, self.C, self.D, fH, fW)
-        x = x.permute(0, 1, 3, 4, 5, 2)
-        return x
-
-    def forward(self, *args, **kwargs):
-        x = super().forward(*args, **kwargs)
-        x = self.downsample(x)
-        return x

@@ -58,7 +58,7 @@ RUN python3 -m pip --no-cache-dir install \
     rerun-sdk==0.17.0
 
 # Install t4-devkit
-RUN python3 -m pip install git+https://github.com/tier4/t4-devkit@v0.2.1
+RUN python3 -m pip install git+https://github.com/tier4/t4-devkit@v0.5.1
 
 # Install autoware-perception-evaluation
 RUN python3 -m pip install git+https://github.com/tier4/autoware_perception_evaluation@develop
@@ -66,7 +66,7 @@ RUN python3 -m pip install git+https://github.com/tier4/autoware_perception_eval
 # Need to dowgrade setuptools to 60.2.0 to fix setup
 RUN python3 -m pip --no-cache-dir install \
     setuptools==60.2.0 \
-    spconv-cu120 \ 
+    spconv-cu120 \
     transformers==4.51.3
 
 # NOTE(knzo25): this patch is needed to use numpy versions over 1.23.5 (version used in mmdet3d 1.4.0)

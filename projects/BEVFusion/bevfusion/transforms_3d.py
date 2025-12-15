@@ -3,13 +3,13 @@ import uuid
 from copy import deepcopy
 from typing import Any, Dict
 
+import matplotlib.pyplot as plt
 import numpy as np
 import torch
 from mmcv.transforms import BaseTransform
 from mmdet3d.datasets import GlobalRotScaleTrans
 from mmdet3d.registry import TRANSFORMS
 from PIL import Image
-import matplotlib.pyplot as plt
 
 
 @TRANSFORMS.register_module()
@@ -23,20 +23,9 @@ class ImageAug3D(BaseTransform):
         self.rot_lim = rot_lim
         self.is_train = is_train
 
-    def sample_augmentation(self, results, camera_index):
+    def sample_augmentation(self, results):
         H, W = results["ori_shape"]
         fH, fW = self.final_dim
-
-        cam2image = results["cam2img"][camera_index]
-        fx = cam2image[0, 0]
-        fy = cam2image[1, 1]
-        cx = cam2image[0, 2]
-        cy = cam2image[1, 2]
-
-        r31, r32, r33 = results["cam2lidar"][camera_index, 2, :3]
-        yl = cy + cx * (fy / fx) * (r31 / r32) - fy * (r33 / r32)
-        yr = cy + (cx - W + 1) * (fy / fx) * (r31 / r32) - fy * (r33 / r32)
-        yh = max(0, max(yr, yl))
 
         if self.is_train:
             if isinstance(self.resize_lim, (int, float)):
@@ -44,17 +33,16 @@ class ImageAug3D(BaseTransform):
                 resize = np.random.uniform(aspect_ratio, aspect_ratio + self.resize_lim)
             else:
                 resize = np.random.uniform(*self.resize_lim)
-            
-            yh_resized = yh * resize
 
             resize_dims = (int(W * resize), int(H * resize))
             newW, newH = resize_dims
 
-            # crop_h = int(min(newH - fH, yh_resized))
-            # print(yh, " ", yh_resized, " ", crop_h, " ", newH-fH)
             crop_h = int((1 - np.random.uniform(*self.bot_pct_lim)) * newH) - fH
             crop_w = int(np.random.uniform(0, max(0, newW - fW)))
             crop = (crop_w, crop_h, crop_w + fW, crop_h + fH)
+            flip = False
+            if self.rand_flip and np.random.choice([0, 1]):
+                flip = True
             rotate = np.random.uniform(*self.rot_lim)
         else:
             resize_lim = np.mean(self.resize_lim)
@@ -63,17 +51,15 @@ class ImageAug3D(BaseTransform):
                 resize = aspect_ratio + resize_lim
             else:
                 resize = resize_lim
-            
-            yh_resized = yh * resize
 
             resize_dims = (int(W * resize), int(H * resize))
             newW, newH = resize_dims
             crop_h = int((1 - np.mean(self.bot_pct_lim)) * newH) - fH
-            # crop_h = int(min(newH - fH, yh_resized))
             crop_w = int(max(0, newW - fW) / 2)
             crop = (crop_w, crop_h, crop_w + fW, crop_h + fH)
             rotate = 0
-        return resize, resize_dims, crop, rotate
+            flip = False
+        return resize, resize_dims, crop, flip, rotate
 
     def img_transform(self, img, rotation, translation, resize, resize_dims, crop, flip, rotate):
         # adjust image
@@ -99,7 +85,7 @@ class ImageAug3D(BaseTransform):
                 [-np.sin(theta), np.cos(theta)],
             ]
         )
-        
+
         b = torch.Tensor([(crop[2] - crop[0]), (crop[3] - crop[1])]) / 2
         b = A.matmul(-b) + b
         rotation = A.matmul(rotation)
@@ -111,13 +97,10 @@ class ImageAug3D(BaseTransform):
         imgs = data["img"]
         new_imgs = []
         transforms = []
-        for camera_index, img in enumerate(imgs):
-            flip = False
-            if self.rand_flip and np.random.choice([0, 1]):
-                  flip = True
-            resize, resize_dims, crop, rotate = self.sample_augmentation(data, camera_index)
+        for img in imgs:
             post_rot = torch.eye(2)
             post_tran = torch.zeros(2)
+            resize, resize_dims, crop, flip, rotate = self.sample_augmentation(data)
             new_img, rotation, translation = self.img_transform(
                 img,
                 post_rot,
@@ -156,10 +139,10 @@ class BEVFusionRandomFlip3D:
         rotation = np.eye(3)
         sync_flip = data.get("sync_flip", None)
         if sync_flip is None:
-          flip_horizontal = np.random.choice([0, 1])
+            flip_horizontal = np.random.choice([0, 1])
         else:
-          flip_horizontal = sync_flip
-          
+            flip_horizontal = sync_flip
+
         if flip_horizontal:
             rotation = np.array([[1, 0, 0], [0, -1, 0], [0, 0, 1]]) @ rotation
             if "points" in data:
@@ -172,7 +155,7 @@ class BEVFusionRandomFlip3D:
         if self.flip_vertical:
             flip_vertical = np.random.choice([0, 1])
         else:
-            flip_vertical = False 
+            flip_vertical = False
 
         if flip_vertical:
             rotation = np.array([[-1, 0, 0], [0, 1, 0], [0, 0, 1]]) @ rotation
