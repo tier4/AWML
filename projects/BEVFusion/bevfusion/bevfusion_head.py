@@ -29,7 +29,7 @@ class ConvFuser(nn.Sequential):
         self.in_channels = in_channels
         self.out_channels = out_channels
         super().__init__(
-            nn.Conv2d(sum(in_channels), out_channels, 3, padding=1, bias=False),
+            nn.Conv2d(sum(in_channels), out_channels, 5, padding=2, bias=False),
             nn.BatchNorm2d(out_channels),
             nn.ReLU(True),
         )

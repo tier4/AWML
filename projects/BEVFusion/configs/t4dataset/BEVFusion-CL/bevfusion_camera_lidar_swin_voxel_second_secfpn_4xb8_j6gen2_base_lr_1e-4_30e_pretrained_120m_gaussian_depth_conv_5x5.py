@@ -495,5 +495,5 @@ auto_scale_lr = dict(enable=False, base_batch_size=train_gpu_size * train_batch_
 if train_gpu_size > 1:
     sync_bn = "torch"
 
-# load_from = "work_dirs/bevfusion_2_3_short_point_filter/epoch_28.pth"
-resume = True
+load_from = "work_dirs/bevfusion_2_3_short_point_filter/epoch_28.pth"
+# resume = True
