@@ -2,7 +2,7 @@ _base_ = [
     "bevfusion_lidar_intensity_voxel_second_secfpn_4xb8_120m.py",
     "./models/bevfusion_camera_second_secfpn.py"
     "./pipelines/default_camera_lidar_intensity_120m.py",
-    "./schedulers/default_30e_linear_cosine.py"
+    "./schedulers/default_50e_linear_cosine.py"
 ]
 
 model = dict(
