@@ -15,6 +15,143 @@ def gen_dx_bx(xbound, ybound, zbound):
     return dx, bx, nx
 
 
+class DepthLSSNet(nn.Module):
+    """
+    DepthLSSNet is a small convolutional network that takes in image and LiDAR depthmap features, and outputs
+    fused feature maps. It is used to extract depth information from the image features and LiDAR depth maps.
+    """
+
+    def __init__(self, in_channels: int, out_channels: int) -> None:
+        """
+        Args:
+            in_channels: int, the number of input channels.
+            out_channels: int, the number of output channels.
+        Returns:
+            None.
+        """
+        super().__init__()
+        self.net = nn.Sequential(
+            nn.Conv2d(in_channels=in_channels, out_channels=in_channels, kernel_size=3, padding=1, bias=False),
+            nn.BatchNorm2d(num_features=in_channels),
+            nn.ReLU(True),
+            nn.Conv2d(in_channels=in_channels, out_channels=in_channels, kernel_size=3, padding=1, bias=False),
+            nn.BatchNorm2d(num_features=in_channels),
+            nn.ReLU(True),
+            nn.Conv2d(in_channels=in_channels, out_channels=out_channels, kernel_size=1, bias=True),
+        )
+
+    def forward(self, x) -> torch.Tensor:
+        """
+        Args:
+            x: torch.Tensor, the input feature map.
+        Returns:
+            torch.Tensor, the output feature maps in shape (B * N, D + C, H, W), where B is the batch size, N is
+            the number of images, D is the number of depth bins, C is the number of output channels of the network,
+            H is the height, and W is the width.
+        """
+        return self.net(x)
+
+
+class DownSampleNet(nn.Module):
+    """
+    DownSampleNet is a small convolutional network that takes in a BEV feature map and outputs a downsampled BEV
+    feature map. It is used to downsample the BEV feature map to reduce the resolution of the BEV feature map.
+    """
+
+    def __init__(self, downsample: int, in_channels: int, out_channels: int) -> None:
+        """
+        Args:
+            downsample: int, the downsampling factor.
+            in_channels: int, the number of input channels.
+            out_channels: int, the number of output channels.
+        Returns:
+            None.
+        """
+        super().__init__()
+
+        if downsample > 1:
+            assert downsample == 2, f"DownSampleNet only supports downsample == 2, but got downsample: {downsample}"
+            assert (
+                in_channels == out_channels
+            ), f"DownSampleNet only supports in_channels == out_channels, but got in_channels: {in_channels}, and out_channels: {out_channels}"
+
+            self.net = nn.Sequential(
+                nn.Conv2d(in_channels=in_channels, out_channels=out_channels, kernel_size=3, padding=1, bias=False),
+                nn.BatchNorm2d(num_features=out_channels),
+                nn.ReLU(True),
+                nn.Conv2d(
+                    in_channels=in_channels,
+                    out_channels=out_channels,
+                    kernel_size=3,
+                    stride=downsample,
+                    padding=1,
+                    bias=False,
+                ),
+                nn.BatchNorm2d(num_features=out_channels),
+                nn.ReLU(True),
+                nn.Conv2d(in_channels=in_channels, out_channels=out_channels, kernel_size=3, padding=1, bias=False),
+                nn.BatchNorm2d(num_features=out_channels),
+                nn.ReLU(True),
+            )
+        else:
+            self.net = nn.Identity()
+
+    def forward(self, x) -> torch.Tensor:
+        """
+        Args:
+            x: torch.Tensor, the input feature map.
+        Returns:
+            torch.Tensor, the output feature maps in shape (B, C, H / downsample, W / downsample), where B is the
+            batch size, C is the number of output channels of the network, H is the height, and W is the width.
+        """
+        return self.net(x)
+
+
+class LidarDepthImageNet(nn.Module):
+    """
+    LidarDepthImageNet is a small convolutional network that takes in a LiDAR depthmap, and outputs LiDAR
+    depthmap feature maps. It is used to extract depth information from the LiDAR depthmaps.
+    """
+
+    def __init__(self, in_channels: int = 1, out_channels: int = 64, last_stride: int = 2) -> None:
+        """
+        Args:
+            in_channels: int, the number of input channels.
+            out_channels: int, the number of output channels.
+            last_stride: int, the stride of the last convolutional layer.
+        Returns:
+            None.
+        """
+        super().__init__()
+        self.in_channels = in_channels
+        self.out_channels = out_channels
+
+        self.net = nn.Sequential(
+            nn.Conv2d(in_channels=in_channels, out_channels=8, kernel_size=1, bias=False),
+            nn.BatchNorm2d(num_features=8),
+            nn.ReLU(True),
+            nn.Conv2d(in_channels=8, out_channels=32, kernel_size=5, stride=4, padding=2, bias=False),
+            nn.BatchNorm2d(num_features=32),
+            nn.ReLU(True),
+            nn.Conv2d(
+                in_channels=32, out_channels=out_channels, kernel_size=5, stride=last_stride, padding=2, bias=False
+            ),
+            nn.BatchNorm2d(num_features=out_channels),
+            nn.ReLU(True),
+        )
+
+    def forward(self, x) -> torch.Tensor:
+        """
+        Args:
+            x: torch.Tensor, the input feature map.
+        Returns:
+            torch.Tensor, the output feature maps in shape (B * N, C, H, W), where B is the batch size, N is
+            the number of images, C is the number of output channels of the network,
+            H is the height, and W is the width.
+        """
+        return self.net(x)
+
+
 class BaseViewTransform(nn.Module):
 
     def __init__(
@@ -105,7 +242,6 @@ class BaseViewTransform(nn.Module):
         raise NotImplementedError
 
     def bev_pool_aux(self, geom_feats):
-
         B, N, D, H, W, C = geom_feats.shape
         Nprime = B * N * D * H * W
         assert C == 3
@@ -130,7 +266,14 @@ class BaseViewTransform(nn.Module):
 
         geom_feats = geom_feats[kept]
 
-        ranks = geom_feats[:, 0] * (W * D * B) + geom_feats[:, 1] * (D * B) + geom_feats[:, 2] * B + geom_feats[:, 3]
+        # nx is the total number of voxels/cells in the BEV grid
+        # nx[0] is x, nx[1] is y, nx[2] is z
+        ranks = (
+            geom_feats[:, 0] * (self.nx[1] * self.nx[2] * B)
+            + geom_feats[:, 1] * (self.nx[2] * B)
+            + geom_feats[:, 2] * B
+            + geom_feats[:, 3]
+        )
         indices = ranks.argsort()
 
         ranks = ranks[indices]
@@ -158,7 +301,6 @@ class BaseViewTransform(nn.Module):
 
         # collapse Z
         final = torch.cat(x.unbind(dim=2), 1)
-
         return final
 
     def bev_pool_precomputed(self, x, geom_feats, kept, ranks, indices):
@@ -210,7 +352,6 @@ class BaseViewTransform(nn.Module):
             x = self.bev_pool_precomputed(x, geom_feats, kept, ranks, indices)
 
         else:
-
             geom = self.get_geometry(
                 camera2lidar_rots,
                 camera2lidar_trans,
@@ -220,6 +361,7 @@ class BaseViewTransform(nn.Module):
                 extra_rots=extra_rots,
                 extra_trans=extra_trans,
             )
+
             # depth is not connected to the calibration
             # on_img is
             # is also flattened_indices
@@ -255,28 +397,7 @@ class LSSTransform(BaseViewTransform):
             dbound=dbound,
         )
         self.depthnet = nn.Conv2d(in_channels, self.D + self.C, 1)
-        if downsample > 1:
-            assert downsample == 2, downsample
-            self.downsample = nn.Sequential(
-                nn.Conv2d(out_channels, out_channels, 3, padding=1, bias=False),
-                nn.BatchNorm2d(out_channels),
-                nn.ReLU(True),
-                nn.Conv2d(
-                    out_channels,
-                    out_channels,
-                    3,
-                    stride=downsample,
-                    padding=1,
-                    bias=False,
-                ),
-                nn.BatchNorm2d(out_channels),
-                nn.ReLU(True),
-                nn.Conv2d(out_channels, out_channels, 3, padding=1, bias=False),
-                nn.BatchNorm2d(out_channels),
-                nn.ReLU(True),
-            )
-        else:
-            self.downsample = nn.Identity()
+        self.downsample = DownSampleNet(downsample, out_channels, out_channels)
 
     def get_cam_feats(self, x):
         B, N, C, fH, fW = x.shape
@@ -319,20 +440,22 @@ class BaseDepthTransform(BaseViewTransform):
         camera2lidar_trans = camera2lidar[..., :3, 3]
 
         if camera_intrinsics_inverse is None:
-            intrins_inverse = torch.inverse(cam_intrinsic)[..., :3, :3]
+            intrins_inverse = torch.inverse(cam_intrinsic[..., :3, :3])
         else:
             intrins_inverse = camera_intrinsics_inverse[..., :3, :3]
 
         if img_aug_matrix_inverse is None:
-            post_rots_inverse = torch.inverse(img_aug_matrix)[..., :3, :3]
+            post_rots_inverse = torch.inverse(img_aug_matrix[..., :3, :3])
         else:
-            img_aug_matrix_inverse = img_aug_matrix_inverse[..., :3, :3]
+            post_rots_inverse = img_aug_matrix_inverse[..., :3, :3]
 
         if lidar_aug_matrix_inverse is None:
-            lidar_aug_matrix_inverse = torch.inverse(lidar_aug_matrix)
+            lidar_aug_matrix_inverse = torch.inverse(lidar_aug_matrix[..., :3, :3])
 
         batch_size = len(points)
         depth = torch.zeros(batch_size, img.shape[1], 1, *self.image_size).to(points[0].device)
+        _, num_imgs, channels, height, width = depth.shape
+
         for b in range(batch_size):
             cur_coords = points[b][:, :3]
             cur_img_aug_matrix = img_aug_matrix[b]
@@ -342,11 +465,15 @@ class BaseDepthTransform(BaseViewTransform):
             # inverse aug
             cur_coords -= cur_lidar_aug_matrix[:3, 3]
             cur_coords = lidar_aug_matrix_inverse[b, :3, :3].matmul(cur_coords.transpose(1, 0))
+
             # lidar2image
             cur_coords = cur_lidar2image[:, :3, :3].matmul(cur_coords)
             cur_coords += cur_lidar2image[:, :3, 3].reshape(-1, 3, 1)
+
             # get 2d coords
             dist = cur_coords[:, 2, :]
+            valid_dist_mask = dist > 0
+
             cur_coords[:, 2, :] = torch.clamp(cur_coords[:, 2, :], 1e-5, 1e5)
             cur_coords[:, :2, :] /= cur_coords[:, 2:3, :]
 
@@ -357,12 +484,12 @@ class BaseDepthTransform(BaseViewTransform):
 
             # normalize coords for grid sample
             cur_coords = cur_coords[..., [1, 0]]
-
             on_img = (
                 (cur_coords[..., 0] < self.image_size[0])
                 & (cur_coords[..., 0] >= 0)
                 & (cur_coords[..., 1] < self.image_size[1])
                 & (cur_coords[..., 1] >= 0)
+                & valid_dist_mask
             )
 
             # NOTE(knzo25): in the original code, a per-image loop was
@@ -380,21 +507,12 @@ class BaseDepthTransform(BaseViewTransform):
 
             masked_coords = cur_coords[camera_indices, point_indices].long()
             masked_dist = dist[camera_indices, point_indices]
-            depth = depth.to(masked_dist.dtype)
-            batch_size, num_imgs, channels, height, width = depth.shape
-            # Depth tensor should have only one channel in this implementation
-            assert channels == 1
-
-            depth_flat = depth.view(batch_size, num_imgs, channels, -1)
 
             flattened_indices = camera_indices * height * width + masked_coords[:, 0] * width + masked_coords[:, 1]
             updates_flat = torch.zeros((num_imgs * channels * height * width), device=depth.device)
-
             updates_flat.scatter_(dim=0, index=flattened_indices, src=masked_dist)
 
-            depth_flat[b] = updates_flat.view(num_imgs, channels, height * width)
-
-            depth = depth_flat.view(batch_size, num_imgs, channels, height, width)
+            depth[b] = updates_flat.view(num_imgs, channels, height, width)
 
         extra_rots = lidar_aug_matrix[..., :3, :3]
         extra_trans = lidar_aug_matrix[..., :3, 3]
@@ -407,11 +525,11 @@ class BaseDepthTransform(BaseViewTransform):
             x = self.bev_pool_precomputed(x, geom_feats, kept, ranks, indices)
         else:
             geom = self.get_geometry(
-                camera2lidar_rots,
-                camera2lidar_trans,
-                intrins_inverse,
-                post_rots_inverse,
-                post_trans,
+                camera2lidar_rots=camera2lidar_rots,
+                camera2lidar_trans=camera2lidar_trans,
+                intrins_inverse=intrins_inverse,
+                post_rots_inverse=post_rots_inverse,
+                post_trans=post_trans,
                 extra_rots=extra_rots,
                 extra_trans=extra_trans,
             )
@@ -436,6 +554,7 @@ class DepthLSSTransform(BaseDepthTransform):
         zbound: Tuple[float, float, float],
         dbound: Tuple[float, float, float],
         downsample: int = 1,
+        lidar_depth_image_last_stride: int = 2,
     ) -> None:
         """Compared with `LSSTransform`, `DepthLSSTransform` adds sparse depth
         information from lidar points into the inputs of the `depthnet`."""
@@ -449,54 +568,18 @@ class DepthLSSTransform(BaseDepthTransform):
             zbound=zbound,
             dbound=dbound,
         )
-        self.dtransform = nn.Sequential(
-            nn.Conv2d(1, 8, 1),
-            nn.BatchNorm2d(8),
-            nn.ReLU(True),
-            nn.Conv2d(8, 32, 5, stride=4, padding=2),
-            nn.BatchNorm2d(32),
-            nn.ReLU(True),
-            nn.Conv2d(32, 64, 5, stride=2, padding=2),
-            nn.BatchNorm2d(64),
-            nn.ReLU(True),
+
+        self.dtransform = LidarDepthImageNet(in_channels=1, out_channels=64, last_stride=lidar_depth_image_last_stride)
+        self.depthnet = DepthLSSNet(
+            in_channels=in_channels + self.dtransform.out_channels, out_channels=self.D + self.C
         )
-        self.depthnet = nn.Sequential(
-            nn.Conv2d(in_channels + 64, in_channels, 3, padding=1),
-            nn.BatchNorm2d(in_channels),
-            nn.ReLU(True),
-            nn.Conv2d(in_channels, in_channels, 3, padding=1),
-            nn.BatchNorm2d(in_channels),
-            nn.ReLU(True),
-            nn.Conv2d(in_channels, self.D + self.C, 1),
-        )
-        if downsample > 1:
-            assert downsample == 2, downsample
-            self.downsample = nn.Sequential(
-                nn.Conv2d(out_channels, out_channels, 3, padding=1, bias=False),
-                nn.BatchNorm2d(out_channels),
-                nn.ReLU(True),
-                nn.Conv2d(
-                    out_channels,
-                    out_channels,
-                    3,
-                    stride=downsample,
-                    padding=1,
-                    bias=False,
-                ),
-                nn.BatchNorm2d(out_channels),
-                nn.ReLU(True),
-                nn.Conv2d(out_channels, out_channels, 3, padding=1, bias=False),
-                nn.BatchNorm2d(out_channels),
-                nn.ReLU(True),
-            )
-        else:
-            self.downsample = nn.Identity()
+        self.downsample = DownSampleNet(downsample=downsample, in_channels=out_channels, out_channels=out_channels)
 
     def get_cam_feats(self, x, d):
         B, N, C, fH, fW = x.shape
 
-        d = d.view(B * N, *d.shape[2:])
         x = x.view(B * N, C, fH, fW)
+        d = d.view(B * N, *d.shape[2:])
 
         d = self.dtransform(d)
         x = torch.cat([d, x], dim=1)
