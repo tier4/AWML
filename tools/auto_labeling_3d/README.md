@@ -76,8 +76,9 @@ DOCKER_BUILDKIT=1 docker build -t auto_labeling_3d -f tools/auto_labeling_3d/Doc
 docker run -it --gpus '"device=0"' --name auto_labeling_3d --shm-size=64g -d -v {path to autoware-ml}:/workspace -v {path to data}:/workspace/data auto_labeling_3d bash
 ```
 
-- Please follow the setting up procedure in README of the model used for auto labeling.
-  - For example, if you want to use BEVFusion, please follow [setting environemnt for BEVFusion](/projects/BEVFusion/README.md#1-setup).
+- If you want to use these models in auto labeling, please follow the setting up procedure in the README of each model:
+  - [BEVFusion](/projects/BEVFusion/README.md#1-setup)
+  - [StreamPETR](/projects/StreamPETR/README.md#1-setup)
 
 ## 2. Prepare Dataset
 
