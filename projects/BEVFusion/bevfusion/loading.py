@@ -1,13 +1,14 @@
 # Copyright (c) OpenMMLab. All rights reserved.
 import copy
 import os
-from typing import Optional
+from typing import Optional, List
 
 import mmcv
 import numpy as np
 from mmdet3d.datasets.transforms import LoadMultiViewImageFromFiles
 from mmdet3d.registry import TRANSFORMS
 from mmengine.fileio import get
+from mmengine.logging import print_log
 
 
 @TRANSFORMS.register_module()
@@ -34,6 +35,7 @@ class BEVLoadMultiViewImageFromFiles(LoadMultiViewImageFromFiles):
 
     def __init__(
         self,
+        camera_order: List[str],
         to_float32: bool = False,
         color_type: str = "unchanged",
         backend_args: Optional[dict] = None,
@@ -53,6 +55,7 @@ class BEVLoadMultiViewImageFromFiles(LoadMultiViewImageFromFiles):
         self.test_mode = test_mode
         self.set_default_scale = set_default_scale
         self.before_camera_info = dict()
+        self.camera_order = camera_order
 
     def transform(self, results: dict) -> Optional[dict]:
         """Call function to load multi-view image from files.
@@ -129,20 +132,27 @@ class BEVLoadMultiViewImageFromFiles(LoadMultiViewImageFromFiles):
                         cur2prev = np.linalg.inv(pad_prev_ego2global).dot(pad_cur_ego2global)
                         for result_idx in range(choice_idx * self.num_views, (choice_idx + 1) * self.num_views):
                             results[key][result_idx] = results[key][result_idx].dot(cur2prev)
+        
         # Support multi-view images with different shapes
         # TODO: record the origin shape and padded shape
         filename, cam2img, lidar2cam, cam2lidar, lidar2img = [], [], [], [], []
 
         # to fill None data
         # for _ , cam_item in results['images'].items():
-        for cam_type, cam_item in results["images"].items():
+        for camera_type in self.camera_order:
+            if camera_type not in results["images"]:
+                continue
+
+            cam_item = results["images"][camera_type]
             # TODO (KokSeang): This sometime causes an error when we set num_workers > 1 during training,
             # it's likely due to multiprocessing in CPU. We should probably process this part when creating info files
             if cam_item["img_path"] is None:
-                cam_item = self.before_camera_info[cam_type]
-                print("Warning: fill None data")
+                # print_log(f"Warning: None data for cam: {camera_type} in {results['images']}")
+                # continue
+                cam_item = self.before_camera_info[camera_type]
+                print_log("Warning: fill None data")
             else:
-                self.before_camera_info[cam_type] = cam_item
+                self.before_camera_info[camera_type] = cam_item
 
             filename.append(cam_item["img_path"])
             lidar2cam.append(cam_item["lidar2cam"])
@@ -184,9 +194,12 @@ class BEVLoadMultiViewImageFromFiles(LoadMultiViewImageFromFiles):
             pad_shape = img_shape_max[:2]
         else:
             pad_shape = None
+
         if pad_shape is not None:
             imgs = [mmcv.impad(img, shape=pad_shape, pad_val=0) for img in imgs]
         img = np.stack(imgs, axis=-1)
+
+        # Height, width, channels, num_views
         if self.to_float32:
             img = img.astype(np.float32)
 
@@ -194,6 +207,7 @@ class BEVLoadMultiViewImageFromFiles(LoadMultiViewImageFromFiles):
         # unravel to list, see `DefaultFormatBundle` in formating.py
         # which will transpose each image separately and then stack into array
         results["img"] = [img[..., i] for i in range(img.shape[-1])]
+
         results["img_shape"] = img.shape[:2]
         results["ori_shape"] = img.shape[:2]
         # Set initial values for default meta_keys

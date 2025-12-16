@@ -1,6 +1,6 @@
 _base_ = [
     "../../../../../autoware_ml/configs/detection3d/dataset/t4dataset/base.py"
-    "../default/bevfusion_camera_lidar_second_secfpn_4xb8_centerhead_aux_120m.py",
+    "../default/bevfusion_camera_second_secfpn_4xb8_centerhead_aux_120m.py",
 ]
 
 # user setting
