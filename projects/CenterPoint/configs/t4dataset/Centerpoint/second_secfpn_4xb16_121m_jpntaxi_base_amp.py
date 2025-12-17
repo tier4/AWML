@@ -1,6 +1,6 @@
 _base_ = [
     "../../../../../autoware_ml/configs/detection3d/default_runtime.py",
-    "../../../../../autoware_ml/configs/detection3d/dataset/t4dataset/j6gen2_base.py",
+    "../../../../../autoware_ml/configs/detection3d/dataset/t4dataset/jpntaxi_base.py",
     "../../default/second_secfpn_base.py",
 ]
 custom_imports = dict(imports=["projects.CenterPoint.models"], allow_failed_imports=False)
@@ -12,9 +12,9 @@ custom_imports["imports"] += ["autoware_ml.samplers"]
 
 # This is a base file for t4dataset, add the dataset config.
 # type, data_root and ann_file of data.train, data.val and data.test
-point_cloud_range = [-121.60, -121.60, -3.0, 121.60, 121.60, 5.0]
-voxel_size = [0.32, 0.32, 8.0]
-grid_size = [760, 760, 1]  # (121.60 / 0.32 == 380, 380 * 2 == 760)
+point_cloud_range = [-122.40, -122.40, -3.0, 122.40, 122.40, 5.0]
+voxel_size = [0.24, 0.24, 8.0]
+grid_size = [1020, 1020, 1]  # (122.40 / 0.24 == 510, 510 * 2 == 1020)
 sweeps_num = 1
 input_modality = dict(
     use_lidar=True,
@@ -23,7 +23,7 @@ input_modality = dict(
     use_map=False,
     use_external=False,
 )
-out_size_factor = 1
+out_size_factor = 2
 
 backend_args = None
 # backend_args = dict(backend="disk")
@@ -49,7 +49,7 @@ test_batch_size = 2
 num_workers = 32
 val_interval = 1
 max_epochs = 30
-work_dir = "work_dirs/centerpoint/" + _base_.dataset_type + "/second_secfpn_4xb16_121m_j6gen2_base_t4metricv2/"
+work_dir = "work_dirs/centerpoint/" + _base_.dataset_type + "/second_secfpn_4xb16_121m_jpntaxi_base_amp"
 
 train_pipeline = [
     dict(
@@ -67,7 +67,6 @@ train_pipeline = [
         pad_empty_sweeps=True,
         remove_close=True,
         backend_args=backend_args,
-        test_mode=True,
     ),
     dict(type="LoadAnnotations3D", with_bbox_3d=True, with_label_3d=True),
     dict(
@@ -109,23 +108,7 @@ test_pipeline = [
         test_mode=True,
     ),
     dict(type="PointsRangeFilter", point_cloud_range=point_cloud_range),
-    dict(
-        type="Pack3DDetInputs",
-        keys=["points", "gt_bboxes_3d", "gt_labels_3d"],
-        meta_keys=(
-            "timestamp",
-            "lidar2img",
-            "depth2img",
-            "cam2img",
-            "box_type_3d",
-            "sample_idx",
-            "lidar_path",
-            "ori_cam2img",
-            "cam2global",
-            "lidar2cam",
-            "ego2global",
-        ),
-    ),
+    dict(type="Pack3DDetInputs", keys=["points", "gt_bboxes_3d", "gt_labels_3d"]),
 ]
 
 # construct a pipeline for data and gt loading in show function
@@ -146,6 +129,7 @@ eval_pipeline = [
         pad_empty_sweeps=True,
         remove_close=True,
         backend_args=backend_args,
+        test_mode=True,
     ),
     dict(type="PointsRangeFilter", point_cloud_range=point_cloud_range),
     dict(type="Pack3DDetInputs", keys=["points", "gt_bboxes_3d", "gt_labels_3d"]),
@@ -209,59 +193,29 @@ test_dataloader = dict(
     ),
 )
 
-# Add evaluator configs
-perception_evaluator_configs = dict(
-    dataset_paths=data_root,
-    frame_id="base_link",
-    result_root_directory=work_dir + "/result",
-    evaluation_config_dict=_base_.evaluator_metric_configs,
-    load_raw_data=False,
-)
-
-critical_object_filter_config = dict(
-    target_labels=_base_.class_names,
-    ignore_attributes=None,
-    max_distance_list=[121.0, 121.0, 121.0, 121.0, 121.0],
-    min_distance_list=[-121.0, -121.0, -121.0, -121.0, -121.0],
-)
-
-frame_pass_fail_config = dict(
-    target_labels=_base_.class_names,
-    # Matching thresholds per class (must align with `plane_distance_thresholds` used in evaluation)
-    matching_threshold_list=[2.0, 2.0, 2.0, 2.0, 2.0],
-    confidence_threshold_list=None,
-)
-
 val_evaluator = dict(
-    type="T4MetricV2",
+    type="T4Metric",
     data_root=data_root,
-    output_dir="validation",
-    dataset_name="j6gen2_base",
     ann_file=data_root + info_directory_path + _base_.info_val_file_name,
+    metric="bbox",
+    backend_args=backend_args,
     class_names={{_base_.class_names}},
     name_mapping={{_base_.name_mapping}},
-    perception_evaluator_configs=perception_evaluator_configs,
-    critical_object_filter_config=critical_object_filter_config,
-    frame_pass_fail_config=frame_pass_fail_config,
-    num_workers=128,
-    scene_batch_size=256,
-    write_metric_summary=False,
+    eval_class_range=eval_class_range,
+    filter_attributes=_base_.filter_attributes,
 )
 
 test_evaluator = dict(
-    type="T4MetricV2",
+    type="T4Metric",
     data_root=data_root,
-    output_dir="testing",
-    dataset_name="j6gen2_base",
     ann_file=data_root + info_directory_path + _base_.info_test_file_name,
+    metric="bbox",
+    backend_args=backend_args,
     class_names={{_base_.class_names}},
     name_mapping={{_base_.name_mapping}},
-    perception_evaluator_configs=perception_evaluator_configs,
-    critical_object_filter_config=critical_object_filter_config,
-    frame_pass_fail_config=frame_pass_fail_config,
-    num_workers=128,
-    scene_batch_size=256,
-    write_metric_summary=True,
+    eval_class_range=eval_class_range,
+    filter_attributes=_base_.filter_attributes,
+    save_csv=True,
 )
 
 model = dict(
@@ -272,7 +226,7 @@ model = dict(
             max_num_points=32,
             voxel_size=voxel_size,
             point_cloud_range=point_cloud_range,
-            max_voxels=(64000, 64000),
+            max_voxels=(96000, 96000),
             deterministic=True,
         ),
     ),
@@ -302,7 +256,7 @@ model = dict(
         type="SECONDFPN",
         in_channels=[64, 128, 256],
         out_channels=[128, 128, 128],
-        upsample_strides=[1, 2, 4],
+        upsample_strides=[0.5, 1, 2],
         norm_cfg=dict(type="BN", eps=0.001, momentum=0.01),
         upsample_cfg=dict(type="deconv", bias=False),
         use_conv_for_no_stride=True,
@@ -435,22 +389,20 @@ vis_backends = [
     dict(type="LocalVisBackend"),
     dict(type="TensorboardVisBackend"),
     # Update info accordingly
-    dict(
-        type="SafeMLflowVisBackend",
-        exp_name="(UserName) CenterPoint",
-        run_name="CenterPoint base",
-        tracking_uri="http://localhost:5000",
-        artifact_suffix=(),
-    ),
+    # dict(
+    #     type="SafeMLflowVisBackend",
+    #     exp_name="(UserName) CenterPoint",
+    #     run_name="CenterPoint base",
+    #     tracking_uri="http://localhost:5000",
+    #     artifact_suffix=(),
+    # ),
 ]
 visualizer = dict(type="Det3DLocalVisualizer", vis_backends=vis_backends, name="visualizer")
 
 logger_interval = 50
 default_hooks = dict(
     logger=dict(type="LoggerHook", interval=logger_interval),
-    checkpoint=dict(
-        type="CheckpointHook", interval=1, max_keep_ckpts=10, save_best="T4MetricV2/T4MetricV2/mAP_center_distance_bev"
-    ),
+    checkpoint=dict(type="CheckpointHook", interval=1, max_keep_ckpts=10, save_best="NuScenes metric/T4Metric/mAP"),
 )
 
 custom_hooks = [
@@ -460,3 +412,5 @@ custom_hooks = [
 
 # Update the load_from path accordingly
 load_from = "<best_checkpoint>"
+
+activation_checkpointing = ["pts_backbone"]

@@ -115,6 +115,29 @@ class ChangeDirectoryStructureConfig:
 
 
 @dataclass(frozen=True)
+class CreateAnnotationToolFormatConfig:
+    """Configuration for create_annotation_tool_format step."""
+
+    output_dir: Path
+    output_format: str
+    dataname_to_anntool_id: Optional[Path]
+
+    @classmethod
+    def from_dict(cls, data: Dict[str, Any]) -> "CreateAnnotationToolFormatConfig":
+        dataname_path = data.get("dataname_to_anntool_id")
+        if dataname_path is None or str(dataname_path).lower() == "none":
+            dataname_to_anntool_id = None
+        else:
+            dataname_to_anntool_id = Path(dataname_path)
+
+        return cls(
+            output_dir=Path(data["output_dir"]),
+            output_format=data["output_format"],
+            dataname_to_anntool_id=dataname_to_anntool_id,
+        )
+
+
+@dataclass(frozen=True)
 class PipelineConfig:
     """Complete pipeline configuration."""
 
@@ -124,6 +147,7 @@ class PipelineConfig:
     ensemble_infos: Optional[EnsembleInfosConfig]
     create_pseudo_t4dataset: Optional[CreatePseudoT4datasetConfig]
     change_directory_structure: Optional[ChangeDirectoryStructureConfig]
+    create_annotation_tool_format: Optional[CreateAnnotationToolFormatConfig]
 
     @classmethod
     def from_file(cls, config_path: Path) -> "PipelineConfig":
@@ -180,6 +204,13 @@ class PipelineConfig:
                 data=yaml_data["change_directory_structure"]
             )
 
+        # Parse create_annotation_tool_format config
+        create_annotation_tool_format_cfg = None
+        if "create_annotation_tool_format" in yaml_data:
+            create_annotation_tool_format_cfg = CreateAnnotationToolFormatConfig.from_dict(
+                data=yaml_data["create_annotation_tool_format"]
+            )
+
         return cls(
             logging=logging_cfg,
             root_path=root_path,
@@ -187,6 +218,7 @@ class PipelineConfig:
             ensemble_infos=ensemble_infos_cfg,
             create_pseudo_t4dataset=create_pseudo_t4dataset_cfg,
             change_directory_structure=change_directory_structure_cfg,
+            create_annotation_tool_format=create_annotation_tool_format_cfg,
         )
 
 
