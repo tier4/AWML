@@ -1,8 +1,7 @@
 _base_ = [
     "bevfusion_lidar_intensity_voxel_second_secfpn_4xb8_120m.py",
-    "./models/bevfusion_camera_second_secfpn.py"
-    "./pipelines/default_camera_lidar_intensity_120m.py",
-    "./schedulers/default_50e_linear_cosine.py"
+    "./models/bevfusion_camera_second_secfpn.py" "./pipelines/default_camera_lidar_intensity_120m.py",
+    "./schedulers/default_50e_linear_cosine.py",
 ]
 
 model = dict(
@@ -19,5 +18,5 @@ model = dict(
         norm_cfg=dict(type="BN", eps=0.001, momentum=0.01),
         conv_cfg=dict(type="Conv2d", bias=False),
     ),
-    img_bev_bbox_head=_base_.img_bev_bbox_head
+    img_bev_bbox_head=_base_.img_bev_bbox_head,
 )

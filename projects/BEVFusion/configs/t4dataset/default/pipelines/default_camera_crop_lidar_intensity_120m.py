@@ -11,8 +11,8 @@ point_use_dim = 5
 lidar_sweep_dims = [0, 1, 2, 3, 4]  # x, y, z, intensity, time_lag
 sweeps_num = 1
 
-# Image parameters 
-image_size = [384, 768] # Height, Width
+# Image parameters
+image_size = [384, 768]  # Height, Width
 camera_order = ["CAM_FRONT", "CAM_FRONT_LEFT", "CAM_BACK_LEFT", "CAM_FRONT_RIGHT", "CAM_BACK_RIGHT"]
 
 train_pipeline = [

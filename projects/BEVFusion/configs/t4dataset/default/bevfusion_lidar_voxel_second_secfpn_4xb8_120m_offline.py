@@ -1,6 +1,4 @@
-_base_ = [
-    "bevfusion_lidar_voxel_second_secfpn_4xb8_120m.py"
-]
+_base_ = ["bevfusion_lidar_voxel_second_secfpn_4xb8_120m.py"]
 
 # range setting
 voxel_size = [0.075, 0.075, 0.2]
@@ -24,4 +22,3 @@ model = dict(
         ),
     ),
 )
-

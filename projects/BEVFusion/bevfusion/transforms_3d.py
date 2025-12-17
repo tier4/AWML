@@ -55,9 +55,9 @@ class ImageAug3D(BaseTransform):
             crop = (crop_w, crop_h, crop_w + fW, crop_h + fH)
             rotate = 0
             flip = False
-        
+
         return resize, resize_dims, crop, flip, rotate
-    
+
     def img_transform(self, img, rotation, translation, resize, resize_dims, crop, flip, rotate):
         # adjust image
         img = Image.fromarray(img.astype("uint8"), mode="RGB")

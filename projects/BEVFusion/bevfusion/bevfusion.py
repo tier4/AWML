@@ -362,7 +362,7 @@ class BEVFusion(Base3DDetector):
                 batch_input_metas,
                 geom_feats=geom_feats,
             )
-        
+
         if img_bev_features is not None:
             features.append(img_bev_features)
 
@@ -383,25 +383,27 @@ class BEVFusion(Base3DDetector):
 
         if self.pts_backbone is not None:
             x = self.pts_backbone(x)
-        
+
         if self.pts_neck is not None:
             x = self.pts_neck(x)
 
         return x, img_bev_features
 
     def img_bev_losses(
-        self, batch_data_samples: List[Det3DDataSample], img_bev_feats,
+        self,
+        batch_data_samples: List[Det3DDataSample],
+        img_bev_feats,
     ) -> dict:
 
         losses = dict()
-        assert self.img_bev_bbox_head is not None, "img_bev_bbox_head should be initialized!" 
-        
+        assert self.img_bev_bbox_head is not None, "img_bev_bbox_head should be initialized!"
+
         img_bev_bbox_losses = self.img_bev_bbox_head.loss([img_bev_feats], batch_data_samples)
         sum_losses = sum([value for value in img_bev_bbox_losses.values()])
         losses.update(img_bev_bbox_losses)
-        losses['sum_img_bev'] = sum_losses
-        return losses 
-    
+        losses["sum_img_bev"] = sum_losses
+        return losses
+
     def loss(
         self, batch_inputs_dict: Dict[str, Optional[Tensor]], batch_data_samples: List[Det3DDataSample], **kwargs
     ) -> List[Det3DDataSample]:

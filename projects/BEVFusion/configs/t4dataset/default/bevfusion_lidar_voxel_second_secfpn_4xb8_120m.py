@@ -1,10 +1,12 @@
 _base_ = [
     "../../../../../autoware_ml/configs/detection3d/default_runtime.py",
     "./pipelines/default_lidar_120m.py",
-    "./schedulers/default_50e_cosine.py"
+    "./schedulers/default_50e_cosine.py",
 ]
 
-custom_imports = dict(imports=["projects.BEVFusion.bevfusion", "projects.CenterPoint.models"], allow_failed_imports=False)
+custom_imports = dict(
+    imports=["projects.BEVFusion.bevfusion", "projects.CenterPoint.models"], allow_failed_imports=False
+)
 custom_imports["imports"] += _base_.custom_imports["imports"]
 custom_imports["imports"] += ["autoware_ml.detection3d.datasets.transforms"]
 
@@ -57,7 +59,9 @@ img_bev_bbox_head = dict(
     ),
     share_conv_channel=64,
     loss_cls=dict(type="mmdet.GaussianFocalLoss", reduction="none", loss_weight=1.0),
-    loss_bbox=dict(type="mmdet.L1Loss", reduction="mean", loss_weight=0.0), # Dont need to learn regression in this aux head
+    loss_bbox=dict(
+        type="mmdet.L1Loss", reduction="mean", loss_weight=0.0
+    ),  # Dont need to learn regression in this aux head
     norm_bbox=True,
     tasks=[
         dict(num_class=5, class_names=["car", "truck", "bus", "bicycle", "pedestrian"]),
@@ -92,12 +96,12 @@ img_bev_bbox_head = dict(
 model = dict(
     type="BEVFusion",
     voxelize_cfg=dict(
-    		max_num_points=max_num_points,
-    		voxel_size=_base_.voxel_size,
-    		point_cloud_range=_base_.point_cloud_range,
-    		max_voxels=max_voxels,
-    		deterministic=True,
-    		voxelize_reduce=True,
+        max_num_points=max_num_points,
+        voxel_size=_base_.voxel_size,
+        point_cloud_range=_base_.point_cloud_range,
+        max_voxels=max_voxels,
+        deterministic=True,
+        voxelize_reduce=True,
     ),
     data_preprocessor=None,
     pts_voxel_encoder=dict(type="HardSimpleVFE", num_features=_base_.point_use_dim),
@@ -218,7 +222,7 @@ train_dataloader = dict(
     num_workers=num_workers,
     persistent_workers=True,
     sampler=dict(type="DefaultSampler", shuffle=True),
-    dataset=None    # Must be overridden by a sub-config
+    dataset=None,  # Must be overridden by a sub-config
 )
 
 val_dataloader = dict(
@@ -226,7 +230,7 @@ val_dataloader = dict(
     num_workers=num_workers,
     persistent_workers=True,
     sampler=dict(type="DefaultSampler", shuffle=False),
-    dataset=None    # Must be overriden by a sub-config
+    dataset=None,  # Must be overriden by a sub-config
 )
 
 test_dataloader = dict(
@@ -234,7 +238,7 @@ test_dataloader = dict(
     num_workers=_base_.num_workers,
     persistent_workers=True,
     sampler=dict(type="DefaultSampler", shuffle=False),
-    dataset=None    # Must be overriden by a sub-config
+    dataset=None,  # Must be overriden by a sub-config
 )
 
 val_evaluator = dict(
@@ -243,7 +247,6 @@ val_evaluator = dict(
     metric="bbox",
     backend_args=_base_.backend_args,
     eval_class_range=eval_class_range,
-    
     # Must be overriden by a sub-config
     ann_file=None,
     class_names=[],
@@ -258,7 +261,6 @@ test_evaluator = dict(
     backend_args=_base_.backend_args,
     eval_class_range=eval_class_range,
     save_csv=True,
-    
     # Must be overriden by a sub-config
     ann_file=None,
     class_names=[],

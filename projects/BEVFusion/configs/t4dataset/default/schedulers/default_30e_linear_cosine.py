@@ -7,7 +7,7 @@ val_interval = 5
 
 param_scheduler = [
     # learning rate scheduler
-	dict(type="LinearLR", start_factor=1.0 / 3, begin=0, end=t_max, by_epoch=True),
+    dict(type="LinearLR", start_factor=1.0 / 3, begin=0, end=t_max, by_epoch=True),
     dict(
         type="CosineAnnealingLR",
         T_max=(max_epochs - t_max),

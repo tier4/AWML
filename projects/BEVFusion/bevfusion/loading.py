@@ -1,7 +1,7 @@
 # Copyright (c) OpenMMLab. All rights reserved.
 import copy
 import os
-from typing import Optional, List
+from typing import List, Optional
 
 import mmcv
 import numpy as np
@@ -132,7 +132,7 @@ class BEVLoadMultiViewImageFromFiles(LoadMultiViewImageFromFiles):
                         cur2prev = np.linalg.inv(pad_prev_ego2global).dot(pad_cur_ego2global)
                         for result_idx in range(choice_idx * self.num_views, (choice_idx + 1) * self.num_views):
                             results[key][result_idx] = results[key][result_idx].dot(cur2prev)
-        
+
         # Support multi-view images with different shapes
         # TODO: record the origin shape and padded shape
         filename, cam2img, lidar2cam, cam2lidar, lidar2img = [], [], [], [], []

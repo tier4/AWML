@@ -24,7 +24,7 @@ train_dataloader = dict(
         test_mode=False,
         data_prefix=_base_.data_prefix,
         box_type_3d="LiDAR",
-        filter_cfg=dict(filter_frames_with_camera_order=_base_.camera_order)
+        filter_cfg=dict(filter_frames_with_camera_order=_base_.camera_order),
     )
 )
 

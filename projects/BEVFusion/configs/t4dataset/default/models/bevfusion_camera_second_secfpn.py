@@ -1,4 +1,4 @@
-image_size = [384, 768] # Height, Width
+image_size = [384, 768]  # Height, Width
 
 # Image network
 model = dict(
@@ -9,7 +9,7 @@ model = dict(
         mean=[123.675, 116.28, 103.53],
         std=[58.395, 57.12, 57.375],
         bgr_to_rgb=False,
-        rgb_to_bgr=False
+        rgb_to_bgr=False,
     ),
     img_backbone=dict(
         type="mmdet.SwinTransformer",
@@ -31,7 +31,7 @@ model = dict(
         init_cfg=dict(
             type="Pretrained",
             # https://download.openmmlab.com/mmdetection3d/v1.1.0_models/bevfusion/swint-nuimages-pretrained.pth
-            checkpoint="work_dirs/swin_transformer/swint_nuimages_pretrained.pth"  # noqa: E251  
+            checkpoint="work_dirs/swin_transformer/swint_nuimages_pretrained.pth",  # noqa: E251
         ),
     ),
     img_neck=dict(
