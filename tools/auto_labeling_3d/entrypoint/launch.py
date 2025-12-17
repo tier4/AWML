@@ -34,6 +34,10 @@ def run_download_dependencies(config: PipelineConfig, logger: logging.Logger) ->
     """
     Download model configs and checkpoints specified in the pipeline configuration.
 
+    This step downloads each model's config and checkpoint only when the respective
+    `config_path` or `checkpoint_path` does not already exist, preventing unnecessary
+    network access and keeping previously downloaded artifacts intact.
+
     Args:
         config (PipelineConfig): The pipeline configuration containing model information.
         logger (logging.Logger): Logger for logging messages.
@@ -267,7 +271,7 @@ def run_auto_labeling_pipeline(config: PipelineConfig) -> None:
     config.logging.work_dir.mkdir(parents=True, exist_ok=True)
 
     if config.create_info:
-        # Step 1: Download dependencies
+        # Step 1: Download dependencies (only if checkpoint_path and config_path is not found)
         run_download_dependencies(config, logger)
 
         # Step 2: Create info data for each model
