@@ -194,6 +194,15 @@ class PredictionRunner(BaseRunner):
         """
         data_root = self._cfg.test_dataloader.dataset.data_root
         batch_decoded_bboxes = []
+
+        selected_frames = [
+            "db_j6gen2_v1/7d4b7ee5-d1f9-4ccf-b2a9-7734fc84a509",
+            "db_j6gen2_v1/ffdd0874-fb94-4990-9de6-c1a723babb9f",
+            "db_largebus_v1/812db13b-9fce-4aca-a7e0-fc2b1a1a61eb",
+            "db_largebus_v1/fe4395c9-9f4c-4383-8599-964e29a7c04b",
+            "db_largebus_v1/4c3c355a-e5d3-4149-8367-a630652969fc",
+            "db_largebus_v2/07fc64fb-ac25-4efd-93c9-15fb1f75385b",
+        ]
         with torch.no_grad():
             model.eval()
             for index, data in enumerate(tqdm(dataloader, desc="Generating predictions...")):
@@ -206,6 +215,10 @@ class PredictionRunner(BaseRunner):
                         break
 
                 lidar_path = Path(data["data_samples"][0].lidar_path)
+                lidar_path_scenario_names = "/".join(data["data_samples"][0].lidar_path.split("/")[2:4])
+                # print(lidar_path_scenario_names)
+                if len(selected_frames) and lidar_path_scenario_names not in selected_frames:
+                    continue
                 lidar_path = lidar_path.relative_to(data_root)
                 lidar_path = str(lidar_path).split("/")
                 # Always assume the first two are database_name/dataset_id

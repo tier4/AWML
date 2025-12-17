@@ -9,7 +9,7 @@ custom_imports["imports"] += ["autoware_ml.detection3d.datasets.transforms"]
 
 # user setting
 data_root = "data/t4dataset/"
-info_directory_path = "info/kokseang_2_5/"
+info_directory_path = "info/kokseang_2_3/"
 train_gpu_size = 4
 train_batch_size = 8
 test_batch_size = 2
@@ -46,7 +46,11 @@ lidar_sweep_dims = [0, 1, 2, 3, 4]  # x, y, z, time_lag
 lidar_feature_dims = 5
 camera_order = ["CAM_FRONT", "CAM_FRONT_LEFT", "CAM_BACK_LEFT", "CAM_FRONT_RIGHT", "CAM_BACK_RIGHT"]
 
-work_dir = "work_dirs/bevfusion_2_5/" + _base_.dataset_type + "/bevfusion_camera_lidar_swin_voxel_second_secfpn_4xb8_j6gen2_base_lr_1e-4_30e_pretrained_120m_convfuse_5x5_crop_rot/"
+work_dir = (
+    "work_dirs/bevfusion_2_5/"
+    + _base_.dataset_type
+    + "/bevfusion_camera_lidar_swin_voxel_second_secfpn_4xb8_j6gen2_base_lr_1e-4_30e_pretrained_120m_convfuse_5x5_crop_rot/"
+)
 
 
 model = dict(
@@ -93,7 +97,7 @@ model = dict(
         convert_weights=True,
         init_cfg=dict(
             type="Pretrained",
-            checkpoint="work_dirs/bevfusion/pretrain/swint_nuimages_pretrained.pth"  # noqa: E251  # noqa: E501
+            checkpoint="work_dirs/bevfusion/pretrain/swint_nuimages_pretrained.pth",  # noqa: E251  # noqa: E501
             # checkpoint="work_dirs/swin_transformer/swint_nuimages_pretrained.pth"  # noqa: E251  # noqa: E501
         ),
     ),
