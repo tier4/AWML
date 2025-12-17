@@ -164,9 +164,11 @@ class PredictionRunner(BaseRunner):
         labels = output.pred_instances_3d["labels_3d"].detach().cpu()
         lidar_bboxes = LiDARInstance3DBoxes(bboxes, box_dim=9)
         img_paths = data_sample.img_path if all(data_sample.img_path) else []
-        full_img_paths = [
-            os.path.join(self._cfg.test_dataloader.dataset.data_root, img_path) for img_path in img_paths
-        ]
+        # full_img_paths = [
+        #     os.path.join(self._cfg.test_dataloader.dataset.data_root, img_path) for img_path in img_paths
+        # ]
+        full_img_paths = [os.path.join(img_path) for img_path in img_paths]
+        print(full_img_paths)
         lidar2cam = data_sample.lidar2cam if hasattr(data_sample, "lidar2cam") else []
         cam2img = data_sample.cam2img if hasattr(data_sample, "cam2img") else []
         return DecodedBboxes(
