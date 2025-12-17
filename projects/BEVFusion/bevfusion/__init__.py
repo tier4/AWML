@@ -1,5 +1,5 @@
 from .bevfusion import BEVFusion
-from .bevfusion_head import BEVFusionHead, ConvFuser
+from .bevfusion_head import BEVFusionHead, ConvFuser, ChannelWiseConvFuser
 from .bevfusion_necks import GeneralizedLSSFPN
 from .depth_lss import DepthLSSTransform, LSSTransform 
 from .loading import BEVLoadMultiViewImageFromFiles, BEVFusionLoadAnnotations2D, Filter3DBoxesinBlindSpot
@@ -37,5 +37,6 @@ __all__ = [
     "BBox3DL1CostAssigner", 
     "BBoxL1CostAssigner", 
     "FocalLossCostAssigner", 
-    "IoUCostAssigner"
+    "IoUCostAssigner",
+    "ChannelWiseConvFuser"
 ]

@@ -39,6 +39,36 @@ class ConvFuser(nn.Sequential):
 
 
 @MODELS.register_module()
+class ChannelWiseConvFuser(nn.Module):
+
+    def __init__(self, in_channels: int, out_channels: int, kernel_size: int, padding: int, stride: int = 1) -> None:
+        super().__init__()
+        self.in_channels = in_channels
+        self.out_channels = out_channels
+        self.net = nn.Sequential(
+            nn.Conv2d(sum(in_channels), out_channels, kernel_size, stride=stride, padding=padding, bias=False),
+            nn.BatchNorm2d(out_channels),
+            nn.ReLU(True),
+        )
+
+        self.channel_modulation = nn.Sequential(
+            nn.AdaptiveAvgPool2d(1),
+            nn.Conv2d(out_channels, out_channels, stride=1, kernel_size=1, padding=0, bias=True),
+            nn.Sigmoid()
+
+        )
+
+    def forward(self, inputs: List[torch.Tensor]) -> torch.Tensor:
+        x = torch.cat(inputs, dim=1)
+        x = self.net(x)
+        channel_modulation = self.channel_modulation(
+            x
+        ) 
+        # CHannel broadcasting
+        x = channel_modulation * x
+        return x
+
+@MODELS.register_module()
 class BEVFusionHead(nn.Module):
 
     def __init__(
