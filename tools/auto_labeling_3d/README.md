@@ -32,7 +32,7 @@ graph LR
         CONVERT[create_pseudo_dataset]
     end
 
-    DATA[(pseudo-label T4Dataset)]
+    DATA[(auto-labeled T4Dataset)]
 
     NADATA --> INFERENCE_A
     NADATA --> INFERENCE_B
@@ -51,7 +51,7 @@ graph LR
     click INFERENCE_C "https://github.com/tier4/AWML/tree/main/tools/auto_labeling_3d#step-31-create-info-file-from-non-annotated-t4dataset"
     click ENSEMBLE "https://github.com/tier4/AWML/tree/main/tools/auto_labeling_3d#step-32-filter-and-ensemble-results"
     click TRACKING "https://github.com/tier4/AWML/tree/main/tools/auto_labeling_3d#step-33-attach-tracking-ids"
-    click CONVERT "https://github.com/tier4/AWML/tree/main/tools/auto_labeling_3d#step-34-create-pseudo-t4dataset"
+    click CONVERT "https://github.com/tier4/AWML/tree/main/tools/auto_labeling_3d#step-34-create-the-auto-labeled-t4dataset"
 ```
 
 ![Auto Labeling 3D Process Flow](docs/auto_labeling_3d_process_flow.drawio.svg)
@@ -116,7 +116,7 @@ This executes all steps automatically:
 2. Run inference and create info files with pseudo labels
 3. Ensemble/filter results from multiple models
 4. Attach consistent tracking IDs across frames
-5. Generate final pseudo-labeled T4Dataset
+5. Generate final auto-labeled T4Dataset
 6. Restructure directory format
 
 See [example.yaml](entrypoint/configs/example.yaml) and update paths for your workspace.
@@ -197,7 +197,7 @@ filter_pipelines = dict(
 )
 ```
 
-- Make the info file to filter the objects which do not use for pseudo T4dataset
+- Make the info file to filter the objects which do not use for auto-labeled T4Dataset
 
 ```sh
 python tools/auto_labeling_3d/filter_objects/filter_objects.py --config {config_file} --work-dir {path to output}
@@ -257,7 +257,7 @@ filter_pipelines = dict(
 )
 ```
 
-- Make the info file to filter the objects which do not use for pseudo T4dataset and ensemble filtered results.
+- Make the info file to filter the objects which do not use for auto-labeled T4Dataset and ensemble filtered results.
 
 ```sh
 python tools/auto_labeling_3d/filter_objects/ensemble_infos.py --config {config_file} --work-dir {path to output}
@@ -317,17 +317,17 @@ python tools/auto_labeling_3d/attach_tracking_id/attach_tracking_id.py --input {
 </details>
 
 <details>
-<summary>Step 3.4: Create pseudo T4dataset</summary>
+<summary>Step 3.4: Create the auto-labeled T4Dataset</summary>
 
-#### Step 3.4: Create pseudo T4dataset
+#### Step 3.4: Create the auto-labeled T4Dataset
 
-Generate the pseudo-labeled T4Dataset:
+Generate the auto-labeled T4Dataset:
 
 ```sh
 python tools/auto_labeling_3d/create_pseudo_t4dataset/create_pseudo_t4dataset.py {yaml config file about T4dataset data} --root-path {path to directory of non-annotated T4dataset} --input {path to pkl file}
 ```
 
-- As a result, pseudo-label T4dataset is made as below.
+- As a result, auto-labeled T4Dataset is made as below.
 
 ```
 - data/t4dataset/
@@ -345,15 +345,15 @@ python tools/auto_labeling_3d/create_pseudo_t4dataset/create_pseudo_t4dataset.py
 
 ### 4. Use for training
 
-#### Verify the Pseudo-T4dataset
+#### Verify the auto-labeled T4Dataset
 
-Before using the Pseudo-T4dataset for training, you can visualize and verify the generated labels using [t4-devkit](https://github.com/tier4/t4-devkit).
+Before using the auto-labeled T4Dataset for training, you can visualize and verify the generated labels using [t4-devkit](https://github.com/tier4/t4-devkit).
 
 Please refer to [t4-devkit render tutorial](https://tier4.github.io/t4-devkit/develop/tutorials/render/) for visualization instructions.
 
 #### Upload to WebAuto
 
-Please upload Pseudo-T4dataset to WebAuto to share easily for other users.
+Please upload auto-labeled T4Dataset to WebAuto to share easily for other users.
 
 Please check [Web.Auto document](https://docs.web.auto/en/user-manuals/vehicle-data-search/quick-start#register-t4-datasets) for the detail.
 
@@ -365,7 +365,7 @@ To align T4dataset directory structure, you run the script as following.
 python tools/auto_labeling_3d/change_directory_structure/change_directory_structure.py --dataset_dir data/t4dataset/pseudo_xx1/
 ```
 
-The result of the structure of Pseudo-T4dataset is following.
+The result of the structure of auto-labeled T4Dataset is following.
 
 ```
 - data/t4dataset/
