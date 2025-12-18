@@ -27,29 +27,39 @@ from tools.auto_labeling_3d.utils.dataset.annotation_tool_dataset import (
     DeepenDataset,
     SegmentsAIDataset,
 )
-from tools.auto_labeling_3d.utils.download_checkpoint import download_checkpoint
+from tools.auto_labeling_3d.utils.download_checkpoint import download_file
 
 
-def run_download_checkpoint(config: PipelineConfig, logger: logging.Logger) -> None:
+def run_download_dependencies(config: PipelineConfig, logger: logging.Logger) -> None:
     """
-    Download checkpoints specified in the pipeline configuration.
+    Download model configs and checkpoints specified in the pipeline configuration.
+
+    This step downloads each model's config and checkpoint only when the respective
+    `config_path` or `checkpoint_path` does not already exist, preventing unnecessary
+    network access and keeping previously downloaded artifacts intact.
 
     Args:
         config (PipelineConfig): The pipeline configuration containing model information.
         logger (logging.Logger): Logger for logging messages.
     """
     if config.create_info is None:
-        raise ValueError("create_info configuration is required for run_download_checkpoint")
+        raise ValueError("create_info configuration is required for run_download_dependencies")
 
-    logger.info("Starting checkpoint download...")
+    logger.info("Starting dependency download...")
     for model in config.create_info.model_list:
-        url = model.checkpoint.model_zoo_url
-        checkpoint_path = model.checkpoint.checkpoint_path
-        if url and checkpoint_path:
-            download_checkpoint(url, checkpoint_path, logger)
-        else:
-            logger.warning(f"Skipping model '{model.name}': missing url or checkpoint_path")
-    logger.info("Checkpoint download completed.")
+        # Download model config
+        download_file(
+            url=model.model_config.model_zoo_url,
+            save_path=model.model_config.config_path,
+            logger=logger,
+        )
+        # Download checkpoint
+        download_file(
+            url=model.checkpoint.model_zoo_url,
+            save_path=model.checkpoint.checkpoint_path,
+            logger=logger,
+        )
+    logger.info("Dependency download completed.")
 
 
 def run_create_info_data(config: PipelineConfig, logger: logging.Logger) -> None:
@@ -261,14 +271,14 @@ def run_auto_labeling_pipeline(config: PipelineConfig) -> None:
     config.logging.work_dir.mkdir(parents=True, exist_ok=True)
 
     if config.create_info:
-        # Step 1: Download checkpoints
-        run_download_checkpoint(config, logger)
+        # Step 1: Download dependencies (only if checkpoint_path and config_path is not found)
+        run_download_dependencies(config, logger)
 
         # Step 2: Create info data for each model
         run_create_info_data(config, logger)
     else:
         logger.warning(
-            "Skipping download_checkpoint and create_info_data steps because create_info config is not contained in yaml."
+            "Skipping download_dependencies and create_info_data steps because create_info config is not contained in yaml."
         )
 
     if config.ensemble_infos:
