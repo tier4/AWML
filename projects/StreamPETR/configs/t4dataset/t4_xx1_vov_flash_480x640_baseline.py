@@ -2,7 +2,7 @@
 _base_ = [
     "../default/vov_flash_480x640_baseline.py",
 ]
-info_directory_path = "info/samrat/jpn_taxi/"
+info_directory_path = "info/username/"
 data_root = "data/t4dataset/"
 
 batch_size = 8
