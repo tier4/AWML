@@ -149,7 +149,7 @@ class BEVFusion(Base3DDetector):
         return loss, log_vars  # type: ignore
 
     def init_weights(self) -> None:
-        if self.img_backbone is not None and self.img_backbone.init_cfg.checkpoint is not None:
+        if self.img_backbone is not None:
             self.img_backbone.init_weights()
 
     @property
