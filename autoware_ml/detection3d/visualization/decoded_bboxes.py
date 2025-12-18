@@ -60,8 +60,13 @@ class DecodedBboxes:
         """
         lidar2imgs = []
         for lidar2cam, cam2img in zip(self.lidar2cams, self.cam2imgs):
+            # print(np.asarray(lidar2cam).shape)
+            # print(np.asarray(cam2img).shape)
+            if isinstance(cam2img, list):
+                cam2img = np.array(cam2img)
+
             cam2img_array = np.eye(4).astype(np.float32)
-            cam2img_array[:3, :3] = np.array(cam2img).astype(np.float32)
+            cam2img_array[:3, :3] = np.array(cam2img[:3, :3]).astype(np.float32)
             lidar2cam_array = np.asarray(lidar2cam, dtype=np.float32)
             lidar2imgs.append(cam2img_array @ lidar2cam_array)
         return lidar2imgs
@@ -156,8 +161,8 @@ class DecodedBboxes:
         self,
         ax: plt.axes,
         img_path: str,
+        ax_title: str,
         lidar2img: npt.NDArray[np.float64],
-        img_title_index: int = -1,
         alpha: float = 0.8,
         line_widths: int = 2,
         line_styles: str = "-",
@@ -181,7 +186,7 @@ class DecodedBboxes:
         # Metadata about image
         h, w, _ = img.shape
         img_size = (w, h)
-        ax_title = img_path.split("/")[img_title_index]
+        # ax_title = img_path.split("/")[img_title_index]
 
         corners_2d = self.project_lidar_bboxex_to_img(lidar2img=lidar2img)
         edge_color_norms = []
@@ -241,9 +246,11 @@ class DecodedBboxes:
     def visualize_bboxes_to_images(
         self,
         fig: Figure,
+        title_orders: dict,
         grid_spec: GridSpec,
         spec_cols: int = 3,
         alpha: float = 0.8,
+        img_title_index: int = -2,
     ) -> None:
         """
         Visualize bboxes from lidar to ever image.
@@ -261,16 +268,17 @@ class DecodedBboxes:
                 lidar2imgs,
             )
         ):
-            selected_col = index % spec_cols
-            selected_row = index // spec_cols
+            img_title = img_path.split("/")[img_title_index]
+            selected_index = title_orders.get(img_title, None)
+            if selected_index is None:
+                continue
+
+            selected_col = selected_index % spec_cols
+            selected_row = selected_index // spec_cols
             ax = fig.add_subplot(grid_spec[selected_row, selected_col])
             if img_path is not None:
                 self.visualize_bboxes_to_image(
-                    ax=ax,
-                    img_path=img_path,
-                    lidar2img=np.asarray(lidar2img),
-                    alpha=alpha,
-                    img_title_index=-2,
+                    ax=ax, img_path=img_path, lidar2img=np.asarray(lidar2img), alpha=alpha, ax_title=img_title
                 )
 
     def visualize_bboxes(
@@ -293,7 +301,15 @@ class DecodedBboxes:
         """
         # Init axes
         # Get the number of rows
-        image_rows = ceil(len(self.img_paths) / spec_cols)
+        title_orders = {
+            "CAM_BACK_LEFT": 0,
+            "CAM_BACK": 1,
+            "CAM_BACK_RIGHT": 2,
+            "CAM_FRONT_LEFT": 3,
+            "CAM_FRONT": 4,
+            "CAM_FRONT_RIGHT": 5,
+        }
+        image_rows = ceil(len(title_orders) / spec_cols)
         fig = plt.figure(figsize=fig_size)
 
         # Images + Lidar
@@ -306,6 +322,7 @@ class DecodedBboxes:
                 grid_spec=grid_spec,
                 spec_cols=spec_cols,
                 alpha=alpha,
+                title_orders=title_orders,
             )
 
         # Add subplot for lidar
