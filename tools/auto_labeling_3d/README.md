@@ -431,3 +431,7 @@ dataset_version_list = [
 #### 4. Prepare T4Dataset info and train
 
 Follow [the dataset preparation](../detection3d/README.md#2-prepare-t4dataset) and generate info files and start training using your chosen model and the YAML you added in [Step 1](#1-add-a-yaml-config-for-your-pseudo-label-t4dataset).
+
+##### (Optional) Add downsampling for your dataset
+
+Auto-labeling works at 10hz while manually annotated dataset are usually 1hz. Depending on your data distribution, you might want to down-sample your specific dataset. This is currently done at the info file creation stage, as seen [here](https://github.com/tier4/AWML/blob/main/tools/detection3d/create_data_t4dataset.py#L255-L258). Add your dataset name to the conditional check and set `sample_steps = 10`.
