@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
@@ -27,8 +27,16 @@ class LoggingConfig:
 class CheckpointConfig:
     """Configuration for model checkpoint."""
 
-    model_zoo_url: str
     checkpoint_path: Path
+    model_zoo_url: str = ""
+
+
+@dataclass(frozen=True)
+class ModelConfigPath:
+    """Configuration for model config."""
+
+    config_path: Path
+    model_zoo_url: str = ""
 
 
 @dataclass(frozen=True)
@@ -36,7 +44,7 @@ class ModelConfig:
     """Configuration for a single model."""
 
     name: str
-    model_config: Path
+    model_config: ModelConfigPath
     checkpoint: CheckpointConfig
 
 
@@ -45,22 +53,31 @@ class CreateInfoConfig:
     """Configuration for create_info step."""
 
     output_dir: Path
-    model_list: List[ModelConfig]
+    model_list: List[ModelConfig] = field(default_factory=list)
 
     @classmethod
     def from_dict(cls, data: Dict[str, Any]) -> CreateInfoConfig:
         model_list = []
-        for model in data["model_list"]:
+        for model_data in data.get("model_list", []):
+            model_config_path = ModelConfigPath(
+                config_path=Path(model_data["model_config"]["config_path"]),
+                model_zoo_url=model_data["model_config"].get("model_zoo_url", ""),
+            )
             checkpoint = CheckpointConfig(
-                model_zoo_url=model["checkpoint"]["model_zoo_url"],
-                checkpoint_path=Path(model["checkpoint"]["checkpoint_path"]),
+                checkpoint_path=Path(model_data["checkpoint"]["checkpoint_path"]),
+                model_zoo_url=model_data["checkpoint"].get("model_zoo_url", ""),
             )
-            model_cfg = ModelConfig(
-                name=model["name"], model_config=Path(model["model_config"]), checkpoint=checkpoint
+            model = ModelConfig(
+                name=model_data["name"],
+                model_config=model_config_path,
+                checkpoint=checkpoint,
             )
-            model_list.append(model_cfg)
+            model_list.append(model)
 
-        return cls(output_dir=Path(data["output_dir"]), model_list=model_list)
+        return cls(
+            output_dir=Path(data["output_dir"]),
+            model_list=model_list,
+        )
 
 
 @dataclass(frozen=True)
@@ -216,7 +233,7 @@ def load_model_config(model: ModelConfig, work_dir: Path) -> Config:
     Returns:
         Config: Loaded mmengine Config object.
     """
-    cfg = Config.fromfile(str(model.model_config))
+    cfg = Config.fromfile(str(model.model_config.config_path))
     cfg.work_dir = str(work_dir / model.name)
     return cfg
 
