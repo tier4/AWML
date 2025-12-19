@@ -15,22 +15,37 @@ root_path: /workspace/data/t4dataset/t4x2_pseudo
 create_info:
   output_dir: /workspace/data/t4dataset/info  # Directory to save generated info files
   model_list:
+  # Note:
+  # Use model_zoo_url only if config_path or checkpoint_path does not exist in the environment.
   # Example template for adding a model:
   # - name: model_name
-  #   model_config: /path/to/model/config.py
+  #   model_config:
+  #     config_path: /path/to/model/config.py
+  #     model_zoo_url: https://url/to/download/model/config.py
   #   checkpoint:
-  #     model_zoo_url: https://url/to/download/checkpoint.pth
   #     checkpoint_path: /path/to/save/checkpoint.pth
+  #     model_zoo_url: https://url/to/download/checkpoint.pth
+  - name: streampetr
+    model_config:
+      config_path: /workspace/projects/StreamPETR/configs/t4dataset/t4_base_vov_flash_480x640_baseline.py
+      model_zoo_url: https://download.autoware-ml-model-zoo.tier4.jp/autoware-ml/models/streampetr/streampetr-vov99/t4base/v2.5/t4_base_vov_flash_480x640_baseline.py
+    checkpoint:
+      model_zoo_url: https://download.autoware-ml-model-zoo.tier4.jp/autoware-ml/models/streampetr/streampetr-vov99/t4base/v2.5/best_NuScenesmetric_T4Metric_mAP_epoch_34.pth
+      checkpoint_path: /workspace/work_dirs/checkpoints/example_model_streampetr.pth
   - name: centerpoint
-    model_config: /workspace/projects/CenterPoint/configs/t4dataset/Centerpoint/second_secfpn_4xb16_121m_j6gen2_base_t4metric_v2.py
+    model_config:
+      config_path: /workspace/projects/CenterPoint/configs/t4dataset/Centerpoint/second_secfpn_4xb16_121m_j6gen2_base_amp_t4metric_v2.py
+      model_zoo_url:
     checkpoint:
-      model_zoo_url: https://download.autoware-ml-model-zoo.tier4.jp/autoware-ml/models/centerpoint/centerpoint/j6gen2/v2.3.1/best_NuScenes_metric_T4Metric_mAP_epoch_29.pth
       checkpoint_path: /workspace/work_dirs/checkpoints/example_model.pth
+      model_zoo_url: https://download.autoware-ml-model-zoo.tier4.jp/autoware-ml/models/centerpoint/centerpoint/j6gen2/v2.3.1/best_NuScenes_metric_T4Metric_mAP_epoch_29.pth
   - name: bevfusion
-    model_config: /workspace/projects/BEVFusion/configs/t4dataset/BEVFusion-CL/bevfusion_camera_lidar_voxel_second_secfpn_4xb8_gen2_base.py
+    model_config:
+      config_path: /workspace/projects/BEVFusion/configs/t4dataset/BEVFusion-CL/bevfusion_camera_lidar_voxel_second_secfpn_4xb8_gen2_base.py
+      model_zoo_url: https://download.autoware-ml-model-zoo.tier4.jp/autoware-ml/models/bevfusion/bevfusion-cl/t4base/v2.0.0/bevfusion_camera_lidar_voxel_second_secfpn_4xb8_base.py
     checkpoint:
-      model_zoo_url: https://download.autoware-ml-model-zoo.tier4.jp/autoware-ml/models/bevfusion/bevfusion-cl/t4base/v2.0.0/best_NuScenes_metric_T4Metric_mAP_epoch_48.pth
       checkpoint_path: /workspace/work_dirs/checkpoints/example_model_bevfusion.pth
+      model_zoo_url: https://download.autoware-ml-model-zoo.tier4.jp/autoware-ml/models/bevfusion/bevfusion-cl/t4base/v2.0.0/best_NuScenes_metric_T4Metric_mAP_epoch_48.pth
 
 # ensemble_infos configuration
 # Please update the config file for ensemble_infos when changing the latest model_config in create_info
