@@ -214,7 +214,7 @@ class TestNMSEnsembleModel(unittest.TestCase):
         result = model.ensemble(single_result)
         self.assertEqual(result, single_result[0])
 
-    def test_ensemble_basic_functionality(self):
+    def test_ensemble_two_models(self):
         """
         Test case for combining predictions from two models across three classes.
 
@@ -581,7 +581,7 @@ class TestNMSHelperFunctions(unittest.TestCase):
         self.assertLess(ious[1], 1.0)
         self.assertAlmostEqual(ious[2], 0.0, places=6)
 
-    def test_nms_indices_basic(self):
+    def test_calculate_iou_partial_overlap_diagonal_offset(self):
         """
         Ensure `_nms_indices` keeps the highest-scoring box among overlaps.
 

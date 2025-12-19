@@ -103,7 +103,7 @@ class TestThresholdFilter(unittest.TestCase):
         self.assertEqual(len(filter_obj.settings["use_label"]), 3)
         self.assertEqual(set(filter_obj.settings["use_label"]), {"car", "pedestrian", "bicycle"})
 
-    def test_basic_filtering(self):
+    def test_filter_per_class_thresholds(self):
         """
         Test case for filtering detections against per-class score thresholds.
 
