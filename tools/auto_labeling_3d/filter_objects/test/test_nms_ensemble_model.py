@@ -30,7 +30,7 @@ class TestNMSModelInstances(unittest.TestCase):
         Test case for filtering and weighting instances with target labels.
 
         This test verifies that filtering by specified labels and weighting of scores works
-        correctly as a preprocessing step for NMS. 
+        correctly as a preprocessing step for NMS.
         It checks:
         - That labels other than the target label (e.g., "bicycle") are filtered out.
         - That the weight is correctly applied to the scores.
@@ -128,7 +128,7 @@ class TestNMSEnsembleModel(unittest.TestCase):
         Initialize states before each individual test method.
 
         This setup assumes a scenario for ensembling object detection results from two models
-        across three classes: "car", "pedestrian", and "bicycle". 
+        across three classes: "car", "pedestrian", and "bicycle".
         It defines:
         - Ensemble settings, including weights for each model and an IoU threshold.
         - Sample prediction results from two models to be used as input for the ensemble tests.
