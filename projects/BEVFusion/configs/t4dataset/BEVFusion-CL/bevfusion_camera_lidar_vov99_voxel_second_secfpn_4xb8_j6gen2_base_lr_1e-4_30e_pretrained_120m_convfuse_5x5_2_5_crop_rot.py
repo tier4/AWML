@@ -78,7 +78,7 @@ model = dict(
     img_backbone=dict(
         type="VoVNetCP",  ###use checkpoint to save memory
         spec_name="V-99-eSE",
-        norm_eval=True,  # TODO: make true by default
+        norm_eval=False,  # TODO: make true by default
         frozen_stages=-1,
         input_ch=3,
         out_features=(
@@ -418,7 +418,7 @@ test_evaluator = dict(
 
 # learning rate
 lr = 1e-4
-t_max = 3
+t_max = 2
 param_scheduler = [
     # learning rate scheduler
     # During the first (max_epochs * 0.4) epochs, learning rate increases from 0 to lr * 10
@@ -468,7 +468,7 @@ test_cfg = dict()
 optim_wrapper = dict(
     type="OptimWrapper",
     optimizer=dict(type="AdamW", lr=lr, weight_decay=0.01),
-    clip_grad=dict(max_norm=5.0, norm_type=2),
+    clip_grad=dict(max_norm=0.1, norm_type=2),
 )
 
 # Default setting for scaling LR automatically
