@@ -160,6 +160,8 @@ flowchart TD
 
 #### Bird's Eye View IoU Calculation
 
+**Note**: This implementation uses axis-aligned NMS, which does not consider rotation. The reason is that it would require computationally expensive processing, such as using `shapely`.
+
 ```mermaid
 graph LR
     subgraph "BEV Projection"
