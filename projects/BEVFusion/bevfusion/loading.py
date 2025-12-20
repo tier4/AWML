@@ -440,55 +440,6 @@ class BEVFusionLoadAnnotations2D(BaseTransform):
             all_depths.append(depths)
             all_labels.append(valid_labels)
 
-            # ------------------------------
-            # 🔵  Draw bounding boxes on image
-            # ------------------------------
-            # img = results["img"][i]
-            # img_draw = img.copy()
-            # for box, center, depth, label in zip(bboxes_2d, projected_centers, depths, valid_labels):
-
-            #     # box = [x1, y1, x2, y2]
-            #     x1, y1, x2, y2 = map(int, box)
-
-            #     # draw bbox rectangle
-            #     cv2.rectangle(img_draw, (x1, y1), (x2, y2), (0, 255, 0), 2)
-
-            #     # draw center point
-            #     cx, cy = map(int, center)
-            #     cv2.circle(img_draw, (cx, cy), 3, (0, 0, 255), -1)
-
-            #     # write depth and class label
-            #     text = f"{label}, {depth:.1f}m"
-            #     cv2.putText(
-            #         img_draw, text, (x1, max(0, y1 - 5)),
-            #         cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 0), 1
-            #     )
-            # img_draw = Image.fromarray(img_draw.astype("uint8"), mode="RGB")
-            # vis_images.append(img_draw)
-
-        # Visualize image
-        # -----------------------------
-        # 🔵 Save as subplot with 5 images
-        # -----------------------------
-        # num_images = len(vis_images)
-        # cols = 5
-        # rows = int(np.ceil(num_images / cols))
-
-        # fig = plt.figure(figsize=(20, 4 * rows))
-
-        # for idx, img in enumerate(vis_images):
-        #     ax = fig.add_subplot(rows, cols, idx + 1)
-        #     ax.imshow(img)
-        #     ax.axis("off")
-        #     ax.set_title(f"Camera {idx}")
-
-        # fig.tight_layout()
-
-        # # Save figure to memory (as ndarray) or file
-        # fig_path = f"work_dirs/bevfusion_image_2d_debug/4/debug_vis_{uuid.uuid4().hex}.png"
-        # fig.savefig(fig_path, dpi=150)
-        # plt.close(fig)
-
         results["depths"] = all_depths
         results["centers_2d"] = all_centers_2d
         results["gt_bboxes"] = all_bboxes_2d

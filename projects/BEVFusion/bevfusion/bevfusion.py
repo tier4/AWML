@@ -413,6 +413,7 @@ class BEVFusion(Base3DDetector):
         self, 
         batch_inputs_dict: Dict[str, Optional[Tensor]], 
         batch_data_samples: List[Det3DDataSample], 
+        batch_input_metas: list,
         img_roi_head_preds
     ) -> dict:
 
@@ -486,6 +487,7 @@ class BEVFusion(Base3DDetector):
             img_roi_losses = self.img_roi_losses(
                 batch_inputs_dict=batch_inputs_dict,
                 batch_data_samples=batch_data_samples,
+                batch_input_metas=batch_input_metas,
                 img_roi_head_preds=img_roi_head_preds
             )
             losses.update(img_roi_losses)
