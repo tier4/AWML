@@ -6,6 +6,7 @@ dataset_version_list = [
     "db_tlr_v4",
     "db_tlr_v5",
     "db_tlr_v6",
+    "db_tlr_v7",
 ]
 
 classes = (

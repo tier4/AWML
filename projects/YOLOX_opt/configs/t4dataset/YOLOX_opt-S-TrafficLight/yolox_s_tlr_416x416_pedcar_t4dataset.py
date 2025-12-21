@@ -89,7 +89,7 @@ model = dict(
 
 # dataset settings
 data_root = ""
-anno_file_root = "./data/tlr_pedcar/"
+anno_file_root = "./infos/tl4_update/"
 dataset_type = "TLRDetectionDataset"
 
 # Example to use different file client
@@ -232,9 +232,9 @@ test_evaluator = dict(
 # training settings
 max_epochs = 300
 num_last_epochs = 15
-interval = 5
+interval = 20
 
-train_cfg = dict(max_epochs=max_epochs, val_interval=interval)
+train_cfg = dict(max_epochs=max_epochs, val_interval=interval, dynamic_intervals=[(max_epochs - num_last_epochs, 2)])
 
 # optimizer
 # default 8 gpu

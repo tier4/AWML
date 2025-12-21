@@ -48,7 +48,7 @@ def check_webauto_version(webauto_path: str) -> None:
         raise Exception(f"Webauto version {current_version} is below required version {required_version}")
 
 
-def get_t4dataset_ids(config_path: str) -> list[str]:
+def get_t4dataset_ids(config_path: str):
     """
     Get T4Dataset IDs like "0df0328e-39ea-42f1-844a-b455c91dc6cc".
 
@@ -146,7 +146,7 @@ def pull_t4dataset(
     Return: None
     """
 
-    download_command = "{} data annotation-dataset pull --project-id {} --annotation-dataset-id {} --annotation-dataset-version-id {} --asset-dir {}"
+    download_command = "{} data annotation-dataset pull --project-id {} --annotation-dataset-id {} --annotation-dataset-version-id {} --asset-dir {} --deprecated"
     download_command_ = download_command.format(
         webauto_path,
         project_id,
@@ -283,7 +283,7 @@ def parse_args():
         "--webauto-path",
         type=str,
         help="The path to WebAutoCLI binary file for executing the CLI command",
-        default="webauto",
+        default="./webauto",
     )
     parser.add_argument(
         "--download-latest",

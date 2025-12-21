@@ -46,11 +46,11 @@ def update_detection_data_annotations(
     allowed_classes: List[str],
 ) -> None:
     for ann in object_ann:
-        category = categories[ann.category_token]
-        class_name = class_mappings[category]
-        if class_name not in allowed_classes:
-            print(f"WARNING {class_name} not found for {category}!")
+        class_name = class_mappings[categories[ann.category_token]]
+        if class_name=="SKIP_CLASS":
             continue
+        if class_name not in allowed_classes:
+            raise ValueError(f"Class name {class_name} is not in allowed classes {allowed_classes}")
         bbox_label = allowed_classes.index(class_name)
         instance = Instance(
             bbox=ann.bbox,
@@ -62,7 +62,11 @@ def update_detection_data_annotations(
         data_list[ann.sample_data_token].instances.append(instance)
 
 
-def get_scene_root_dir_path(root_path: str, dataset_version: str, scene_id: str) -> str:
+def get_scene_root_dir_path(
+    root_path: str,
+    dataset_version: str,
+    scene_id: str,
+) -> str:
     version_pattern = re.compile(r"^\d+$")
     scene_root_dir_path = osp.join(root_path, dataset_version, scene_id)
 
@@ -85,6 +89,11 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--config", type=str, required=True, help="config for T4dataset")
     parser.add_argument("--root_path", type=str, required=True, help="specify the root path of dataset")
     parser.add_argument("--data_name", type=str, required=True, help="dataset name. example: tlr")
+    parser.add_argument(
+        "--use_available_dataset_version",
+        action="store_true",
+        help="Will resort to using the available dataset version if the one specified in the config file does not exist.",
+    )
     parser.add_argument("-o", "--out_dir", type=str, required=True, help="output directory of info file")
     return parser.parse_args()
 
@@ -96,11 +105,7 @@ def get_detection_data_empty_dict(data_name: str, classes: List[str]) -> Detecti
 
 
 def assign_ids_and_save_detection_data(
-    split_name: str,
-    data_entries: List[DataEntry],
-    out_dir: str,
-    data_name: str,
-    classes: List[str],
+    split_name: str, data_entries: List[DataEntry], out_dir: str, data_name: str, classes: List[str]
 ) -> None:
     detection_data = get_detection_data_empty_dict(data_name, classes)
     detection_data.data_list.extend(data_entries)
@@ -154,39 +159,71 @@ def main() -> None:
             print_log(f"Creating data info for split: {split}", logger="current")
             for scene_id in dataset_list_dict.get(split, []):
                 print_log(f"Creating data info for scene: {scene_id}")
-                scene_root_dir_path = get_scene_root_dir_path(args.root_path, dataset_version, scene_id)
 
-                if not osp.isdir(scene_root_dir_path):
-                    raise ValueError(f"{scene_root_dir_path} does not exist.")
-                t4 = Tier4(data_root=scene_root_dir_path, verbose=False)
+                t4_dataset_id, t4_dataset_version_id = scene_id.split("   ")
+                if os.path.exists(osp.join(args.root_path, dataset_version, t4_dataset_id, t4_dataset_version_id)):
+                    scene_root_dir_path = osp.join(args.root_path, dataset_version, t4_dataset_id, t4_dataset_version_id)
+                elif args.use_available_dataset_version:
+                    print(
+                        "Warning: The version of the dataset specified in the config file does not exist. Will use whatever is available locally."
+                    )
+                    scene_root_dir_path = get_scene_root_dir_path(args.root_path, dataset_version, t4_dataset_id)
+                else:
+                    raise ValueError(f"{t4_dataset_id} does not exist.")
+                t4 = Tier4(
+                    data_root=scene_root_dir_path,
+                    verbose=False,
+                )
 
                 data_list: Dict[str, DataEntry] = {}
                 for tmp in t4.sample_data:
-                    data_entry = DataEntry(
-                        img_path=os.path.abspath(os.path.join(t4.data_root, tmp.filename)),
-                        width=tmp.width,
-                        height=tmp.height,
-                    )
-                    data_list[tmp.token] = data_entry
+                    if not tmp.is_key_frame:
+                        continue
+                    if not os.path.basename(tmp.filename)[-3:] == "bin":
+                        data_entry = DataEntry(
+                            img_path=os.path.abspath(os.path.join(t4.data_root, tmp.filename)),
+                            width=tmp.width,
+                            height=tmp.height,
+                        )
+                        data_list[tmp.token] = data_entry
 
                 attributes = {tmp.token: tmp.name for tmp in t4.attribute}
                 categories = {tmp.token: tmp.name for tmp in t4.category}
 
                 update_detection_data_annotations(
-                    data_list, t4.object_ann, attributes, categories, cfg.class_mappings, cfg.classes
+                    data_list,
+                    t4.object_ann,
+                    attributes,
+                    categories,
+                    cfg.class_mappings,
+                    cfg.classes,
                 )
                 data_infos[split].extend(data_list.values())
 
     # Save each split separately
     for split in ["train", "val", "test"]:
-        assign_ids_and_save_detection_data(split, data_infos[split], args.out_dir, args.data_name, cfg.classes)
+        assign_ids_and_save_detection_data(
+            split,
+            data_infos[split],
+            args.out_dir,
+            args.data_name,
+            cfg.classes,
+        )
 
     # Save combined splits
     assign_ids_and_save_detection_data(
-        "trainval", data_infos["train"] + data_infos["val"], args.out_dir, args.data_name, cfg.classes
+        "trainval",
+        data_infos["train"] + data_infos["val"],
+        args.out_dir,
+        args.data_name,
+        cfg.classes,
     )
     assign_ids_and_save_detection_data(
-        "all", data_infos["train"] + data_infos["val"] + data_infos["test"], args.out_dir, args.data_name, cfg.classes
+        "all",
+        data_infos["train"] + data_infos["val"] + data_infos["test"],
+        args.out_dir,
+        args.data_name,
+        cfg.classes,
     )
 
 
