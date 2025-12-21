@@ -108,7 +108,26 @@ test_pipeline = [
         test_mode=True,
     ),
     dict(type="PointsRangeFilter", point_cloud_range=point_cloud_range),
-    dict(type="Pack3DDetInputs", keys=["points", "gt_bboxes_3d", "gt_labels_3d"]),
+    dict(type="Pack3DDetInputs", keys=["points", "gt_bboxes_3d", "gt_labels_3d"], 
+		# Specify the metadata keys required by the downstream pipeline.
+        # Refer to the official MMDetection3D formatting transform implementation for details:
+        # https://github.com/open-mmlab/mmdetection3d/blob/main/mmdet3d/datasets/transforms/formating.py#L67
+        # Also see the content structure in "t4dataset_base_infos_test.pkl" for reference.
+        meta_keys=(
+            "timestamp",
+            "lidar2img",
+            "depth2img",
+            "cam2img",
+            "box_type_3d",
+            "sample_idx",
+            "sample_token",
+            "lidar_path",
+            "ori_cam2img",
+            "cam2global",
+            "lidar2cam",
+            "ego2global",
+        ), 
+    ),
 ]
 
 # construct a pipeline for data and gt loading in show function
@@ -132,7 +151,26 @@ eval_pipeline = [
         test_mode=True,
     ),
     dict(type="PointsRangeFilter", point_cloud_range=point_cloud_range),
-    dict(type="Pack3DDetInputs", keys=["points", "gt_bboxes_3d", "gt_labels_3d"]),
+    dict(type="Pack3DDetInputs", keys=["points", "gt_bboxes_3d", "gt_labels_3d"], 
+		# Specify the metadata keys required by the downstream pipeline.
+        # Refer to the official MMDetection3D formatting transform implementation for details:
+        # https://github.com/open-mmlab/mmdetection3d/blob/main/mmdet3d/datasets/transforms/formating.py#L67
+        # Also see the content structure in "t4dataset_base_infos_test.pkl" for reference.
+        meta_keys=(
+            "timestamp",
+            "lidar2img",
+            "depth2img",
+            "cam2img",
+            "box_type_3d",
+            "sample_idx",
+            "sample_token",
+            "lidar_path",
+            "ori_cam2img",
+            "cam2global",
+            "lidar2cam",
+            "ego2global",
+        ), 
+    ),
 ]
 
 train_dataloader = dict(

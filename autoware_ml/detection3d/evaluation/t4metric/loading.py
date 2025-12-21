@@ -1,4 +1,5 @@
 import json
+from copy import deepcopy
 from typing import Dict, List, Optional, Tuple
 
 import numpy as np
@@ -48,7 +49,7 @@ class T4Box(DetectionBox):
         self.attribute_name = attribute_name
 
 
-def _velocity_clip(velocity: NDArray, max_speed: float = 50.0) -> NDArray:
+def velocity_clip(velocity: NDArray, max_speed: float = 50.0) -> NDArray:
     """
     Normalize the velocity of the boxes.
     Args:
@@ -61,170 +62,6 @@ def _velocity_clip(velocity: NDArray, max_speed: float = 50.0) -> NDArray:
     if speed > max_speed:
         velocity = velocity * (max_speed / speed)
     return velocity
-
-
-# modified version from https://github.com/nutonomy/nuscenes-devkit/blob/9b165b1018a64623b65c17b64f3c9dd746040f36/python-sdk/nuscenes/eval/common/loaders.py#L53
-# adds name mapping capabilities
-def t4metric_load_gt(
-    nusc: NuScenes,
-    config: DetectionConfig,
-    scene: str,
-    filter_attributions: Optional[Tuple[str, str]],
-    verbose: bool = False,
-    post_mapping_dict: Optional[Dict[str, str]] = None,
-    predicted_tokens: Optional[List[str]] = None,
-) -> EvalBoxes:
-    """
-    Loads ground truth boxes from DB.
-    :param nusc: A NuScenes instance.
-    :param config: The detection config.
-    :param eval_split: The evaluation split for which we load GT boxes.
-    :param verbose: Whether to print messages to stdout.
-    :param post_mapping_dict: A dictionary to map detection names after the name mapping. Optional
-    :return: The GT boxes.
-    """
-    if verbose:
-        print("Loading annotations for {} split from nuScenes version: {}".format(scene, nusc.version))
-    # Read out all sample_tokens in DB.
-    sample_tokens_all = [s["token"] for s in nusc.sample]
-    assert len(sample_tokens_all) > 0, "Error: Database has no samples!"
-
-    all_annotations = EvalBoxes()
-
-    # Load annotations and filter predictions and annotations.
-    for sample_token in tqdm.tqdm(sample_tokens_all, leave=verbose):
-        # Sometimes models (like StreamPETR) skip prediction for the frames that have missing sensor data.
-        if predicted_tokens and sample_token not in predicted_tokens:
-            print(f"Skipping sample {sample_token} because it was not found in the predictions")
-            continue
-        sample = nusc.get("sample", sample_token)
-        sample_annotation_tokens = sample["anns"]
-
-        scene_record = nusc.get("scene", sample["scene_token"])
-        scene_name = scene_record["name"]
-
-        sample_boxes = []
-        for sample_annotation_token in sample_annotation_tokens:
-            sample_annotation = nusc.get("sample_annotation", sample_annotation_token)
-            detection_name = sample_annotation["category_name"]
-
-            # Get attribute_name.
-            attribute_names = get_attr_name(nusc, sample_annotation)
-
-            if filter_attributions:
-                is_filter = False
-
-                for filter_attribution in filter_attributions:
-                    # If the ground truth name matches exactly with the filtered class name, and
-                    # the filtered attribute is in one of the available attributes
-                    if detection_name == filter_attribution[0] and filter_attribution[1] in attribute_names:
-                        is_filter = True
-                if is_filter is True:
-                    continue
-
-            if post_mapping_dict:
-                detection_name = post_mapping_dict.get(detection_name, detection_name)
-
-            if detection_name not in config.class_names:
-                continue
-
-            velocity = _velocity_clip(nusc.box_velocity(sample_annotation["token"])[:2])
-            sample_boxes.append(
-                T4Box(
-                    sample_token=sample_token,
-                    translation=sample_annotation["translation"],
-                    size=sample_annotation["size"],
-                    rotation=sample_annotation["rotation"],
-                    velocity=velocity,
-                    num_pts=sample_annotation["num_lidar_pts"] + sample_annotation["num_radar_pts"],
-                    detection_name=detection_name,
-                    detection_score=-1.0,  # GT samples do not have a score.
-                )
-            )
-        all_annotations.add_boxes(sample_token, sample_boxes)
-
-    if verbose:
-        print("Loaded ground truth annotations for {} samples.".format(len(all_annotations.sample_tokens)))
-
-    # Add center distances.
-    all_annotations = add_center_dist(nusc, all_annotations)
-
-    if verbose:
-        print("Filtering ground truth annotations")
-    all_annotations = filter_eval_boxes(nusc, all_annotations, config.class_range, verbose=verbose)
-    return all_annotations
-
-
-# modified version of https://github.com/nutonomy/nuscenes-devkit/blob/9b165b1018a64623b65c17b64f3c9dd746040f36/python-sdk/nuscenes/eval/common/loaders.py#L21
-# adds name mapping capabilities
-def t4metric_load_prediction(
-    nusc: NuScenes,
-    config: DetectionConfig,
-    result_path: str,
-    max_boxes_per_sample: int,
-    verbose: bool = True,
-) -> Tuple[EvalBoxes, Dict]:
-    """
-    Loads object predictions from file.
-    :param nusc: A NuScenes instance.
-    :param config: The detection config.
-    :param scene: The scene token to evaluate on.
-    :param result_path: Path to the result file.
-    :param max_boxes_per_sample: The maximum number of boxes per sample.
-    :param verbose: Whether to print messages to stdout. Optional
-    :return: The deserialized results and meta data.
-    """
-
-    # Load from file and check that the format is correct.
-    with open(result_path) as f:
-        data = json.load(f)
-    assert "results" in data, (
-        "Error: No field `results` in result file. Please note that the result format changed."
-        "See https://www.nuscenes.org/object-detection for more information."
-    )
-
-    # Deserialize results and get meta data.
-    all_results = EvalBoxes.deserialize(data["results"], T4Box)
-    meta = data["meta"]
-    if verbose:
-        print(
-            "Loaded results from {}. Found detections for {} samples.".format(
-                result_path, len(all_results.sample_tokens)
-            )
-        )
-
-    all_results = filter_by_known_tokens(nusc, all_results)
-
-    # Check that each sample has no more than x predicted boxes.
-    for sample_token in all_results.sample_tokens:
-        assert len(all_results.boxes[sample_token]) <= max_boxes_per_sample, (
-            "Error: Only <= %d boxes per sample allowed!" % max_boxes_per_sample
-        )
-
-    all_results = add_center_dist(nusc, all_results)
-
-    # Filter boxes (distance, points per box, etc.).
-    all_results = filter_eval_boxes(nusc, all_results, config.class_range, verbose=verbose)
-
-    return all_results, meta
-
-
-def filter_by_known_tokens(nusc: NuScenes, eval_boxes: EvalBoxes) -> EvalBoxes:
-    """
-    Filters the boxes to only include those that are in the DB.
-    :param nusc: The NuScenes instance.
-    :param eval_boxes: A set of boxes, either GT or predictions.
-    :return: eval_boxes filtered to only include boxes that are in the DB.
-    """
-    # Get all sample tokens in the DB.
-    sample_tokens_all = [s["token"] for s in nusc.sample]
-
-    # Filter boxes.
-    for sample_token in eval_boxes.sample_tokens:
-        if sample_token not in sample_tokens_all:
-            eval_boxes.boxes.pop(sample_token)
-
-    return eval_boxes
 
 
 # modified version of https://github.com/nutonomy/nuscenes-devkit/blob/9b165b1018a64623b65c17b64f3c9dd746040f36/python-sdk/nuscenes/eval/common/loaders.py#L180

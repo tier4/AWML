@@ -28,7 +28,10 @@ frame_pass_fail_config = dict(
 )
 
 val_evaluator = dict(
+	_delete_=True,
     type="T4MetricV2",
+	data_root=_base_.data_root,
+    ann_file=_base_.data_root + _base_.info_directory_path + _base_.info_val_file_name,
     output_dir="validation",
     dataset_name="base",
     perception_evaluator_configs=perception_evaluator_configs,
@@ -36,11 +39,16 @@ val_evaluator = dict(
     frame_pass_fail_config=frame_pass_fail_config,
     num_workers=128,
     scene_batch_size=256,
-    write_metric_summary=False,
+	write_metric_summary=False,
+    class_names={{_base_.class_names}},
+    name_mapping={{_base_.name_mapping}},
 )
 
 test_evaluator = dict(
+	delete_=True,
     type="T4MetricV2",
+	data_root=_base_.data_root,
+    ann_file=_base_.data_root + _base_.info_directory_path + _base_.info_test_file_name,
     output_dir="testing",
     dataset_name="base",
     perception_evaluator_configs=perception_evaluator_configs,
@@ -48,5 +56,7 @@ test_evaluator = dict(
     frame_pass_fail_config=frame_pass_fail_config,
     num_workers=128,
     scene_batch_size=256,
-    write_metric_summary=True,
+	write_metric_summary=True,
+    class_names={{_base_.class_names}},
+    name_mapping={{_base_.name_mapping}},
 )
