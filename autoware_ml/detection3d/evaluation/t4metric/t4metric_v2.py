@@ -538,33 +538,6 @@ class T4MetricV2(BaseMetric):
               evaluator (PerceptionEvaluationManager): The evaluator instance.
               scenes (dict): Dictionary of scenes and their samples.
         """
-        total_objects = 0
-        before_preds = {}
-        before_gts = {}
-        for scene_id, samples in scenes.items():
-            for sample_id, perception_frame in samples.items():
-                for gt in perception_frame.ground_truth_objects.objects:
-                    if gt.semantic_label.name not in before_gts:
-                        before_gts[gt.semantic_label.name] = 1
-                    else:
-                        before_gts[gt.semantic_label.name] += 1
-
-                for est in perception_frame.estimated_objects:
-                    if est.semantic_label.name not in before_preds:
-                        before_preds[est.semantic_label.name] = 1
-                    else:
-                        before_preds[est.semantic_label.name] += 1
-
-        self.logger.info("==== GT boxes info before filtering in evaluation ====")
-        for class_name, value in before_gts.items():
-            self.logger.info(f"class: {class_name}: {value}")
-        self.logger.info("===== End of GT Boxes info ====")
-
-        self.logger.info("==== Est boxes info before filtering in evaluation ====")
-        for class_name, value in before_preds.items():
-            self.logger.info(f"class: {class_name}: {value}")
-        self.logger.info("===== End of Est Boxes info ====")
-
         for scene_id, samples in scenes.items():
             for sample_id, perception_frame in samples.items():
                 try:
@@ -582,17 +555,6 @@ class T4MetricV2(BaseMetric):
                 except Exception as e:
                     self.logger.warning(f"Failed to process frame {scene_id}/{sample_id}: {e}")
         
-        current_epoch = self.message_hub.get_info("epoch", -1) + 1
-        results_pickle_path = self.output_dir / f"filtered_results_{current_epoch}.pkl"
-
-        self.logger.info(f"Saving filtered_results of epoch: {current_epoch} to pickle file: {results_pickle_path}")
-
-        # Create parent directory if needed
-        results_pickle_path.parent.mkdir(parents=True, exist_ok=True)
-
-        with open(results_pickle_path, "wb") as f:
-            pickle.dump(self.frame_results_with_info, f)
-
     def _process_all_frames(self, evaluator: PerceptionEvaluationManager, scenes: dict) -> None:
         """Process all frames in all scenes and collect frame results.
 
@@ -910,13 +872,9 @@ class T4MetricV2(BaseMetric):
 
         # gt_labels_3d: (N,) array of class indices (e.g., [0, 1, 2, 3, ...])
         gt_labels_3d: np.ndarray = eval_info.get("gt_labels_3d", np.array([]))
-        all_gts = [gt for gt in gt_labels_3d if gt not in [0, 1, 2, 3, 4]]
-        if all_gts:
-            print_log(f"sample_id: {sample_id}, gt: {all_gts}")
 
         # num_lidar_pts: (N,) array of int, number of LiDAR points inside each GT box
-        num_lidar_pts: np.ndarray = eval_info.get("num_lidar_pts", np.array([])) 
-        
+        num_lidar_pts: np.ndarray = eval_info.get("num_lidar_pts", np.array([]))
         dynamic_objects = [
             DynamicObject(
                 unix_time=time,
