@@ -8,7 +8,7 @@ custom_imports["imports"] += _base_.custom_imports["imports"]
 custom_imports["imports"] += ["autoware_ml.detection3d.datasets.transforms"]
 
 # user setting
-data_root = "data/t4datasets/"
+data_root = "data/t4dataset/"
 info_directory_path = "info/kokseang_2_5/"
 train_gpu_size = 4
 train_batch_size = 8
@@ -129,7 +129,7 @@ model = dict(
     img_bev_bbox_head=None,
 	fusion_layer=None,
     bbox_head=dict(
-        in_channels=512,
+        in_channels=80,
         num_proposals=num_proposals,
         class_names=_base_.class_names,  # Use class names to identify the correct class indices
         train_cfg=dict(
