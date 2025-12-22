@@ -37,6 +37,8 @@ class BEVFusion(Base3DDetector):
         seg_head: Optional[dict] = None,
         img_roi_head=None,
         img_bev_bbox_head=None,
+        free_img: bool = False,
+        merge_img_pts_backbone: bool = False
         **kwargs,
     ) -> None:
         super().__init__(data_preprocessor=data_preprocessor, init_cfg=init_cfg)
@@ -95,6 +97,8 @@ class BEVFusion(Base3DDetector):
         else:
             self.bbox_head = None
 
+        self.freeze_img = freeze_img
+        self.merge_img_pts_backbone = merge_img_pts_backbone
         self.init_weights()
 
     def _forward(self, batch_inputs_dict: Tensor, batch_data_samples: OptSampleList = None, **kwargs):
@@ -151,6 +155,23 @@ class BEVFusion(Base3DDetector):
     def init_weights(self) -> None:
         if self.img_backbone is not None:
             self.img_backbone.init_weights()
+        
+        if self.free_img:
+            if self.img_backbone is not None:
+                for param in self.img_backbone.parameters():
+                    param.requires_grad = False 
+            
+            if self.img_neck is not None:
+                for param in self.img_neck.parameters():
+                    param.requires_grad = False 
+            
+            if self.view_transform is not None:
+                for param in self.view_transform.paramaters():
+                    param.requires_grad = False
+            
+            if self.img_roi_head is not None:
+                for param in self.img_roi_head.parameters():
+                    param.requires_grad = False
 
     @property
     def with_bbox_head(self):
@@ -322,7 +343,7 @@ class BEVFusion(Base3DDetector):
         imgs = batch_inputs_dict.get("imgs", None)
         points = batch_inputs_dict.get("points", None)
         img_bev_features = None
-        features = []
+        pts_features = None
         if imgs is not None and "lidar2img" not in batch_inputs_dict:
             # NOTE(knzo25): normal training and testing
             imgs = imgs.contiguous()
@@ -383,29 +404,45 @@ class BEVFusion(Base3DDetector):
                 geom_feats=geom_feats,
             )
         
-        if img_bev_features is not None:
-            features.append(img_bev_features)
-        
         if points is not None and self.pts_middle_encoder is not None:
-            pts_feature = self.extract_pts_feat(
+            pts_features = self.extract_pts_feat(
                 batch_inputs_dict.get("voxels", {}).get("voxels", None),
                 batch_inputs_dict.get("voxels", {}).get("coors", None),
                 batch_inputs_dict.get("voxels", {}).get("num_points_per_voxel", None),
                 points=points,
             )
-            features.append(pts_feature)
+        
+        if self.merge_img_pts_backbone:
+            if img_bev_features is not None and pts_features is not None:
+                features = [img_bev_features, pts_features]
+            elif img_bev_features is not None:
+                features = [img_bev_features]
+            else:
+                features = [pts_features]
 
-        if self.fusion_layer is not None:
-            x = self.fusion_layer(features)
+            # Merge img into pts in pts_backbone
+            if self.fusion_layer is not None:
+                x = self.fusion_layer(features)
+            else:
+                assert len(features) == 1, features
+                x = features[0]
+
+            if self.pts_backbone:
+                x = self.pts_backbone(x)
+
+            if self.pts_neck:
+                x = self.pts_neck(x)
         else:
-            assert len(features) == 1, features
-            x = features[0]
+            if pts_features is not None:
+                if self.pts_backbone:
+                    x = self.pts_backbone(pts_features)
 
-        if self.pts_backbone:
-            x = self.pts_backbone(x)
-
-        if self.pts_neck:
-            x = self.pts_neck(x)
+                if self.pts_neck:
+                    x = self.pts_neck(x)
+            
+            # Merge img into pts after pts backbone 
+            if img_bev_features is not None and self.fusion_layer is not None:
+                x = self.fusion_layer([img_bev_features, x])
 
         return x, img_bev_features, img_roi_head_preds, depth_loss
 
