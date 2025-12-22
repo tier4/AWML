@@ -45,7 +45,7 @@ val_evaluator = dict(
 )
 
 test_evaluator = dict(
-    delete_=True,
+    _delete_=True,
     type="T4MetricV2",
     data_root=_base_.data_root,
     ann_file=_base_.data_root + _base_.info_directory_path + _base_.info_test_file_name,
