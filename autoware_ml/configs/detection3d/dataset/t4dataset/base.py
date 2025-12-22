@@ -203,5 +203,5 @@ evaluator_metric_configs = dict(
     label_prefix="autoware",
     max_distance=121.0,
     min_distance=-121.0,
-    min_point_numbers=0,
+    min_point_numbers=None,
 )
