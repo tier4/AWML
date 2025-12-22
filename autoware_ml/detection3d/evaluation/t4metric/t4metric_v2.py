@@ -875,7 +875,7 @@ class T4MetricV2(BaseMetric):
 
         # num_lidar_pts: (N,) array of int, number of LiDAR points inside each GT box
         num_lidar_pts: np.ndarray = eval_info.get("num_lidar_pts", np.array([]))
-        
+
         dynamic_objects = [
             DynamicObject(
                 unix_time=time,
