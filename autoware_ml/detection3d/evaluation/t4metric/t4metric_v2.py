@@ -554,7 +554,7 @@ class T4MetricV2(BaseMetric):
                     )
                 except Exception as e:
                     self.logger.warning(f"Failed to process frame {scene_id}/{sample_id}: {e}")
-        
+
     def _process_all_frames(self, evaluator: PerceptionEvaluationManager, scenes: dict) -> None:
         """Process all frames in all scenes and collect frame results.
 

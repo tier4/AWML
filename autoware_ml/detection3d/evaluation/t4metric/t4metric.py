@@ -1,17 +1,16 @@
 import csv
+import json
 import os
 import tempfile
-import json
 from collections import defaultdict
 from copy import deepcopy
 from os import path as osp
-from typing import Dict, List, Optional, Tuple, Union, Sequence, Any
+from typing import Any, Dict, List, Optional, Sequence, Tuple, Union
 
 import mmengine
 import numpy as np
 import pyquaternion
-import torch 
-
+import torch
 from mmdet3d.evaluation.metrics import NuScenesMetric
 from mmdet3d.registry import METRICS
 from mmdet3d.structures import CameraInstance3DBoxes, LiDARInstance3DBoxes
@@ -23,7 +22,7 @@ from nuscenes.eval.detection.data_classes import DetectionConfig
 from nuscenes.utils.data_classes import Box as NuScenesBox
 
 from autoware_ml.detection3d.evaluation.t4metric.evaluation import T4DetectionConfig, T4DetectionEvaluation
-from autoware_ml.detection3d.evaluation.t4metric.loading import add_center_dist, filter_eval_boxes, T4Box
+from autoware_ml.detection3d.evaluation.t4metric.loading import T4Box, add_center_dist, filter_eval_boxes
 
 __all__ = ["T4Metric"]
 
@@ -165,7 +164,7 @@ class T4Metric(NuScenesMetric):
             "mean_ap_weight": 5,
         }
         self.eval_detection_configs = T4DetectionConfig.deserialize(eval_config_dict)
-        
+
         self.pred_instances_3d_key = "pred_instances_3d"
         self.gt_instances_3d_key = "gt_instances_3d"
 
@@ -181,20 +180,20 @@ class T4Metric(NuScenesMetric):
         """
         for data_sample in data_samples:
             result = dict()
-            pred_3d = data_sample['pred_instances_3d']
-            pred_2d = data_sample['pred_instances']
+            pred_3d = data_sample["pred_instances_3d"]
+            pred_2d = data_sample["pred_instances"]
             for attr_name in pred_3d:
-                pred_3d[attr_name] = pred_3d[attr_name].to('cpu')
+                pred_3d[attr_name] = pred_3d[attr_name].to("cpu")
             result[self.pred_instances_3d_key] = pred_3d
             for attr_name in pred_2d:
-                pred_2d[attr_name] = pred_2d[attr_name].to('cpu')
-            result['pred_instances'] = pred_2d
-            sample_idx = data_sample['sample_idx']
-            result['sample_idx'] = sample_idx
+                pred_2d[attr_name] = pred_2d[attr_name].to("cpu")
+            result["pred_instances"] = pred_2d
+            sample_idx = data_sample["sample_idx"]
+            result["sample_idx"] = sample_idx
 
-            result['current_time'] = data_sample["timestamp"]
-            result['scene_id'] = self._parse_scene_id(data_sample["lidar_path"])
-            
+            result["current_time"] = data_sample["timestamp"]
+            result["scene_id"] = self._parse_scene_id(data_sample["lidar_path"])
+
             result[self.gt_instances_3d_key] = self._parse_ground_truth_from_sample(data_sample)
             self.results.append(result)
 
@@ -256,7 +255,7 @@ class T4Metric(NuScenesMetric):
             "bboxes_3d": gt_bboxes_3d,
             "scores_3d": np.array([1.0 for _ in range(len(gt_bboxes_3d))]),
             "labels_3d": gt_labels_3d,
-            "num_lidar_pts": num_lidar_pts
+            "num_lidar_pts": num_lidar_pts,
         }
 
     @staticmethod
@@ -336,17 +335,13 @@ class T4Metric(NuScenesMetric):
         ap_dict, scene_preds, scene_gts = self._evaluate_scenes(
             result_path=result_dict[self.pred_instances_3d_key],
             gt_result_path=result_dict[self.gt_instances_3d_key],
-            classes=self.class_names
+            classes=self.class_names,
         )
 
         # Flatten preds and gts from scene level {scene_token: EvalBoxes} to global level EvalBoxes
-        all_preds = flatten_scene_eval_boxes(
-            scene_eval_boxes=scene_preds
-        )
+        all_preds = flatten_scene_eval_boxes(scene_eval_boxes=scene_preds)
 
-        all_gts = flatten_scene_eval_boxes(
-            scene_eval_boxes=scene_gts
-        )
+        all_gts = flatten_scene_eval_boxes(scene_eval_boxes=scene_gts)
 
         logger.info("==== GT boxes info after filtering in evaluation ====")
         class_names = {}
@@ -377,11 +372,7 @@ class T4Metric(NuScenesMetric):
         logger.info("===== End of Est Boxes info ====")
 
         ap_dict = self.t4_evaluate_all_scenes(
-            result_dict[self.pred_instances_3d_key], 
-            all_preds, 
-            all_gts, 
-            self.class_names, 
-            logger
+            result_dict[self.pred_instances_3d_key], all_preds, all_gts, self.class_names, logger
         )
         for result in ap_dict:
             metric_dict[result] = ap_dict[result]
@@ -450,14 +441,10 @@ class T4Metric(NuScenesMetric):
         scene_preds, _ = self._load_eval_boxes(
             result_path=result_path,
             max_boxes_per_sample=self.eval_detection_configs.max_boxes_per_sample,
-            verbose=True
+            verbose=True,
         )
 
-        scene_gts, _ = self._load_eval_boxes(
-            result_path=gt_result_path, 
-            max_boxes_per_sample=0,
-            verbose=True
-        )
+        scene_gts, _ = self._load_eval_boxes(result_path=gt_result_path, max_boxes_per_sample=0, verbose=True)
 
         # TODO(KokSeang): Add Scene-level metrics
         # for scene_token in self.scene_tokens:
@@ -478,18 +465,20 @@ class T4Metric(NuScenesMetric):
         #     metrics = load(os.path.join(output_dir, "metrics_summary.json"))
         #     detail = self._create_detail(metrics=metrics, classes=classes, save_csv=False)
         #     metric_dict.update(detail)
-        
-        return metric_dict, scene_preds, scene_gts 
 
-    def _load_eval_boxes(self, result_path: str, max_boxes_per_sample: int, verbose: bool = True) -> Tuple[Dict[str, EvalBoxes], Dict]:
+        return metric_dict, scene_preds, scene_gts
+
+    def _load_eval_boxes(
+        self, result_path: str, max_boxes_per_sample: int, verbose: bool = True
+    ) -> Tuple[Dict[str, EvalBoxes], Dict]:
         """
-        Modified version of https://github.com/nutonomy/nuscenes-devkit/blob/9b165b1018a64623b65c17b64f3c9dd746040f36/python-sdk/nuscenes/eval/common/loaders.py#L21 
+        Modified version of https://github.com/nutonomy/nuscenes-devkit/blob/9b165b1018a64623b65c17b64f3c9dd746040f36/python-sdk/nuscenes/eval/common/loaders.py#L21
         adds name mapping capabilities
         """
         # Load from file and check that the format is correct.
         with open(result_path) as f:
             data = json.load(f)
-        
+
         assert "results" in data, (
             "Error: No field `results` in result file. Please note that the result format changed."
             "See https://www.nuscenes.org/object-detection for more information."
@@ -519,25 +508,17 @@ class T4Metric(NuScenesMetric):
         for sample_token in all_results.sample_tokens:
             scene_token = self.sample_token_to_scene_tokens[sample_token]
             # print(f"sample_token: {sample_token}, scene_token: {scene_token}")
-            scene_eval_boxes[scene_token].add_boxes(
-                sample_token=sample_token,
-                boxes=all_results.boxes[sample_token]
-            )
+            scene_eval_boxes[scene_token].add_boxes(sample_token=sample_token, boxes=all_results.boxes[sample_token])
 
         for scene_token, eval_boxes in scene_eval_boxes.items():
             nusc = self.loaded_scenes[scene_token]
             eval_boxes = add_center_dist(nusc, eval_boxes)
 
             # Filter boxes (distance, points per box, etc.).
-            eval_boxes = filter_eval_boxes(
-                nusc, 
-                eval_boxes, 
-                self.eval_detection_configs.class_range, 
-                verbose=verbose
-            )
+            eval_boxes = filter_eval_boxes(nusc, eval_boxes, self.eval_detection_configs.class_range, verbose=verbose)
 
         return scene_eval_boxes, meta
-        
+
     def _write_to_csv(self, header, data, csv_filename: str, logger) -> None:
         """"""
         with open(csv_filename, "w") as f:
@@ -648,10 +629,9 @@ class T4Metric(NuScenesMetric):
             jsonfile_prefix = osp.join(tmp_dir.name, "results")
         else:
             tmp_dir = None
-        
+
         result_dict = dict()
         sample_idx_list = [result["sample_idx"] for result in results]
-
 
         # pred_instances_3d
         print(f"\nFormating bboxes of {self.pred_instances_3d_key}")
@@ -659,9 +639,13 @@ class T4Metric(NuScenesMetric):
         tmp_file_ = osp.join(jsonfile_prefix, self.pred_instances_3d_key)
         box_type_3d = type(results_[0]["bboxes_3d"])
         if box_type_3d == LiDARInstance3DBoxes:
-            result_dict[self.pred_instances_3d_key] = self._format_lidar_bbox(results_, sample_idx_list, classes, tmp_file_)
+            result_dict[self.pred_instances_3d_key] = self._format_lidar_bbox(
+                results_, sample_idx_list, classes, tmp_file_
+            )
         elif box_type_3d == CameraInstance3DBoxes:
-            result_dict[self.pred_instances_3d_key] = self._format_camera_bbox(results_, sample_idx_list, classes, tmp_file_)
+            result_dict[self.pred_instances_3d_key] = self._format_camera_bbox(
+                results_, sample_idx_list, classes, tmp_file_
+            )
 
         # gt
         print(f"\nFormating gt bboxes of {self.gt_instances_3d_key}")
@@ -669,10 +653,12 @@ class T4Metric(NuScenesMetric):
         tmp_file_ = osp.join(jsonfile_prefix, self.gt_instances_3d_key)
         box_type_3d = type(results_[0]["bboxes_3d"])
         if box_type_3d == LiDARInstance3DBoxes:
-            result_dict[self.gt_instances_3d_key] = self._format_gt_lidar_bbox(results_, sample_idx_list, classes, tmp_file_)
+            result_dict[self.gt_instances_3d_key] = self._format_gt_lidar_bbox(
+                results_, sample_idx_list, classes, tmp_file_
+            )
         else:
             raise NotImplementedError
-        
+
         return result_dict, tmp_dir
 
     def _format_lidar_bbox(
@@ -740,7 +726,7 @@ class T4Metric(NuScenesMetric):
                 )
                 annos.append(nusc_anno)
             nusc_annos[sample_token] = annos
-        
+
         nusc_submissions = {
             "meta": self.modality,
             "results": nusc_annos,
@@ -795,7 +781,7 @@ class T4Metric(NuScenesMetric):
                 )
                 annos.append(nusc_anno)
             nusc_annos[sample_token] = annos
-        
+
         nusc_submissions = {
             "meta": self.modality,
             "results": nusc_annos,
@@ -810,12 +796,9 @@ class T4Metric(NuScenesMetric):
 def flatten_scene_eval_boxes(scene_eval_boxes: Dict[str, EvalBoxes]) -> EvalBoxes:
     """"""
     all_eval_boxes = EvalBoxes()
-    for eval_boxes in scene_eval_boxes.values():  
+    for eval_boxes in scene_eval_boxes.values():
         for sample_token, boxes in eval_boxes.boxes.items():
-            all_eval_boxes.add_boxes(
-                sample_token, 
-                boxes
-            )
+            all_eval_boxes.add_boxes(sample_token, boxes)
     return all_eval_boxes
 
 
@@ -908,7 +891,7 @@ def output_to_nusc_box(detection: dict) -> Tuple[List[NuScenesBox], Union[np.nda
     labels = detection["labels_3d"]
     if isinstance(labels, torch.Tensor):
         labels = labels.numpy()
-    
+
     attrs = None
     if "attr_labels" in detection:
         attrs = detection["attr_labels"].numpy()

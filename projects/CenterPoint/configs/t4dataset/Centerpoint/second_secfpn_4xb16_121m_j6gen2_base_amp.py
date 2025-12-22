@@ -109,7 +109,8 @@ test_pipeline = [
     ),
     dict(type="PointsRangeFilter", point_cloud_range=point_cloud_range),
     dict(
-        type="Pack3DDetInputs", keys=["points", "gt_bboxes_3d", "gt_labels_3d"],
+        type="Pack3DDetInputs",
+        keys=["points", "gt_bboxes_3d", "gt_labels_3d"],
         # Specify the metadata keys required by the downstream pipeline.
         # Refer to the official MMDetection3D formatting transform implementation for details:
         # https://github.com/open-mmlab/mmdetection3d/blob/main/mmdet3d/datasets/transforms/formating.py#L67
@@ -126,7 +127,7 @@ test_pipeline = [
             "cam2global",
             "lidar2cam",
             "ego2global",
-        ), 
+        ),
     ),
 ]
 
@@ -151,8 +152,10 @@ eval_pipeline = [
         test_mode=True,
     ),
     dict(type="PointsRangeFilter", point_cloud_range=point_cloud_range),
-    dict(type="Pack3DDetInputs", keys=["points", "gt_bboxes_3d", "gt_labels_3d"], 
-		# Specify the metadata keys required by the downstream pipeline.
+    dict(
+        type="Pack3DDetInputs",
+        keys=["points", "gt_bboxes_3d", "gt_labels_3d"],
+        # Specify the metadata keys required by the downstream pipeline.
         # Refer to the official MMDetection3D formatting transform implementation for details:
         # https://github.com/open-mmlab/mmdetection3d/blob/main/mmdet3d/datasets/transforms/formating.py#L67
         # Also see the content structure in "t4dataset_base_infos_test.pkl" for reference.
@@ -169,7 +172,7 @@ eval_pipeline = [
             "cam2global",
             "lidar2cam",
             "ego2global",
-        ), 
+        ),
     ),
 ]
 
