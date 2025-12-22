@@ -8,6 +8,7 @@
 
 |          | Eval DB            | precision_top1 | recall_top1 | f1-score_top1 | counts |
 | -------- | ------------------ | -------------- | ----------- | ------------- | ------ |
+| base/1.3 |                    |                |             |               |        |
 | base/1.2 | TLR v1.0, 4.0, 5.0 | **69.75**      | **68.09**   | **68.85**     | 9648   |
 | base/1.1 | TLR v1.0, 4.0, 5.0 | **70.64**      | **68.28**   | **69.29**     | 9648   |
 | base/1.2 | TLR v6.0           | **21.19**      | **24.17**   | **22.18**     | 957    |
@@ -18,6 +19,55 @@
 | base/1.0 | TLR v5.0           | 46.35          | 49.08       | 46.39         | 306    |
 
 ## Release
+
+### base/1.3
+
+- Adds DB TLR v7.0 dataset to the training data, in addition to the datasets used for training base/1.2.
+
+<details>
+<summary> The link of data and evaluation result </summary>
+
+- model
+  - Training dataset: DB TLR v1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0
+  - Eval dataset: 
+  - [Config file path]()
+  - Deployed onnx model [[WebAuto (for internal)]]()
+  - Deployed onnx model [model-zoo]
+    - [traffic_light_classifier_mobilenetv2_batch_1.onnx]()
+    - [traffic_light_classifier_mobilenetv2_batch_4.onnx]()
+    - [traffic_light_classifier_mobilenetv2_batch_6.onnx]()
+
+  - Deployed [label file]()
+  - Training results [model-zoo]
+    - [config.py]()
+    - [checkpoint_best.pth]()
+    - [logs.zip]()
+
+  - train time: 
+
+- Results evaluated with 
+
+```python
+Class-wise Metrics:
+----------------------------------------------------------------------------
+| Class Name           | Precision  | Recall     | F1-Score   | Counts     |
+----------------------------------------------------------------------------
+| green                | 99.88      | 99.88      | 99.88      | 5980       |
+| left,red             | 100.00     | 89.78      | 94.62      | 137        |
+| left,red,straight    | 99.66      | 99.32      | 99.49      | 294        |
+| red                  | 99.44      | 99.75      | 99.59      | 4420       |
+| red,right            | 96.98      | 98.97      | 97.97      | 292        |
+| red,straight         | 100.00     | 100.00     | 100.00     | 11         |
+| unknown              | 73.68      | 56.00      | 63.64      | 50         |
+| yellow               | 94.94      | 98.83      | 96.85      | 171        |
+| red,up_left          | 0.00       | 0.00       | 0.00       | 0          |
+| red,right,straight   | 0.00       | 0.00       | 0.00       | 0          |
+| red,up_right         | 0.00       | 0.00       | 0.00       | 0          |
+----------------------------------------------------------------------------
+Overall results:  precision_top1: 69.51     , recall_top1: 67.50     , f1-score_top1: 68.37     , support_top1: 11355.00 
+```
+
+</details>
 
 ### base/1.2
 - The car traffic light classifier model trained with X2 gen1.0 BRT dataset([DB TLR v6.0](../../../../../autoware_ml/configs/t4dataset/db_tlr_v6.yaml) dataset), in addition to the dataset used for training base/1.1.
