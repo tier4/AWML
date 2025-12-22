@@ -2,11 +2,11 @@
 BATCH_SIZE = 32
 NUM_WORKERS = 8
 NUM_EPOCHS = 300
-VAL_INTERVAL = 1
+VAL_INTERVAL = 20
 IMG_SCALE = 224
 CHECKPOINT_INTERVAL = 1
 LOG_INTERVAL = 100
-ANN_FILE = "./data/info/tlr_classifier_car/"
+ANN_FILE = "./infos/tlr_classifier/"
 
 # Base Configurations
 _base_ = [
@@ -102,7 +102,8 @@ optim_wrapper = dict(optimizer=optimizer)
 param_scheduler = dict(type="StepLR", by_epoch=True, gamma=0.98, step_size=1)
 
 # Training Configuration
-train_cfg = dict(by_epoch=True, max_epochs=NUM_EPOCHS, val_interval=VAL_INTERVAL)
+
+train_cfg = dict(by_epoch=True, max_epochs=NUM_EPOCHS, val_interval=VAL_INTERVAL, dynamic_intervals=[(NUM_EPOCHS - 50, 5)])
 train_dataloader = dict(
     batch_size=BATCH_SIZE,
     num_workers=NUM_WORKERS,

@@ -3,6 +3,7 @@ import os
 import os.path as osp
 import re
 import warnings
+from collections import Counter
 from dataclasses import dataclass, field
 from typing import Any, Dict, List
 
@@ -47,10 +48,9 @@ def update_detection_data_annotations(
 ) -> None:
     for ann in object_ann:
         class_name = class_mappings[categories[ann.category_token]]
-        if class_name=="SKIP_CLASS":
-            continue
         if class_name not in allowed_classes:
-            raise ValueError(f"Class name {class_name} is not in allowed classes {allowed_classes}")
+            print(f"Class name {class_name} is not in allowed classes {allowed_classes}")
+            continue
         bbox_label = allowed_classes.index(class_name)
         instance = Instance(
             bbox=ann.bbox,
@@ -102,6 +102,28 @@ def get_detection_data_empty_dict(data_name: str, classes: List[str]) -> Detecti
     return DetectionData(
         metainfo={"dataset_type": data_name, "task_name": "detection_task", "classes": classes}, data_list=[]
     )
+
+
+def print_class_statistics(split_name: str, data_entries: List[DataEntry], classes: List[str]) -> None:
+    """Print the number of instances for each class in the given split."""
+    class_counts = Counter()
+    for entry in data_entries:
+        for instance in entry.instances:
+            class_counts[instance.bbox_label] += 1
+
+    print(f"\n{'='*50}")
+    print(f"Class statistics for split: {split_name}")
+    print(f"{'='*50}")
+    print(f"{'Class Name':<30} {'Count':>10}")
+    print(f"{'-'*40}")
+    total = 0
+    for idx, class_name in enumerate(classes):
+        count = class_counts.get(idx, 0)
+        total += count
+        print(f"{class_name:<30} {count:>10}")
+    print(f"{'-'*40}")
+    print(f"{'Total':<30} {total:>10}")
+    print(f"{'='*50}\n")
 
 
 def assign_ids_and_save_detection_data(
@@ -202,6 +224,7 @@ def main() -> None:
 
     # Save each split separately
     for split in ["train", "val", "test"]:
+        print_class_statistics(split, data_infos[split], cfg.classes)
         assign_ids_and_save_detection_data(
             split,
             data_infos[split],
