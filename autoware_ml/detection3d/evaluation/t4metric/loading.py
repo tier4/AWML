@@ -1,5 +1,4 @@
 import json
-from copy import deepcopy
 from typing import Dict, List, Optional, Tuple
 
 import numpy as np
@@ -49,7 +48,7 @@ class T4Box(DetectionBox):
         self.attribute_name = attribute_name
 
 
-def velocity_clip(velocity: NDArray, max_speed: float = 50.0) -> NDArray:
+def _velocity_clip(velocity: NDArray, max_speed: float = 50.0) -> NDArray:
     """
     Normalize the velocity of the boxes.
     Args:
