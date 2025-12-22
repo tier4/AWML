@@ -122,6 +122,7 @@ test_pipeline = [
             "cam2img",
             "box_type_3d",
             "sample_idx",
+            "sample_token",
             "lidar_path",
             "ori_cam2img",
             "cam2global",

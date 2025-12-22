@@ -436,8 +436,6 @@ class T4Metric(NuScenesMetric):
             Dict[str, float]: The evaluation results.
         """
         metric_dict = dict()
-        output_dir = os.path.join(*os.path.split(result_path)[:-1])
-
         scene_preds, _ = self._load_eval_boxes(
             result_path=result_path,
             max_boxes_per_sample=self.eval_detection_configs.max_boxes_per_sample,
@@ -447,24 +445,6 @@ class T4Metric(NuScenesMetric):
         scene_gts, _ = self._load_eval_boxes(result_path=gt_result_path, max_boxes_per_sample=0, verbose=True)
 
         # TODO(KokSeang): Add Scene-level metrics
-        # for scene_token in self.scene_tokens:
-        #     gt_boxes = scene_gts[scene_token]
-        #     preds = scene_preds[scene_token]
-        #     evaluator = T4DetectionEvaluation(
-        #         config=self.eval_detection_configs,
-        #         result_path=result_path,
-        #         scene=scene_token,
-        #         output_dir=output_dir,
-        #         verbose=False,
-        #         ground_truth_boxes=gt_boxes,
-        #         prediction_boxes=preds,
-        #     )
-        #     _, metrics_table = evaluator.run_and_save_eval()
-
-        #     # record metrics
-        #     metrics = load(os.path.join(output_dir, "metrics_summary.json"))
-        #     detail = self._create_detail(metrics=metrics, classes=classes, save_csv=False)
-        #     metric_dict.update(detail)
 
         return metric_dict, scene_preds, scene_gts
 
@@ -507,7 +487,6 @@ class T4Metric(NuScenesMetric):
         scene_eval_boxes = defaultdict(EvalBoxes)
         for sample_token in all_results.sample_tokens:
             scene_token = self.sample_token_to_scene_tokens[sample_token]
-            # print(f"sample_token: {sample_token}, scene_token: {scene_token}")
             scene_eval_boxes[scene_token].add_boxes(sample_token=sample_token, boxes=all_results.boxes[sample_token])
 
         for scene_token, eval_boxes in scene_eval_boxes.items():
@@ -794,7 +773,14 @@ class T4Metric(NuScenesMetric):
 
 
 def flatten_scene_eval_boxes(scene_eval_boxes: Dict[str, EvalBoxes]) -> EvalBoxes:
-    """"""
+    """Flatten per-scene EvalBoxes into a single EvalBoxes instance.
+    Args:
+        scene_eval_boxes (Dict[str, EvalBoxes]): Mapping from scene identifiers
+            (e.g., scene tokens) to their corresponding EvalBoxes instances.
+    Returns:
+        EvalBoxes: A new EvalBoxes instance containing all boxes from every
+        scene in ``scene_eval_boxes``, keyed by their sample tokens.
+    """
     all_eval_boxes = EvalBoxes()
     for eval_boxes in scene_eval_boxes.values():
         for sample_token, boxes in eval_boxes.boxes.items():
