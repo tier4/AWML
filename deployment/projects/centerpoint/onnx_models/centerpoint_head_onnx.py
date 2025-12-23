@@ -5,7 +5,7 @@ from mmdet3d.models.dense_heads.centerpoint_head import SeparateHead
 from mmdet3d.registry import MODELS
 from mmengine.logging import MMLogger
 
-from .centerpoint_head import CenterHead
+from projects.CenterPoint.models.dense_heads.centerpoint_head import CenterHead
 
 
 @MODELS.register_module()

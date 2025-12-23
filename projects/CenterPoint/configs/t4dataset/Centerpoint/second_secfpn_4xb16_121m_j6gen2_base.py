@@ -7,7 +7,7 @@ custom_imports = dict(imports=["projects.CenterPoint.models"], allow_failed_impo
 custom_imports["imports"] += _base_.custom_imports["imports"]
 custom_imports["imports"] += ["autoware_ml.detection3d.datasets.transforms"]
 custom_imports["imports"] += ["autoware_ml.hooks"]
-custom_imports["imports"] += ["autoware_ml.backends.mlflowbackend"]
+# custom_imports["imports"] += ["autoware_ml.backends.mlflowbackend"]
 
 # This is a base file for t4dataset, add the dataset config.
 # type, data_root and ann_file of data.train, data.val and data.test
@@ -41,13 +41,13 @@ eval_class_range = {
 
 # user setting
 data_root = "data/t4dataset/"
-info_directory_path = "info/user_name/"
-train_gpu_size = 4
-train_batch_size = 16
-test_batch_size = 2
-num_workers = 32
+info_directory_path = "info/"
+train_gpu_size = 1
+train_batch_size = 1
+test_batch_size = 1
+num_workers = 1
 val_interval = 1
-max_epochs = 30
+max_epochs = 1
 work_dir = "work_dirs/centerpoint/" + _base_.dataset_type + "/second_secfpn_4xb16_121m_j6gen2_base/"
 
 train_pipeline = [
@@ -384,19 +384,19 @@ auto_scale_lr = dict(enable=False, base_batch_size=train_gpu_size * train_batch_
 if train_gpu_size > 1:
     sync_bn = "torch"
 
-vis_backends = [
-    dict(type="LocalVisBackend"),
-    dict(type="TensorboardVisBackend"),
-    # Update info accordingly
-    dict(
-        type="SafeMLflowVisBackend",
-        exp_name="(UserName) CenterPoint",
-        run_name="CenterPoint base",
-        tracking_uri="http://localhost:5000",
-        artifact_suffix=(),
-    ),
-]
-visualizer = dict(type="Det3DLocalVisualizer", vis_backends=vis_backends, name="visualizer")
+# vis_backends = [
+#     dict(type="LocalVisBackend"),
+#     dict(type="TensorboardVisBackend"),
+#     # Update info accordingly
+#     dict(
+#         type="SafeMLflowVisBackend",
+#         exp_name="(UserName) CenterPoint",
+#         run_name="CenterPoint base",
+#         tracking_uri="http://localhost:5000",
+#         artifact_suffix=(),
+#     ),
+# ]
+# visualizer = dict(type="Det3DLocalVisualizer", vis_backends=vis_backends, name="visualizer")
 
 logger_interval = 50
 default_hooks = dict(

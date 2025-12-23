@@ -7,7 +7,7 @@ from mmdet3d.registry import MODELS
 from mmengine.logging import MMLogger
 from torch import Tensor
 
-from .pillar_encoder import BackwardPillarFeatureNet
+from projects.CenterPoint.models.voxel_encoders.pillar_encoder import BackwardPillarFeatureNet
 
 
 @MODELS.register_module()

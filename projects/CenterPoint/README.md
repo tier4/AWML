@@ -41,6 +41,11 @@
 docker run -it --rm --gpus all --shm-size=64g --name awml -p 6006:6006 -v $PWD/:/workspace -v $PWD/data:/workspace/data autoware-ml
 ```
 
+For ONNX and TensorRT evaluation
+```sh
+docker run -it --rm --gpus all --shm-size=64g --name awml_deployment -p 6006:6006 -v $PWD/:/workspace -v $PWD/data:/workspace/data centerpoint-deployment:latest
+```
+
 ### 2. Train
 #### 2.1 Environment set up
 
@@ -110,12 +115,14 @@ where `frame-range` represents the range of frames to visualize.
 
 ### 5. Deploy
 
-- Make an onnx file for a CenterPoint model.
+- Run the unified deployment pipeline to export ONNX/TensorRT artifacts, verify them, and (optionally) evaluate. Update `deployment/projects/centerpoint/config/deploy_config.py` so that `checkpoint_path`, `runtime_io.info_file`, and `export.work_dir` point to your experiment (e.g., `checkpoint_path="work_dirs/centerpoint/t4dataset/second_secfpn_2xb8_121m_base/epoch_50.pth"`).
 
 ```sh
-# Deploy for t4dataset
-DIR="work_dirs/centerpoint/t4dataset/second_secfpn_2xb8_121m_base/" &&
-python projects/CenterPoint/scripts/deploy.py projects/CenterPoint/configs/t4dataset/second_secfpn_2xb8_121m_base.py $DIR/epoch_50.pth --replace_onnx_models --device gpu --rot_y_axis_reference
+# Deploy for t4dataset (export + verification + evaluation)
+python -m deployment.cli.main centerpoint \
+    deployment/projects/centerpoint/config/deploy_config.py \
+    projects/CenterPoint/configs/t4dataset/second_secfpn_2xb8_121m_base.py \
+    --rot-y-axis-reference
 ```
 
 where `rot_y_axis_reference` can be removed if we would like to use the original counterclockwise x-axis rotation system.
