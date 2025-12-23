@@ -11,7 +11,7 @@ custom_imports = dict(
         "projects.YOLOX_opt_elan.yolox.models",
         "projects.YOLOX_opt_elan.yolox.models.yolox_multitask",
         "projects.YOLOX_opt_elan.yolox.transforms",
-        "mmseg.evaluation.metrics", # 引入分割评估指标
+        "mmseg.evaluation.metrics",  # 引入分割评估指标
     ],
     allow_failed_imports=False,
 )
@@ -29,14 +29,51 @@ num_workers = 4
 base_lr = 0.001
 
 
-classes = ('person', 'rider', 'car', 'truck', 'bus', 'train', 'motorcycle', 'bicycle')
-palette = [
-    (220, 20, 60), (255, 0, 0), (0, 0, 142), (0, 0, 70),
-    (0, 60, 100), (0, 80, 100), (0, 0, 230), (119, 11, 32)
-]
+classes = ("person", "rider", "car", "truck", "bus", "train", "motorcycle", "bicycle")
+palette = [(220, 20, 60), (255, 0, 0), (0, 0, 142), (0, 0, 70), (0, 60, 100), (0, 80, 100), (0, 0, 230), (119, 11, 32)]
 
-seg_classes = ('road', 'sidewalk', 'building', 'wall', 'fence', 'pole', 'traffic light', 'traffic sign', 'vegetation', 'terrain', 'sky', 'person', 'rider', 'car', 'truck', 'bus', 'train', 'motorcycle', 'bicycle')
-seg_palette = [(128, 64, 128), (244, 35, 232), (70, 70, 70), (102, 102, 156), (190, 153, 153), (153, 153, 153), (250, 170, 30), (220, 220, 0), (107, 142, 35), (152, 251, 152), (70, 130, 180), (220, 20, 60), (255, 0, 0), (0, 0, 142), (0, 0, 70), (0, 60, 100), (0, 80, 100), (0, 0, 230), (119, 11, 32)]
+seg_classes = (
+    "road",
+    "sidewalk",
+    "building",
+    "wall",
+    "fence",
+    "pole",
+    "traffic light",
+    "traffic sign",
+    "vegetation",
+    "terrain",
+    "sky",
+    "person",
+    "rider",
+    "car",
+    "truck",
+    "bus",
+    "train",
+    "motorcycle",
+    "bicycle",
+)
+seg_palette = [
+    (128, 64, 128),
+    (244, 35, 232),
+    (70, 70, 70),
+    (102, 102, 156),
+    (190, 153, 153),
+    (153, 153, 153),
+    (250, 170, 30),
+    (220, 220, 0),
+    (107, 142, 35),
+    (152, 251, 152),
+    (70, 130, 180),
+    (220, 20, 60),
+    (255, 0, 0),
+    (0, 0, 142),
+    (0, 0, 70),
+    (0, 60, 100),
+    (0, 80, 100),
+    (0, 0, 230),
+    (119, 11, 32),
+]
 
 # metainfo = dict(classes=classes, palette=palette)
 metainfo = dict(classes=seg_classes, palette=seg_palette)
@@ -58,7 +95,7 @@ model = dict(
     backbone=dict(
         type="ELANDarknet",
         deepen_factor=2,
-        widen_factor=1, 
+        widen_factor=1,
         out_indices=(2, 3, 4),
         act_cfg=dict(type=activation),
     ),
@@ -75,10 +112,10 @@ model = dict(
         in_channels=128,
         feat_channels=128,
         act_cfg=dict(type=activation),
-        loss_cls=dict(type='CrossEntropyLoss', use_sigmoid=True, loss_weight=0.0),
-        loss_bbox=dict(type='IoULoss', loss_weight=0.0),
-        loss_obj=dict(type='CrossEntropyLoss', use_sigmoid=True, loss_weight=0.0),
-        loss_l1=dict(type='L1Loss', loss_weight=0.0),
+        loss_cls=dict(type="CrossEntropyLoss", use_sigmoid=True, loss_weight=0.0),
+        loss_bbox=dict(type="IoULoss", loss_weight=0.0),
+        loss_obj=dict(type="CrossEntropyLoss", use_sigmoid=True, loss_weight=0.0),
+        loss_l1=dict(type="L1Loss", loss_weight=0.0),
     ),
     mask_head=dict(
         type="YOLOXSegHead",
@@ -92,8 +129,8 @@ model = dict(
     test_cfg=dict(score_thr=0.01, nms=dict(type="nms", iou_threshold=0.65)),
 )
 
-dataset_type = 'CocoDataset'
-data_root = 'data/cityscapes/'
+dataset_type = "CocoDataset"
+data_root = "data/cityscapes/"
 backend_args = None
 
 train_pipeline = [
@@ -114,7 +151,7 @@ train_pipeline = [
 
 test_pipeline = [
     dict(type="LoadImageFromFile", backend_args=backend_args),
-    dict(type="FixCityscapesPath", data_root=data_root, split='val'),
+    dict(type="FixCityscapesPath", data_root=data_root, split="val"),
     dict(type="LoadAnnotations", with_bbox=True, with_seg=True),
     dict(type="Resize", scale=IMG_SCALE, keep_ratio=False),
     dict(type="Pad", pad_to_square=False, size_divisor=32, pad_val=dict(img=(114.0, 114.0, 114.0), seg=255)),
@@ -129,14 +166,11 @@ train_dataset = dict(
     dataset=dict(
         type=dataset_type,
         data_root=data_root,
-        data_prefix=dict(
-            img='leftImg8bit/train',
-            seg_map_path='gtFine/train'
-        ),
-        ann_file='annotations/instancesonly_filtered_gtFine_train.json',
+        data_prefix=dict(img="leftImg8bit/train", seg_map_path="gtFine/train"),
+        ann_file="annotations/instancesonly_filtered_gtFine_train.json",
         pipeline=[
             dict(type="LoadImageFromFile", backend_args=backend_args),
-            dict(type="FixCityscapesPath", data_root=data_root, split='train'),
+            dict(type="FixCityscapesPath", data_root=data_root, split="train"),
             dict(type="LoadAnnotations", with_bbox=True, with_seg=True),
         ],
         filter_cfg=dict(filter_empty_gt=False, min_size=8),
@@ -163,11 +197,8 @@ val_dataloader = dict(
     dataset=dict(
         type=dataset_type,
         data_root=data_root,
-        data_prefix=dict(
-            img='leftImg8bit/val', 
-            seg_map_path='gtFine/val'
-        ),
-        ann_file='annotations/instancesonly_filtered_gtFine_val.json',
+        data_prefix=dict(img="leftImg8bit/val", seg_map_path="gtFine/val"),
+        ann_file="annotations/instancesonly_filtered_gtFine_val.json",
         test_mode=True,
         pipeline=test_pipeline,
         backend_args=backend_args,
@@ -177,7 +208,7 @@ val_dataloader = dict(
 test_dataloader = val_dataloader
 
 val_evaluator = [
-    dict(type='mmseg.IoUMetric', ignore_index=255, iou_metrics=['mIoU'], prefix="seg", classes=seg_classes)
+    dict(type="mmseg.IoUMetric", ignore_index=255, iou_metrics=["mIoU"], prefix="seg", classes=seg_classes)
 ]
 test_evaluator = val_evaluator
 
@@ -224,19 +255,9 @@ log_config = dict(
 )
 
 default_hooks = dict(
-    checkpoint=dict(
-        interval=interval,
-        max_keep_ckpts=3, 
-        save_best='seg/mIoU',
-        rule='greater'
-    ),
+    checkpoint=dict(interval=interval, max_keep_ckpts=3, save_best="seg/mIoU", rule="greater"),
     visualization=dict(
-        type='DetVisualizationHook',
-        draw=False,
-        interval=50,
-        show=False,
-        wait_time=2,
-        test_out_dir='vis_data'
+        type="DetVisualizationHook", draw=False, interval=50, show=False, wait_time=2, test_out_dir="vis_data"
     ),
 )
 
@@ -260,8 +281,8 @@ vis_backends = [
 ]
 
 visualizer = dict(
-    type='DetLocalVisualizer',
-    vis_backends=[dict(type='LocalVisBackend'), dict(type='TensorboardVisBackend')],
-    name='visualizer',
+    type="DetLocalVisualizer",
+    vis_backends=[dict(type="LocalVisBackend"), dict(type="TensorboardVisBackend")],
+    name="visualizer",
     alpha=0.5,
 )

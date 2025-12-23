@@ -6,6 +6,7 @@ import torch
 import torch.nn as nn
 from torch.autograd import Function
 
+
 class SiLU(nn.Module):
     """export-friendly version of nn.SiLU()"""
 
@@ -13,22 +14,24 @@ class SiLU(nn.Module):
     def forward(x):
         return x * torch.sigmoid(x)
 
+
 class PactFix(nn.Module):
     """export-friendly version of nn.SiLU()"""
 
     @staticmethod
     def forward(x, alpha=4.0):
-        y = torch.clamp(x, min = 0, max = alpha)
+        y = torch.clamp(x, min=0, max=alpha)
         return y
 
+
 class Pact(Function):
-    @staticmethod        
+    @staticmethod
     def forward(ctx, x, alpha, k):
         ctx.save_for_backward(x, alpha)
         # y_1 = 0.5 * ( torch.abs(x).detach() - torch.abs(x - alpha).detach() + alpha.item() )
-        y = torch.clamp(x, min = 0, max = alpha.item())
+        y = torch.clamp(x, min=0, max=alpha.item())
         scale = (2**k - 1) / alpha
-        y_q = torch.round( y * scale) / scale
+        y_q = torch.round(y * scale) / scale
         return y_q
 
     @staticmethod
@@ -36,20 +39,24 @@ class Pact(Function):
         # Backward function, I borrowed code from
         # https://github.com/obilaniu/GradOverride/blob/master/functional.py
         # We get dL / dy_q as a gradient
-        x, alpha, = ctx.saved_tensors
+        (
+            x,
+            alpha,
+        ) = ctx.saved_tensors
         # Weight gradient is only valid when [0, alpha]
         # Actual gradient for alpha,
         # By applying Chain Rule, we get dL / dy_q * dy_q / dy * dy / dalpha
         # dL / dy_q = argument,  dy_q / dy * dy / dalpha = 0, 1 with x value range
-        lower_bound      = x < 0
-        upper_bound      = x > alpha
+        lower_bound = x < 0
+        upper_bound = x > alpha
         # x_range       = 1.0-lower_bound-upper_bound
-        x_range = ~(lower_bound|upper_bound)
+        x_range = ~(lower_bound | upper_bound)
         grad_alpha = torch.sum(dLdy_q * torch.ge(x, alpha).float()).view(-1)
         return dLdy_q * x_range.float(), grad_alpha, None
-    
+
+
 def get_activation(name="silu", inplace=True):
-    #name = 'relu'
+    # name = 'relu'
     name = name.lower()
     if name == "silu":
         module = nn.SiLU(inplace=inplace)
@@ -57,9 +64,9 @@ def get_activation(name="silu", inplace=True):
         module = nn.ReLU(inplace=inplace)
     elif name == "lrelu":
         module = nn.LeakyReLU(0.1, inplace=inplace)
-    elif name == "pact":        
+    elif name == "pact":
         module = Pact.apply
-    elif name == "pactfix":        
+    elif name == "pactfix":
         module = PactFix()
     elif name == "relu6":
         module = nn.ReLU6()
@@ -67,14 +74,15 @@ def get_activation(name="silu", inplace=True):
         raise AttributeError("Unsupported act type: {}".format(name))
     return module
 
+
 K = 2
-#fisrt = True
+
+
+# fisrt = True
 class BaseConv(nn.Module):
     """A Conv2d -> Batchnorm -> silu/leaky relu block"""
 
-    def __init__(
-        self, in_channels, out_channels, ksize, stride, groups=1, bias=False, act="silu"
-    ):
+    def __init__(self, in_channels, out_channels, ksize, stride, groups=1, bias=False, act="silu"):
         super().__init__()
         # same padding
         pad = (ksize - 1) // 2
@@ -90,15 +98,14 @@ class BaseConv(nn.Module):
         self.bn = nn.BatchNorm2d(out_channels)
         self.act = get_activation(act, inplace=True)
         self.act_name = act
-        if (self.act_name == "pact") :
-            self.alpha = nn.Parameter(torch.tensor(20.))
+        if self.act_name == "pact":
+            self.alpha = nn.Parameter(torch.tensor(20.0))
 
-        
     def forward(self, x):
-        if (self.act_name == "pact") :
+        if self.act_name == "pact":
             return self.act(self.bn(self.conv(x)), self.alpha, 2)
         else:
-            #print(self.conv)
+            # print(self.conv)
             return self.act(self.bn(self.conv(x)))
 
     def fuseforward(self, x):
@@ -118,9 +125,7 @@ class DWConv(nn.Module):
             groups=in_channels,
             act=act,
         )
-        self.pconv = BaseConv(
-            in_channels, out_channels, ksize=1, stride=1, groups=1, act=act
-        )
+        self.pconv = BaseConv(in_channels, out_channels, ksize=1, stride=1, groups=1, act=act)
 
     def forward(self, x):
         x = self.dconv(x)
@@ -129,16 +134,7 @@ class DWConv(nn.Module):
 
 class Bottleneck(nn.Module):
     # Standard bottleneck
-    def __init__(
-        self,
-        in_channels,
-        out_channels,
-        shortcut=True,
-        expansion=0.5,
-        depthwise=False,
-        act="silu",
-        kernel=3
-    ):
+    def __init__(self, in_channels, out_channels, shortcut=True, expansion=0.5, depthwise=False, act="silu", kernel=3):
         super().__init__()
         hidden_channels = int(out_channels * expansion)
         Conv = DWConv if depthwise else BaseConv
@@ -179,7 +175,6 @@ class BottleneckV8(nn.Module):
         return y
 
 
-
 class Bottleneck_EFF(nn.Module):
     # Standard bottleneck
     def __init__(
@@ -190,7 +185,7 @@ class Bottleneck_EFF(nn.Module):
         expansion=0.5,
         depthwise=False,
         act="silu",
-        kernel=3,            
+        kernel=3,
     ):
         super().__init__()
         hidden_channels = int(out_channels * expansion)
@@ -203,7 +198,7 @@ class Bottleneck_EFF(nn.Module):
         y = self.conv2(self.conv1(x))
         if self.use_add:
             y = y + x
-        return y    
+        return y
 
 
 class ResLayer(nn.Module):
@@ -212,12 +207,8 @@ class ResLayer(nn.Module):
     def __init__(self, in_channels: int):
         super().__init__()
         mid_channels = in_channels // 2
-        self.layer1 = BaseConv(
-            in_channels, mid_channels, ksize=1, stride=1, act="lrelu"
-        )
-        self.layer2 = BaseConv(
-            mid_channels, in_channels, ksize=3, stride=1, act="lrelu"
-        )
+        self.layer1 = BaseConv(in_channels, mid_channels, ksize=1, stride=1, act="lrelu")
+        self.layer2 = BaseConv(mid_channels, in_channels, ksize=3, stride=1, act="lrelu")
 
     def forward(self, x):
         out = self.layer2(self.layer1(x))
@@ -227,18 +218,11 @@ class ResLayer(nn.Module):
 class SPPBottleneck(nn.Module):
     """Spatial pyramid pooling layer used in YOLOv3-SPP"""
 
-    def __init__(
-        self, in_channels, out_channels, kernel_sizes=(5, 9, 13), activation="silu"
-    ):
+    def __init__(self, in_channels, out_channels, kernel_sizes=(5, 9, 13), activation="silu"):
         super().__init__()
         hidden_channels = in_channels // 2
         self.conv1 = BaseConv(in_channels, hidden_channels, 1, stride=1, act=activation)
-        self.m = nn.ModuleList(
-            [
-                nn.MaxPool2d(kernel_size=ks, stride=1, padding=ks // 2)
-                for ks in kernel_sizes
-            ]
-        )
+        self.m = nn.ModuleList([nn.MaxPool2d(kernel_size=ks, stride=1, padding=ks // 2) for ks in kernel_sizes])
         conv2_channels = hidden_channels * (len(kernel_sizes) + 1)
         self.conv2 = BaseConv(conv2_channels, out_channels, 1, stride=1, act=activation)
 
@@ -277,20 +261,16 @@ class CSPLayer(nn.Module):
         self.conv2 = BaseConv(in_channels, hidden_channels, 1, stride=1, act=act)
         self.elan = elan
 
-        if (self.elan == True) :
-            self.conv3 = BaseConv((n+1) * hidden_channels, out_channels, 1, stride=1, act=act)
+        if self.elan == True:
+            self.conv3 = BaseConv((n + 1) * hidden_channels, out_channels, 1, stride=1, act=act)
             module_list = [
-                BottleneckV8(
-                    hidden_channels, hidden_channels, shortcut, 1.0, depthwise, act=act, kernel=kernel
-                )
+                BottleneckV8(hidden_channels, hidden_channels, shortcut, 1.0, depthwise, act=act, kernel=kernel)
                 for _ in range(n)
-            ]            
+            ]
         else:
             self.conv3 = BaseConv(2 * hidden_channels, out_channels, 1, stride=1, act=act)
             module_list = [
-                Bottleneck(
-                    hidden_channels, hidden_channels, shortcut, 1.0, depthwise, act=act, kernel=kernel
-                )
+                Bottleneck(hidden_channels, hidden_channels, shortcut, 1.0, depthwise, act=act, kernel=kernel)
                 for _ in range(n)
             ]
         self.m = nn.Sequential(*module_list)
@@ -299,16 +279,17 @@ class CSPLayer(nn.Module):
         x_1 = self.conv1(x)
         x_2 = self.conv2(x)
         el = []
-        if (self.elan == True) :
+        if self.elan == True:
             x = x_1
             for m in self.m:
                 x = m(x)
                 el.append(x)
             x = torch.cat([x_2] + [m for m in el], dim=1)
-        else :
+        else:
             x_1 = self.m(x_1)
             x = torch.cat((x_1, x_2), dim=1)
         return self.conv3(x)
+
 
 class CSPLayer_EFF(nn.Module):
     """C3 in yolov5, CSP Bottleneck with 3 convolutions"""
@@ -319,12 +300,12 @@ class CSPLayer_EFF(nn.Module):
         out_channels,
         n=1,
         shortcut=True,
-        #expansion=0.5,
+        # expansion=0.5,
         expansion=1.0,
         depthwise=False,
         act="silu",
         kernel=3,
-        elan=False,            
+        elan=False,
     ):
         """
         Args:
@@ -339,21 +320,16 @@ class CSPLayer_EFF(nn.Module):
         self.conv2 = BaseConv(in_channels, hidden_channels, 3, stride=1, act=act)
         self.elan = elan
 
-        if (self.elan == True) :
-            self.conv3 = BaseConv((n+1) * hidden_channels, out_channels, 1, stride=1, act=act)
+        if self.elan == True:
+            self.conv3 = BaseConv((n + 1) * hidden_channels, out_channels, 1, stride=1, act=act)
             module_list = [
-                BottleneckV8(
-                    hidden_channels, hidden_channels, shortcut, 1.0, depthwise, act=act
-                )
-                for _ in range(n)
-            ]            
-        else :
+                BottleneckV8(hidden_channels, hidden_channels, shortcut, 1.0, depthwise, act=act) for _ in range(n)
+            ]
+        else:
             self.conv3 = BaseConv(2 * hidden_channels, out_channels, 3, stride=1, act=act)
 
             module_list = [
-                Bottleneck_EFF(
-                    hidden_channels, hidden_channels, shortcut, 1.0, depthwise, act=act, kernel=kernel
-                )
+                Bottleneck_EFF(hidden_channels, hidden_channels, shortcut, 1.0, depthwise, act=act, kernel=kernel)
                 for _ in range(n)
             ]
         self.m = nn.Sequential(*module_list)
@@ -362,13 +338,13 @@ class CSPLayer_EFF(nn.Module):
         x_1 = self.conv1(x)
         x_2 = self.conv2(x)
         el = []
-        if (self.elan == True) :
+        if self.elan == True:
             x = x_1
             for m in self.m:
                 x = m(x)
                 el.append(x)
             x = torch.cat([x_2] + [m for m in el], dim=1)
-        else :
+        else:
             x_1 = self.m(x_1)
             x = torch.cat((x_1, x_2), dim=1)
         return self.conv3(x)
@@ -383,7 +359,7 @@ class ELAN(nn.Module):
         out_channels,
         n=3,
         shortcut=True,
-        #expansion=0.5,
+        # expansion=0.5,
         expansion=1.0,
         depthwise=False,
         act="silu",
@@ -398,15 +374,11 @@ class ELAN(nn.Module):
         # ch_in, ch_out, number, shortcut, groups, expansion
         super().__init__()
         hidden_channels = int(out_channels * expansion)  # hidden channels
-        self.conv1 = BaseConv(hidden_channels, out_channels, 3, stride=1, act=act)        
+        self.conv1 = BaseConv(hidden_channels, out_channels, 3, stride=1, act=act)
         self.conv_c = BaseConv(in_channels, hidden_channels, kernel, stride=1, act=act)
-        self.conv2 = BaseConv((n+1) * hidden_channels, out_channels, 1, stride=1, act=act)
+        self.conv2 = BaseConv((n + 1) * hidden_channels, out_channels, 1, stride=1, act=act)
 
-
-        module_list = [
-            self.conv_c
-            for _ in range(n)
-        ]
+        module_list = [self.conv_c for _ in range(n)]
         self.m = nn.Sequential(*module_list)
 
     def forward(self, x):
@@ -417,7 +389,6 @@ class ELAN(nn.Module):
             el.append(x)
         x = torch.cat([x_1] + [m for m in el], dim=1)
         return self.conv2(x)
-
 
 
 class Focus(nn.Module):
@@ -445,22 +416,20 @@ class Focus(nn.Module):
         return self.conv(x)
 
 
-
 class SimpleStem(nn.Module):
     """Simple Stem for Acceleration on Embedded Devices"""
 
     def __init__(self, in_channels, out_channels, ksize=1, stride=1, act="silu"):
         super().__init__()
-        #self.conv1 = BaseConv(in_channels, out_channels, ksize, stride, act=act)
-        #self.down1 = BaseConv(out_channels, out_channels, ksize, 2, act=act)
-        self.down1 = BaseConv(in_channels, out_channels, ksize, 2, act=act)        
+        # self.conv1 = BaseConv(in_channels, out_channels, ksize, stride, act=act)
+        # self.down1 = BaseConv(out_channels, out_channels, ksize, 2, act=act)
+        self.down1 = BaseConv(in_channels, out_channels, ksize, 2, act=act)
         self.conv2 = BaseConv(out_channels, out_channels, ksize, stride, act=act)
-        #self.down2 = BaseConv(out_channels, out_channels, ksize, 2, act=act)                
+        # self.down2 = BaseConv(out_channels, out_channels, ksize, 2, act=act)
 
     def forward(self, x):
-        #x = self.conv1(x)
+        # x = self.conv1(x)
         x = self.down1(x)
         x = self.conv2(x)
-        #x = self.down2(x)                
+        # x = self.down2(x)
         return x
-    

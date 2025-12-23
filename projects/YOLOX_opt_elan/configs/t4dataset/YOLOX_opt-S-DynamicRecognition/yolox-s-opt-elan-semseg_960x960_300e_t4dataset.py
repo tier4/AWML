@@ -65,10 +65,10 @@ model = dict(
         in_channels=128,
         feat_channels=128,
         act_cfg=dict(type=activation),
-        loss_cls=dict(type='CrossEntropyLoss', use_sigmoid=True, loss_weight=0.0),
-        loss_bbox=dict(type='IoULoss', loss_weight=0.0),
-        loss_obj=dict(type='CrossEntropyLoss', use_sigmoid=True, loss_weight=0.0),
-        loss_l1=dict(type='L1Loss', loss_weight=0.0),   
+        loss_cls=dict(type="CrossEntropyLoss", use_sigmoid=True, loss_weight=0.0),
+        loss_bbox=dict(type="IoULoss", loss_weight=0.0),
+        loss_obj=dict(type="CrossEntropyLoss", use_sigmoid=True, loss_weight=0.0),
+        loss_l1=dict(type="L1Loss", loss_weight=0.0),
     ),
     mask_head=dict(
         type="YOLOXSegHead",
@@ -155,45 +155,45 @@ classes = (
 )
 
 palette = [
-    (150, 120, 90),   # 0: animal
-    (119, 11, 32),    # 1: bicycle
-    (70, 70, 70),     # 2: building
-    (0, 60, 100),     # 3: bus 
-    (0, 0, 142),      # 4: car
-    (250, 170, 30),   # 5: cone 
-    (230, 150, 140),  # 6: construction 
-    (140, 140, 200),  # 7: crosswalk 
+    (150, 120, 90),  # 0: animal
+    (119, 11, 32),  # 1: bicycle
+    (70, 70, 70),  # 2: building
+    (0, 60, 100),  # 3: bus
+    (0, 0, 142),  # 4: car
+    (250, 170, 30),  # 5: cone
+    (230, 150, 140),  # 6: construction
+    (140, 140, 200),  # 7: crosswalk
     (255, 255, 255),  # 8: dashed_lane_marking
-    (200, 200, 200),  # 9: deceleration_line 
-    (190, 153, 153),  # 10: gate 
-    (250, 170, 30),   # 11: guide_post
+    (200, 200, 200),  # 9: deceleration_line
+    (190, 153, 153),  # 10: gate
+    (250, 170, 30),  # 11: guide_post
     (255, 255, 255),  # 12: laneline_dash_white
-    (255, 255, 0),    # 13: laneline_dash_yellow
-    (0, 255, 0),      # 14: laneline_solid_green
-    (255, 0, 0),      # 15: laneline_solid_red
+    (255, 255, 0),  # 13: laneline_dash_yellow
+    (0, 255, 0),  # 14: laneline_solid_green
+    (255, 0, 0),  # 15: laneline_solid_red
     (255, 255, 255),  # 16: laneline_solid_white
-    (255, 215, 0),    # 17: laneline_solid_yellow 
-    (0, 255, 255),    # 18: marking_arrow
-    (200, 0, 200),    # 19: marking_character 
-    (150, 0, 150),    # 20: marking_other
-    (0, 0, 230),      # 21: motorcycle 
-    (80, 80, 80),     # 22: other_obstacle
-    (250, 170, 160),  # 23: other_pedestrian 
-    (100, 80, 200),   # 24: other_vehicle 
+    (255, 215, 0),  # 17: laneline_solid_yellow
+    (0, 255, 255),  # 18: marking_arrow
+    (200, 0, 200),  # 19: marking_character
+    (150, 0, 150),  # 20: marking_other
+    (0, 0, 230),  # 21: motorcycle
+    (80, 80, 80),  # 22: other_obstacle
+    (250, 170, 160),  # 23: other_pedestrian
+    (100, 80, 200),  # 24: other_vehicle
     (180, 165, 180),  # 25: parking_lot
-    (220, 20, 60),    # 26: pedestrian 
-    (153, 153, 153),  # 27: pole 
-    (128, 64, 128),   # 28: road
+    (220, 20, 60),  # 26: pedestrian
+    (153, 153, 153),  # 27: pole
+    (128, 64, 128),  # 28: road
     (110, 110, 110),  # 29: road_debris
-    (244, 35, 232),   # 30: sidewalk
-    (70, 130, 180),   # 31: sky 
-    (220, 220, 220),  # 32: stopline 
+    (244, 35, 232),  # 30: sidewalk
+    (70, 130, 180),  # 31: sky
+    (220, 220, 220),  # 32: stopline
     (160, 150, 180),  # 33: striped_road_marking
-    (250, 170, 30),   # 34: traffic_light
-    (220, 220, 0),    # 35: traffic_sign
-    (0, 80, 100),     # 36: train 
-    (0, 0, 70),       # 37: truck 
-    (107, 142, 35),   # 38: vegetation/terrain
+    (250, 170, 30),  # 34: traffic_light
+    (220, 220, 0),  # 35: traffic_sign
+    (0, 80, 100),  # 36: train
+    (0, 0, 70),  # 37: truck
+    (107, 142, 35),  # 38: vegetation/terrain
     (102, 102, 156),  # 39: wall/fence
 ]
 metainfo = dict(classes=classes, palette=palette)
@@ -254,7 +254,7 @@ val_dataloader = dict(
         pipeline=test_pipeline,
         backend_args=backend_args,
         metainfo=metainfo,
-        indices=2000, 
+        indices=2000,
     ),
 )
 
@@ -262,18 +262,13 @@ test_dataloader = val_dataloader
 
 val_evaluator = [
     dict(type="VOCMetric", metric="mAP", prefix="det"),
-    dict(type='mmseg.IoUMetric', ignore_index=255, iou_metrics=['mIoU'], prefix="seg")
+    dict(type="mmseg.IoUMetric", ignore_index=255, iou_metrics=["mIoU"], prefix="seg"),
 ]
 
 test_evaluator = val_evaluator
 
 # train_cfg = dict(max_epochs=max_epochs, val_interval=interval)
-train_cfg = dict(
-    _delete_=True,
-    type='IterBasedTrainLoop',
-    max_iters=200000,     
-    val_interval=1000
-)
+train_cfg = dict(_delete_=True, type="IterBasedTrainLoop", max_iters=200000, val_interval=1000)
 
 # optimizer
 optimizer = dict(
@@ -323,24 +318,11 @@ log_config = dict(
 # )
 default_hooks = dict(
     checkpoint=dict(
-        type='CheckpointHook', 
-        interval=1000,
-        by_epoch=False,
-        max_keep_ckpts=5, 
-        save_best='seg/mIoU',
-        rule='greater'
+        type="CheckpointHook", interval=1000, by_epoch=False, max_keep_ckpts=5, save_best="seg/mIoU", rule="greater"
     ),
-    logger=dict(
-        type='LoggerHook', 
-        interval=50 
-    ),
+    logger=dict(type="LoggerHook", interval=50),
     visualization=dict(
-        type='DetVisualizationHook',
-        draw=False,
-        interval=100,
-        show=False,
-        wait_time=2,
-        test_out_dir='vis_data'
+        type="DetVisualizationHook", draw=False, interval=100, show=False, wait_time=2, test_out_dir="vis_data"
     ),
 )
 
@@ -365,8 +347,8 @@ vis_backends = [
 ]
 
 visualizer = dict(
-    type='DetLocalVisualizer',
-    vis_backends=[dict(type='LocalVisBackend'), dict(type='TensorboardVisBackend')],
-    name='visualizer',
+    type="DetLocalVisualizer",
+    vis_backends=[dict(type="LocalVisBackend"), dict(type="TensorboardVisBackend")],
+    name="visualizer",
     alpha=0.3,
 )
