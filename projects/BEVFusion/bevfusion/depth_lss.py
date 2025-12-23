@@ -575,6 +575,7 @@ class DepthLSSTransform(BaseDepthTransform):
         ybound: Tuple[float, float, float],
         zbound: Tuple[float, float, float],
         dbound: Tuple[float, float, float],
+        depth_lidar: bool = True,
         downsample: int = 1,
         lidar_depth_image_last_stride: int = 2,
         gaussian_sigma: float = 1.0,
@@ -593,9 +594,16 @@ class DepthLSSTransform(BaseDepthTransform):
         )
 
         self.gaussian_sigma = gaussian_sigma
-        self.dtransform = LidarDepthImageNet(in_channels=1, out_channels=64, last_stride=lidar_depth_image_last_stride)
+        self.depth_lidar = depth_lidar
+        if self.depth_lidar:
+            self.dtransform = LidarDepthImageNet(in_channels=1, out_channels=64, last_stride=lidar_depth_image_last_stride)
+            dtransform_out_channels = self.dtransform.out_channels
+        else:
+            self.dtransform = None
+            dtransform_out_channels = 0 
+
         self.depthnet = DepthLSSNet(
-            in_channels=in_channels + self.dtransform.out_channels, out_channels=self.D + self.C
+            in_channels=in_channels + dtransform_out_channels, out_channels=self.D + self.C
         )
         self.downsample = DownSampleNet(downsample=downsample, in_channels=out_channels, out_channels=out_channels)
 
@@ -678,9 +686,11 @@ class DepthLSSTransform(BaseDepthTransform):
         d = d.view(B * N, *d.shape[2:])
 
         gt_depth_distr, counts_3d, gt_gaussian_probs = self.get_depth_gt_bins(d=d, B=B, N=N, C=C, fH=fH, fW=fW)
-
-        d = self.dtransform(d)
-        x = torch.cat([d, x], dim=1)
+        
+        if self.dtransform is not None:
+            d = self.dtransform(d)
+            x = torch.cat([d, x], dim=1)
+        
         x = self.depthnet(x)
 
         depth = x[:, : self.D].softmax(dim=1)
