@@ -234,7 +234,7 @@ class T4Metric(NuScenesMetric):
                                         including 3D bounding boxes, labels, and point counts.
 
         Returns:
-            Ground truth bboxes with the following keys: 
+            Ground truth bboxes with the following keys:
             {"bboxes_3d", "scores_3d", "labels_3d", "num_lidar_pts"}.
         """
         # Extract evaluation annotation info for the current sample
