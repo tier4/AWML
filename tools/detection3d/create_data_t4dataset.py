@@ -21,10 +21,10 @@ from t4_devkit.schema import Sample, SampleData
 from tools.detection3d.t4dataset_converters.t4converter import (
     extract_tier4_data,
     get_annotations,
-    get_lidarseg_annotations,
     get_ego2global,
     get_lidar_points_info,
     get_lidar_sweeps_info,
+    get_lidarseg_annotations,
     obtain_sensor2top,
     parse_camera_path,
 )
