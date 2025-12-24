@@ -14,7 +14,6 @@ from mmdet3d.datasets.utils import convert_quaternion_to_matrix
 from mmengine.config import Config
 from mmengine.logging import print_log
 from t4_devkit import Tier4
-from t4_devkit.common.io import load_json
 from t4_devkit.common.timestamp import us2sec
 from t4_devkit.schema import Sample, SampleData
 
