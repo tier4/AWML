@@ -234,8 +234,8 @@ class T4Metric(NuScenesMetric):
                                         including 3D bounding boxes, labels, and point counts.
 
         Returns:
-            FrameGroundTruth: A structured representation of the ground truth objects,
-                            including position, orientation, shape, velocity, and labels.
+            Ground truth bboxes with the following keys: 
+            {"bboxes_3d", "scores_3d", "labels_3d", "num_lidar_pts"}.
         """
         # Extract evaluation annotation info for the current sample
         eval_info: dict = data_sample.get("eval_ann_info", {})
