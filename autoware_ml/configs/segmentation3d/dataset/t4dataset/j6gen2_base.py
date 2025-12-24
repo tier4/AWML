@@ -7,7 +7,7 @@ info_test_file_name = "t4dataset_j6gen2_base_infos_test.pkl"
 # dataset scene setting
 dataset_version_config_root = "autoware_ml/configs/t4dataset/"
 dataset_version_list = [
-    "db_semseg_demo",
+    "db_j6gen2_semaseg_v1",
 ]
 
 camera_types = {}
@@ -17,33 +17,33 @@ input_modality = dict(use_lidar=True, use_camera=False)
 
 # class setting
 class_names = [
-    "unknown",
+    "unpainted",
     "driveable_surface",
-    "manmade",
     "other_flat_surface",
-    "vegetation",
     "sidewalk",
+    "manmade",
+    "vegetation",
     "car",
-    "pedestrian",
+    "bus",
     "emergency_vehicle",
+    "train",
     "truck",
     "tractor_unit",
     "semi_trailer",
-    "bus",
-    "bicycle",
-    "motorcycle",
     "construction_vehicle",
-    "other_stuff",
-    "noise",
-    "traffic_cone",
-    "debris",
     "forklift",
     "kart",
-    "stroller",
+    "motorcycle",
+    "bicycle",
+    "pedestrian",
     "personal_mobility",
-    "pushable_pullable",
     "animal",
-    "train",
+    "pushable_pullable",
+    "traffic_cone",
+    "stroller",
+    "debris",
+    "other_stuff",
+    "noise",
     "ghost_point",
     "out_of_sync",
 ]

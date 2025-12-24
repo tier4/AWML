@@ -29,19 +29,3 @@ docker run -it --rm --gpus '"device=0"' --shm-size=64g --name awml -p 6006:6006 
 ```sh
 python tools/detection3d/create_data_t4dataset.py --root_path ./data/t4dataset --config autoware_ml/configs/segmentation3d/dataset/t4dataset/j6gen2_base.py --version j6gen2_lidarseg --max_sweeps 1 --out_dir ./data/t4dataset/info/user_name
 ```
-
-## 3. Train
-
-TODO
-
-## 4. Analyze
-
-TODO
-
-### 4.2. Visualization
-
-TODO
-
-## 5. Deploy
-
-TODO

@@ -21,6 +21,7 @@ from t4_devkit.schema import Sample, SampleData
 from tools.detection3d.t4dataset_converters.t4converter import (
     extract_tier4_data,
     get_annotations,
+    get_lidarseg_annotations,
     get_ego2global,
     get_lidar_points_info,
     get_lidar_sweeps_info,
@@ -133,34 +134,17 @@ def get_info(
             sd_record,
             max_sweeps,
         ),
+        get_annotations(
+            t4,
+            sample.ann_3ds,
+            boxes,
+            e2g_r_mat,
+            l2e_r_mat,
+            cfg,
+        ),
+        get_lidarseg_annotations(t4, sd_record, i, lidar_token),
     ]:
         info.update(new_info)
-
-    # Add box annotation if available
-    if len(boxes) > 0:
-        info.update(
-            get_annotations(
-                t4,
-                sample.ann_3ds,
-                boxes,
-                e2g_r_mat,
-                l2e_r_mat,
-                cfg.name_mapping,
-                cfg.class_names,
-                cfg.filter_attributes,
-                merge_objects=cfg.merge_objects,
-                merge_type=cfg.merge_type,
-            )
-        )
-
-    # Add lidarseg annotation if available
-    if hasattr(t4, "lidarseg") and t4.lidarseg:
-        assert i < len(t4.lidarseg), "Index exceeds number of lidarseg records!"
-        assert t4.lidarseg[i].sample_data_token == lidar_token, "Sample data token mismatch!"
-        info["pts_semantic_mask_path"] = osp.join(t4.data_root, t4.lidarseg[i].filename)
-        info["lidar_sources_info"] = load_json(osp.join(t4.data_root, sd_record.info_filename))
-    elif len(boxes) == 0:
-        raise ValueError(f"Missing boxes and point cloud semantic segmentation for sample {sample.token}!")
 
     camera_types = cfg.camera_types
     if len(camera_types) > 0:
