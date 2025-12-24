@@ -19,8 +19,8 @@ from models import build_model
 from utils.logger import get_root_logger
 from utils.misc import (
     AverageMeter,
-    invert_class_mapping,
     intersection_and_union,
+    invert_class_mapping,
     make_dirs,
 )
 from utils.registry import Registry

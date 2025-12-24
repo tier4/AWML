@@ -7,8 +7,7 @@ Please cite our work if the code is helpful to you.
 
 import os
 import warnings
-from collections import abc
-from collections import defaultdict
+from collections import abc, defaultdict
 from importlib import import_module
 
 import numpy as np

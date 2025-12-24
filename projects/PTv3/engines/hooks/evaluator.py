@@ -9,8 +9,7 @@ import numpy as np
 import torch
 import torch.distributed as dist
 import utils.comm as comm
-from utils.misc import intersection_and_union_gpu
-from utils.misc import invert_class_mapping
+from utils.misc import intersection_and_union_gpu, invert_class_mapping
 
 from .builder import HOOKS
 from .default import HookBase
