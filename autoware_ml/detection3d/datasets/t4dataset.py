@@ -153,11 +153,6 @@ class T4Dataset(NuScenesDataset):
                     else:
                         sweep["lidar_points"]["lidar_path"] = osp.join(self.data_prefix["sweeps"], file_suffix)
 
-            if "pts_semantic_mask_path" in info:
-                info["pts_semantic_mask_path"] = osp.join(
-                    self.data_prefix.get("pts_semantic_mask", ""), info["pts_semantic_mask_path"]
-                )
-
         if self.modality["use_camera"]:
             for cam_id, img_info in info["images"].items():
                 if "img_path" in img_info:
