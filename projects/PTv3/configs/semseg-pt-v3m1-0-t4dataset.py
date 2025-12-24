@@ -20,37 +20,37 @@ dataset_type = "T4Dataset"
 data_root = "data/t4dataset"
 ignore_index = -1
 class_mapping = {
-    0: ignore_index,  # ignore unknown
-    1: 1,
-    2: 2,
-    3: 3,
-    4: 4,
-    5: 5,
-    6: 6,
-    7: 7,
-    8: 8,
-    9: 9,
-    10: 10,
-    11: 11,
-    12: 12,
-    13: 13,
-    14: 14,
-    15: 15,
-    16: 16,
-    17: 17,
-    18: 18,
-    19: 19,
-    20: 20,
-    21: 21,
-    22: 22,
-    23: 23,
-    24: 24,
-    25: 25,
-    26: 26,
-    27: 17,  # ghost point as noise
-    28: 17,  # out of sync as noise
+    "drivable_surface": 0,
+    "other_flat_surface": 1,
+    "sidewalk": 2,
+    "manmade": 3,
+    "vegetation": 4,
+    "car": 5,
+    "bus": 6,
+    "emergency_vehicle": 7,
+    "train": 8,
+    "truck": 9,
+    "tractor_unit": 10,
+    "semi_trailer": 11,
+    "construction_vehicle": 12,
+    "forklift": 13,
+    "kart": 14,
+    "motorcycle": 15,
+    "bicycle": 16,
+    "pedestrian": 17,
+    "personal_mobility": 18,
+    "animal": 19,
+    "pushable_pullable": 20,
+    "traffic_cone": 21,
+    "stroller": 22,
+    "debris": 23,
+    "other_stuff": 24,
+    "noise": 25,
+    "ghost_point": 25,
+    "out_of_sync": ignore_index,
+    "unpainted": ignore_index,
 }
-num_classes = 27
+num_classes = 26
 
 # model settings
 model = dict(

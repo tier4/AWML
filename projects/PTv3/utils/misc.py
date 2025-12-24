@@ -8,6 +8,7 @@ Please cite our work if the code is helpful to you.
 import os
 import warnings
 from collections import abc
+from collections import defaultdict
 from importlib import import_module
 
 import numpy as np
@@ -158,6 +159,26 @@ def import_modules_from_strings(imports, allow_failed_imports=False):
     if single_import:
         imported = imported[0]
     return imported
+
+
+def invert_class_mapping(mapping, separator="+"):
+    """
+    Inverts a dictionary mapping. If multiple keys share the same value,
+    they are concatenated using the provided separator.
+
+    Args:
+        mapping (dict): The dictionary to invert (e.g. {'class_name': id}).
+        separator (str): String used to join multiple names (default: '+').
+
+    Returns:
+        dict: Dictionary where keys are IDs and values are joined names.
+    """
+    grouped_map = defaultdict(list)
+
+    for name, class_id in mapping.items():
+        grouped_map[class_id].append(name)
+
+    return {class_id: separator.join(names) for class_id, names in grouped_map.items()}
 
 
 class DummyClass:

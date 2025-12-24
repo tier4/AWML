@@ -29,9 +29,9 @@ class T4Dataset(DefaultDataset):
         if split == "train":
             return os.path.join(self.data_root, "info", f"t4dataset_j6gen2_lidarseg_infos_train.pkl")
         elif split == "val":
-            return os.path.join(self.data_root, "info", f"t4dataset_j6gen2_lidarseg_infos_train.pkl")
+            return os.path.join(self.data_root, "info", f"t4dataset_j6gen2_lidarseg_infos_val.pkl")
         elif split == "test":
-            return os.path.join(self.data_root, "info", f"t4dataset_j6gen2_lidarseg_infos_train.pkl")
+            return os.path.join(self.data_root, "info", f"t4dataset_j6gen2_lidarseg_infos_test.pkl")
         else:
             raise NotImplementedError
 
@@ -49,6 +49,27 @@ class T4Dataset(DefaultDataset):
                 data_list.extend(info["data_list"])
         return data_list
 
+    def map_segments(self, segment, lidarseg_categories):
+        """Map raw segment labels to unified learning labels.
+
+        Args:
+            segment: Raw segment array with scene-specific labels
+            lidarseg_categories: Dict mapping category names to raw label values
+                (e.g., {"car": 2})
+
+        Returns:
+            Mapped segment array with unified learning labels
+        """
+        raw_to_category = {v: k for k, v in lidarseg_categories.items()}
+
+        def _map_segment(raw_label):
+            category = raw_to_category.get(raw_label, None)
+            if category is None:
+                return self.ignore_index
+            return self.learning_map.get(category, self.ignore_index)
+
+        return np.vectorize(_map_segment)(segment).astype(np.int64)
+
     def get_data(self, idx):
         data = self.data_list[idx % len(self.data_list)]
         lidar_path = os.path.join(self.data_root, data["lidar_points"]["lidar_path"])
@@ -57,8 +78,9 @@ class T4Dataset(DefaultDataset):
         strength = points[:, 3].reshape([-1, 1]) / 255  # scale strength to [0, 1]
 
         lidarseg_path = data["pts_semantic_mask_path"]
+        lidarseg_categories = data["pts_semantic_mask_categories"]
         segment = np.fromfile(str(lidarseg_path), dtype=np.uint8, count=-1).reshape([-1])
-        segment = np.vectorize(self.learning_map.__getitem__)(segment).astype(np.int64)
+        segment = self.map_segments(segment, lidarseg_categories)
 
         data_dict = dict(
             coord=coord,

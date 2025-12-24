@@ -19,6 +19,7 @@ from models import build_model
 from utils.logger import get_root_logger
 from utils.misc import (
     AverageMeter,
+    invert_class_mapping,
     intersection_and_union,
     make_dirs,
 )
@@ -283,11 +284,12 @@ class SemSegTester(TesterBase):
             allAcc = sum(intersection) / (sum(target) + 1e-10)
 
             logger.info("Val result: mIoU/mAcc/allAcc {:.4f}/{:.4f}/{:.4f}".format(mIoU, mAcc, allAcc))
+            mapped_class_names = invert_class_mapping(self.cfg.class_mapping)
             for i in range(self.cfg.data.num_classes):
                 logger.info(
                     "Class_{idx} - {name} Result: iou/accuracy {iou:.4f}/{accuracy:.4f}".format(
                         idx=i,
-                        name=self.cfg.class_names[i],
+                        name=mapped_class_names[i],
                         iou=iou_class[i],
                         accuracy=accuracy_class[i],
                     )
