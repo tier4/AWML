@@ -42,7 +42,10 @@ def create_info_data(
 
     # predict pseudo label
     pseudo_labeled_dataset_info: Dict[str, Any] = inference(
-        model_config, model_checkpoint_path, non_annotated_info_file_path.name
+        model_config,
+        model_checkpoint_path,
+        non_annotated_info_file_path.name,
+        logger,
     )
 
     # delete non_annotated info
