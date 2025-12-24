@@ -253,7 +253,7 @@ class T4Metric(NuScenesMetric):
 
         return {
             "bboxes_3d": gt_bboxes_3d,
-            "scores_3d": np.array([1.0 for _ in range(len(gt_bboxes_3d))]),
+            "scores_3d": np.ones(len(gt_bboxes_3d), dtype=np.float32),
             "labels_3d": gt_labels_3d,
             "num_lidar_pts": num_lidar_pts,
         }
