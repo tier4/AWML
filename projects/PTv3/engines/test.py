@@ -119,6 +119,9 @@ class TesterBase:
 @TESTERS.register_module()
 class SemSegTester(TesterBase):
     def test(self):
+        if not self.test_loader.dataset.data_list:
+            self.logger.warning("No data found in the test dataset, skipping test")
+            return
         assert self.test_loader.batch_size == 1
         logger = get_root_logger()
         logger.info(">>>>>>>>>>>>>>>> Start Evaluation >>>>>>>>>>>>>>>>")
