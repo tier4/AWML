@@ -1,7 +1,22 @@
 """CenterPoint deploy-only ONNX head variants.
 
-These heads adjust output ordering and forward behavior to improve ONNX export
-and downstream inference compatibility.
+This module provides ONNX-friendly implementations of the CenterPoint heads:
+
+- ``SeparateHeadONNX``: a variant of
+  :class:`mmdet3d.models.dense_heads.centerpoint_head.SeparateHead` that
+  redefines the ``heads`` ordering (e.g., ``heatmap``, ``reg``, ``height``,
+  ``dim``, rotation-related heads, ``vel``) to produce a stable, deterministic
+  output layout for export.
+- ``CenterHeadONNX``: a variant of
+  :class:`projects.CenterPoint.models.dense_heads.centerpoint_head.CenterHead`
+  that wraps a single-task ``SeparateHeadONNX`` and exposes an ONNX-oriented
+  ``forward`` interface, optionally changing the rotation representation to be
+  relative to the y-axis.
+
+In this context, *deploy-only* means these classes are intended for model
+export and downstream inference (e.g., ONNXRuntime, TensorRT) rather than for
+training: they focus on deterministic tensor ordering and export-compatible
+forward behavior, and do not add or modify any training-time loss computation.
 """
 
 from typing import Dict, List, Tuple
