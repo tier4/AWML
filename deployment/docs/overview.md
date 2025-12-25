@@ -9,7 +9,7 @@ The AWML Deployment Framework provides a standardized, task-agnostic approach to
 3. **Backend flexibility** – PyTorch, ONNX, and TensorRT backends are first-class citizens.
 4. **Pipeline architecture** – common pre/postprocessing with backend-specific inference stages.
 5. **Configuration-driven** – configs plus typed dataclasses provide predictable defaults and IDE support.
-6. **Dependency injection** – exporters, wrappers, and workflows are explicitly wired for clarity and testability.
+6. **Dependency injection** – exporters, wrappers, and export pipelines are explicitly wired for clarity and testability.
 7. **Type-safe building blocks** – typed configs, runtime contexts, and result objects reduce runtime surprises.
 8. **Extensible verification** – mixins compare nested outputs so that evaluators stay lightweight.
 

@@ -5,7 +5,7 @@ This document defines the responsibilities and boundaries between the primary de
 ### BaseDeploymentRunner (and project runners)
 - Owns the end-to-end deployment flow: load PyTorch model → export ONNX/TensorRT → verify → evaluate.
 - Constructs exporters via `ExporterFactory` and never embeds exporter-specific logic.
-- Injects project-provided `BaseDataLoader`, `BaseEvaluator`, model configs, wrappers, and optional workflows.
+- Injects project-provided `BaseDataLoader`, `BaseEvaluator`, model configs, wrappers, and optional export pipelines.
 - Ensures evaluators receive:
   - Loaded PyTorch model (`set_pytorch_model`)
   - Runtime/export artifacts (via `ArtifactManager`)

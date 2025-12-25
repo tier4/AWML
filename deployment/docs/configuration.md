@@ -138,6 +138,4 @@ Use `from_mapping()` / `from_dict()` helpers to instantiate typed configs from e
 
 ## Example Config Paths
 
-- `projects/CenterPoint/deploy/configs/deploy_config.py`
-- `projects/YOLOX_opt_elan/deploy/configs/deploy_config.py`
-- `projects/CalibrationStatusClassification/deploy/configs/deploy_config.py`
+- `deployment/projects/centerpoint/config/deploy_config.py`

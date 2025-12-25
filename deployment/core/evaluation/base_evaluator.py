@@ -303,9 +303,7 @@ class BaseEvaluator(VerificationMixin, ABC):
         if not latency_breakdowns:
             return LatencyBreakdown.empty()
 
-        all_stages = set()
-        for breakdown in latency_breakdowns:
-            all_stages.update(breakdown.keys())
+        stage_order = list(dict.fromkeys(stage for breakdown in latency_breakdowns for stage in breakdown.keys()))
 
         return LatencyBreakdown(
             stages={

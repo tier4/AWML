@@ -6,25 +6,23 @@
    - Implement `BaseEvaluator` with task-specific metrics.
    - Implement `BaseDataLoader` variant for the dataset(s).
 
-2. **Exporters**
-   - Add `exporters/{project}/model_wrappers.py` (reuse `IdentityWrapper` or implement a custom wrapper).
-   - Introduce `onnx_workflow.py` / `tensorrt_workflow.py` only if multi-stage orchestration is required; prefer composing the base exporters instead of subclassing them.
+2. **Project Bundle**
+   - Create a new bundle under `deployment/projects/<project>/`.
+   - Put **all project deployment code** in one place: `runner.py`, `evaluator.py`, `data_loader.py`, `config/deploy_config.py`.
 
 3. **Pipelines**
-   - Inherit from the appropriate task base (`Detection2D`, `Detection3D`, `Classification`).
-   - Add backend-specific implementations (PyTorch, ONNX, TensorRT) only when behavior deviates from existing ones.
+   - Add backend-specific pipelines under `deployment/projects/<project>/pipelines/` and register a factory into `deployment.pipelines.registry.pipeline_registry`.
 
-4. **Configuration**
-   - Create `projects/{project}/deploy/configs/deploy_config.py`.
-   - Configure export, verification, and evaluation settings with typed dataclasses where possible.
+4. **Export Pipelines (optional)**
+   - If the project needs multi-stage export, implement under `deployment/projects/<project>/export/` (compose the generic exporters in `deployment/exporters/common/`).
 
-5. **Entry Point**
-   - Add `projects/{project}/deploy/main.py`.
-   - Follow the dependency injection pattern: explicitly pass wrapper classes and workflows to the runner.
+5. **CLI wiring**
+   - Register a `ProjectAdapter` in `deployment/projects/<project>/__init__.py`.
+   - The unified entry point is `python -m deployment.cli.main <project> <deploy_cfg.py> <model_cfg.py> ...`
 
 6. **Documentation**
    - Update `deployment/README.md` and the relevant docs in `deployment/docs/`.
-   - Document special requirements, configuration flags, or workflows.
+   - Document special requirements, configuration flags, or export pipelines.
 
 ## Core Contract
 
