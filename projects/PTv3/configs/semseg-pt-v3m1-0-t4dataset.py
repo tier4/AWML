@@ -19,6 +19,9 @@ point_cloud_range = [-76.8, -76.8, -4, 76.8, 76.8, 8]
 dataset_type = "T4Dataset"
 data_root = "data/t4dataset"
 ignore_index = -1
+info_paths_train = ["info/t4dataset_j6gen2_lidarseg_infos_train.pkl"]
+info_paths_val = ["info/t4dataset_j6gen2_lidarseg_infos_val.pkl"]
+info_paths_test = ["info/t4dataset_j6gen2_lidarseg_infos_test.pkl"]
 class_mapping = {
     "drivable_surface": 0,
     "other_flat_surface": 1,
@@ -117,6 +120,7 @@ data = dict(
         type=dataset_type,
         split="train",
         data_root=data_root,
+        info_paths=info_paths_train,
         transform=[
             # dict(type="RandomDropout", dropout_ratio=0.2, dropout_application_ratio=0.2),
             # dict(type="RandomRotateTargetAngle", angle=(1/2, 1, 3/2), center=[0, 0, 0], axis="z", p=0.75),
@@ -157,6 +161,7 @@ data = dict(
         type=dataset_type,
         split="val",
         data_root=data_root,
+        info_paths=info_paths_val,
         transform=[
             # dict(type="PointClip", point_cloud_range=(-51.2, -51.2, -4, 51.2, 51.2, 2.4)),
             dict(
@@ -187,6 +192,7 @@ data = dict(
         type=dataset_type,
         split="val",
         data_root=data_root,
+        info_paths=info_paths_test,
         transform=[
             dict(type="Copy", keys_dict={"segment": "origin_segment"}),
             dict(

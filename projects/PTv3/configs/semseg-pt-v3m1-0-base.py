@@ -10,6 +10,9 @@ enable_amp = True
 dataset_type = "NuScenesDataset"
 data_root = "data/nuscenes"
 ignore_index = -1
+info_paths_train = ["info/nuscenes_infos_10sweeps_train.pkl"]
+info_paths_val = ["info/nuscenes_infos_10sweeps_val.pkl"]
+info_paths_test = ["info/nuscenes_infos_10sweeps_test.pkl"]
 class_names = [
     "barrier",
     "bicycle",
@@ -114,6 +117,7 @@ data = dict(
         type=dataset_type,
         split="train",
         data_root=data_root,
+        info_paths=info_paths_train,
         transform=[
             # dict(type="RandomDropout", dropout_ratio=0.2, dropout_application_ratio=0.2),
             # dict(type="RandomRotateTargetAngle", angle=(1/2, 1, 3/2), center=[0, 0, 0], axis="z", p=0.75),
@@ -150,6 +154,7 @@ data = dict(
         type=dataset_type,
         split="val",
         data_root=data_root,
+        info_paths=info_paths_val,
         transform=[
             # dict(type="PointClip", point_cloud_range=(-51.2, -51.2, -4, 51.2, 51.2, 2.4)),
             dict(
@@ -176,6 +181,7 @@ data = dict(
         type=dataset_type,
         split="val",
         data_root=data_root,
+        info_paths=info_paths_test,
         transform=[
             dict(type="Copy", keys_dict={"segment": "origin_segment"}),
             dict(
