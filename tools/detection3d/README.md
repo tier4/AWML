@@ -5,9 +5,8 @@ It contains training, evaluation, and visualization for 3D detection and 3D sema
 
 - [Support priority](https://github.com/tier4/AWML/blob/main/docs/design/autoware_ml_design.md#support-priority): Tier S
 - Supported dataset
-  - [x] NuScenes
+  - [x] NuScenes with 3D detection
   - [x] T4dataset with 3D detection
-  - [ ] T4dataset with 3D semantic segmentation
 - Other supported feature
   - [ ] Add unit test
 
