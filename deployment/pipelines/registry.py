@@ -1,0 +1,104 @@
+"""
+Pipeline Registry for Dynamic Project Pipeline Registration.
+
+Flattened from `deployment/pipelines/common/registry.py`.
+"""
+
+import logging
+from typing import Any, Dict, Optional, Type
+
+from deployment.core.evaluation.evaluator_types import ModelSpec
+from deployment.pipelines.base_factory import BasePipelineFactory
+from deployment.pipelines.base_pipeline import BaseDeploymentPipeline
+
+logger = logging.getLogger(__name__)
+
+
+class PipelineRegistry:
+    """Registry for mapping project names to pipeline factories.
+
+    Factories are responsible for creating a `BaseDeploymentPipeline` instance
+    given a `ModelSpec` and (optionally) a loaded PyTorch model.
+    """
+
+    def __init__(self):
+        """Initialize an empty registry.
+
+        The registry is populated at import-time by project modules that register
+        their `BasePipelineFactory` subclasses (typically via a decorator call to
+        `pipeline_registry.register(...)`).
+        """
+        self._factories: Dict[str, Type[BasePipelineFactory]] = {}
+
+    def register(self, factory_cls: Type[BasePipelineFactory]) -> Type[BasePipelineFactory]:
+        """Register a project factory class.
+
+        Args:
+            factory_cls: A subclass of `BasePipelineFactory`.
+
+        Returns:
+            The same class, enabling decorator usage:
+            `@pipeline_registry.register`
+            `class MyFactory(BasePipelineFactory): ...`
+        """
+        if not issubclass(factory_cls, BasePipelineFactory):
+            raise TypeError(f"Factory class must inherit from BasePipelineFactory, got {factory_cls.__name__}")
+
+        project_name = factory_cls.get_project_name()
+
+        if project_name in self._factories:
+            logger.warning(
+                f"Overwriting existing factory for project '{project_name}': "
+                f"{self._factories[project_name].__name__} -> {factory_cls.__name__}"
+            )
+
+        self._factories[project_name] = factory_cls
+        logger.debug(f"Registered pipeline factory: {project_name} -> {factory_cls.__name__}")
+        return factory_cls
+
+    def get_factory(self, project_name: str) -> Type[BasePipelineFactory]:
+        """Return the registered factory for a project name.
+
+        Raises:
+            KeyError: If no factory is registered for the given project.
+        """
+        if project_name not in self._factories:
+            available = list(self._factories.keys())
+            raise KeyError(f"No factory registered for project '{project_name}'. Available projects: {available}")
+        return self._factories[project_name]
+
+    def create_pipeline(
+        self,
+        project_name: str,
+        model_spec: ModelSpec,
+        pytorch_model: Any,
+        device: Optional[str] = None,
+        **kwargs,
+    ) -> BaseDeploymentPipeline:
+        """Create a project-specific pipeline instance using the registered factory.
+
+        This is the central instantiation path used by evaluators and by the
+        convenience wrapper `deployment.pipelines.factory.PipelineFactory`.
+        """
+        factory = self.get_factory(project_name)
+        return factory.create_pipeline(
+            model_spec=model_spec,
+            pytorch_model=pytorch_model,
+            device=device,
+            **kwargs,
+        )
+
+    def list_projects(self) -> list:
+        """List registered project names."""
+        return list(self._factories.keys())
+
+    def is_registered(self, project_name: str) -> bool:
+        """Return True if a project is registered."""
+        return project_name in self._factories
+
+    def reset(self) -> None:
+        """Clear all registrations (primarily useful for tests)."""
+        self._factories.clear()
+
+
+pipeline_registry = PipelineRegistry()
