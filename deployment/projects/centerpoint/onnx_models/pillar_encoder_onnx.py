@@ -1,3 +1,9 @@
+"""CenterPoint deploy-only ONNX voxel encoder variants.
+
+These variants expose helper APIs and forward shapes that are friendlier for ONNX export
+and componentized inference pipelines.
+"""
+
 from typing import Optional
 
 import torch
@@ -7,7 +13,7 @@ from mmdet3d.registry import MODELS
 from mmengine.logging import MMLogger
 from torch import Tensor
 
-from .pillar_encoder import BackwardPillarFeatureNet
+from projects.CenterPoint.models.voxel_encoders.pillar_encoder import BackwardPillarFeatureNet
 
 
 @MODELS.register_module()
