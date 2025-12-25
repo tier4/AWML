@@ -7,10 +7,10 @@ Please cite our work if the code is helpful to you.
 
 import os
 import pickle
-from collections.abc import Sequence
-from pathlib import Path
+from typing import Dict
 
 import numpy as np
+import numpy.typing as npt
 
 from .builder import DATASETS
 from .defaults import DefaultDataset
@@ -35,7 +35,7 @@ class T4Dataset(DefaultDataset):
                 data_list.extend(info["data_list"])
         return data_list
 
-    def map_segments(self, segment, lidarseg_categories):
+    def map_segments(self, segment: npt.NDArray, lidarseg_categories: Dict[str, int]) -> npt.NDArray:
         """Map raw segment labels to unified learning labels.
 
         Args:

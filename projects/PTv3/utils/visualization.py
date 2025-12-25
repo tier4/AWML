@@ -5,7 +5,11 @@ Author: Xiaoyang Wu (xiaoyang.wu.cs@gmail.com)
 Please cite our work if the code is helpful to you.
 """
 
+import logging
+from typing import Dict, Optional
+
 import numpy as np
+import numpy.typing as npt
 import open3d as o3d
 
 
@@ -57,7 +61,9 @@ def visualize_point_cloud(coords, colors, title):
     )
 
 
-def get_segmentation_colors(labels, result_path, class_colors, logger=None):
+def get_segmentation_colors(
+    labels: npt.NDArray, result_path: str, class_colors: Dict[str, int], logger: Optional[logging.Logger] = None
+):
     """Visualize segmentation results from saved data.
 
     Args:
