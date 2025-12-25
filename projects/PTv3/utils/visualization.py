@@ -6,14 +6,16 @@ Please cite our work if the code is helpful to you.
 """
 
 import logging
-from typing import Dict, Optional
+from typing import Dict
 
 import numpy as np
 import numpy.typing as npt
 import open3d as o3d
 
 
-def create_colors_from_predictions(predictions, num_points, class_colors, logger=None):
+def create_colors_from_predictions(
+    predictions: npt.NDArray, num_points: int, class_colors: Dict[int, npt.NDArray], logger: logging.Logger
+) -> npt.NDArray:
     """Create RGB colors from predictions using class color mapping.
 
     Args:
@@ -31,13 +33,12 @@ def create_colors_from_predictions(predictions, num_points, class_colors, logger
             colors[i] = class_colors[pred_class]
         else:
             colors[i] = (255, 255, 255)  # white for unknown classes
-            if logger:
-                logger.warning(f"Class {pred_class} not found in class colors")
+            logger.warning(f"Class {pred_class} not found in class colors")
 
     return colors
 
 
-def visualize_point_cloud(coords, colors, title):
+def visualize_point_cloud(coords: npt.NDArray, colors: npt.NDArray, title: str):
     """Create and display/save point cloud using Open3D.
 
     Args:
@@ -62,7 +63,7 @@ def visualize_point_cloud(coords, colors, title):
 
 
 def get_segmentation_colors(
-    labels: npt.NDArray, result_path: str, class_colors: Dict[str, int], logger: Optional[logging.Logger] = None
+    labels: npt.NDArray, result_path: str, class_colors: Dict[str, int], logger: logging.Logger
 ):
     """Visualize segmentation results from saved data.
 
@@ -76,18 +77,15 @@ def get_segmentation_colors(
         coords: Coordinates array
         colors: RGB colors array
     """
-    if logger:
-        logger.info(f"Visualizing segmentation results")
-        logger.info(f"Labels shape: {labels.shape}")
+    logger.info(f"Visualizing segmentation results")
+    logger.info(f"Labels shape: {labels.shape}")
 
     # Load coordinates from saved result file
-    if logger:
-        print(f"Loading coordinates from {result_path}")
+    logger.info(f"Loading coordinates from {result_path}")
     result_data = np.load(result_path)
     feat = result_data["feat"]
     coords = feat[:, :3]  # x, y, z coordinates
-    if logger:
-        logger.info(f"Loaded coordinates from {result_path}, shape: {coords.shape}")
+    logger.info(f"Loaded coordinates from {result_path}, shape: {coords.shape}")
 
     # Create color mapping from predictions
     colors = create_colors_from_predictions(labels, coords.shape[0], class_colors, logger)
