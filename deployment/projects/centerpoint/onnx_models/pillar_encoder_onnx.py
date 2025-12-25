@@ -1,3 +1,22 @@
+"""CenterPoint deploy-only ONNX voxel encoder variants.
+
+This module defines ONNX-compatible wrappers around CenterPoint pillar voxel encoders
+that are intended for deployment / inference only (that is, for ONNX export and
+runtime execution, not for training). The classes here expose helper APIs and forward
+signatures that are easier to trace and integrate into componentized inference
+pipelines.
+
+Provided encoder variants include:
+
+- ``PillarFeatureNetONNX``: ONNX-support implementation of
+  :class:`mmdet3d.models.voxel_encoders.pillar_encoder.PillarFeatureNet`, keeping
+  the original behavior but with an ONNX-friendly interface.
+- ``BackwardPillarFeatureNetONNX``: backward-compatible pillar feature network based
+  on :class:`projects.CenterPoint.models.voxel_encoders.pillar_encoder.BackwardPillarFeatureNet`
+  that prepares pillar features and runs PFN layers without Z-distance features for
+  use with exported CenterPoint models.
+"""
+
 from typing import Optional
 
 import torch
@@ -7,7 +26,7 @@ from mmdet3d.registry import MODELS
 from mmengine.logging import MMLogger
 from torch import Tensor
 
-from .pillar_encoder import BackwardPillarFeatureNet
+from projects.CenterPoint.models.voxel_encoders.pillar_encoder import BackwardPillarFeatureNet
 
 
 @MODELS.register_module()
