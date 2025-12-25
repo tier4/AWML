@@ -8,9 +8,9 @@
 
 ## Model Export
 
-- Inject wrapper classes (and optional workflows) into project runners; let `ExporterFactory` build exporters lazily.
+- Inject wrapper classes (and optional export pipelines) into project runners; let `ExporterFactory` build exporters lazily.
 - Store wrappers under `exporters/{model}/model_wrappers.py` and reuse `IdentityWrapper` when reshaping is unnecessary.
-- Add workflow modules only when orchestration beyond single file export is required.
+- Add export-pipeline modules only when orchestration beyond single file export is required.
 - Always verify ONNX exports before TensorRT conversion.
 - Choose TensorRT precision policies (`auto`, `fp16`, `fp32_tf32`, `strongly_typed`) based on deployment targets.
 
@@ -19,12 +19,12 @@
 ```
 exporters/{model}/
 ├── model_wrappers.py
-├── [optional] onnx_workflow.py
-└── [optional] tensorrt_workflow.py
+├── [optional] onnx_export_pipeline.py
+└── [optional] tensorrt_export_pipeline.py
 ```
 
 - Simple models: use base exporters + wrappers, no subclassing.
-- Complex models: compose workflows that call the base exporters multiple times.
+- Complex models: compose export pipelines that call the base exporters multiple times.
 
 ## Dependency Injection Pattern
 
@@ -37,7 +37,7 @@ runner = YOLOXOptElanDeploymentRunner(
 
 - Keeps dependencies explicit.
 - Enables lazy exporter construction.
-- Simplifies testing via mock wrappers/workflows.
+- Simplifies testing via mock wrappers/pipelines.
 
 ## Verification Tips
 

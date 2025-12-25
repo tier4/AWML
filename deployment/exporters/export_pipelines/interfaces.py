@@ -1,8 +1,8 @@
 """
-Interfaces for export workflow components.
+Interfaces for export pipeline components.
 
 This module defines interfaces that allow project-specific code to provide
-model-specific knowledge to generic deployment workflows.
+model-specific knowledge to generic deployment export pipelines.
 """
 
 from abc import ABC, abstractmethod
@@ -42,7 +42,7 @@ class ModelComponentExtractor(ABC):
 
     This solves the dependency inversion problem: instead of deployment
     framework importing from projects/, projects/ implement this interface
-    and inject it into workflows.
+    and inject it into export pipelines.
     """
 
     @abstractmethod

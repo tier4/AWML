@@ -14,7 +14,7 @@ from deployment.core.config.base_config import BaseDeploymentConfig
 from deployment.core.evaluation.base_evaluator import BaseEvaluator
 from deployment.core.evaluation.evaluator_types import ModelSpec
 from deployment.core.io.base_data_loader import BaseDataLoader
-from deployment.runners.common.artifact_manager import ArtifactManager
+from deployment.runtime.artifact_manager import ArtifactManager
 
 
 class VerificationOrchestrator:
@@ -55,13 +55,11 @@ class VerificationOrchestrator:
 
         Args:
             artifact_manager: Artifact manager for resolving model paths
-
         Returns:
             Verification results dictionary
         """
         verification_cfg = self.config.verification_config
 
-        # Check master switch
         if not verification_cfg.enabled:
             self.logger.info("Verification disabled (verification.enabled=False), skipping...")
             return {}
@@ -73,17 +71,14 @@ class VerificationOrchestrator:
             self.logger.info(f"No verification scenarios for export mode '{export_mode.value}', skipping...")
             return {}
 
-        # Check if PyTorch checkpoint is needed and available
         needs_pytorch = any(
             policy.ref_backend is Backend.PYTORCH or policy.test_backend is Backend.PYTORCH for policy in scenarios
         )
-
         if needs_pytorch:
-            pytorch_artifact, pytorch_valid = artifact_manager.resolve_artifact(Backend.PYTORCH)
+            _, pytorch_valid = artifact_manager.resolve_artifact(Backend.PYTORCH)
             if not pytorch_valid:
                 self.logger.warning(
-                    "PyTorch checkpoint not available, but required by verification scenarios. "
-                    "Skipping verification."
+                    "PyTorch checkpoint not available, but required by verification scenarios. Skipping verification."
                 )
                 return {}
 
@@ -98,12 +93,11 @@ class VerificationOrchestrator:
         self.logger.info(f"Running Verification (mode: {export_mode.value})")
         self.logger.info("=" * 80)
 
-        all_results = {}
+        all_results: Dict[str, Any] = {}
         total_passed = 0
         total_failed = 0
 
         for i, policy in enumerate(scenarios):
-            # Resolve devices using alias system
             ref_device = self._resolve_device(policy.ref_device, devices_map)
             test_device = self._resolve_device(policy.test_device, devices_map)
 
@@ -112,7 +106,6 @@ class VerificationOrchestrator:
                 f"{policy.ref_backend.value}({ref_device}) vs {policy.test_backend.value}({test_device})"
             )
 
-            # Resolve artifacts via ArtifactManager
             ref_artifact, ref_valid = artifact_manager.resolve_artifact(policy.ref_backend)
             test_artifact, test_valid = artifact_manager.resolve_artifact(policy.test_backend)
 
@@ -120,16 +113,14 @@ class VerificationOrchestrator:
                 ref_path = ref_artifact.path if ref_artifact else None
                 test_path = test_artifact.path if test_artifact else None
                 self.logger.warning(
-                    f"  Skipping: missing or invalid artifacts "
+                    "  Skipping: missing or invalid artifacts "
                     f"(ref={ref_path}, valid={ref_valid}, test={test_path}, valid={test_valid})"
                 )
                 continue
 
-            # Create model specs
             reference_spec = ModelSpec(backend=policy.ref_backend, device=ref_device, artifact=ref_artifact)
             test_spec = ModelSpec(backend=policy.test_backend, device=test_device, artifact=test_artifact)
 
-            # Run verification
             verification_results = self.evaluator.verify(
                 reference=reference_spec,
                 test=test_spec,
@@ -139,24 +130,20 @@ class VerificationOrchestrator:
                 verbose=False,
             )
 
-            # Store results
             policy_key = f"{policy.ref_backend.value}_{ref_device}_vs_{policy.test_backend.value}_{test_device}"
             all_results[policy_key] = verification_results
 
-            # Update counters
             if "summary" in verification_results:
                 summary = verification_results["summary"]
                 passed = summary.get("passed", 0)
                 failed = summary.get("failed", 0)
                 total_passed += passed
                 total_failed += failed
-
                 if failed == 0:
                     self.logger.info(f"Scenario {i+1} passed ({passed} comparisons)")
                 else:
                     self.logger.warning(f"Scenario {i+1} failed ({failed}/{passed+failed} comparisons)")
 
-        # Overall summary
         self.logger.info("\n" + "=" * 80)
         if total_failed == 0:
             self.logger.info(f"All verifications passed! ({total_passed} total)")
@@ -174,17 +161,15 @@ class VerificationOrchestrator:
 
     def _resolve_device(self, device_key: str, devices_map: Mapping[str, str]) -> str:
         """
-        Resolve device using alias system.
+        Resolve a device key to a full device string.
 
         Args:
-            device_key: Device key from scenario
-            devices_map: Device alias mapping
-
+            device_key: Device key to resolve
+            devices_map: Mapping of device keys to full device strings
         Returns:
-            Actual device string
+            Resolved device string
         """
         if device_key in devices_map:
             return devices_map[device_key]
-        else:
-            self.logger.warning(f"Device alias '{device_key}' not found in devices map, using as-is")
-            return device_key
+        self.logger.warning(f"Device alias '{device_key}' not found in devices map, using as-is")
+        return device_key

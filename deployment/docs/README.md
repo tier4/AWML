@@ -7,7 +7,7 @@ Reference guides extracted from the monolithic deployment README:
 - [`usage.md`](./usage.md) – commands, runner setup, typed contexts, CLI args, export modes.
 - [`configuration.md`](./configuration.md) – configuration structure, typed config classes, backend enums.
 - [`projects.md`](./projects.md) – CenterPoint, YOLOX, and Calibration deployment specifics.
-- [`export_workflow.md`](./export_workflow.md) – ONNX/TensorRT export details plus workflows.
+- [`export_pipeline.md`](./export_pipeline.md) – ONNX/TensorRT export details plus export pipelines.
 - [`verification_evaluation.md`](./verification_evaluation.md) – verification mixin, evaluation metrics, core contract.
 - [`best_practices.md`](./best_practices.md) – best practices, troubleshooting, and roadmap items.
 - [`contributing.md`](./contributing.md) – steps for adding new deployment projects.

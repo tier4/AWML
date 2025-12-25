@@ -14,7 +14,7 @@ from deployment.core.config.base_config import BaseDeploymentConfig
 from deployment.core.evaluation.base_evaluator import BaseEvaluator
 from deployment.core.evaluation.evaluator_types import ModelSpec
 from deployment.core.io.base_data_loader import BaseDataLoader
-from deployment.runners.common.artifact_manager import ArtifactManager
+from deployment.runtime.artifact_manager import ArtifactManager
 
 
 class EvaluationOrchestrator:
@@ -37,7 +37,7 @@ class EvaluationOrchestrator:
         logger: logging.Logger,
     ):
         """
-        Initialize evaluation orchestrator.
+        Initialize the evaluation orchestrator.
 
         Args:
             config: Deployment configuration
@@ -52,13 +52,12 @@ class EvaluationOrchestrator:
 
     def run(self, artifact_manager: ArtifactManager) -> Dict[str, Any]:
         """
-        Run evaluation on specified models.
+        Run the evaluation orchestration.
 
         Args:
             artifact_manager: Artifact manager for resolving model paths
-
         Returns:
-            Dictionary containing evaluation results for all backends
+            Dictionary of evaluation results
         """
         eval_config = self.config.evaluation_config
 
@@ -70,31 +69,24 @@ class EvaluationOrchestrator:
         self.logger.info("Running Evaluation")
         self.logger.info("=" * 80)
 
-        # Get models to evaluate
         models_to_evaluate = self._get_models_to_evaluate(artifact_manager)
-
         if not models_to_evaluate:
             self.logger.warning("No models found for evaluation")
             return {}
 
-        # Determine number of samples
         num_samples = eval_config.num_samples
         if num_samples == -1:
             num_samples = self.data_loader.get_num_samples()
 
         verbose_mode = eval_config.verbose
-
-        # Run evaluation for each model
         all_results: Dict[str, Any] = {}
 
         for spec in models_to_evaluate:
             backend = spec.backend
             backend_device = self._normalize_device_for_backend(backend, spec.device)
-
             normalized_spec = ModelSpec(backend=backend, device=backend_device, artifact=spec.artifact)
 
             self.logger.info(f"\nEvaluating {backend.value} on {backend_device}...")
-
             try:
                 results = self.evaluator.evaluate(
                     model=normalized_spec,
@@ -102,22 +94,17 @@ class EvaluationOrchestrator:
                     num_samples=num_samples,
                     verbose=verbose_mode,
                 )
-
                 all_results[backend.value] = results
-
                 self.logger.info(f"\n{backend.value.upper()} Results:")
                 self.evaluator.print_results(results)
-
             except Exception as e:
                 self.logger.error(f"Evaluation failed for {backend.value}: {e}", exc_info=True)
                 all_results[backend.value] = {"error": str(e)}
             finally:
-                # Ensure CUDA memory is cleaned up between model evaluations
-                from deployment.pipelines.common.gpu_resource_mixin import clear_cuda_memory
+                from deployment.pipelines.gpu_resource_mixin import clear_cuda_memory
 
                 clear_cuda_memory()
 
-        # Print cross-backend comparison if multiple backends
         if len(all_results) > 1:
             self._print_cross_backend_comparison(all_results)
 
@@ -125,13 +112,12 @@ class EvaluationOrchestrator:
 
     def _get_models_to_evaluate(self, artifact_manager: ArtifactManager) -> List[ModelSpec]:
         """
-        Get list of models to evaluate from config.
+        Get the models to evaluate from the configuration.
 
         Args:
-            artifact_manager: Artifact manager for resolving paths
-
+            artifact_manager: Artifact manager for resolving model paths
         Returns:
-            List of ModelSpec instances describing models to evaluate
+            List of model specifications
         """
         backends = self.config.get_evaluation_backends()
         models_to_evaluate: List[ModelSpec] = []
@@ -142,8 +128,6 @@ class EvaluationOrchestrator:
                 continue
 
             device = str(backend_cfg.get("device", "cpu") or "cpu")
-
-            # Use artifact_manager to resolve artifact
             artifact, is_valid = artifact_manager.resolve_artifact(backend_enum)
 
             if is_valid and artifact:
@@ -157,12 +141,11 @@ class EvaluationOrchestrator:
 
     def _normalize_device_for_backend(self, backend: Backend, device: str) -> str:
         """
-        Normalize device string for specific backend.
+        Normalize the device for a backend.
 
         Args:
-            backend: Backend identifier
-            device: Device string from config
-
+            backend: Backend to normalize the device for
+            device: Device to normalize
         Returns:
             Normalized device string
         """
@@ -171,7 +154,7 @@ class EvaluationOrchestrator:
         if backend in (Backend.PYTORCH, Backend.ONNX):
             if normalized_device not in ("cpu",) and not normalized_device.startswith("cuda"):
                 self.logger.warning(
-                    f"Unsupported device '{normalized_device}' for backend '{backend.value}'. " "Falling back to CPU."
+                    f"Unsupported device '{normalized_device}' for backend '{backend.value}'. Falling back to CPU."
                 )
                 normalized_device = "cpu"
         elif backend is Backend.TENSORRT:
@@ -187,17 +170,24 @@ class EvaluationOrchestrator:
         return normalized_device
 
     def _get_default_device(self, backend: Backend) -> str:
-        """Return default device for a backend when config omits explicit value."""
+        """
+        Get the default device for a backend.
+
+        Args:
+            backend: Backend to get the default device for
+        Returns:
+            Default device string
+        """
         if backend is Backend.TENSORRT:
             return self.config.devices.cuda or "cuda:0"
         return self.config.devices.cpu or "cpu"
 
     def _print_cross_backend_comparison(self, all_results: Mapping[str, Any]) -> None:
         """
-        Print cross-backend comparison of metrics.
+        Print the cross-backend comparison results.
 
         Args:
-            all_results: Dictionary of results by backend
+            all_results: Dictionary of all results
         """
         self.logger.info("\n" + "=" * 80)
         self.logger.info("Cross-Backend Comparison")
@@ -206,13 +196,11 @@ class EvaluationOrchestrator:
         for backend_label, results in all_results.items():
             self.logger.info(f"\n{backend_label.upper()}:")
             if results and "error" not in results:
-                # Print primary metrics
                 if "accuracy" in results:
                     self.logger.info(f"  Accuracy: {results.get('accuracy', 0):.4f}")
                 if "mAP" in results:
                     self.logger.info(f"  mAP: {results.get('mAP', 0):.4f}")
 
-                # Print latency stats
                 if "latency_stats" in results:
                     stats = results["latency_stats"]
                     self.logger.info(f"  Latency: {stats['mean_ms']:.2f} ± {stats['std_ms']:.2f} ms")

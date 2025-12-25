@@ -472,7 +472,7 @@ class VerificationMixin:
         logger.info("=" * 60)
 
         for key, value in results["samples"].items():
-            status = "✓ PASSED" if value else "✗ FAILED"
+            status = "PASSED" if value else "FAILED"
             logger.info(f"  {key}: {status}")
 
         summary = results["summary"]

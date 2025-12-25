@@ -1,4 +1,4 @@
-# Export Workflows
+# Export Pipelines
 
 ## ONNX Export
 
@@ -24,7 +24,7 @@ CenterPoint splits the model into multiple ONNX/TensorRT artifacts:
 - `voxel_encoder.onnx`
 - `backbone_head.onnx`
 
-Workflows orchestrate:
+Export pipelines orchestrate:
 
 - Sequential export of each component.
 - Input/output wiring between stages.
@@ -37,14 +37,14 @@ Workflows orchestrate:
 
 ## Dependency Injection Pattern
 
-Projects inject wrappers and workflows when instantiating the runner:
+Projects inject wrappers and export pipelines when instantiating the runner:
 
 ```python
 runner = CenterPointDeploymentRunner(
     ...,
-    onnx_workflow=CenterPointONNXExportWorkflow(...),
-    tensorrt_workflow=CenterPointTensorRTExportWorkflow(...),
+    onnx_pipeline=CenterPointONNXExportPipeline(...),
+    tensorrt_pipeline=CenterPointTensorRTExportPipeline(...),
 )
 ```
 
-Simple projects can skip workflows entirely and rely on the base exporters provided by `ExporterFactory`.
+Simple projects can skip export pipelines entirely and rely on the base exporters provided by `ExporterFactory`.

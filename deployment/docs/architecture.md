@@ -22,7 +22,7 @@
 │   Exporters    │     │  Helper Orchestrators │
 │  - ONNX / TRT  │     │  - ArtifactManager     │
 │  - Wrappers    │     │  - VerificationOrch.   │
-│  - Workflows   │     │  - EvaluationOrch.     │
+│  - Export Ppl. │     │  - EvaluationOrch.     │
 └────────────────┘     └────────┬───────────────┘
                                 │
 ┌───────────────────────────────▼─────────────────────────┐
@@ -39,7 +39,7 @@
 `BaseDeploymentRunner` orchestrates the export/verification/evaluation loop. Project runners (CenterPoint, YOLOX, Calibration, …):
 
 - Implement model loading.
-- Inject wrapper classes and optional workflows.
+- Inject wrapper classes and optional export pipelines.
 - Reuse `ExporterFactory` to lazily create ONNX/TensorRT exporters.
 - Delegate artifact registration plus verification/evaluation to the shared orchestrators.
 
@@ -54,11 +54,11 @@
 - `build_preprocessing_pipeline` – extracts preprocessing steps from MMDet/MMDet3D configs.
 - Typed value objects (`constants.py`, `runtime_config.py`, `task_config.py`, `results.py`) keep configuration and metrics structured.
 
-### Exporters & Workflows
+### Exporters & Export Pipelines
 
 - `exporters/common/` hosts the base exporters, typed config objects, and `ExporterFactory`.
 - Project wrappers live in `exporters/{project}/model_wrappers.py`.
-- Complex projects add workflows (e.g., `CenterPointONNXExportWorkflow`) that orchestrate multi-file exports by composing the base exporters.
+- Complex projects add export pipelines (e.g., `CenterPointONNXExportPipeline`) that orchestrate multi-file exports by composing the base exporters.
 
 ### Pipelines
 
@@ -69,7 +69,7 @@
 ```
 deployment/
 ├── core/                 # Core dataclasses, configs, evaluators
-├── exporters/            # Base exporters + project wrappers/workflows
+├── exporters/            # Base exporters + project wrappers/export pipelines
 ├── pipelines/            # Task-specific pipelines per backend
 ├── runners/              # Shared runner + project adapters
 ```

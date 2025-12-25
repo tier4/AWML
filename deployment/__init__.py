@@ -11,7 +11,7 @@ from deployment.core.config.base_config import BaseDeploymentConfig
 from deployment.core.evaluation.base_evaluator import BaseEvaluator
 from deployment.core.io.base_data_loader import BaseDataLoader
 from deployment.core.io.preprocessing_builder import build_preprocessing_pipeline
-from deployment.runners import BaseDeploymentRunner
+from deployment.runtime.runner import BaseDeploymentRunner
 
 __all__ = [
     "BaseDeploymentConfig",

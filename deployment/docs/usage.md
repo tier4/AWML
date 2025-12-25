@@ -3,43 +3,30 @@
 ## Basic Commands
 
 ```bash
-# CenterPoint deployment
-python projects/CenterPoint/deploy/main.py \
-    configs/deploy_config.py \
-    configs/model_config.py
+# Single deployment entrypoint (project is a subcommand)
+python -m deployment.cli.main centerpoint \
+    <deploy_cfg.py> \
+    <model_cfg.py>
 
-# YOLOX deployment
-python projects/YOLOX_opt_elan/deploy/main.py \
-    configs/deploy_config.py \
-    configs/model_config.py
-
-# Calibration deployment
-python projects/CalibrationStatusClassification/deploy/main.py \
-    configs/deploy_config.py \
-    configs/model_config.py
+# Example with CenterPoint-specific flag
+python -m deployment.cli.main centerpoint \
+    <deploy_cfg.py> \
+    <model_cfg.py> \
+    --rot-y-axis-reference
 ```
 
 ## Creating a Project Runner
 
-Projects pass lightweight configuration objects (wrapper classes and optional workflows) into the runner. Exporters are created lazily via `ExporterFactory`.
+Projects pass lightweight configuration objects (wrapper classes and optional export pipelines) into the runner. Exporters are created lazily via `ExporterFactory`.
 
 ```python
-from deployment.exporters.yolox.model_wrappers import YOLOXOptElanONNXWrapper
-from deployment.runners import YOLOXOptElanDeploymentRunner
-
-runner = YOLOXOptElanDeploymentRunner(
-    data_loader=data_loader,
-    evaluator=evaluator,
-    config=config,
-    model_cfg=model_cfg,
-    logger=logger,
-    onnx_wrapper_cls=YOLOXOptElanONNXWrapper,
-)
+# Project bundles live under deployment/projects/<project> and are resolved by the CLI.
+# The runtime layer is under deployment/runtime/*.
 ```
 
 Key points:
 
-- Pass wrapper classes (and optional workflows) instead of exporter instances.
+- Pass wrapper classes (and optional export pipelines) instead of exporter instances.
 - Exporters are constructed lazily inside `BaseDeploymentRunner`.
 - Entry points remain explicit and easily testable.
 
