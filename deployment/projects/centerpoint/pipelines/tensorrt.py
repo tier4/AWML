@@ -68,7 +68,7 @@ class CenterPointTensorRTPipeline(GPUResourceMixin, CenterPointDeploymentPipelin
             context = engine.create_execution_context()
             if context is None:
                 raise RuntimeError(
-                    f"Failed to create execution context for {component}. " "This is likely due to GPU out-of-memory."
+                    f"Failed to create execution context for {component}. This is likely due to GPU out-of-memory."
                 )
 
             self._engines[component] = engine
