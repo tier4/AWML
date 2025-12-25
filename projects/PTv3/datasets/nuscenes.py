@@ -17,8 +17,7 @@ from .defaults import DefaultDataset
 
 @DATASETS.register_module()
 class NuScenesDataset(DefaultDataset):
-    def __init__(self, sweeps=10, ignore_index=-1, **kwargs):
-        self.sweeps = sweeps
+    def __init__(self, ignore_index=-1, **kwargs):
         self.ignore_index = ignore_index
         self.learning_map = self.get_learning_map(ignore_index)
         super().__init__(ignore_index=ignore_index, **kwargs)

@@ -18,8 +18,7 @@ from .defaults import DefaultDataset
 
 @DATASETS.register_module()
 class T4Dataset(DefaultDataset):
-    def __init__(self, sweeps=10, ignore_index=-1, class_mapping={}, **kwargs):
-        self.sweeps = sweeps
+    def __init__(self, ignore_index=-1, class_mapping={}, **kwargs):
         self.ignore_index = ignore_index
         self.learning_map = class_mapping
         super().__init__(ignore_index=ignore_index, **kwargs)
