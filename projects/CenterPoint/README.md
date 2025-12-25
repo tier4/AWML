@@ -115,7 +115,14 @@ where `frame-range` represents the range of frames to visualize.
 
 ### 5. Deploy
 
-- Run the unified deployment pipeline to export ONNX/TensorRT artifacts, verify them, and (optionally) evaluate. Update `deployment/projects/centerpoint/config/deploy_config.py` so that `checkpoint_path`, `runtime_io.info_file`, and `export.work_dir` point to your experiment (e.g., `checkpoint_path="work_dirs/centerpoint/t4dataset/second_secfpn_2xb8_121m_base/epoch_50.pth"`).
+- Run the unified deployment pipeline:
+  - Export ONNX/TensorRT artifacts.
+  - Verify the exported artifacts.
+  - (Optionally) run evaluation.
+  - Update `deployment/projects/centerpoint/config/deploy_config.py` so that the following entries point to your experiment:
+    - `checkpoint_path` (e.g., `checkpoint_path="work_dirs/centerpoint/t4dataset/second_secfpn_2xb8_121m_base/epoch_50.pth"`).
+    - `runtime_io.info_file`.
+    - `export.work_dir`.
 
 ```sh
 # Deploy for t4dataset (export + verification + evaluation)
