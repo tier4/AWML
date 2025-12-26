@@ -1,6 +1,7 @@
 from typing import Dict, List, Optional
 
 import numpy as np
+import torch
 from mmdet3d.models.task_modules.coders.centerpoint_bbox_coders import CenterPointBBoxCoder as _CenterPointBBoxCoder
 from mmdet3d.registry import TASK_UTILS
 from torch import Tensor
@@ -37,6 +38,7 @@ class CenterPointBBoxCoder(_CenterPointBBoxCoder):
         vel: Tensor,
         reg: Optional[Tensor] = None,
         task_id: int = -1,
+        raw_heatmap: Optional[Tensor] = None,
     ) -> List[Dict[str, Tensor]]:
         """Decode bboxes.
 
@@ -58,26 +60,96 @@ class CenterPointBBoxCoder(_CenterPointBBoxCoder):
         Returns:
             list[dict]: Decoded boxes.
         """
-        predictions_dicts = super().decode(
-            heat=heat,
-            rot_sine=rot_sine,
-            rot_cosine=rot_cosine,
-            hei=hei,
-            dim=dim,
-            vel=vel,
-            reg=reg,
-            task_id=task_id,
-        )
+        batch, cat, _, _ = heat.size()
 
-        if not self.y_axis_reference:
-            return predictions_dicts
+        # Capture per-class scores at the top-k locations for downstream uncertainty analysis.
+        # Prefer logits if provided to get sharper distributions for entropy.
+        source_heatmap = raw_heatmap if raw_heatmap is not None else heat
+        heat_flat = source_heatmap.view(batch, cat, -1)
 
-        for predictions_dict in predictions_dicts:
-            if self.y_axis_reference:
-                # Switch width and length
+        scores, inds, clses, ys, xs = self._topk(heat, K=self.max_num)
+
+        if reg is not None:
+            reg = self._transpose_and_gather_feat(reg, inds)
+            reg = reg.view(batch, self.max_num, 2)
+            xs = xs.view(batch, self.max_num, 1) + reg[:, :, 0:1]
+            ys = ys.view(batch, self.max_num, 1) + reg[:, :, 1:2]
+        else:
+            xs = xs.view(batch, self.max_num, 1) + 0.5
+            ys = ys.view(batch, self.max_num, 1) + 0.5
+
+        # Gather per-class scores for each selected proposal.
+        cls_score_vectors = heat_flat.gather(
+            2, inds.view(batch, 1, self.max_num).expand(-1, cat, -1)
+        ).permute(0, 2, 1).contiguous()
+
+        # rotation value and direction label
+        rot_sine = self._transpose_and_gather_feat(rot_sine, inds)
+        rot_sine = rot_sine.view(batch, self.max_num, 1)
+
+        rot_cosine = self._transpose_and_gather_feat(rot_cosine, inds)
+        rot_cosine = rot_cosine.view(batch, self.max_num, 1)
+        rot = torch.atan2(rot_sine, rot_cosine)
+
+        # height in the bev
+        hei = self._transpose_and_gather_feat(hei, inds)
+        hei = hei.view(batch, self.max_num, 1)
+
+        # dim of the box
+        dim = self._transpose_and_gather_feat(dim, inds)
+        dim = dim.view(batch, self.max_num, 3)
+
+        # class label
+        clses = clses.view(batch, self.max_num).float()
+        scores = scores.view(batch, self.max_num)
+
+        xs = xs.view(batch, self.max_num, 1) * self.out_size_factor * self.voxel_size[0] + self.pc_range[0]
+        ys = ys.view(batch, self.max_num, 1) * self.out_size_factor * self.voxel_size[1] + self.pc_range[1]
+
+        if vel is None:  # KITTI FORMAT
+            final_box_preds = torch.cat([xs, ys, hei, dim, rot], dim=2)
+        else:  # exist velocity, nuscene format
+            vel = self._transpose_and_gather_feat(vel, inds)
+            vel = vel.view(batch, self.max_num, 2)
+            final_box_preds = torch.cat([xs, ys, hei, dim, rot, vel], dim=2)
+
+        final_scores = scores
+        final_preds = clses
+
+        # use score threshold
+        if self.score_threshold is not None:
+            thresh_mask = final_scores > self.score_threshold
+
+        if self.post_center_range is not None:
+            self.post_center_range = torch.tensor(self.post_center_range, device=heat.device)
+            mask = (final_box_preds[..., :3] >= self.post_center_range[:3]).all(2)
+            mask &= (final_box_preds[..., :3] <= self.post_center_range[3:]).all(2)
+
+            predictions_dicts = []
+            for i in range(batch):
+                cmask = mask[i, :]
+                if self.score_threshold:
+                    cmask &= thresh_mask[i]
+
+                boxes3d = final_box_preds[i, cmask]
+                scores = final_scores[i, cmask]
+                labels = final_preds[i, cmask]
+                class_scores = cls_score_vectors[i, cmask]
+                predictions_dict = {
+                    "bboxes": boxes3d,
+                    "scores": scores,
+                    "labels": labels,
+                    "class_scores": class_scores,
+                }
+
+                predictions_dicts.append(predictions_dict)
+        else:
+            raise NotImplementedError("Need to reorganize output as a batch, only support post_center_range is not None for now!")
+
+        # Apply optional y-axis reference adjustments.
+        if self.y_axis_reference:
+            for predictions_dict in predictions_dicts:
                 predictions_dict["bboxes"][:, [3, 4]] = predictions_dict["bboxes"][:, [4, 3]]
-
-                # Change the rotation to clockwise y-axis
                 predictions_dict["bboxes"][:, 6] = -predictions_dict["bboxes"][:, 6] - np.pi / 2
 
         return predictions_dicts

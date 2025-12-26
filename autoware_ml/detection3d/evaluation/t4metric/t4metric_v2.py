@@ -1,10 +1,11 @@
 import json
+import math
 import pickle
 import time
 from concurrent.futures import Executor, ProcessPoolExecutor
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Dict, Generator, List, Optional, Sequence, Union
+from typing import Any, Dict, Generator, List, Optional, Sequence, Set, Tuple, Union
 
 import numpy as np
 import torch
@@ -45,6 +46,8 @@ class PerceptionFrameProcessingData:
     unix_time: float
     ground_truth_objects: FrameGroundTruth
     estimated_objects: List[ObjectType]
+    entropy_stats: Optional[dict] = None
+    prediction_stats: Optional[dict] = None
 
 
 @METRICS.register_module()
@@ -58,6 +61,8 @@ class T4MetricV2(BaseMetric):
         dataset_name (str): Dataset running metrics.
         output_dir (str): Directory to save the evaluation results. Note that it's working_directory/<output_dir>.
         write_metric_summary (bool): Whether to write metric summary to json files.
+        entropy_score_threshold (float, optional): Score threshold to include predictions in entropy
+            statistics only. This does not affect evaluation metrics. Defaults to 0.3.
         prefix (str, optional):
             The prefix that will be added in the metric
             names to disambiguate homonymous metrics of different evaluators.
@@ -99,6 +104,7 @@ class T4MetricV2(BaseMetric):
         write_metric_summary: bool,
         scene_batch_size: int = 128,
         num_workers: int = 8,
+        entropy_score_threshold: Optional[float] = 0.3,
         prefix: Optional[str] = None,
         collect_device: str = "cpu",
         class_names: List[str] = None,
@@ -116,6 +122,7 @@ class T4MetricV2(BaseMetric):
         self.data_root = data_root
         self.num_workers = num_workers
         self.scene_batch_size = scene_batch_size
+        self.entropy_score_threshold = entropy_score_threshold
 
         self.class_names = class_names
         self.name_mapping = name_mapping
@@ -137,6 +144,10 @@ class T4MetricV2(BaseMetric):
 
         self.scene_id_to_index_map: Dict[str, int] = {}  # scene_id to index map in self.results
         self.frame_results_with_info = []
+        self.entropy_stats = {}
+        self.prediction_stats = {}
+        self._object_result_debug_written = False
+        self._frame_result_debug_written = False
 
         self.message_hub = MessageHub.get_current_instance()
         self.logger = MMLogger.get_current_instance()
@@ -191,8 +202,12 @@ class T4MetricV2(BaseMetric):
             current_time = data_sample["timestamp"]
             scene_id = self._parse_scene_id(data_sample["lidar_path"])
             frame_ground_truth = self._parse_ground_truth_from_sample(current_time, data_sample)
-            perception_frame = self._parse_predictions_from_sample(current_time, data_sample, frame_ground_truth)
+            perception_frame, entropy_stats, prediction_stats = self._parse_predictions_from_sample(
+                current_time, data_sample, frame_ground_truth
+            )
             self._save_perception_frame(scene_id, data_sample["sample_idx"], perception_frame)
+            self._save_entropy_stats(scene_id, data_sample["sample_idx"], entropy_stats)
+            self._save_prediction_stats(scene_id, data_sample["sample_idx"], prediction_stats)
 
     # override of BaseMetric.compute_metrics
     def compute_metrics(
@@ -352,6 +367,8 @@ class T4MetricV2(BaseMetric):
         batch = []
         for scene_batch_id, (scene_id, samples) in enumerate(scenes.items()):
             for sample_id, perception_frame in samples.items():
+                entropy_stats = self.entropy_stats.get(scene_id, {}).get(str(sample_id))
+                prediction_stats = self.prediction_stats.get(scene_id, {}).get(str(sample_id))
                 batch.append(
                     (
                         PerceptionFrameProcessingData(
@@ -360,6 +377,8 @@ class T4MetricV2(BaseMetric):
                             time.time(),
                             perception_frame.ground_truth_objects,
                             perception_frame.estimated_objects,
+                            entropy_stats,
+                            prediction_stats,
                         )
                     )
                 )
@@ -496,6 +515,8 @@ class T4MetricV2(BaseMetric):
                     "scene_id": scene_batch.scene_id,
                     "sample_id": scene_batch.sample_id,
                     "frame_result": perception_frame_result,
+                    "entropy_stats": scene_batch.entropy_stats,
+                    "prediction_stats": scene_batch.prediction_stats,
                 }
             )
             # We append the results outside of evaluator to keep the order of the frame results
@@ -550,7 +571,13 @@ class T4MetricV2(BaseMetric):
                     )
 
                     self.frame_results_with_info.append(
-                        {"scene_id": scene_id, "sample_id": sample_id, "frame_result": frame_result}
+                        {
+                            "scene_id": scene_id,
+                            "sample_id": sample_id,
+                            "frame_result": frame_result,
+                            "entropy_stats": self.entropy_stats.get(scene_id, {}).get(str(sample_id)),
+                            "prediction_stats": self.prediction_stats.get(scene_id, {}).get(str(sample_id)),
+                        }
                     )
                 except Exception as e:
                     self.logger.warning(f"Failed to process frame {scene_id}/{sample_id}: {e}")
@@ -575,8 +602,10 @@ class T4MetricV2(BaseMetric):
             final_metric_dict (dict): The final metrics dictionary.
         """
         try:
-            self._write_scene_metrics(scenes)
+            scene_metrics = self._write_scene_metrics(scenes)
             self._write_aggregated_metrics(final_metric_dict)
+            self._write_frame_summary(scene_metrics)
+            self._write_prediction_results()
         except Exception as e:
             self.logger.error(f"Failed to write output files: {e}")
 
@@ -584,6 +613,8 @@ class T4MetricV2(BaseMetric):
         """Clean up resources after computation."""
         self.scene_id_to_index_map.clear()
         self.frame_results_with_info.clear()
+        self.entropy_stats.clear()
+        self.prediction_stats.clear()
 
     def _process_metrics_for_aggregation(self, metrics_score: MetricsScore) -> Dict[str, float]:
         """
@@ -659,7 +690,7 @@ class T4MetricV2(BaseMetric):
             self.logger.error(f"Failed to write aggregated metrics: {e}")
             raise
 
-    def _write_scene_metrics(self, scenes: dict):
+    def _write_scene_metrics(self, scenes: dict) -> dict:
         """
         Writes scene metrics to a JSON file in nested format.
 
@@ -680,10 +711,514 @@ class T4MetricV2(BaseMetric):
                 json.dump(scene_metrics, scene_file, indent=4)
 
             self.logger.info(f"Scene metrics written to: {output_path}")
+            return scene_metrics
 
         except Exception as e:
             self.logger.error(f"Failed to write scene metrics: {e}")
             raise
+
+    def _write_frame_summary(self, scene_metrics: dict) -> None:
+        """Write per-frame summary with metrics and entropy in JSONL format."""
+        output_path = self.output_dir / "frame_summary.jsonl"
+        with open(output_path, "w") as summary_file:
+            for scene_id, frames in scene_metrics.items():
+                for frame_id, frame_data in frames.items():
+                    record = {
+                        "scene_id": scene_id,
+                        "frame_id": frame_id,
+                        "metrics": frame_data.get("all", {}),
+                    }
+                    summary_file.write(json.dumps(record) + "\n")
+        self.logger.info(f"Frame summary written to: {output_path}")
+
+    def _write_prediction_results(self) -> None:
+        """Write per-prediction results with TP/FP status and entropy to JSONL."""
+        output_path = self.output_dir / "prediction_results.jsonl"
+        with open(output_path, "w") as pred_file:
+            for frame_info in self.frame_results_with_info:
+                scene_id = frame_info["scene_id"]
+                frame_id = frame_info["sample_id"]
+                frame_result = frame_info["frame_result"]
+                prediction_stats = frame_info.get("prediction_stats", {}) or {}
+                per_prediction = prediction_stats.get("per_prediction", [])
+
+                obj_results = self._get_object_results(frame_result)
+                if not obj_results and not self._frame_result_debug_written:
+                    self._dump_frame_result_debug(frame_result)
+                    self._frame_result_debug_written = True
+                if obj_results:
+                    match_map = self._match_predictions_to_object_results(obj_results, per_prediction)
+                    if not match_map and len(obj_results) == len(per_prediction):
+                        match_map = {idx: (idx, "index") for idx in range(len(obj_results))}
+                    matched_pred_indices = set()
+                    for idx, obj_result in enumerate(obj_results):
+                        record = self._build_prediction_record(scene_id, frame_id, obj_result)
+                        if (
+                            record.get("tp_fp") is None
+                            and record.get("match_type") in (None, "")
+                            and not self._object_result_debug_written
+                        ):
+                            self._dump_object_result_debug(frame_result, obj_result)
+                            self._object_result_debug_written = True
+                        if idx in match_map:
+                            pred_idx, alignment = match_map[idx]
+                            if pred_idx < len(per_prediction):
+                                record.update(per_prediction[pred_idx])
+                                matched_pred_indices.add(pred_idx)
+                            record["alignment"] = alignment
+                            record["source"] = "combined"
+                            pred_file.write(json.dumps(record) + "\n")
+                        else:
+                            record["alignment"] = "unmatched"
+                            record["source"] = "object_result"
+                            pred_file.write(json.dumps(record) + "\n")
+                    for pred_idx, pred in enumerate(per_prediction):
+                        if pred_idx in matched_pred_indices:
+                            continue
+                        pred_file.write(
+                            json.dumps(
+                                {
+                                    "scene_id": scene_id,
+                                    "frame_id": frame_id,
+                                    **pred,
+                                    "tp_fp": None,
+                                    "match_type": None,
+                                    "alignment": "unmatched",
+                                    "source": "prediction",
+                                }
+                            )
+                            + "\n"
+                        )
+                else:
+                    # Fallback: dump entropy-only predictions without TP/FP
+                    for pred in per_prediction:
+                        record = {
+                            "scene_id": scene_id,
+                            "frame_id": frame_id,
+                            **pred,
+                            "tp_fp": None,
+                            "match_type": None,
+                            "alignment": "unmatched",
+                            "source": "prediction",
+                        }
+                        pred_file.write(json.dumps(record) + "\n")
+
+        self.logger.info(f"Prediction results written to: {output_path}")
+
+    @staticmethod
+    def _looks_like_object_result(value: Any) -> bool:
+        if value is None:
+            return False
+        if isinstance(value, dict):
+            keys = set(value.keys())
+            return bool(
+                keys
+                & {
+                    "result_type",
+                    "is_true_positive",
+                    "is_tp",
+                    "is_false_positive",
+                    "estimated_object",
+                    "estimated",
+                    "predicted_object",
+                    "object",
+                }
+            )
+        return any(
+            hasattr(value, key)
+            for key in [
+                "result_type",
+                "is_true_positive",
+                "is_tp",
+                "is_false_positive",
+                "estimated_object",
+                "estimated",
+                "predicted_object",
+                "object",
+            ]
+        )
+
+    @classmethod
+    def _extract_object_results(cls, value: Any, depth: int, seen: Set[int]) -> List[Any]:
+        if value is None or depth > 4:
+            return []
+        value_id = id(value)
+        if value_id in seen:
+            return []
+        seen.add(value_id)
+
+        if isinstance(value, (list, tuple)):
+            if value and cls._looks_like_object_result(value[0]):
+                return list(value)
+            for item in value:
+                found = cls._extract_object_results(item, depth + 1, seen)
+                if found:
+                    return found
+            return []
+
+        if isinstance(value, dict):
+            for item in value.values():
+                found = cls._extract_object_results(item, depth + 1, seen)
+                if found:
+                    return found
+            return []
+
+        for attr in [
+            "object_results",
+            "objects_results",
+            "perception_object_results",
+            "result_objects",
+            "object_result",
+            "object_result_list",
+        ]:
+            if hasattr(value, attr):
+                found = cls._extract_object_results(getattr(value, attr), depth + 1, seen)
+                if found:
+                    return found
+
+        if hasattr(value, "__dict__"):
+            for item in value.__dict__.values():
+                found = cls._extract_object_results(item, depth + 1, seen)
+                if found:
+                    return found
+
+        for attr in getattr(value, "__slots__", []):
+            try:
+                item = getattr(value, attr)
+            except Exception:
+                continue
+            found = cls._extract_object_results(item, depth + 1, seen)
+            if found:
+                return found
+
+        return []
+
+    @classmethod
+    def _get_object_results(cls, frame_result: PerceptionFrameResult) -> List[Any]:
+        """Try to retrieve object results from PerceptionFrameResult across versions."""
+        return cls._extract_object_results(frame_result, 0, set())
+
+    def _dump_frame_result_debug(self, frame_result: PerceptionFrameResult) -> None:
+        """Dump a summary of PerceptionFrameResult fields for debugging."""
+        debug_path = self.output_dir / "frame_result_debug.json"
+        debug = {
+            "type": type(frame_result).__name__,
+            "attrs": [],
+        }
+
+        for attr in dir(frame_result):
+            if attr.startswith("_"):
+                continue
+            try:
+                value = getattr(frame_result, attr)
+            except Exception:
+                continue
+            entry = {"name": attr, "type": type(value).__name__}
+            if isinstance(value, (list, tuple)):
+                entry["len"] = len(value)
+                entry["item_type"] = type(value[0]).__name__ if value else None
+                if value and self._looks_like_object_result(value[0]):
+                    entry["looks_like_object_result"] = True
+            elif isinstance(value, dict):
+                entry["len"] = len(value)
+                entry["keys"] = [str(k) for k in list(value.keys())[:5]]
+            debug["attrs"].append(entry)
+
+        try:
+            with open(debug_path, "w") as debug_file:
+                json.dump(debug, debug_file, indent=2)
+            self.logger.info(f"Frame result debug written to: {debug_path}")
+        except Exception as e:
+            self.logger.warning(f"Failed to write frame result debug info: {e}")
+
+    def _dump_object_result_debug(self, frame_result: PerceptionFrameResult, obj_result: Any) -> None:
+        """Dump a summary of object result fields for debugging TP/FP extraction."""
+        debug_path = self.output_dir / "object_result_debug.json"
+        debug = {
+            "frame_result_type": type(frame_result).__name__,
+            "object_result_type": type(obj_result).__name__,
+            "object_result_attrs": [],
+            "get_status": None,
+            "is_result_correct": None,
+            "serialization": None,
+        }
+
+        debug["get_status"] = self._safe_call_noargs(obj_result, "get_status")
+        debug["is_result_correct"] = self._safe_call_noargs(obj_result, "is_result_correct")
+        debug["serialization"] = self._safe_call_noargs(obj_result, "serialization")
+
+        for attr in dir(obj_result):
+            if attr.startswith("_"):
+                continue
+            try:
+                value = getattr(obj_result, attr)
+            except Exception:
+                continue
+            entry = {"name": attr, "type": type(value).__name__}
+            if isinstance(value, (str, int, float, bool)) or value is None:
+                entry["value"] = value
+            elif isinstance(value, (list, tuple)):
+                entry["len"] = len(value)
+                entry["item_type"] = type(value[0]).__name__ if value else None
+            elif isinstance(value, dict):
+                entry["len"] = len(value)
+                entry["keys"] = [str(k) for k in list(value.keys())[:5]]
+            else:
+                entry["repr"] = repr(value)[:200]
+            debug["object_result_attrs"].append(entry)
+
+        try:
+            with open(debug_path, "w") as debug_file:
+                json.dump(debug, debug_file, indent=2)
+            self.logger.info(f"Object result debug written to: {debug_path}")
+        except Exception as e:
+            self.logger.warning(f"Failed to write object result debug info: {e}")
+
+    @staticmethod
+    def _label_to_str(label: Any) -> str:
+        if label is None:
+            return ""
+        return getattr(label, "value", None) or getattr(label, "name", None) or str(label)
+
+    @staticmethod
+    def _safe_call_noargs(obj: Any, method_name: str) -> Optional[Any]:
+        method = getattr(obj, method_name, None)
+        if not callable(method):
+            return None
+        try:
+            return method()
+        except TypeError:
+            return None
+        except Exception:
+            return None
+
+    @staticmethod
+    def _extract_status_from_serialized(serialized: dict) -> Tuple[Optional[str], Optional[bool]]:
+        match_type = None
+        is_tp = None
+        if not isinstance(serialized, dict):
+            return match_type, is_tp
+
+        for key in ["result_type", "status", "matching_status", "match_type", "status_label"]:
+            if key in serialized and serialized[key] is not None:
+                match_type = str(serialized[key])
+                break
+
+        for key in ["is_result_correct", "is_true_positive", "is_tp", "is_false_positive"]:
+            if key in serialized:
+                if key == "is_false_positive":
+                    is_tp = not bool(serialized[key])
+                else:
+                    is_tp = bool(serialized[key])
+                break
+
+        if is_tp is None and "is_label_correct" in serialized:
+            is_tp = bool(serialized["is_label_correct"])
+
+        return match_type, is_tp
+
+    @staticmethod
+    def _extract_center(obj: Any) -> Optional[Tuple[float, float, float]]:
+        if obj is None:
+            return None
+        for attr in ["position", "center", "center_position"]:
+            val = getattr(obj, attr, None)
+            if val is None:
+                continue
+            if callable(val):
+                try:
+                    val = val()
+                except Exception:
+                    continue
+            try:
+                coords = list(val)
+            except TypeError:
+                continue
+            if len(coords) >= 3:
+                return (float(coords[0]), float(coords[1]), float(coords[2]))
+
+        state = getattr(obj, "state", None)
+        if state is not None and state is not obj:
+            center = T4MetricV2._extract_center(state)
+            if center is not None:
+                return center
+
+        pose = getattr(obj, "pose", None)
+        if pose is not None and pose is not obj:
+            center = T4MetricV2._extract_center(pose)
+            if center is not None:
+                return center
+
+        return None
+
+    def _label_name_to_index(self, label_name: str) -> Optional[int]:
+        if not label_name or not self.class_names:
+            return None
+        target = label_name.lower()
+        for idx, name in enumerate(self.class_names):
+            if name.lower() == target:
+                return idx
+        return None
+
+    def _match_predictions_to_object_results(
+        self,
+        obj_results: List[Any],
+        per_prediction: List[dict],
+        center_tol: float = 1e-2,
+        score_tol: float = 1e-3,
+    ) -> Dict[int, Tuple[int, str]]:
+        """Match object results to predictions by center/label/score similarity."""
+        matches: Dict[int, Tuple[int, str]] = {}
+        if not obj_results or not per_prediction:
+            return matches
+
+        pred_centers: List[Optional[Tuple[float, float, float]]] = []
+        for pred in per_prediction:
+            center = pred.get("center")
+            if center and len(center) >= 3:
+                pred_centers.append((float(center[0]), float(center[1]), float(center[2])))
+            else:
+                pred_centers.append(None)
+
+        candidate_pairs: List[Tuple[float, int, int]] = []
+        for obj_idx, obj_result in enumerate(obj_results):
+            estimated = None
+            for attr in ["estimated_object", "estimated", "predicted_object", "object"]:
+                if hasattr(obj_result, attr):
+                    estimated = getattr(obj_result, attr)
+                    break
+            if estimated is None:
+                continue
+            obj_center = self._extract_center(estimated)
+            if obj_center is None:
+                continue
+            obj_score = getattr(estimated, "semantic_score", None)
+            obj_label = self._label_to_str(getattr(estimated, "semantic_label", None))
+            obj_label_index = self._label_name_to_index(obj_label)
+
+            for pred_idx, pred in enumerate(per_prediction):
+                pred_center = pred_centers[pred_idx]
+                if pred_center is None:
+                    continue
+                if obj_label_index is not None:
+                    pred_label_index = pred.get("label_index")
+                    if pred_label_index is not None and int(pred_label_index) != obj_label_index:
+                        continue
+                if obj_score is not None and pred.get("score") is not None:
+                    if abs(float(pred["score"]) - float(obj_score)) > score_tol:
+                        continue
+                dist = math.sqrt(
+                    (obj_center[0] - pred_center[0]) ** 2
+                    + (obj_center[1] - pred_center[1]) ** 2
+                    + (obj_center[2] - pred_center[2]) ** 2
+                )
+                if dist <= center_tol:
+                    candidate_pairs.append((dist, obj_idx, pred_idx))
+
+        candidate_pairs.sort(key=lambda x: x[0])
+        used_objs = set()
+        used_preds = set()
+        for _, obj_idx, pred_idx in candidate_pairs:
+            if obj_idx in used_objs or pred_idx in used_preds:
+                continue
+            matches[obj_idx] = (pred_idx, "center")
+            used_objs.add(obj_idx)
+            used_preds.add(pred_idx)
+
+        return matches
+
+    def _build_prediction_record(self, scene_id: str, frame_id: str, obj_result: Any) -> dict:
+        """Build a prediction record from an object result."""
+        estimated = None
+        result_type = None
+        is_tp = None
+        if isinstance(obj_result, dict):
+            estimated = (
+                obj_result.get("estimated_object")
+                or obj_result.get("estimated")
+                or obj_result.get("predicted_object")
+                or obj_result.get("object")
+            )
+            result_type = obj_result.get("result_type")
+            if "is_true_positive" in obj_result:
+                is_tp = bool(obj_result.get("is_true_positive"))
+            elif "is_tp" in obj_result:
+                is_tp = bool(obj_result.get("is_tp"))
+            elif "is_false_positive" in obj_result:
+                is_tp = not bool(obj_result.get("is_false_positive"))
+        else:
+            for attr in ["estimated_object", "estimated", "predicted_object", "object"]:
+                if hasattr(obj_result, attr):
+                    estimated = getattr(obj_result, attr)
+                    break
+            result_type = getattr(obj_result, "result_type", None)
+            if hasattr(obj_result, "is_true_positive"):
+                is_tp = bool(getattr(obj_result, "is_true_positive"))
+            elif hasattr(obj_result, "is_tp"):
+                is_tp = bool(getattr(obj_result, "is_tp"))
+            elif hasattr(obj_result, "is_false_positive"):
+                is_tp = not bool(getattr(obj_result, "is_false_positive"))
+
+        score = None
+        label = None
+        center = None
+        if isinstance(estimated, dict):
+            score = estimated.get("semantic_score", estimated.get("score"))
+            label = estimated.get("semantic_label", estimated.get("label"))
+        elif estimated is not None:
+            score = getattr(estimated, "semantic_score", None)
+            if score is None:
+                score = getattr(estimated, "score", None)
+            label = getattr(estimated, "semantic_label", None)
+            if label is None:
+                label = getattr(estimated, "label", None)
+            center = self._extract_center(estimated)
+
+        label = self._label_to_str(label)
+        label_index = self._label_name_to_index(label)
+        match_type = self._label_to_str(result_type)
+
+        status = self._safe_call_noargs(obj_result, "get_status")
+        if status is not None and not match_type:
+            match_type = self._label_to_str(status)
+
+        serialized = self._safe_call_noargs(obj_result, "serialization")
+        if not match_type or is_tp is None:
+            ser_match_type, ser_tp = self._extract_status_from_serialized(serialized)
+            if not match_type and ser_match_type:
+                match_type = ser_match_type
+            if is_tp is None and ser_tp is not None:
+                is_tp = ser_tp
+
+        if is_tp is None:
+            result_correct = self._safe_call_noargs(obj_result, "is_result_correct")
+            if isinstance(result_correct, bool):
+                is_tp = result_correct
+
+        if is_tp is None and hasattr(obj_result, "is_label_correct"):
+            is_label_correct = getattr(obj_result, "is_label_correct", None)
+            gt_obj = getattr(obj_result, "ground_truth_object", None)
+            if isinstance(is_label_correct, bool):
+                is_tp = is_label_correct if gt_obj is not None else False
+
+        if is_tp is None and match_type:
+            mt_lower = match_type.lower()
+            if "tp" in mt_lower:
+                is_tp = True
+            elif "fp" in mt_lower:
+                is_tp = False
+
+        record = {
+            "scene_id": scene_id,
+            "frame_id": frame_id,
+            "score": float(score) if score is not None else None,
+            "label": label,
+            "label_index": label_index,
+            "center": list(center) if center is not None else None,
+            "tp_fp": "tp" if is_tp is True else ("fp" if is_tp is False else None),
+            "match_type": match_type,
+        }
+        return record
 
     def _initialize_scene_metrics_structure(self, scenes: dict) -> dict:
         """Initialize the scene metrics structure with empty dictionaries.
@@ -712,6 +1247,8 @@ class T4MetricV2(BaseMetric):
 
             # Process all map instances for this frame
             self._process_frame_map_instances(frame_metrics, frame_result.metrics_score.mean_ap_values)
+            if frame_info.get("entropy_stats"):
+                frame_metrics["entropy"] = frame_info["entropy_stats"]
 
     def _process_frame_map_instances(self, frame_metrics: dict, map_instances) -> None:
         """Process all map instances for a single frame and populate the metrics structure.
@@ -902,7 +1439,7 @@ class T4MetricV2(BaseMetric):
 
     def _parse_predictions_from_sample(
         self, time: float, data_sample: Dict[str, Any], ground_truth_objects: FrameGroundTruth
-    ) -> PerceptionFrame:
+    ) -> Tuple[PerceptionFrame, Optional[dict], Optional[dict]]:
         """
         Parses predicted objects from the data sample and creates a perception frame result.
 
@@ -912,7 +1449,8 @@ class T4MetricV2(BaseMetric):
             ground_truth_objects (FrameGroundTruth): The ground truth data corresponding to the current frame.
 
         Returns:
-            PerceptionFrame: A structured result containing the predicted objects and ground truth objects.
+            Tuple[PerceptionFrame, Optional[dict], Optional[dict]]: Perception frame, entropy stats,
+            and per-prediction stats.
         """
         pred_3d: Dict[str, Any] = data_sample.get("pred_instances_3d", {})
 
@@ -925,26 +1463,125 @@ class T4MetricV2(BaseMetric):
         scores: torch.Tensor = pred_3d.get("scores_3d", torch.empty(0)).cpu()
         # labels_3d: (N,) Tensor of predicted class indices
         labels: torch.Tensor = pred_3d.get("labels_3d", torch.empty(0)).cpu()
-        estimated_objects = [
-            DynamicObject(
-                unix_time=time,
-                frame_id=self.perception_evaluator_configs.frame_id,
-                position=tuple(bbox[:3]),
-                orientation=Quaternion(np.cos(bbox[6] / 2), 0, 0, np.sin(bbox[6] / 2)),
-                shape=Shape(shape_type=ShapeType.BOUNDING_BOX, size=tuple(bbox[3:6])),
-                velocity=(bbox[7], bbox[8], 0.0),
-                semantic_score=float(score),
-                semantic_label=self._convert_index_to_label(int(label)),
+        class_scores: Optional[torch.Tensor] = pred_3d.get("class_scores_3d")
+        entropy_stats: Optional[dict] = None
+        prediction_stats: Optional[dict] = None
+
+        estimated_objects = []
+        entropies_sum: List[float] = []
+        entropies_argmax: List[float] = []
+        entropies_norm: List[float] = []
+        entropies_sum_by_class: Dict[int, List[float]] = {}
+        entropies_argmax_by_class: Dict[int, List[float]] = {}
+        entropies_norm_by_class: Dict[int, List[float]] = {}
+        per_prediction: List[dict] = []
+        for idx, (bbox, score, label) in enumerate(zip(bboxes, scores, labels)):
+            score_val = float(score)
+            if np.isnan(score) or np.isnan(label) or np.any(np.isnan(bbox)):
+                continue
+            label_name = self._label_to_str(self._convert_index_to_label(int(label)))
+            estimated_objects.append(
+                DynamicObject(
+                    unix_time=time,
+                    frame_id=self.perception_evaluator_configs.frame_id,
+                    position=tuple(bbox[:3]),
+                    orientation=Quaternion(np.cos(bbox[6] / 2), 0, 0, np.sin(bbox[6] / 2)),
+                    shape=Shape(shape_type=ShapeType.BOUNDING_BOX, size=tuple(bbox[3:6])),
+                    velocity=(bbox[7], bbox[8], 0.0),
+                    semantic_score=score_val,
+                    semantic_label=self._convert_index_to_label(int(label)),
+                )
             )
-            for bbox, score, label in zip(bboxes, scores, labels)
-            if not (np.isnan(score) or np.isnan(label) or np.any(np.isnan(bbox)))
-        ]
+            entropy_record = {
+                "index": int(idx),
+                "score": score_val,
+                "label_index": int(label),
+                "label": label_name,
+                "entropy_sum": None,
+                "entropy_argmax": None,
+                "entropy_normalized": None,
+                "entropy_included": False,
+                "entropy_reason": None,
+                "center": [float(bbox[0]), float(bbox[1]), float(bbox[2])],
+                "size": [float(bbox[3]), float(bbox[4]), float(bbox[5])],
+                "yaw": float(bbox[6]),
+            }
+            if class_scores is not None and idx < class_scores.shape[0]:
+                logits = class_scores[idx]
+                probs = torch.sigmoid(logits)
+                probs = probs.clamp_min(1e-8).clamp_max(1.0 - 1e-8)
+                # Bernoulli entropy per channel, summed (log2 for bits)
+                ent_sum = float(
+                    (-(probs * torch.log2(probs) + (1.0 - probs) * torch.log2(1.0 - probs))).sum().cpu()
+                )
+                # Bernoulli entropy for argmax channel
+                argmax_idx = int(torch.argmax(logits).item())
+                p_arg = float(probs[argmax_idx].cpu())
+                ent_arg = float(-(p_arg * np.log2(p_arg) + (1.0 - p_arg) * np.log2(1.0 - p_arg)))
+                # Normalized sigmoid entropy (heuristic)
+                norm = probs / probs.sum()
+                ent_norm = float((-(norm * torch.log2(norm)).sum().cpu()))
+
+                entropy_record["entropy_sum"] = ent_sum
+                entropy_record["entropy_argmax"] = ent_arg
+                entropy_record["entropy_normalized"] = ent_norm
+                include_entropy = (
+                    self.entropy_score_threshold is None or score_val >= self.entropy_score_threshold
+                )
+                entropy_record["entropy_included"] = include_entropy
+                if not include_entropy:
+                    entropy_record["entropy_reason"] = "below_score_threshold"
+                if include_entropy:
+                    entropies_sum_by_class.setdefault(int(label), []).append(ent_sum)
+                    entropies_argmax_by_class.setdefault(int(label), []).append(ent_arg)
+                    entropies_norm_by_class.setdefault(int(label), []).append(ent_norm)
+                    entropies_sum.append(ent_sum)
+                    entropies_argmax.append(ent_arg)
+                    entropies_norm.append(ent_norm)
+            else:
+                entropy_record["entropy_reason"] = "missing_class_scores"
+            per_prediction.append(entropy_record)
+
+        if entropies_sum:
+            per_class = {}
+            for cls_idx in set(
+                list(entropies_sum_by_class.keys())
+                + list(entropies_argmax_by_class.keys())
+                + list(entropies_norm_by_class.keys())
+            ):
+                if self.class_names and cls_idx < len(self.class_names):
+                    cls_name = self.class_names[cls_idx]
+                else:
+                    cls_name = str(cls_idx)
+                per_class[cls_name] = {
+                    "sum": float(np.mean(entropies_sum_by_class.get(cls_idx, []))) if cls_idx in entropies_sum_by_class else None,
+                    "argmax": float(np.mean(entropies_argmax_by_class.get(cls_idx, []))) if cls_idx in entropies_argmax_by_class else None,
+                    "normalized": float(np.mean(entropies_norm_by_class.get(cls_idx, []))) if cls_idx in entropies_norm_by_class else None,
+                }
+            entropy_stats = {
+                "mean_entropy_sum": float(np.mean(entropies_sum)),
+                "max_entropy_sum": float(np.max(entropies_sum)),
+                "mean_entropy_argmax": float(np.mean(entropies_argmax)),
+                "max_entropy_argmax": float(np.max(entropies_argmax)),
+                "mean_entropy_normalized": float(np.mean(entropies_norm)),
+                "max_entropy_normalized": float(np.max(entropies_norm)),
+                "per_class_entropy": per_class,
+                "num_predictions": len(entropies_sum),
+                "score_threshold": self.entropy_score_threshold,
+                "entropy_log_base": 2,
+            }
+        if per_prediction:
+            prediction_stats = {
+                "per_prediction": per_prediction,
+                "score_threshold": self.entropy_score_threshold,
+                "entropy_log_base": 2,
+            }
 
         return PerceptionFrame(
             unix_time=time,
             estimated_objects=estimated_objects,
             ground_truth_objects=ground_truth_objects,
-        )
+        ), entropy_stats, prediction_stats
 
     def _save_perception_frame(self, scene_id: str, sample_idx: int, perception_frame: PerceptionFrame) -> None:
         """
@@ -975,6 +1612,20 @@ class T4MetricV2(BaseMetric):
             # New scene: append to results and record its index
             self.results.append({scene_id: {sample_idx: perception_frame}})
             self.scene_id_to_index_map[scene_id] = len(self.results) - 1
+
+    def _save_entropy_stats(self, scene_id: str, sample_idx: int, entropy_stats: Optional[dict]) -> None:
+        """Store entropy statistics for later export."""
+        if entropy_stats is None:
+            return
+        scene_store = self.entropy_stats.setdefault(scene_id, {})
+        scene_store[str(sample_idx)] = entropy_stats
+
+    def _save_prediction_stats(self, scene_id: str, sample_idx: int, prediction_stats: Optional[dict]) -> None:
+        """Store per-prediction stats for later export."""
+        if prediction_stats is None:
+            return
+        scene_store = self.prediction_stats.setdefault(scene_id, {})
+        scene_store[str(sample_idx)] = prediction_stats
 
     def _save_results_to_pickle(self, path: Path) -> None:
         """Save self.results to the given pickle file path.
