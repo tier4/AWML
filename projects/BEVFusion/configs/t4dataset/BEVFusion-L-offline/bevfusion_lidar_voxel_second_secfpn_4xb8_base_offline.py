@@ -1,6 +1,6 @@
 _base_ = [
     "../../../../../autoware_ml/configs/detection3d/dataset/t4dataset/base.py"
-    "../default/bevfusion_camera_lidar_second_secfpn_4xb8_centerhead_aux_120m.py",
+    "../default/bevfusion_lidar_voxel_second_secfpn_4xb8_120m_offline.py",
 ]
 
 # user setting
@@ -27,7 +27,6 @@ train_dataloader = dict(
         test_mode=False,
         data_prefix=_base_.data_prefix,
         box_type_3d="LiDAR",
-        filter_cfg=dict(filter_frames_with_camera_order=_base_.camera_order),
     )
 )
 

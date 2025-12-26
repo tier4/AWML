@@ -1,4 +1,5 @@
 from .bevfusion import BEVFusion
+from .bevfusion_center_head import BEVFusionCenterHead
 from .bevfusion_head import BEVFusionHead, ConvFuser
 from .bevfusion_necks import GeneralizedLSSFPN
 from .depth_lss import DepthLSSTransform, LSSTransform
@@ -11,6 +12,7 @@ from .utils import BBoxBEVL1Cost, HeuristicAssigner3D, HungarianAssigner3D, IoU3
 __all__ = [
     "BEVFusion",
     "BEVFusionHead",
+    "BEVFusionCenterHead",
     "ConvFuser",
     "ImageAug3D",
     "GridMask",

@@ -1,18 +1,15 @@
 _base_ = [
-    "../../../../../autoware_ml/configs/detection3d/dataset/t4dataset/base.py"
-    "../default/bevfusion_camera_lidar_second_secfpn_4xb8_centerhead_aux_120m.py",
+    "../../../../../autoware_ml/configs/detection3d/dataset/t4dataset/j6gen2_base.py",
+    "../default/bevfusion_camera_second_secfpn_4xb8_centerhead_aux_120m.py",
+    "../default/pipelines/default_camera_crop_lidar_intensity_120m.py",
 ]
 
 # user setting
 data_root = "data/t4dataset/"
 info_directory_path = "info/user_name/"
 
-model = dict(
-    type="BEVFusion",
-    bbox_head=dict(
-        class_names=_base_.class_names,  # Use class names to identify the correct class indices
-    ),
-)
+# Scheduler parameters
+max_epochs = 30
 
 train_dataloader = dict(
     dataset=dict(
