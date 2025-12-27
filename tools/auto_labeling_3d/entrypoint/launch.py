@@ -1,12 +1,18 @@
 import argparse
+import json
 import logging
 import pickle
 from pathlib import Path
+from typing import Type
 
+import yaml
 from mmengine.registry import init_default_scope
 
 from tools.auto_labeling_3d.attach_tracking_id.attach_tracking_id import determine_scene_range, track_objects
 from tools.auto_labeling_3d.change_directory_structure.change_directory_structure import process_dataset
+from tools.auto_labeling_3d.create_annotation_tool_format.create_annotation_tool_format import (
+    create_annotation_tool_format,
+)
 from tools.auto_labeling_3d.create_info.create_info_data import create_info_data
 from tools.auto_labeling_3d.create_pseudo_t4dataset.create_pseudo_t4dataset import create_pseudo_t4dataset
 from tools.auto_labeling_3d.entrypoint.parse_config import (
@@ -16,29 +22,44 @@ from tools.auto_labeling_3d.entrypoint.parse_config import (
     load_t4dataset_config,
 )
 from tools.auto_labeling_3d.filter_objects.ensemble_infos import ensemble_infos
-from tools.auto_labeling_3d.utils.download_checkpoint import download_checkpoint
+from tools.auto_labeling_3d.utils.dataset.annotation_tool_dataset import (
+    AnnotationToolDataset,
+    DeepenDataset,
+    SegmentsAIDataset,
+)
+from tools.auto_labeling_3d.utils.download_checkpoint import download_file
 
 
-def run_download_checkpoint(config: PipelineConfig, logger: logging.Logger) -> None:
+def run_download_dependencies(config: PipelineConfig, logger: logging.Logger) -> None:
     """
-    Download checkpoints specified in the pipeline configuration.
+    Download model configs and checkpoints specified in the pipeline configuration.
+
+    This step downloads each model's config and checkpoint only when the respective
+    `config_path` or `checkpoint_path` does not already exist, preventing unnecessary
+    network access and keeping previously downloaded artifacts intact.
 
     Args:
         config (PipelineConfig): The pipeline configuration containing model information.
         logger (logging.Logger): Logger for logging messages.
     """
     if config.create_info is None:
-        raise ValueError("create_info configuration is required for run_download_checkpoint")
+        raise ValueError("create_info configuration is required for run_download_dependencies")
 
-    logger.info("Starting checkpoint download...")
+    logger.info("Starting dependency download...")
     for model in config.create_info.model_list:
-        url = model.checkpoint.model_zoo_url
-        checkpoint_path = model.checkpoint.checkpoint_path
-        if url and checkpoint_path:
-            download_checkpoint(url, checkpoint_path, logger)
-        else:
-            logger.warning(f"Skipping model '{model.name}': missing url or checkpoint_path")
-    logger.info("Checkpoint download completed.")
+        # Download model config
+        download_file(
+            url=model.model_config.model_zoo_url,
+            save_path=model.model_config.config_path,
+            logger=logger,
+        )
+        # Download checkpoint
+        download_file(
+            url=model.checkpoint.model_zoo_url,
+            save_path=model.checkpoint.checkpoint_path,
+            logger=logger,
+        )
+    logger.info("Dependency download completed.")
 
 
 def run_create_info_data(config: PipelineConfig, logger: logging.Logger) -> None:
@@ -191,6 +212,57 @@ def run_change_directory_structure(config: PipelineConfig, logger: logging.Logge
     logger.info("Change directory structure step completed.")
 
 
+def run_create_annotation_tool_format(config: PipelineConfig, logger: logging.Logger, input_path: Path) -> None:
+    """
+    Create annotation tool format from pseudo labels.
+
+    Args:
+        config (PipelineConfig): The pipeline configuration.
+        logger (logging.Logger): Logger for logging messages.
+        input_path (Path): Path to the input file (tracking output).
+
+    Raises:
+        ValueError: If create_annotation_tool_format configuration is missing.
+    """
+    if config.create_annotation_tool_format is None:
+        raise ValueError(
+            "create_annotation_tool_format configuration is required for run_create_annotation_tool_format"
+        )
+
+    logger.info("Starting create annotation tool format step...")
+
+    # Load dataname_to_anntool_id if provided
+    dataname_to_anntool_id = None
+    if config.create_annotation_tool_format.dataname_to_anntool_id:
+        logger.info(f"Loading ID mapping from: {config.create_annotation_tool_format.dataname_to_anntool_id}")
+        with open(config.create_annotation_tool_format.dataname_to_anntool_id, "r") as f:
+            dataname_to_anntool_id = yaml.safe_load(f)
+
+    # Select the dataset class based on the output format argument
+    annotation_tool_classes: dict[str, Type[AnnotationToolDataset]] = {
+        "deepen": DeepenDataset,
+        "segments.ai": SegmentsAIDataset,
+    }
+    output_format = config.create_annotation_tool_format.output_format
+    if output_format in annotation_tool_classes:
+        dataset_cls = annotation_tool_classes[output_format]
+    else:
+        logger.error(f"Unsupported output format: {output_format}. We support: {list(annotation_tool_classes.keys())}")
+        return
+
+    result_datasets = create_annotation_tool_format(
+        info_path=input_path,
+        output_dir=config.create_annotation_tool_format.output_dir,
+        dataset_cls=dataset_cls,
+        logger=logger,
+        dataname_to_anntool_id=dataname_to_anntool_id,
+    )
+    id_to_path_map = {ds.ann_tool_id: str(ds.ann_tool_file_path) for ds in result_datasets}
+    logger.info("--- Conversion Result ---")
+    logger.info(json.dumps(id_to_path_map, indent=4))
+    logger.info("Create annotation tool format step completed.")
+
+
 def run_auto_labeling_pipeline(config: PipelineConfig) -> None:
     """Execute the whole auto labeling pipeline."""
     logger = logging.getLogger("auto_labeling_3d.entrypoint")
@@ -199,28 +271,41 @@ def run_auto_labeling_pipeline(config: PipelineConfig) -> None:
     config.logging.work_dir.mkdir(parents=True, exist_ok=True)
 
     if config.create_info:
-        # Step 1: Download checkpoints
-        run_download_checkpoint(config, logger)
+        # Step 1: Download dependencies (only if checkpoint_path and config_path is not found)
+        run_download_dependencies(config, logger)
 
         # Step 2: Create info data for each model
         run_create_info_data(config, logger)
     else:
         logger.warning(
-            "Skipping download_checkpoint and create_info_data steps because create_info config is not contained in yaml."
+            "Skipping download_dependencies and create_info_data steps because create_info config is not contained in yaml."
         )
 
-    if config.ensemble_infos and config.create_pseudo_t4dataset:
+    if config.ensemble_infos:
         # Step 3: Ensemble infos (only if configured)
         ensemble_output_path = run_ensemble_infos(config, logger)
 
         # Step 4: Attach tracking IDs
         tracking_output_path = run_attach_tracking_id(config, logger, ensemble_output_path)
 
-        # Step 5: Create pseudo T4dataset
-        run_create_pseudo_t4dataset(config, logger, tracking_output_path)
+        if config.create_pseudo_t4dataset:
+            # Step 5: Create pseudo T4dataset
+            run_create_pseudo_t4dataset(config, logger, tracking_output_path)
+        else:
+            logger.warning(
+                "Skipping create_pseudo_t4dataset step because create_pseudo_t4dataset config is not contained in yaml."
+            )
+
+        if config.create_annotation_tool_format:
+            # Step 6: Create annotation tool format
+            run_create_annotation_tool_format(config, logger, tracking_output_path)
+        else:
+            logger.warning(
+                "Skipping create_annotation_tool_format step because create_annotation_tool_format config is not contained in yaml."
+            )
     else:
         logger.warning(
-            "Skipping ensemble_infos, attach_tracking_id, and create_pseudo_t4dataset steps because ensemble_infos or create_pseudo_t4dataset config is not contained in yaml."
+            "Skipping ensemble_infos and attach_tracking_id steps because ensemble_infos config is not contained in yaml."
         )
 
     if config.change_directory_structure:
