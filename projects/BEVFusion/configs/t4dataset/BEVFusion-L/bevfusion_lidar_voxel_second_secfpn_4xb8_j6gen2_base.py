@@ -115,6 +115,9 @@ train_pipeline = [
     dict(type="BEVFusionRandomFlip3D"),
     dict(type="PointsRangeFilter", point_cloud_range=point_cloud_range),
     dict(type="ObjectRangeFilter", point_cloud_range=point_cloud_range),
+    dict(type="ObjectRangeMinPointsFilter", range_radius=[0, 60], min_num_points=5),
+    dict(type="ObjectRangeMinPointsFilter", range_radius=[60, 90], min_num_points=3),
+    dict(type="ObjectRangeMinPointsFilter", range_radius=[90, 130], min_num_points=1),
     dict(
         type="ObjectNameFilter",
         classes=[
