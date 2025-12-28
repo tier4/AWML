@@ -157,6 +157,7 @@ train_pipeline = [
             "pcd_trans",
             "img_aug_matrix",
             "lidar_aug_matrix",
+            "timestamp"
         ],
     ),
 ]
@@ -197,6 +198,7 @@ test_pipeline = [
             "img_path",
             "num_pts_feats",
             "num_views",
+            "timestamp"
         ],
     ),
 ]
@@ -362,3 +364,5 @@ if train_gpu_size > 1:
     sync_bn = "torch"
 
 load_from = "work_dirs/bevfusion_2_5/T4Dataset/bevfusion_lidar_base/epoch_50.pth"
+
+# resume = True
