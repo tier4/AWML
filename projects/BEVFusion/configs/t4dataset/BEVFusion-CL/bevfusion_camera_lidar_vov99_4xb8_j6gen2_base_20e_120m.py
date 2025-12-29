@@ -493,7 +493,7 @@ param_scheduler = [
 # runtime settings
 # Run validation for every val_interval epochs before max_epochs - 10, and run validation every 2 epoch after max_epochs - 10
 train_cfg = dict(
-    by_epoch=True, max_epochs=max_epochs, val_interval=val_interval, dynamic_intervals=[(max_epochs - 3, 1)]
+    by_epoch=True, max_epochs=max_epochs, val_interval=val_interval, dynamic_intervals=[(max_epochs - 5, 1)]
 )
 val_cfg = dict()
 test_cfg = dict()
