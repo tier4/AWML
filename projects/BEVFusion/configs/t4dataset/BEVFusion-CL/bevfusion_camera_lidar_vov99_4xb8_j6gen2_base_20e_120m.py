@@ -49,7 +49,7 @@ camera_order = ["CAM_FRONT", "CAM_FRONT_LEFT", "CAM_BACK_LEFT", "CAM_FRONT_RIGHT
 work_dir = (
     "work_dirs/bevfusion_cl_2_5/"
     + _base_.dataset_type
-    + "/bevfusion_camera_lidar_vov99_4xb8_j6gen2_base_30e_120m/"
+    + "/bevfusion_camera_lidar_vov99_4xb8_j6gen2_base_20e_120m/"
 )
 focal_head_loss_weight = 1.0
 
