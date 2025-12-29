@@ -12,9 +12,9 @@ custom_imports["imports"] += ["autoware_ml.samplers"]
 
 # This is a base file for t4dataset, add the dataset config.
 # type, data_root and ann_file of data.train, data.val and data.test
-point_cloud_range = [-121.60, -121.60, -3.0, 121.60, 121.60, 5.0]
-voxel_size = [0.32, 0.32, 8.0]
-grid_size = [760, 760, 1]  # (121.60 / 0.32 == 380, 380 * 2 == 760)
+point_cloud_range = [-122.40, -122.40, -3.0, 122.40, 122.40, 5.0]
+voxel_size = [0.24, 0.24, 8.0]
+grid_size = [1020, 1020, 1]  # (122.40 / 0.24 == 510, 510 * 2 == 1020)
 sweeps_num = 1
 input_modality = dict(
     use_lidar=True,
@@ -23,7 +23,7 @@ input_modality = dict(
     use_map=False,
     use_external=False,
 )
-out_size_factor = 1
+out_size_factor = 2
 
 backend_args = None
 # backend_args = dict(backend="disk")
@@ -42,7 +42,7 @@ eval_class_range = {
 
 # user setting
 data_root = "data/t4dataset/"
-info_directory_path = "info/user_name/"
+info_directory_path = "info/kokseang/"
 train_gpu_size = 4
 train_batch_size = 16
 test_batch_size = 2
@@ -226,7 +226,7 @@ model = dict(
             max_num_points=32,
             voxel_size=voxel_size,
             point_cloud_range=point_cloud_range,
-            max_voxels=(64000, 64000),
+            max_voxels=(96000, 96000),
             deterministic=True,
         ),
     ),
@@ -256,7 +256,7 @@ model = dict(
         type="SECONDFPN",
         in_channels=[64, 128, 256],
         out_channels=[128, 128, 128],
-        upsample_strides=[1, 2, 4],
+        upsample_strides=[0.5, 1, 2],
         norm_cfg=dict(type="BN", eps=0.001, momentum=0.01),
         upsample_cfg=dict(type="deconv", bias=False),
         use_conv_for_no_stride=True,
@@ -274,10 +274,8 @@ model = dict(
             post_center_range=[-200.0, -200.0, -10.0, 200.0, 200.0, 10.0],
             out_size_factor=out_size_factor,
         ),
-        # sigmoid(-9.2103) = 0.0001 for initial small values
-        # separate_head=dict(type="CustomSeparateHead", init_bias=-9.2103, final_kernel=1),
+        # sigmoid(-4.595) = 0.01 for initial small values
         separate_head=dict(type="CustomSeparateHead", init_bias=-4.595, final_kernel=1),
-        # loss_cls=dict(type="mmdet.GaussianFocalLoss", reduction="none", loss_weight=1.0),
         loss_cls=dict(type="mmdet.AmpGaussianFocalLoss", reduction="none", loss_weight=1.0),
         loss_bbox=dict(type="mmdet.L1Loss", reduction="mean", loss_weight=0.25),
         norm_bbox=True,
@@ -412,3 +410,5 @@ custom_hooks = [
 
 # Update the load_from path accordingly
 load_from = "<best_checkpoint>"
+
+activation_checkpointing = ["pts_backbone"]
