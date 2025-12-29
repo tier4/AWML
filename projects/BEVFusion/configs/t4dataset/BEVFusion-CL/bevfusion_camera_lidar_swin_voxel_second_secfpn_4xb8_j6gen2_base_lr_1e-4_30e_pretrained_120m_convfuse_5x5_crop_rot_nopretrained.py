@@ -3,7 +3,7 @@ _base_ = [
     "../../../../../autoware_ml/configs/detection3d/dataset/t4dataset/j6gen2_base.py",
 ]
 
-custom_imports = dict(imports=["projects.BEVFusion.bevfusion", "projects.CenterPoint.models", "projects.BEVFusion.models"], allow_failed_imports=False)
+custom_imports = dict(imports=["projects.BEVFusion.bevfusion"], allow_failed_imports=False)
 custom_imports["imports"] += _base_.custom_imports["imports"]
 custom_imports["imports"] += ["autoware_ml.detection3d.datasets.transforms"]
 
@@ -14,7 +14,7 @@ train_gpu_size = 4
 train_batch_size = 8
 test_batch_size = 2
 val_interval = 5
-max_epochs = 20
+max_epochs = 30
 backend_args = None
 out_size_factor = 8
 
@@ -46,13 +46,17 @@ lidar_sweep_dims = [0, 1, 2, 3, 4]  # x, y, z, time_lag
 lidar_feature_dims = 5
 camera_order = ["CAM_FRONT", "CAM_FRONT_LEFT", "CAM_BACK_LEFT", "CAM_FRONT_RIGHT", "CAM_BACK_RIGHT"]
 
-work_dir = "work_dirs/bevfusion_2_5/" + _base_.dataset_type + "/bevfusion_camera_lidar_vov99_e14_voxel_second_secfpn_4xb8_j6gen2_base_20e_120m_img_freeze/"
+work_dir = (
+    "work_dirs/bevfusion_2_5/"
+    + _base_.dataset_type
+    + "/bevfusion_camera_lidar_swin_voxel_second_secfpn_4xb8_j6gen2_base_lr_1e-4_30e_pretrained_120m_convfuse_5x5_crop_rot_nopretrained/"
+)
 
 
 model = dict(
     type="BEVFusion",
-    freeze_img=True,
-    merge_img_pts_backbone=False,
+    freeze_img=False,
+    merge_img_pts_backbone=True,
     data_preprocessor=dict(
         type="Det3DDataPreprocessor",
         pad_size_divisor=32,
@@ -78,18 +82,37 @@ model = dict(
     # ),
     pts_middle_encoder=dict(sparse_shape=grid_size, in_channels=lidar_feature_dims),
     img_backbone=dict(
-        type="VoVNetCP",  ###use checkpoint to save memory
-        spec_name="V-99-eSE",
-        norm_eval=True,  # TODO: make true by default
-        frozen_stages=-1,
-        input_ch=3,
-        out_features=(
-            "stage3",
-            "stage4",
-            "stage5",
+        type="mmdet.SwinTransformer",
+        embed_dims=96,
+        depths=[2, 2, 6, 2],
+        num_heads=[3, 6, 12, 24],
+        window_size=7,
+        mlp_ratio=4,
+        qkv_bias=True,
+        qk_scale=None,
+        drop_rate=0.0,
+        attn_drop_rate=0.0,
+        drop_path_rate=0.2,
+        patch_norm=True,
+        out_indices=[1, 2, 3],
+        with_cp=False,
+        convert_weights=True,
+        init_cfg=dict(
+            type="Pretrained",
+            checkpoint="work_dirs/bevfusion/pretrain/swint_nuimages_pretrained.pth",  # noqa: E251  # noqa: E501
+            # checkpoint="work_dirs/swin_transformer/swint_nuimages_pretrained.pth"  # noqa: E251  # noqa: E501
         ),
     ),
-    img_neck=dict(type="CPFPN", in_channels=[512, 768, 1024], out_channels=256, num_outs=3),
+    img_neck=dict(
+        type="GeneralizedLSSFPN",
+        in_channels=[192, 384, 768],
+        out_channels=256,
+        start_level=0,
+        num_outs=3,
+        norm_cfg=dict(type="BN2d", requires_grad=True),
+        act_cfg=dict(type="ReLU", inplace=True),
+        upsample_cfg=dict(mode="bilinear", align_corners=False),
+    ),
     view_transform=dict(
         type="DepthLSSTransform",
         in_channels=256,
@@ -102,9 +125,8 @@ model = dict(
         dbound=[1.0, 130, 1.0],
         downsample=2,
     ),
-    fusion_layer=dict(type="ConvFuser", in_channels=[80, 256+256], out_channels=256, kernel_size=5, padding=2),
+    fusion_layer=dict(type="ConvFuser", in_channels=[80, 256], out_channels=256, kernel_size=5, padding=2),
     bbox_head=dict(
-        in_channels=256,
         num_proposals=num_proposals,
         class_names=_base_.class_names,  # Use class names to identify the correct class indices
         train_cfg=dict(
@@ -126,68 +148,67 @@ model = dict(
     ),
     # Lidar pipeline
     pts_voxel_encoder=dict(num_features=lidar_feature_dims),
-    img_bev_bbox_head=None,
-    # img_bev_bbox_head=dict(
-    #     type="BEVFusionCenterHead",
-    #     # in_channels=sum([128, 128, 128]),
-    #     in_channels=80,
-    #     # (output_channel_size, num_conv_layers)
-    #     common_heads=dict(
-    #         reg=(2, 2),
-    #         height=(1, 2),
-    #         dim=(3, 2),
-    #         rot=(2, 2),
-    #         vel=(2, 2),
-    #     ),
-    #     bbox_coder=dict(
-    #         type="CenterPointBBoxCoder",
-    #         max_num=500,
-    #         score_threshold=0.1,
-    #         code_size=9,
-    #         voxel_size=voxel_size,
-    #         pc_range=point_cloud_range,
-    #         post_center_range=[-200.0, -200.0, -10.0, 200.0, 200.0, 10.0],
-    #         out_size_factor=out_size_factor,
-    #     ),
-    #     share_conv_channel=64,
-    #     loss_cls=dict(type="mmdet.GaussianFocalLoss", reduction="none", loss_weight=1.0),
-    #     loss_bbox=dict(type="mmdet.L1Loss", reduction="mean", loss_weight=0.0),
-    #     norm_bbox=True,
-    #     tasks=[
-    #         dict(num_class=5, class_names=["car", "truck", "bus", "bicycle", "pedestrian"]),
-    #     ],
-    #     # sigmoid(-4.595) = 0.01 for initial small values
-    #     separate_head=dict(type="CustomSeparateHead", init_bias=-4.595, final_kernel=1),
-    #     train_cfg=dict(
-    #         out_size_factor=out_size_factor,
-    #         dense_reg=1,
-    #         gaussian_overlap=0.1,
-    #         max_objs=500,
-    #         min_radius=2,
-    #         # (Reg x 2, height x 1, dim 3, rot x 2, vel x 2)
-    #         code_weights=[1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 0.2, 0.2],
-    #         grid_size=grid_size,
-    #         voxel_size=voxel_size,
-    #         point_cloud_range=point_cloud_range,
-    #     ),
-    #     test_cfg=dict(
-    #         nms_type="circle",
-    #         min_radius=[1.0],
-    #         post_max_size=100,
-    #         grid_size=grid_size,
-    #         out_size_factor=out_size_factor,
-    #         pc_range=point_cloud_range,
-    #         voxel_size=voxel_size,
-    #         # No filter by range
-    #         post_center_limit_range=[-200.0, -200.0, -10.0, 200.0, 200.0, 10.0],
-    #         # nms_type="rotate",
-    #         # post_center_limit_range=[-90.0, -90.0, -10.0, 90.0, 90.0, 10.0],
-    #         # score_threshold=0.1,
-    #         # nms_thr=0.2,
-    #         # pre_max_size=1000,
-    #         # post_max_size=100,
-    #     ),
-    # ),
+    img_bev_bbox_head=dict(
+        type="BEVFusionCenterHead",
+        # in_channels=sum([128, 128, 128]),
+        in_channels=80,
+        # (output_channel_size, num_conv_layers)
+        common_heads=dict(
+            reg=(2, 2),
+            height=(1, 2),
+            dim=(3, 2),
+            rot=(2, 2),
+            vel=(2, 2),
+        ),
+        bbox_coder=dict(
+            type="CenterPointBBoxCoder",
+            max_num=500,
+            score_threshold=0.1,
+            code_size=9,
+            voxel_size=voxel_size,
+            pc_range=point_cloud_range,
+            post_center_range=[-200.0, -200.0, -10.0, 200.0, 200.0, 10.0],
+            out_size_factor=out_size_factor,
+        ),
+        share_conv_channel=64,
+        loss_cls=dict(type="mmdet.GaussianFocalLoss", reduction="none", loss_weight=1.0),
+        loss_bbox=dict(type="mmdet.L1Loss", reduction="mean", loss_weight=0.0),
+        norm_bbox=True,
+        tasks=[
+            dict(num_class=5, class_names=["car", "truck", "bus", "bicycle", "pedestrian"]),
+        ],
+        # sigmoid(-4.595) = 0.01 for initial small values
+        separate_head=dict(type="CustomSeparateHead", init_bias=-4.595, final_kernel=1),
+        train_cfg=dict(
+            out_size_factor=out_size_factor,
+            dense_reg=1,
+            gaussian_overlap=0.1,
+            max_objs=500,
+            min_radius=2,
+            # (Reg x 2, height x 1, dim 3, rot x 2, vel x 2)
+            code_weights=[1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 0.2, 0.2],
+            grid_size=grid_size,
+            voxel_size=voxel_size,
+            point_cloud_range=point_cloud_range,
+        ),
+        test_cfg=dict(
+            nms_type="circle",
+            min_radius=[1.0],
+            post_max_size=100,
+            grid_size=grid_size,
+            out_size_factor=out_size_factor,
+            pc_range=point_cloud_range,
+            voxel_size=voxel_size,
+            # No filter by range
+            post_center_limit_range=[-200.0, -200.0, -10.0, 200.0, 200.0, 10.0],
+            # nms_type="rotate",
+            # post_center_limit_range=[-90.0, -90.0, -10.0, 90.0, 90.0, 10.0],
+            # score_threshold=0.1,
+            # nms_thr=0.2,
+            # pre_max_size=1000,
+            # post_max_size=100,
+        ),
+    ),
 )
 
 train_pipeline = [
@@ -485,6 +506,4 @@ auto_scale_lr = dict(enable=False, base_batch_size=train_gpu_size * train_batch_
 if train_gpu_size > 1:
     sync_bn = "torch"
 
-load_from = "work_dirs/bevfusion_merge/bevfusion_streampetr_e14_lidar.pth"
-
-# activation_checkpointing = ["img_backbone"]
+load_from = "work_dirs/bevfusion_2_5/T4Dataset/bevfusion_lidar_voxel_second_secfpn_4xb8_base/epoch_50.pth"

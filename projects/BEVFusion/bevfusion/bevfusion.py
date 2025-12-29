@@ -37,8 +37,8 @@ class BEVFusion(Base3DDetector):
         seg_head: Optional[dict] = None,
         img_roi_head=None,
         img_bev_bbox_head=None,
-        free_img: bool = False,
-        merge_img_pts_backbone: bool = False
+        freeze_img: bool = False,
+        merge_img_pts_backbone: bool = False,
         **kwargs,
     ) -> None:
         super().__init__(data_preprocessor=data_preprocessor, init_cfg=init_cfg)
@@ -156,7 +156,7 @@ class BEVFusion(Base3DDetector):
         if self.img_backbone is not None:
             self.img_backbone.init_weights()
         
-        if self.free_img:
+        if self.freeze_img:
             if self.img_backbone is not None:
                 for param in self.img_backbone.parameters():
                     param.requires_grad = False 
@@ -166,7 +166,7 @@ class BEVFusion(Base3DDetector):
                     param.requires_grad = False 
             
             if self.view_transform is not None:
-                for param in self.view_transform.paramaters():
+                for param in self.view_transform.parameters():
                     param.requires_grad = False
             
             if self.img_roi_head is not None:
@@ -439,6 +439,11 @@ class BEVFusion(Base3DDetector):
 
                 if self.pts_neck:
                     x = self.pts_neck(x)
+                
+                if isinstance(x, list):
+                    x = x[0]
+            else:
+                x = img_bev_features
             
             # Merge img into pts after pts backbone 
             if img_bev_features is not None and self.fusion_layer is not None:

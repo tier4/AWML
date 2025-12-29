@@ -7,7 +7,7 @@ if __name__ == "__main__":
   lidar_state_dict = lidar_ckpt['state_dict']
   lidar_state_metadata = lidar_state_dict._metadata 
 
-  camera_ckpt_path = "work_dirs/bevfusion_merge/bevfusion_camera_epoch_46.pth"
+  camera_ckpt_path = "work_dirs/bevfusion_camera_4xb8_j6gen2_base_vov99_downsample_e15_transfusion_120m_img_roi_gaussian_depth/epoch_14.pth"
   camera_ckpt = torch.load(camera_ckpt_path)
 
   camera_state_dict = camera_ckpt['state_dict']
@@ -27,4 +27,4 @@ if __name__ == "__main__":
     img_state_metadata
   )
 
-  torch.save(lidar_ckpt, "work_dirs/bevfusion_merge/bevfusion_streampetr_lidar.pth")
+  torch.save(lidar_ckpt, "work_dirs/bevfusion_merge/bevfusion_streampetr_e14_lidar.pth")

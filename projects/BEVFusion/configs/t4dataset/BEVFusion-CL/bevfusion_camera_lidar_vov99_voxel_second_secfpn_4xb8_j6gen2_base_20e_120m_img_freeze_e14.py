@@ -46,7 +46,7 @@ lidar_sweep_dims = [0, 1, 2, 3, 4]  # x, y, z, time_lag
 lidar_feature_dims = 5
 camera_order = ["CAM_FRONT", "CAM_FRONT_LEFT", "CAM_BACK_LEFT", "CAM_FRONT_RIGHT", "CAM_BACK_RIGHT"]
 
-work_dir = "work_dirs/bevfusion_2_5/" + _base_.dataset_type + "/bevfusion_camera_lidar_vov99_e14_voxel_second_secfpn_4xb8_j6gen2_base_20e_120m_img_freeze/"
+work_dir = "work_dirs/bevfusion_2_5/" + _base_.dataset_type + "/bevfusion_camera_lidar_vov99_voxel_second_secfpn_4xb8_j6gen2_base_20e_120m_img_freeze_e14/"
 
 
 model = dict(

@@ -46,7 +46,7 @@ lidar_sweep_dims = [0, 1, 2, 3, 4]  # x, y, z, time_lag
 lidar_feature_dims = 5
 camera_order = ["CAM_FRONT", "CAM_FRONT_LEFT", "CAM_BACK_LEFT", "CAM_FRONT_RIGHT", "CAM_BACK_RIGHT"]
 
-work_dir = "work_dirs/bevfusion_2_5/" + _base_.dataset_type + "/bevfusion_camera_lidar_vov99_e14_voxel_second_secfpn_4xb8_j6gen2_base_20e_120m_img_freeze/"
+work_dir = "work_dirs/bevfusion_2_5/" + _base_.dataset_type + "/bevfusion_camera_lidar_vov99_voxel_second_secfpn_4xb8_j6gen2_base_20e_120m_img_freeze/"
 
 
 model = dict(
@@ -485,6 +485,6 @@ auto_scale_lr = dict(enable=False, base_batch_size=train_gpu_size * train_batch_
 if train_gpu_size > 1:
     sync_bn = "torch"
 
-load_from = "work_dirs/bevfusion_merge/bevfusion_streampetr_e14_lidar.pth"
+load_from = "work_dirs/bevfusion_merge/bevfusion_streampetr_lidar.pth"
 
 # activation_checkpointing = ["img_backbone"]
