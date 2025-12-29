@@ -15,7 +15,7 @@ from mmengine.config import Config
 from mmengine.logging import print_log
 from t4_devkit import Tier4
 from t4_devkit.common.timestamp import us2sec
-from t4_devkit.schema import Sample
+from t4_devkit.schema import Sample, SampleData
 
 from tools.detection3d.t4dataset_converters.t4converter import (
     extract_tier4_data,
@@ -23,6 +23,7 @@ from tools.detection3d.t4dataset_converters.t4converter import (
     get_ego2global,
     get_lidar_points_info,
     get_lidar_sweeps_info,
+    get_lidarseg_annotations,
     obtain_sensor2top,
     parse_camera_path,
 )
@@ -138,12 +139,9 @@ def get_info(
             boxes,
             e2g_r_mat,
             l2e_r_mat,
-            cfg.name_mapping,
-            cfg.class_names,
-            cfg.filter_attributes,
-            merge_objects=cfg.merge_objects,
-            merge_type=cfg.merge_type,
+            cfg,
         ),
+        get_lidarseg_annotations(t4, sd_record, i, lidar_token),
     ]:
         info.update(new_info)
 

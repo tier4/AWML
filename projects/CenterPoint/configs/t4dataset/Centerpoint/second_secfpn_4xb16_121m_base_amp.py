@@ -7,14 +7,14 @@ custom_imports = dict(imports=["projects.CenterPoint.models"], allow_failed_impo
 custom_imports["imports"] += _base_.custom_imports["imports"]
 custom_imports["imports"] += ["autoware_ml.detection3d.datasets.transforms"]
 custom_imports["imports"] += ["autoware_ml.hooks"]
-# custom_imports["imports"] += ["autoware_ml.backends.mlflowbackend"]
+custom_imports["imports"] += ["autoware_ml.backends.mlflowbackend"]
 custom_imports["imports"] += ["autoware_ml.samplers"]
 
 # This is a base file for t4dataset, add the dataset config.
 # type, data_root and ann_file of data.train, data.val and data.test
-point_cloud_range = [-121.60, -121.60, -3.0, 121.60, 121.60, 5.0]
-voxel_size = [0.32, 0.32, 8.0]
-grid_size = [760, 760, 1]  # (121.60 / 0.32 == 380, 380 * 2 == 760)
+point_cloud_range = [-122.40, -122.40, -3.0, 122.40, 122.40, 5.0]
+voxel_size = [0.24, 0.24, 8.0]
+grid_size = [1020, 1020, 1]  # (122.40 / 0.24 == 510, 510 * 2 == 1020)
 sweeps_num = 1
 input_modality = dict(
     use_lidar=True,
@@ -23,7 +23,7 @@ input_modality = dict(
     use_map=False,
     use_external=False,
 )
-out_size_factor = 1
+out_size_factor = 2
 
 backend_args = None
 # backend_args = dict(backend="disk")
@@ -108,7 +108,28 @@ test_pipeline = [
         test_mode=True,
     ),
     dict(type="PointsRangeFilter", point_cloud_range=point_cloud_range),
-    dict(type="Pack3DDetInputs", keys=["points", "gt_bboxes_3d", "gt_labels_3d"]),
+    dict(
+        type="Pack3DDetInputs",
+        keys=["points", "gt_bboxes_3d", "gt_labels_3d"],
+        # Specify the metadata keys required by the downstream pipeline.
+        # Refer to the official MMDetection3D formatting transform implementation for details:
+        # https://github.com/open-mmlab/mmdetection3d/blob/main/mmdet3d/datasets/transforms/formating.py#L67
+        # Also see the content structure in "t4dataset_base_infos_test.pkl" for reference.
+        meta_keys=(
+            "timestamp",
+            "lidar2img",
+            "depth2img",
+            "cam2img",
+            "box_type_3d",
+            "sample_idx",
+            "sample_token",
+            "lidar_path",
+            "ori_cam2img",
+            "cam2global",
+            "lidar2cam",
+            "ego2global",
+        ),
+    ),
 ]
 
 # construct a pipeline for data and gt loading in show function
@@ -132,7 +153,28 @@ eval_pipeline = [
         test_mode=True,
     ),
     dict(type="PointsRangeFilter", point_cloud_range=point_cloud_range),
-    dict(type="Pack3DDetInputs", keys=["points", "gt_bboxes_3d", "gt_labels_3d"]),
+    dict(
+        type="Pack3DDetInputs",
+        keys=["points", "gt_bboxes_3d", "gt_labels_3d"],
+        # Specify the metadata keys required by the downstream pipeline.
+        # Refer to the official MMDetection3D formatting transform implementation for details:
+        # https://github.com/open-mmlab/mmdetection3d/blob/main/mmdet3d/datasets/transforms/formating.py#L67
+        # Also see the content structure in "t4dataset_base_infos_test.pkl" for reference.
+        meta_keys=(
+            "timestamp",
+            "lidar2img",
+            "depth2img",
+            "cam2img",
+            "box_type_3d",
+            "sample_idx",
+            "sample_token",
+            "lidar_path",
+            "ori_cam2img",
+            "cam2global",
+            "lidar2cam",
+            "ego2global",
+        ),
+    ),
 ]
 
 train_dataloader = dict(
@@ -226,7 +268,7 @@ model = dict(
             max_num_points=32,
             voxel_size=voxel_size,
             point_cloud_range=point_cloud_range,
-            max_voxels=(64000, 64000),
+            max_voxels=(96000, 96000),
             deterministic=True,
         ),
     ),
@@ -256,7 +298,7 @@ model = dict(
         type="SECONDFPN",
         in_channels=[64, 128, 256],
         out_channels=[128, 128, 128],
-        upsample_strides=[1, 2, 4],
+        upsample_strides=[0.5, 1, 2],
         norm_cfg=dict(type="BN", eps=0.001, momentum=0.01),
         upsample_cfg=dict(type="deconv", bias=False),
         use_conv_for_no_stride=True,
@@ -409,3 +451,5 @@ custom_hooks = [
     dict(type="MomentumInfoHook"),
     dict(type="LossScaleInfoHook"),
 ]
+
+activation_checkpointing = ["pts_backbone"]

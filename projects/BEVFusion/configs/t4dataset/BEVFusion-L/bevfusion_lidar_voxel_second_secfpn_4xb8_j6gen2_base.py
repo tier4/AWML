@@ -19,7 +19,7 @@ backend_args = None
 work_dir = (
     "work_dirs/bevfusion_2_5/"
     + _base_.dataset_type
-    + "/bevfusion_lidar_voxel_second_secfpn_4xb8_j6gen2_base/"
+    + "/bevfusion_lidar_voxel_second_secfpn_4xb8_j6gen2_base_fixed/"
 )
 
 # range setting
@@ -113,6 +113,8 @@ train_pipeline = [
     dict(type="BEVFusionRandomFlip3D"),
     dict(type="PointsRangeFilter", point_cloud_range=point_cloud_range),
     dict(type="ObjectRangeFilter", point_cloud_range=point_cloud_range),
+    dict(type="ObjectRangeMinPointsFilter", range_radius=[0, 60], min_num_points=2),
+    dict(type="ObjectRangeMinPointsFilter", range_radius=[60, 130], min_num_points=1),
     dict(
         type="ObjectNameFilter",
         classes=[
@@ -152,6 +154,7 @@ train_pipeline = [
             "pcd_trans",
             "img_aug_matrix",
             "lidar_aug_matrix",
+            "timestamp"
         ],
     ),
 ]
@@ -192,6 +195,7 @@ test_pipeline = [
             "img_path",
             "num_pts_feats",
             "num_views",
+            "timestamp"
         ],
     ),
 ]
