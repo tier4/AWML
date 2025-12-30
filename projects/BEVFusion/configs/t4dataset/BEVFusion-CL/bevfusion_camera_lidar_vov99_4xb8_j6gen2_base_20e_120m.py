@@ -281,7 +281,8 @@ train_pipeline = [
     dict(type="BEVFusionLoadAnnotations2D"),
     dict(
         type="Pack3DDetInputs",
-        keys=["points", "img", "gt_bboxes_3d", "gt_labels_3d", "gt_bboxes", "gt_labels"],
+		# keys=["img", "points",  "gt_bboxes_3d", "gt_labels_3d"],
+        keys=["img", "points",  "gt_bboxes_3d", "gt_labels_3d", "gt_bboxes", "gt_bboxes_labels"],
         meta_keys=[
             "cam2img",
             "ori_cam2img",
@@ -299,6 +300,9 @@ train_pipeline = [
             "pcd_scale_factor",
             "pcd_trans",
             "lidar_aug_matrix",
+			"pad_shape",
+            "depths",
+            "centers_2d",
             "timestamp"
         ],
     ),
@@ -356,6 +360,7 @@ test_pipeline = [
             "img_path",
             "num_pts_feats",
             "num_views",
+            "pad_shape",
             "timestamp"
         ],
     ),
