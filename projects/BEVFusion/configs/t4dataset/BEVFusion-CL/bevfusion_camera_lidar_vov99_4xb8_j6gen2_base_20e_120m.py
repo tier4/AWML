@@ -2,8 +2,7 @@ _base_ = [
     "../default/bevfusion_lidar_voxel_second_secfpn_1xb1_t4base.py",
     "../../../../../autoware_ml/configs/detection3d/dataset/t4dataset/j6gen2_base.py",
 ]
-
-custom_imports = dict(imports=["projects.BEVFusion.bevfusion"], allow_failed_imports=False)
+custom_imports = dict(imports=["projects.BEVFusion.bevfusion", "projects.CenterPoint.models", "projects.BEVFusion.models"], allow_failed_imports=False)
 custom_imports["imports"] += _base_.custom_imports["imports"]
 custom_imports["imports"] += ["autoware_ml.detection3d.datasets.transforms"]
 
@@ -80,7 +79,7 @@ model = dict(
     # ),
     pts_middle_encoder=dict(sparse_shape=grid_size, in_channels=lidar_feature_dims),
     img_backbone=dict(
-        type="VoVNet",  ###use checkpoint to save memory
+        type="VoVNetCP",  ###use checkpoint to save memory
         spec_name="V-99-eSE",
         norm_eval=True,  # TODO: make true by default
         frozen_stages=-1,
@@ -514,4 +513,4 @@ auto_scale_lr = dict(enable=False, base_batch_size=train_gpu_size * train_batch_
 if train_gpu_size > 1:
     sync_bn = "torch"
 
-load_from = "work_dirs/bevfusion_2_5/T4Dataset/bevfusion_lidar_voxel_second_secfpn_4xb8_j6gen2_base/epoch_30.pth"
+load_from = "work_dirs/bevfusion_merge/bevfusion_base_lidar_e30_base_streampetr_e31.pth"
