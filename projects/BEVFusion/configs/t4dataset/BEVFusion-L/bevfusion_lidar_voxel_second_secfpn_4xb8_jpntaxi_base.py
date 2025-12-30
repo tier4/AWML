@@ -17,7 +17,7 @@ val_interval = 5
 max_epochs = 30
 backend_args = None
 work_dir = (
-    "work_dirs/bevfusion_2_5/"
+    "work_dirs/bevfusion_lidar_2_5/"
     + _base_.dataset_type
     + "/bevfusion_lidar_voxel_second_secfpn_4xb8_jpntaxi_base/"
 )
@@ -132,9 +132,6 @@ train_pipeline = [
             "traffic_cone",
         ],
     ),
-    dict(type="ObjectRangeMinPointsFilter", range_radius=[0, 60], min_num_points=2),
-    dict(type="ObjectRangeMinPointsFilter", range_radius=[60, 130], min_num_points=1),
-    # dict(type="ObjectRangeMinPointsFilter", range_radius=[90, 130], min_num_points=1),
     dict(type="PointShuffle"),
     dict(
         type="Pack3DDetInputs",
@@ -341,7 +338,7 @@ param_scheduler = [
 # runtime settings
 # Run validation for every val_interval epochs before max_epochs - 10, and run validation every 2 epoch after max_epochs - 10
 train_cfg = dict(
-    by_epoch=True, max_epochs=max_epochs, val_interval=val_interval, dynamic_intervals=[(max_epochs - 5, 2)]
+    by_epoch=True, max_epochs=max_epochs, val_interval=val_interval, dynamic_intervals=[(max_epochs - 5, 1)]
 )
 val_cfg = dict()
 test_cfg = dict()
@@ -349,7 +346,7 @@ test_cfg = dict()
 optim_wrapper = dict(
     type="OptimWrapper",
     optimizer=dict(type="AdamW", lr=lr, weight_decay=0.01),
-    clip_grad=dict(max_norm=35, norm_type=2),
+    clip_grad=dict(max_norm=5.0, norm_type=2),
 )
 
 # Default setting for scaling LR automatically
