@@ -676,7 +676,7 @@ class T4MetricV2(BaseMetric):
                     except Exception as e:
                         self.logger.warning(f"Failed to process frame {scene_id}/{sample_id}: {e}")
 
-    def _process_all_frames(self, evaluator: PerceptionEvaluationManager, scenes: dict) -> None:
+    def _process_all_frames(self, scenes: dict) -> None:
         """Process all frames in all scenes and collect frame results.
 
         Args:
@@ -684,9 +684,9 @@ class T4MetricV2(BaseMetric):
             scenes (dict): Dictionary of scenes and their samples.
         """
         if self.num_workers > 1:
-            self._multi_process_all_frames(evaluator, scenes)
+            self._multi_process_all_frames(scenes)
         else:
-            self._sequential_process_all_frames(evaluator, scenes)
+            self._sequential_process_all_frames(scenes)
 
     def _write_output_files(self, scenes: dict, final_metric_dict: dict, evaluator_name: str) -> None:
         """Write scene metrics and aggregated metrics to files.
