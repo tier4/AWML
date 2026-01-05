@@ -9,7 +9,7 @@ import numpy as np
 import torch
 import torch.distributed as dist
 import utils.comm as comm
-from utils.misc import intersection_and_union_gpu
+from utils.misc import intersection_and_union_gpu, invert_class_mapping
 
 from .builder import HOOKS
 from .default import HookBase
@@ -68,11 +68,13 @@ class SemSegEvaluator(HookBase):
         m_acc = np.mean(acc_class)
         all_acc = sum(intersection) / (sum(target) + 1e-10)
         self.trainer.logger.info("Val result: mIoU/mAcc/allAcc {:.4f}/{:.4f}/{:.4f}.".format(m_iou, m_acc, all_acc))
+
+        mapped_class_names = invert_class_mapping(self.trainer.cfg.class_mapping)
         for i in range(self.trainer.cfg.data.num_classes):
             self.trainer.logger.info(
                 "Class_{idx}-{name} Result: iou/accuracy {iou:.4f}/{accuracy:.4f}".format(
                     idx=i,
-                    name=self.trainer.cfg.data.names[i],
+                    name=mapped_class_names[i],
                     iou=iou_class[i],
                     accuracy=acc_class[i],
                 )

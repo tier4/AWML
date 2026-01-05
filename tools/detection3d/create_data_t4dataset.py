@@ -15,7 +15,7 @@ from mmengine.config import Config
 from mmengine.logging import print_log
 from t4_devkit import Tier4
 from t4_devkit.common.timestamp import us2sec
-from t4_devkit.schema import Sample
+from t4_devkit.schema import Sample, SampleData
 
 from tools.detection3d.t4dataset_converters.t4converter import (
     extract_tier4_data,
@@ -23,6 +23,7 @@ from tools.detection3d.t4dataset_converters.t4converter import (
     get_ego2global,
     get_lidar_points_info,
     get_lidar_sweeps_info,
+    get_lidarseg_annotations,
     obtain_sensor2top,
     parse_camera_path,
 )
@@ -138,12 +139,9 @@ def get_info(
             boxes,
             e2g_r_mat,
             l2e_r_mat,
-            cfg.name_mapping,
-            cfg.class_names,
-            cfg.filter_attributes,
-            merge_objects=cfg.merge_objects,
-            merge_type=cfg.merge_type,
+            cfg,
         ),
+        get_lidarseg_annotations(t4, sd_record, i, lidar_token),
     ]:
         info.update(new_info)
 
@@ -251,8 +249,14 @@ def main():
 
         for split in ["train", "val", "test"]:
             print_log(f"Creating data info for split: {split}", logger="current")
+            # Get 2 Hz
+            if split == "train" and dataset_version == "db_jpntaxigen2_v1":
+                sample_steps = 5
+            else:
+                sample_steps = 1
+
             for scene_id in dataset_list_dict.get(split, []):
-                print_log(f"Creating data info for scene: {scene_id}")
+                print_log(f"Creating data info for scene: {scene_id}, steps: {sample_steps}")
                 t4_dataset_id, t4_dataset_version_id = scene_id.split("   ")
                 scene_root_dir_path = osp.join(args.root_path, dataset_version, t4_dataset_id, t4_dataset_version_id)
                 if not os.path.exists(scene_root_dir_path):
@@ -264,7 +268,8 @@ def main():
                     else:
                         raise ValueError(f"{t4_dataset_id} does not exist.")
                 t4 = Tier4(data_root=scene_root_dir_path, verbose=False)
-                for i, sample in enumerate(t4.sample):
+                for i in range(0, len(t4.sample), sample_steps):
+                    sample = t4.sample[i]
                     info = get_info(cfg, t4, sample, i, args.max_sweeps)
                     # info["version"] = dataset_version             # used for visualizations during debugging.
                     t4_infos[split].append(info)

@@ -4,12 +4,64 @@ The pipeline of auto labeling for 3D detection.
 
 - [Support priority](https://github.com/tier4/AWML/blob/main/docs/design/autoware_ml_design.md#support-priority): Tier S
 
-## 1. Setup environment
+```mermaid
+graph LR
+    NADATA[(non-annotated T4Dataset)]
+
+    subgraph "Model A inference"
+        INFERENCE_A[create_info]
+    end
+
+    subgraph "Model B inference"
+        INFERENCE_B[create_info]
+    end
+
+    subgraph "Model C inference"
+        INFERENCE_C[create_info]
+    end
+
+    subgraph "Ensemble"
+        ENSEMBLE[filter_objects]
+    end
+
+    subgraph "Temporal ID Consistency"
+        TRACKING[attach_tracking_id]
+    end
+
+    subgraph "Convert to T4Dataset"
+        CONVERT[create_pseudo_dataset]
+    end
+
+    DATA[(auto-labeled T4Dataset)]
+
+    NADATA --> INFERENCE_A
+    NADATA --> INFERENCE_B
+    NADATA --> INFERENCE_C
+
+    INFERENCE_A --> ENSEMBLE
+    INFERENCE_B --> ENSEMBLE
+    INFERENCE_C --> ENSEMBLE
+
+    ENSEMBLE --> TRACKING
+    TRACKING --> CONVERT
+    CONVERT --> DATA
+
+    click INFERENCE_A "https://github.com/tier4/AWML/tree/main/tools/auto_labeling_3d#step-31-create-info-file-from-non-annotated-t4dataset"
+    click INFERENCE_B "https://github.com/tier4/AWML/tree/main/tools/auto_labeling_3d#step-31-create-info-file-from-non-annotated-t4dataset"
+    click INFERENCE_C "https://github.com/tier4/AWML/tree/main/tools/auto_labeling_3d#step-31-create-info-file-from-non-annotated-t4dataset"
+    click ENSEMBLE "https://github.com/tier4/AWML/tree/main/tools/auto_labeling_3d#step-32-filter-and-ensemble-results"
+    click TRACKING "https://github.com/tier4/AWML/tree/main/tools/auto_labeling_3d#step-33-attach-tracking-ids"
+    click CONVERT "https://github.com/tier4/AWML/tree/main/tools/auto_labeling_3d#step-34-create-the-auto-labeled-t4dataset"
+```
+
+![Auto Labeling 3D Process Flow](docs/auto_labeling_3d_process_flow.drawio.svg)
+
+## 1. Setup Environment
 
 - Please follow the [installation tutorial](/docs/tutorial/tutorial_detection_3d.md) to set up the environment.
 - In addition, please follow the below setting up procedure.
 
-### Set up environment for auto_labeling_3d
+### Build docker image
 
 - Build docker image.
   - If you build `AWML` image locally, please add `--build-arg BASE_IMAGE=autoware-ml` or `--build-arg BASE_IMAGE=autoware-ml-ros2` to build script.
@@ -24,13 +76,13 @@ DOCKER_BUILDKIT=1 docker build -t auto_labeling_3d -f tools/auto_labeling_3d/Doc
 docker run -it --gpus '"device=0"' --name auto_labeling_3d --shm-size=64g -d -v {path to autoware-ml}:/workspace -v {path to data}:/workspace/data auto_labeling_3d bash
 ```
 
-- Please follow the setting up procedure in README of the model used for auto labeling.
-  - For example, if you want to use BEVFusion, please follow [setting environemnt for BEVFusion](/projects/BEVFusion/README.md#1-setup).
+- If you want to use these models in auto labeling, please follow the setting up procedure in the README of each model:
+  - [BEVFusion](/projects/BEVFusion/README.md#1-setup)
+  - [StreamPETR](/projects/StreamPETR/README.md#1-setup)
 
+## 2. Prepare Dataset
 
-## 2. Create info file from non-annotated T4dataset
-
-- Set non-annotated T4dataset
+Prepare your non-annotated T4dataset in the following structure:
 
 ```
 - data/t4dataset/
@@ -39,14 +91,46 @@ docker run -it --gpus '"device=0"' --name auto_labeling_3d --shm-size=64g -d -v 
       - annotation/
         - ..
       - data/
+        - LIDAR_CONCAT/
+        - CAM_*/
         - ..
       - ...
     - scene_1/
       - ..
 ```
 
-- Make the info file from non-annotated dataset and the 3d detection model.
-  - The info file contains the confidence information.
+## 3. Run Auto Labeling Pipeline
+
+You have two options to run the pipeline:
+
+### Option A: Quick Start with launch.py
+
+**For most users, use `launch.py` to run the entire pipeline in one command:**
+
+```bash
+python tools/auto_labeling_3d/entrypoint/launch.py tools/auto_labeling_3d/entrypoint/configs/example.yaml
+```
+
+This executes all steps automatically:
+1. Download model checkpoints from Model Zoo
+2. Run inference and create info files with pseudo labels
+3. Ensemble/filter results from multiple models
+4. Attach consistent tracking IDs across frames
+5. Generate final auto-labeled T4Dataset
+6. Restructure directory format
+
+See [example.yaml](entrypoint/configs/example.yaml) and update paths for your workspace.
+
+### Option B: Run Individual Modules
+
+For advanced users who need granular control or want to customize the pipeline, you can run each step separately:
+
+<details>
+<summary>Step 3.1: Create info file from non-annotated T4dataset</summary>
+
+#### Step 3.1: Create info file from non-annotated T4dataset
+
+Run inference with a 3D detection model to generate info files:
 
 ```sh
 python tools/auto_labeling_3d/create_info_data/create_info_data.py --root-path {path to directory of non-annotated T4dataset} --out-dir {path to output} --config {model config file to use auto labeling} --ckpt {checkpoint file}
@@ -76,9 +160,14 @@ python tools/auto_labeling_3d/create_info_data/create_info_data.py --root-path .
     - pseudo_infos_raw_bevfusion.pkl
 ```
 
-## 3. Filter objects which do not use for pseudo T4dataset
+</details>
 
-### Filter
+<details>
+<summary>Step 3.2: Filter and ensemble results</summary>
+
+#### Step 3.2: Filter and ensemble results
+
+##### Filter
 
 - Set a config to decide what you want to filter
   - Set threshold to filter objects with low confidence
@@ -108,13 +197,13 @@ filter_pipelines = dict(
 )
 ```
 
-- Make the info file to filter the objects which do not use for pseudo T4dataset
+- Make the info file to filter the objects which do not use for auto-labeled T4Dataset
 
 ```sh
 python tools/auto_labeling_3d/filter_objects/filter_objects.py --config {config_file} --work-dir {path to output}
 ```
 
-### Ensemble
+##### Ensemble
 
 - If you want to ensemble model, you set a config as below.
 
@@ -168,7 +257,7 @@ filter_pipelines = dict(
 )
 ```
 
-- Make the info file to filter the objects which do not use for pseudo T4dataset and ensemble filtered results.
+- Make the info file to filter the objects which do not use for auto-labeled T4Dataset and ensemble filtered results.
 
 ```sh
 python tools/auto_labeling_3d/filter_objects/ensemble_infos.py --config {config_file} --work-dir {path to output}
@@ -192,10 +281,15 @@ python tools/auto_labeling_3d/filter_objects/ensemble_infos.py --config {config_
     - pseudo_infos_filtered.pkl
 ```
 
-### 4. Attach tracking id to info file
+</details>
 
-- If you do not use for target annotation, you can skip this section.
-- Attach tracking id to info
+<details>
+<summary>Step 3.3: Attach tracking IDs</summary>
+
+#### Step 3.3: Attach tracking IDs
+
+- Attach tracking IDs to maintain temporal consistency:
+  - If you do not use for target annotation, you can skip this section.
 
 ```sh
 python tools/auto_labeling_3d/attach_tracking_id/attach_tracking_id.py --input {info file} --output {info_file}
@@ -220,15 +314,20 @@ python tools/auto_labeling_3d/attach_tracking_id/attach_tracking_id.py --input {
     - pseudo_infos_tracked.pkl
 ```
 
-### 5. Create pseudo T4dataset
+</details>
 
-- Run script
+<details>
+<summary>Step 3.4: Create the auto-labeled T4Dataset</summary>
+
+#### Step 3.4: Create the auto-labeled T4Dataset
+
+Generate the auto-labeled T4Dataset:
 
 ```sh
 python tools/auto_labeling_3d/create_pseudo_t4dataset/create_pseudo_t4dataset.py {yaml config file about T4dataset data} --root-path {path to directory of non-annotated T4dataset} --input {path to pkl file}
 ```
 
-- As a result, pseudo-label T4dataset is made as below.
+- As a result, auto-labeled T4Dataset is made as below.
 
 ```
 - data/t4dataset/
@@ -242,15 +341,23 @@ python tools/auto_labeling_3d/create_pseudo_t4dataset/create_pseudo_t4dataset.py
     - ..
 ```
 
-### 6. Use for training
+</details>
 
-#### 6.1. Upload for WebAuto
+### 4. Use for training
 
-Please upload Pseudo-T4dataset to WebAuto to share easily for other users.
+#### Verify the auto-labeled T4Dataset
+
+Before using the auto-labeled T4Dataset for training, you can visualize and verify the generated labels using [t4-devkit](https://github.com/tier4/t4-devkit).
+
+Please refer to [t4-devkit render tutorial](https://tier4.github.io/t4-devkit/develop/tutorials/render/) for visualization instructions.
+
+#### Upload to WebAuto
+
+Please upload auto-labeled T4Dataset to WebAuto to share easily for other users.
 
 Please check [Web.Auto document](https://docs.web.auto/en/user-manuals/vehicle-data-search/quick-start#register-t4-datasets) for the detail.
 
-#### 6.2. Use in local PC
+#### Use in local PC
 
 To align T4dataset directory structure, you run the script as following.
 
@@ -258,7 +365,7 @@ To align T4dataset directory structure, you run the script as following.
 python tools/auto_labeling_3d/change_directory_structure/change_directory_structure.py --dataset_dir data/t4dataset/pseudo_xx1/
 ```
 
-The result of the structure of Pseudo-T4dataset is following.
+The result of the structure of auto-labeled T4Dataset is following.
 
 ```
 - data/t4dataset/
@@ -273,3 +380,58 @@ The result of the structure of Pseudo-T4dataset is following.
         - ..
     - ..
 ```
+
+### How to train with the auto-labeled T4Dataset
+
+#### 1. Add a YAML config for your auto-labeled T4Dataset
+
+Create a YAML under `autoware_ml/configs/t4dataset/` describing your auto-labeled T4Dataset.
+
+Example: [`autoware_ml/configs/t4dataset/pseudo_j6_v1.yaml`](../../autoware_ml/configs/t4dataset/pseudo_j6_v1.yaml)
+
+#### 2. Run docker and mount the auto-labeled T4Dataset
+
+Ensure your auto-labeled T4Dataset is mounted under `./data/t4dataset` inside the container.
+
+Example:
+
+```sh
+docker run -it --gpus '"device=0"' --name auto_labeling_3d --shm-size=64g -d -v {path to autoware-ml}:/workspace -v {path to auto-labeled T4Dataset}:/workspace/data auto_labeling_3d bash
+```
+
+#### 3. Update `dataset.py` used in training config
+
+Add the name of your auto-labeled T4Dataset directory to the `dataset_version_list` in the dataset config file used by your training configuration.
+
+<details>
+<summary>Example Case</summary>
+
+- **Example Case:**
+  - **If your training config is:** [`Centerpoint/second_secfpn_4xb16_121m_j6gen2_base.py`](../../projects/CenterPoint/configs/t4dataset/Centerpoint/second_secfpn_4xb16_121m_j6gen2_base.py)
+    - This config uses: [`j6gen2_base.py`](../../autoware_ml/configs/detection3d/dataset/t4dataset/j6gen2_base.py)
+  - **And your pseudo-label dataset directory is named:** `pseudo_x2`
+- **To Do:**
+  - Add `pseudo_x2` to the `dataset_version_list` in the `j6gen2_base.py` file.
+
+```python
+dataset_version_list = [
+    "db_j6gen2_v1",
+    "db_j6gen2_v2",
+    "db_j6gen2_v3",
+    "db_j6gen2_v4",
+    "db_j6gen2_v5",
+    "db_largebus_v1",
+    "db_largebus_v2",
+    "pseudo_x2",
+]
+```
+
+</details>
+
+#### 4. Prepare T4Dataset info and train
+
+Follow [the dataset preparation](../detection3d/README.md#2-prepare-t4dataset) and generate info files and start training using your chosen model and the YAML you added in [Step 1](#1-add-a-yaml-config-for-your-pseudo-label-t4dataset).
+
+##### (Optional) Add downsampling for your dataset
+
+Auto-labeling works at 10hz while manually annotated dataset are usually 1hz. Depending on your data distribution, you might want to down-sample your specific dataset. This is currently done at the info file creation stage, as seen [here](https://github.com/tier4/AWML/blob/main/tools/detection3d/create_data_t4dataset.py#L255-L258). Add your dataset name to the conditional check and set `sample_steps = 10`.

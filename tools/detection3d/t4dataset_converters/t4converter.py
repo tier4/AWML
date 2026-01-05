@@ -1,5 +1,6 @@
 import copy
 import os
+import os.path as osp
 from typing import Any, Dict, List, Optional, Tuple, Union
 
 import mmengine
@@ -13,6 +14,7 @@ from shapely.geometry import Polygon
 from shapely.geometry import box as shapely_box
 from shapely.ops import unary_union
 from t4_devkit import Tier4
+from t4_devkit.common.io import load_json
 from t4_devkit.dataclass import Box3D
 from t4_devkit.schema import CalibratedSensor, EgoPose, Log, Sample, SampleAnnotation, SampleData, Scene
 
@@ -570,12 +572,11 @@ def get_annotations(
     boxes: List[Box3D],
     e2g_r_mat: np.array,
     l2e_r_mat: np.array,
-    name_mapping: dict,
-    class_names: List[str],
-    filter_attributes: Optional[List[Tuple[str, str]]],
-    merge_objects: List[Tuple[str, List[str]]] = [],
-    merge_type: str = None,
+    cfg: mmengine.Config,
 ) -> dict:
+    if len(boxes) == 0:
+        return dict(instances=[])
+
     annotations: list[SampleAnnotation] = [t4.get("sample_annotation", token) for token in anns]
     instance_tokens = [ann.instance_token for ann in annotations]
     locs = np.array([b.position for b in boxes]).reshape(-1, 3)
@@ -585,7 +586,7 @@ def get_annotations(
 
     valid_flag = np.array([anno.num_lidar_pts > 0 for anno in annotations], dtype=bool).reshape(-1)
 
-    names = np.array([name_mapping.get(b.semantic_label.name, b.semantic_label.name) for b in boxes])
+    names = np.array([cfg.name_mapping.get(b.semantic_label.name, b.semantic_label.name) for b in boxes])
     # we need to convert rot to SECOND format.
     # Copied from https://github.com/open-mmlab/mmdetection3d/blob/0f9dfa97a35ef87e16b700742d3c358d0ad15452/tools/dataset_converters/nuscenes_converter.py#L258
     gt_boxes = np.concatenate([locs, dims[:, [1, 0, 2]], rots], axis=1)
@@ -597,24 +598,42 @@ def get_annotations(
     assert velocity.shape == (len(gt_boxes), 2)
 
     matched_object_idx = None
-    if merge_objects:
-        matched_object_idx = match_objects(gt_boxes, names, merge_objects)
+    if cfg.merge_objects:
+        matched_object_idx = match_objects(gt_boxes, names, cfg.merge_objects)
 
     instances = get_instances(
         gt_boxes,
         names,
-        class_names,
+        cfg.class_names,
         velocity,
         boxes,
         annotations,
         valid_flag,
         gt_attrs,
-        filter_attributions=filter_attributes,
+        filter_attributions=cfg.filter_attributes,
         matched_object_idx=matched_object_idx,
-        merge_type=merge_type,
+        merge_type=cfg.merge_type,
     )
 
     return dict(instances=instances)
+
+
+def get_lidarseg_annotations(
+    t4: Tier4,
+    sd_record: SampleData,
+    i: int,
+    lidar_token: str,
+) -> dict:
+    if not hasattr(t4, "lidarseg") or not t4.lidarseg:
+        return dict()
+
+    assert i < len(t4.lidarseg), "Index exceeds number of lidarseg records!"
+    assert t4.lidarseg[i].sample_data_token == lidar_token, "Sample data token mismatch!"
+    return dict(
+        pts_semantic_mask_path=osp.join(t4.data_root, t4.lidarseg[i].filename),
+        pts_semantic_mask_categories={c.name: c.index for c in t4.category},
+        lidar_sources_info=load_json(osp.join(t4.data_root, sd_record.info_filename)),
+    )
 
 
 def obtain_sensor2top(
