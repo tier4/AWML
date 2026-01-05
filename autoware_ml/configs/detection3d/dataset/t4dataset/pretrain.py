@@ -15,7 +15,7 @@ info_test_file_name = "t4dataset_pretrain_infos_test.pkl"
 # dataset scene setting
 dataset_version_config_root = "autoware_ml/configs/t4dataset/"
 dataset_version_list = [
-    "pretrain_v1",
+    "db_pretrain_v1",
 ]
 
 # dataset format setting
