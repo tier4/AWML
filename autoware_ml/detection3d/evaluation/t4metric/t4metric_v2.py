@@ -1,13 +1,15 @@
 import json
 import pickle
 import time
+from collections import defaultdict
 from concurrent.futures import Executor, ProcessPoolExecutor
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Dict, Generator, List, Optional, Sequence, Union
+from typing import Any, Dict, Generator, List, Optional, Sequence, Union, Tuple
 
 import numpy as np
 import torch
+from torch.utils import data
 from mmdet3d.registry import METRICS
 from mmdet3d.structures import LiDARInstance3DBoxes
 from mmengine.dist import get_world_size
@@ -45,6 +47,17 @@ class PerceptionFrameProcessingData:
     unix_time: float
     ground_truth_objects: FrameGroundTruth
     estimated_objects: List[ObjectType]
+
+
+@dataclass(frozen=True)
+class EvaluatorData:
+
+    evaluator: PerceptionEvaluationManager
+    bev_distance_range: Optional[Tuple[float]]
+    perception_evaluator_configs: PerceptionEvaluationConfig
+    frame_pass_fail_config: PerceptionPassFailConfig
+    critical_object_filter_config: Optional[CriticalObjectFilterConfig]
+    metric_score_config: MetricsScoreConfig
 
 
 @METRICS.register_module()
@@ -88,6 +101,10 @@ class T4MetricV2(BaseMetric):
               ground truth from the pickle file, and runs `compute_metrics()`.
 
             Defaults to None.
+      bev_distance_ranges (Optional[Tuple[float]]):
+        Bev distance ranges in meters for different range buckets. Defaults to None.
+        Example: [(0.0, 60.0), (60.0, 90.0), (90.0, 121.0), (0.0, 121.0)], which means it will compute the metrics
+        for bev distance ranges are [0.0, 60.0), [60.0, 90.0), [90.0, 121.0), [0.0, 121.0) after filtering objects by bev distance ranges, respectively.
     """
 
     def __init__(
@@ -108,7 +125,6 @@ class T4MetricV2(BaseMetric):
         frame_pass_fail_config: Optional[Dict[str, Any]] = None,
         results_pickle_path: Optional[Union[Path, str]] = None,
     ) -> None:
-
         self.default_prefix = "T4MetricV2"
         self.dataset_name = dataset_name
         super(T4MetricV2, self).__init__(collect_device=collect_device, prefix=prefix)
@@ -124,19 +140,15 @@ class T4MetricV2(BaseMetric):
             self.class_names = [self.name_mapping.get(name, name) for name in self.class_names]
 
         self.target_labels = [AutowareLabel[label.upper()] for label in self.class_names]
-        self.perception_evaluator_configs = PerceptionEvaluationConfig(**perception_evaluator_configs)
-        self.critical_object_filter_config = CriticalObjectFilterConfig(
-            evaluator_config=self.perception_evaluator_configs, **critical_object_filter_config
-        )
-        self.frame_pass_fail_config = PerceptionPassFailConfig(
-            evaluator_config=self.perception_evaluator_configs, **frame_pass_fail_config
-        )
-        self.metrics_config = MetricsScoreConfig(
-            self.perception_evaluator_configs.evaluation_task, target_labels=self.target_labels
+        self.evaluators = self._create_evaluators(
+            perception_evaluator_configs,
+            frame_pass_fail_config,
+            critical_object_filter_config,
         )
 
         self.scene_id_to_index_map: Dict[str, int] = {}  # scene_id to index map in self.results
-        self.frame_results_with_info = []
+        # {evaluator_name: []}
+        self.frame_results_with_info = defaultdict(list)
 
         self.message_hub = MessageHub.get_current_instance()
         self.logger = MMLogger.get_current_instance()
@@ -144,7 +156,7 @@ class T4MetricV2(BaseMetric):
 
         # Set output directory for metrics files
         assert output_dir, f"output_dir must be provided, got: {output_dir}"
-        self.output_dir = self.logger_file_path / output_dir
+        self.output_dir = self.logger_file_path / output_dir / dataset_name
         self.output_dir.mkdir(parents=True, exist_ok=True)
         self.logger.info(f"Metrics output directory set to: {self.output_dir}")
 
@@ -159,6 +171,82 @@ class T4MetricV2(BaseMetric):
 
         self.num_running_gpus = get_world_size()
         self.logger.info(f"{self.default_prefix} running with {self.num_running_gpus} GPUs")
+
+    def _create_evaluators(
+        self,
+        perception_evaluator_configs: Dict[str, Any],
+        frame_pass_fail_configs: Dict[str, Any],
+        critical_object_filter_configs: Optional[Dict[str, Any]] = None,
+    ) -> Dict[str, EvaluatorData]:
+        """Create and return a dictionary of evaluators.
+
+        Returns:
+            Dict[str, EvaluatorData]: A dictionary of evaluators.
+        """
+        metric_output_dir = self.output_dir / DEFAULT_T4METRIC_METRICS_FOLDER if self.write_metric_summary else None
+
+        # min_distance and max_distance must be provided in perception_evaluator_configs since bev_range is mandatory
+        assert (
+            "min_distance" in perception_evaluator_configs and "max_distance" in perception_evaluator_configs
+        ), "min_distance and max_distance must be provided in perception_evaluator_configs"
+
+        assert isinstance(perception_evaluator_configs["min_distance"], list) and isinstance(
+            perception_evaluator_configs["max_distance"], list
+        ), f"min_distance and max_distance must be a list, got: {type(perception_evaluator_configs['min_distance'])} and {type(perception_evaluator_configs['max_distance'])}"
+
+        # Form bev distance ranges from min_distance and max_distance, for example, [(min_distance[0], max_distance[0]), (min_distance[1], max_distance[1]), ...],
+        # and each distance range will be used to create a separate evaluator to evaluate metrics for different bev distance ranges.
+        bev_distance_ranges = []
+        for min_distance, max_distance in zip(
+            perception_evaluator_configs["min_distance"], perception_evaluator_configs["max_distance"]
+        ):
+            assert isinstance(min_distance, float) and isinstance(
+                max_distance, float
+            ), f"min_distance and max_distance must be a float, got: {type(min_distance)} and {type(max_distance)}"
+            assert (
+                min_distance < max_distance
+            ), f"min_distance must be less than max_distance, got: {min_distance} and {max_distance}"
+            bev_distance_ranges.append((min_distance, max_distance))
+
+        evaluators = {}
+        for bev_distance_range in bev_distance_ranges:
+            # Update min_distance_list and max_distance_list
+            perception_evaluator_configs["min_distance"] = bev_distance_range[0]
+            perception_evaluator_configs["max_distance"] = bev_distance_range[1]
+
+            perception_evaluator_config = PerceptionEvaluationConfig(**perception_evaluator_configs)
+
+            if critical_object_filter_configs is not None:
+                perception_critical_object_filter_config = CriticalObjectFilterConfig(
+                    evaluator_config=perception_evaluator_configs,
+                    **critical_object_filter_configs,
+                )
+            else:
+                perception_critical_object_filter_config = None
+
+            perception_frame_pass_fail_config = PerceptionPassFailConfig(
+                evaluator_config=perception_evaluator_configs,
+                **frame_pass_fail_configs,
+            )
+            perception_metrics_score_config = MetricsScoreConfig(
+                perception_evaluator_config.evaluation_task, target_labels=self.target_labels
+            )
+
+            bev_range_name = f"bev_range_{bev_distance_range[0]}_{bev_distance_range[1]}"
+            evaluator = PerceptionEvaluationManager(
+                evaluation_config=perception_evaluator_configs,
+                load_ground_truth=False,
+                metric_output_dir=metric_output_dir,
+            )
+            evaluators[bev_range_name] = EvaluatorData(
+                evaluator=evaluator,
+                bev_distance_range=bev_distance_range,
+                perception_evaluator_configs=perception_evaluator_config,
+                frame_pass_fail_config=perception_frame_pass_fail_config,
+                critical_object_filter_config=perception_critical_object_filter_config,
+                metric_score_config=perception_metrics_score_config,
+            )
+        return evaluators
 
     def evaluate(self, size: int) -> Dict[str, float]:
         """
@@ -194,6 +282,35 @@ class T4MetricV2(BaseMetric):
             perception_frame = self._parse_predictions_from_sample(current_time, data_sample, frame_ground_truth)
             self._save_perception_frame(scene_id, data_sample["sample_idx"], perception_frame)
 
+    def _process_evaluator_results(self, scenes: dict) -> None:
+        """Process the results for each evaluator.
+
+        Args:
+            evaluator (PerceptionEvaluationManager): The evaluator instance.
+            results (List[dict]): The results to process.
+        """
+        aggregated_metric_dict = defaultdict(dict)
+        for evaluator_name, evaluator in self.evaluators.items():
+            final_metric_score = evaluator.get_scene_result()
+            final_metric_dict = self._process_metrics_for_aggregation(final_metric_score)
+
+            aggregated_metric_dict[evaluator_name] = final_metric_dict
+            self.logger.info(f"====Evaluator: {evaluator_name}====")
+            self.logger.info(f"Final metrics result: {final_metric_score}")
+
+            # Write output files
+            if self.write_metric_summary:
+                try:
+                    self._write_scene_metrics(scenes, evaluator_name)
+                except Exception as e:
+                    self.logger.error(f"Failed to write scene metrics to output files: {e}")
+
+        if self.write_metric_summary:
+            try:
+                self._write_aggregated_metrics(aggregated_metric_dict)
+            except Exception as e:
+                self.logger.error(f"Failed to write aggregated metrics to output files: {e}")
+
     # override of BaseMetric.compute_metrics
     def compute_metrics(
         self,
@@ -225,11 +342,10 @@ class T4MetricV2(BaseMetric):
             self._validate_results(results)
 
             # Initialize evaluator and process scenes
-            evaluator = self._create_evaluator()
             scenes = self._init_scene_from_results(results)
 
             # Process all frames and collect results
-            self._process_all_frames(evaluator, scenes)
+            self._process_all_frames(scenes)
 
             # Compute final metrics
             final_metric_score = evaluator.get_scene_result()
@@ -329,19 +445,6 @@ class T4MetricV2(BaseMetric):
         self.logger.info(f"Saving results of epoch: {current_epoch} to pickle file: {results_pickle_path}")
         self._save_results_to_pickle(results_pickle_path)
         return results
-
-    def _create_evaluator(self) -> PerceptionEvaluationManager:
-        """Create and return a perception evaluation manager.
-
-        Returns:
-            PerceptionEvaluationManager: The configured evaluator.
-        """
-        metric_output_dir = self.output_dir / DEFAULT_T4METRIC_METRICS_FOLDER if self.write_metric_summary else None
-        return PerceptionEvaluationManager(
-            evaluation_config=self.perception_evaluator_configs,
-            load_ground_truth=False,
-            metric_output_dir=metric_output_dir,
-        )
 
     def _batch_scenes(
         self, scenes: dict, scene_batch_size: int
@@ -533,29 +636,34 @@ class T4MetricV2(BaseMetric):
                     batch_index=batch_index,
                 )
 
-    def _sequential_process_all_frames(self, evaluator: PerceptionEvaluationManager, scenes: dict) -> None:
+    def _sequential_process_all_frames(self, scenes: dict) -> None:
         """Process all frames in all scenes sequentially.
 
         Args:
-              evaluator (PerceptionEvaluationManager): The evaluator instance.
               scenes (dict): Dictionary of scenes and their samples.
         """
-        for scene_id, samples in scenes.items():
-            for sample_id, perception_frame in samples.items():
-                try:
-                    frame_result: PerceptionFrameResult = evaluator.add_frame_result(
-                        unix_time=time.time(),
-                        ground_truth_now_frame=perception_frame.ground_truth_objects,
-                        estimated_objects=perception_frame.estimated_objects,
-                        critical_object_filter_config=self.critical_object_filter_config,
-                        frame_pass_fail_config=self.frame_pass_fail_config,
-                    )
+        for evaluator_name, evaluator in self.evaluators.items():
+            for scene_id, samples in scenes.items():
+                for sample_id, perception_frame in samples.items():
+                    try:
+                        frame_result: PerceptionFrameResult = evaluator.add_frame_result(
+                            unix_time=time.time(),
+                            ground_truth_now_frame=perception_frame.ground_truth_objects,
+                            estimated_objects=perception_frame.estimated_objects,
+                            critical_object_filter_config=self.critical_object_filter_config,
+                            frame_pass_fail_config=self.frame_pass_fail_config,
+                            frame_prefix=evaluator_name,
+                        )
 
-                    self.frame_results_with_info.append(
-                        {"scene_id": scene_id, "sample_id": sample_id, "frame_result": frame_result}
-                    )
-                except Exception as e:
-                    self.logger.warning(f"Failed to process frame {scene_id}/{sample_id}: {e}")
+                        self.frame_results_with_info[evaluator_name].append(
+                            {
+                                "scene_id": scene_id,
+                                "sample_id": sample_id,
+                                "frame_result": frame_result,
+                            }
+                        )
+                    except Exception as e:
+                        self.logger.warning(f"Failed to process frame {scene_id}/{sample_id}: {e}")
 
     def _process_all_frames(self, evaluator: PerceptionEvaluationManager, scenes: dict) -> None:
         """Process all frames in all scenes and collect frame results.
@@ -569,12 +677,13 @@ class T4MetricV2(BaseMetric):
         else:
             self._sequential_process_all_frames(evaluator, scenes)
 
-    def _write_output_files(self, scenes: dict, final_metric_dict: dict) -> None:
+    def _write_output_files(self, scenes: dict, final_metric_dict: dict, evaluator_name: str) -> None:
         """Write scene metrics and aggregated metrics to files.
 
         Args:
             scenes (dict): Dictionary of scenes and their samples.
             final_metric_dict (dict): The final metrics dictionary.
+            evaluator_name (str): The name of the evaluator.
         """
         try:
             self._write_scene_metrics(scenes)
@@ -622,33 +731,35 @@ class T4MetricV2(BaseMetric):
 
         return metric_dict
 
-    def _write_aggregated_metrics(self, final_metric_dict: dict):
+    def _write_aggregated_metrics(self, final_metric_dict: dict) -> None:
         """
         Writes aggregated metrics to a JSON file with the specified format.
 
         Args:
-            final_metric_dict (dict): Dictionary containing processed metrics from the evaluator.
+            final_metric_dict {evaluator_name: {metric_name: metric_value}}: Dictionary containing processed metrics from the evaluator.
         """
         try:
             # Initialize the structure
-            # TODO(vividf): change this when we have multiple metrics for different distance thresholds
-            aggregated_metrics = {"all": {"metrics": {}, "aggregated_metric_label": {}}}
+            for evaluator_name in final_metric_dict.keys():
+                aggregated_metrics = {evaluator_name: {"metrics": {}, "aggregated_metric_label": {}}}
 
-            # Organize metrics by label
-            for key, value in final_metric_dict.items():
-                if key.startswith("T4MetricV2/mAP_") or key.startswith("T4MetricV2/mAPH_"):
-                    # These are overall metrics, put them in the metrics section
-                    aggregated_metrics["all"]["metrics"][key] = value
-                else:
-                    # These are per-label metrics, extract label name and organize
-                    # Example: T4MetricV2/car_AP_center_distance_0.5
-                    parts = key.split("/")[1].split("_")
-                    label_name = parts[0]  # car, truck, etc.
+            # Gather metrics
+            for evaluator_name, metric_dict in final_metric_dict.items():
+                # Organize metrics by label
+                for key, value in metric_dict.items():
+                    if key.startswith("T4MetricV2/mAP_") or key.startswith("T4MetricV2/mAPH_"):
+                        # These are overall metrics, put them in the metrics section
+                        aggregated_metrics[evaluator_name]["metrics"][key] = value
+                    else:
+                        # These are per-label metrics, extract label name and organize
+                        # Example: T4MetricV2/car_AP_center_distance_0.5
+                        parts = key.split("/")[1].split("_")
+                        label_name = parts[0]  # car, truck, etc.
 
-                    if label_name not in aggregated_metrics["all"]["aggregated_metric_label"]:
-                        aggregated_metrics["all"]["aggregated_metric_label"][label_name] = {}
+                        if label_name not in aggregated_metrics[evaluator_name]["aggregated_metric_label"]:
+                            aggregated_metrics[evaluator_name]["aggregated_metric_label"][label_name] = {}
 
-                    aggregated_metrics["all"]["aggregated_metric_label"][label_name][key] = value
+                        aggregated_metrics[evaluator_name]["aggregated_metric_label"][label_name][key] = value
 
             # Write to JSON file
             output_path = self.output_dir / "aggregated_metrics.json"
@@ -661,7 +772,7 @@ class T4MetricV2(BaseMetric):
             self.logger.error(f"Failed to write aggregated metrics: {e}")
             raise
 
-    def _write_scene_metrics(self, scenes: dict):
+    def _write_scene_metrics(self, scenes: dict, evaluator_name: str) -> None:
         """
         Writes scene metrics to a JSON file in nested format.
 
@@ -671,13 +782,15 @@ class T4MetricV2(BaseMetric):
         """
         try:
             # Initialize scene_metrics structure
-            scene_metrics = self._initialize_scene_metrics_structure(scenes)
+            scene_metrics = {
+                scene_id: {sample_id: {} for sample_id in samples.keys()} for scene_id, samples in scenes.items()
+            }
 
             # Process all frame results and populate metrics
             self._populate_scene_metrics(scene_metrics)
 
             # Write the nested metrics to JSON
-            output_path = self.output_dir / "scene_metrics.json"
+            output_path = self.output_dir / evaluator_name / "scene_metrics.json"
             with open(output_path, "w") as scene_file:
                 json.dump(scene_metrics, scene_file, indent=4)
 
@@ -686,17 +799,6 @@ class T4MetricV2(BaseMetric):
         except Exception as e:
             self.logger.error(f"Failed to write scene metrics: {e}")
             raise
-
-    def _initialize_scene_metrics_structure(self, scenes: dict) -> dict:
-        """Initialize the scene metrics structure with empty dictionaries.
-
-        Args:
-            scenes (dict): Dictionary mapping scene_id to samples.
-
-        Returns:
-            dict: Initialized scene metrics structure.
-        """
-        return {scene_id: {sample_id: {} for sample_id in samples.keys()} for scene_id, samples in scenes.items()}
 
     def _populate_scene_metrics(self, scene_metrics: dict) -> None:
         """Populate scene metrics with data from frame results.
@@ -708,6 +810,7 @@ class T4MetricV2(BaseMetric):
             scene_id = frame_info["scene_id"]
             sample_id = frame_info["sample_id"]
             frame_result = frame_info["frame_result"]
+            evaluator_name = frame_info["evaluator_name"]
 
             # Get or create the metrics structure for this frame
             frame_metrics = scene_metrics[scene_id][sample_id].setdefault("all", {})

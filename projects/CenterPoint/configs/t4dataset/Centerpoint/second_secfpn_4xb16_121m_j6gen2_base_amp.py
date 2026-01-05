@@ -1,6 +1,6 @@
 _base_ = [
     "../../../../../autoware_ml/configs/detection3d/default_runtime.py",
-    "../../../../../autoware_ml/configs/detection3d/dataset/t4dataset/j6gen2_base.py",
+    "../../../../../autoware_ml/configs/detection3d/dataset/t4dataset/j6gen2_v6.py",
     "../../default/second_secfpn_base.py",
 ]
 custom_imports = dict(imports=["projects.CenterPoint.models"], allow_failed_imports=False)
@@ -41,7 +41,7 @@ eval_class_range = {
 }
 
 # user setting
-data_root = "data/t4dataset/"
+data_root = "data/t4datasets/"
 info_directory_path = "info/kokseang_2_5/"
 train_gpu_size = 4
 train_batch_size = 16
