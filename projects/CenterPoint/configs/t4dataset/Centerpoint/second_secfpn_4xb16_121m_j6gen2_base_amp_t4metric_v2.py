@@ -2,7 +2,11 @@ _base_ = [
     "second_secfpn_4xb16_121m_j6gen2_base_amp.py",
 ]
 
-work_dir = "work_dirs/centerpoint_2_5_t4metricv2/" + _base_.dataset_type + "/second_secfpn_4xb16_121m_j6gen2_base_amp_t4metric_v2/"
+work_dir = (
+    "work_dirs/centerpoint_2_5_t4metricv2/"
+    + _base_.dataset_type
+    + "/second_secfpn_4xb16_121m_j6gen2_base_amp_t4metric_v2/"
+)
 
 # Add evaluator configs
 perception_evaluator_configs = dict(
@@ -13,12 +17,12 @@ perception_evaluator_configs = dict(
     load_raw_data=False,
 )
 
-critical_object_filter_config = dict(
-    target_labels=_base_.class_names,
-    ignore_attributes=None,
-    max_distance_list=[121.0, 121.0, 121.0, 121.0, 121.0],
-    min_distance_list=[-121.0, -121.0, -121.0, -121.0, -121.0],
-)
+# critical_object_filter_config = dict(
+#     target_labels=_base_.class_names,
+#     ignore_attributes=None,
+#     max_distance_list=[121.0, 121.0, 121.0, 121.0, 121.0],
+#     min_distance_list=[-121.0, -121.0, -121.0, -121.0, -121.0],
+# )
 
 frame_pass_fail_config = dict(
     target_labels=_base_.class_names,
@@ -35,9 +39,9 @@ val_evaluator = dict(
     output_dir="validation",
     dataset_name="j6gen2_base",
     perception_evaluator_configs=perception_evaluator_configs,
-    critical_object_filter_config=critical_object_filter_config,
+    critical_object_filter_config=None,
     frame_pass_fail_config=frame_pass_fail_config,
-    num_workers=64,
+    num_workers=1,
     scene_batch_size=-1,
     write_metric_summary=False,
     class_names={{_base_.class_names}},
@@ -52,9 +56,9 @@ test_evaluator = dict(
     output_dir="testing",
     dataset_name="j6gen2_base",
     perception_evaluator_configs=perception_evaluator_configs,
-    critical_object_filter_config=critical_object_filter_config,
+    critical_object_filter_config=None,
     frame_pass_fail_config=frame_pass_fail_config,
-    num_workers=64,
+    num_workers=1,
     scene_batch_size=-1,
     write_metric_summary=True,
     class_names={{_base_.class_names}},

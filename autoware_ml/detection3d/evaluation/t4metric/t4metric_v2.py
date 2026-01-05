@@ -140,11 +140,6 @@ class T4MetricV2(BaseMetric):
             self.class_names = [self.name_mapping.get(name, name) for name in self.class_names]
 
         self.target_labels = [AutowareLabel[label.upper()] for label in self.class_names]
-        self.evaluators = self._create_evaluators(
-            perception_evaluator_configs,
-            frame_pass_fail_config,
-            critical_object_filter_config,
-        )
 
         self.scene_id_to_index_map: Dict[str, int] = {}  # scene_id to index map in self.results
         # {evaluator_name: []}
@@ -168,8 +163,13 @@ class T4MetricV2(BaseMetric):
 
         self.results_pickle_exists = True if self.results_pickle_path and self.results_pickle_path.exists() else False
         self.write_metric_summary = write_metric_summary
-
         self.num_running_gpus = get_world_size()
+
+        self.evaluators = self._create_evaluators(
+            perception_evaluator_configs,
+            frame_pass_fail_config,
+            critical_object_filter_config,
+        )
         self.logger.info(f"{self.default_prefix} running with {self.num_running_gpus} GPUs")
 
     def _create_evaluators(
@@ -187,18 +187,20 @@ class T4MetricV2(BaseMetric):
 
         # min_distance and max_distance must be provided in perception_evaluator_configs since bev_range is mandatory
         assert (
-            "min_distance" in perception_evaluator_configs and "max_distance" in perception_evaluator_configs
+            "min_distance" in perception_evaluator_configs["evaluation_config_dict"]
+            and "max_distance" in perception_evaluator_configs["evaluation_config_dict"]
         ), "min_distance and max_distance must be provided in perception_evaluator_configs"
 
-        assert isinstance(perception_evaluator_configs["min_distance"], list) and isinstance(
-            perception_evaluator_configs["max_distance"], list
+        assert isinstance(perception_evaluator_configs["evaluation_config_dict"]["min_distance"], list) and isinstance(
+            perception_evaluator_configs["evaluation_config_dict"]["max_distance"], list
         ), f"min_distance and max_distance must be a list, got: {type(perception_evaluator_configs['min_distance'])} and {type(perception_evaluator_configs['max_distance'])}"
 
         # Form bev distance ranges from min_distance and max_distance, for example, [(min_distance[0], max_distance[0]), (min_distance[1], max_distance[1]), ...],
         # and each distance range will be used to create a separate evaluator to evaluate metrics for different bev distance ranges.
         bev_distance_ranges = []
         for min_distance, max_distance in zip(
-            perception_evaluator_configs["min_distance"], perception_evaluator_configs["max_distance"]
+            perception_evaluator_configs["evaluation_config_dict"]["min_distance"],
+            perception_evaluator_configs["evaluation_config_dict"]["max_distance"],
         ):
             assert isinstance(min_distance, float) and isinstance(
                 max_distance, float
@@ -211,21 +213,20 @@ class T4MetricV2(BaseMetric):
         evaluators = {}
         for bev_distance_range in bev_distance_ranges:
             # Update min_distance_list and max_distance_list
-            perception_evaluator_configs["min_distance"] = bev_distance_range[0]
-            perception_evaluator_configs["max_distance"] = bev_distance_range[1]
+            perception_evaluator_configs["evaluation_config_dict"]["min_distance"] = bev_distance_range[0]
+            perception_evaluator_configs["evaluation_config_dict"]["max_distance"] = bev_distance_range[1]
 
-            perception_evaluator_config = PerceptionEvaluationConfig(**perception_evaluator_configs)
-
+            evaluator_config = PerceptionEvaluationConfig(**perception_evaluator_configs)
             if critical_object_filter_configs is not None:
                 perception_critical_object_filter_config = CriticalObjectFilterConfig(
-                    evaluator_config=perception_evaluator_configs,
+                    evaluator_config=evaluator_config,
                     **critical_object_filter_configs,
                 )
             else:
                 perception_critical_object_filter_config = None
 
             perception_frame_pass_fail_config = PerceptionPassFailConfig(
-                evaluator_config=perception_evaluator_configs,
+                evaluator_config=evaluator_config,
                 **frame_pass_fail_configs,
             )
             perception_metrics_score_config = MetricsScoreConfig(
@@ -234,14 +235,14 @@ class T4MetricV2(BaseMetric):
 
             bev_range_name = f"bev_range_{bev_distance_range[0]}_{bev_distance_range[1]}"
             evaluator = PerceptionEvaluationManager(
-                evaluation_config=perception_evaluator_configs,
+                evaluation_config=evaluator_config,
                 load_ground_truth=False,
                 metric_output_dir=metric_output_dir,
             )
             evaluators[bev_range_name] = EvaluatorData(
                 evaluator=evaluator,
                 bev_distance_range=bev_distance_range,
-                perception_evaluator_configs=perception_evaluator_config,
+                perception_evaluator_configs=evaluator_config,
                 frame_pass_fail_config=perception_frame_pass_fail_config,
                 critical_object_filter_config=perception_critical_object_filter_config,
                 metric_score_config=perception_metrics_score_config,

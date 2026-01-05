@@ -179,8 +179,8 @@ evaluator_metric_configs = dict(
     label_prefix="autoware",
     # bev minimum distance ranges for each range bucket, must be the same length as max_distance,
     # they will form bev distance ranges in [(min_distance[0], max_distance[0]), (min_distance[1], max_distance[1]), ...] when filtering
-    min_distance=[0, 60, 90, 0],
+    min_distance=[0.0, 60.0, 90.0, 0.0],
     # bev maximum distance ranges for each range bucket, must be the same length as min_distance
-    max_distance=[60, 90, 121, 121],
+    max_distance=[60.0, 90.0, 121.0, 121.0],
     min_point_numbers=0,
 )
