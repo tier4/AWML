@@ -170,6 +170,11 @@ class T4MetricV2(BaseMetric):
             frame_pass_fail_config,
             critical_object_filter_config,
         )
+
+        # The last evaluator is the main evaluator, which will be used to get the frame id for the ground truth
+        # and predictions. Also, it's used to report the final metrics
+        self.main_evaluator_name = list(self.evaluators.keys())[-1]
+        self.main_evaluator_frame_id = self.evaluators[self.main_evaluator_name].perception_evaluator_configs.frame_id
         self.logger.info(f"{self.default_prefix} running with {self.num_running_gpus} GPUs")
 
     def _create_evaluators(
@@ -230,7 +235,7 @@ class T4MetricV2(BaseMetric):
                 **frame_pass_fail_configs,
             )
             perception_metrics_score_config = MetricsScoreConfig(
-                perception_evaluator_config.evaluation_task, target_labels=self.target_labels
+                evaluator_config.evaluation_task, target_labels=self.target_labels
             )
 
             bev_range_name = f"bev_range_{bev_distance_range[0]}_{bev_distance_range[1]}"
@@ -283,7 +288,7 @@ class T4MetricV2(BaseMetric):
             perception_frame = self._parse_predictions_from_sample(current_time, data_sample, frame_ground_truth)
             self._save_perception_frame(scene_id, data_sample["sample_idx"], perception_frame)
 
-    def _process_evaluator_results(self, scenes: dict) -> None:
+    def _process_evaluator_results(self, scenes: dict) -> Dict[str, Dict[str, float]]:
         """Process the results for each evaluator.
 
         Args:
@@ -311,6 +316,8 @@ class T4MetricV2(BaseMetric):
                 self._write_aggregated_metrics(aggregated_metric_dict)
             except Exception as e:
                 self.logger.error(f"Failed to write aggregated metrics to output files: {e}")
+
+        return aggregated_metric_dict
 
     # override of BaseMetric.compute_metrics
     def compute_metrics(
@@ -349,15 +356,18 @@ class T4MetricV2(BaseMetric):
             self._process_all_frames(scenes)
 
             # Compute final metrics
-            final_metric_score = evaluator.get_scene_result()
-            self.logger.info(f"Final metrics result: {final_metric_score}")
-            final_metric_dict = self._process_metrics_for_aggregation(final_metric_score)
+            aggregated_metric_dict = self._process_evaluator_results(scenes)
 
-            # Write output files
-            if self.write_metric_summary:
-                self._write_output_files(scenes, final_metric_dict)
+            # final_metric_score = evaluator.get_scene_result()
+            # self.logger.info(f"Final metrics result: {final_metric_score}")
+            # final_metric_dict = self._process_metrics_for_aggregation(
+            #     final_metric_score)
 
-            return final_metric_dict
+            # # Write output files
+            # if self.write_metric_summary:
+            #     self._write_output_files(scenes, final_metric_dict)
+
+            return aggregated_metric_dict[self.main_evaluator_name]  # Return the metrics from the main evaluator
 
         except Exception as e:
             raise RuntimeError(f"Error in compute_metrics: {e}")
@@ -985,7 +995,7 @@ class T4MetricV2(BaseMetric):
         dynamic_objects = [
             DynamicObject(
                 unix_time=time,
-                frame_id=self.perception_evaluator_configs.frame_id,
+                frame_id=self.main_evaluator_frame_id,
                 position=tuple(bbox[:3]),
                 orientation=Quaternion(np.cos(bbox[6] / 2), 0, 0, np.sin(bbox[6] / 2)),
                 shape=Shape(shape_type=ShapeType.BOUNDING_BOX, size=tuple(bbox[3:6])),
@@ -1034,7 +1044,7 @@ class T4MetricV2(BaseMetric):
         estimated_objects = [
             DynamicObject(
                 unix_time=time,
-                frame_id=self.perception_evaluator_configs.frame_id,
+                frame_id=self.main_evaluator_frame_id,
                 position=tuple(bbox[:3]),
                 orientation=Quaternion(np.cos(bbox[6] / 2), 0, 0, np.sin(bbox[6] / 2)),
                 shape=Shape(shape_type=ShapeType.BOUNDING_BOX, size=tuple(bbox[3:6])),
