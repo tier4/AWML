@@ -1,5 +1,5 @@
 version: 1
-dataset_version: pseudo-j6-v1.0
+dataset_version: db_pretrain_v1
 train:
   - Pct6CqsV_2025-01-09T10-14-54+0900_40   0
   - Pct6CqsV_2025-01-09T10-14-54+0900_41   0
