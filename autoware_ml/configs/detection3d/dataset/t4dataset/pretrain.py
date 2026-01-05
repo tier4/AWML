@@ -15,8 +15,7 @@ info_test_file_name = "t4dataset_pretrain_infos_test.pkl"
 # dataset scene setting
 dataset_version_config_root = "autoware_ml/configs/t4dataset/"
 dataset_version_list = [
-    "pseudo_j6_v1",
-    "pseudo_j6_v2",
+    "pretrain_v1",
 ]
 
 # dataset format setting
@@ -31,12 +30,23 @@ camera_types = {
 }
 
 # class setting, for labels, they all already remapped when they're generated
+# class setting
 name_mapping = {
-    "car": "car",
-    "truck": "truck",
-    "bus": "bus",
-    "bicycle": "bicycle",
-    "pedestrian": "pedestrian",
+	'car': 'car',
+ 	'truck': 'truck',
+ 	'pedestrian': 'pedestrian',
+ 	'animal': 'animal',
+ 	'other_vehicle': 'car',
+ 	'bus': 'bus',
+ 	'bicycle': 'bicycle',
+ 	'trailer': 'trailer',
+ 	'motorcycle': 'bicycle',
+ 	'traffic_cone': 'traffic_cone',
+ 	'personal_mobility': 'pedestrian',
+ 	'other_pedestrian': 'pedestrian',
+ 	'fake_pedestrian': 'pedestrian',
+ 	'train': 'train',
+ 	'barrier': 'barrier'
 }
 
 class_names = [
@@ -46,6 +56,7 @@ class_names = [
     "bicycle",
     "pedestrian",
 ]
+
 num_class = len(class_names)
 metainfo = dict(classes=class_names)
 
