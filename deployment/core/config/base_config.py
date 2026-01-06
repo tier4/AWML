@@ -173,22 +173,31 @@ class RuntimeConfig:
 
 
 @dataclass(frozen=True)
-class BackendConfig:
-    """Configuration for backend-specific settings."""
+class TensorRTConfig:
+    """
+    Configuration for TensorRT backend-specific settings.
+
+    Note:
+        The deploy config key for this section is **`tensorrt_config`**.
+    """
 
     common_config: Mapping[str, Any] = field(default_factory=_empty_mapping)
     model_inputs: Tuple[TensorRTModelInputConfig, ...] = field(default_factory=tuple)
+    components: Mapping[str, Mapping[str, Any]] = field(default_factory=_empty_mapping)
 
     @classmethod
-    def from_dict(cls, config_dict: Mapping[str, Any]) -> BackendConfig:
+    def from_dict(cls, config_dict: Mapping[str, Any]) -> "TensorRTConfig":
         common_config = dict(config_dict.get("common_config", {}))
         model_inputs_raw: Iterable[Mapping[str, Any]] = config_dict.get("model_inputs", []) or []
         model_inputs: Tuple[TensorRTModelInputConfig, ...] = tuple(
             TensorRTModelInputConfig.from_dict(item) for item in model_inputs_raw
         )
+        components_raw = dict(config_dict.get("components", {}) or {})
+        components_frozen = {k: MappingProxyType(dict(v or {})) for k, v in components_raw.items()}
         return cls(
             common_config=MappingProxyType(common_config),
             model_inputs=model_inputs,
+            components=MappingProxyType(components_frozen),
         )
 
     def get_precision_policy(self) -> str:
@@ -315,7 +324,7 @@ class BaseDeploymentConfig:
         # Initialize config sections
         self.export_config = ExportConfig.from_dict(deploy_cfg.get("export", {}))
         self.runtime_config = RuntimeConfig.from_dict(deploy_cfg.get("runtime_io", {}))
-        self.backend_config = BackendConfig.from_dict(deploy_cfg.get("backend_config", {}))
+        self.tensorrt_config = TensorRTConfig.from_dict(deploy_cfg.get("tensorrt_config", {}) or {})
         self._evaluation_config = EvaluationConfig.from_dict(deploy_cfg.get("evaluation", {}))
         self._verification_config = VerificationConfig.from_dict(deploy_cfg.get("verification", {}))
 
@@ -336,8 +345,8 @@ class BaseDeploymentConfig:
             raise ValueError(str(exc)) from exc
 
         # Validate precision policy if present
-        backend_cfg = self.deploy_cfg.get("backend_config", {})
-        common_cfg = backend_cfg.get("common_config", {})
+        tensorrt_config = self.deploy_cfg.get("tensorrt_config", {})
+        common_cfg = tensorrt_config.get("common_config", {})
         precision_policy = common_cfg.get("precision_policy", PrecisionPolicy.AUTO.value)
         if precision_policy not in PRECISION_POLICIES:
             raise ValueError(
@@ -512,10 +521,10 @@ class BaseDeploymentConfig:
             TensorRTExportConfig instance containing TensorRT export parameters
         """
         settings_dict = {
-            "max_workspace_size": self.backend_config.get_max_workspace_size(),
-            "precision_policy": self.backend_config.get_precision_policy(),
-            "policy_flags": self.backend_config.get_precision_flags(),
-            "model_inputs": self.backend_config.model_inputs,
+            "max_workspace_size": self.tensorrt_config.get_max_workspace_size(),
+            "precision_policy": self.tensorrt_config.get_precision_policy(),
+            "policy_flags": self.tensorrt_config.get_precision_flags(),
+            "model_inputs": self.tensorrt_config.model_inputs,
         }
         return TensorRTExportConfig.from_mapping(settings_dict)
 

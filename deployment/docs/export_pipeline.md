@@ -21,14 +21,19 @@
 
 CenterPoint splits the model into multiple ONNX/TensorRT artifacts:
 
-- `voxel_encoder.onnx`
-- `backbone_head.onnx`
+- The produced filenames are driven by `deploy_cfg.onnx_config.components[*].onnx_file` (ONNX)
+- The produced engine filenames are driven by `deploy_cfg.tensorrt_config.components[*].engine_file` (TensorRT, optional)
 
 Export pipelines orchestrate:
 
 - Sequential export of each component.
 - Input/output wiring between stages.
 - Directory structure management.
+
+CenterPoint uses a project-specific `ModelComponentExtractor` implementation that provides:
+
+- `extract_features(model, data_loader, sample_idx)`: project-specific feature extraction for tracing
+- `extract_components(model, sample_data)`: splitting into ONNX-exportable submodules and per-component config overrides
 
 ## Verification-Oriented Exports
 

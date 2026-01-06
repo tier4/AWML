@@ -7,7 +7,7 @@ from __future__ import annotations
 import logging
 import os
 from pathlib import Path
-from typing import Iterable, Optional, Tuple
+from typing import Any, Iterable, Optional, Tuple
 
 import torch
 
@@ -29,12 +29,10 @@ class CenterPointONNXExportPipeline(OnnxExportPipeline):
         self,
         exporter_factory: type[ExporterFactory],
         component_extractor: ModelComponentExtractor,
-        config: BaseDeploymentConfig,
         logger: Optional[logging.Logger] = None,
     ):
         self.exporter_factory = exporter_factory
         self.component_extractor = component_extractor
-        self.config = config
         self.logger = logger or logging.getLogger(__name__)
 
     def export(
@@ -70,10 +68,7 @@ class CenterPointONNXExportPipeline(OnnxExportPipeline):
         model: torch.nn.Module,
         data_loader: BaseDataLoader,
         sample_idx: int,
-    ) -> Tuple[torch.Tensor, dict]:
-        if not hasattr(self.component_extractor, "extract_features"):
-            raise AttributeError("Component extractor must provide extract_features method")
-
+    ) -> Any:
         self.logger.info("Extracting features from sample data...")
         try:
             return self.component_extractor.extract_features(model, data_loader, sample_idx)
@@ -90,10 +85,10 @@ class CenterPointONNXExportPipeline(OnnxExportPipeline):
         exported_paths: list[str] = []
         component_list = list(components)
         total = len(component_list)
+        exporter = self._build_onnx_exporter(config)
 
         for index, component in enumerate(component_list, start=1):
             self.logger.info(f"\n[{index}/{total}] Exporting {component.name}...")
-            exporter = self._build_onnx_exporter(config)
             output_path = output_dir / f"{component.name}.onnx"
 
             try:

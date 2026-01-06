@@ -26,6 +26,7 @@ class CenterPointComponentExtractor(ModelComponentExtractor):
     def __init__(self, config: BaseDeploymentConfig, logger: logging.Logger = None):
         self.config = config
         self.logger = logger or logging.getLogger(__name__)
+        self._validate_config()
 
     @property
     def _onnx_config(self) -> dict:
@@ -36,7 +37,7 @@ class CenterPointComponentExtractor(ModelComponentExtractor):
         return dict((self.config.deploy_cfg or {}).get("model_io", {}) or {})
 
     def extract_components(self, model: torch.nn.Module, sample_data: Any) -> List[ExportableComponent]:
-        input_features, voxel_dict = sample_data
+        input_features, voxel_dict = self._unpack_sample(sample_data)
         self.logger.info("Extracting CenterPoint components for export...")
 
         voxel_component = self._create_voxel_encoder_component(model, input_features)
@@ -44,6 +45,60 @@ class CenterPointComponentExtractor(ModelComponentExtractor):
 
         self.logger.info("Extracted 2 components: voxel_encoder, backbone_neck_head")
         return [voxel_component, backbone_component]
+
+    def _validate_config(self) -> None:
+        onnx_config = self._onnx_config
+        components = dict(onnx_config.get("components", {}) or {})
+
+        missing = []
+        for required_key in ("voxel_encoder", "backbone_head"):
+            if required_key not in components:
+                missing.append(required_key)
+        if missing:
+            raise KeyError(
+                "Missing required `onnx_config.components` entries for CenterPoint export: "
+                f"{missing}. Please set them in deploy config."
+            )
+
+        def _require_fields(comp_key: str, fields: Tuple[str, ...]) -> None:
+            comp = dict(components.get(comp_key, {}) or {})
+            missing_fields = [f for f in fields if not comp.get(f)]
+            if missing_fields:
+                raise KeyError(
+                    f"Missing required fields in onnx_config.components['{comp_key}']: {missing_fields}. "
+                    "Expected at least: " + ", ".join(fields)
+                )
+
+        _require_fields("voxel_encoder", ("name", "onnx_file"))
+        _require_fields("backbone_head", ("name", "onnx_file"))
+
+        # Make it easier to debug later failures by flagging likely misconfigurations early.
+        model_io = self._model_io
+        if not model_io.get("head_output_names"):
+            self.logger.warning(
+                "deploy_cfg.model_io.head_output_names is not set. "
+                "Export will rely on `model.pts_bbox_head.output_names` at runtime."
+            )
+
+    def _unpack_sample(self, sample_data: Any) -> Tuple[torch.Tensor, dict]:
+        """
+        Unpack extractor output into `(input_features, voxel_dict)`.
+
+        We intentionally keep this contract simple to avoid extra project-specific types.
+        """
+        if not (isinstance(sample_data, (list, tuple)) and len(sample_data) == 2):
+            raise TypeError(
+                "Invalid sample_data for CenterPoint export. Expected a 2-tuple "
+                "`(input_features: torch.Tensor, voxel_dict: dict)`."
+            )
+        input_features, voxel_dict = sample_data
+        if not isinstance(input_features, torch.Tensor):
+            raise TypeError(f"input_features must be a torch.Tensor, got: {type(input_features)}")
+        if not isinstance(voxel_dict, dict):
+            raise TypeError(f"voxel_dict must be a dict, got: {type(voxel_dict)}")
+        if "coors" not in voxel_dict:
+            raise KeyError("voxel_dict must contain key 'coors' for CenterPoint export")
+        return input_features, voxel_dict
 
     def _create_voxel_encoder_component(
         self, model: torch.nn.Module, input_features: torch.Tensor
@@ -129,7 +184,8 @@ class CenterPointComponentExtractor(ModelComponentExtractor):
 
     def extract_features(self, model: torch.nn.Module, data_loader: Any, sample_idx: int) -> Tuple[torch.Tensor, dict]:
         if hasattr(model, "_extract_features"):
-            return model._extract_features(data_loader, sample_idx)
+            raw = model._extract_features(data_loader, sample_idx)
+            return self._unpack_sample(raw)
         raise AttributeError(
             "CenterPoint model must have _extract_features method for ONNX export. "
             "Please ensure the model is built with ONNX compatibility."

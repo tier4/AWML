@@ -43,7 +43,7 @@ onnx_config = dict(
     multi_file=False,
 )
 
-backend_config = dict(
+tensorrt_config = dict(
     common_config=dict(
         precision_policy="auto",
         max_workspace_size=1 << 30,

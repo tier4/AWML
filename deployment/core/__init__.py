@@ -3,13 +3,13 @@
 from deployment.core.artifacts import Artifact
 from deployment.core.backend import Backend
 from deployment.core.config.base_config import (
-    BackendConfig,
     BaseDeploymentConfig,
     DeviceConfig,
     EvaluationConfig,
     ExportConfig,
     ExportMode,
     RuntimeConfig,
+    TensorRTConfig,
     VerificationConfig,
     VerificationScenario,
     parse_base_args,
@@ -56,7 +56,7 @@ __all__ = [
     "ExportConfig",
     "ExportMode",
     "RuntimeConfig",
-    "BackendConfig",
+    "TensorRTConfig",
     "DeviceConfig",
     "EvaluationConfig",
     "VerificationConfig",

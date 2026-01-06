@@ -72,20 +72,19 @@ onnx_config = dict(
         voxel_encoder=dict(
             name="pts_voxel_encoder",
             onnx_file="pts_voxel_encoder.onnx",
-            engine_file="pts_voxel_encoder.engine",
         ),
         backbone_head=dict(
             name="pts_backbone_neck_head",
             onnx_file="pts_backbone_neck_head.onnx",
-            engine_file="pts_backbone_neck_head.engine",
         ),
     ),
 )
 
+
 # ============================================================================
 # Backend Configuration (mainly for TensorRT)
 # ============================================================================
-backend_config = dict(
+tensorrt_config = dict(
     common_config=dict(
         precision_policy="auto",
         max_workspace_size=2 << 30,
@@ -106,6 +105,16 @@ backend_config = dict(
             )
         )
     ],
+    components=dict(
+        voxel_encoder=dict(
+            onnx_file="pts_voxel_encoder.onnx",
+            engine_file="pts_voxel_encoder.engine",
+        ),
+        backbone_head=dict(
+            onnx_file="pts_backbone_neck_head.onnx",
+            engine_file="pts_backbone_neck_head.engine",
+        ),
+    ),
 )
 
 # ============================================================================

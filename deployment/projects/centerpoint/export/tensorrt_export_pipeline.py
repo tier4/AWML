@@ -28,11 +28,9 @@ class CenterPointTensorRTExportPipeline(TensorRTExportPipeline):
     def __init__(
         self,
         exporter_factory: type[ExporterFactory],
-        config: BaseDeploymentConfig,
         logger: Optional[logging.Logger] = None,
     ):
         self.exporter_factory = exporter_factory
-        self.config = config
         self.logger = logger or logging.getLogger(__name__)
 
     def _validate_cuda_device(self, device: str) -> int:
@@ -70,9 +68,12 @@ class CenterPointTensorRTExportPipeline(TensorRTExportPipeline):
         if not onnx_files:
             raise FileNotFoundError(f"No ONNX files found in {onnx_dir_path}")
 
+        engine_file_by_onnx_stem = self._build_engine_file_map(config)
         num_files = len(onnx_files)
         for i, onnx_file in enumerate(onnx_files, 1):
-            trt_path = output_dir_path / f"{onnx_file.stem}.engine"
+            engine_file = engine_file_by_onnx_stem.get(onnx_file.stem, f"{onnx_file.stem}.engine")
+            trt_path = output_dir_path / engine_file
+            trt_path.parent.mkdir(parents=True, exist_ok=True)
 
             self.logger.info(f"\n[{i}/{num_files}] Converting {onnx_file.name} → {trt_path.name}...")
             exporter = self._build_tensorrt_exporter(config)
@@ -93,6 +94,23 @@ class CenterPointTensorRTExportPipeline(TensorRTExportPipeline):
             (path for path in onnx_dir.iterdir() if path.is_file() and path.suffix.lower() == ".onnx"),
             key=lambda p: p.name,
         )
+
+    def _build_engine_file_map(self, config: BaseDeploymentConfig) -> dict[str, str]:
+        """
+        Build mapping from ONNX stem -> engine_file from config (if present).
+
+        This allows `deploy_cfg.tensorrt_config.components[*].engine_file` to control output naming.
+        """
+        trt_cfg = getattr(config, "tensorrt_config", None)
+        components = dict(getattr(trt_cfg, "components", {}) or {})
+        mapping: dict[str, str] = {}
+        for comp in components.values():
+            onnx_file = comp.get("onnx_file")
+            engine_file = comp.get("engine_file")
+            if not onnx_file or not engine_file:
+                continue
+            mapping[Path(onnx_file).stem] = str(engine_file)
+        return mapping
 
     def _build_tensorrt_exporter(self, config: BaseDeploymentConfig):
         return self.exporter_factory.create_tensorrt_exporter(config=config, logger=self.logger)

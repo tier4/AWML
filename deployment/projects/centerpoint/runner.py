@@ -51,14 +51,12 @@ class CenterPointDeploymentRunner(BaseDeploymentRunner):
             self._onnx_pipeline = CenterPointONNXExportPipeline(
                 exporter_factory=ExporterFactory,
                 component_extractor=component_extractor,
-                config=self.config,
                 logger=self.logger,
             )
 
         if self._tensorrt_pipeline is None:
             self._tensorrt_pipeline = CenterPointTensorRTExportPipeline(
                 exporter_factory=ExporterFactory,
-                config=self.config,
                 logger=self.logger,
             )
 
