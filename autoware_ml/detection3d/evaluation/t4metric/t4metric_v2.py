@@ -90,7 +90,7 @@ def _apply_perception_evaluator_preprocessing(
     frame_prefix: str,
 ) -> PerceptionFrameMultiProcessingResult:
     """
-    Wrapper to apply an evaluator to a list of performance frame in multiprocessing.
+    Wrapper to apply an evaluator to a list of objects for a frame in multiprocessing.
 
     Args:
         evaluator (PerceptionEvaluationManager): The evaluator to apply.
@@ -130,7 +130,7 @@ def _apply_perception_evaluator_evaluation(
     previous_perception_frame_result: Optional[PerceptionFrameResult],
 ) -> PerceptionFrameMultiProcessingResult:
     """
-    Wrapper to apply an evaluator to a list of performance frame.
+    Wrapper to apply an evaluator to a a pair of PerceptionFrameResults.
 
     Args:
         evaluator (PerceptionEvaluationManager): The evaluator to apply.
