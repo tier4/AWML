@@ -1,7 +1,5 @@
 """
 CenterPoint DataLoader for deployment.
-
-Moved from projects/CenterPoint/deploy/data_loader.py into the unified deployment bundle.
 """
 
 import os

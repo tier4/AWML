@@ -1,7 +1,5 @@
 """
 CenterPoint TensorRT Pipeline Implementation.
-
-Moved from deployment/pipelines/centerpoint/centerpoint_tensorrt.py into the CenterPoint deployment bundle.
 """
 
 import logging

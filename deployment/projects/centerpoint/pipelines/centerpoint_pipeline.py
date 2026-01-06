@@ -1,7 +1,6 @@
 """
 CenterPoint Deployment Pipeline Base Class.
 
-Moved from deployment/pipelines/centerpoint/centerpoint_pipeline.py into the CenterPoint deployment bundle.
 """
 
 import logging

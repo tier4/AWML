@@ -1,8 +1,5 @@
 """
 CenterPoint Deployment Configuration
-
-NOTE: This file was moved under deployment/projects/centerpoint/config/ as part of the
-proposed unified deployment architecture.
 """
 
 # ============================================================================

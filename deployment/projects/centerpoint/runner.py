@@ -1,7 +1,5 @@
 """
 CenterPoint-specific deployment runner.
-
-Moved from deployment/runners/projects/centerpoint_runner.py into the unified deployment bundle.
 """
 
 from __future__ import annotations

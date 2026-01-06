@@ -1,7 +1,5 @@
 """
 CenterPoint TensorRT export pipeline using composition.
-
-Moved from deployment/exporters/centerpoint/tensorrt_export_pipeline.py into the CenterPoint deployment bundle.
 """
 
 from __future__ import annotations

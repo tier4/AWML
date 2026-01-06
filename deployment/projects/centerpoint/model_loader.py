@@ -1,7 +1,5 @@
 """
 CenterPoint deployment utilities: ONNX-compatible model building and metrics config extraction.
-
-Moved from projects/CenterPoint/deploy/utils.py into the unified deployment bundle.
 """
 
 import copy

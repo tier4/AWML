@@ -1,7 +1,5 @@
 """
 CenterPoint Evaluator for deployment.
-
-Moved from projects/CenterPoint/deploy/evaluator.py into the unified deployment bundle.
 """
 
 import logging

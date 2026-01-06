@@ -1,7 +1,5 @@
 """
 CenterPoint ONNX Pipeline Implementation.
-
-Moved from deployment/pipelines/centerpoint/centerpoint_onnx.py into the CenterPoint deployment bundle.
 """
 
 import logging

@@ -1,7 +1,5 @@
 """
 CenterPoint-specific component extractor.
-
-Moved from projects/CenterPoint/deploy/component_extractor.py into the unified deployment bundle.
 """
 
 import logging
