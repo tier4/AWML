@@ -7,9 +7,9 @@ from typing import Any, List, Tuple
 
 import torch
 
+from deployment.core import BaseDeploymentConfig
 from deployment.exporters.common.configs import ONNXExportConfig
 from deployment.exporters.export_pipelines.interfaces import ExportableComponent, ModelComponentExtractor
-from deployment.projects.centerpoint.config.deploy_config import model_io, onnx_config
 from deployment.projects.centerpoint.onnx_models.centerpoint_onnx import CenterPointHeadONNX
 
 logger = logging.getLogger(__name__)
@@ -23,9 +23,17 @@ class CenterPointComponentExtractor(ModelComponentExtractor):
     - `backbone_neck_head` (pts_backbone + pts_neck + pts_bbox_head)
     """
 
-    def __init__(self, logger: logging.Logger = None, simplify: bool = True):
+    def __init__(self, config: BaseDeploymentConfig, logger: logging.Logger = None):
+        self.config = config
         self.logger = logger or logging.getLogger(__name__)
-        self.simplify = simplify
+
+    @property
+    def _onnx_config(self) -> dict:
+        return dict(self.config.onnx_config or {})
+
+    @property
+    def _model_io(self) -> dict:
+        return dict((self.config.deploy_cfg or {}).get("model_io", {}) or {})
 
     def extract_components(self, model: torch.nn.Module, sample_data: Any) -> List[ExportableComponent]:
         input_features, voxel_dict = sample_data
@@ -40,6 +48,7 @@ class CenterPointComponentExtractor(ModelComponentExtractor):
     def _create_voxel_encoder_component(
         self, model: torch.nn.Module, input_features: torch.Tensor
     ) -> ExportableComponent:
+        onnx_config = self._onnx_config
         voxel_cfg = onnx_config["components"]["voxel_encoder"]
         return ExportableComponent(
             name=voxel_cfg["name"],
@@ -52,9 +61,9 @@ class CenterPointComponentExtractor(ModelComponentExtractor):
                     "input_features": {0: "num_voxels", 1: "num_max_points"},
                     "pillar_features": {0: "num_voxels"},
                 },
-                opset_version=16,
+                opset_version=onnx_config.get("opset_version", 16),
                 do_constant_folding=True,
-                simplify=self.simplify,
+                simplify=bool(onnx_config.get("simplify", True)),
                 save_file=voxel_cfg["onnx_file"],
             ),
         )
@@ -72,6 +81,7 @@ class CenterPointComponentExtractor(ModelComponentExtractor):
         for name in output_names:
             dynamic_axes[name] = {0: "batch_size", 2: "height", 3: "width"}
 
+        onnx_config = self._onnx_config
         backbone_cfg = onnx_config["components"]["backbone_head"]
         return ExportableComponent(
             name=backbone_cfg["name"],
@@ -81,9 +91,9 @@ class CenterPointComponentExtractor(ModelComponentExtractor):
                 input_names=("spatial_features",),
                 output_names=output_names,
                 dynamic_axes=dynamic_axes,
-                opset_version=16,
+                opset_version=onnx_config.get("opset_version", 16),
                 do_constant_folding=True,
-                simplify=self.simplify,
+                simplify=bool(onnx_config.get("simplify", True)),
                 save_file=backbone_cfg["onnx_file"],
             ),
         )
@@ -107,7 +117,15 @@ class CenterPointComponentExtractor(ModelComponentExtractor):
             if isinstance(output_names, (list, tuple)):
                 return tuple(output_names)
             return (output_names,)
-        return model_io["head_output_names"]
+        model_io = self._model_io
+        output_names = model_io.get("head_output_names", ())
+        if not output_names:
+            raise KeyError(
+                "Missing head output names for CenterPoint export. "
+                "Set `model_io.head_output_names` in the deployment config, "
+                "or define `model.pts_bbox_head.output_names`."
+            )
+        return tuple(output_names)
 
     def extract_features(self, model: torch.nn.Module, data_loader: Any, sample_idx: int) -> Tuple[torch.Tensor, dict]:
         if hasattr(model, "_extract_features"):

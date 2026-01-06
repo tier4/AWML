@@ -34,8 +34,7 @@ class CenterPointDeploymentRunner(BaseDeploymentRunner):
         onnx_pipeline=None,
         tensorrt_pipeline=None,
     ):
-        simplify_onnx = config.get_onnx_settings().simplify
-        component_extractor = CenterPointComponentExtractor(logger=logger, simplify=simplify_onnx)
+        component_extractor = CenterPointComponentExtractor(config=config, logger=logger)
 
         super().__init__(
             data_loader=data_loader,

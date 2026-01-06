@@ -11,7 +11,7 @@ from typing import List, Optional
 
 import torch
 
-from deployment.core import Artifact, BaseDataLoader, BaseDeploymentConfig
+from deployment.core import Artifact, BaseDeploymentConfig
 from deployment.exporters.common.factory import ExporterFactory
 from deployment.exporters.export_pipelines.base import TensorRTExportPipeline
 
@@ -49,18 +49,15 @@ class CenterPointTensorRTExportPipeline(TensorRTExportPipeline):
         output_dir: str,
         config: BaseDeploymentConfig,
         device: str,
-        data_loader: BaseDataLoader,
     ) -> Artifact:
-        onnx_dir = onnx_path
-
         if device is None:
             raise ValueError("CUDA device must be provided for TensorRT export")
-        if onnx_dir is None:
-            raise ValueError("onnx_dir must be provided for CenterPoint TensorRT export")
+        if onnx_path is None:
+            raise ValueError("onnx_path must be provided for CenterPoint TensorRT export")
 
-        onnx_dir_path = Path(onnx_dir)
+        onnx_dir_path = Path(onnx_path)
         if not onnx_dir_path.is_dir():
-            raise ValueError(f"onnx_path must be a directory for multi-file export, got: {onnx_dir}")
+            raise ValueError(f"onnx_path must be a directory for multi-file export, got: {onnx_path}")
 
         device_id = self._validate_cuda_device(device)
         torch.cuda.set_device(device_id)
@@ -78,7 +75,7 @@ class CenterPointTensorRTExportPipeline(TensorRTExportPipeline):
             trt_path = output_dir_path / f"{onnx_file.stem}.engine"
 
             self.logger.info(f"\n[{i}/{num_files}] Converting {onnx_file.name} → {trt_path.name}...")
-            exporter = self._build_tensorrt_exporter()
+            exporter = self._build_tensorrt_exporter(config)
 
             artifact = exporter.export(
                 model=None,
@@ -97,5 +94,5 @@ class CenterPointTensorRTExportPipeline(TensorRTExportPipeline):
             key=lambda p: p.name,
         )
 
-    def _build_tensorrt_exporter(self):
-        return self.exporter_factory.create_tensorrt_exporter(config=self.config, logger=self.logger)
+    def _build_tensorrt_exporter(self, config: BaseDeploymentConfig):
+        return self.exporter_factory.create_tensorrt_exporter(config=config, logger=self.logger)

@@ -53,7 +53,7 @@ class CenterPointONNXExportPipeline(OnnxExportPipeline):
         sample_data = self._extract_sample_data(model, data_loader, sample_idx)
         components = self.component_extractor.extract_components(model, sample_data)
 
-        exported_paths = self._export_components(components, output_dir_path)
+        exported_paths = self._export_components(components, output_dir_path, config)
         self._log_summary(exported_paths)
 
         return Artifact(path=str(output_dir_path), multi_file=True)
@@ -85,6 +85,7 @@ class CenterPointONNXExportPipeline(OnnxExportPipeline):
         self,
         components: Iterable[ExportableComponent],
         output_dir: Path,
+        config: BaseDeploymentConfig,
     ) -> Tuple[str, ...]:
         exported_paths: list[str] = []
         component_list = list(components)
@@ -92,7 +93,7 @@ class CenterPointONNXExportPipeline(OnnxExportPipeline):
 
         for index, component in enumerate(component_list, start=1):
             self.logger.info(f"\n[{index}/{total}] Exporting {component.name}...")
-            exporter = self._build_onnx_exporter()
+            exporter = self._build_onnx_exporter(config)
             output_path = output_dir / f"{component.name}.onnx"
 
             try:
@@ -111,9 +112,9 @@ class CenterPointONNXExportPipeline(OnnxExportPipeline):
 
         return tuple(exported_paths)
 
-    def _build_onnx_exporter(self):
+    def _build_onnx_exporter(self, config: BaseDeploymentConfig):
         return self.exporter_factory.create_onnx_exporter(
-            config=self.config,
+            config=config,
             wrapper_cls=IdentityWrapper,
             logger=self.logger,
         )
