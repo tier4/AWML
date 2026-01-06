@@ -583,7 +583,7 @@ class T4MetricV2(BaseMetric):
         batch_index: int,
         batch_frames: List[PerceptionFrameProcessingData],
         executor: Executor,
-    ) -> List[PerceptionFramePreprocessingResult]:
+    ) -> List[PerceptionFrameMultiProcessingResult]:
         """
         Preprocess a batch of frames using multiprocessing.
 
