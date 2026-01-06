@@ -56,6 +56,7 @@ class PerceptionFrameProcessingData:
 
 @dataclass(frozen=True)
 class EvaluatorData:
+    """Dataclass to save data related to a PerceptionEvaluationManager."""
 
     perception_evaluator_manager: PerceptionEvaluationManager
     bev_distance_range: Optional[Tuple[float]]
@@ -67,6 +68,8 @@ class EvaluatorData:
 
 @dataclass(frozen=True)
 class PerceptionFrameMultiProcessingResult:
+    """Dataclass to save data related to a PerceptionFrameResult after multiprocessing."""
+
     perception_frame_result: PerceptionFrameResult
     evaluator: PerceptionEvaluationManager
     scene_id: str
