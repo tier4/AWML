@@ -455,7 +455,7 @@ test_evaluator = dict(
 
 # learning rate
 lr = 5e-5
-t_max = 3
+t_max = 6
 param_scheduler = [
     # learning rate scheduler
     # During the first (max_epochs * 0.4) epochs, learning rate increases from 0 to lr * 10
@@ -518,5 +518,5 @@ auto_scale_lr = dict(enable=False, base_batch_size=train_gpu_size * train_batch_
 if train_gpu_size > 1:
     sync_bn = "torch"
 
-# load_from = "work_dirs/bevfusion_merge/bevfusion_base_lidar_e30_base_streampetr_e31.pth"
-resume = True
+load_from = "work_dirs/bevfusion_merge/bevfusion_base_lidar_e30_base_streampetr_2_5_e34.pth"
+# resume = True
