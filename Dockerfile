@@ -61,12 +61,10 @@ RUN python3 -m pip --no-cache-dir install \
 RUN python3 -m pip install git+https://github.com/tier4/t4-devkit@v0.5.1
 
 # Install autoware-perception-evaluation
-RUN python3 -m pip install git+https://github.com/tier4/autoware_perception_evaluation@dc0139734308c66dbc594d010873193bc164d723
+RUN python3 -m pip install git+https://github.com/tier4/autoware_perception_evaluation@develop
 
 # Need to dowgrade setuptools to 60.2.0 to fix setup
 RUN python3 -m pip --no-cache-dir install \
-    onnx_graphsurgeon==0.5.8 \
-    spconv-cu120==2.3.6 \
     setuptools==60.2.0 \
     transformers==4.51.3
 

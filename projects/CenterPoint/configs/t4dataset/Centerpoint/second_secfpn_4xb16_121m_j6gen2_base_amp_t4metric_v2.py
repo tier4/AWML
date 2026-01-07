@@ -3,7 +3,7 @@ _base_ = [
 ]
 
 work_dir = (
-    "work_dirs/centerpoint_2_5_t4metricv2/"
+    "work_dirs/centerpoint/"
     + _base_.dataset_type
     + "/second_secfpn_4xb16_121m_j6gen2_base_amp_t4metric_v2/"
 )
@@ -12,17 +12,9 @@ work_dir = (
 perception_evaluator_configs = dict(
     dataset_paths=_base_.data_root,
     frame_id="base_link",
-    result_root_directory=work_dir + "/result",
     evaluation_config_dict=_base_.evaluator_metric_configs,
     load_raw_data=False,
 )
-
-# critical_object_filter_config = dict(
-#     target_labels=_base_.class_names,
-#     ignore_attributes=None,
-#     max_distance_list=[121.0, 121.0, 121.0, 121.0, 121.0],
-#     min_distance_list=[-121.0, -121.0, -121.0, -121.0, -121.0],
-# )
 
 frame_pass_fail_config = dict(
     target_labels=_base_.class_names,
