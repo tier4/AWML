@@ -30,6 +30,82 @@ export = dict(
     onnx_path=None,
 )
 
+# Derived artifact directories
+_WORK_DIR = str(export["work_dir"]).rstrip("/")
+_ONNX_DIR = f"{_WORK_DIR}/onnx"
+_TENSORRT_DIR = f"{_WORK_DIR}/tensorrt"
+
+# ============================================================================
+# Unified Component Configuration (Single Source of Truth)
+#
+# Each component defines:
+#   - name: Component identifier used in export
+#   - onnx_file: Output ONNX filename
+#   - engine_file: Output TensorRT engine filename
+#   - io: Input/output specification for ONNX export
+#   - tensorrt_profile: TensorRT optimization profile (min/opt/max shapes)
+# ============================================================================
+components = dict(
+    voxel_encoder=dict(
+        name="pts_voxel_encoder",
+        onnx_file="pts_voxel_encoder.onnx",
+        engine_file="pts_voxel_encoder.engine",
+        io=dict(
+            inputs=[
+                dict(name="input_features", dtype="float32"),
+            ],
+            outputs=[
+                dict(name="pillar_features", dtype="float32"),
+            ],
+            dynamic_axes={
+                "input_features": {0: "num_voxels", 1: "num_max_points"},
+                "pillar_features": {0: "num_voxels"},
+            },
+        ),
+        tensorrt_profile=dict(
+            input_features=dict(
+                min_shape=[1000, 32, 11],
+                opt_shape=[20000, 32, 11],
+                max_shape=[64000, 32, 11],
+            ),
+        ),
+    ),
+    backbone_head=dict(
+        name="pts_backbone_neck_head",
+        onnx_file="pts_backbone_neck_head.onnx",
+        engine_file="pts_backbone_neck_head.engine",
+        io=dict(
+            inputs=[
+                dict(name="spatial_features", dtype="float32"),
+            ],
+            outputs=[
+                dict(name="heatmap", dtype="float32"),
+                dict(name="reg", dtype="float32"),
+                dict(name="height", dtype="float32"),
+                dict(name="dim", dtype="float32"),
+                dict(name="rot", dtype="float32"),
+                dict(name="vel", dtype="float32"),
+            ],
+            dynamic_axes={
+                "spatial_features": {0: "batch_size", 2: "height", 3: "width"},
+                "heatmap": {0: "batch_size", 2: "height", 3: "width"},
+                "reg": {0: "batch_size", 2: "height", 3: "width"},
+                "height": {0: "batch_size", 2: "height", 3: "width"},
+                "dim": {0: "batch_size", 2: "height", 3: "width"},
+                "rot": {0: "batch_size", 2: "height", 3: "width"},
+                "vel": {0: "batch_size", 2: "height", 3: "width"},
+            },
+        ),
+        tensorrt_profile=dict(
+            spatial_features=dict(
+                min_shape=[1, 32, 760, 760],
+                opt_shape=[1, 32, 760, 760],
+                max_shape=[1, 32, 760, 760],
+            ),
+        ),
+    ),
+)
+
 # ============================================================================
 # Runtime I/O settings
 # ============================================================================
@@ -39,27 +115,7 @@ runtime_io = dict(
 )
 
 # ============================================================================
-# Model Input/Output Configuration
-# ============================================================================
-model_io = dict(
-    input_name="voxels",
-    input_shape=(32, 4),
-    input_dtype="float32",
-    additional_inputs=[
-        dict(name="num_points", shape=(-1,), dtype="int32"),
-        dict(name="coors", shape=(-1, 4), dtype="int32"),
-    ],
-    head_output_names=("heatmap", "reg", "height", "dim", "rot", "vel"),
-    batch_size=None,
-    dynamic_axes={
-        "voxels": {0: "num_voxels"},
-        "num_points": {0: "num_voxels"},
-        "coors": {0: "num_voxels"},
-    },
-)
-
-# ============================================================================
-# ONNX Export Configuration
+# ONNX Export Settings (shared across all components)
 # ============================================================================
 onnx_config = dict(
     opset_version=16,
@@ -67,54 +123,14 @@ onnx_config = dict(
     export_params=True,
     keep_initializers_as_inputs=False,
     simplify=False,
-    multi_file=True,
-    components=dict(
-        voxel_encoder=dict(
-            name="pts_voxel_encoder",
-            onnx_file="pts_voxel_encoder.onnx",
-        ),
-        backbone_head=dict(
-            name="pts_backbone_neck_head",
-            onnx_file="pts_backbone_neck_head.onnx",
-        ),
-    ),
 )
 
-
 # ============================================================================
-# Backend Configuration (mainly for TensorRT)
+# TensorRT Build Settings (shared across all components)
 # ============================================================================
 tensorrt_config = dict(
-    common_config=dict(
-        precision_policy="auto",
-        max_workspace_size=2 << 30,
-    ),
-    model_inputs=[
-        dict(
-            input_shapes=dict(
-                input_features=dict(
-                    min_shape=[1000, 32, 11],
-                    opt_shape=[20000, 32, 11],
-                    max_shape=[64000, 32, 11],
-                ),
-                spatial_features=dict(
-                    min_shape=[1, 32, 760, 760],
-                    opt_shape=[1, 32, 760, 760],
-                    max_shape=[1, 32, 760, 760],
-                ),
-            )
-        )
-    ],
-    components=dict(
-        voxel_encoder=dict(
-            onnx_file="pts_voxel_encoder.onnx",
-            engine_file="pts_voxel_encoder.engine",
-        ),
-        backbone_head=dict(
-            onnx_file="pts_backbone_neck_head.onnx",
-            engine_file="pts_backbone_neck_head.engine",
-        ),
-    ),
+    precision_policy="auto",
+    max_workspace_size=2 << 30,
 )
 
 # ============================================================================
@@ -132,12 +148,12 @@ evaluation = dict(
         onnx=dict(
             enabled=True,
             device=devices["cuda"],
-            model_dir="work_dirs/centerpoint_deployment/onnx/",
+            model_dir=_ONNX_DIR,
         ),
         tensorrt=dict(
             enabled=True,
             device=devices["cuda"],
-            engine_dir="work_dirs/centerpoint_deployment/tensorrt/",
+            engine_dir=_TENSORRT_DIR,
         ),
     ),
 )

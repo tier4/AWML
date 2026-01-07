@@ -3,7 +3,7 @@ CenterPoint Evaluator for deployment.
 """
 
 import logging
-from typing import Any, Dict, List, Tuple
+from typing import Any, Dict, List, Mapping, Optional, Tuple
 
 from mmengine.config import Config
 
@@ -17,7 +17,6 @@ from deployment.core import (
 )
 from deployment.core.io.base_data_loader import BaseDataLoader
 from deployment.pipelines.factory import PipelineFactory
-from deployment.projects.centerpoint.config.deploy_config import model_io
 
 logger = logging.getLogger(__name__)
 
@@ -27,17 +26,26 @@ class CenterPointEvaluator(BaseEvaluator):
 
     This builds a task profile (class names, display name) and uses the configured
     `Detection3DMetricsInterface` to compute metrics from pipeline outputs.
+
+    Args:
+        model_cfg: Model configuration with class_names
+        metrics_config: Configuration for 3D detection metrics
+        components_cfg: Optional unified components configuration dict.
+                       Used to get output names from components.backbone_head.io.outputs
     """
 
     def __init__(
         self,
         model_cfg: Config,
         metrics_config: Detection3DMetricsConfig,
+        components_cfg: Optional[Mapping[str, Any]] = None,
     ):
         if hasattr(model_cfg, "class_names"):
             class_names = model_cfg.class_names
         else:
             raise ValueError("class_names must be provided via model_cfg.class_names.")
+
+        self._components_cfg = components_cfg or {}
 
         task_profile = TaskProfile(
             task_name="centerpoint_3d_detection",
@@ -58,7 +66,16 @@ class CenterPointEvaluator(BaseEvaluator):
         self.model_cfg = model_cfg
 
     def _get_output_names(self) -> List[str]:
-        return list(model_io["head_output_names"])
+        """Get head output names from components config."""
+        backbone_head_cfg = self._components_cfg.get("backbone_head", {})
+        io_cfg = backbone_head_cfg.get("io", {})
+        outputs = io_cfg.get("outputs", [])
+
+        if outputs:
+            return [out.get("name") for out in outputs if out.get("name")]
+
+        # Fallback to default output names
+        return ["heatmap", "reg", "height", "dim", "rot", "vel"]
 
     def _create_pipeline(self, model_spec: ModelSpec, device: str) -> Any:
         return PipelineFactory.create(
@@ -66,6 +83,7 @@ class CenterPointEvaluator(BaseEvaluator):
             model_spec=model_spec,
             pytorch_model=self.pytorch_model,
             device=device,
+            components_cfg=self._components_cfg,
         )
 
     def _prepare_input(

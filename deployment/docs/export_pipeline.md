@@ -19,16 +19,50 @@
 
 ## Multi-File Export (CenterPoint)
 
-CenterPoint splits the model into multiple ONNX/TensorRT artifacts:
+CenterPoint splits the model into multiple ONNX/TensorRT artifacts using a unified `components` configuration:
 
-- The produced filenames are driven by `deploy_cfg.onnx_config.components[*].onnx_file` (ONNX)
-- The produced engine filenames are driven by `deploy_cfg.tensorrt_config.components[*].engine_file` (TensorRT, optional)
+```python
+components = dict(
+    voxel_encoder=dict(
+        name="pts_voxel_encoder",
+        onnx_file="pts_voxel_encoder.onnx",     # ONNX output filename
+        engine_file="pts_voxel_encoder.engine", # TensorRT output filename
+        io=dict(
+            inputs=[dict(name="input_features", dtype="float32")],
+            outputs=[dict(name="pillar_features", dtype="float32")],
+            dynamic_axes={...},
+        ),
+        tensorrt_profile=dict(
+            input_features=dict(min_shape=[...], opt_shape=[...], max_shape=[...]),
+        ),
+    ),
+    backbone_head=dict(
+        name="pts_backbone_neck_head",
+        onnx_file="pts_backbone_neck_head.onnx",
+        engine_file="pts_backbone_neck_head.engine",
+        io=dict(...),
+        tensorrt_profile=dict(...),
+    ),
+)
+```
+
+### Configuration Structure
+
+Each component in `deploy_cfg.components` defines:
+
+- `name`: Component identifier used during export
+- `onnx_file`: Output ONNX filename
+- `engine_file`: Output TensorRT engine filename
+- `io`: Input/output specification (names, dtypes, dynamic_axes)
+- `tensorrt_profile`: TensorRT optimization profile (min/opt/max shapes)
+
+### Export Pipeline Orchestration
 
 Export pipelines orchestrate:
 
-- Sequential export of each component.
-- Input/output wiring between stages.
-- Directory structure management.
+- Sequential export of each component
+- Input/output wiring between stages
+- Directory structure management
 
 CenterPoint uses a project-specific `ModelComponentExtractor` implementation that provides:
 
@@ -53,3 +87,18 @@ runner = CenterPointDeploymentRunner(
 ```
 
 Simple projects can skip export pipelines entirely and rely on the base exporters provided by `ExporterFactory`.
+
+## Runtime Pipeline Usage
+
+Runtime pipelines receive the `components_cfg` through constructor injection:
+
+```python
+pipeline = CenterPointONNXPipeline(
+    pytorch_model=model,
+    onnx_dir="/path/to/onnx",
+    device="cuda:0",
+    components_cfg=deploy_cfg["components"],  # Pass component config
+)
+```
+
+This allows pipelines to resolve artifact paths from the unified config.

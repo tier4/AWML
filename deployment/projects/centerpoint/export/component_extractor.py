@@ -1,9 +1,11 @@
 """
 CenterPoint-specific component extractor.
+
+Extracts exportable submodules from CenterPoint using the unified component config.
 """
 
 import logging
-from typing import Any, List, Tuple
+from typing import Any, Dict, List, Mapping, Tuple
 
 import torch
 
@@ -21,6 +23,9 @@ class CenterPointComponentExtractor(ModelComponentExtractor):
     For CenterPoint we export two components:
     - `voxel_encoder` (pts_voxel_encoder)
     - `backbone_neck_head` (pts_backbone + pts_neck + pts_bbox_head)
+
+    Uses the unified `components` config structure where each component defines
+    its own IO specification, filenames, and TensorRT profiles.
     """
 
     def __init__(self, config: BaseDeploymentConfig, logger: logging.Logger = None):
@@ -29,12 +34,14 @@ class CenterPointComponentExtractor(ModelComponentExtractor):
         self._validate_config()
 
     @property
-    def _onnx_config(self) -> dict:
-        return dict(self.config.onnx_config or {})
+    def _components_cfg(self) -> Dict[str, Any]:
+        """Get unified components configuration."""
+        return dict((self.config.deploy_cfg or {}).get("components", {}) or {})
 
     @property
-    def _model_io(self) -> dict:
-        return dict((self.config.deploy_cfg or {}).get("model_io", {}) or {})
+    def _onnx_config(self) -> Dict[str, Any]:
+        """Get shared ONNX export settings."""
+        return dict(self.config.onnx_config or {})
 
     def extract_components(self, model: torch.nn.Module, sample_data: Any) -> List[ExportableComponent]:
         input_features, voxel_dict = self._unpack_sample(sample_data)
@@ -47,8 +54,8 @@ class CenterPointComponentExtractor(ModelComponentExtractor):
         return [voxel_component, backbone_component]
 
     def _validate_config(self) -> None:
-        onnx_config = self._onnx_config
-        components = dict(onnx_config.get("components", {}) or {})
+        """Validate component configuration."""
+        components = self._components_cfg
 
         missing = []
         for required_key in ("voxel_encoder", "backbone_head"):
@@ -56,7 +63,7 @@ class CenterPointComponentExtractor(ModelComponentExtractor):
                 missing.append(required_key)
         if missing:
             raise KeyError(
-                "Missing required `onnx_config.components` entries for CenterPoint export: "
+                "Missing required `components` entries for CenterPoint export: "
                 f"{missing}. Please set them in deploy config."
             )
 
@@ -65,20 +72,12 @@ class CenterPointComponentExtractor(ModelComponentExtractor):
             missing_fields = [f for f in fields if not comp.get(f)]
             if missing_fields:
                 raise KeyError(
-                    f"Missing required fields in onnx_config.components['{comp_key}']: {missing_fields}. "
+                    f"Missing required fields in components['{comp_key}']: {missing_fields}. "
                     "Expected at least: " + ", ".join(fields)
                 )
 
         _require_fields("voxel_encoder", ("name", "onnx_file"))
         _require_fields("backbone_head", ("name", "onnx_file"))
-
-        # Make it easier to debug later failures by flagging likely misconfigurations early.
-        model_io = self._model_io
-        if not model_io.get("head_output_names"):
-            self.logger.warning(
-                "deploy_cfg.model_io.head_output_names is not set. "
-                "Export will rely on `model.pts_bbox_head.output_names` at runtime."
-            )
 
     def _unpack_sample(self, sample_data: Any) -> Tuple[torch.Tensor, dict]:
         """
@@ -100,56 +99,85 @@ class CenterPointComponentExtractor(ModelComponentExtractor):
             raise KeyError("voxel_dict must contain key 'coors' for CenterPoint export")
         return input_features, voxel_dict
 
+    def _get_component_io(self, component: str) -> Mapping[str, Any]:
+        """Get IO specification for a component."""
+        comp_cfg = self._components_cfg.get(component, {})
+        return comp_cfg.get("io", {})
+
+    def _build_onnx_config_for_component(
+        self,
+        component: str,
+        input_names: Tuple[str, ...],
+        output_names: Tuple[str, ...],
+        dynamic_axes: Dict[str, Dict[int, str]] | None = None,
+    ) -> ONNXExportConfig:
+        """Build ONNX export config for a component using unified config."""
+        comp_cfg = self._components_cfg.get(component, {})
+        comp_io = comp_cfg.get("io", {})
+        onnx_settings = self._onnx_config
+
+        # Use dynamic_axes from component IO config if not explicitly provided
+        if dynamic_axes is None:
+            dynamic_axes = comp_io.get("dynamic_axes", {})
+
+        return ONNXExportConfig(
+            input_names=input_names,
+            output_names=output_names,
+            dynamic_axes=dynamic_axes,
+            opset_version=onnx_settings.get("opset_version", 16),
+            do_constant_folding=onnx_settings.get("do_constant_folding", True),
+            simplify=bool(onnx_settings.get("simplify", True)),
+            save_file=comp_cfg.get("onnx_file", f"{component}.onnx"),
+        )
+
     def _create_voxel_encoder_component(
         self, model: torch.nn.Module, input_features: torch.Tensor
     ) -> ExportableComponent:
-        onnx_config = self._onnx_config
-        voxel_cfg = onnx_config["components"]["voxel_encoder"]
+        """Create exportable component for voxel encoder."""
+        comp_cfg = self._components_cfg["voxel_encoder"]
+        comp_io = comp_cfg.get("io", {})
+
+        # Get input/output names from IO config
+        inputs = comp_io.get("inputs", [])
+        outputs = comp_io.get("outputs", [])
+        input_names = tuple(inp.get("name", "input_features") for inp in inputs) or ("input_features",)
+        output_names = tuple(out.get("name", "pillar_features") for out in outputs) or ("pillar_features",)
+
         return ExportableComponent(
-            name=voxel_cfg["name"],
+            name=comp_cfg["name"],
             module=model.pts_voxel_encoder,
             sample_input=input_features,
-            config_override=ONNXExportConfig(
-                input_names=("input_features",),
-                output_names=("pillar_features",),
-                dynamic_axes={
-                    "input_features": {0: "num_voxels", 1: "num_max_points"},
-                    "pillar_features": {0: "num_voxels"},
-                },
-                opset_version=onnx_config.get("opset_version", 16),
-                do_constant_folding=True,
-                simplify=bool(onnx_config.get("simplify", True)),
-                save_file=voxel_cfg["onnx_file"],
+            config_override=self._build_onnx_config_for_component(
+                component="voxel_encoder",
+                input_names=input_names,
+                output_names=output_names,
             ),
         )
 
     def _create_backbone_component(
         self, model: torch.nn.Module, input_features: torch.Tensor, voxel_dict: dict
     ) -> ExportableComponent:
+        """Create exportable component for backbone + neck + head."""
         backbone_input = self._prepare_backbone_input(model, input_features, voxel_dict)
         backbone_module = self._create_backbone_module(model)
-        output_names = self._get_output_names(model)
 
-        dynamic_axes = {
-            "spatial_features": {0: "batch_size", 2: "height", 3: "width"},
-        }
-        for name in output_names:
-            dynamic_axes[name] = {0: "batch_size", 2: "height", 3: "width"}
+        comp_cfg = self._components_cfg["backbone_head"]
+        comp_io = comp_cfg.get("io", {})
 
-        onnx_config = self._onnx_config
-        backbone_cfg = onnx_config["components"]["backbone_head"]
+        # Get input/output names from IO config
+        inputs = comp_io.get("inputs", [])
+        outputs = comp_io.get("outputs", [])
+        input_names = tuple(inp.get("name", "spatial_features") for inp in inputs) or ("spatial_features",)
+        output_names = self._get_output_names(model, outputs)
+
         return ExportableComponent(
-            name=backbone_cfg["name"],
+            name=comp_cfg["name"],
             module=backbone_module,
             sample_input=backbone_input,
-            config_override=ONNXExportConfig(
-                input_names=("spatial_features",),
+            config_override=self._build_onnx_config_for_component(
+                component="backbone_head",
+                input_names=input_names,
                 output_names=output_names,
-                dynamic_axes=dynamic_axes,
-                opset_version=onnx_config.get("opset_version", 16),
-                do_constant_folding=True,
-                simplify=bool(onnx_config.get("simplify", True)),
-                save_file=backbone_cfg["onnx_file"],
             ),
         )
 
@@ -166,21 +194,30 @@ class CenterPointComponentExtractor(ModelComponentExtractor):
     def _create_backbone_module(self, model: torch.nn.Module) -> torch.nn.Module:
         return CenterPointHeadONNX(model.pts_backbone, model.pts_neck, model.pts_bbox_head)
 
-    def _get_output_names(self, model: torch.nn.Module) -> Tuple[str, ...]:
+    def _get_output_names(self, model: torch.nn.Module, io_outputs: List[Dict[str, Any]]) -> Tuple[str, ...]:
+        """Get output names from config or model.
+
+        Priority:
+        1. Component IO config outputs
+        2. model.pts_bbox_head.output_names
+        3. Raise error if neither available
+        """
+        # Try from component IO config first
+        if io_outputs:
+            return tuple(out.get("name") for out in io_outputs if out.get("name"))
+
+        # Try from model
         if hasattr(model, "pts_bbox_head") and hasattr(model.pts_bbox_head, "output_names"):
             output_names = model.pts_bbox_head.output_names
             if isinstance(output_names, (list, tuple)):
                 return tuple(output_names)
             return (output_names,)
-        model_io = self._model_io
-        output_names = model_io.get("head_output_names", ())
-        if not output_names:
-            raise KeyError(
-                "Missing head output names for CenterPoint export. "
-                "Set `model_io.head_output_names` in the deployment config, "
-                "or define `model.pts_bbox_head.output_names`."
-            )
-        return tuple(output_names)
+
+        raise KeyError(
+            "Missing head output names for CenterPoint export. "
+            "Set `components.backbone_head.io.outputs` in the deployment config, "
+            "or define `model.pts_bbox_head.output_names`."
+        )
 
     def extract_features(self, model: torch.nn.Module, data_loader: Any, sample_idx: int) -> Tuple[torch.Tensor, dict]:
         if hasattr(model, "_extract_features"):

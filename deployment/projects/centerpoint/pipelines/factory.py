@@ -6,7 +6,7 @@ via `deployment.pipelines.factory.PipelineFactory`.
 """
 
 import logging
-from typing import Any, Optional
+from typing import Any, Mapping, Optional
 
 from deployment.core.backend import Backend
 from deployment.core.evaluation.evaluator_types import ModelSpec
@@ -22,7 +22,11 @@ logger = logging.getLogger(__name__)
 
 @pipeline_registry.register
 class CenterPointPipelineFactory(BasePipelineFactory):
-    """Pipeline factory for CenterPoint across supported backends."""
+    """Pipeline factory for CenterPoint across supported backends.
+
+    Supports passing `components_cfg` to configure component file paths
+    and IO specifications.
+    """
 
     @classmethod
     def get_project_name(cls) -> str:
@@ -34,8 +38,22 @@ class CenterPointPipelineFactory(BasePipelineFactory):
         model_spec: ModelSpec,
         pytorch_model: Any,
         device: Optional[str] = None,
+        components_cfg: Optional[Mapping[str, Any]] = None,
         **kwargs,
     ) -> BaseDeploymentPipeline:
+        """Create a CenterPoint pipeline for the specified backend.
+
+        Args:
+            model_spec: Model specification (backend/device/path)
+            pytorch_model: PyTorch model instance for preprocessing
+            device: Override device (uses model_spec.device if None)
+            components_cfg: Unified component configuration dict from deploy_config.
+                           Used to configure component file paths.
+            **kwargs: Additional arguments (unused)
+
+        Returns:
+            Pipeline instance for the specified backend
+        """
         device = device or model_spec.device
         backend = model_spec.backend
 
@@ -51,6 +69,7 @@ class CenterPointPipelineFactory(BasePipelineFactory):
                 pytorch_model,
                 onnx_dir=model_spec.path,
                 device=device,
+                components_cfg=components_cfg,
             )
 
         if backend is Backend.TENSORRT:
@@ -59,6 +78,7 @@ class CenterPointPipelineFactory(BasePipelineFactory):
                 pytorch_model,
                 tensorrt_dir=model_spec.path,
                 device=device,
+                components_cfg=components_cfg,
             )
 
         raise ValueError(f"Unsupported backend: {backend.value}")

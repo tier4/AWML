@@ -4,30 +4,58 @@ CenterPoint ONNX Pipeline Implementation.
 
 import logging
 import os.path as osp
-from typing import List
+from typing import Any, List, Mapping
 
 import numpy as np
 import onnxruntime as ort
 import torch
 
+from deployment.projects.centerpoint.pipelines.artifacts import resolve_component_artifact_path
 from deployment.projects.centerpoint.pipelines.centerpoint_pipeline import CenterPointDeploymentPipeline
 
 logger = logging.getLogger(__name__)
 
 
 class CenterPointONNXPipeline(CenterPointDeploymentPipeline):
-    """ONNXRuntime-based CenterPoint pipeline (componentized inference)."""
+    """ONNXRuntime-based CenterPoint pipeline (componentized inference).
 
-    def __init__(self, pytorch_model, onnx_dir: str, device: str = "cpu"):
+    Args:
+        pytorch_model: Reference PyTorch model for preprocessing
+        onnx_dir: Directory containing ONNX model files
+        device: Target device ('cpu' or 'cuda:N')
+        components_cfg: Component configuration dict from deploy_config.
+                       If None, uses default component names.
+    """
+
+    def __init__(
+        self,
+        pytorch_model,
+        onnx_dir: str,
+        device: str = "cpu",
+        components_cfg: Mapping[str, Any] | None = None,
+    ):
         super().__init__(pytorch_model, device, backend_type="onnx")
 
         self.onnx_dir = onnx_dir
+        self._components_cfg = components_cfg or {}
         self._load_onnx_models(device)
         logger.info(f"ONNX pipeline initialized with models from: {onnx_dir}")
 
     def _load_onnx_models(self, device: str):
-        voxel_encoder_path = osp.join(self.onnx_dir, "pts_voxel_encoder.onnx")
-        backbone_head_path = osp.join(self.onnx_dir, "pts_backbone_neck_head.onnx")
+        voxel_encoder_path = resolve_component_artifact_path(
+            base_dir=self.onnx_dir,
+            components_cfg=self._components_cfg,
+            component="voxel_encoder",
+            file_key="onnx_file",
+            default_filename="pts_voxel_encoder.onnx",
+        )
+        backbone_head_path = resolve_component_artifact_path(
+            base_dir=self.onnx_dir,
+            components_cfg=self._components_cfg,
+            component="backbone_head",
+            file_key="onnx_file",
+            default_filename="pts_backbone_neck_head.onnx",
+        )
 
         if not osp.exists(voxel_encoder_path):
             raise FileNotFoundError(f"Voxel encoder ONNX not found: {voxel_encoder_path}")

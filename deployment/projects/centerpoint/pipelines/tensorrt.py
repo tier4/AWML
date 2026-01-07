@@ -4,7 +4,7 @@ CenterPoint TensorRT Pipeline Implementation.
 
 import logging
 import os.path as osp
-from typing import List
+from typing import Any, List, Mapping
 
 import numpy as np
 import pycuda.autoinit  # noqa: F401
@@ -17,22 +17,37 @@ from deployment.pipelines.gpu_resource_mixin import (
     TensorRTResourceManager,
     release_tensorrt_resources,
 )
-from deployment.projects.centerpoint.config.deploy_config import onnx_config
+from deployment.projects.centerpoint.pipelines.artifacts import resolve_component_artifact_path
 from deployment.projects.centerpoint.pipelines.centerpoint_pipeline import CenterPointDeploymentPipeline
 
 logger = logging.getLogger(__name__)
 
 
 class CenterPointTensorRTPipeline(GPUResourceMixin, CenterPointDeploymentPipeline):
-    """TensorRT-based CenterPoint pipeline (engine-per-component inference)."""
+    """TensorRT-based CenterPoint pipeline (engine-per-component inference).
 
-    def __init__(self, pytorch_model, tensorrt_dir: str, device: str = "cuda"):
+    Args:
+        pytorch_model: Reference PyTorch model for preprocessing
+        tensorrt_dir: Directory containing TensorRT engine files
+        device: Target device (must be 'cuda:N')
+        components_cfg: Component configuration dict from deploy_config.
+                       If None, uses default component names.
+    """
+
+    def __init__(
+        self,
+        pytorch_model,
+        tensorrt_dir: str,
+        device: str = "cuda",
+        components_cfg: Mapping[str, Any] | None = None,
+    ):
         if not device.startswith("cuda"):
             raise ValueError("TensorRT requires CUDA device")
 
         super().__init__(pytorch_model, device, backend_type="tensorrt")
 
         self.tensorrt_dir = tensorrt_dir
+        self._components_cfg = components_cfg or {}
         self._engines = {}
         self._contexts = {}
         self._logger = trt.Logger(trt.Logger.WARNING)
@@ -45,16 +60,24 @@ class CenterPointTensorRTPipeline(GPUResourceMixin, CenterPointDeploymentPipelin
         trt.init_libnvinfer_plugins(self._logger, "")
         runtime = trt.Runtime(self._logger)
 
-        component_cfg = onnx_config.get("components", {})
-        voxel_cfg = component_cfg.get("voxel_encoder", {})
-        backbone_cfg = component_cfg.get("backbone_head", {})
         engine_files = {
-            "voxel_encoder": voxel_cfg.get("engine_file", "pts_voxel_encoder.engine"),
-            "backbone_neck_head": backbone_cfg.get("engine_file", "pts_backbone_neck_head.engine"),
+            "voxel_encoder": resolve_component_artifact_path(
+                base_dir=self.tensorrt_dir,
+                components_cfg=self._components_cfg,
+                component="voxel_encoder",
+                file_key="engine_file",
+                default_filename="pts_voxel_encoder.engine",
+            ),
+            "backbone_head": resolve_component_artifact_path(
+                base_dir=self.tensorrt_dir,
+                components_cfg=self._components_cfg,
+                component="backbone_head",
+                file_key="engine_file",
+                default_filename="pts_backbone_neck_head.engine",
+            ),
         }
 
-        for component, engine_file in engine_files.items():
-            engine_path = osp.join(self.tensorrt_dir, engine_file)
+        for component, engine_path in engine_files.items():
             if not osp.exists(engine_path):
                 raise FileNotFoundError(f"TensorRT engine not found: {engine_path}")
 
@@ -128,10 +151,10 @@ class CenterPointTensorRTPipeline(GPUResourceMixin, CenterPointDeploymentPipelin
         return input_name, output_names
 
     def run_backbone_head(self, spatial_features: torch.Tensor) -> List[torch.Tensor]:
-        engine = self._engines["backbone_neck_head"]
-        context = self._contexts["backbone_neck_head"]
+        engine = self._engines["backbone_head"]
+        context = self._contexts["backbone_head"]
         if context is None:
-            raise RuntimeError("backbone_neck_head context is None - likely failed to initialize due to GPU OOM")
+            raise RuntimeError("backbone_head context is None - likely failed to initialize due to GPU OOM")
 
         input_array = spatial_features.cpu().numpy().astype(np.float32)
         if not input_array.flags["C_CONTIGUOUS"]:
