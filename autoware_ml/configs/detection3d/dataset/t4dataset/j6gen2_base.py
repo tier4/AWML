@@ -192,5 +192,5 @@ evaluator_metric_configs = dict(
     max_distance=121.0,
     min_distance=-121.0,
     min_point_numbers=0,
-    matching_class_agnostic_fps=False
+    matching_class_agnostic_fps=False,
 )

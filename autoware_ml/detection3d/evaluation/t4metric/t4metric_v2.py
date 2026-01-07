@@ -5,11 +5,10 @@ from collections import defaultdict
 from concurrent.futures import Executor, ProcessPoolExecutor
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Dict, Generator, List, Optional, Sequence, Union, Tuple
+from typing import Any, Dict, Generator, List, Optional, Sequence, Tuple, Union
 
 import numpy as np
 import torch
-from torch.utils import data
 from mmdet3d.registry import METRICS
 from mmdet3d.structures import LiDARInstance3DBoxes
 from mmengine.dist import get_world_size
@@ -31,6 +30,7 @@ from perception_eval.evaluation.result.perception_frame_config import (
 from perception_eval.evaluation.result.perception_frame_result import PerceptionFrameResult
 from perception_eval.manager import PerceptionEvaluationManager
 from pyquaternion import Quaternion
+from torch.utils import data
 
 __all__ = ["T4MetricV2"]
 _UNKNOWN = "unknown"
