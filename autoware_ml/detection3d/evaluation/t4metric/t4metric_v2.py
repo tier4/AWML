@@ -969,7 +969,7 @@ class T4MetricV2(BaseMetric):
             # it iterates through map instances (e.g., center_distance, plane_distance)
             # and processes both AP (Average Precision) and APH (Average Precision with Heading)
             # values for each label and threshold.
-            for map_instance in frame_result.frame_result.metrics_score.mean_ap_values:
+            for map_instance in frame_result.metrics_score.mean_ap_values:
                 matching_mode = map_instance.matching_mode.value.lower().replace(" ", "_")
                 matching_metrics = frame_metrics.setdefault(matching_mode, {})
 
