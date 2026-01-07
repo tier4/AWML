@@ -2,30 +2,40 @@
 
 from __future__ import annotations
 
+import argparse
 import logging
+from typing import Any, Mapping
 
 from mmengine.config import Config
 
 from deployment.core.config.base_config import BaseDeploymentConfig, setup_logging
 from deployment.core.contexts import CenterPointExportContext
-from deployment.core.metrics.detection_3d_metrics import Detection3DMetricsConfig
 from deployment.projects.centerpoint.data_loader import CenterPointDataLoader
 from deployment.projects.centerpoint.evaluator import CenterPointEvaluator
-from deployment.projects.centerpoint.model_loader import extract_t4metric_v2_config
+from deployment.projects.centerpoint.metrics_utils import extract_t4metric_v2_config
 from deployment.projects.centerpoint.runner import CenterPointDeploymentRunner
 
 
-def run(args) -> int:
+def run(args: argparse.Namespace) -> int:
     """Run the CenterPoint deployment workflow for the unified CLI.
 
     This wires together the CenterPoint bundle components (data loader, evaluator,
     runner) and executes export/verification/evaluation according to `deploy_cfg`.
+
+    Args:
+        args: Parsed command-line arguments containing deploy_cfg and model_cfg paths.
+
+    Returns:
+        Exit code (0 for success).
     """
     logger = setup_logging(args.log_level)
 
     deploy_cfg = Config.fromfile(args.deploy_cfg)
     model_cfg = Config.fromfile(args.model_cfg)
     config = BaseDeploymentConfig(deploy_cfg)
+
+    # Extract components config for dependency injection
+    components_cfg: Mapping[str, Any] = deploy_cfg.get("components", {}) or {}
 
     logger.info("=" * 80)
     logger.info("CenterPoint Deployment Pipeline (Unified CLI)")
@@ -44,6 +54,7 @@ def run(args) -> int:
     evaluator = CenterPointEvaluator(
         model_cfg=model_cfg,
         metrics_config=metrics_config,
+        components_cfg=components_cfg,
     )
 
     runner = CenterPointDeploymentRunner(
