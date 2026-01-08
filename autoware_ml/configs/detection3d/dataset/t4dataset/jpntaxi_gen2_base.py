@@ -17,11 +17,13 @@ dataset_version_config_root = "autoware_ml/configs/t4dataset/"
 dataset_test_groups = {
     "db_jpntaxi_gen2_base": "t4dataset_jpntaxi_gen2_base_infos_test.pkl",
     "db_jpntaxi_gen2_v2": "t4dataset_jpntaxi_gen2_v2_infos_test.pkl",
+    "db_jpntaxi_gen2_v3": "t4dataset_jpntaxi_gen2_v3_infos_test.pkl",
 }
 
 dataset_version_list = [
     "db_jpntaxigen2_v1",
     "db_jpntaxigen2_v2",
+    "db_jpntaxigen2_v3",
 ]
 
 # dataset format setting
@@ -115,6 +117,14 @@ name_mapping = {
     "semi_trailer": "trailer",
     "tractor_unit": "truck",
     "construction_vehicle": "truck",
+		#db_jpntaxigen2_v3
+		"other_vehicle": "car",
+ 	  "traffic_cone": "traffic_cone",
+	  "personal_mobility": "pedestrian",
+ 	  "other_pedestrian": "pedestrian",
+ 	  "train": "train",
+    "barrier": "barrier",
+		"fake_pedestrian": "pedestrian",
 }
 
 class_names = [
