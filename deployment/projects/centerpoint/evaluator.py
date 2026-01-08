@@ -126,23 +126,24 @@ class CenterPointEvaluator(BaseEvaluator):
         num_samples: int,
     ) -> EvalResultDict:
         latency_stats = self.compute_latency_stats(latencies)
-        latency_payload = latency_stats.to_dict()
-
-        if latency_breakdowns:
-            latency_payload["latency_breakdown"] = self._compute_latency_breakdown(latency_breakdowns).to_dict()
 
         map_results = self.metrics_interface.compute_metrics()
         summary = self.metrics_interface.get_summary()
         summary_dict = summary.to_dict() if hasattr(summary, "to_dict") else summary
 
-        return {
+        result: EvalResultDict = {
             "mAP": summary_dict.get("mAP", 0.0),
             "mAPH": summary_dict.get("mAPH", 0.0),
             "per_class_ap": summary_dict.get("per_class_ap", {}),
             "detailed_metrics": map_results,
-            "latency": latency_payload,
+            "latency": latency_stats,  # Store LatencyStats directly
             "num_samples": num_samples,
         }
+
+        if latency_breakdowns:
+            result["latency_breakdown"] = self._compute_latency_breakdown(latency_breakdowns)
+
+        return result
 
     def print_results(self, results: EvalResultDict) -> None:
         print("\n" + "=" * 80)
@@ -165,7 +166,7 @@ class CenterPointEvaluator(BaseEvaluator):
                 print(f"  {class_name:<12}: {ap:.4f}")
 
         if "latency" in results:
-            latency = results["latency"]
+            latency = results["latency"].to_dict()
             print("\nLatency Statistics:")
             print(f"  Mean:   {latency['mean_ms']:.2f} ms")
             print(f"  Std:    {latency['std_ms']:.2f} ms")

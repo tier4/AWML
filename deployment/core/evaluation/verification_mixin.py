@@ -417,17 +417,17 @@ class VerificationMixin:
         logger: logging.Logger,
     ) -> bool:
         """Verify a single sample."""
-        input_data, metadata = self._get_verification_input(sample_idx, data_loader, ref_device)
+        input_data, infer_kwargs = self._get_verification_input(sample_idx, data_loader, ref_device)
 
         ref_name = f"{ref_backend.value} ({ref_device})"
         logger.info(f"\nRunning {ref_name} reference...")
-        ref_result = ref_pipeline.infer(input_data, metadata, return_raw_outputs=True)
+        ref_result = ref_pipeline.infer(input_data, return_raw_outputs=True, **infer_kwargs)
         logger.info(f"  {ref_name} latency: {ref_result.latency_ms:.2f} ms")
 
         test_input = self._move_input_to_device(input_data, test_device)
         test_name = f"{test_backend.value} ({test_device})"
         logger.info(f"\nRunning {test_name} test...")
-        test_result = test_pipeline.infer(test_input, metadata, return_raw_outputs=True)
+        test_result = test_pipeline.infer(test_input, return_raw_outputs=True, **infer_kwargs)
         logger.info(f"  {test_name} latency: {test_result.latency_ms:.2f} ms")
 
         passed, _ = self._compare_backend_outputs(ref_result.output, test_result.output, tolerance, test_name, logger)

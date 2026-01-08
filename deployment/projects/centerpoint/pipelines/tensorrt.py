@@ -14,12 +14,12 @@ import pycuda.driver as cuda
 import tensorrt as trt
 import torch
 
+from deployment.core.artifacts import resolve_artifact_path
 from deployment.pipelines.gpu_resource_mixin import (
     GPUResourceMixin,
     TensorRTResourceManager,
     release_tensorrt_resources,
 )
-from deployment.projects.centerpoint.pipelines.artifacts import resolve_component_artifact_path
 from deployment.projects.centerpoint.pipelines.centerpoint_pipeline import CenterPointDeploymentPipeline
 
 logger = logging.getLogger(__name__)
@@ -80,19 +80,17 @@ class CenterPointTensorRTPipeline(GPUResourceMixin, CenterPointDeploymentPipelin
         runtime = trt.Runtime(self._logger)
 
         engine_files = {
-            "voxel_encoder": resolve_component_artifact_path(
+            "voxel_encoder": resolve_artifact_path(
                 base_dir=self.tensorrt_dir,
                 components_cfg=self._components_cfg,
                 component="voxel_encoder",
                 file_key="engine_file",
-                default_filename="pts_voxel_encoder.engine",
             ),
-            "backbone_head": resolve_component_artifact_path(
+            "backbone_head": resolve_artifact_path(
                 base_dir=self.tensorrt_dir,
                 components_cfg=self._components_cfg,
                 component="backbone_head",
                 file_key="engine_file",
-                default_filename="pts_backbone_neck_head.engine",
             ),
         }
 

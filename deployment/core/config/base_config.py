@@ -12,7 +12,7 @@ import logging
 from dataclasses import dataclass, field
 from enum import Enum
 from types import MappingProxyType
-from typing import Any, Dict, Iterable, Mapping, Optional, Tuple, Union
+from typing import Any, Dict, Mapping, Optional, Tuple, Union
 
 import torch
 from mmengine.config import Config
@@ -177,41 +177,36 @@ class TensorRTConfig:
     """
     Configuration for TensorRT backend-specific settings.
 
+    Uses config structure:
+        tensorrt_config = dict(precision_policy="auto", max_workspace_size=1<<30)
+
+    TensorRT profiles are defined in components.*.tensorrt_profile.
+
     Note:
         The deploy config key for this section is **`tensorrt_config`**.
     """
 
-    common_config: Mapping[str, Any] = field(default_factory=_empty_mapping)
-    model_inputs: Tuple[TensorRTModelInputConfig, ...] = field(default_factory=tuple)
-    components: Mapping[str, Mapping[str, Any]] = field(default_factory=_empty_mapping)
+    precision_policy: str = PrecisionPolicy.AUTO.value
+    max_workspace_size: int = DEFAULT_WORKSPACE_SIZE
 
     @classmethod
     def from_dict(cls, config_dict: Mapping[str, Any]) -> "TensorRTConfig":
-        common_config = dict(config_dict.get("common_config", {}))
-        model_inputs_raw: Iterable[Mapping[str, Any]] = config_dict.get("model_inputs", []) or []
-        model_inputs: Tuple[TensorRTModelInputConfig, ...] = tuple(
-            TensorRTModelInputConfig.from_dict(item) for item in model_inputs_raw
-        )
-        components_raw = dict(config_dict.get("components", {}) or {})
-        components_frozen = {k: MappingProxyType(dict(v or {})) for k, v in components_raw.items()}
         return cls(
-            common_config=MappingProxyType(common_config),
-            model_inputs=model_inputs,
-            components=MappingProxyType(components_frozen),
+            precision_policy=config_dict.get("precision_policy", PrecisionPolicy.AUTO.value),
+            max_workspace_size=config_dict.get("max_workspace_size", DEFAULT_WORKSPACE_SIZE),
         )
 
     def get_precision_policy(self) -> str:
         """Get precision policy name."""
-        return self.common_config.get("precision_policy", PrecisionPolicy.AUTO.value)
+        return self.precision_policy
 
     def get_precision_flags(self) -> Mapping[str, bool]:
         """Get TensorRT precision flags for the configured policy."""
-        policy = self.get_precision_policy()
-        return PRECISION_POLICIES.get(policy, {})
+        return PRECISION_POLICIES.get(self.precision_policy, {})
 
     def get_max_workspace_size(self) -> int:
         """Get maximum workspace size for TensorRT."""
-        return self.common_config.get("max_workspace_size", DEFAULT_WORKSPACE_SIZE)
+        return self.max_workspace_size
 
 
 @dataclass(frozen=True)
@@ -345,9 +340,8 @@ class BaseDeploymentConfig:
             raise ValueError(str(exc)) from exc
 
         # Validate precision policy if present
-        tensorrt_config = self.deploy_cfg.get("tensorrt_config", {})
-        common_cfg = tensorrt_config.get("common_config", {})
-        precision_policy = common_cfg.get("precision_policy", PrecisionPolicy.AUTO.value)
+        tensorrt_config = self.deploy_cfg.get("tensorrt_config", {}) or {}
+        precision_policy = tensorrt_config.get("precision_policy", PrecisionPolicy.AUTO.value)
         if precision_policy not in PRECISION_POLICIES:
             raise ValueError(
                 f"Invalid precision_policy '{precision_policy}'. " f"Must be one of {list(PRECISION_POLICIES.keys())}"
@@ -462,71 +456,125 @@ class BaseDeploymentConfig:
 
     def get_onnx_settings(self) -> ONNXExportConfig:
         """
-        Get ONNX export settings.
+        Get ONNX export settings from unified components configuration.
+
+        Reads I/O from components.model.io.{inputs, outputs, dynamic_axes}
 
         Returns:
             ONNXExportConfig instance containing ONNX export parameters
         """
         onnx_config = self.onnx_config
-        model_io = self.deploy_cfg.get("model_io", {})
+        components_io = self._get_model_io_from_components()
 
-        # Get batch size and dynamic axes from model_io
-        batch_size = model_io.get("batch_size", None)
-        dynamic_axes = model_io.get("dynamic_axes", None)
+        # Get input/output names from components
+        input_names = [inp.get("name", "input") for inp in components_io.get("inputs", [])]
+        output_names = [out.get("name", "output") for out in components_io.get("outputs", [])]
 
-        # If batch_size is set to a number, disable dynamic_axes
-        if batch_size is not None and isinstance(batch_size, int):
-            dynamic_axes = None
-
-        # Handle multiple inputs and outputs
-        input_names = [model_io.get("input_name", "input")]
-        output_names = [model_io.get("output_name", "output")]
-
-        # Add additional inputs if specified
-        additional_inputs = model_io.get("additional_inputs", [])
-        for additional_input in additional_inputs:
-            if isinstance(additional_input, dict):
-                input_names.append(additional_input.get("name", "input"))
-
-        # Add additional outputs if specified
-        additional_outputs = model_io.get("additional_outputs", [])
-        for additional_output in additional_outputs:
-            if isinstance(additional_output, str):
-                output_names.append(additional_output)
+        # Fallback to defaults if components not configured
+        if not input_names:
+            input_names = ["input"]
+        if not output_names:
+            output_names = ["output"]
 
         settings_dict = {
             "opset_version": onnx_config.get("opset_version", 16),
             "do_constant_folding": onnx_config.get("do_constant_folding", True),
             "input_names": tuple(input_names),
             "output_names": tuple(output_names),
-            "dynamic_axes": dynamic_axes,
+            "dynamic_axes": components_io.get("dynamic_axes"),
             "export_params": onnx_config.get("export_params", True),
             "keep_initializers_as_inputs": onnx_config.get("keep_initializers_as_inputs", False),
             "verbose": onnx_config.get("verbose", False),
-            "save_file": onnx_config.get("save_file", "model.onnx"),
-            "batch_size": batch_size,
+            "save_file": components_io.get("onnx_file") or onnx_config.get("save_file", "model.onnx"),
+            "batch_size": None,
         }
 
-        # Note: simplify is typically True by default, but can be overridden
         if "simplify" in onnx_config:
             settings_dict["simplify"] = onnx_config["simplify"]
 
         return ONNXExportConfig.from_mapping(settings_dict)
 
+    def _get_model_io_from_components(self) -> Dict[str, Any]:
+        """
+        Extract model I/O configuration from components.
+
+        For end-to-end models (single component), returns the io config
+        from components.model.
+
+        Returns:
+            Dictionary with inputs, outputs, dynamic_axes, and onnx_file.
+        """
+        components = self.deploy_cfg.get("components", {})
+        if not components:
+            return {}
+
+        # For single-component models, look for 'model' component
+        if "model" in components:
+            comp_cfg = components["model"]
+            io_cfg = comp_cfg.get("io", {})
+            return {
+                "inputs": io_cfg.get("inputs", []),
+                "outputs": io_cfg.get("outputs", []),
+                "dynamic_axes": io_cfg.get("dynamic_axes"),
+                "onnx_file": comp_cfg.get("onnx_file"),
+            }
+
+        return {}
+
     def get_tensorrt_settings(self) -> TensorRTExportConfig:
         """
-        Get TensorRT export settings with precision policy support.
+        Get TensorRT export settings from unified components configuration.
+
+        TensorRT profiles are read from components.model.tensorrt_profile.
 
         Returns:
             TensorRTExportConfig instance containing TensorRT export parameters
         """
+        model_inputs = self._build_model_inputs_from_components()
+
         settings_dict = {
             "max_workspace_size": self.tensorrt_config.get_max_workspace_size(),
             "precision_policy": self.tensorrt_config.get_precision_policy(),
             "policy_flags": self.tensorrt_config.get_precision_flags(),
-            "model_inputs": self.tensorrt_config.model_inputs,
+            "model_inputs": model_inputs,
         }
         return TensorRTExportConfig.from_mapping(settings_dict)
+
+    def _build_model_inputs_from_components(self) -> Tuple[TensorRTModelInputConfig, ...]:
+        """
+        Build model_inputs from components configuration.
+
+        For end-to-end models (single component), extracts tensorrt_profile
+        from components.model and converts to TensorRTModelInputConfig format.
+
+        Returns:
+            Tuple of TensorRTModelInputConfig, or empty tuple if not configured.
+        """
+        components = self.deploy_cfg.get("components", {})
+        if not components or "model" not in components:
+            return ()
+
+        comp_cfg = components["model"]
+        tensorrt_profile = comp_cfg.get("tensorrt_profile", {})
+
+        if not tensorrt_profile:
+            return ()
+
+        from deployment.exporters.common.configs import TensorRTProfileConfig
+
+        input_shapes = {}
+        for input_name, shape_cfg in tensorrt_profile.items():
+            if isinstance(shape_cfg, Mapping):
+                input_shapes[input_name] = TensorRTProfileConfig(
+                    min_shape=tuple(shape_cfg.get("min_shape", [])),
+                    opt_shape=tuple(shape_cfg.get("opt_shape", [])),
+                    max_shape=tuple(shape_cfg.get("max_shape", [])),
+                )
+
+        if input_shapes:
+            return (TensorRTModelInputConfig(input_shapes=MappingProxyType(input_shapes)),)
+
+        return ()
 
 
 def setup_logging(level: str = "INFO") -> logging.Logger:

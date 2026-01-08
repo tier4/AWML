@@ -1,6 +1,12 @@
 """Core components for deployment framework."""
 
-from deployment.core.artifacts import Artifact
+from deployment.core.artifacts import (
+    Artifact,
+    get_component_files,
+    resolve_artifact_path,
+    resolve_engine_path,
+    resolve_onnx_path,
+)
 from deployment.core.backend import Backend
 from deployment.core.config.base_config import (
     BaseDeploymentConfig,
@@ -76,6 +82,10 @@ __all__ = [
     "VerificationMixin",
     # Artifacts
     "Artifact",
+    "resolve_artifact_path",
+    "resolve_onnx_path",
+    "resolve_engine_path",
+    "get_component_files",
     "ModelSpec",
     # Preprocessing
     "build_preprocessing_pipeline",

@@ -201,11 +201,8 @@ class EvaluationOrchestrator:
                 if "mAP" in results:
                     self.logger.info(f"  mAP: {results.get('mAP', 0):.4f}")
 
-                if "latency_stats" in results:
-                    stats = results["latency_stats"]
-                    self.logger.info(f"  Latency: {stats['mean_ms']:.2f} ± {stats['std_ms']:.2f} ms")
-                elif "latency" in results:
+                if "latency" in results:
                     latency = results["latency"]
-                    self.logger.info(f"  Latency: {latency['mean_ms']:.2f} ± {latency['std_ms']:.2f} ms")
+                    self.logger.info(f"  Latency: {latency.mean_ms:.2f} ± {latency.std_ms:.2f} ms")
             else:
                 self.logger.info("  No results available")
