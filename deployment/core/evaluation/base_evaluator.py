@@ -23,6 +23,7 @@ import torch
 from deployment.core.backend import Backend
 from deployment.core.evaluation.evaluator_types import (
     EvalResultDict,
+    InferenceInput,
     InferenceResult,
     LatencyBreakdown,
     LatencyStats,
@@ -38,6 +39,7 @@ __all__ = [
     "EvalResultDict",
     "VerifyResultDict",
     "ModelSpec",
+    "InferenceInput",
     "InferenceResult",
     "LatencyStats",
     "LatencyBreakdown",
@@ -160,8 +162,14 @@ class BaseEvaluator(VerificationMixin, ABC):
         sample: Mapping[str, Any],
         data_loader: BaseDataLoader,
         device: str,
-    ) -> Tuple[Any, Dict[str, Any]]:
-        """Prepare model input from a sample. Returns (input_data, inference_kwargs)."""
+    ) -> InferenceInput:
+        """Prepare model input from a sample.
+
+        Returns:
+            InferenceInput containing:
+                - data: The actual input data (e.g., points tensor)
+                - metadata: Sample metadata forwarded to postprocess()
+        """
         raise NotImplementedError
 
     @abstractmethod
@@ -211,7 +219,7 @@ class BaseEvaluator(VerificationMixin, ABC):
         sample_idx: int,
         data_loader: BaseDataLoader,
         device: str,
-    ) -> Tuple[Any, Dict[str, Any]]:
+    ) -> InferenceInput:
         """Get verification input."""
         sample = data_loader.load_sample(sample_idx)
         return self._prepare_input(sample, data_loader, device)
@@ -254,12 +262,12 @@ class BaseEvaluator(VerificationMixin, ABC):
                 logger.info(f"Processing sample {idx + 1}/{actual_samples}")
 
             sample = data_loader.load_sample(idx)
-            input_data, infer_kwargs = self._prepare_input(sample, data_loader, model.device)
+            inference_input = self._prepare_input(sample, data_loader, model.device)
 
             gt_data = data_loader.get_ground_truth(idx)
             ground_truths = self._parse_ground_truths(gt_data)
 
-            infer_result = pipeline.infer(input_data, **infer_kwargs)
+            infer_result = pipeline.infer(inference_input.data, metadata=inference_input.metadata)
             latencies.append(infer_result.latency_ms)
             if infer_result.breakdown:
                 latency_breakdowns.append(infer_result.breakdown)

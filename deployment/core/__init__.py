@@ -32,6 +32,7 @@ from deployment.core.evaluation.base_evaluator import (
     BaseEvaluator,
     EvalResultDict,
     EvaluationDefaults,
+    InferenceInput,
     ModelSpec,
     TaskProfile,
     VerifyResultDict,
@@ -77,6 +78,7 @@ __all__ = [
     # Evaluation
     "BaseEvaluator",
     "TaskProfile",
+    "InferenceInput",
     "EvalResultDict",
     "VerifyResultDict",
     "VerificationMixin",

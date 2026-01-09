@@ -7,7 +7,7 @@ runners, and orchestrators.
 
 from __future__ import annotations
 
-from dataclasses import asdict, dataclass
+from dataclasses import asdict, dataclass, field
 from typing import Any, Dict, Optional, TypedDict
 
 from deployment.core.artifacts import Artifact
@@ -91,6 +91,22 @@ class LatencyBreakdown:
     def to_dict(self) -> Dict[str, Dict[str, float]]:
         """Convert to ``Dict[str, Dict[str, float]]`` for downstream use."""
         return {stage: stats.to_dict() for stage, stats in self.stages.items()}
+
+
+@dataclass
+class InferenceInput:
+    """Prepared input for pipeline inference.
+
+    This replaces the old (input_data, infer_kwargs) tuple pattern,
+    making the interface explicit and statically checkable.
+
+    Attributes:
+        data: The actual input data (e.g., points tensor, image tensor).
+        metadata: Sample metadata forwarded to postprocess().
+    """
+
+    data: Any
+    metadata: Dict[str, Any] = field(default_factory=dict)
 
 
 @dataclass(frozen=True)

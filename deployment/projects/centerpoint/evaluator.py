@@ -3,7 +3,7 @@ CenterPoint Evaluator for deployment.
 """
 
 import logging
-from typing import Any, Dict, List, Mapping, Optional, Tuple
+from typing import Any, Dict, List, Mapping, Optional
 
 from mmengine.config import Config
 
@@ -12,6 +12,7 @@ from deployment.core import (
     Detection3DMetricsConfig,
     Detection3DMetricsInterface,
     EvalResultDict,
+    InferenceInput,
     ModelSpec,
     TaskProfile,
 )
@@ -91,7 +92,7 @@ class CenterPointEvaluator(BaseEvaluator):
         sample: Dict[str, Any],
         data_loader: BaseDataLoader,
         device: str,
-    ) -> Tuple[Any, Dict[str, Any]]:
+    ) -> InferenceInput:
         if "points" in sample:
             points = sample["points"]
         else:
@@ -99,7 +100,7 @@ class CenterPointEvaluator(BaseEvaluator):
             points = input_data.get("points", input_data)
 
         metadata = sample.get("metainfo", {})
-        return points, metadata
+        return InferenceInput(data=points, metadata=metadata)
 
     def _parse_predictions(self, pipeline_output: Any) -> List[Dict]:
         return pipeline_output if isinstance(pipeline_output, list) else []

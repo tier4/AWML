@@ -5,7 +5,7 @@ CenterPoint PyTorch Pipeline Implementation.
 from __future__ import annotations
 
 import logging
-from typing import Any, Dict, List, Optional
+from typing import List
 
 import torch
 
@@ -30,26 +30,6 @@ class CenterPointPyTorchPipeline(CenterPointDeploymentPipeline):
         """
         super().__init__(pytorch_model, device, backend_type="pytorch")
         logger.info("PyTorch pipeline initialized (ONNX-compatible staged inference)")
-
-    def infer(
-        self,
-        points: torch.Tensor,
-        sample_meta: Optional[Dict[str, Any]] = None,
-        return_raw_outputs: bool = False,
-    ) -> Any:
-        """Run inference on point cloud.
-
-        Args:
-            points: Point cloud tensor [N, point_features].
-            sample_meta: Optional sample metadata.
-            return_raw_outputs: Whether to return raw outputs.
-
-        Returns:
-            Detection results or raw outputs.
-        """
-        if sample_meta is None:
-            sample_meta = {}
-        return super().infer(points, sample_meta, return_raw_outputs=return_raw_outputs)
 
     def run_voxel_encoder(self, input_features: torch.Tensor) -> torch.Tensor:
         """Run voxel encoder using PyTorch model.

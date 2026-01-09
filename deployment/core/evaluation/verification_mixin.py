@@ -16,7 +16,7 @@ import numpy as np
 import torch
 
 from deployment.core.backend import Backend
-from deployment.core.evaluation.evaluator_types import ModelSpec, VerifyResultDict
+from deployment.core.evaluation.evaluator_types import InferenceInput, ModelSpec, VerifyResultDict
 from deployment.core.io.base_data_loader import BaseDataLoader
 
 
@@ -71,8 +71,14 @@ class VerificationMixin:
         sample_idx: int,
         data_loader: BaseDataLoader,
         device: str,
-    ) -> Tuple[Any, Dict[str, Any]]:
-        """Get input data for verification."""
+    ) -> InferenceInput:
+        """Get input data for verification.
+
+        Returns:
+            InferenceInput containing:
+                - data: The actual input data (e.g., points tensor)
+                - metadata: Sample metadata forwarded to postprocess()
+        """
         raise NotImplementedError
 
     def _get_output_names(self) -> Optional[List[str]]:
@@ -417,17 +423,25 @@ class VerificationMixin:
         logger: logging.Logger,
     ) -> bool:
         """Verify a single sample."""
-        input_data, infer_kwargs = self._get_verification_input(sample_idx, data_loader, ref_device)
+        inference_input = self._get_verification_input(sample_idx, data_loader, ref_device)
 
         ref_name = f"{ref_backend.value} ({ref_device})"
         logger.info(f"\nRunning {ref_name} reference...")
-        ref_result = ref_pipeline.infer(input_data, return_raw_outputs=True, **infer_kwargs)
+        ref_result = ref_pipeline.infer(
+            inference_input.data,
+            metadata=inference_input.metadata,
+            return_raw_outputs=True,
+        )
         logger.info(f"  {ref_name} latency: {ref_result.latency_ms:.2f} ms")
 
-        test_input = self._move_input_to_device(input_data, test_device)
+        test_input = self._move_input_to_device(inference_input.data, test_device)
         test_name = f"{test_backend.value} ({test_device})"
         logger.info(f"\nRunning {test_name} test...")
-        test_result = test_pipeline.infer(test_input, return_raw_outputs=True, **infer_kwargs)
+        test_result = test_pipeline.infer(
+            test_input,
+            metadata=inference_input.metadata,
+            return_raw_outputs=True,
+        )
         logger.info(f"  {test_name} latency: {test_result.latency_ms:.2f} ms")
 
         passed, _ = self._compare_backend_outputs(ref_result.output, test_result.output, tolerance, test_name, logger)
