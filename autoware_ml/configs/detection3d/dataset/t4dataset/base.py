@@ -17,7 +17,7 @@ dataset_version_config_root = "autoware_ml/configs/t4dataset/"
 dataset_version_list = [
     "db_jpntaxigen2_v1",
     "db_jpntaxigen2_v2",
-		"db_jpntaxigen2_v3",
+		# "db_jpntaxigen2_v3",
     "db_j6gen2_v1",
     "db_j6gen2_v2",
     "db_j6gen2_v3",
@@ -38,7 +38,7 @@ dataset_version_list = [
     "db_j6_v5",
 ]
 dataset_test_groups = {
-		"db_jpntaxigen2_v3": "t4dataset_jpntaxi_gen2_v3_infos_test.pkl",
+		# "db_jpntaxigen2_v3": "t4dataset_jpntaxi_gen2_v3_infos_test.pkl",
     "db_jpntaxi_gen2_base": "t4dataset_jpntaxi_gen2_base_infos_test.pkl",
     "db_j6gen2": "t4dataset_j6gen2_infos_test.pkl",
     "db_j6gen2_v6": "t4dataset_j6gen2_v6_infos_test.pkl",
