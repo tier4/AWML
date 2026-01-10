@@ -6,10 +6,55 @@ mix_prob = 0.8
 empty_cache = False
 enable_amp = True
 
+# dataset settings
+dataset_type = "NuScenesDataset"
+data_root = "data/nuscenes"
+ignore_index = -1
+info_paths_train = ["info/nuscenes_infos_10sweeps_train.pkl"]
+info_paths_val = ["info/nuscenes_infos_10sweeps_val.pkl"]
+info_paths_test = ["info/nuscenes_infos_10sweeps_test.pkl"]
+class_names = [
+    "barrier",
+    "bicycle",
+    "bus",
+    "car",
+    "construction_vehicle",
+    "motorcycle",
+    "pedestrian",
+    "traffic_cone",
+    "trailer",
+    "truck",
+    "driveable_surface",
+    "other_flat",
+    "sidewalk",
+    "terrain",
+    "manmade",
+    "vegetation",
+]
+class_mapping = {
+    0: 0,
+    1: 1,
+    2: 2,
+    3: 3,
+    4: 4,
+    5: 5,
+    6: 6,
+    7: 7,
+    8: 8,
+    9: 9,
+    10: 10,
+    11: 11,
+    12: 12,
+    13: 13,
+    14: 14,
+    15: 15,
+}
+num_classes = 16
+
 # model settings
 model = dict(
     type="DefaultSegmentorV2",
-    num_classes=16,
+    num_classes=num_classes,
     backbone_out_channels=64,
     backbone=dict(
         type="PT-v3m1",
@@ -64,37 +109,15 @@ scheduler = dict(
 )
 param_dicts = [dict(keyword="block", lr=0.0002)]
 
-# dataset settings
-dataset_type = "NuScenesDataset"
-data_root = "data/nuscenes"
-ignore_index = -1
-names = [
-    "barrier",
-    "bicycle",
-    "bus",
-    "car",
-    "construction_vehicle",
-    "motorcycle",
-    "pedestrian",
-    "traffic_cone",
-    "trailer",
-    "truck",
-    "driveable_surface",
-    "other_flat",
-    "sidewalk",
-    "terrain",
-    "manmade",
-    "vegetation",
-]
 
 data = dict(
-    num_classes=16,
+    num_classes=num_classes,
     ignore_index=ignore_index,
-    names=names,
     train=dict(
         type=dataset_type,
         split="train",
         data_root=data_root,
+        info_paths=info_paths_train,
         transform=[
             # dict(type="RandomDropout", dropout_ratio=0.2, dropout_application_ratio=0.2),
             # dict(type="RandomRotateTargetAngle", angle=(1/2, 1, 3/2), center=[0, 0, 0], axis="z", p=0.75),
@@ -125,11 +148,13 @@ data = dict(
         ],
         test_mode=False,
         ignore_index=ignore_index,
+        class_mapping=class_mapping,
     ),
     val=dict(
         type=dataset_type,
         split="val",
         data_root=data_root,
+        info_paths=info_paths_val,
         transform=[
             # dict(type="PointClip", point_cloud_range=(-51.2, -51.2, -4, 51.2, 51.2, 2.4)),
             dict(
@@ -150,11 +175,13 @@ data = dict(
         ],
         test_mode=False,
         ignore_index=ignore_index,
+        class_mapping=class_mapping,
     ),
     test=dict(
         type=dataset_type,
         split="val",
         data_root=data_root,
+        info_paths=info_paths_test,
         transform=[
             dict(type="Copy", keys_dict={"segment": "origin_segment"}),
             dict(
@@ -211,5 +238,6 @@ data = dict(
             ],
         ),
         ignore_index=ignore_index,
+        class_mapping=class_mapping,
     ),
 )

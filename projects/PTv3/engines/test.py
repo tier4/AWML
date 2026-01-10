@@ -20,9 +20,11 @@ from utils.logger import get_root_logger
 from utils.misc import (
     AverageMeter,
     intersection_and_union,
+    invert_class_mapping,
     make_dirs,
 )
 from utils.registry import Registry
+from utils.visualization import get_segmentation_colors, visualize_point_cloud
 
 from .defaults import create_ddp_model
 
@@ -100,6 +102,15 @@ class TesterBase:
     def test(self):
         raise NotImplementedError
 
+    def visualize_results(self, outputs, result_path):
+        pred = outputs.get("pred")
+        segment = outputs.get("segment")
+
+        coords, colors = get_segmentation_colors(segment, result_path, self.cfg.class_colors, self.logger)
+        visualize_point_cloud(coords, colors, "Ground Truth")
+        coords, colors = get_segmentation_colors(pred, result_path, self.cfg.class_colors, self.logger)
+        visualize_point_cloud(coords, colors, "Predictions")
+
     @staticmethod
     def collate_fn(batch):
         raise collate_fn(batch)
@@ -108,6 +119,9 @@ class TesterBase:
 @TESTERS.register_module()
 class SemSegTester(TesterBase):
     def test(self):
+        if not self.test_loader.dataset.data_list:
+            self.logger.warning("No data found in the test dataset, skipping test")
+            return
         assert self.test_loader.batch_size == 1
         logger = get_root_logger()
         logger.info(">>>>>>>>>>>>>>>> Start Evaluation >>>>>>>>>>>>>>>>")
@@ -195,6 +209,12 @@ class SemSegTester(TesterBase):
                 # np.save(pred_save_path, pred)
                 # np.save(feat_save_path, feat.cpu().numpy())
                 np.savez_compressed(result_save_path, pred=pred, feat=feat.cpu().numpy())
+
+                # Call visualization
+                if self.cfg.show:
+                    outputs = {"pred": pred, "segment": segment, "result_path": result_save_path}
+                    self.visualize_results(outputs, result_save_path)
+
             if self.cfg.data.test.type == "NuScenesDataset":
                 np.array(pred + 1).astype(np.uint8).tofile(
                     os.path.join(
@@ -267,11 +287,12 @@ class SemSegTester(TesterBase):
             allAcc = sum(intersection) / (sum(target) + 1e-10)
 
             logger.info("Val result: mIoU/mAcc/allAcc {:.4f}/{:.4f}/{:.4f}".format(mIoU, mAcc, allAcc))
+            mapped_class_names = invert_class_mapping(self.cfg.class_mapping)
             for i in range(self.cfg.data.num_classes):
                 logger.info(
                     "Class_{idx} - {name} Result: iou/accuracy {iou:.4f}/{accuracy:.4f}".format(
                         idx=i,
-                        name=self.cfg.data.names[i],
+                        name=mapped_class_names[i],
                         iou=iou_class[i],
                         accuracy=accuracy_class[i],
                     )

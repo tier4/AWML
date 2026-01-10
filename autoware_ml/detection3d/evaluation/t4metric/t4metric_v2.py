@@ -509,6 +509,8 @@ class T4MetricV2(BaseMetric):
             scenes (dict): Dictionary of scenes and their samples.
         """
         # Multiprocessing to speed up frame processing
+        if self.scene_batch_size <= 0:
+            self.scene_batch_size = len(scenes)
         self.logger.info(f"Multiprocessing with {self.num_workers} workers and batch size: {self.scene_batch_size}...")
         with ProcessPoolExecutor(max_workers=self.num_workers) as executor:
             for batch_index, scene_batches in enumerate(
