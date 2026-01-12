@@ -226,9 +226,8 @@ def parse_args():
     )
     parser.add_argument(
         "--use_legacy_info",
-        type=bool,
-        required=False,
-        default=True,
+        action="store_true",
+        default=False,
         help="specify sweeps of lidar per example",
     )
     parser.add_argument(
@@ -276,11 +275,11 @@ def main():
             for scene_id in dataset_list_dict.get(split, []):
                 print_log(f"Creating data info for scene: {scene_id}, steps: {sample_steps}")
                 if args.use_legacy_info:
-                    t4_dataset_id, t4_dataset_version_id = scene_id.split("   ")
+                    t4_dataset_id, t4_dataset_version_id, city, vehicle_type = scene_id.split("/")
+                else:
+                    t4_dataset_id, t4_dataset_version_id = scene_id.split("/")
                     city = None 
                     vehicle_type = None
-                else:
-                    t4_dataset_id, t4_dataset_version_id, city, vehicle_type = scene_id.split("/")
 
                 scene_root_dir_path = osp.join(args.root_path, dataset_version, t4_dataset_id, t4_dataset_version_id)
                 if not os.path.exists(scene_root_dir_path):
