@@ -225,10 +225,10 @@ def parse_args():
         help="specify the root path for yaml t4dataset split",
     )
     parser.add_argument(
-        "--use_legacy_info",
+        "--use_legacy_t4dataset_split",
         action="store_true",
-        default=False,
-        help="specify sweeps of lidar per example",
+        default=True,
+        help="Set True to use legacy t4dataset yaml split format",
     )
     parser.add_argument(
         "--use_available_dataset_version",
@@ -274,12 +274,12 @@ def main():
 
             for scene_id in dataset_list_dict.get(split, []):
                 print_log(f"Creating data info for scene: {scene_id}, steps: {sample_steps}")
-                if args.use_legacy_info:
-                    t4_dataset_id, t4_dataset_version_id, city, vehicle_type = scene_id.split("/")
-                else:
+                if args.use_legacy_t4dataset_split:
                     t4_dataset_id, t4_dataset_version_id = scene_id.split("/")
                     city = None 
                     vehicle_type = None
+                else:
+                    t4_dataset_id, t4_dataset_version_id, city, vehicle_type = scene_id.split("/")
 
                 scene_root_dir_path = osp.join(args.root_path, dataset_version, t4_dataset_id, t4_dataset_version_id)
                 if not os.path.exists(scene_root_dir_path):
