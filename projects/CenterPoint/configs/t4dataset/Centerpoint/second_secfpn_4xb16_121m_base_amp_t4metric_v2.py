@@ -2,7 +2,7 @@ _base_ = [
     "./second_secfpn_4xb16_121m_base_amp.py",
 ]
 
-work_dir = "work_dirs/centerpoint/" + _base_.dataset_type + "/second_secfpn_4xb16_121m_base_amp_t4metric_v2/"
+work_dir = "work_dirs/centerpoint_2_6/" + _base_.dataset_type + "/second_secfpn_4xb16_121m_base_amp_t4metric_v2/"
 
 # Add evaluator configs
 perception_evaluator_configs = dict(

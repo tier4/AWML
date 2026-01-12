@@ -117,14 +117,14 @@ name_mapping = {
     "semi_trailer": "trailer",
     "tractor_unit": "truck",
     "construction_vehicle": "truck",
-		#db_jpntaxigen2_v3
-		"other_vehicle": "car",
- 	  "traffic_cone": "traffic_cone",
-	  "personal_mobility": "pedestrian",
- 	  "other_pedestrian": "pedestrian",
- 	  "train": "train",
+	#db_jpntaxigen2_v3
+    "other_vehicle": "car",
+ 	"traffic_cone": "traffic_cone",
+	"personal_mobility": "pedestrian",
+ 	"other_pedestrian": "pedestrian",
+ 	"train": "train",
     "barrier": "barrier",
-		"fake_pedestrian": "pedestrian",
+	"fake_pedestrian": "pedestrian",
 }
 
 class_names = [
