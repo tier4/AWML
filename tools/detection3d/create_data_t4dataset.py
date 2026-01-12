@@ -226,9 +226,9 @@ def parse_args():
     )
     parser.add_argument(
         "--use_legacy_t4dataset_split",
-        action="store_true",
-        default=False,
-        help="Set True to use legacy t4dataset yaml split format",
+        action="store_false",
+        default=True,
+        help="Set this to disable legacy t4dataset yaml split format",
     )
     parser.add_argument(
         "--use_available_dataset_version",
