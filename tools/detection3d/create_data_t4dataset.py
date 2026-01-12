@@ -87,7 +87,7 @@ def get_info(
     sample: Sample,
     i: int,
     max_sweeps: int,
-    location: str = None, 
+    city: str = None, 
     vehicle_type: str = None
 ):
     lidar_token = get_lidar_token(sample)
@@ -122,7 +122,7 @@ def get_info(
         scene_token=sample.scene_token,
         location=log_record.location,
         scene_name=scene_record.name,
-        location=location,
+        city=city,
         vehilce_type=vehicle_type
     )
 
@@ -277,10 +277,10 @@ def main():
                 print_log(f"Creating data info for scene: {scene_id}, steps: {sample_steps}")
                 if args.use_legacy_info:
                     t4_dataset_id, t4_dataset_version_id = scene_id.split("   ")
-                    location = None 
+                    city = None 
                     vehicle_type = None
                 else:
-                    t4_dataset_id, t4_dataset_version_id, location, vehicle_type = scene_id.split("/")
+                    t4_dataset_id, t4_dataset_version_id, city, vehicle_type = scene_id.split("/")
 
                 scene_root_dir_path = osp.join(args.root_path, dataset_version, t4_dataset_id, t4_dataset_version_id)
                 if not os.path.exists(scene_root_dir_path):
@@ -294,7 +294,7 @@ def main():
                 t4 = Tier4(data_root=scene_root_dir_path, verbose=False)
                 for i in range(0, len(t4.sample), sample_steps):
                     sample = t4.sample[i]
-                    info = get_info(cfg, t4, sample, i, args.max_sweeps, location, vehicle_type)
+                    info = get_info(cfg, t4, sample, i, args.max_sweeps, city, vehicle_type)
                     # info["version"] = dataset_version             # used for visualizations during debugging.
                     t4_infos[split].append(info)
     assert sum(len(split) for split in t4_infos.values()) > 0, "dataset isn't available"
