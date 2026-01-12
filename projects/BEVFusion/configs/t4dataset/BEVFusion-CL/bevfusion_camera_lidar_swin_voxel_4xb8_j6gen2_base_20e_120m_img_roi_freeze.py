@@ -2,13 +2,12 @@ _base_ = [
     "../default/bevfusion_lidar_voxel_second_secfpn_1xb1_t4base.py",
     "../../../../../autoware_ml/configs/detection3d/dataset/t4dataset/j6gen2_base.py",
 ]
-
 custom_imports = dict(imports=["projects.BEVFusion.bevfusion", "projects.CenterPoint.models", "projects.BEVFusion.models"], allow_failed_imports=False)
 custom_imports["imports"] += _base_.custom_imports["imports"]
 custom_imports["imports"] += ["autoware_ml.detection3d.datasets.transforms"]
 
 # user setting
-data_root = "data/t4dataset/"
+data_root = "data/t4datasets/"
 info_directory_path = "info/kokseang_2_5/"
 train_gpu_size = 4
 train_batch_size = 8
@@ -46,13 +45,17 @@ lidar_sweep_dims = [0, 1, 2, 3, 4]  # x, y, z, time_lag
 lidar_feature_dims = 5
 camera_order = ["CAM_FRONT", "CAM_FRONT_LEFT", "CAM_BACK_LEFT", "CAM_FRONT_RIGHT", "CAM_BACK_RIGHT"]
 
-work_dir = "work_dirs/bevfusion_2_5/" + _base_.dataset_type + "/bevfusion_camera_lidar_vov99_voxel_second_secfpn_4xb8_j6gen2_base_20e_120m_img_freeze_e14/"
-
+work_dir = (
+    "work_dirs/bevfusion_cl_2_5/"
+    + _base_.dataset_type
+    + "/bevfusion_camera_lidar_swin_voxel_4xb8_j6gen2_base_20e_120m_img_roi_freeze/"
+)
+focal_head_loss_weight = 1.0
 
 model = dict(
     type="BEVFusion",
     freeze_img=True,
-    merge_img_pts_backbone=False,
+    merge_img_pts_backbone=True,
     data_preprocessor=dict(
         type="Det3DDataPreprocessor",
         pad_size_divisor=32,
@@ -78,18 +81,37 @@ model = dict(
     # ),
     pts_middle_encoder=dict(sparse_shape=grid_size, in_channels=lidar_feature_dims),
     img_backbone=dict(
-        type="VoVNetCP",  ###use checkpoint to save memory
-        spec_name="V-99-eSE",
-        norm_eval=True,  # TODO: make true by default
-        frozen_stages=-1,
-        input_ch=3,
-        out_features=(
-            "stage3",
-            "stage4",
-            "stage5",
+        type="mmdet.SwinTransformer",
+        embed_dims=96,
+        depths=[2, 2, 6, 2],
+        num_heads=[3, 6, 12, 24],
+        window_size=7,
+        mlp_ratio=4,
+        qkv_bias=True,
+        qk_scale=None,
+        drop_rate=0.0,
+        attn_drop_rate=0.0,
+        drop_path_rate=0.2,
+        patch_norm=True,
+        out_indices=[1, 2, 3],
+        with_cp=False,
+        convert_weights=True,
+        init_cfg=dict(
+            type="Pretrained",
+            checkpoint="work_dirs/swin_transformer/swint_nuimages_pretrained.pth",  # noqa: E251  # noqa: E501
+            # checkpoint="work_dirs/swin_transformer/swint_nuimages_pretrained.pth"  # noqa: E251  # noqa: E501
         ),
     ),
-    img_neck=dict(type="CPFPN", in_channels=[512, 768, 1024], out_channels=256, num_outs=3),
+    img_neck=dict(
+        type="GeneralizedLSSFPN",
+        in_channels=[192, 384, 768],
+        out_channels=256,
+        start_level=0,
+        num_outs=3,
+        norm_cfg=dict(type="BN2d", requires_grad=True),
+        act_cfg=dict(type="ReLU", inplace=True),
+        upsample_cfg=dict(mode="bilinear", align_corners=False),
+    ),
     view_transform=dict(
         type="DepthLSSTransform",
         in_channels=256,
@@ -102,9 +124,30 @@ model = dict(
         dbound=[1.0, 130, 1.0],
         downsample=2,
     ),
-    fusion_layer=dict(type="ConvFuser", in_channels=[80, 256+256], out_channels=256, kernel_size=5, padding=2),
+    fusion_layer=dict(type="ConvFuser", in_channels=[80, 256], out_channels=256, kernel_size=5, padding=2),
+    img_roi_head=None,
+    # img_roi_head=dict(
+    #     type="mmdet.FocalHead",
+    #     num_classes=len(_base_.class_names),
+    #     in_channels=256,
+    #     stride=8,
+    #     bbox_coder=dict(type="mmdet.DistancePointBBoxCoder"),
+    #     loss_cls2d=dict(type="mmdet.QualityFocalLoss", use_sigmoid=True, beta=2.0, loss_weight=1.0*focal_head_loss_weight),
+    #     loss_centerness=dict(type="mmdet.GaussianFocalLoss", reduction="mean", loss_weight=1.0*focal_head_loss_weight),
+    #     loss_bbox2d=dict(type="mmdet.L1Loss", loss_weight=5.0*focal_head_loss_weight),
+    #     loss_iou2d=dict(type="mmdet.GIoULoss", loss_weight=2.0*focal_head_loss_weight),
+    #     loss_centers2d=dict(type="mmdet.L1Loss", loss_weight=10.0*focal_head_loss_weight),
+    #     train_cfg=dict(
+    #         assigner2d=dict(
+    #             type="HungarianAssigner2D",
+    #             cls_cost=dict(type="FocalLossCostAssigner", weight=2),
+    #             reg_cost=dict(type="BBoxL1CostAssigner", weight=5.0, box_format="xywh"),
+    #             iou_cost=dict(type="IoUCostAssigner", iou_mode="giou", weight=2.0),
+    #             centers2d_cost=dict(type="BBox3DL1CostAssigner", weight=10.0),
+    #         )
+    #     ),
+    # ),
     bbox_head=dict(
-        in_channels=256,
         num_proposals=num_proposals,
         class_names=_base_.class_names,  # Use class names to identify the correct class indices
         train_cfg=dict(
@@ -126,7 +169,7 @@ model = dict(
     ),
     # Lidar pipeline
     pts_voxel_encoder=dict(num_features=lidar_feature_dims),
-    img_bev_bbox_head=None,
+    img_bev_bbox_head=None
     # img_bev_bbox_head=dict(
     #     type="BEVFusionCenterHead",
     #     # in_channels=sum([128, 128, 128]),
@@ -253,9 +296,11 @@ train_pipeline = [
     dict(type="ObjectRangeMinPointsFilter", range_radius=[0, 60], min_num_points=2),
     dict(type="ObjectRangeMinPointsFilter", range_radius=[60, 130], min_num_points=1),
     dict(type="PointShuffle"),
+    dict(type="BEVFusionLoadAnnotations2D"),
     dict(
         type="Pack3DDetInputs",
-        keys=["points", "img", "gt_bboxes_3d", "gt_labels_3d", "gt_bboxes", "gt_labels"],
+		# keys=["img", "points",  "gt_bboxes_3d", "gt_labels_3d"],
+        keys=["img", "points",  "gt_bboxes_3d", "gt_labels_3d", "gt_bboxes", "gt_bboxes_labels"],
         meta_keys=[
             "cam2img",
             "ori_cam2img",
@@ -273,6 +318,10 @@ train_pipeline = [
             "pcd_scale_factor",
             "pcd_trans",
             "lidar_aug_matrix",
+			"pad_shape",
+            "depths",
+            "centers_2d",
+            "timestamp"
         ],
     ),
 ]
@@ -329,6 +378,8 @@ test_pipeline = [
             "img_path",
             "num_pts_feats",
             "num_views",
+            "pad_shape",
+            "timestamp"
         ],
     ),
 ]
@@ -422,7 +473,7 @@ test_evaluator = dict(
 
 # learning rate
 lr = 1e-4
-t_max = 3
+t_max = 6
 param_scheduler = [
     # learning rate scheduler
     # During the first (max_epochs * 0.4) epochs, learning rate increases from 0 to lr * 10
@@ -464,7 +515,7 @@ param_scheduler = [
 # runtime settings
 # Run validation for every val_interval epochs before max_epochs - 10, and run validation every 2 epoch after max_epochs - 10
 train_cfg = dict(
-    by_epoch=True, max_epochs=max_epochs, val_interval=val_interval, dynamic_intervals=[(max_epochs - 3, 1)]
+    by_epoch=True, max_epochs=max_epochs, val_interval=val_interval, dynamic_intervals=[(max_epochs - 5, 1)]
 )
 val_cfg = dict()
 test_cfg = dict()
@@ -485,6 +536,4 @@ auto_scale_lr = dict(enable=False, base_batch_size=train_gpu_size * train_batch_
 if train_gpu_size > 1:
     sync_bn = "torch"
 
-load_from = "work_dirs/bevfusion_merge/bevfusion_streampetr_e14_lidar.pth"
-
-# activation_checkpointing = ["img_backbone"]
+load_from = "work_dirs/bevfusion_merge/bevfusion_lidar_e30_swint_e19_lidar.pth"

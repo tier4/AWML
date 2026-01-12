@@ -1,14 +1,14 @@
 import torch 
 
 if __name__ == "__main__":
-  lidar_ckpt_path = "work_dirs/bevfusion_2_5/T4Dataset/bevfusion_lidar_voxel_second_secfpn_4xb8_j6gen2_base/epoch_30.pth"
-  lidar_ckpt = torch.load(lidar_ckpt_path)
+  lidar_ckpt_path = "work_dirs/bevfusion_2_5/T4Dataset/bevfusion_lidar_j6gen2_base_epoch_30.pth"
+  lidar_ckpt = torch.load(lidar_ckpt_path, weights_only=False)
 
   lidar_state_dict = lidar_ckpt['state_dict']
   lidar_state_metadata = lidar_state_dict._metadata 
 
-  camera_ckpt_path = "work_dirs/bevfusion_camera_4xb8_j6gen2_base_vov99_downsample_e15_transfusion_120m_img_roi_gaussian_depth/epoch_14.pth"
-  camera_ckpt = torch.load(camera_ckpt_path)
+  camera_ckpt_path = "work_dirs/swin_transformer/swint_e19_pretrain.pth"
+  camera_ckpt = torch.load(camera_ckpt_path, weights_only=False)
 
   camera_state_dict = camera_ckpt['state_dict']
   camera_state_metadata = camera_state_dict._metadata 
@@ -27,4 +27,4 @@ if __name__ == "__main__":
     img_state_metadata
   )
 
-  torch.save(lidar_ckpt, "work_dirs/bevfusion_merge/bevfusion_streampetr_e14_lidar.pth")
+  torch.save(lidar_ckpt, "work_dirs/bevfusion_merge/bevfusion_lidar_e30_swint_e19_lidar.pth")
