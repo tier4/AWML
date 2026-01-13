@@ -420,7 +420,7 @@ class T4MetricV2(BaseMetric):
         """
         # Metrics by prefix frame, for example, location and vehicle type
         prefix_frame_metric_dict = defaultdict(dict)
-        for evaluator_name, evaluator in self.evaluator.items():
+        for evaluator_name, evaluator in self.evaluators.items():
             prefix_frame_scores = evaluator.perception_evaluator_manager.get_scene_result_with_prefix()
             for prefix_frame_name, metric_dict in prefix_frame_scores.items():
                 evaluator_prefix_frame_name = prefix_frame_name + "/" + evaluator_name
