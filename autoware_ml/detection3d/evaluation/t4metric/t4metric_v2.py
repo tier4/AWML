@@ -37,7 +37,7 @@ _UNKNOWN = "unknown"
 DEFAULT_T4METRIC_FILE_NAME = "t4metric_v2_results_{}.pkl"
 DEFAULT_T4METRIC_METRICS_FOLDER = "metrics"
 DEFAULT_T4METRIC_RESULT_FOLDER = "result"
-DEFAULT_EVALUATOR_PREFIX_NAME = "all"
+DEFAULT_EVALUATOR_PREFIX_NAME = "all/all"
 
 
 @dataclass(frozen=True)
@@ -59,7 +59,6 @@ class PerceptionFrameProcessingData:
     unix_time: float
     ground_truth_objects: FrameGroundTruth
     estimated_objects: List[ObjectType]
-    frame_prefix: str
     perception_evaluator_manager: PerceptionEvaluationManager
     frame_pass_fail_config: PerceptionPassFailConfig
     critical_object_filter_config: Optional[CriticalObjectFilterConfig]
@@ -103,7 +102,6 @@ def _apply_perception_evaluator_preprocessing(
     estimated_objects: List[ObjectType],
     critical_object_filter_config: Optional[CriticalObjectFilterConfig],
     frame_pass_fail_config: PerceptionPassFailConfig,
-    frame_prefix: str,
     vehicle_type: str,
     location: str
 ) -> PerceptionFrameMultiProcessingResult:
@@ -180,16 +178,6 @@ def _apply_perception_evaluator_evaluation(
         vehicle_type=vehicle_type,
         location=location
     )
-
-
-def _convert_prefix_frame(
-    evaluator_name: str, 
-    location: str, 
-    vehicle_type: str
-) -> str: 
-    """"""
-    return f"{location}/{vehicle_type}/{evaluator_name}"
-
 
 @METRICS.register_module()
 class T4MetricV2(BaseMetric):
@@ -303,7 +291,7 @@ class T4MetricV2(BaseMetric):
         # The last evaluator is the main evaluator, which will be used to get the frame id for the ground truth
         # and predictions. Also, it's used to report the final metrics
         selected_evaluator_name = list(self.evaluators.keys())[-1]
-        self.main_evaluator_name = f"{DEFAULT_EVALUATOR_PREFIX_NAME}/{DEFAULT_EVALUATOR_PREFIX_NAME}/{selected_evaluator_name}"
+        self.main_evaluator_name = f"{DEFAULT_EVALUATOR_PREFIX_NAME}/{selected_evaluator_name}"
         self.main_evaluator_frame_id = self.evaluators[selected_evaluator_name].perception_evaluator_configs.frame_id
         self.logger.info(f"{self.default_prefix} running with {self.num_running_gpus} GPUs")
 
@@ -435,12 +423,13 @@ class T4MetricV2(BaseMetric):
         for evaluator_name, evaluator in self.evaluator.items():
             prefix_frame_scores = evaluator.perception_evaluator_manager.get_scene_result_with_prefix()
             for prefix_frame_name, metric_dict in prefix_frame_scores.items():
-                prefix_frame_metric_dict[prefix_frame_name] = self._process_metrics_for_aggregation(metric_dict)
+                evaluator_prefix_frame_name = prefix_frame_name + "/" + evaluator_name
+                prefix_frame_metric_dict[evaluator_prefix_frame_name] = self._process_metrics_for_aggregation(metric_dict)
         
         # Write prefix_frame_name to json
-        for prefix_frame_name, metric_dict in prefix_frame_metric_dict.items():
+        for evaluator_prefix_frame_name, metric_dict in prefix_frame_metric_dict.items():
             try:
-                self._write_aggregated_metrics(metric_dict, f"aggregated_{prefix_frame_name}.json")
+                self._write_aggregated_metrics(metric_dict, f"aggregated_{evaluator_prefix_frame_name}.json")
             except Exception as e:
                 self.logger.error(f"Failed to write aggregated metrics to output files: {e}")
 
@@ -616,11 +605,6 @@ class T4MetricV2(BaseMetric):
             for evaluator_name, evaluator in self.evaluators.items():
                 for sample_id, perception_frame in samples.items():
                     location, vehicle_type = perception_frame.ground_truth_objects.frame_prefix.split("/")
-                    frame_prefix = _convert_prefix_frame(
-                        location=location,
-                        vehicle_type=vehicle_type,
-                        evaluator_name=evaluator_name
-                    )
                     batch.append(
                         (
                             PerceptionFrameProcessingData(
@@ -629,7 +613,6 @@ class T4MetricV2(BaseMetric):
                                 unix_time=time.time(),
                                 ground_truth_objects=perception_frame.ground_truth_objects,
                                 estimated_objects=perception_frame.estimated_objects,
-                                frame_prefix=frame_prefix,
                                 perception_evaluator_manager=evaluator.perception_evaluator_manager,
                                 frame_pass_fail_config=evaluator.frame_pass_fail_config,
                                 critical_object_filter_config=evaluator.critical_object_filter_config,
@@ -676,7 +659,6 @@ class T4MetricV2(BaseMetric):
                 batch.estimated_objects,
                 batch.critical_object_filter_config,
                 batch.frame_pass_fail_config,
-                batch.frame_prefix,
                 batch.perception_evaluator_manager,
                 batch.evaluator_name,
                 batch.vehicle_type,
@@ -694,7 +676,6 @@ class T4MetricV2(BaseMetric):
             estimated_objects,
             critical_object_filter_configs,
             frame_pass_fail_configs,
-            frame_prefixes,
             perception_evaluator_managers,
             evaluator_names,
             vehicle_types,
@@ -714,7 +695,6 @@ class T4MetricV2(BaseMetric):
                 estimated_objects,
                 critical_object_filter_configs,
                 frame_pass_fail_configs,
-                frame_prefixes,
                 vehicle_types,
                 locations, 
             )
@@ -866,11 +846,6 @@ class T4MetricV2(BaseMetric):
                 for sample_id, perception_frame in samples.items():
                     try:
                         location, vehicle_type = perception_frame.frame_prefix.split("/")
-                        frame_prefix = _convert_prefix_frame(
-                            location=location,
-                            vehicle_type=vehicle_type,
-                            evaluator_name=evaluator_name
-                        )
                         frame_result: PerceptionFrameResult = evaluator.perception_evaluator_manager.add_frame_result(
                             unix_time=time.time(),
                             ground_truth_now_frame=perception_frame.ground_truth_objects,
