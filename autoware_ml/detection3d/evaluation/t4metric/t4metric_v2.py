@@ -427,11 +427,10 @@ class T4MetricV2(BaseMetric):
                 prefix_frame_metric_dict[evaluator_prefix_frame_name] = self._process_metrics_for_aggregation(metric_dict)
         
         # Write prefix_frame_name to json
-        for evaluator_prefix_frame_name, metric_dict in prefix_frame_metric_dict.items():
-            try:
-                self._write_aggregated_metrics(metric_dict, f"aggregated_{evaluator_prefix_frame_name}.json")
-            except Exception as e:
-                self.logger.error(f"Failed to write aggregated metrics to output files: {e}")
+        try:
+            self._write_aggregated_metrics(prefix_frame_metric_dict, f"aggregated_prefix_frame_metrics.json")
+        except Exception as e:
+            self.logger.error(f"Failed to write aggregated metrics to output files: {e}")
 
         # Aggregate all without prefix frame
         aggregated_metric_dict = defaultdict(dict)
@@ -1015,7 +1014,7 @@ class T4MetricV2(BaseMetric):
             perception_frame_result = frame_info.perception_frame_result
 
             # Get or create the metrics structure for this frame
-            frame_metrics = scene_metrics[scene_id][sample_id].setdefault(perception_frame_result.frame_prefix, {})
+            frame_metrics = scene_metrics[scene_id][sample_id].setdefault(f"{perception_frame_result.frame_prefix} / {evaluator_name}", {})
 
             # Process all map instances for a single frame and populate the metrics structure.
             # it iterates through map instances (e.g., center_distance, plane_distance)
