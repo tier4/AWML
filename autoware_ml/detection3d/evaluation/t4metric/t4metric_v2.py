@@ -1014,7 +1014,7 @@ class T4MetricV2(BaseMetric):
             perception_frame_result = frame_info.perception_frame_result
 
             # Get or create the metrics structure for this frame
-            frame_metrics = scene_metrics[scene_id][sample_id].setdefault(f"{perception_frame_result.frame_prefix} / {evaluator_name}", {})
+            frame_metrics = scene_metrics[scene_id][sample_id].setdefault(f"{perception_frame_result.frame_prefix}/{evaluator_name}", {})
 
             # Process all map instances for a single frame and populate the metrics structure.
             # it iterates through map instances (e.g., center_distance, plane_distance)
