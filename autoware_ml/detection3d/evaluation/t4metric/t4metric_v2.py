@@ -90,7 +90,7 @@ class PerceptionFrameMultiProcessingResult:
     sample_id: str
     evaluator_name: str
     location: str 
-    vehicle_tye: str
+    vehicle_type: str
 
 
 def _apply_perception_evaluator_preprocessing(
@@ -615,7 +615,7 @@ class T4MetricV2(BaseMetric):
             # Retrieve all evaluators
             for evaluator_name, evaluator in self.evaluators.items():
                 for sample_id, perception_frame in samples.items():
-                    _, location, vehicle_type = perception_frame.ground_truth_objects.frame_prefix.split("/")
+                    location, vehicle_type = perception_frame.ground_truth_objects.frame_prefix.split("/")
                     frame_prefix = _convert_prefix_frame(
                         location=location,
                         vehicle_type=vehicle_type,
