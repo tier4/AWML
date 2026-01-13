@@ -28,7 +28,7 @@ from perception_eval.evaluation.result.perception_frame_config import (
     PerceptionPassFailConfig,
 )
 from perception_eval.evaluation.result.perception_frame_result import PerceptionFrameResult
-from perception_eval.manager import PerceptionEvaluationManager
+from perception_eval.manager import PerceptionEvaluationManager, AggregatedNusceneObjectResults
 from pyquaternion import Quaternion
 from torch.utils import data
 
@@ -37,6 +37,16 @@ _UNKNOWN = "unknown"
 DEFAULT_T4METRIC_FILE_NAME = "t4metric_v2_results_{}.pkl"
 DEFAULT_T4METRIC_METRICS_FOLDER = "metrics"
 DEFAULT_T4METRIC_RESULT_FOLDER = "result"
+
+
+@dataclass(frozen=True)
+class FrameResult:
+
+    perception_frame_result: PerceptionFrameResult
+    sample_id; str 
+    scene_id: int
+    location: str 
+    vehicle_type: str
 
 
 @dataclass(frozen=True)
@@ -53,6 +63,8 @@ class PerceptionFrameProcessingData:
     frame_pass_fail_config: PerceptionPassFailConfig
     critical_object_filter_config: Optional[CriticalObjectFilterConfig]
     evaluator_name: str
+    location: str 
+    vehicle_type: str
 
 
 @dataclass(frozen=True)
@@ -76,6 +88,8 @@ class PerceptionFrameMultiProcessingResult:
     scene_id: str
     sample_id: str
     evaluator_name: str
+    location: str 
+    vehicle_tye: str
 
 
 def _apply_perception_evaluator_preprocessing(
@@ -89,6 +103,8 @@ def _apply_perception_evaluator_preprocessing(
     critical_object_filter_config: Optional[CriticalObjectFilterConfig],
     frame_pass_fail_config: PerceptionPassFailConfig,
     frame_prefix: str,
+    vehicle_type: str,
+    location: str
 ) -> PerceptionFrameMultiProcessingResult:
     """
     Wrapper to apply an evaluator to a list of objects for a frame in multiprocessing.
@@ -122,6 +138,8 @@ def _apply_perception_evaluator_preprocessing(
         scene_id=scene_id,
         sample_id=sample_id,
         evaluator_name=evaluator_name,
+        vehicle_type=vehicle_type,
+        location=location
     )
 
 
@@ -130,6 +148,8 @@ def _apply_perception_evaluator_evaluation(
     evaluator_name: str,
     scene_id: str,
     sample_id: str,
+    vehicle_type: str, 
+    location: str,
     current_perception_frame_result: PerceptionFrameResult,
     previous_perception_frame_result: Optional[PerceptionFrameResult],
 ) -> PerceptionFrameMultiProcessingResult:
@@ -157,6 +177,8 @@ def _apply_perception_evaluator_evaluation(
         scene_id=scene_id,
         sample_id=sample_id,
         evaluator_name=evaluator_name,
+        vehicle_type=vehicle_type,
+        location=location
     )
 
 
@@ -243,7 +265,7 @@ class T4MetricV2(BaseMetric):
         # scene_id to index map in self.results
         self.scene_id_to_index_map: Dict[str, int] = {}
         # {evaluator_name: []}
-        self.frame_results_with_info = defaultdict(list)
+        self.frame_results_with_info: Dict[str, List[FrameResult]] = defaultdict(list)
 
         self.message_hub = MessageHub.get_current_instance()
         self.logger = MMLogger.get_current_instance()
@@ -398,6 +420,9 @@ class T4MetricV2(BaseMetric):
             evaluator (PerceptionEvaluationManager): The evaluator instance.
             results (List[dict]): The results to process.
         """
+        # Aggregate location and vehicle types
+        aggregated_nuscee
+        
         aggregated_metric_dict = defaultdict(dict)
         for evaluator_name, evaluator in self.evaluators.items():
             # Write scene-level metrics for each evaluator to an output file
@@ -567,6 +592,7 @@ class T4MetricV2(BaseMetric):
             # Retrieve all evaluators
             for evaluator_name, evaluator in self.evaluators.items():
                 for sample_id, perception_frame in samples.items():
+                    _, location, vehicle_type = perception_frame.ground_truth_objects.frame_name.split("/")
                     batch.append(
                         (
                             PerceptionFrameProcessingData(
@@ -580,6 +606,8 @@ class T4MetricV2(BaseMetric):
                                 frame_pass_fail_config=evaluator.frame_pass_fail_config,
                                 critical_object_filter_config=evaluator.critical_object_filter_config,
                                 evaluator_name=evaluator_name,
+                                location=location,
+                                vehicle_type=vehicle_type
                             )
                         )
                     )
@@ -623,6 +651,8 @@ class T4MetricV2(BaseMetric):
                 batch.frame_prefix,
                 batch.perception_evaluator_manager,
                 batch.evaluator_name,
+                batch.vehicle_type
+                batch.location,
             )
             for batch in batch_frames
         ]
@@ -639,6 +669,8 @@ class T4MetricV2(BaseMetric):
             frame_prefixes,
             perception_evaluator_managers,
             evaluator_names,
+            vehicle_types
+            locations,
         ) = zip(*future_args)
 
         # Preprocessing all frames in the batch
@@ -655,6 +687,8 @@ class T4MetricV2(BaseMetric):
                 critical_object_filter_configs,
                 frame_pass_fail_configs,
                 frame_prefixes,
+                vehicle_types
+                locations, 
             )
         )
         return perception_frame_preprocessing_results
@@ -693,6 +727,8 @@ class T4MetricV2(BaseMetric):
                     perception_frame_preprocessing_result.evaluator_name,
                     perception_frame_preprocessing_result.scene_id,
                     perception_frame_preprocessing_result.sample_id,
+                    perception_frame_preprocessing_result.vehicle_type,
+                    perception_frame_preprocessing_result.location,
                     perception_frame_preprocessing_result.perception_frame_result,
                     previous_perception_frame_result,
                 )
@@ -707,6 +743,8 @@ class T4MetricV2(BaseMetric):
             evaluator_names,
             scene_ids,
             sample_ids,
+            vehicle_types,
+            locations,
             current_perception_frame_results,
             previous_perception_frame_results,
         ) = zip(*future_perception_frame_evaluation_args)
@@ -718,6 +756,8 @@ class T4MetricV2(BaseMetric):
                 evaluator_names,
                 scene_ids,
                 sample_ids,
+                vehicle_types,
+                locations,
                 current_perception_frame_results,
                 previous_perception_frame_results,
             )
@@ -738,11 +778,13 @@ class T4MetricV2(BaseMetric):
         for perception_evaluation_result in perception_evaluation_results:
             # Append results
             self.frame_results_with_info[perception_evaluation_result.evaluator_name].append(
-                {
-                    "scene_id": perception_evaluation_result.scene_id,
-                    "sample_id": perception_evaluation_result.sample_id,
-                    "frame_result": perception_evaluation_result.perception_frame_result,
-                }
+                FrameResult(
+                    scene_id=perception_evaluation_result.scene_id,
+                    sample_id=perception_evaluation_result.sample_id,
+                    location=perception_evaluation_result.location,
+                    vehicle_type=perception_evaluation_result.vehicle_type
+                    perception_frame_result=perception_evaluation_result.perception_frame_result
+                )
             )
 
             # Since multiprocessing creates a new evaluator instance for each worker,
@@ -803,13 +845,16 @@ class T4MetricV2(BaseMetric):
                             frame_pass_fail_config=evaluator.frame_pass_fail_config,
                             frame_prefix=evaluator_name,
                         )
+                        _, location, vehicle_type = perception_frame.ground_truth_objects.frame_name.split("/")
 
                         self.frame_results_with_info[evaluator_name].append(
-                            {
-                                "scene_id": scene_id,
-                                "sample_id": sample_id,
-                                "frame_result": frame_result,
-                            }
+                            FrameResult(
+                                scene_id=scene_id,
+                                sample_id=sample_id,
+                                location=location,
+                                vehicle_type=vehicle_type
+                                perception_frame_result=frame_result
+                            )
                         )
                     except Exception as e:
                         self.logger.warning(f"Failed to process frame {scene_id}/{sample_id}: {e}")
@@ -958,9 +1003,9 @@ class T4MetricV2(BaseMetric):
             scene_metrics (dict): The scene metrics structure to populate.
         """
         for frame_info in self.frame_results_with_info[evaluator_name]:
-            scene_id = frame_info["scene_id"]
-            sample_id = frame_info["sample_id"]
-            frame_result = frame_info["frame_result"]
+            scene_id = frame_info.scene_id
+            sample_id = frame_info.sample_id
+            perception_frame_result = frame_info.perception_frame_result
 
             # Get or create the metrics structure for this frame
             frame_metrics = scene_metrics[scene_id][sample_id].setdefault(evaluator_name, {})
@@ -969,7 +1014,7 @@ class T4MetricV2(BaseMetric):
             # it iterates through map instances (e.g., center_distance, plane_distance)
             # and processes both AP (Average Precision) and APH (Average Precision with Heading)
             # values for each label and threshold.
-            for map_instance in frame_result.metrics_score.mean_ap_values:
+            for map_instance in perception_frame_result.metrics_score.mean_ap_values:
                 matching_mode = map_instance.matching_mode.value.lower().replace(" ", "_")
                 matching_metrics = frame_metrics.setdefault(matching_mode, {})
 
@@ -1096,6 +1141,8 @@ class T4MetricV2(BaseMetric):
         # Extract evaluation annotation info for the current sample
         eval_info: dict = data_sample.get("eval_ann_info", {})
         sample_id: str = data_sample.get("sample_idx", _UNKNOWN)
+        location: str = data_sample.get("city", _UNKNOWN)
+        vehicle_type: str = data_sample.get("vehicle_type", _UNKNOWN)
 
         # gt_bboxes_3d: LiDARInstance3DBoxes with tensor of shape (N, 9)
         # Format per box: [x, y, z, l, w, h, yaw, vx, vy]
@@ -1124,9 +1171,10 @@ class T4MetricV2(BaseMetric):
             if not (np.isnan(label) or np.isnan(num_pts) or np.any(np.isnan(bbox)))
         ]
 
+        frame_name = sample_id + "/" + location + "/" + vehicle_type
         return FrameGroundTruth(
             unix_time=time,
-            frame_name=sample_id,
+            frame_name=frame_name,
             objects=dynamic_objects,
             transforms=None,
             raw_data=None,
