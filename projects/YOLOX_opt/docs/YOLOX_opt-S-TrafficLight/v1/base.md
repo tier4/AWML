@@ -27,21 +27,16 @@ The performance on the new dataset (new location) improved significatly from (0.
 - model
   - Training dataset: DB TLR v1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0
   - Eval dataset: 
-  - [Config file path]()
-  - Deployed onnx model [[WebAuto (for internal)]]()
-  - Deployed onnx and labels [model-zoo]
-    - [tlr_car_ped_yolox_s_batch_6.onnx]()
-    - [tlr_car_ped_yolox_s_batch_4.onnx]()
-    - [tlr_car_ped_yolox_s_batch_1.onnx]()
-    - [tlr_labels.txt]()
+  - [Config file path](../../../configs/t4dataset/YOLOX_opt-S-TrafficLight/yolox_s_tlr_416x416_pedcar_t4dataset.py)
+  - Deployed onnx model [[WebAuto (for internal)]](https://evaluation.tier4.jp/evaluation/mlpackages/ac288878-9790-44e3-9fc8-ca246c5cd235/releases/38aece2e-f472-4313-ba66-aaabda71a740?project_id=zWhWRzei)
+  - Deployed onnx and labels [model-zoo](https://download.autoware-ml-model-zoo.tier4.jp/autoware-ml/models/yolox-opt/yolox-opt-s-trafficlight/t4base/v1.2/deployment.zip)
   - Training and evaluation results [model-zoo]
-    - [config.py]()
-    - [checkpoint_last.pth]()
-    - [logs.zip]()
-  - train time: 
-
+    - [config.py](https://download.autoware-ml-model-zoo.tier4.jp/autoware-ml/models/yolox-opt/yolox-opt-s-trafficlight/t4base/v1.2/yolox_s_tlr_416x416_pedcar_t4dataset.py)
+    - [checkpoint_last.pth](https://download.autoware-ml-model-zoo.tier4.jp/autoware-ml/models/yolox-opt/yolox-opt-s-trafficlight/t4base/v1.2/best_mAP_epoch_300.pth)
+    - [logs.zip](https://download.autoware-ml-model-zoo.tier4.jp/autoware-ml/models/yolox-opt/yolox-opt-s-trafficlight/t4base/v1.2/logs.zip)
+  - train time: (A100 * 1) * 1 days
 - Results evaluated on 
-  - [tlr_infos_test_crops.json]()
+  - [tlr_infos_test_crops.json](https://download.autoware-ml-model-zoo.tier4.jp/autoware-ml/models/yolox-opt/yolox-opt-s-trafficlight/t4base/v1.2/tlr_infos_test_crops.json)
 
 ```python
 ***************bbox range = (0, inf)***************

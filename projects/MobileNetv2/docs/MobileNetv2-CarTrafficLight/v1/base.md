@@ -35,18 +35,13 @@
 - model
   - Training dataset: DB TLR v1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0
   - Eval dataset: 
-  - [Config file path]()
-  - Deployed onnx model [[WebAuto (for internal)]]()
-  - Deployed onnx model [model-zoo]
-    - [traffic_light_classifier_mobilenetv2_batch_1.onnx]()
-    - [traffic_light_classifier_mobilenetv2_batch_4.onnx]()
-    - [traffic_light_classifier_mobilenetv2_batch_6.onnx]()
-
-  - Deployed [label file]()
+  - [Config file path](../../../configs/t4dataset/MobileNetv2-CarTrafficLight/mobilenet-v2_tlr_car_t4dataset.py)
+  - Deployed model [[WebAuto (for internal)]](https://evaluation.tier4.jp/evaluation/mlpackages/e104265c-2945-4b8a-ae68-13accc1c0af2/releases/f6b66ebc-cc16-43a6-910b-b745447cfc7f?project_id=zWhWRzei)
+  - Deployed model [model-zoo](https://download.autoware-ml-model-zoo.tier4.jp/autoware-ml/models/mobilenet-v2/car_traffic_light/t4base/v1.3/deployment.zip)
   - Training results [model-zoo]
-    - [config.py]()
-    - [checkpoint_best.pth]()
-    - [logs.zip]()
+    - [config.py](https://download.autoware-ml-model-zoo.tier4.jp/autoware-ml/models/mobilenet-v2/car_traffic_light/t4base/v1.3/mobilenet-v2_tlr_car_t4dataset.py)
+    - [checkpoint_best.pth](https://download.autoware-ml-model-zoo.tier4.jp/autoware-ml/models/mobilenet-v2/car_traffic_light/t4base/v1.3/best_multi-label_f1-score_top1_epoch_260.pth)
+    - [logs.zip](https://download.autoware-ml-model-zoo.tier4.jp/autoware-ml/models/mobilenet-v2/car_traffic_light/t4base/v1.3/logs.zip/logs.zip)
 
   - train time: 
 
