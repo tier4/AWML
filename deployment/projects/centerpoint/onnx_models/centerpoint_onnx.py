@@ -77,18 +77,15 @@ class CenterPointONNX(CenterPoint):
 
         sample = data_loader.load_sample(sample_idx)
 
-        if "lidar_points" not in sample:
-            raise KeyError("Sample does not contain 'lidar_points'")
+        if "points" not in sample:
+            raise KeyError(f"Sample must contain 'points' (processed tensor). Got keys: {list(sample.keys())}")
 
-        lidar_path = sample["lidar_points"].get("lidar_path")
-        if not lidar_path:
-            raise ValueError("Sample must provide 'lidar_path' inside 'lidar_points'")
+        points = sample["points"]
+        if not isinstance(points, torch.Tensor):
+            raise TypeError(f"Expected points to be torch.Tensor, got {type(points)}")
 
-        if not os.path.exists(lidar_path):
-            raise FileNotFoundError(f"Lidar path not found: {lidar_path}")
-
-        points = self._load_point_cloud(lidar_path)
-        points = torch.from_numpy(points).to(self._torch_device)
+        # Ensure points are on the correct device
+        points = points.to(self._torch_device)
         points = [points]
         return {"points": points, "data_samples": None}
 

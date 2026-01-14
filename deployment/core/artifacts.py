@@ -81,7 +81,6 @@ def resolve_artifact_path(
                        Can be None for backwards compatibility.
         component: Component name (e.g., 'model', 'voxel_encoder', 'backbone_head')
         file_key: Key to look up ('onnx_file' or 'engine_file')
-        default_filename: Fallback filename if not specified in config
 
     Returns:
         Resolved path to the artifact file
@@ -171,42 +170,6 @@ def _get_filename_from_config(
     if isinstance(filename, str) and filename:
         return filename
     return None
-
-
-def _search_directory_for_artifact(
-    directory: str,
-    file_key: str,
-    default_filename: str,
-) -> Optional[str]:
-    """Search directory for matching artifact file."""
-    ext = FILE_EXTENSIONS.get(file_key, "")
-    if not ext:
-        return None
-
-    try:
-        matching_files = [f for f in os.listdir(directory) if f.endswith(ext)]
-    except OSError:
-        return None
-
-    if not matching_files:
-        return None
-
-    # Single file: use it
-    if len(matching_files) == 1:
-        resolved = osp.join(directory, matching_files[0])
-        logger.info(f"Resolved artifact path: {directory} -> {resolved}")
-        return resolved
-
-    # Multiple files: prefer default_filename
-    if default_filename in matching_files:
-        resolved = osp.join(directory, default_filename)
-        logger.info(f"Resolved artifact path using default: {resolved}")
-        return resolved
-
-    # Otherwise use the first one (with warning)
-    resolved = osp.join(directory, matching_files[0])
-    logger.warning(f"Multiple {ext} files found in {directory}, using first one: {matching_files[0]}")
-    return resolved
 
 
 def get_component_files(

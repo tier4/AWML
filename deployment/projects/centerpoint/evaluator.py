@@ -73,11 +73,20 @@ class CenterPointEvaluator(BaseEvaluator):
         io_cfg = backbone_head_cfg.get("io", {})
         outputs = io_cfg.get("outputs", [])
 
-        if outputs:
-            return [out.get("name") for out in outputs if out.get("name")]
+        if not outputs:
+            raise ValueError(
+                "Output names must be provided via components_cfg.backbone_head.io.outputs. "
+                "No fallback values are allowed in deployment framework."
+            )
 
-        # Fallback to default output names
-        return ["heatmap", "reg", "height", "dim", "rot", "vel"]
+        output_names = [out.get("name") for out in outputs if out.get("name")]
+        if not output_names:
+            raise ValueError(
+                "Output names must be provided via components_cfg.backbone_head.io.outputs. "
+                "Each output must have a 'name' field."
+            )
+
+        return output_names
 
     def _create_pipeline(self, model_spec: ModelSpec, device: str) -> Any:
         return PipelineFactory.create(
