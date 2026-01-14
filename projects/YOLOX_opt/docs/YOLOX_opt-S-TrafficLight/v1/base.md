@@ -2,15 +2,17 @@
 ## Summary
 
 - Performance summary
-  - Evaluation dataset: Eval dataset of tlr_v0_1 + tlr_v1_2
+  - Evaluation dataset: various combinations of TLR v1.0, 4.0, 5.0, 6.0, 7.0
   - mAP, AP for IOUs (50, 60, 70, 80, 90)
 
 |          | Eval DB                      | mAP    | AP50   | AP60   | AP70   | AP80   | AP90   |
 | -------- | ---------------------------- | ------ | ------ | ------ | ------ | ------ | ------ |
-| base/1.2 | TLR v1.0, 4.0, 5.0, 6.0, 7.0 |        |        |        |        |        |        |
-| base/1.1 | TLR v1.0, 4.0, 5.0           | 0.3562 | 0.4790 | 0.4730 | 0.4480 | 0.3250 | 0.0560 |
-| base/1.1 | TLR v6.0                     | 0.6492 | 0.6990 | 0.6990 | 0.6830 | 0.4830 | 0.0330 |
-| base/1.0 | TLR v1.0, 4.0                | 0.3588 | 0.4810 | 0.4760 | 0.4520 | 0.3250 | 0.0600 |
+| base/1.2 | TLR v1.0, 4.0, 5.0, 6.0, 7.0 | 0.3432 | 0.4620 | 0.4520 | 0.4240 | 0.3110 | 0.0670 |
+| base/1.1 | TLR v1.0, 4.0, 5.0, 6.0, 7.0 | 0.3446 | 0.4640 | 0.4580 | 0.4260 | 0.3140 | 0.0610 |
+| base/1.2 | TLR v1.0, 4.0, 5.0, 6.0      | 0.3654 | 0.4860 | 0.4800 | 0.4560 | 0.3370 | 0.0680 |
+| base/1.1 | TLR v1.0, 4.0, 5.0, 6.0      | 0.3683 | 0.4910 | 0.4870 | 0.4620 | 0.3330 | 0.0670 |
+| base/1.2 | TLR v7.0                     | 0.5636 | 0.6450 | 0.6450 | 0.6170 | 0.5710 | 0.3400 |
+| base/1.1 | TLR v7.0                     | 0.4460 | 0.5260 | 0.5100 | 0.4980 | 0.4520 | 0.2440 |
 
 ## Release
 
@@ -20,6 +22,7 @@
 
 <details>
 <summary> The link of data and evaluation result </summary>
+The performance on the new dataset (new location) improved significatly from (0.44->0.56) with slight insignificant performance drop in older datasets.
 
 - model
   - Training dataset: DB TLR v1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0
