@@ -912,13 +912,18 @@ class T4MetricV2(BaseMetric):
         """
         metric_dict = {}
 
+        total_num_preds = 0
         for map_instance in metrics_score.mean_ap_values:
+            num_preds = 0
             matching_mode = map_instance.matching_mode.value.lower().replace(" ", "_")
 
             # Process individual AP values
             for label, aps in map_instance.label_to_aps.items():
                 label_name = label.value
 
+                label_num_preds = aps[0].objects_results_num if len(aps) else 0
+                label_num_gts = map_instance.num_ground_truth_dict.get(label, 0) if len(aps) else 0
+                num_preds += label_num_preds
                 for ap in aps:
                     threshold = ap.matching_threshold
                     ap_value = ap.ap
@@ -927,11 +932,22 @@ class T4MetricV2(BaseMetric):
                     key = f"T4MetricV2/{label_name}_AP_{matching_mode}_{threshold}"
                     metric_dict[key] = ap_value
 
+                # Label metadata key 
+                metric_dict[f"metadata_label/{label_name}_{matching_mode}_num_predictions"] = label_num_preds
+                metric_dict[f"metadata_label/{label_name}_{matching_mode}_num_ground_truths"] = label_num_gts
+
             # Add mAP and mAPH values
             map_key = f"T4MetricV2/mAP_{matching_mode}"
             maph_key = f"T4MetricV2/mAPH_{matching_mode}"
             metric_dict[map_key] = map_instance.map
             metric_dict[maph_key] = map_instance.maph
+
+            total_num_preds += num_preds
+
+        # Add metadata information 
+        metric_dict["metadata/num_testing_frames"] = metric_score.num_frame
+        metric_dict["metadata/num_ground_truths"] = metric_score.num_ground_truths
+        metric_dict["metadata/num_predictions"] = total_num_preds
 
         return metric_dict
 
@@ -946,13 +962,24 @@ class T4MetricV2(BaseMetric):
             # Initialize the structure
             aggregated_metrics = {}
             for evaluator_name in final_metric_dict.keys():
-                aggregated_metrics[evaluator_name] = {"metrics": {}, "aggregated_metric_label": {}}
+                aggregated_metrics[evaluator_name] = {"metrics": {}, "aggregated_metric_label": {}, "metadata": {}, "metadata_label": {}}
 
             # Gather metrics
             for evaluator_name, metric_dict in final_metric_dict.items():
                 # Organize metrics by label
                 for key, value in metric_dict.items():
-                    if key.startswith("T4MetricV2/mAP_") or key.startswith("T4MetricV2/mAPH_"):
+                    if key.startswith("metadata/"):
+                      aggregated_metrics[evaluator_name]["metadata"][key] = value
+                    elif key.startswith("metadata_label/"):
+                      # These are per-label metrics, extract label name and organize
+                      # Example: T4MetricV2/car_AP_center_distance_0.5
+                      parts = key.split("/")[1].split("_")
+                      label_name = parts[0]  # car, truck, etc.
+                      if label_name not in aggregated_metrics[evaluator_name]["metadata_label"]:
+                        aggregated_metrics[evaluator_name]["metadata_label"][label_name] = {}
+
+                      aggregated_metrics[evaluator_name]["metadata_label"][key] = value
+                    elif key.startswith("T4MetricV2/mAP_") or key.startswith("T4MetricV2/mAPH_"):
                         # These are overall metrics, put them in the metrics section
                         aggregated_metrics[evaluator_name]["metrics"][key] = value
                     else:
