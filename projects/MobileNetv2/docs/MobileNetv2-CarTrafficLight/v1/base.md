@@ -34,7 +34,7 @@
 
 - model
   - Training dataset: DB TLR v1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0
-  - Eval dataset: 
+  - Eval dataset:
   - [Config file path](../../../configs/t4dataset/MobileNetv2-CarTrafficLight/mobilenet-v2_tlr_car_t4dataset.py)
   - Deployed model [[WebAuto (for internal)]](https://evaluation.tier4.jp/evaluation/mlpackages/e104265c-2945-4b8a-ae68-13accc1c0af2/releases/f6b66ebc-cc16-43a6-910b-b745447cfc7f?project_id=zWhWRzei)
   - Deployed model [model-zoo](https://download.autoware-ml-model-zoo.tier4.jp/autoware-ml/models/mobilenet-v2/car_traffic_light/t4base/v1.3/deployment.zip)
@@ -43,9 +43,9 @@
     - [checkpoint_best.pth](https://download.autoware-ml-model-zoo.tier4.jp/autoware-ml/models/mobilenet-v2/car_traffic_light/t4base/v1.3/best_multi-label_f1-score_top1_epoch_260.pth)
     - [logs.zip](https://download.autoware-ml-model-zoo.tier4.jp/autoware-ml/models/mobilenet-v2/car_traffic_light/t4base/v1.3/logs.zip)
 
-  - train time: 
+  - train time:
 
-- Results evaluated with 
+- Results evaluated with
 
 ```python
 Class-wise Metrics:
@@ -64,7 +64,7 @@ Class-wise Metrics:
 | red,right,straight   | 0.00       | 0.00       | 0.00       | 0          |
 | red,up_right         | 0.00       | 0.00       | 0.00       | 0          |
 ----------------------------------------------------------------------------
-Overall results:  precision_top1: 69.51     , recall_top1: 67.50     , f1-score_top1: 68.37     , support_top1: 11355.00 
+Overall results:  precision_top1: 69.51     , recall_top1: 67.50     , f1-score_top1: 68.37     , support_top1: 11355.00
 ```
 
 </details>

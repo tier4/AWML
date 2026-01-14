@@ -5,8 +5,8 @@ dataset_version_list = [
     "db_tlr_v3",
     "db_tlr_v4",
     "db_tlr_v5",
-    "db_tlr_v6",            # does not have any pedestrian tlr data
-    "db_tlr_v7",            # does not have any pedestrian tlr data
+    "db_tlr_v6",  # does not have any pedestrian tlr data
+    "db_tlr_v7",  # does not have any pedestrian tlr data
 ]
 
 classes = (

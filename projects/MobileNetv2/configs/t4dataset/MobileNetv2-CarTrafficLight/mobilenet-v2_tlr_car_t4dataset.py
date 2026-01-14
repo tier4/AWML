@@ -103,7 +103,9 @@ param_scheduler = dict(type="StepLR", by_epoch=True, gamma=0.98, step_size=1)
 
 # Training Configuration
 
-train_cfg = dict(by_epoch=True, max_epochs=NUM_EPOCHS, val_interval=VAL_INTERVAL, dynamic_intervals=[(NUM_EPOCHS - 50, 5)])
+train_cfg = dict(
+    by_epoch=True, max_epochs=NUM_EPOCHS, val_interval=VAL_INTERVAL, dynamic_intervals=[(NUM_EPOCHS - 50, 5)]
+)
 train_dataloader = dict(
     batch_size=BATCH_SIZE,
     num_workers=NUM_WORKERS,

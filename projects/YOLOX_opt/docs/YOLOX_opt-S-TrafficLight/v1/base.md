@@ -26,7 +26,7 @@ The performance on the new dataset (new location) improved significatly from (0.
 
 - model
   - Training dataset: DB TLR v1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0
-  - Eval dataset: 
+  - Eval dataset:
   - [Config file path](../../../configs/t4dataset/YOLOX_opt-S-TrafficLight/yolox_s_tlr_416x416_pedcar_t4dataset.py)
   - Deployed onnx model [[WebAuto (for internal)]](https://evaluation.tier4.jp/evaluation/mlpackages/ac288878-9790-44e3-9fc8-ca246c5cd235/releases/38aece2e-f472-4313-ba66-aaabda71a740?project_id=zWhWRzei)
   - Deployed onnx and labels [model-zoo](https://download.autoware-ml-model-zoo.tier4.jp/autoware-ml/models/yolox-opt/yolox-opt-s-trafficlight/t4base/v1.2/deployment.zip)
@@ -35,7 +35,7 @@ The performance on the new dataset (new location) improved significatly from (0.
     - [checkpoint_last.pth](https://download.autoware-ml-model-zoo.tier4.jp/autoware-ml/models/yolox-opt/yolox-opt-s-trafficlight/t4base/v1.2/best_mAP_epoch_300.pth)
     - [logs.zip](https://download.autoware-ml-model-zoo.tier4.jp/autoware-ml/models/yolox-opt/yolox-opt-s-trafficlight/t4base/v1.2/logs.zip)
   - train time: (A100 * 1) * 1 days
-- Results evaluated on 
+- Results evaluated on
   - [tlr_infos_test_crops.json](https://download.autoware-ml-model-zoo.tier4.jp/autoware-ml/models/yolox-opt/yolox-opt-s-trafficlight/t4base/v1.2/tlr_infos_test_crops.json)
 
 ```python
@@ -224,7 +224,7 @@ The performance on the new dataset (new location) improved significatly from (0.
 +--------------------------+-------+-------+--------+-------+
 | mAP                      |       |       |        | 0.067 |
 +--------------------------+-------+-------+--------+-------+
-AP50: 0.4620  AP60: 0.4520  AP70: 0.4240  AP80: 0.3110  AP90: 0.0670  mAP: 0.3432 
+AP50: 0.4620  AP60: 0.4520  AP70: 0.4240  AP80: 0.3110  AP90: 0.0670  mAP: 0.3432
 
 ```
 
