@@ -423,22 +423,6 @@ class T4MetricV2(BaseMetric):
             evaluator (PerceptionEvaluationManager): The evaluator instance.
             results (List[dict]): The results to process.
         """
-        # Metrics by prefix frame, for example, location and vehicle type
-        prefix_frame_metric_dict = defaultdict(dict)
-        for evaluator_name, evaluator in self.evaluators.items():
-            prefix_frame_scores = evaluator.perception_evaluator_manager.get_scene_result_with_prefix()
-            for prefix_frame_name, metric_dict in prefix_frame_scores.items():
-                evaluator_prefix_frame_name = prefix_frame_name + "/" + evaluator_name
-                prefix_frame_metric_dict[evaluator_prefix_frame_name] = self._process_metrics_for_aggregation(
-                    metric_dict
-                )
-
-        # Write prefix_frame_name to json
-        try:
-            self._write_aggregated_metrics(prefix_frame_metric_dict, f"aggregated_prefix_frame_metrics.json")
-        except Exception as e:
-            self.logger.error(f"Failed to write aggregated metrics to output files: {e}")
-
         # Aggregate all without prefix frame
         aggregated_metric_dict = defaultdict(dict)
         for evaluator_name, evaluator in self.evaluators.items():
@@ -449,9 +433,17 @@ class T4MetricV2(BaseMetric):
                 except Exception as e:
                     self.logger.error(f"Failed to write scene metrics to output files: {e}")
 
-            # Aggregate metrics for each evaluator
+            # Aggregate metrics by frame prefix, for example, location and vehicle type
+            frame_prefix_scores = evaluator.perception_evaluator_manager.get_scene_result_with_prefix()
+            for frame_prefix_name, metric_dict in frame_prefix_scores.items():
+                evaluator_frame_prefix_name = frame_prefix_name + "/" + evaluator_name
+                aggregated_metric_dict[evaluator_frame_prefix_name] = self._process_metrics_for_aggregation(
+                    metric_dict, evaluator_name
+                )
+
+            # Aggregate metrics without prefix for each evaluator
             final_metric_score = evaluator.perception_evaluator_manager.get_scene_result()
-            final_metric_dict = self._process_metrics_for_aggregation(final_metric_score)
+            final_metric_dict = self._process_metrics_for_aggregation(final_metric_score, evaluator_name)
             evaluator_full_name = f"{DEFAULT_EVALUATOR_PREFIX_NAME}/{evaluator_name}"
             aggregated_metric_dict[evaluator_full_name] = final_metric_dict
             self.logger.info(f"====Evaluator: {evaluator_full_name}====")
@@ -900,7 +892,7 @@ class T4MetricV2(BaseMetric):
         self.scene_id_to_index_map.clear()
         self.frame_results_with_info.clear()
 
-    def _process_metrics_for_aggregation(self, metrics_score: MetricsScore) -> Dict[str, float]:
+    def _process_metrics_for_aggregation(self, metrics_score: MetricsScore, evaluator_name: str) -> Dict[str, float]:
         """
         Process metrics from MetricsScore and return a dictionary of all metrics.
 
@@ -944,10 +936,15 @@ class T4MetricV2(BaseMetric):
 
             total_num_preds += num_preds
 
+        # Selected evaluator 
+        selected_evaluator = self.evaluators[evaluator_name]
+
         # Add metadata information
         metric_dict["metadata/num_testing_frames"] = metrics_score.num_frame
         metric_dict["metadata/num_ground_truths"] = metrics_score.num_ground_truth
         metric_dict["metadata/num_predictions"] = total_num_preds
+        metric_dict["metadata/min_range"] = selected_evaluator.min_range
+        metric_dict["metadata/max_range"] = selected_evaluator.max_range
 
         return metric_dict
 
@@ -985,7 +982,7 @@ class T4MetricV2(BaseMetric):
                         if label_name not in aggregated_metrics[evaluator_name]["metadata_label"]:
                             aggregated_metrics[evaluator_name]["metadata_label"][label_name] = {}
 
-                        aggregated_metrics[evaluator_name]["metadata_label"][key] = value
+                        aggregated_metrics[evaluator_name]["metadata_label"][label][key] = value
                     elif key.startswith("T4MetricV2/mAP_") or key.startswith("T4MetricV2/mAPH_"):
                         # These are overall metrics, put them in the metrics section
                         aggregated_metrics[evaluator_name]["metrics"][key] = value
