@@ -946,7 +946,7 @@ class T4MetricV2(BaseMetric):
 
         # Add metadata information
         metric_dict["metadata/num_testing_frames"] = metrics_score.num_frame
-        metric_dict["metadata/num_ground_truths"] = metrics_score.num_ground_truths
+        metric_dict["metadata/num_ground_truths"] = metrics_score.num_ground_truth
         metric_dict["metadata/num_predictions"] = total_num_preds
 
         return metric_dict
