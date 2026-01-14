@@ -1,4 +1,8 @@
-_base_ = ["./_base_/default_runtime.py"]
+_base_ = [
+    "../../../autoware_ml/configs/detection3d/default_runtime.py",
+    "./_base_/default_runtime.py",
+    "../../../autoware_ml/configs/segmentation3d/dataset/t4dataset/j6gen2_base.py",
+]
 
 # misc custom setting
 batch_size = 8  # bs: total bs in all gpus
@@ -8,9 +12,48 @@ empty_cache = False
 enable_amp = True  # NOTE: set to False if NaN loss occurs
 
 grid_size = 0.1  # original is 0.05
-num_classes = 6
 
 point_cloud_range = [-76.8, -76.8, -4, 76.8, 76.8, 8]
+
+# dataset settings
+dataset_type = "T4Dataset"
+data_root = "data/t4dataset"
+ignore_index = -1
+info_paths_train = ["info/t4dataset_j6gen2_lidarseg_infos_train.pkl"]
+info_paths_val = ["info/t4dataset_j6gen2_lidarseg_infos_val.pkl"]
+info_paths_test = ["info/t4dataset_j6gen2_lidarseg_infos_test.pkl"]
+class_mapping = {
+    "drivable_surface": 0,
+    "other_flat_surface": 1,
+    "sidewalk": 2,
+    "manmade": 3,
+    "vegetation": 4,
+    "car": 5,
+    "bus": 6,
+    "emergency_vehicle": 7,
+    "train": 8,
+    "truck": 9,
+    "tractor_unit": 10,
+    "semi_trailer": 11,
+    "construction_vehicle": 12,
+    "forklift": 13,
+    "kart": 14,
+    "motorcycle": 15,
+    "bicycle": 16,
+    "pedestrian": 17,
+    "personal_mobility": 18,
+    "animal": 19,
+    "pushable_pullable": 20,
+    "traffic_cone": 21,
+    "stroller": 22,
+    "debris": 23,
+    "other_stuff": 24,
+    "noise": 25,
+    "ghost_point": 25,
+    "out_of_sync": ignore_index,
+    "unpainted": ignore_index,
+}
+num_classes = 26
 
 # model settings
 model = dict(
@@ -51,8 +94,8 @@ model = dict(
         pdnorm_conditions=("nuScenes", "SemanticKITTI", "Waymo"),
     ),
     criteria=[
-        dict(type="CrossEntropyLoss", loss_weight=1.0, ignore_index=-1),
-        dict(type="LovaszLoss", mode="multiclass", loss_weight=1.0, ignore_index=-1),
+        dict(type="CrossEntropyLoss", loss_weight=1.0, ignore_index=ignore_index),
+        dict(type="LovaszLoss", mode="multiclass", loss_weight=1.0, ignore_index=ignore_index),
     ],
 )
 
@@ -70,27 +113,14 @@ scheduler = dict(
 )
 param_dicts = [dict(keyword="block", lr=0.0002)]
 
-# dataset settings
-dataset_type = "T4Dataset"
-data_root = "data/t4dataset"
-ignore_index = -1
-names = [
-    "vehicle",
-    "bicycle",
-    "pedestrian",
-    "road",
-    "vegetation",
-    "obstacle",
-]
-
 data = dict(
     num_classes=num_classes,
     ignore_index=ignore_index,
-    names=names,
     train=dict(
         type=dataset_type,
         split="train",
         data_root=data_root,
+        info_paths=info_paths_train,
         transform=[
             # dict(type="RandomDropout", dropout_ratio=0.2, dropout_application_ratio=0.2),
             # dict(type="RandomRotateTargetAngle", angle=(1/2, 1, 3/2), center=[0, 0, 0], axis="z", p=0.75),
@@ -125,11 +155,13 @@ data = dict(
         ],
         test_mode=False,
         ignore_index=ignore_index,
+        class_mapping=class_mapping,
     ),
     val=dict(
         type=dataset_type,
         split="val",
         data_root=data_root,
+        info_paths=info_paths_val,
         transform=[
             # dict(type="PointClip", point_cloud_range=(-51.2, -51.2, -4, 51.2, 51.2, 2.4)),
             dict(
@@ -154,11 +186,13 @@ data = dict(
         ],
         test_mode=False,
         ignore_index=ignore_index,
+        class_mapping=class_mapping,
     ),
     test=dict(
         type=dataset_type,
         split="val",
         data_root=data_root,
+        info_paths=info_paths_test,
         transform=[
             dict(type="Copy", keys_dict={"segment": "origin_segment"}),
             dict(
@@ -215,5 +249,6 @@ data = dict(
             ],
         ),
         ignore_index=ignore_index,
+        class_mapping=class_mapping,
     ),
 )

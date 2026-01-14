@@ -1,7 +1,9 @@
 weight = None  # path to model weight
-resume = False  # whether to resume training process
 evaluate = True  # evaluate after each epoch training process
 test_only = False  # test process
+show = False  # show visualization
+wait_time = 2.0  # wait time for visualization
+score_thr = 0.1  # score threshold for visualization
 
 seed = None  # train process will init a random seed and record
 save_path = "work_dirs/ptv3"
@@ -11,7 +13,7 @@ batch_size_val = None  # auto adapt to bs 1 for each gpu
 batch_size_test = None  # auto adapt to bs 1 for each gpu
 epoch = 100  # total epoch, data loop = epoch // eval_epoch
 eval_epoch = 100  # sche total eval & checkpoint epoch
-clip_grad = 1.0  # disable with None, enable with a float
+clip_grad = 10.0  # disable with None, enable with a float
 
 sync_bn = False
 enable_amp = False
