@@ -81,15 +81,7 @@ def get_scene_root_dir_path(
         return scene_root_dir_path
 
 
-def get_info(
-    cfg: Any,
-    t4: Tier4,
-    sample: Sample,
-    i: int,
-    max_sweeps: int,
-    city: str = None, 
-    vehicle_type: str = None
-):
+def get_info(cfg: Any, t4: Tier4, sample: Sample, i: int, max_sweeps: int, city: str = None, vehicle_type: str = None):
     lidar_token = get_lidar_token(sample)
     if lidar_token is None:
         print_log(
@@ -123,7 +115,7 @@ def get_info(
         location=log_record.location,
         scene_name=scene_record.name,
         city=city,
-        vehicle_type=vehicle_type
+        vehicle_type=vehicle_type,
     )
 
     for new_info in [
@@ -278,9 +270,9 @@ def main():
                     t4_dataset_id, t4_dataset_version_id, city, vehicle_type = scene_id.split("/")
                 else:
                     t4_dataset_id, t4_dataset_version_id = scene_id.split("/")
-                    city = None 
+                    city = None
                     vehicle_type = None
-                
+
                 scene_root_dir_path = osp.join(args.root_path, dataset_version, t4_dataset_id, t4_dataset_version_id)
                 if not os.path.exists(scene_root_dir_path):
                     if args.use_available_dataset_version:

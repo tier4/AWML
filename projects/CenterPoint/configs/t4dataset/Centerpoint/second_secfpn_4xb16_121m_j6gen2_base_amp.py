@@ -129,7 +129,7 @@ test_pipeline = [
             "lidar2cam",
             "ego2global",
             "city",
-            "vehicle_type"
+            "vehicle_type",
         ),
     ),
 ]
@@ -176,7 +176,7 @@ eval_pipeline = [
             "lidar2cam",
             "ego2global",
             "city",
-            "vehicle_type"
+            "vehicle_type",
         ),
     ),
 ]
