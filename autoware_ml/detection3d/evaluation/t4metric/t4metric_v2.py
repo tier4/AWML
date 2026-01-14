@@ -154,7 +154,7 @@ def _apply_perception_evaluator_evaluation(
     previous_perception_frame_result: Optional[PerceptionFrameResult],
 ) -> PerceptionFrameMultiProcessingResult:
     """
-    Wrapper to apply an evaluator to a a pair of PerceptionFrameResults.
+    Wrapper to apply an evaluator to a pair of PerceptionFrameResults.
 
     Args:
         evaluator (PerceptionEvaluationManager): The evaluator to apply.
@@ -320,7 +320,7 @@ class T4MetricV2(BaseMetric):
 
         assert isinstance(perception_evaluator_configs["evaluation_config_dict"]["min_distance"], list) and isinstance(
             perception_evaluator_configs["evaluation_config_dict"]["max_distance"], list
-        ), f"min_distance and max_distance must be a list, got: {type(perception_evaluator_configs['min_distance'])} and {type(perception_evaluator_configs['max_distance'])}"
+        ), f"min_distance and max_distance must be a list, got: {type(perception_evaluator_configs['evaluation_config_dict']['min_distance'])} and {type(perception_evaluator_configs['evaluation_config_dict']['max_distance'])}"
 
         # Form bev distance ranges from min_distance and max_distance, for example, [(min_distance[0], max_distance[0]), (min_distance[1], max_distance[1]), ...],
         # and each distance range will be used to create a separate evaluator to evaluate metrics for different bev distance ranges.
@@ -730,7 +730,7 @@ class T4MetricV2(BaseMetric):
         previous_scene_id = None
         previous_perception_frame_result = None
         for perception_frame_preprocessing_result in perception_frame_preprocessing_results:
-            # When the scene id is different from the previous frame scebe id, it's the first frame of the scene or when the previoous_scene_id is None
+            # When the scene id is different from the previous frame scene id, it's the first frame of the scene or when the previous_scene_id is None
             if perception_frame_preprocessing_result.scene_id != previous_scene_id:
                 previous_perception_frame_result = None
                 previous_scene_id = None
@@ -845,9 +845,6 @@ class T4MetricV2(BaseMetric):
         """
         for evaluator_name, evaluator in self.evaluators.items():
             self.logger.info(f"Processing frames for evaluator: {evaluator_name}")
-            # selected_scenes = {}
-            # for key in list(scenes.keys())[:2]:
-            #     selected_scenes[key] = scenes[key]
             for scene_id, samples in scenes.items():
                 for sample_id, perception_frame in samples.items():
                     try:
