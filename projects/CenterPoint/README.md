@@ -42,6 +42,19 @@ docker run -it --rm --gpus all --shm-size=64g --name awml -p 6006:6006 -v $PWD/:
 ```
 
 For ONNX and TensorRT evaluation
+
+- If you need to use deployment, ONNX runtime, or TensorRT evaluation, please build the docker image first:
+
+```sh
+# Build the base autoware-ml image (if not already built)
+DOCKER_BUILDKIT=1 docker build -t autoware-ml .
+
+# Build the centerpoint-deployment image
+docker build -t centerpoint-deployment:latest -f projects/CenterPoint/Dockerfile .
+```
+
+- Run the docker container:
+
 ```sh
 docker run -it --rm --gpus all --shm-size=64g --name awml_deployment -p 6006:6006 -v $PWD/:/workspace -v $PWD/data:/workspace/data centerpoint-deployment:latest
 ```
@@ -115,7 +128,7 @@ where `frame-range` represents the range of frames to visualize.
 
 ### 5. Deploy
 
-- Run the unified deployment pipeline:
+- Run the deployment pipeline:
   - Export ONNX/TensorRT artifacts.
   - Verify the exported artifacts.
   - (Optionally) run evaluation.
