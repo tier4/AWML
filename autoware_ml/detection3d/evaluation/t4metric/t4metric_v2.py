@@ -982,7 +982,7 @@ class T4MetricV2(BaseMetric):
                         if label_name not in aggregated_metrics[evaluator_name]["metadata_label"]:
                             aggregated_metrics[evaluator_name]["metadata_label"][label_name] = {}
 
-                        aggregated_metrics[evaluator_name]["metadata_label"][label][key] = value
+                        aggregated_metrics[evaluator_name]["metadata_label"][label_name][key] = value
                     elif key.startswith("T4MetricV2/mAP_") or key.startswith("T4MetricV2/mAPH_"):
                         # These are overall metrics, put them in the metrics section
                         aggregated_metrics[evaluator_name]["metrics"][key] = value
