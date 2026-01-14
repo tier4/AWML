@@ -264,7 +264,7 @@ class BaseEvaluator(VerificationMixin, ABC):
             sample = data_loader.load_sample(idx)
             inference_input = self._prepare_input(sample, data_loader, model.device)
 
-            gt_data = data_loader.get_ground_truth(idx)
+            gt_data = sample.get("ground_truth", {})
             ground_truths = self._parse_ground_truths(gt_data)
 
             infer_result = pipeline.infer(inference_input.data, metadata=inference_input.metadata)

@@ -5,6 +5,7 @@ CenterPoint Evaluator for deployment.
 import logging
 from typing import Any, Dict, List, Mapping, Optional
 
+import numpy as np
 from mmengine.config import Config
 
 from deployment.core import (
@@ -95,11 +96,9 @@ class CenterPointEvaluator(BaseEvaluator):
     ) -> InferenceInput:
         if "points" in sample:
             points = sample["points"]
+            metadata = sample.get("metainfo", {})
         else:
-            input_data = data_loader.preprocess(sample)
-            points = input_data.get("points", input_data)
-
-        metadata = sample.get("metainfo", {})
+            raise ValueError(f"Expected 'points' in sample. Got keys: {list(sample.keys())}")
         return InferenceInput(data=points, metadata=metadata)
 
     def _parse_predictions(self, pipeline_output: Any) -> List[Dict]:
@@ -111,6 +110,11 @@ class CenterPointEvaluator(BaseEvaluator):
         if "gt_bboxes_3d" in gt_data and "gt_labels_3d" in gt_data:
             gt_bboxes_3d = gt_data["gt_bboxes_3d"]
             gt_labels_3d = gt_data["gt_labels_3d"]
+
+            gt_bboxes_3d = np.asarray(gt_bboxes_3d, dtype=np.float32).reshape(
+                -1, np.asarray(gt_bboxes_3d).shape[-1] if np.asarray(gt_bboxes_3d).ndim > 1 else 7
+            )
+            gt_labels_3d = np.asarray(gt_labels_3d, dtype=np.int64).reshape(-1)
 
             for i in range(len(gt_bboxes_3d)):
                 ground_truths.append({"bbox_3d": gt_bboxes_3d[i].tolist(), "label": int(gt_labels_3d[i])})
@@ -133,9 +137,9 @@ class CenterPointEvaluator(BaseEvaluator):
         summary_dict = summary.to_dict() if hasattr(summary, "to_dict") else summary
 
         result: EvalResultDict = {
-            "mAP": summary_dict.get("mAP", 0.0),
-            "mAPH": summary_dict.get("mAPH", 0.0),
-            "per_class_ap": summary_dict.get("per_class_ap", {}),
+            "mAP_by_mode": summary_dict.get("mAP_by_mode", {}),
+            "mAPH_by_mode": summary_dict.get("mAPH_by_mode", {}),
+            "per_class_ap_by_mode": summary_dict.get("per_class_ap_by_mode", {}),
             "detailed_metrics": map_results,
             "latency": latency_stats,  # Store LatencyStats directly
             "num_samples": num_samples,
@@ -147,24 +151,12 @@ class CenterPointEvaluator(BaseEvaluator):
         return result
 
     def print_results(self, results: EvalResultDict) -> None:
-        print("\n" + "=" * 80)
-        print(f"{self.task_profile.display_name} - Evaluation Results")
-        print("(Using autoware_perception_evaluation for consistent metrics)")
-        print("=" * 80)
-
-        print("\nDetection Metrics:")
-        print(f"  mAP: {results.get('mAP', 0.0):.4f}")
-        print(f"  mAPH: {results.get('mAPH', 0.0):.4f}")
-
-        if "per_class_ap" in results:
-            print("\nPer-Class AP:")
-            for class_id, ap in results["per_class_ap"].items():
-                class_name = (
-                    class_id
-                    if isinstance(class_id, str)
-                    else (self.class_names[class_id] if class_id < len(self.class_names) else f"class_{class_id}")
-                )
-                print(f"  {class_name:<12}: {ap:.4f}")
+        interface = self.metrics_interface  # type: ignore[assignment]
+        text = interface.format_last_report()
+        if text:
+            print(text)
+            print(f"\nTotal Samples: {results.get('num_samples', 0)}")
+            return
 
         if "latency" in results:
             latency = results["latency"].to_dict()
@@ -187,4 +179,3 @@ class CenterPointEvaluator(BaseEvaluator):
                         print(f"  {stage_name:18s}: {stats['mean_ms']:.2f} ± {stats['std_ms']:.2f} ms")
 
         print(f"\nTotal Samples: {results.get('num_samples', 0)}")
-        print("=" * 80)

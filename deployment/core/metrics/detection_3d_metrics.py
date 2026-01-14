@@ -25,9 +25,10 @@ Usage:
 """
 
 import logging
+import re
 import time
-from dataclasses import dataclass, field
-from typing import Any, Dict, List, Optional
+from dataclasses import dataclass
+from typing import Any, Dict, List, Mapping, Optional
 
 import numpy as np
 from perception_eval.common.dataset import FrameGroundTruth
@@ -136,24 +137,6 @@ class Detection3DMetricsInterface(BaseMetricsInterface):
     This interface provides a simplified interface for the deployment framework to
     compute mAP, mAPH, and other detection metrics that are consistent with
     the T4MetricV2 used during training.
-
-    Example usage:
-        config = Detection3DMetricsConfig(
-            class_names=["car", "truck", "bus", "bicycle", "pedestrian"],
-            frame_id="base_link",
-        )
-        interface = Detection3DMetricsInterface(config)
-
-        # Add frames
-        for pred, gt in zip(predictions_list, ground_truths_list):
-            interface.add_frame(
-                predictions=pred,  # List[Dict] with bbox_3d, label, score
-                ground_truths=gt,  # List[Dict] with bbox_3d, label
-            )
-
-        # Compute metrics
-        metrics = interface.compute_metrics()
-        # Returns: {"mAP_center_distance_bev_0.5": 0.7, ...}
     """
 
     _UNKNOWN = "unknown"
@@ -200,6 +183,15 @@ class Detection3DMetricsInterface(BaseMetricsInterface):
         # Initialize evaluation manager (will be created on first use or reset)
         self.evaluator: Optional[PerceptionEvaluationManager] = None
 
+        self.gt_count_total: int = 0
+        self.pred_count_total: int = 0
+        self.gt_count_by_label: Dict[str, int] = {}
+        self.pred_count_by_label: Dict[str, int] = {}
+        self._metric_score: Optional[MetricsScore] = None
+
+        cfg_dict = config.evaluation_config_dict or {}
+        self._evaluation_cfg_dict: Dict[str, Any] = dict(cfg_dict)
+
     def reset(self) -> None:
         """Reset the interface for a new evaluation session."""
         self.evaluator = PerceptionEvaluationManager(
@@ -208,6 +200,11 @@ class Detection3DMetricsInterface(BaseMetricsInterface):
             metric_output_dir=None,
         )
         self._frame_count = 0
+        self.gt_count_total = 0
+        self.pred_count_total = 0
+        self.gt_count_by_label = {}
+        self.pred_count_by_label = {}
+        self._metric_score = None
 
     def _convert_index_to_label(self, label_index: int) -> Label:
         """Convert a label index to a Label object.
@@ -381,6 +378,27 @@ class Detection3DMetricsInterface(BaseMetricsInterface):
         if frame_name is None:
             frame_name = str(self._frame_count)
 
+        self.pred_count_total += len(predictions)
+        self.gt_count_total += len(ground_truths)
+
+        for p in predictions:
+            try:
+                label = int(p.get("label", -1))
+            except Exception:
+                label = -1
+            if 0 <= label < len(self.class_names):
+                name = self.class_names[label]
+                self.pred_count_by_label[name] = self.pred_count_by_label.get(name, 0) + 1
+
+        for g in ground_truths:
+            try:
+                label = int(g.get("label", -1))
+            except Exception:
+                label = -1
+            if 0 <= label < len(self.class_names):
+                name = self.class_names[label]
+                self.gt_count_by_label[name] = self.gt_count_by_label.get(name, 0) + 1
+
         # Convert predictions to DynamicObject
         estimated_objects = self._predictions_to_dynamic_objects(predictions, unix_time)
 
@@ -418,6 +436,7 @@ class Detection3DMetricsInterface(BaseMetricsInterface):
         try:
             # Get scene result (aggregated metrics)
             metrics_score: MetricsScore = self.evaluator.get_scene_result()
+            self._metric_score = metrics_score
 
             # Process metrics into a flat dictionary
             return self._process_metrics_score(metrics_score)
@@ -428,6 +447,29 @@ class Detection3DMetricsInterface(BaseMetricsInterface):
 
             traceback.print_exc()
             return {}
+
+    @property
+    def metric_score(self) -> MetricsScore:
+        """Return the raw MetricsScore returned by autoware_perception_evaluation.
+
+        Raises:
+            RuntimeError: If metrics haven't been computed yet.
+        """
+        if self._metric_score is None:
+            raise RuntimeError("metric_score is not available yet. Call add_frame(...), then compute_metrics() first.")
+        return self._metric_score
+
+    # Backward-compatible alias (can be removed once callers migrate).
+    @property
+    def last_metrics_score(self) -> MetricsScore:
+        """Alias of `metric_score`."""
+        return self.metric_score
+
+    def format_last_report(self) -> str:
+        """Format the last metrics report using perception_eval's own __str__ implementation."""
+        if self._metric_score is None:
+            return ""
+        return str(self._metric_score)
 
     def _process_metrics_score(self, metrics_score: MetricsScore) -> Dict[str, float]:
         """Process MetricsScore into a flat dictionary.
@@ -455,6 +497,21 @@ class Detection3DMetricsInterface(BaseMetricsInterface):
                     key = f"{label_name}_AP_{matching_mode}_{threshold}"
                     metric_dict[key] = ap_value
 
+            # Process individual APH values
+            label_to_aphs = getattr(map_instance, "label_to_aphs", None)
+            if label_to_aphs:
+                for label, aphs in label_to_aphs.items():
+                    label_name = label.value
+                    for aph in aphs:
+                        threshold = aph.matching_threshold
+                        aph_value = getattr(aph, "aph", None)
+                        if aph_value is None:
+                            aph_value = getattr(aph, "ap", None)
+                        if aph_value is None:
+                            continue
+                        key = f"{label_name}_APH_{matching_mode}_{threshold}"
+                        metric_dict[key] = aph_value
+
             # Add mAP and mAPH values
             map_key = f"mAP_{matching_mode}"
             maph_key = f"mAPH_{matching_mode}"
@@ -463,32 +520,82 @@ class Detection3DMetricsInterface(BaseMetricsInterface):
 
         return metric_dict
 
+    @staticmethod
+    def _extract_matching_modes(metrics: Mapping[str, float]) -> List[str]:
+        """Extract matching modes from metrics dict keys (e.g., 'mAP_center_distance_bev' -> 'center_distance_bev')."""
+        modes = []
+        for k in metrics.keys():
+            if k.startswith("mAP_") and k != "mAP":
+                modes.append(k[len("mAP_") :])
+        # Remove duplicates while preserving order
+        return list(dict.fromkeys(modes))
+
+    def get_thresholds_for_mode(
+        self, mode: str, metrics: Optional[Mapping[str, float]] = None
+    ) -> Optional[List[float]]:
+        """Return thresholds for a matching mode from config or inferred from metric keys."""
+        cfg = self._evaluation_cfg_dict
+        threshold_key = f"{mode}_thresholds"
+        thresholds = cfg.get(threshold_key)
+        if thresholds is not None:
+            return [float(x) for x in thresholds]
+
+        if not metrics:
+            return None
+
+        pattern = re.compile(rf"_AP(H)?_{re.escape(mode)}_([-+]?\d*\.?\d+(?:[eE][-+]?\d+)?)$")
+        found: List[float] = []
+        for k in metrics.keys():
+            m = pattern.search(k)
+            if m:
+                try:
+                    found.append(float(m.group(2)))
+                except Exception:
+                    pass
+        return sorted(set(found)) if found else None
+
     def get_summary(self) -> DetectionSummary:
-        """Get a summary of the evaluation including mAP and per-class metrics."""
+        """Get a summary of the evaluation including mAP and per-class metrics for all matching modes."""
         metrics = self.compute_metrics()
 
-        # Extract primary metrics (first mAP value found)
-        primary_map = None
-        primary_maph = None
-        per_class_ap = {}
+        modes = self._extract_matching_modes(metrics)
+        if not modes:
+            return DetectionSummary(
+                mAP_by_mode={},
+                mAPH_by_mode={},
+                per_class_ap_by_mode={},
+                num_frames=self._frame_count,
+                detailed_metrics=metrics,
+            )
 
-        for key, value in metrics.items():
-            if key.startswith("mAP_") and primary_map is None:
-                primary_map = value
-            elif key.startswith("mAPH_") and primary_maph is None:
-                primary_maph = value
-            elif "_AP_" in key and not key.startswith("mAP"):
-                # Extract class name from key
-                parts = key.split("_AP_")
-                if len(parts) == 2:
-                    class_name = parts[0]
-                    if class_name not in per_class_ap:
-                        per_class_ap[class_name] = value
+        # Collect mAP/mAPH and per-class AP for each matching mode
+        mAP_by_mode: Dict[str, float] = {}
+        mAPH_by_mode: Dict[str, float] = {}
+        per_class_ap_by_mode: Dict[str, Dict[str, float]] = {}
+
+        for mode in modes:
+            map_value = metrics.get(f"mAP_{mode}", 0.0)
+            maph_value = metrics.get(f"mAPH_{mode}", 0.0)
+            mAP_by_mode[mode] = float(map_value)
+            if maph_value != 0.0 or f"mAPH_{mode}" in metrics:
+                mAPH_by_mode[mode] = float(maph_value)
+
+            # Collect AP values per class for this mode
+            per_class_ap_values: Dict[str, List[float]] = {}
+            ap_key_infix = f"_AP_{mode}_"
+            for key, value in metrics.items():
+                if ap_key_infix not in key:
+                    continue
+                class_name = key.split("_AP_", 1)[0]
+                per_class_ap_values.setdefault(class_name, []).append(float(value))
+
+            if per_class_ap_values:
+                per_class_ap_by_mode[mode] = {k: float(np.mean(v)) for k, v in per_class_ap_values.items() if v}
 
         return DetectionSummary(
-            mAP=primary_map or 0.0,
-            mAPH=primary_maph or 0.0,
-            per_class_ap=per_class_ap,
+            mAP_by_mode=mAP_by_mode,
+            mAPH_by_mode=mAPH_by_mode,
+            per_class_ap_by_mode=per_class_ap_by_mode,
             num_frames=self._frame_count,
             detailed_metrics=metrics,
         )

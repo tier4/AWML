@@ -198,8 +198,11 @@ class EvaluationOrchestrator:
             if results and "error" not in results:
                 if "accuracy" in results:
                     self.logger.info(f"  Accuracy: {results.get('accuracy', 0):.4f}")
-                if "mAP" in results:
-                    self.logger.info(f"  mAP: {results.get('mAP', 0):.4f}")
+                if "mAP_by_mode" in results:
+                    mAP_by_mode = results.get("mAP_by_mode", {})
+                    if mAP_by_mode:
+                        for mode, map_value in mAP_by_mode.items():
+                            self.logger.info(f"  mAP ({mode}): {map_value:.4f}")
 
                 if "latency" in results:
                     latency = results["latency"]
