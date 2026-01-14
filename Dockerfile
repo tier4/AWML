@@ -61,7 +61,7 @@ RUN python3 -m pip --no-cache-dir install \
 RUN python3 -m pip install git+https://github.com/tier4/t4-devkit@v0.5.1
 
 # Install autoware-perception-evaluation
-RUN python3 -m pip install git+https://github.com/tier4/autoware_perception_evaluation@2b7b1bce1f8bb0ec8416e9118b82ed1d63f8c5e7
+RUN python3 -m pip install git+https://github.com/tier4/autoware_perception_evaluation@d37a546352f953565033f1d4b8cb443df1232c59
 
 # Need to dowgrade setuptools to 60.2.0 to fix setup
 RUN python3 -m pip --no-cache-dir install \

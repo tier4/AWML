@@ -77,6 +77,8 @@ class EvaluatorData:
     frame_pass_fail_config: PerceptionPassFailConfig
     critical_object_filter_config: Optional[CriticalObjectFilterConfig]
     metric_score_config: MetricsScoreConfig
+    min_range: float
+    max_range: float
 
 
 @dataclass(frozen=True)
@@ -374,6 +376,8 @@ class T4MetricV2(BaseMetric):
                 frame_pass_fail_config=perception_frame_pass_fail_config,
                 critical_object_filter_config=perception_critical_object_filter_config,
                 metric_score_config=perception_metrics_score_config,
+                min_range=bev_distance_range[0],
+                max_range=bev_distance_range[1]
             )
         return evaluators
 
