@@ -925,8 +925,8 @@ class T4MetricV2(BaseMetric):
                     metric_dict[key] = ap_value
 
                 # Label metadata key
-                metric_dict[f"metadata_label/{label_name}_{matching_mode}_num_predictions"] = label_num_preds
-                metric_dict[f"metadata_label/{label_name}_{matching_mode}_num_ground_truths"] = label_num_gts
+                metric_dict[f"metadata_label/{label_name}_num_predictions"] = label_num_preds
+                metric_dict[f"metadata_label/{label_name}_num_ground_truths"] = label_num_gts
 
             # Add mAP and mAPH values
             map_key = f"T4MetricV2/mAP_{matching_mode}"
@@ -934,7 +934,7 @@ class T4MetricV2(BaseMetric):
             metric_dict[map_key] = map_instance.map
             metric_dict[maph_key] = map_instance.maph
 
-            total_num_preds += num_preds
+            total_num_preds = num_preds
 
         # Selected evaluator
         selected_evaluator = self.evaluators[evaluator_name]
