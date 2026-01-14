@@ -36,6 +36,7 @@ class DefaultDataset(Dataset):
         self,
         split="train",
         data_root="data/dataset",
+        info_paths=["info.pkl"],
         transform=None,
         test_mode=False,
         test_cfg=None,
@@ -45,6 +46,7 @@ class DefaultDataset(Dataset):
     ):
         super(DefaultDataset, self).__init__()
         self.data_root = data_root
+        self.info_paths = info_paths
         self.split = split
         self.transform = Compose(transform)
         self.cache = cache

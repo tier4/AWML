@@ -16,7 +16,7 @@ from tools.analysis_3d.data_classes import (
     DatasetSplitName,
     LidarPoint,
     LidarSweep,
-    SampleData,
+    SampleData3D,
     ScenarioData,
 )
 from tools.analysis_3d.split_options import SplitOptions
@@ -46,7 +46,8 @@ class AnalysisRunner:
         # Initialization
         self.config = Config.fromfile(self.config_path)
         self.out_path.mkdir(parents=True, exist_ok=True)
-        self.remapping_classes = self.config.name_mapping
+        # TODO (MasatoSaeki): When creating the base AnalysisRunner, remove this temporary fix.
+        self.remapping_classes = getattr(self.config, "name_mapping", None)
         self.max_sweeps = max_sweeps
 
         # Default callbacks to generate analyses
@@ -102,11 +103,11 @@ class AnalysisRunner:
             dataset_list_dict: Dict[str, List[str]] = yaml.safe_load(f)
             return dataset_list_dict
 
-    def _extract_sample_data(self, t4: Tier4) -> Dict[str, SampleData]:
+    def _extract_sample_data(self, t4: Tier4) -> Dict[str, SampleData3D]:
         """
         Extract data for every sample.
         :param t4: Tier4 interface.
-        :return: A dict of {sample token: SampleData}.
+        :return: A dict of {sample token: SampleData3D}.
         """
         sample_data = {}
         for sample in t4.sample:
@@ -140,8 +141,8 @@ class AnalysisRunner:
                 for lidar_sweep in lidar_sweep_info["lidar_sweeps"]
             ]
 
-            # Convert to SampleData
-            sample_data[sample.token] = SampleData.create_sample_data(
+            # Convert to SampleData3D
+            sample_data[sample.token] = SampleData3D.create_sample_data(
                 sample_token=sample.token,
                 boxes=tier4_sample_data.boxes,
                 lidar_point=lidar_point,

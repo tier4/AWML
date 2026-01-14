@@ -17,32 +17,17 @@ from .defaults import DefaultDataset
 
 @DATASETS.register_module()
 class NuScenesDataset(DefaultDataset):
-    def __init__(self, sweeps=10, ignore_index=-1, **kwargs):
-        self.sweeps = sweeps
+    def __init__(self, ignore_index=-1, **kwargs):
         self.ignore_index = ignore_index
         self.learning_map = self.get_learning_map(ignore_index)
         super().__init__(ignore_index=ignore_index, **kwargs)
 
-    def get_info_path(self, split):
-        assert split in ["train", "val", "test"]
-        if split == "train":
-            return os.path.join(self.data_root, "info", f"nuscenes_infos_{self.sweeps}sweeps_train.pkl")
-        elif split == "val":
-            return os.path.join(self.data_root, "info", f"nuscenes_infos_{self.sweeps}sweeps_val.pkl")
-        elif split == "test":
-            return os.path.join(self.data_root, "info", f"nuscenes_infos_{self.sweeps}sweeps_test.pkl")
-        else:
-            raise NotImplementedError
+    def get_info_paths(self):
+        return [os.path.join(self.data_root, path) for path in self.info_paths]
 
     def get_data_list(self):
-        if isinstance(self.split, str):
-            info_paths = [self.get_info_path(self.split)]
-        elif isinstance(self.split, Sequence):
-            info_paths = [self.get_info_path(s) for s in self.split]
-        else:
-            raise NotImplementedError
         data_list = []
-        for info_path in info_paths:
+        for info_path in self.get_info_paths():
             with open(info_path, "rb") as f:
                 info = pickle.load(f)
                 data_list.extend(info)
