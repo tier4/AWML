@@ -936,7 +936,7 @@ class T4MetricV2(BaseMetric):
 
             total_num_preds += num_preds
 
-        # Selected evaluator 
+        # Selected evaluator
         selected_evaluator = self.evaluators[evaluator_name]
 
         # Add metadata information
