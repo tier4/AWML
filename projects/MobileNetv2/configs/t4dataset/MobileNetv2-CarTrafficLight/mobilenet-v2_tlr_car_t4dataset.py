@@ -6,7 +6,7 @@ VAL_INTERVAL = 20
 IMG_SCALE = 224
 CHECKPOINT_INTERVAL = 1
 LOG_INTERVAL = 100
-ANN_FILE = "./infos/tlr_classifier/"
+ANN_FILE = "./data/info/tlr_classifier_car/"
 
 # Base Configurations
 _base_ = [

@@ -41,7 +41,7 @@
   - Training results [model-zoo]
     - [config.py](https://download.autoware-ml-model-zoo.tier4.jp/autoware-ml/models/mobilenet-v2/car_traffic_light/t4base/v1.3/mobilenet-v2_tlr_car_t4dataset.py)
     - [checkpoint_best.pth](https://download.autoware-ml-model-zoo.tier4.jp/autoware-ml/models/mobilenet-v2/car_traffic_light/t4base/v1.3/best_multi-label_f1-score_top1_epoch_260.pth)
-    - [logs.zip](https://download.autoware-ml-model-zoo.tier4.jp/autoware-ml/models/mobilenet-v2/car_traffic_light/t4base/v1.3/logs.zip/logs.zip)
+    - [logs.zip](https://download.autoware-ml-model-zoo.tier4.jp/autoware-ml/models/mobilenet-v2/car_traffic_light/t4base/v1.3/logs.zip)
 
   - train time: 
 

@@ -89,7 +89,7 @@ model = dict(
 
 # dataset settings
 data_root = ""
-anno_file_root = "./infos/tl4_update/"
+anno_file_root = "./data/tlr_pedcar/"
 dataset_type = "TLRDetectionDataset"
 
 # Example to use different file client
