@@ -452,27 +452,49 @@ class Detection2DMetricsInterface(BaseMetricsInterface):
         return metric_dict
 
     def get_summary(self) -> DetectionSummary:
-        """Get a summary of the evaluation including mAP and per-class metrics."""
+        """Get a summary of the evaluation including mAP and per-class metrics for all matching modes."""
         metrics = self.compute_metrics()
 
-        # Extract primary metrics (first mAP value found)
-        primary_map = None
-        per_class_ap = {}
+        # Extract matching modes from metrics
+        modes = []
+        for k in metrics.keys():
+            if k.startswith("mAP_") and k != "mAP":
+                modes.append(k[len("mAP_") :])
+        modes = list(dict.fromkeys(modes))  # Remove duplicates while preserving order
 
-        for key, value in metrics.items():
-            if key.startswith("mAP_") and primary_map is None:
-                primary_map = value
-            elif "_AP_" in key and not key.startswith("mAP"):
-                # Extract class name from key
-                parts = key.split("_AP_")
-                if len(parts) == 2:
-                    class_name = parts[0]
-                    if class_name not in per_class_ap:
-                        per_class_ap[class_name] = value
+        if not modes:
+            return DetectionSummary(
+                mAP_by_mode={},
+                mAPH_by_mode={},
+                per_class_ap_by_mode={},
+                num_frames=self._frame_count,
+                detailed_metrics=metrics,
+            )
+
+        # Collect mAP and per-class AP for each matching mode
+        mAP_by_mode: Dict[str, float] = {}
+        per_class_ap_by_mode: Dict[str, Dict[str, float]] = {}
+
+        for mode in modes:
+            map_value = metrics.get(f"mAP_{mode}", 0.0)
+            mAP_by_mode[mode] = float(map_value)
+
+            # Collect AP values per class for this mode
+            per_class_ap_values: Dict[str, List[float]] = {}
+            ap_key_infix = f"_AP_{mode}_"
+            for key, value in metrics.items():
+                if ap_key_infix not in key or key.startswith("mAP"):
+                    continue
+                class_name = key.split("_AP_", 1)[0]
+                per_class_ap_values.setdefault(class_name, []).append(float(value))
+
+            if per_class_ap_values:
+                per_class_ap_by_mode[mode] = {k: float(np.mean(v)) for k, v in per_class_ap_values.items() if v}
 
         return DetectionSummary(
-            mAP=primary_map or 0.0,
-            per_class_ap=per_class_ap,
+            mAP_by_mode=mAP_by_mode,
+            mAPH_by_mode={},  # 2D detection doesn't have mAPH
+            per_class_ap_by_mode=per_class_ap_by_mode,
             num_frames=self._frame_count,
             detailed_metrics=metrics,
         )

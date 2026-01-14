@@ -68,7 +68,7 @@ class BaseDataLoader(ABC):
         raise NotImplementedError
 
     @abstractmethod
-    def preprocess(self, sample: SampleData) -> torch.Tensor:
+    def preprocess(self, sample: SampleData) -> Any:
         """
         Preprocess raw sample data into model input format.
 
@@ -76,8 +76,8 @@ class BaseDataLoader(ABC):
             sample: Raw sample data returned by load_sample()
 
         Returns:
-            Preprocessed tensor ready for model inference.
-            Shape and format depend on the specific task.
+            Preprocessed model input ready for inference. Type/shape is task-specific.
+            (e.g., torch.Tensor, Dict[str, torch.Tensor], tuple, etc.)
 
         Raises:
             ValueError: If sample format is invalid
@@ -91,20 +91,6 @@ class BaseDataLoader(ABC):
 
         Returns:
             Total number of samples available
-        """
-        raise NotImplementedError
-
-    @abstractmethod
-    def get_ground_truth(self, index: int) -> Mapping[str, Any]:
-        """
-        Get ground truth annotations for a specific sample.
-
-        Args:
-            index: Sample index whose annotations should be returned
-
-        Returns:
-            Dictionary containing task-specific ground truth data.
-            Implementations should raise IndexError if the index is invalid.
         """
         raise NotImplementedError
 

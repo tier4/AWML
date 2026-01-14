@@ -25,7 +25,7 @@ devices = dict(
 # Export Configuration
 # ============================================================================
 export = dict(
-    mode="both",
+    mode="none",
     work_dir="work_dirs/centerpoint_deployment",
     onnx_path=None,
 )
@@ -110,7 +110,8 @@ components = dict(
 # Runtime I/O settings
 # ============================================================================
 runtime_io = dict(
-    info_file="data/t4dataset/info/t4dataset_j6gen2_infos_val.pkl",
+    # This should be a path relative to `data_root` in the model config.
+    info_file="info/t4dataset_j6gen2_infos_val.pkl",
     sample_idx=1,
 )
 

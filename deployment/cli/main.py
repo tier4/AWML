@@ -11,6 +11,7 @@ import argparse
 import importlib
 import pkgutil
 import sys
+import traceback
 from typing import List
 
 import deployment.projects as projects_pkg
@@ -51,11 +52,13 @@ def build_parser() -> argparse.ArgumentParser:
     subparsers = parser.add_subparsers(dest="project", required=True)
 
     # Discover projects and import them so they can contribute args.
+    failed_projects: List[str] = []
     for project_name in _discover_project_packages():
         try:
             _import_and_register_project(project_name)
-        except Exception:
-            # Skip broken/incomplete project bundles rather than breaking the whole CLI.
+        except Exception as e:
+            tb = traceback.format_exc()
+            failed_projects.append(f"- {project_name}: {e}\n{tb}")
             continue
 
         try:
@@ -67,6 +70,12 @@ def build_parser() -> argparse.ArgumentParser:
         parse_base_args(sub)  # adds deploy_cfg, model_cfg, --log-level
         adapter.add_args(sub)
         sub.set_defaults(_adapter_name=project_name)
+
+    if not project_registry.list():
+        details = "\n".join(failed_projects) if failed_projects else "(no project packages discovered)"
+        raise RuntimeError(
+            "No deployment projects were registered. This usually means project imports failed.\n" f"{details}"
+        )
 
     return parser
 

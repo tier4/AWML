@@ -1,25 +1,34 @@
 """
 CenterPoint DataLoader for deployment.
+
+Wraps MMDet3D Dataset to ensure GT is identical to tools/detection3d/test.py.
+Pipeline is run once per sample in load_sample(), avoiding redundant computation.
 """
 
-import os
-import pickle
+import copy
 from typing import Any, Dict, List, Optional, Union
 
+import mmdet3d.datasets.transforms  # noqa: F401 - registers transforms
 import numpy as np
 import torch
 from mmengine.config import Config
+from mmengine.registry import DATASETS, init_default_scope
+from mmengine.utils import import_modules_from_strings
 
-from deployment.core import BaseDataLoader, build_preprocessing_pipeline
+from deployment.core import BaseDataLoader
 
 
 class CenterPointDataLoader(BaseDataLoader):
-    """Deployment dataloader for CenterPoint.
+    """Deployment dataloader for CenterPoint using MMDet3D Dataset.
 
-    Responsibilities:
-    - Load `info_file` (pickle) entries describing samples.
-    - Build and run the MMEngine preprocessing pipeline for each sample.
-    - Provide `load_sample()` for export helpers that need raw sample metadata.
+    This wraps the same Dataset used by tools/detection3d/test.py, ensuring:
+    - GT is identical
+    - Pipeline processing is identical
+    - Pipeline runs once per sample (no cache needed)
+
+    Design:
+        load_sample() runs the full pipeline and returns all data (input + GT).
+        preprocess() extracts model inputs from the loaded sample.
     """
 
     def __init__(
@@ -36,15 +45,26 @@ class CenterPointDataLoader(BaseDataLoader):
             }
         )
 
-        if not os.path.exists(info_file):
-            raise FileNotFoundError(f"Info file not found: {info_file}")
-
-        self.info_file = info_file
         self.model_cfg = model_cfg
         self.device = device
+        self.info_file = info_file
+        self.dataset = self._build_dataset(model_cfg, info_file)
 
-        self.data_infos = self._load_info_file()
-        self.pipeline = build_preprocessing_pipeline(model_cfg, task_type=task_type)
+    def _build_dataset(self, model_cfg: Config, info_file: str) -> Any:
+        """Build MMDet3D Dataset from config, overriding ann_file."""
+        # Set default scope to mmdet3d so transforms are found in the registry
+        init_default_scope("mmdet3d")
+        if not hasattr(model_cfg, "test_dataloader"):
+            raise ValueError("model_cfg must have 'test_dataloader' with dataset config")
+
+        dataset_cfg = copy.deepcopy(model_cfg.test_dataloader.dataset)
+
+        dataset_cfg["ann_file"] = info_file
+        dataset_cfg["test_mode"] = True
+
+        # Build dataset
+        dataset = DATASETS.build(dataset_cfg)
+        return dataset
 
     def _to_tensor(
         self,
@@ -75,124 +95,65 @@ class CenterPointDataLoader(BaseDataLoader):
             f"Unexpected type for '{name}': {type(data)}. Expected torch.Tensor, np.ndarray, or list of tensors/arrays."
         )
 
-    def _load_info_file(self) -> list:
-        try:
-            with open(self.info_file, "rb") as f:
-                data = pickle.load(f)
-        except Exception as e:
-            raise ValueError(f"Failed to load info file: {e}") from e
-
-        if isinstance(data, dict):
-            if "data_list" in data:
-                data_list = data["data_list"]
-            elif "infos" in data:
-                data_list = data["infos"]
-            else:
-                raise ValueError(f"Expected 'data_list' or 'infos' in info file, found keys: {list(data.keys())}")
-        elif isinstance(data, list):
-            data_list = data
-        else:
-            raise ValueError(f"Unexpected info file format: {type(data)}")
-
-        if not data_list:
-            raise ValueError("No samples found in info file")
-
-        return data_list
-
     def load_sample(self, index: int) -> Dict[str, Any]:
-        if index >= len(self.data_infos):
-            raise IndexError(f"Sample index {index} out of range (0-{len(self.data_infos)-1})")
+        """Load sample by running the full pipeline once.
 
-        info = self.data_infos[index]
+        Returns a dict containing all data needed for inference and evaluation:
+        - points: Points tensor (ready for inference)
+        - metainfo: Sample metadata
+        - ground_truth: Raw eval_ann_info from MMDet3D (kept unconverted)
+        """
+        if index >= len(self.dataset):
+            raise IndexError(f"Sample index {index} out of range (0-{len(self.dataset)-1})")
 
-        lidar_points = info.get("lidar_points", {})
-        if not lidar_points:
-            lidar_path = info.get("lidar_path", info.get("velodyne_path", ""))
-            lidar_points = {"lidar_path": lidar_path}
+        # Run pipeline once
+        data = self.dataset[index]
 
-        if "lidar_path" in lidar_points and not lidar_points["lidar_path"].startswith("/"):
-            data_root = getattr(self.model_cfg, "data_root", "data/t4dataset/")
-            if not data_root.endswith("/"):
-                data_root += "/"
-            if not lidar_points["lidar_path"].startswith(data_root):
-                lidar_points["lidar_path"] = data_root + lidar_points["lidar_path"]
-
-        instances = info.get("instances", [])
-
-        sample = {
-            "lidar_points": lidar_points,
-            "sample_idx": info.get("sample_idx", index),
-            "timestamp": info.get("timestamp", 0),
-        }
-
-        if instances:
-            gt_bboxes_3d = []
-            gt_labels_3d = []
-
-            for instance in instances:
-                if "bbox_3d" in instance and "bbox_label_3d" in instance:
-                    if instance.get("bbox_3d_isvalid", True):
-                        gt_bboxes_3d.append(instance["bbox_3d"])
-                        gt_labels_3d.append(instance["bbox_label_3d"])
-
-            if gt_bboxes_3d:
-                sample["gt_bboxes_3d"] = np.array(gt_bboxes_3d, dtype=np.float32)
-                sample["gt_labels_3d"] = np.array(gt_labels_3d, dtype=np.int64)
-
-        if "images" in info or "img_path" in info:
-            sample["images"] = info.get("images", {})
-            if "img_path" in info:
-                sample["img_path"] = info["img_path"]
-
-        return sample
-
-    def preprocess(self, sample: Dict[str, Any]) -> Union[Dict[str, torch.Tensor], torch.Tensor]:
-        results = self.pipeline(sample)
-
-        if "inputs" not in results:
-            raise ValueError(
-                "Expected 'inputs' key in pipeline results (MMDet3D 3.x format). "
-                f"Found keys: {list(results.keys())}. "
-                "Please ensure your test pipeline includes Pack3DDetInputs transform."
-            )
-
-        pipeline_inputs = results["inputs"]
+        # Extract inputs
+        pipeline_inputs = data.get("inputs", {})
         if "points" not in pipeline_inputs:
-            available_keys = list(pipeline_inputs.keys())
-            raise ValueError(
-                "Expected 'points' key in pipeline inputs for CenterPoint. "
-                f"Available keys: {available_keys}. "
-                "For CenterPoint, voxelization is performed by the model's data_preprocessor."
-            )
+            raise ValueError(f"Expected 'points' in inputs. Got keys: {list(pipeline_inputs.keys())}")
 
         points_tensor = self._to_tensor(pipeline_inputs["points"], name="points")
         if points_tensor.ndim != 2:
-            raise ValueError(f"Expected points tensor with shape [N, point_features], got shape {points_tensor.shape}")
+            raise ValueError(f"Expected points tensor with shape [N, features], got {points_tensor.shape}")
 
-        return {"points": points_tensor}
+        # Extract metainfo and eval_ann_info from data_samples
+        data_samples = data.get("data_samples")
+        metainfo: Dict[str, Any] = {}
+        ground_truth: Dict[str, Any] = {}
 
-    def get_num_samples(self) -> int:
-        return len(self.data_infos)
-
-    def get_ground_truth(self, index: int) -> Dict[str, Any]:
-        sample = self.load_sample(index)
-
-        gt_bboxes_3d = sample.get("gt_bboxes_3d", np.zeros((0, 7), dtype=np.float32))
-        gt_labels_3d = sample.get("gt_labels_3d", np.zeros((0,), dtype=np.int64))
-
-        if isinstance(gt_bboxes_3d, (list, tuple)):
-            gt_bboxes_3d = np.array(gt_bboxes_3d, dtype=np.float32)
-        if isinstance(gt_labels_3d, (list, tuple)):
-            gt_labels_3d = np.array(gt_labels_3d, dtype=np.int64)
+        if data_samples is not None:
+            metainfo = getattr(data_samples, "metainfo", {}) or {}
+            eval_ann_info = getattr(data_samples, "eval_ann_info", {}) or {}
+            # Keep raw eval_ann_info here; evaluator will convert to the metrics format.
+            ground_truth = dict(eval_ann_info)
 
         return {
-            "gt_bboxes_3d": gt_bboxes_3d,
-            "gt_labels_3d": gt_labels_3d,
-            "sample_idx": sample.get("sample_idx", index),
+            "points": points_tensor,
+            "metainfo": metainfo,
+            "ground_truth": ground_truth,
         }
 
-    def get_class_names(self) -> List[str]:
-        if hasattr(self.model_cfg, "class_names"):
-            return self.model_cfg.class_names
+    def preprocess(self, sample: Dict[str, Any]) -> Dict[str, Any]:
+        """Extract points and metainfo from loaded sample.
 
-        raise ValueError("class_names must be defined in model_cfg.")
+        This is a lightweight operation - pipeline already ran in load_sample().
+        """
+        return {
+            "points": sample["points"],
+            "metainfo": sample["metainfo"],
+        }
+
+    def get_num_samples(self) -> int:
+        return len(self.dataset)
+
+    def get_class_names(self) -> List[str]:
+        # Get from dataset's metainfo or model_cfg
+        if hasattr(self.dataset, "metainfo") and "classes" in self.dataset.metainfo:
+            return list(self.dataset.metainfo["classes"])
+
+        if hasattr(self.model_cfg, "class_names"):
+            return list(self.model_cfg.class_names)
+
+        raise ValueError("class_names not found in dataset.metainfo or model_cfg")
