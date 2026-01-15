@@ -106,7 +106,6 @@ class CenterPointDeploymentPipeline(BaseDeploymentPipeline):
     def preprocess(
         self,
         points: torch.Tensor,
-        **kwargs: Any,
     ) -> Tuple[Dict[str, torch.Tensor], Dict[str, Any]]:
         """Preprocess point cloud data for inference.
 
@@ -115,7 +114,6 @@ class CenterPointDeploymentPipeline(BaseDeploymentPipeline):
 
         Args:
             points: Point cloud tensor of shape [N, point_features].
-            **kwargs: Additional arguments (unused).
 
         Returns:
             Tuple of (preprocessed_dict, metadata_dict).

@@ -97,9 +97,6 @@ class LatencyBreakdown:
 class InferenceInput:
     """Prepared input for pipeline inference.
 
-    This replaces the old (input_data, infer_kwargs) tuple pattern,
-    making the interface explicit and statically checkable.
-
     Attributes:
         data: The actual input data (e.g., points tensor, image tensor).
         metadata: Sample metadata forwarded to postprocess().

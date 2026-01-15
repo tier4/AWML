@@ -39,7 +39,6 @@ class CenterPointPipelineFactory(BasePipelineFactory):
         pytorch_model: Any,
         device: Optional[str] = None,
         components_cfg: Optional[Mapping[str, Any]] = None,
-        **kwargs,
     ) -> BaseDeploymentPipeline:
         """Create a CenterPoint pipeline for the specified backend.
 
@@ -49,7 +48,6 @@ class CenterPointPipelineFactory(BasePipelineFactory):
             device: Override device (uses model_spec.device if None)
             components_cfg: Unified component configuration dict from deploy_config.
                            Used to configure component file paths.
-            **kwargs: Additional arguments (unused)
 
         Returns:
             Pipeline instance for the specified backend
