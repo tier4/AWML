@@ -30,7 +30,6 @@ from perception_eval.evaluation.result.perception_frame_config import (
 from perception_eval.evaluation.result.perception_frame_result import PerceptionFrameResult
 from perception_eval.manager import PerceptionEvaluationManager
 from pyquaternion import Quaternion
-from torch.utils import data
 
 __all__ = ["T4MetricV2"]
 _UNKNOWN = "unknown"
@@ -723,16 +722,21 @@ class T4MetricV2(BaseMetric):
             List[PerceptionFrameResult]: List of evaluated frame results.
         """
         self.logger.info(f"Evaluating batch: {batch_index+1}")
-        future_perception_frame_evaluation_args = []
+        evaluation_args = []
         previous_scene_id = None
         previous_perception_frame_result = None
+        previous_evaluator_name = None
         for perception_frame_preprocessing_result in perception_frame_preprocessing_results:
             # When the scene id is different from the previous frame scene id, it's the first frame of the scene or when the previous_scene_id is None
-            if perception_frame_preprocessing_result.scene_id != previous_scene_id:
+            if (
+                perception_frame_preprocessing_result.scene_id != previous_scene_id
+                or perception_frame_preprocessing_result.evaluator_name != previous_evaluator_name
+            ):
                 previous_perception_frame_result = None
                 previous_scene_id = None
+                previous_evaluator_name = None
 
-            future_perception_frame_evaluation_args.append(
+            evaluation_args.append(
                 (
                     perception_frame_preprocessing_result.evaluator,
                     perception_frame_preprocessing_result.evaluator_name,
@@ -747,6 +751,7 @@ class T4MetricV2(BaseMetric):
 
             previous_perception_frame_result = perception_frame_preprocessing_result.perception_frame_result
             previous_scene_id = perception_frame_preprocessing_result.scene_id
+            previous_evaluator_name = perception_frame_preprocessing_result.evaluator_name
 
         # Separate current and previous results into two sequences
         (
@@ -758,7 +763,8 @@ class T4MetricV2(BaseMetric):
             locations,
             current_perception_frame_results,
             previous_perception_frame_results,
-        ) = zip(*future_perception_frame_evaluation_args)
+        ) = zip(*evaluation_args)
+
         # Run evaluation for all frames in the batch
         perception_evaluation_results = list(
             executor.map(
@@ -877,20 +883,6 @@ class T4MetricV2(BaseMetric):
             self._multi_process_all_frames(scenes)
         else:
             self._sequential_process_all_frames(scenes)
-
-    def _write_output_files(self, scenes: dict, final_metric_dict: dict, evaluator_name: str) -> None:
-        """Write scene metrics and aggregated metrics to files.
-
-        Args:
-            scenes (dict): Dictionary of scenes and their samples.
-            final_metric_dict (dict): The final metrics dictionary.
-            evaluator_name (str): The name of the evaluator.
-        """
-        try:
-            self._write_scene_metrics(scenes)
-            self._write_aggregated_metrics(final_metric_dict)
-        except Exception as e:
-            self.logger.error(f"Failed to write output files: {e}")
 
     def _clean_up(self) -> None:
         """Clean up resources after computation."""
@@ -1054,7 +1046,7 @@ class T4MetricV2(BaseMetric):
 
             # Write the nested metrics to JSON
             output_path = self.output_dir / evaluator_name / "scene_metrics.json"
-            output_path.parents[0].mkdir(parents=True, exist_ok=True)
+            output_path.parent.mkdir(parents=True, exist_ok=True)
             with open(output_path, "w") as scene_file:
                 json.dump(scene_metrics, scene_file, indent=4)
 
