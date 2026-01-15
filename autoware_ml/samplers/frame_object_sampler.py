@@ -69,10 +69,11 @@ class LowPedestriansObjectSampler(ObjectSampler):
     MAPPING_CATEGORY_NAME = "pedestrian"
     SAMPLER_CATEGORY_NAME = "low_pedestrian"
 
-    def __init__(self, height_threshold: float, bev_distance_thresholds: Tuple[float, float, float, float]):
+    def __init__(self, height_threshold: float, bev_distance_thresholds: Tuple[float, float, float, float], target_label_index: int):
         super().__init__()
         self.height_threshold = height_threshold
         self.bev_distance_thresholds = bev_distance_thresholds
+        self.target_label_index = target_label_index
 
     @property
     def sampler_category_name(self) -> str:
@@ -82,13 +83,13 @@ class LowPedestriansObjectSampler(ObjectSampler):
         # Implement the sampling logic for low pedestrian category
         nearer_bbox_in_ranges = frame_ann_info["gt_bboxes_3d"].in_range_bev(self.bev_distance_thresholds)
         gt_bbox_height_mask = frame_ann_info["gt_bboxes_3d"].height < self.height_threshold
-        labels = frame_ann_info["gt_nusc_name"]
+        labels = frame_ann_info["gt_labels_3d"]
         for index, (label, gt_bbox_height_mask, nearer_bbox_mask) in enumerate(
             zip(labels, gt_bbox_height_mask, nearer_bbox_in_ranges)
         ):
             if (
                 frame_ann_info[SAMPLE_CLASS_NAME_KEY][index] == FILTER_CLASS_LABELS
-                or label != LowPedestriansObjectSampler.MAPPING_CATEGORY_NAME
+                or label != self.target_label_index
                 or not gt_bbox_height_mask
                 or not nearer_bbox_mask
             ):

@@ -26,6 +26,7 @@ train_frame_object_sampler = dict(
                 50.0,
                 50.0,
             ],
+            target_label_index=4  # 4 is the label index for pedestrian 
         ),
     ],
 )
