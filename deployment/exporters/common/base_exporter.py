@@ -66,7 +66,7 @@ class BaseExporter(ABC):
         return self._model_wrapper(model)
 
     @abstractmethod
-    def export(self, model: torch.nn.Module, sample_input: Any, output_path: str, **kwargs) -> None:
+    def export(self, model: torch.nn.Module, sample_input: Any, output_path: str) -> None:
         """
         Export model to target format.
 
@@ -74,7 +74,6 @@ class BaseExporter(ABC):
             model: PyTorch model to export
             sample_input: Example model input(s) for tracing/shape inference
             output_path: Path to save exported model
-            **kwargs: Additional format-specific arguments
 
         Raises:
             RuntimeError: If export fails

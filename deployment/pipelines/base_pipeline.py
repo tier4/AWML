@@ -44,7 +44,7 @@ class BaseDeploymentPipeline(ABC):
         logger.info(f"Initialized {self.__class__.__name__} on device: {self.device}")
 
     @abstractmethod
-    def preprocess(self, input_data: Any, **kwargs) -> Any:
+    def preprocess(self, input_data: Any) -> Any:
         """Convert raw input into model-ready tensors/arrays.
 
         Implementations may optionally return a tuple `(model_input, metadata_dict)`
@@ -68,7 +68,7 @@ class BaseDeploymentPipeline(ABC):
         raise NotImplementedError
 
     def infer(
-        self, input_data: Any, metadata: Optional[Dict] = None, return_raw_outputs: bool = False, **kwargs
+        self, input_data: Any, metadata: Optional[Dict] = None, return_raw_outputs: bool = False
     ) -> InferenceResult:
         """Run end-to-end inference with latency breakdown.
 
@@ -81,7 +81,6 @@ class BaseDeploymentPipeline(ABC):
             input_data: Raw input sample(s) in a project-defined format.
             metadata: Optional auxiliary context merged with preprocess metadata.
             return_raw_outputs: If True, skip `postprocess` and return raw model output.
-            **kwargs: Forwarded to `preprocess` for project-specific options.
 
         Returns:
             InferenceResult with `output`, total latency, and per-stage breakdown.
@@ -94,7 +93,7 @@ class BaseDeploymentPipeline(ABC):
         try:
             start_time = time.perf_counter()
 
-            preprocessed = self.preprocess(input_data, **kwargs)
+            preprocessed = self.preprocess(input_data)
 
             preprocess_metadata = {}
             model_input = preprocessed

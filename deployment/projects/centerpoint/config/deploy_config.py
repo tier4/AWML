@@ -25,7 +25,7 @@ devices = dict(
 # Export Configuration
 # ============================================================================
 export = dict(
-    mode="none",
+    mode="both",
     work_dir="work_dirs/centerpoint_deployment",
     onnx_path=None,
 )

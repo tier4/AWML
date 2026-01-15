@@ -128,7 +128,7 @@ class BaseMetricsInterface(ABC):
         pass
 
     @abstractmethod
-    def add_frame(self, *args, **kwargs) -> None:
+    def add_frame(self, *args) -> None:
         """
         Add a frame of predictions and ground truths for evaluation.
 
