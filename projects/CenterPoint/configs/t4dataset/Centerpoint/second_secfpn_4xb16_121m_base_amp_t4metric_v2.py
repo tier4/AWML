@@ -59,5 +59,7 @@ test_evaluator = dict(
 )
 
 default_hooks = dict(
-    checkpoint=dict(type="CheckpointHook", interval=1, max_keep_ckpts=3, save_best="T4MetricV2/T4MetricV2/mAP_center_distance_bev"),
+    checkpoint=dict(
+        type="CheckpointHook", interval=1, max_keep_ckpts=3, save_best="T4MetricV2/T4MetricV2/mAP_center_distance_bev"
+    ),
 )
