@@ -945,8 +945,8 @@ class T4MetricV2(BaseMetric):
                     )
 
                     # Create precision_interpolate and recall_interpolate keys
-                    metric_dict[f"T4MetricV2/{label_name}_precision_{matching_mode}_{threshold}"] = ap.precision_interp
-                    metric_dict[f"T4MetricV2/{label_name}_recall_{matching_mode}_{threshold}"] = ap.recall_interp
+                    metric_dict[f"T4MetricV2/{label_name}_precisions_{matching_mode}_{threshold}"] = ap.precision_interp
+                    metric_dict[f"T4MetricV2/{label_name}_recalls_{matching_mode}_{threshold}"] = ap.recall_interp
 
                 # Label metadata key
                 metric_dict[f"metadata_label/test_{label_name}_num_predictions"] = label_num_preds
