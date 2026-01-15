@@ -2,8 +2,8 @@ _base_ = [
     "second_secfpn_4xb16_121m_j6gen2_base_amp.py",
 ]
 
-experiment_group_name = "second_secfpn_4xb16_121m_j6gen2_base_amp_t4metric_v2"
-work_dir = _base_.experiment_base_work_dir + "/" + experiment_group_name + "/"
+experiment_name = "second_secfpn_4xb16_121m_j6gen2_base_amp_t4metric_v2"
+work_dir = "work_dirs/" + _base_.experiment_group_name + "/" + experiment_name
 
 # Add evaluator configs
 perception_evaluator_configs = dict(
@@ -35,8 +35,8 @@ val_evaluator = dict(
     write_metric_summary=False,
     class_names={{_base_.class_names}},
     name_mapping={{_base_.name_mapping}},
-    experiment_model_name=_base_.experiment_model_name,
-    experiment_group_name=experiment_group_name,
+    experiment_name=experiment_name,
+    experiment_group_name=_base_.experiment_group_name,
 )
 
 test_evaluator = dict(
@@ -54,8 +54,8 @@ test_evaluator = dict(
     write_metric_summary=True,
     class_names={{_base_.class_names}},
     name_mapping={{_base_.name_mapping}},
-    experiment_model_name=_base_.experiment_model_name,
-    experiment_group_name=experiment_group_name,
+    experiment_name=experiment_name,
+    experiment_group_name=_base_.experiment_group_name,
 )
 
 default_hooks = dict(

@@ -50,10 +50,9 @@ num_workers = 32
 val_interval = 1
 max_epochs = 30
 
-experiment_model_name = "centerpoint"
-experiment_base_work_dir = "work_dirs/" + experiment_model_name + "/" + _base_.dataset_type
-experiment_group_name = "second_secfpn_4xb16_121m_jpntaxi_gen2_base_amp"
-work_dir = experiment_base_work_dir + "/" + experiment_group_name + "/"
+experiment_group_name = "centerpoint/jpntaxi_gen2_base/" + _base_.dataset_type
+experiment_name = "second_secfpn_4xb16_121m_jpntaxi_gen2_base_amp"
+work_dir = "work_dirs/" + experiment_group_name + "/" + experiment_name
 
 train_pipeline = [
     dict(

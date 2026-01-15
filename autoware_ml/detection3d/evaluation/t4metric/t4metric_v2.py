@@ -234,7 +234,7 @@ class T4MetricV2(BaseMetric):
         ann_file: str,
         dataset_name: str,
         output_dir: str,
-        experiment_model_name: str,
+        experiment_name: str,
         experiment_group_name: str,
         write_metric_summary: bool,
         checkpoint_path: Optional[Union[Path, str]] = None,
@@ -258,7 +258,7 @@ class T4MetricV2(BaseMetric):
         self.num_workers = num_workers
         self.scene_batch_size = scene_batch_size
         self.class_names = class_names
-        self.experiment_model_name = experiment_model_name
+        self.experiment_name = experiment_name
         self.experiment_group_name = experiment_group_name
         self.name_mapping = name_mapping
         if name_mapping is not None:
@@ -974,7 +974,7 @@ class T4MetricV2(BaseMetric):
         selected_evaluator = self.evaluators[evaluator_name]
 
         # Add metadata information
-        metric_dict["metadata/experiment_model_name"] = self.experiment_model_name
+        metric_dict["metadata/experiment_name"] = self.experiment_name
         metric_dict["metadata/experiment_group_name"] = self.experiment_group_name
         metric_dict["metadata/test_timestamp"] = self.test_timestamp
         metric_dict["metadata/test_checkpoint_path"] = self.checkpoint_path
