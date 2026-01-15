@@ -715,7 +715,7 @@ class T4MetricV2(BaseMetric):
             current_perception_frame_results,
             previous_perception_frame_results,
         ) = zip(*evaluation_args)
-        
+
         # Run evaluation for all frames in the batch
         perception_evaluation_results = list(
             executor.map(
