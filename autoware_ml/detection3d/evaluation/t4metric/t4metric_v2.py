@@ -77,6 +77,7 @@ class EvaluatorData:
     metric_score_config: MetricsScoreConfig
     min_range: float
     max_range: float
+    range_filter_name: str
 
 
 @dataclass(frozen=True)
@@ -343,6 +344,7 @@ class T4MetricV2(BaseMetric):
             ), f"min_distance must be less than max_distance, got: {min_distance} and {max_distance}"
             bev_distance_ranges.append((min_distance, max_distance))
 
+        range_filter_name = "bev_center"
         evaluators = {}
         for bev_distance_range in bev_distance_ranges:
             # Update min_distance_list and max_distance_list
@@ -365,7 +367,7 @@ class T4MetricV2(BaseMetric):
                 evaluator_config.evaluation_task, target_labels=self.target_labels
             )
 
-            evaluator_name = f"bev_range_{bev_distance_range[0]}-{bev_distance_range[1]}"
+            evaluator_name = f"{range_filter_name}_{bev_distance_range[0]}-{bev_distance_range[1]}"
             metric_output_dir = (
                 str(Path(evaluator_config.visualization_directory) / evaluator_name)
                 if self.write_metric_summary
@@ -385,6 +387,7 @@ class T4MetricV2(BaseMetric):
                 metric_score_config=perception_metrics_score_config,
                 min_range=bev_distance_range[0],
                 max_range=bev_distance_range[1],
+                range_filter_name=range_filter_name,
             )
         return evaluators
 
@@ -979,6 +982,7 @@ class T4MetricV2(BaseMetric):
         metric_dict["metadata/test_num_predictions"] = total_num_preds
         metric_dict["metadata/test_min_range"] = selected_evaluator.min_range
         metric_dict["metadata/test_max_range"] = selected_evaluator.max_range
+        metric_dict["metadata/test_range_filter_name"] = selected_evaluator.range_filter_name
 
         return metric_dict
 
