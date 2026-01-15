@@ -37,7 +37,6 @@ _UNKNOWN = "unknown"
 DEFAULT_T4METRIC_FILE_NAME = "t4metric_v2_results_{}.pkl"
 DEFAULT_T4METRIC_METRICS_FOLDER = "metrics"
 DEFAULT_T4METRIC_RESULT_FOLDER = "result"
-DEFAULT_EVALUATOR_PREFIX_NAME = "all/all"
 
 
 @dataclass(frozen=True)
@@ -294,7 +293,8 @@ class T4MetricV2(BaseMetric):
         # The last evaluator is the main evaluator, which will be used to get the frame id for the ground truth
         # and predictions. Also, it's used to report the final metrics
         selected_evaluator_name = list(self.evaluators.keys())[-1]
-        self.main_evaluator_name = f"{DEFAULT_EVALUATOR_PREFIX_NAME}/{selected_evaluator_name}"
+        self.default_evaluator_prefix_name = f"{dataset_name}/{dataset_name}"
+        self.main_evaluator_name = f"{self.default_evaluator_prefix_name}/{selected_evaluator_name}"
         self.main_evaluator_frame_id = self.evaluators[selected_evaluator_name].perception_evaluator_configs.frame_id
         self.logger.info(f"{self.default_prefix} running with {self.num_running_gpus} GPUs")
 
@@ -444,7 +444,7 @@ class T4MetricV2(BaseMetric):
             # Aggregate metrics without prefix for each evaluator
             final_metric_score = evaluator.perception_evaluator_manager.get_scene_result()
             final_metric_dict = self._process_metrics_for_aggregation(final_metric_score, evaluator_name)
-            evaluator_full_name = f"{DEFAULT_EVALUATOR_PREFIX_NAME}/{evaluator_name}"
+            evaluator_full_name = f"{self.default_evaluator_prefix_name}/{evaluator_name}"
             aggregated_metric_dict[evaluator_full_name] = final_metric_dict
             self.logger.info(f"====Evaluator: {evaluator_full_name}====")
             self.logger.info(f"Final metrics result: {final_metric_score}")
@@ -923,6 +923,25 @@ class T4MetricV2(BaseMetric):
                     # Create the metric key
                     key = f"T4MetricV2/{label_name}_AP_{matching_mode}_{threshold}"
                     metric_dict[key] = ap_value
+
+                    metric_dict[f"T4MetricV2/{label_name}_max-f1score_{matching_mode}_{threshold}"] = ap.max_f1_score
+
+                    # Get optimal confidence threshold for the label
+                    metric_dict[f"T4MetricV2/{label_name}_optimal-confidence_{matching_mode}_{threshold}"] = (
+                        ap.optimal_conf
+                    )
+                    # Optimal recall and precision at the optimal confidence threshold
+                    metric_dict[f"T4MetricV2/{label_name}_optimal-recall_{matching_mode}_{threshold}"] = (
+                        ap.optimal_recall
+                    )
+                    metric_dict[f"T4MetricV2/{label_name}_optimal-precision_{matching_mode}_{threshold}"] = (
+                        ap.optimal_precision
+                    )
+
+                    # Create precision_interpolate and recall_interpolate keys
+                    metric_dict[f"T4MetricV2/{label_name}_precision_{matching_mode}_{threshold}"] = ap.precision_interp
+                    metric_dict[f"T4MetricV2/{label_name}_recall_{matching_mode}_{threshold}"] = ap.recall_interp
+
 
                 # Label metadata key
                 metric_dict[f"metadata_label/test_{label_name}_num_predictions"] = label_num_preds
