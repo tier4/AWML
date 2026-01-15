@@ -57,3 +57,7 @@ test_evaluator = dict(
     experiment_model_name=_base_.experiment_model_name,
     experiment_group_name=experiment_group_name,
 )
+
+default_hooks = dict(
+    checkpoint=dict(type="CheckpointHook", interval=1, max_keep_ckpts=3, save_best="T4MetricV2/T4MetricV2/mAP_center_distance_bev"),
+)
