@@ -21,10 +21,11 @@ In addition to ML model deployment, `AWML` supports active learning framework in
 `AWML` supports following environment.
 
 - All tools are tested by [Docker environment](Dockerfile) on Ubuntu 22.04LTS
-- NVIDIA dependency: CUDA 12.1 + cuDNN 8
-  - Need > 530.xx.xx NVIDIA device driver
+- NVIDIA dependency: CUDA 12.9 + cuDNN 9
+  - Need >= 575.xx.xx NVIDIA device driver
 
-If you use this project in your research, please use [the arXiv paper](https://arxiv.org/abs/2506.00645) and consider cite.
+If you use this project in your research, please use [the arXiv paper of AWML](https://arxiv.org/abs/2506.00645) and [the arXiv paper for fine-tuning strategy](https://arxiv.org/abs/2509.04711).
+And please use consider citation as below.
 
 ```
 @misc{tanaka2025awmlopensourcemlbasedrobotics,
@@ -35,6 +36,16 @@ If you use this project in your research, please use [the arXiv paper](https://a
       archivePrefix={arXiv},
       primaryClass={cs.RO},
       url={https://arxiv.org/abs/2506.00645},
+}
+
+@misc{tanaka2025domainadaptationdifferentsensor,
+      title={Domain Adaptation for Different Sensor Configurations in 3D Object Detection},
+      author={Satoshi Tanaka and Kok Seang Tan and Isamu Yamashita},
+      year={2025},
+      eprint={2509.04711},
+      archivePrefix={arXiv},
+      primaryClass={cs.CV},
+      url={https://arxiv.org/abs/2509.04711},
 }
 ```
 
@@ -47,6 +58,10 @@ We hope that `AWML` promotes the community between Autoware and ML researchers a
 | -------------- | ---------------------------------------------- |
 | Autoware       | https://github.com/autowarefoundation/autoware |
 | AWMLPrediction | TBD                                            |
+
+## Get started
+
+- [Start training for 3D object detection](/docs/tutorial/tutorial_detection_3d.md)
 
 ## Docs
 ### Design documents
@@ -84,7 +99,7 @@ If you want to know about `AWML`, you should read following pages.
 
 ## Supported tools
 
-- [Setting environment for AWML](/tools/setting_environment/)
+- [Docker environment for AWML](/tools/setting_environment/)
 - Training, evaluation, and deployment
   - [Train and evaluate 3D detection model and 3D semantic segmentation model](/tools/detection3d/)
   - [Train and evaluate 2D detection model](/tools/detection2d/)
@@ -109,22 +124,20 @@ If you want to know about `AWML`, you should read following pages.
 
 ## Supported model
 
-- Supported models
-  - :star: is recommended to use
+- :star: is recommended to use
 
-| Task              | Model                                         | Use for Autoware   |
-| ----------------- | --------------------------------------------- | ------------------ |
-| 3D detection      | [CenterPoint](/projects/CenterPoint/)         | :star:             |
-| 3D detection      | [TransFusion](/projects/TransFusion/)         | :white_check_mark: |
-| 3D detection      | [BEVFusion](/projects/BEVFusion/)             | :white_check_mark: |
-| 3D segmentation   | [FRNet](/projects/FRNet/)                     | (Reviewing now)    |
-| 2D detection      | [YOLOX](/projects/YOLOX/)                     |                    |
-| 2D detection      | [YOLOX_opt](/projects/YOLOX_opt/)             | :star:             |
-| 2D detection      | [GLIP](/projects/GLIP/)                       |                    |
-| 2D detection      | [SwinTransformer](/projects/SwinTransformer/) |                    |
-| 2D classification | [MobileNetv2](/projects/MobileNetv2/)         | :white_check_mark: |
-| Vision language   | [BLIP-2](/projects/BLIP-2/)                   |                    |
-|                   |                                               |                    |
+| Task              | Model                                 | Use for Autoware   |
+| ----------------- | ------------------------------------- | ------------------ |
+| 3D detection      | [CenterPoint](/projects/CenterPoint/) | :star:             |
+| 3D detection      | [TransFusion](/projects/TransFusion/) | :white_check_mark: |
+| 3D detection      | [BEVFusion](/projects/BEVFusion/)     | :white_check_mark: |
+| 3D segmentation   | [FRNet](/projects/FRNet/)             | (Reviewing now)    |
+| 2D detection      | [YOLOX](/projects/YOLOX/)             |                    |
+| 2D detection      | [YOLOX_opt](/projects/YOLOX_opt/)     | :star:             |
+| 2D detection      | [GLIP](/projects/GLIP/)               |                    |
+| 2D classification | [MobileNetv2](/projects/MobileNetv2/) | :white_check_mark: |
+| Vision language   | [BLIP-2](/projects/BLIP-2/)           |                    |
+|                   |                                       |                    |
 
 - Additional plug-ins
   - [SparseConvolutions](/projects/SparseConvolution/)

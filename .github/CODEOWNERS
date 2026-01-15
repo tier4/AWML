@@ -12,7 +12,8 @@
 /projects/FRNet/ amadeusz.szymko.2@tier4.jp
 /projects/GLIP/ samrat.thapa@tier4.jp
 /projects/MobileNetv2/ samrat.thapa@tier4.jp
-/projects/SparseConvolution/ kokseang.tan@tier4.jp
+/projects/PTv3/ amadeusz.szymko.2@tier4.jp
+/projects/SparseConvolution/ kokseang.tan@tier4.jp amadeusz.szymko.2@tier4.jp
 /projects/SwinTransformer/ samrat.thapa@tier4.jp
 /projects/template/ kokseang.tan@tier4.jp
 /projects/TransFusion/ amadeusz.szymko.2@tier4.jp kokseang.tan@tier4.jp
@@ -22,6 +23,7 @@
 /tools/analysis_3d/ kokseang.tan@tier4.jp
 /tools/auto_labeling_2d/ shinatro.tomie@tier4.jp
 /tools/auto_labeling_3d/ shinatro.tomie@tier4.jp
+/tools/calibration_classification/ amadeusz.szymko.2@tier4.jp yihsiang.fang@tier4.jp
 /tools/classification2d/ samrat.thapa@tier4.jp
 /tools/detection2d/ samrat.thapa@tier4.jp
 /tools/detection3d/ kokseang.tan@tier4.jp

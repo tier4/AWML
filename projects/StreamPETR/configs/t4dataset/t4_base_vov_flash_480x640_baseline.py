@@ -3,7 +3,7 @@ _base_ = [
     "../default/vov_flash_480x640_baseline.py",
 ]
 
-info_directory_path = "info/kokseang_1_8/"
+info_directory_path = "info/username/"
 data_root = "data/t4dataset/"
 
 batch_size = 8

@@ -81,9 +81,9 @@ class ImageAug3D(BaseTransform):
         new_imgs = []
         transforms = []
         for img in imgs:
-            resize, resize_dims, crop, flip, rotate = self.sample_augmentation(data)
             post_rot = torch.eye(2)
             post_tran = torch.zeros(2)
+            resize, resize_dims, crop, flip, rotate = self.sample_augmentation(data)
             new_img, rotation, translation = self.img_transform(
                 img,
                 post_rot,

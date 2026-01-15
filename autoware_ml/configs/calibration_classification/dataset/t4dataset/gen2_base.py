@@ -27,7 +27,5 @@ dataset_version_list = [
 transform_config = dict(
     crop_ratio=0.6,  # Ratio for image cropping (0.0-1.0, where 1.0 means no crop)
     max_distortion=0.001,  # Maximum affine distortion as fraction of image dimensions (0.0-1.0)
-    depth_scale=80.0,  # Depth scaling factor in meters (used to normalize depth values to 0-255 range)
-    radius=2,  # Radius in pixels for LiDAR point visualization (creates 5x5 patches around each point)
     rgb_weight=0.3,  # Weight for RGB component in overlay visualization (0.0-1.0, where 1.0 is full RGB)
 )
