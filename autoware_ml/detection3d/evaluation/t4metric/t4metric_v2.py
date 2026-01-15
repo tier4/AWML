@@ -925,8 +925,8 @@ class T4MetricV2(BaseMetric):
                     metric_dict[key] = ap_value
 
                 # Label metadata key
-                metric_dict[f"metadata_label/{label_name}_num_predictions"] = label_num_preds
-                metric_dict[f"metadata_label/{label_name}_num_ground_truths"] = label_num_gts
+                metric_dict[f"metadata_label/test_{label_name}_num_predictions"] = label_num_preds
+                metric_dict[f"metadata_label/test_{label_name}_num_ground_truths"] = label_num_gts
 
             # Add mAP and mAPH values
             map_key = f"T4MetricV2/mAP_{matching_mode}"
@@ -940,11 +940,11 @@ class T4MetricV2(BaseMetric):
         selected_evaluator = self.evaluators[evaluator_name]
 
         # Add metadata information
-        metric_dict["metadata/num_testing_frames"] = metrics_score.num_frame
-        metric_dict["metadata/num_ground_truths"] = metrics_score.num_ground_truth
-        metric_dict["metadata/num_predictions"] = total_num_preds
-        metric_dict["metadata/min_range"] = selected_evaluator.min_range
-        metric_dict["metadata/max_range"] = selected_evaluator.max_range
+        metric_dict["metadata/test_num_frames"] = metrics_score.num_frame
+        metric_dict["metadata/test_num_ground_truths"] = metrics_score.num_ground_truth
+        metric_dict["metadata/test_num_predictions"] = total_num_preds
+        metric_dict["metadata/test_min_range"] = selected_evaluator.min_range
+        metric_dict["metadata/test_max_range"] = selected_evaluator.max_range
 
         return metric_dict
 
@@ -978,7 +978,7 @@ class T4MetricV2(BaseMetric):
                         # These are per-label metrics, extract label name and organize
                         # Example: T4MetricV2/car_AP_center_distance_0.5
                         parts = key.split("/")[1].split("_")
-                        label_name = parts[0]  # car, truck, etc.
+                        label_name = parts[1]  # car, truck, etc.
                         if label_name not in aggregated_metrics[evaluator_name]["metadata_label"]:
                             aggregated_metrics[evaluator_name]["metadata_label"][label_name] = {}
 
