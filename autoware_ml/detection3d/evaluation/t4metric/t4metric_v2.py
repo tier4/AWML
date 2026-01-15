@@ -930,29 +930,31 @@ class T4MetricV2(BaseMetric):
                     ap_value = ap.ap
 
                     # Create the metric key
-                    key = f"T4MetricV2/{label_name}_AP_{matching_mode}_{threshold}"
+                    key = f"T4MetricV2_label/{label_name}_AP_{matching_mode}_{threshold}"
                     metric_dict[key] = ap_value
 
                     # Create max f1_score key
-                    metric_dict[f"T4MetricV2/{label_name}_max-f1score_{matching_mode}_{threshold}"] = ap.max_f1_score
+                    metric_dict[f"T4MetricV2_label/{label_name}_max-f1score_{matching_mode}_{threshold}"] = (
+                        ap.max_f1_score
+                    )
 
                     # Get optimal confidence threshold for the label
-                    metric_dict[f"T4MetricV2/{label_name}_optimal-confidence_{matching_mode}_{threshold}"] = (
+                    metric_dict[f"T4MetricV2_label/{label_name}_optimal-confidence_{matching_mode}_{threshold}"] = (
                         ap.optimal_conf
                     )
                     # Optimal recall and precision at the optimal confidence threshold
-                    metric_dict[f"T4MetricV2/{label_name}_optimal-recall_{matching_mode}_{threshold}"] = (
+                    metric_dict[f"T4MetricV2_label/{label_name}_optimal-recall_{matching_mode}_{threshold}"] = (
                         ap.optimal_recall
                     )
-                    metric_dict[f"T4MetricV2/{label_name}_optimal-precision_{matching_mode}_{threshold}"] = (
+                    metric_dict[f"T4MetricV2_label/{label_name}_optimal-precision_{matching_mode}_{threshold}"] = (
                         ap.optimal_precision
                     )
 
                     # Create precision_interpolate and recall_interpolate keys
-                    metric_dict[f"T4MetricV2/{label_name}_precisions_{matching_mode}_{threshold}"] = (
+                    metric_dict[f"T4MetricV2_label/{label_name}_precisions_{matching_mode}_{threshold}"] = (
                         ap.precision_interp.tolist()
                     )
-                    metric_dict[f"T4MetricV2/{label_name}_recalls_{matching_mode}_{threshold}"] = (
+                    metric_dict[f"T4MetricV2_label/{label_name}_recalls_{matching_mode}_{threshold}"] = (
                         ap.recall_interp.tolist()
                     )
 
