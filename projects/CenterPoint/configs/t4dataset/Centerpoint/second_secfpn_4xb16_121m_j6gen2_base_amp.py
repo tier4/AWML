@@ -49,7 +49,11 @@ test_batch_size = 2
 num_workers = 32
 val_interval = 1
 max_epochs = 30
-work_dir = "work_dirs/centerpoint/" + _base_.dataset_type + "/second_secfpn_4xb16_121m_j6gen2_base_amp/"
+
+experiment_model_name = "centerpoint"
+experiment_base_work_dir = "work_dirs/" + experiment_model_name + "/" + _base_.dataset_type
+experiment_group_name = "second_secfpn_4xb16_121m_j6gen2_base_amp"
+work_dir = experiment_base_work_dir + "/" + experiment_group_name + "/"
 
 train_pipeline = [
     dict(

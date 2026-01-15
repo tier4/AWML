@@ -234,6 +234,8 @@ class T4MetricV2(BaseMetric):
         ann_file: str,
         dataset_name: str,
         output_dir: str,
+        experiment_model_name: str,
+        experiment_group_name: str,
         write_metric_summary: bool,
         scene_batch_size: int = 128,
         num_workers: int = 8,
@@ -255,6 +257,8 @@ class T4MetricV2(BaseMetric):
         self.num_workers = num_workers
         self.scene_batch_size = scene_batch_size
         self.class_names = class_names
+        self.experiment_model_name = experiment_model_name
+        self.experiment_group_name = experiment_group_name
         self.name_mapping = name_mapping
         if name_mapping is not None:
             self.class_names = [self.name_mapping.get(name, name) for name in self.class_names]
@@ -269,6 +273,7 @@ class T4MetricV2(BaseMetric):
         self.message_hub = MessageHub.get_current_instance()
         self.logger = MMLogger.get_current_instance()
         self.logger_file_path = Path(self.logger.log_file).parent
+        self.experiment_group = "/".join(self.logger_file_path.parent.parts[-2:])
 
         # Set output directory for metrics files
         assert output_dir, f"output_dir must be provided, got: {output_dir}"
@@ -924,6 +929,7 @@ class T4MetricV2(BaseMetric):
                     key = f"T4MetricV2/{label_name}_AP_{matching_mode}_{threshold}"
                     metric_dict[key] = ap_value
 
+                    # Create max f1_score key
                     metric_dict[f"T4MetricV2/{label_name}_max-f1score_{matching_mode}_{threshold}"] = ap.max_f1_score
 
                     # Get optimal confidence threshold for the label
@@ -942,7 +948,6 @@ class T4MetricV2(BaseMetric):
                     metric_dict[f"T4MetricV2/{label_name}_precision_{matching_mode}_{threshold}"] = ap.precision_interp
                     metric_dict[f"T4MetricV2/{label_name}_recall_{matching_mode}_{threshold}"] = ap.recall_interp
 
-
                 # Label metadata key
                 metric_dict[f"metadata_label/test_{label_name}_num_predictions"] = label_num_preds
                 metric_dict[f"metadata_label/test_{label_name}_num_ground_truths"] = label_num_gts
@@ -959,6 +964,9 @@ class T4MetricV2(BaseMetric):
         selected_evaluator = self.evaluators[evaluator_name]
 
         # Add metadata information
+        metric_dict["metadata/experiment_model_name"] = self.experiment_model_name
+        metric_dict["metadata/experiment_group_name"] = self.experiment_group_name
+        metric_dict["metadata/test_dataset_name"] = self.dataset_name
         metric_dict["metadata/test_num_frames"] = metrics_score.num_frame
         metric_dict["metadata/test_num_ground_truths"] = metrics_score.num_ground_truth
         metric_dict["metadata/test_num_predictions"] = total_num_preds

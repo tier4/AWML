@@ -3,7 +3,8 @@ _base_ = [
 ]
 
 # user setting
-work_dir = "work_dirs/centerpoint/" + _base_.dataset_type + "/second_secfpn_4xb16_121m_jpntaxi_gen2_base_amp_rfs/"
+experiment_group_name = "second_secfpn_4xb16_121m_jpntaxi_gen2_base_amp_rfs"
+work_dir = _base_.experiment_base_work_dir + "/" + experiment_group_name + "/"
 
 train_frame_object_sampler = dict(
     type="FrameObjectSampler",
