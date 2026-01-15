@@ -236,6 +236,7 @@ class T4MetricV2(BaseMetric):
         experiment_model_name: str,
         experiment_group_name: str,
         write_metric_summary: bool,
+        checkpoint_path: Optional[Union[Path, str]] = None,
         scene_batch_size: int = 128,
         num_workers: int = 8,
         prefix: Optional[str] = None,
@@ -272,7 +273,8 @@ class T4MetricV2(BaseMetric):
         self.message_hub = MessageHub.get_current_instance()
         self.logger = MMLogger.get_current_instance()
         self.logger_file_path = Path(self.logger.log_file).parent
-        self.experiment_group = "/".join(self.logger_file_path.parent.parts[-2:])
+        self.test_timestamp = self.logger_file_path.parts[-1]
+        self.checkpoint_path = checkpoint_path
 
         # Set output directory for metrics files
         assert output_dir, f"output_dir must be provided, got: {output_dir}"
@@ -500,7 +502,14 @@ class T4MetricV2(BaseMetric):
             # Compute final metrics
             aggregated_metric_dict = self._process_evaluator_results(scenes)
 
-            return aggregated_metric_dict[self.main_evaluator_name]  # Return the metrics from the main evaluator
+            # Remove unnecessary keys from the aggregated metric dictionary after saving them
+            remove_keys = ["precisios", "recalls"]
+            selected_aggregated_metric_dict = {
+                k: v
+                for k, v in aggregated_metric_dict[self.main_evaluator_name].items()
+                if not any(key in k for key in remove_keys)
+            }
+            return selected_aggregated_metric_dict  # Return the metrics from the main evaluator
 
         except Exception as e:
             raise RuntimeError(f"Error in compute_metrics: {e}")
@@ -938,9 +947,11 @@ class T4MetricV2(BaseMetric):
 
                     # Create precision_interpolate and recall_interpolate keys
                     metric_dict[f"T4MetricV2/{label_name}_precisions_{matching_mode}_{threshold}"] = (
-                        ap.precision_interp
+                        ap.precision_interp.tolist()
                     )
-                    metric_dict[f"T4MetricV2/{label_name}_recalls_{matching_mode}_{threshold}"] = ap.recall_interp
+                    metric_dict[f"T4MetricV2/{label_name}_recalls_{matching_mode}_{threshold}"] = (
+                        ap.recall_interp.tolist()
+                    )
 
                 # Label metadata key
                 metric_dict[f"metadata_label/test_{label_name}_num_predictions"] = label_num_preds
@@ -960,6 +971,8 @@ class T4MetricV2(BaseMetric):
         # Add metadata information
         metric_dict["metadata/experiment_model_name"] = self.experiment_model_name
         metric_dict["metadata/experiment_group_name"] = self.experiment_group_name
+        metric_dict["metadata/test_timestamp"] = self.test_timestamp
+        metric_dict["metadata/test_checkpoint_path"] = self.checkpoint_path
         metric_dict["metadata/test_dataset_name"] = self.dataset_name
         metric_dict["metadata/test_num_frames"] = metrics_score.num_frame
         metric_dict["metadata/test_num_ground_truths"] = metrics_score.num_ground_truth
