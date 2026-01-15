@@ -312,7 +312,7 @@ class TensorRTExporter(BaseExporter):
                     f"  - sample_input: {sample_input}\n"
                     "\n"
                     "Example config:\n"
-                    "  backend_config = dict(\n"
+                    "  tensorrt_config = dict(\n"
                     "      model_inputs=[\n"
                     "          dict(\n"
                     "              input_shapes={\n"
