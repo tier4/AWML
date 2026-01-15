@@ -923,7 +923,7 @@ class T4MetricV2(BaseMetric):
 
             # Write the nested metrics to JSON
             output_path = self.output_dir / evaluator_name / "scene_metrics.json"
-            output_path.parents[0].mkdir(parents=True, exist_ok=True)
+            output_path.parent.mkdir(parents=True, exist_ok=True)
             with open(output_path, "w") as scene_file:
                 json.dump(scene_metrics, scene_file, indent=4)
 
