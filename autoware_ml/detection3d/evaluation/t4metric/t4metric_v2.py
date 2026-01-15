@@ -823,20 +823,6 @@ class T4MetricV2(BaseMetric):
         else:
             self._sequential_process_all_frames(scenes)
 
-    def _write_output_files(self, scenes: dict, final_metric_dict: dict, evaluator_name: str) -> None:
-        """Write scene metrics and aggregated metrics to files.
-
-        Args:
-            scenes (dict): Dictionary of scenes and their samples.
-            final_metric_dict (dict): The final metrics dictionary.
-            evaluator_name (str): The name of the evaluator.
-        """
-        try:
-            self._write_scene_metrics(scenes)
-            self._write_aggregated_metrics(final_metric_dict)
-        except Exception as e:
-            self.logger.error(f"Failed to write output files: {e}")
-
     def _clean_up(self) -> None:
         """Clean up resources after computation."""
         self.scene_id_to_index_map.clear()
