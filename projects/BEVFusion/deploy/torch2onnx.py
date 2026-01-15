@@ -228,7 +228,6 @@ if __name__ == "__main__":
                 dynamic_axes=dynamic_axes,
                 keep_initializers_as_inputs=keep_initializers_as_inputs,
                 verbose=verbose,
-                do_constant_folding=False,
             )
 
             logger.info("Attempting to fix the graph (TopK's K becoming a tensor)")

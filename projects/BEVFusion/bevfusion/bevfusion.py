@@ -317,12 +317,7 @@ class BEVFusion(Base3DDetector):
             camera2lidar = batch_inputs_dict["cam2lidar"]
             img_aug_matrix = batch_inputs_dict["img_aug_matrix"]
             lidar_aug_matrix = batch_inputs_dict["lidar_aug_matrix"]
-
             geom_feats = batch_inputs_dict["geom_feats"]
-
-            # feats = batch_inputs_dict["voxels"]["voxels"]
-            # sizes = batch_inputs_dict["voxels"]["num_points_per_voxel"]
-            # feats = feats.sum(dim=1, keepdim=False) / sizes.type_as(feats).view(-1, 1)
 
             img_feature = self.extract_img_feat(
                 imgs,
