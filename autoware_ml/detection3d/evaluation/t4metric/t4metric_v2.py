@@ -30,7 +30,6 @@ from perception_eval.evaluation.result.perception_frame_config import (
 from perception_eval.evaluation.result.perception_frame_result import PerceptionFrameResult
 from perception_eval.manager import PerceptionEvaluationManager
 from pyquaternion import Quaternion
-from torch.utils import data
 
 __all__ = ["T4MetricV2"]
 _UNKNOWN = "unknown"
