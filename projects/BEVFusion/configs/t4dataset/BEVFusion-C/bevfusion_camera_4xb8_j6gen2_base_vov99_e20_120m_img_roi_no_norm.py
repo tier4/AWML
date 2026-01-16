@@ -8,13 +8,13 @@ custom_imports["imports"] += _base_.custom_imports["imports"]
 custom_imports["imports"] += ["autoware_ml.detection3d.datasets.transforms"]
 
 # user setting
-data_root = "data/t4dataset/"
+data_root = "data/t4datasets/"
 info_directory_path = "info/kokseang_2_5/"
 train_gpu_size = 4
 train_batch_size = 8
 test_batch_size = 2
 val_interval = 5
-max_epochs = 50
+max_epochs = 20
 backend_args = None
 
 # range setting
@@ -51,7 +51,7 @@ num_workers = 32
 lidar_sweep_dims = [0, 1, 2, 4]  # x, y, z, time_lag
 lidar_feature_dims = 4
 camera_order = ["CAM_FRONT", "CAM_FRONT_LEFT", "CAM_FRONT_RIGHT", "CAM_BACK_LEFT", "CAM_BACK_RIGHT"]
-focal_head_loss_weight = 1.0
+focal_head_loss_weight = 0.30
 
 model = dict(
     type="BEVFusion",
@@ -470,4 +470,5 @@ auto_scale_lr = dict(enable=False, base_batch_size=train_gpu_size * train_batch_
 if train_gpu_size > 1:
     sync_bn = "torch"
 
-load_from = "work_dirs/streampetr/epoch_31.pth"
+# load_from = "work_dirs/streampetr/epoch_31.pth"
+resumr = True

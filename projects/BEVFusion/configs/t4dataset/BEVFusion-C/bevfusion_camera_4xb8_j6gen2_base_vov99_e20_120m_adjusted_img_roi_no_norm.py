@@ -8,13 +8,13 @@ custom_imports["imports"] += _base_.custom_imports["imports"]
 custom_imports["imports"] += ["autoware_ml.detection3d.datasets.transforms"]
 
 # user setting
-data_root = "data/t4dataset/"
+data_root = "data/t4datasets/"
 info_directory_path = "info/kokseang_2_5/"
 train_gpu_size = 4
 train_batch_size = 8
 test_batch_size = 2
 val_interval = 5
-max_epochs = 50
+max_epochs = 20
 backend_args = None
 
 # range setting
@@ -51,7 +51,7 @@ num_workers = 32
 lidar_sweep_dims = [0, 1, 2, 4]  # x, y, z, time_lag
 lidar_feature_dims = 4
 camera_order = ["CAM_FRONT", "CAM_FRONT_LEFT", "CAM_FRONT_RIGHT", "CAM_BACK_LEFT", "CAM_BACK_RIGHT"]
-focal_head_loss_weight = 1.0
+focal_head_loss_weight = 0.60
 
 model = dict(
     type="BEVFusion",
@@ -75,7 +75,7 @@ model = dict(
     img_backbone=dict(
         type="VoVNet",  ###use checkpoint to save memory
         spec_name="V-99-eSE",
-        norm_eval=False,  # TODO: make true by default
+        norm_eval=True,  # TODO: make true by default
         frozen_stages=-1,
         input_ch=3,
         out_features=(
@@ -101,8 +101,7 @@ model = dict(
         zbound=[-10.0, 10.0, 20.0],
         dbound=[1.0, 130, 1.0],
         downsample=2,
-        lidar_depth_image_last_stride=2,
-        depth_lidar=False
+        lidar_depth_image_last_stride=2
     ),
 	pts_backbone=None,
     pts_neck=None,
@@ -320,7 +319,6 @@ train_dataloader = dict(
         backend_args=backend_args,
         data_root=data_root,
         ann_file=info_directory_path + _base_.info_train_file_name,
-        # ann_file=info_directory_path + _base_.info_val_file_name,
         metainfo=_base_.metainfo,
         class_names=_base_.class_names,
         test_mode=False,
@@ -339,7 +337,6 @@ val_dataloader = dict(
         type=_base_.dataset_type,
         data_root=data_root,
         ann_file=info_directory_path + _base_.info_val_file_name,
-        # ann_file=info_directory_path + _base_.info_train_file_name,
         pipeline=test_pipeline,
         metainfo=_base_.metainfo,
         class_names=_base_.class_names,
@@ -451,7 +448,7 @@ param_scheduler = [
 # runtime settings
 # Run validation for every val_interval epochs before max_epochs - 10, and run validation every 2 epoch after max_epochs - 10
 train_cfg = dict(
-    by_epoch=True, max_epochs=max_epochs, val_interval=val_interval, dynamic_intervals=[(max_epochs - 5, 2)]
+    by_epoch=True, max_epochs=max_epochs, val_interval=val_interval, dynamic_intervals=[(max_epochs - 5, 1)]
 )
 val_cfg = dict()
 test_cfg = dict()
@@ -473,4 +470,5 @@ auto_scale_lr = dict(enable=False, base_batch_size=train_gpu_size * train_batch_
 if train_gpu_size > 1:
     sync_bn = "torch"
 
-load_from = "work_dirs/streampetr/epoch_31.pth"
+# load_from = "work_dirs/streampetr/epoch_31.pth"
+resumr = True

@@ -8,13 +8,13 @@ custom_imports["imports"] += _base_.custom_imports["imports"]
 custom_imports["imports"] += ["autoware_ml.detection3d.datasets.transforms"]
 
 # user setting
-data_root = "data/t4dataset/"
+data_root = "data/t4datasets/"
 info_directory_path = "info/kokseang_2_5/"
 train_gpu_size = 4
 train_batch_size = 8
 test_batch_size = 2
 val_interval = 5
-max_epochs = 10
+max_epochs = 20
 backend_args = None
 
 # range setting
@@ -73,22 +73,36 @@ model = dict(
     ),
     pts_middle_encoder=None,
     img_backbone=dict(
-        type="VoVNet",  ###use checkpoint to save memory
-        spec_name="V-99-eSE",
-        norm_eval=True,  # TODO: make true by default
-        frozen_stages=-1,
-        input_ch=3,
-        out_features=(
-            "stage3",
-            "stage4",
-            "stage5",
+        type="mmdet.SwinTransformer",
+        embed_dims=96,
+        depths=[2, 2, 6, 2],
+        num_heads=[3, 6, 12, 24],
+        window_size=7,
+        mlp_ratio=4,
+        qkv_bias=True,
+        qk_scale=None,
+        drop_rate=0.0,
+        attn_drop_rate=0.0,
+        drop_path_rate=0.2,
+        patch_norm=True,
+        out_indices=[1, 2, 3],
+        with_cp=False,
+        convert_weights=True,
+        init_cfg=dict(
+            type="Pretrained",
+            checkpoint="work_dirs/swin_transformer/swint_nuimages_pretrained.pth",  # noqa: E251  # noqa: E501
+            # checkpoint="work_dirs/swin_transformer/swint_nuimages_pretrained.pth"  # noqa: E251  # noqa: E501
         ),
     ),
     img_neck=dict(
-        type="CPFPN", 
-        in_channels=[512, 768, 1024], 
-        out_channels=256, 
-        num_outs=3, 
+        type="GeneralizedLSSFPN",
+        in_channels=[192, 384, 768],
+        out_channels=256,
+        start_level=0,
+        num_outs=3,
+        norm_cfg=dict(type="BN2d", requires_grad=True),
+        act_cfg=dict(type="ReLU", inplace=True),
+        upsample_cfg=dict(mode="bilinear", align_corners=False),
     ),
     view_transform=dict(
         type="DepthLSSTransform",
@@ -396,13 +410,22 @@ test_evaluator = dict(
 
 # learning rate
 # lr = 0.0001
-lr = 1e-4
-t_max = 2
+lr = 5e-5
+t_max = 6
 param_scheduler = [
     # learning rate scheduler
     # During the first (max_epochs * 0.4) epochs, learning rate increases from 0 to lr * 10
     # during the next epochs, learning rate decreases from lr * 10 to
     # lr * 1e-4
+    # dict(
+    #     type="CosineAnnealingLR",
+    #     T_max=t_max,
+    #     eta_min=lr * 10,
+    #     begin=0,
+    #     end=t_max,
+    #     by_epoch=True,
+    #     convert_to_iter_based=True,
+    # ),
 	dict(type="LinearLR", start_factor=1.0 / 3, begin=0, end=t_max, by_epoch=True),
     dict(
         type="CosineAnnealingLR",
@@ -461,4 +484,5 @@ auto_scale_lr = dict(enable=False, base_batch_size=train_gpu_size * train_batch_
 if train_gpu_size > 1:
     sync_bn = "torch"
 
-load_from = "work_dirs/streampetr/epoch_31.pth"
+# load_from = "work_dirs/streampetr/epoch_31.pth"
+# resumr = True
