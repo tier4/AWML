@@ -5,7 +5,8 @@ dataset_version_list = [
     "db_tlr_v3",
     "db_tlr_v4",
     "db_tlr_v5",
-    "db_tlr_v6",
+    "db_tlr_v6",  # does not have any pedestrian tlr data
+    "db_tlr_v7",  # does not have any pedestrian tlr data
 ]
 
 classes = (
@@ -13,11 +14,7 @@ classes = (
     "crosswalk_green",
     "crosswalk_unknown",
 )
-class_mappings = {
-    "crosswalk_red": "crosswalk_red",
-    "crosswalk_green": "crosswalk_green",
-    "crosswalk_unknown": "crosswalk_unknown",
-}
+
 class_mappings = {
     "crosswalk_red": "crosswalk_red",
     "crosswalk_green": "crosswalk_green",

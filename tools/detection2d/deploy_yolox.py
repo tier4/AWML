@@ -102,6 +102,27 @@ def create_yolox_checkpoint(autoware_ml_ckpt: str, model: str, work_dir: str):
     return modified_official_ckpt_path, class_num
 
 
+def patch_yolox_export_onnx(yolox_dir: str):
+    """
+    Patch the YOLOX export_onnx.py to fix torch.onnx._export deprecation.
+    In newer PyTorch versions, torch.onnx._export was removed.
+    This function replaces it with torch.onnx.export.
+
+    Args:
+        yolox_dir (str): path to the YOLOX directory
+    """
+    export_onnx_path = os.path.join(yolox_dir, "tools", "export_onnx.py")
+    if os.path.isfile(export_onnx_path):
+        with open(export_onnx_path, "r") as f:
+            content = f.read()
+        # Replace torch.onnx._export with torch.onnx.export
+        if "torch.onnx._export" in content:
+            content = content.replace("torch.onnx._export", "torch.onnx.export")
+            with open(export_onnx_path, "w") as f:
+                f.write(content)
+            print("Patched export_onnx.py: replaced torch.onnx._export with torch.onnx.export")
+
+
 def install_official_yolox(work_dir: str) -> str:
     """
     download the official yolox codes and install the environment
@@ -126,6 +147,10 @@ def install_official_yolox(work_dir: str) -> str:
         )
     else:
         print("yolox official package exists. skip clone and install")
+
+    # Patch export_onnx.py to fix torch.onnx._export deprecation
+    patch_yolox_export_onnx(yolox_dir)
+
     return yolox_dir
 
 
