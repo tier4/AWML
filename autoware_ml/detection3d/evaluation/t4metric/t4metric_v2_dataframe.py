@@ -15,7 +15,7 @@ class T4MetricV2DataFrame:
             output_path (Path): The path to save the dataframe.
         """
         self.output_dataframe_path = output_dataframe_path
-        self.output_dataframe_path.mkdir(parents=True, exist_ok=True)
+        self.output_dataframe_path.parent.mkdir(parents=True, exist_ok=True)
 
     def read_json_to_dict(self, json_path: Path) -> Dict[str, Any]:
         """
@@ -64,7 +64,7 @@ class T4MetricV2DataFrame:
         """
         df = defaultdict(list)
         for evaluator_name, metric_dict in aggregated_metric_scalars.items():
-            selected_evaluator_metric_data = aggregated_metric_data.select(evaluator_name, None)
+            selected_evaluator_metric_data = aggregated_metric_data.get(evaluator_name, None)
             if selected_evaluator_metric_data is None:
                 raise ValueError(f"Evaluator {evaluator_name} not found in aggregated metric data.")
             
@@ -96,6 +96,7 @@ class T4MetricV2DataFrame:
             for metric_column_name, metric_column_data in current_df.items():
                 df[metric_column_name].extend(metric_column_data)
 
+        df = pl.from_dict(df)
         return df
     
     def _parse_metric_header_data(self, metric_header_name: str, metric_header_data: Dict[str, Any]) -> Dict[str, Any]:
@@ -112,9 +113,9 @@ class T4MetricV2DataFrame:
             ```
         """
         if metric_header_name in ["metadata_label", "aggregated_metric_label"]:
-            return self._parse_metric_label_column_data(metric_header_name, metric_header_data)
+            return self._parse_metric_label_column_data(metric_header_data)
         else:
-            return self._parse_metric_column_data(metric_header_name, metric_header_data)
+            return self._parse_metric_column_data(metric_header_data)
     
     def _parse_metric_label_column_data(self, metric_header_data: Dict[str, Any]) -> Dict[str, Any]:
         """
@@ -165,13 +166,13 @@ class T4MetricV2DataFrame:
         df.write_parquet(self.output_dataframe_path)
 
 
-if __name__ == "__main__":
-    aggregated_metric_scalars = "path/to/aggregated_metric_scalars.json"
-    aggregated_metric_data = "path/to/aggregated_metric_data.json"
-    t4metric_v2_dataframe = T4MetricV2DataFrame(output_dataframe_path="path/to/output_dataframe.parquet")
+# if __name__ == "__main__":
+#     aggregated_metric_scalars = "work_dirs/centerpoint/j6gen2_base/T4Dataset/second_secfpn_4xb16_121m_j6gen2_base_amp_t4metric_v2/20260119_042508/testing/db_largebus/aggregated_metrics.json"
+#     aggregated_metric_data = "work_dirs/centerpoint/j6gen2_base/T4Dataset/second_secfpn_4xb16_121m_j6gen2_base_amp_t4metric_v2/20260119_042508/testing/db_largebus/aggregated_metrics_data.json"
+#     t4metric_v2_dataframe = T4MetricV2DataFrame(output_dataframe_path=Path("work_dirs/centerpoint/j6gen2_base/T4Dataset/second_secfpn_4xb16_121m_j6gen2_base_amp_t4metric_v2/20260119_042508/testing/db_largebus/output_dataframe.parquet"))
     
-    aggregated_metric_scalars = t4metric_v2_dataframe.read_json_to_dict(aggregated_metric_scalars)
-    aggregated_metric_data = t4metric_v2_dataframe.read_json_to_dict(aggregated_metric_data)
-    df = t4metric_v2_dataframe(aggregated_metric_scalars, aggregated_metric_data)
-    t4metric_v2_dataframe.save_dataframe(df)
-    print(df.columns)
+#     aggregated_metric_scalars = t4metric_v2_dataframe.read_json_to_dict(aggregated_metric_scalars)
+#     aggregated_metric_data = t4metric_v2_dataframe.read_json_to_dict(aggregated_metric_data)
+#     df = t4metric_v2_dataframe(aggregated_metric_scalars, aggregated_metric_data)
+#     t4metric_v2_dataframe.save_dataframe(df)
+#     print(df.columns)

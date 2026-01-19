@@ -31,6 +31,8 @@ from perception_eval.evaluation.result.perception_frame_result import Perception
 from perception_eval.manager import PerceptionEvaluationManager
 from pyquaternion import Quaternion
 
+from autoware_ml.detection3d.evaluation.t4metric.t4metric_v2_dataframe import T4MetricV2DataFrame  
+
 __all__ = ["T4MetricV2"]
 _UNKNOWN = "unknown"
 DEFAULT_T4METRIC_FILE_NAME = "t4metric_v2_results_{}.pkl"
@@ -305,6 +307,11 @@ class T4MetricV2(BaseMetric):
         self.main_evaluator_frame_id = self.evaluators[selected_evaluator_name].perception_evaluator_configs.frame_id
         self.logger.info(f"{self.default_prefix} running with {self.num_running_gpus} GPUs")
 
+        # T4MetricV2 DatFrame
+        self.t4_metric_v2_dataframe = T4MetricV2DataFrame(
+            output_dataframe_path=self.output_dir / "t4metricv2_metrics.parquet"
+        ) 
+
     def _create_evaluators(
         self,
         perception_evaluator_configs: Dict[str, Any],
@@ -477,12 +484,21 @@ class T4MetricV2(BaseMetric):
             self.logger.info(f"Final metrics result: {final_metric_score}")
 
         # Write aggregated metrics for all evaluators to an output file
-        try:
-            self._write_aggregated_metrics(aggregated_metric_scalars, "aggregated_metrics.json")
-            self._write_aggregated_metrics(aggregated_metric_data, "aggregated_metrics_data.json")
-        except Exception as e:
-            self.logger.error(f"Failed to write aggregated metrics to output files: {e}")
+        if self.write_metric_summary:
+            try:
+                self._write_aggregated_metrics(aggregated_metric_scalars, "aggregated_metrics.json")
+                self._write_aggregated_metrics(aggregated_metric_data, "aggregated_metrics_data.json")
 
+                # Write to a parquet 
+                df = self.t4_metric_v2_dataframe(
+                    aggregated_metric_scalars=aggregated_metric_scalars, 
+                    aggregated_metric_data=aggregated_metric_data
+                )
+                self.t4metric_v2_dataframe.save_dataframe(df)
+
+            except Exception as e:
+                self.logger.error(f"Failed to write aggregated metrics to output files: {e}")
+         
         return aggregated_metric_scalars
 
     # override of BaseMetric.compute_metrics
