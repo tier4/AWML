@@ -435,20 +435,6 @@ class BaseDepthTransform(BaseViewTransform):
         lidar_aug_matrix_inverse,
         geom_feats_precomputed,
     ):
-        post_trans = img_aug_matrix[..., :3, 3]
-        camera2lidar_rots = camera2lidar[..., :3, :3]
-        camera2lidar_trans = camera2lidar[..., :3, 3]
-
-        if camera_intrinsics_inverse is None:
-            intrins_inverse = torch.inverse(cam_intrinsic[..., :3, :3])
-        else:
-            intrins_inverse = camera_intrinsics_inverse[..., :3, :3]
-
-        if img_aug_matrix_inverse is None:
-            post_rots_inverse = torch.inverse(img_aug_matrix[..., :3, :3])
-        else:
-            post_rots_inverse = img_aug_matrix_inverse[..., :3, :3]
-
         if lidar_aug_matrix_inverse is None:
             lidar_aug_matrix_inverse = torch.inverse(lidar_aug_matrix[..., :3, :3])
 
@@ -524,6 +510,20 @@ class BaseDepthTransform(BaseViewTransform):
 
             x = self.bev_pool_precomputed(x, geom_feats, kept, ranks, indices)
         else:
+            post_trans = img_aug_matrix[..., :3, 3]
+            camera2lidar_rots = camera2lidar[..., :3, :3]
+            camera2lidar_trans = camera2lidar[..., :3, 3]
+
+            if camera_intrinsics_inverse is None:
+                intrins_inverse = torch.inverse(cam_intrinsic)[..., :3, :3]
+            else:
+                intrins_inverse = camera_intrinsics_inverse[..., :3, :3]
+
+            if img_aug_matrix_inverse is None:
+                post_rots_inverse = torch.inverse(img_aug_matrix)[..., :3, :3]
+            else:
+                post_rots_inverse = img_aug_matrix_inverse[..., :3, :3]
+
             geom = self.get_geometry(
                 camera2lidar_rots=camera2lidar_rots,
                 camera2lidar_trans=camera2lidar_trans,
