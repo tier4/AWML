@@ -415,8 +415,12 @@ optim_wrapper = dict(
     clip_grad=dict(max_norm=35, norm_type=2),
 )
 
-auto_scale_lr = dict(enable=True, base_batch_size=4)
+#   - `base_batch_size` = (8 GPUs) x (4 samples per GPU).
+# auto_scale_lr = dict(enable=False, base_batch_size=32)
+auto_scale_lr = dict(enable=False, base_batch_size=train_gpu_size * train_batch_size)
 
 # Only set if the number of train_gpu_size more than 1
 if train_gpu_size > 1:
     sync_bn = "torch"
+
+randomness = dict(seed=0, diff_rank_seed=False, deterministic=True)
