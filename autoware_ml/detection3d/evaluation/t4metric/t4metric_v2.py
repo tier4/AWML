@@ -494,7 +494,7 @@ class T4MetricV2(BaseMetric):
                     aggregated_metric_scalars=metric_scalars_json, 
                     aggregated_metric_data=metric_data_json
                 )
-                self.t4metric_v2_dataframe.save_dataframe(df)
+                self.t4_metric_v2_dataframe.save_dataframe(df)
 
             except Exception as e:
                 self.logger.error(f"Failed to write aggregated metrics to output files: {e}")
