@@ -925,7 +925,7 @@ class T4MetricV2(BaseMetric):
         self.frame_results_with_info.clear()
 
     def _aggregate_metrics_data(
-        self, metrics_score: MetricsScore, evaluator_name: str,
+        self, metrics_score: MetricsScore, 
     ) -> Dict[str, float]:
         """
         Process Ietarable metrics, for example, detection/precisions from MetricsScore and return a dictionary of all metrics.
@@ -1015,14 +1015,6 @@ class T4MetricV2(BaseMetric):
                     )
                     metric_dict[f"T4MetricV2_label/{label_name}_optimal-precision_{matching_mode}_{threshold}"] = (
                         ap.optimal_precision
-                    )
-
-                    # Create precision_interpolate and recall_interpolate keys
-                    metric_dict[f"T4MetricV2_label_detection/{label_name}_precisions_{matching_mode}_{threshold}"] = (
-                        ap.precision_interp.tolist()
-                    )
-                    metric_dict[f"T4MetricV2_label_detection/{label_name}_recalls_{matching_mode}_{threshold}"] = (
-                        ap.recall_interp.tolist()
                     )
 
                 # Label metadata key
