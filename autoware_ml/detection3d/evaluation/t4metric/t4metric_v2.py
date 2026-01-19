@@ -530,6 +530,7 @@ class T4MetricV2(BaseMetric):
 
             # Compute final metrics
             aggregated_metric_dict = self._process_evaluator_results(scenes, sample_id_to_prefix_frame_mapping)
+            selected_aggregated_metric_dict = aggregated_metric_dict[self.main_evaluator_name]
 
             return selected_aggregated_metric_dict  # Return the metrics from the main evaluator
 
