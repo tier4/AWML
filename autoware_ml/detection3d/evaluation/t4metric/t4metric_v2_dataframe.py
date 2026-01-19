@@ -151,6 +151,8 @@ class T4MetricV2DataFrame:
         Args:
             metric_name (str): The metric name.
         """
+        # Remove prefix, such as "metrics/" or "metadata/"
+        metric_name = metric_name.split("/")[-1]
         return metric_name.replace("/", "_").replace(".", "_")
 
     def save_dataframe(self, df: pl.DataFrame) -> None:
