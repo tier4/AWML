@@ -48,7 +48,7 @@ def update_detection_data_annotations(
     for ann in object_ann:
         class_name = class_mappings[categories[ann.category_token]]
         if class_name not in allowed_classes:
-            continue
+            raise ValueError(f"Class name {class_name} is not in allowed classes {allowed_classes}")
         bbox_label = allowed_classes.index(class_name)
         instance = Instance(
             bbox=ann.bbox,
@@ -159,8 +159,10 @@ def main() -> None:
                 print_log(f"Creating data info for scene: {scene_id}")
 
                 t4_dataset_id, t4_dataset_version_id = scene_id.split("   ")
-                if os.path.exists(osp.join(args.root_path, t4_dataset_id, t4_dataset_version_id)):
-                    scene_root_dir_path = osp.join(args.root_path, t4_dataset_id, t4_dataset_version_id)
+                if os.path.exists(osp.join(args.root_path, dataset_version, t4_dataset_id, t4_dataset_version_id)):
+                    scene_root_dir_path = osp.join(
+                        args.root_path, dataset_version, t4_dataset_id, t4_dataset_version_id
+                    )
                 elif args.use_available_dataset_version:
                     print(
                         "Warning: The version of the dataset specified in the config file does not exist. Will use whatever is available locally."
@@ -168,9 +170,7 @@ def main() -> None:
                     scene_root_dir_path = get_scene_root_dir_path(args.root_path, dataset_version, t4_dataset_id)
                 else:
                     raise ValueError(f"{t4_dataset_id} does not exist.")
-
                 t4 = Tier4(
-                    version="annotation",
                     data_root=scene_root_dir_path,
                     verbose=False,
                 )

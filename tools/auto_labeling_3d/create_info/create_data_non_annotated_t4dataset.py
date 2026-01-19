@@ -77,7 +77,6 @@ def _create_non_annotated_info(
         if not Path(scene_root_dir_path).is_dir():
             raise ValueError(f"{scene_root_dir_path} does not exist.")
         t4 = Tier4(
-            version="annotation",
             data_root=scene_root_dir_path,
             verbose=False,
         )

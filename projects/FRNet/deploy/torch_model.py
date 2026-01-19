@@ -23,7 +23,7 @@ class TorchModel:
         model_cfg["backbone"].update(deploy)
         model_cfg["decode_head"].update(deploy)
         model = MODELS.build(model_cfg)
-        model.load_state_dict(torch.load(checkpoint_path)["state_dict"])
+        model.load_state_dict(torch.load(checkpoint_path, weights_only=False)["state_dict"])
         model.eval()
         return model
 
