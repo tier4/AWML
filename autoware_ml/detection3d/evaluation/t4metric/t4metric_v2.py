@@ -434,8 +434,12 @@ class T4MetricV2(BaseMetric):
             evaluator (PerceptionEvaluationManager): The evaluator instance.
             results (List[dict]): The results to process.
         """
-        # Aggregate all without prefix frame
-        aggregated_metric_dict = defaultdict(dict)
+        # Save scalar metrics and metadata only
+        aggregated_metric_scalars = defaultdict(dict)
+
+        # Save metric data, for example, detection/precisions
+        aggregated_metric_data = defaultdict(dict)
+        
         for evaluator_name, evaluator in self.evaluators.items():
             # Write scene-level metrics for each evaluator to an output file
             if self.write_metric_summary:
@@ -448,27 +452,42 @@ class T4MetricV2(BaseMetric):
             frame_prefix_scores = evaluator.perception_evaluator_manager.get_scene_result_with_prefix()
             for frame_prefix_name, metric_dict in frame_prefix_scores.items():
                 evaluator_frame_prefix_name = frame_prefix_name + "/" + evaluator_name
-                aggregated_metric_dict[evaluator_frame_prefix_name] = self._process_metrics_for_aggregation(
+                
+                # Process scalar metrics and metadata
+                aggregated_metric_scalars[evaluator_frame_prefix_name] = self._process_metrics_for_aggregation(
                     metric_dict, evaluator_name, sample_id_to_prefix_frame_mapping
+                )
+                
+                # Process metric data, for example, detection/precisions
+                aggregated_metric_data[evaluator_frame_prefix_name] = self._aggregate_metrics_data(
+                    metric_dict
                 )
 
             # Aggregate metrics without prefix for each evaluator
+            evaluator_full_name = f"{self.default_evaluator_prefix_name}/{evaluator_name}"
             final_metric_score = evaluator.perception_evaluator_manager.get_scene_result()
-            final_metric_dict = self._process_metrics_for_aggregation(
+            
+            # Process scalar metrics and metadata
+            aggregated_metric_scalars[evaluator_full_name] = self._process_metrics_for_aggregation(
                 final_metric_score, evaluator_name, sample_id_to_prefix_frame_mapping
             )
-            evaluator_full_name = f"{self.default_evaluator_prefix_name}/{evaluator_name}"
-            aggregated_metric_dict[evaluator_full_name] = final_metric_dict
+            
+            # Process metric data, for example, detection/precisions
+            aggregated_metric_data[evaluator_full_name] = self._aggregate_metrics_data(
+                final_metric_score
+            )
+            
             self.logger.info(f"====Evaluator: {evaluator_full_name}====")
             self.logger.info(f"Final metrics result: {final_metric_score}")
 
         # Write aggregated metrics for all evaluators to an output file
         try:
-            self._write_aggregated_metrics(aggregated_metric_dict)
+            self._write_aggregated_metrics(aggregated_metric_scalars, "aggregated_metrics.json")
+            self._write_aggregated_metrics(aggregated_metric_data, "aggregated_metrics_data.json")
         except Exception as e:
             self.logger.error(f"Failed to write aggregated metrics to output files: {e}")
 
-        return aggregated_metric_dict
+        return aggregated_metric_scalars
 
     # override of BaseMetric.compute_metrics
     def compute_metrics(
@@ -516,13 +535,6 @@ class T4MetricV2(BaseMetric):
             # Compute final metrics
             aggregated_metric_dict = self._process_evaluator_results(scenes, sample_id_to_prefix_frame_mapping)
 
-            # Remove unnecessary keys from the aggregated metric dictionary after saving them
-            remove_keys = ["precisios", "recalls"]
-            selected_aggregated_metric_dict = {
-                k: v
-                for k, v in aggregated_metric_dict[self.main_evaluator_name].items()
-                if not any(key in k for key in remove_keys)
-            }
             return selected_aggregated_metric_dict  # Return the metrics from the main evaluator
 
         except Exception as e:
@@ -912,6 +924,46 @@ class T4MetricV2(BaseMetric):
         self.scene_id_to_index_map.clear()
         self.frame_results_with_info.clear()
 
+    def _aggregate_metrics_data(
+        self, metrics_score: MetricsScore, evaluator_name: str,
+    ) -> Dict[str, float]:
+        """
+        Process Ietarable metrics, for example, detection/precisions from MetricsScore and return a dictionary of all metrics.
+
+        Args:
+            metrics_score (MetricsScore): The metrics score to process.
+            evaluator_name (str): The name of the evaluator.
+            sample_id_to_prefix_frame_mapping (Dict[str, str]): A dictionary mapping sample ids to prefix frame names.
+
+        Returns:
+            Dict[str, float]: Dictionary containing all processed metrics.
+        """
+        iterable_metrics = {}
+
+        total_num_preds = 0
+        # Detections
+        for map_instance in metrics_score.mean_ap_values:
+            num_preds = 0
+            matching_mode = map_instance.matching_mode.value.lower().replace(" ", "_")
+
+            # Process individual AP values
+            for label, aps in map_instance.label_to_aps.items():
+                label_name = label.value
+
+                for ap in aps:
+                    threshold = ap.matching_threshold
+                    ap_value = ap.ap
+
+                    # Create precision_interpolate and recall_interpolate keys
+                    iterable_metrics[f"T4MetricV2_label_detection/{label_name}_precisions_{matching_mode}_{threshold}"] = (
+                        ap.precision_interp.tolist()
+                    )
+                    iterable_metrics[f"T4MetricV2_label_detection/{label_name}_recalls_{matching_mode}_{threshold}"] = (
+                        ap.recall_interp.tolist()
+                    )
+
+        return iterable_metrics
+
     def _process_metrics_for_aggregation(
         self, metrics_score: MetricsScore, evaluator_name: str, sample_id_to_prefix_frame_mapping: Dict[str, str]
     ) -> Dict[str, float]:
@@ -966,10 +1018,10 @@ class T4MetricV2(BaseMetric):
                     )
 
                     # Create precision_interpolate and recall_interpolate keys
-                    metric_dict[f"T4MetricV2_label/{label_name}_precisions_{matching_mode}_{threshold}"] = (
+                    metric_dict[f"T4MetricV2_label_detection/{label_name}_precisions_{matching_mode}_{threshold}"] = (
                         ap.precision_interp.tolist()
                     )
-                    metric_dict[f"T4MetricV2_label/{label_name}_recalls_{matching_mode}_{threshold}"] = (
+                    metric_dict[f"T4MetricV2_label_detection/{label_name}_recalls_{matching_mode}_{threshold}"] = (
                         ap.recall_interp.tolist()
                     )
 
