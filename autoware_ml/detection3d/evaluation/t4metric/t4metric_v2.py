@@ -309,7 +309,7 @@ class T4MetricV2(BaseMetric):
 
         # T4MetricV2 DatFrame
         self.t4_metric_v2_dataframe = T4MetricV2DataFrame(
-            output_dataframe_path=self.output_dir / "t4metricv2_metrics.parquet"
+            output_dataframe_path=self.output_dir / f"t4metricv2_metrics_{self.test_timestamp}.parquet"
         ) 
 
     def _create_evaluators(
