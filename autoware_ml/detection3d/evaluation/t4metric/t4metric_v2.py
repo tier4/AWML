@@ -921,7 +921,8 @@ class T4MetricV2(BaseMetric):
         self.frame_results_with_info.clear()
 
     def _aggregate_metrics_data(
-        self, metrics_score: MetricsScore, 
+        self,
+        metrics_score: MetricsScore,
     ) -> Dict[str, float]:
         """
         Process Ietarable metrics, for example, detection/precisions from MetricsScore and return a dictionary of all metrics.
