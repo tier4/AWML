@@ -15,8 +15,10 @@ backend_config = dict(
     model_inputs=[
         dict(
             input_shapes=dict(
-                voxels=dict(min_shape=[1, 5], opt_shape=[64000, 5], max_shape=[256000, 5]),
-                coors=dict(min_shape=[1, 4], opt_shape=[64000, 4], max_shape=[256000, 4]),
+                voxels=dict(
+                    min_shape=[1, 10, 4], opt_shape=[64000, 10, 4], max_shape=[256000, 10, 4]
+                ),  # [M, maximum number of points, features] features=5 when using intensity
+                coors=dict(min_shape=[1, 3], opt_shape=[64000, 3], max_shape=[256000, 3]),
                 num_points_per_voxel=dict(min_shape=[1], opt_shape=[64000], max_shape=[256000]),
             )
         )
