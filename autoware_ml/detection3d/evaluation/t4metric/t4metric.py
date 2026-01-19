@@ -4,8 +4,8 @@ import os
 import tempfile
 from collections import defaultdict
 from copy import deepcopy
-from pathlib import Path
 from os import path as osp
+from pathlib import Path
 from typing import Any, Dict, List, Optional, Sequence, Tuple, Union
 
 import mmengine

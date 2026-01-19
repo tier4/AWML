@@ -439,7 +439,7 @@ class T4MetricV2(BaseMetric):
 
         # Save metric data, for example, detection/precisions
         aggregated_metric_data = defaultdict(dict)
-        
+
         for evaluator_name, evaluator in self.evaluators.items():
             # Write scene-level metrics for each evaluator to an output file
             if self.write_metric_summary:
@@ -452,31 +452,27 @@ class T4MetricV2(BaseMetric):
             frame_prefix_scores = evaluator.perception_evaluator_manager.get_scene_result_with_prefix()
             for frame_prefix_name, metric_dict in frame_prefix_scores.items():
                 evaluator_frame_prefix_name = frame_prefix_name + "/" + evaluator_name
-                
+
                 # Process scalar metrics and metadata
                 aggregated_metric_scalars[evaluator_frame_prefix_name] = self._process_metrics_for_aggregation(
                     metric_dict, evaluator_name, sample_id_to_prefix_frame_mapping
                 )
-                
+
                 # Process metric data, for example, detection/precisions
-                aggregated_metric_data[evaluator_frame_prefix_name] = self._aggregate_metrics_data(
-                    metric_dict
-                )
+                aggregated_metric_data[evaluator_frame_prefix_name] = self._aggregate_metrics_data(metric_dict)
 
             # Aggregate metrics without prefix for each evaluator
             evaluator_full_name = f"{self.default_evaluator_prefix_name}/{evaluator_name}"
             final_metric_score = evaluator.perception_evaluator_manager.get_scene_result()
-            
+
             # Process scalar metrics and metadata
             aggregated_metric_scalars[evaluator_full_name] = self._process_metrics_for_aggregation(
                 final_metric_score, evaluator_name, sample_id_to_prefix_frame_mapping
             )
-            
+
             # Process metric data, for example, detection/precisions
-            aggregated_metric_data[evaluator_full_name] = self._aggregate_metrics_data(
-                final_metric_score
-            )
-            
+            aggregated_metric_data[evaluator_full_name] = self._aggregate_metrics_data(final_metric_score)
+
             self.logger.info(f"====Evaluator: {evaluator_full_name}====")
             self.logger.info(f"Final metrics result: {final_metric_score}")
 
@@ -925,7 +921,9 @@ class T4MetricV2(BaseMetric):
         self.frame_results_with_info.clear()
 
     def _aggregate_metrics_data(
-        self, metrics_score: MetricsScore, evaluator_name: str,
+        self,
+        metrics_score: MetricsScore,
+        evaluator_name: str,
     ) -> Dict[str, float]:
         """
         Process Ietarable metrics, for example, detection/precisions from MetricsScore and return a dictionary of all metrics.
@@ -955,12 +953,12 @@ class T4MetricV2(BaseMetric):
                     ap_value = ap.ap
 
                     # Create precision_interpolate and recall_interpolate keys
-                    iterable_metrics[f"T4MetricV2_label_detection/{label_name}_precisions_{matching_mode}_{threshold}"] = (
-                        ap.precision_interp.tolist()
-                    )
-                    iterable_metrics[f"T4MetricV2_label_detection/{label_name}_recalls_{matching_mode}_{threshold}"] = (
-                        ap.recall_interp.tolist()
-                    )
+                    iterable_metrics[
+                        f"T4MetricV2_label_detection/{label_name}_precisions_{matching_mode}_{threshold}"
+                    ] = ap.precision_interp.tolist()
+                    iterable_metrics[
+                        f"T4MetricV2_label_detection/{label_name}_recalls_{matching_mode}_{threshold}"
+                    ] = ap.recall_interp.tolist()
 
         return iterable_metrics
 
