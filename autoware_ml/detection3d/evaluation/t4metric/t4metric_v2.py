@@ -486,13 +486,13 @@ class T4MetricV2(BaseMetric):
         # Write aggregated metrics for all evaluators to an output file
         if self.write_metric_summary:
             try:
-                self._write_aggregated_metrics(aggregated_metric_scalars, "aggregated_metrics.json")
-                self._write_aggregated_metrics(aggregated_metric_data, "aggregated_metrics_data.json")
+                metric_scalars_json = self._write_aggregated_metrics(aggregated_metric_scalars, "aggregated_metrics.json")
+                metric_data_json = self._write_aggregated_metrics(aggregated_metric_data, "aggregated_metrics_data.json")
 
                 # Write to a parquet 
                 df = self.t4_metric_v2_dataframe(
-                    aggregated_metric_scalars=aggregated_metric_scalars, 
-                    aggregated_metric_data=aggregated_metric_data
+                    aggregated_metric_scalars=metric_scalars_json, 
+                    aggregated_metric_data=metric_data_json
                 )
                 self.t4metric_v2_dataframe.save_dataframe(df)
 
@@ -1069,7 +1069,7 @@ class T4MetricV2(BaseMetric):
 
     def _write_aggregated_metrics(
         self, final_metric_dict: dict, aggregated_metric_file_name: str = "aggregated_metrics.json"
-    ) -> None:
+    ) -> Dict[str, Any]:
         """
         Writes aggregated metrics to a JSON file with the specified format.
 
@@ -1122,6 +1122,7 @@ class T4MetricV2(BaseMetric):
                 json.dump(aggregated_metrics, aggregated_file, indent=4)
 
             self.logger.info(f"Aggregated metrics written to: {output_path}")
+            return aggregated_metrics
 
         except Exception as e:
             self.logger.error(f"Failed to write aggregated metrics: {e}")
