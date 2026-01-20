@@ -143,12 +143,10 @@ class T4MetricV2DataFrame:
             metric_column_name = self._parse_metric_column_name(metric_name)
             # Nested dict type
             if isinstance(metric_value, dict):
-                # Make it list of strs
-                values = []
-                keys = []
-                for key, value in metric_value.items():
-                    keys.append(key)
-                    values.append(value)
+                # Make it list of values
+                values = list(metric_value.values())
+                # Make it list of keys 
+                keys = list(metric_value.keys())
                 df[f"{metric_column_name}_keys"].append(keys)
                 df[f"{metric_column_name}_values"].append(values)
             else:
