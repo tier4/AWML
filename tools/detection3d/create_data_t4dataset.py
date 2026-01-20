@@ -5,7 +5,7 @@ import os.path as osp
 import re
 import warnings
 from pathlib import Path
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Optional
 
 import mmengine
 import numpy as np
@@ -81,7 +81,7 @@ def get_scene_root_dir_path(
         return scene_root_dir_path
 
 
-def get_info(cfg: Any, t4: Tier4, sample: Sample, i: int, max_sweeps: int, city: str = None, vehicle_type: str = None):
+def get_info(cfg: Any, t4: Tier4, sample: Sample, i: int, max_sweeps: int, city: Optional[str] = None, vehicle_type: Optional[str] = None):
     lidar_token = get_lidar_token(sample)
     if lidar_token is None:
         print_log(
@@ -212,7 +212,6 @@ def parse_args():
     parser.add_argument(
         "--dataset_version_config_root",
         type=str,
-        required=True,
         default="autoware_ml/configs/t4dataset/",
         help="specify the root path for yaml t4dataset split",
     )
