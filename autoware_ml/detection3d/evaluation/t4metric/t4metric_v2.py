@@ -936,7 +936,7 @@ class T4MetricV2(BaseMetric):
         metrics_score: MetricsScore,
     ) -> Dict[str, float]:
         """
-        Process Ietarable metrics, for example, detection/precisions from MetricsScore and return a dictionary of all metrics.
+        Process Iterable metrics, for example, detection/precisions from MetricsScore and return a dictionary of all metrics.
 
         Args:
             metrics_score (MetricsScore): The metrics score to process.
