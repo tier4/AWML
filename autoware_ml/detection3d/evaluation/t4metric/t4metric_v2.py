@@ -628,6 +628,14 @@ class T4MetricV2(BaseMetric):
 
         return results
 
+    @staticmethod
+    def _parse_frame_prefix(frame_prefix: str) -> Tuple[str, str]:
+        """Parse the frame prefix and return the location and vehicle type."""
+        parts = frame_prefix.split("/") if frame_prefix is not None else []
+        if len(parts) != 2:
+            raise ValueError(f"Invalid frame prefix: {frame_prefix}. Expected format: location/vehicle_type")
+        return parts[0], parts[1]
+
     def _batch_scenes(
         self, scenes: dict, scene_batch_size: int
     ) -> Generator[List[PerceptionFrameProcessingData], None, None]:
@@ -640,14 +648,7 @@ class T4MetricV2(BaseMetric):
             for evaluator_name, evaluator in self.evaluators.items():
                 for sample_id, perception_frame in samples.items():
                     frame_prefix = perception_frame.ground_truth_objects.frame_prefix
-                    parts = frame_prefix.split("/") if frame_prefix is not None else []
-
-                    if len(parts) != 2:
-                        raise ValueError(
-                            f"Invalid frame prefix: {frame_prefix}. Expected format: {location}/{vehicle_type}"
-                        )
-
-                    location, vehicle_type = parts
+                    location, vehicle_type = self._parse_frame_prefix(frame_prefix)
                     batch.append(
                         (
                             PerceptionFrameProcessingData(
@@ -892,7 +893,7 @@ class T4MetricV2(BaseMetric):
             for scene_id, samples in scenes.items():
                 for sample_id, perception_frame in samples.items():
                     try:
-                        location, vehicle_type = perception_frame.frame_prefix.split("/")
+                        location, vehicle_type = self._parse_frame_prefix(perception_frame.frame_prefix)
                         frame_result: PerceptionFrameResult = evaluator.perception_evaluator_manager.add_frame_result(
                             unix_time=time.time(),
                             ground_truth_now_frame=perception_frame.ground_truth_objects,
