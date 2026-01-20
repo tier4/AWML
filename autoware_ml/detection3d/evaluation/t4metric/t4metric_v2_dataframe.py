@@ -141,6 +141,18 @@ class T4MetricV2DataFrame:
         df = defaultdict(list)
         for metric_name, metric_value in metric_header_data.items():
             metric_column_name = self._parse_metric_column_name(metric_name)
+            # Nested dict type
+            if isinstance(metric_value, dict):
+                # Make it list of strs
+                values = []
+                keys = []
+                for key, value in metric_value.items():
+                    keys.append(key)
+                    values.append(value)
+                df[f"{metric_column_name}_keys"].append(keys)
+                df[f"{metric_column_name}_values"].append(values)
+            else:
+                df[metric_column_name].append(metric_value)
             df[metric_column_name].append(metric_value)
         return df
         
