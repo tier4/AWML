@@ -1,7 +1,7 @@
 _base_ = [
     "../../../../../autoware_ml/configs/detection3d/default_runtime.py",
     "../../../../../autoware_ml/configs/detection3d/dataset/t4dataset/j6gen2_base.py",
-    "../default/pipelines/default_lidar_intensity_120m.py",
+    "../default/pipelines/default_offline_lidar_intensity_120m.py",
     "../default/models/default_lidar_second_secfpn_120m.py",
     "../default/schedulers/default_30e_4xb8_adamw_cosine.py",
     "../default/default_misc.py",
@@ -15,7 +15,7 @@ custom_imports["imports"] += ["autoware_ml.detection3d.datasets.transforms"]
 data_root = "data/t4dataset/"
 info_directory_path = "info/user_name/"
 
-experiment_group_name = "bevfusion_lidar_intensity/j6gen2_base/" + _base_.dataset_type
+experiment_group_name = "bevfusion_lidar_intensity_offline/j6gen2_base/" + _base_.dataset_type
 experiment_name = "lidar_voxel_second_secfpn_30e_4xb8_j6gen2_base_120m"
 work_dir = "work_dirs/" + experiment_group_name + "/" + experiment_name
 

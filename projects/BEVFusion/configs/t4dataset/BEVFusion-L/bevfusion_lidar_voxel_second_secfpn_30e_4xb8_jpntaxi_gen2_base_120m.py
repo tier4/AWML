@@ -2,6 +2,7 @@ _base_ = [
     "../../../../../autoware_ml/configs/detection3d/default_runtime.py",
     "../../../../../autoware_ml/configs/detection3d/dataset/t4dataset/jpntaxi_gen2_base.py",
     "../default/pipelines/default_lidar_intensity_120m.py",
+    "../default/models/default_lidar_second_secfpn_120m.py",
     "../default/schedulers/default_30e_4xb8_adamw_cosine.py",
     "../default/default_misc.py",
 ]

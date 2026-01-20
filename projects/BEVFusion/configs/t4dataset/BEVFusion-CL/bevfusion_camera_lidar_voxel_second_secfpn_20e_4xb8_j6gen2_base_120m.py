@@ -1,9 +1,9 @@
 _base_ = [
     "../../../../../autoware_ml/configs/detection3d/default_runtime.py",
     "../../../../../autoware_ml/configs/detection3d/dataset/t4dataset/j6gen2_base.py",
-    "../models/default_lidar_second_secfpn_120m.py",
-    "../models/default_camera_swin_fpn.py",
     "../default/pipelines/default_camera_lidar_intensity_120m.py",
+    "../default/models/default_lidar_second_secfpn_120m.py",
+    "../default/models/default_camera_swin_fpn.py",
     "../default/schedulers/default_20e_4xb8_adamw_linear_cosine.py",
     "../default/default_misc.py",
 ]
