@@ -173,15 +173,3 @@ class T4MetricV2DataFrame:
             df (pl.DataFrame): The dataframe to save.
         """
         df.write_parquet(self.output_dataframe_path)
-
-
-# if __name__ == "__main__":
-#     aggregated_metric_scalars = "work_dirs/centerpoint/j6gen2_base/T4Dataset/second_secfpn_4xb16_121m_j6gen2_base_amp_t4metric_v2/20260119_042508/testing/db_largebus/aggregated_metrics.json"
-#     aggregated_metric_data = "work_dirs/centerpoint/j6gen2_base/T4Dataset/second_secfpn_4xb16_121m_j6gen2_base_amp_t4metric_v2/20260119_042508/testing/db_largebus/aggregated_metrics_data.json"
-#     t4metric_v2_dataframe = T4MetricV2DataFrame(output_dataframe_path=Path("work_dirs/centerpoint/j6gen2_base/T4Dataset/second_secfpn_4xb16_121m_j6gen2_base_amp_t4metric_v2/20260119_042508/testing/db_largebus/output_dataframe.parquet"))
-    
-#     aggregated_metric_scalars = t4metric_v2_dataframe.read_json_to_dict(aggregated_metric_scalars)
-#     aggregated_metric_data = t4metric_v2_dataframe.read_json_to_dict(aggregated_metric_data)
-#     df = t4metric_v2_dataframe(aggregated_metric_scalars, aggregated_metric_data)
-#     t4metric_v2_dataframe.save_dataframe(df)
-#     print(df.columns)
