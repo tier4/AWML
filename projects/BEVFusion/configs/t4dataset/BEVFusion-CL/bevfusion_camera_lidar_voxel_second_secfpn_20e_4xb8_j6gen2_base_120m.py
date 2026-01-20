@@ -138,3 +138,9 @@ test_evaluator = dict(
     filter_attributes=_base_.filter_attributes,
     save_csv=True,
 )
+
+default_hooks = dict(
+    logger=dict(type="LoggerHook", interval=50),
+    checkpoint=dict(type="CheckpointHook", interval=1, max_keep_ckpts=3, save_best="NuScenes metric/T4Metric/mAP"),
+)
+log_processor = dict(window_size=50)

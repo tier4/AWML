@@ -13,7 +13,6 @@ point_load_dim = 5  # x, y, z, intensity, ring_id
 point_use_dim = 5
 lidar_sweep_dims = [0, 1, 2, 3, 4]  # x, y, z, intensity, time_lag
 sweeps_num = 1
-num_proposals = 500
 
 # Image parameters
 image_size = [384, 768]  # Height, Width

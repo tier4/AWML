@@ -20,7 +20,6 @@ point_load_dim = 5  # x, y, z, intensity, ring_id
 point_use_dim = 4
 lidar_sweep_dims = [0, 1, 2, 4]  # x, y, z, time_lag
 sweeps_num = 1
-num_proposals = 500
 
 train_pipeline = [
     dict(
