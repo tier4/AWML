@@ -8,16 +8,8 @@ work_dir = "work_dirs/centerpoint/" + _base_.dataset_type + "/second_secfpn_4xb1
 perception_evaluator_configs = dict(
     dataset_paths=_base_.data_root,
     frame_id="base_link",
-    result_root_directory=work_dir + "/result",
     evaluation_config_dict=_base_.evaluator_metric_configs,
     load_raw_data=False,
-)
-
-critical_object_filter_config = dict(
-    target_labels=_base_.class_names,
-    ignore_attributes=None,
-    max_distance_list=[121.0, 121.0, 121.0, 121.0, 121.0],
-    min_distance_list=[-121.0, -121.0, -121.0, -121.0, -121.0],
 )
 
 frame_pass_fail_config = dict(
@@ -35,7 +27,7 @@ val_evaluator = dict(
     output_dir="validation",
     dataset_name="j6gen2_base",
     perception_evaluator_configs=perception_evaluator_configs,
-    critical_object_filter_config=critical_object_filter_config,
+    critical_object_filter_config=None,
     frame_pass_fail_config=frame_pass_fail_config,
     num_workers=64,
     scene_batch_size=-1,
@@ -52,7 +44,7 @@ test_evaluator = dict(
     output_dir="testing",
     dataset_name="j6gen2_base",
     perception_evaluator_configs=perception_evaluator_configs,
-    critical_object_filter_config=critical_object_filter_config,
+    critical_object_filter_config=None,
     frame_pass_fail_config=frame_pass_fail_config,
     num_workers=64,
     scene_batch_size=-1,

@@ -165,3 +165,21 @@ filter_attributes = [
     ("motorcycle", "cycle_state.without_rider"),
     ("motorcycle", "motorcycle_state.without_rider"),
 ]
+
+evaluator_metric_configs = dict(
+    evaluation_task="detection",
+    target_labels=class_names,
+    center_distance_bev_thresholds=[0.5, 1.0, 2.0, 4.0],
+    # plane_distance_thresholds is required for the pass fail evaluation
+    plane_distance_thresholds=[2.0, 4.0],
+    iou_2d_thresholds=None,
+    iou_3d_thresholds=None,
+    label_prefix="autoware",
+    # bev minimum distance ranges for each range bucket, must be the same length as max_distance,
+    # they will form bev distance ranges in [(min_distance[0], max_distance[0]), (min_distance[1], max_distance[1]), ...] when filtering
+    min_distance=[0.0, 50.0, 90.0, 0.0],
+    # bev maximum distance ranges for each range bucket, must be the same length as min_distance
+    max_distance=[50.0, 90.0, 121.0, 121.0],
+    min_point_numbers=0,
+    matching_class_agnostic_fps=False,
+)
