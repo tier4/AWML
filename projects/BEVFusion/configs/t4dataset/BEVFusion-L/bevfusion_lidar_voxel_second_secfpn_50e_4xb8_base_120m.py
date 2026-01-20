@@ -2,7 +2,7 @@ _base_ = [
     "../../../../../autoware_ml/configs/detection3d/default_runtime.py",
     "../../../../../autoware_ml/configs/detection3d/dataset/t4dataset/base.py",
     "../default/pipelines/default_lidar_120m.py",
-    "../models/default_lidar_second_secfpn_120m.py",
+    "../default/models/default_lidar_second_secfpn_120m.py",
     "../default/schedulers/default_50e_4xb8_adamw_cosine.py",
     "../default/default_misc.py",
 ]
@@ -11,8 +11,8 @@ custom_imports = dict(imports=["projects.BEVFusion.bevfusion"], allow_failed_imp
 custom_imports["imports"] += _base_.custom_imports["imports"]
 
 # user setting
-data_root = "data/t4dataset/"
-info_directory_path = "info/user_name/"
+data_root = "data/t4datasets/"
+info_directory_path = "info/kokseang_2_5/"
 
 experiment_group_name = "bevfusion_lidar/base/" + _base_.dataset_type
 experiment_name = "lidar_voxel_second_secfpn_50e_4xb8_base_120m"
@@ -135,3 +135,9 @@ test_evaluator = dict(
     filter_attributes=_base_.filter_attributes,
     save_csv=True,
 )
+
+default_hooks = dict(
+    logger=dict(type="LoggerHook", interval=50),
+    checkpoint=dict(type="CheckpointHook", interval=1, max_keep_ckpts=3, save_best="NuScenes metric/T4Metric/mAP"),
+)
+log_processor = dict(window_size=50)
