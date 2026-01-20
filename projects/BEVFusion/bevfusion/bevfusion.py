@@ -36,7 +36,23 @@ class BEVFusion(Base3DDetector):
         seg_head: Optional[dict] = None,
         **kwargs,
     ) -> None:
+        """Initialize BEVFusion model.
 
+        Args:
+            data_preprocessor (dict): Data preprocessor config.
+            voxelize_cfg (dict): Voxelization config.
+            pts_voxel_encoder (dict): Point voxel encoder config.
+            pts_middle_encoder (dict): Point middle encoder config.
+            fusion_layer (dict): Fusion layer config.
+            img_backbone (dict): Image backbone config.
+            img_neck (dict): Image neck config.
+            pts_backbone (dict): Point backbone config.
+            pts_neck (dict): Point neck config.
+            bbox_head (dict): Bbox head config.
+            init_cfg (dict): Initialization config.
+            seg_head (dict): Segmentation head config.
+            **kwargs: Additional keyword arguments.
+        """
         super().__init__(data_preprocessor=data_preprocessor, init_cfg=init_cfg)
 
         if voxelize_cfg is not None:
