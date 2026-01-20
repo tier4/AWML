@@ -34,6 +34,7 @@ model = dict(
         sparse_shape=_base_.grid_size,
     ),
     bbox_head=dict(
+        class_names=_base_.class_names,  # Use class names to identify the correct class indices
         train_cfg=dict(
             point_cloud_range=_base_.point_cloud_range,
             grid_size=_base_.grid_size,
