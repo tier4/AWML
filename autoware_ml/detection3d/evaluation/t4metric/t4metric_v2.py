@@ -31,7 +31,7 @@ from perception_eval.evaluation.result.perception_frame_result import Perception
 from perception_eval.manager import PerceptionEvaluationManager
 from pyquaternion import Quaternion
 
-from autoware_ml.detection3d.evaluation.t4metric.t4metric_v2_dataframe import T4MetricV2DataFrame  
+from autoware_ml.detection3d.evaluation.t4metric.t4metric_v2_dataframe import T4MetricV2DataFrame
 
 __all__ = ["T4MetricV2"]
 _UNKNOWN = "unknown"
@@ -311,7 +311,7 @@ class T4MetricV2(BaseMetric):
         # T4MetricV2 DatFrame
         self.t4_metric_v2_dataframe = T4MetricV2DataFrame(
             output_dataframe_path=self.output_dir / f"t4metricv2_metrics_{self.test_timestamp}.parquet"
-        ) 
+        )
 
     def _create_evaluators(
         self,
@@ -487,19 +487,22 @@ class T4MetricV2(BaseMetric):
         # Write aggregated metrics for all evaluators to an output file
         if self.write_metric_summary:
             try:
-                metric_scalars_json = self._write_aggregated_metrics(aggregated_metric_scalars, "aggregated_metrics.json")
-                metric_data_json = self._write_aggregated_metrics(aggregated_metric_data, "aggregated_metrics_data.json")
+                metric_scalars_json = self._write_aggregated_metrics(
+                    aggregated_metric_scalars, "aggregated_metrics.json"
+                )
+                metric_data_json = self._write_aggregated_metrics(
+                    aggregated_metric_data, "aggregated_metrics_data.json"
+                )
 
-                # Write to a parquet 
+                # Write to a parquet
                 df = self.t4_metric_v2_dataframe(
-                    aggregated_metric_scalars=metric_scalars_json, 
-                    aggregated_metric_data=metric_data_json
+                    aggregated_metric_scalars=metric_scalars_json, aggregated_metric_data=metric_data_json
                 )
                 self.t4_metric_v2_dataframe.save_dataframe(df)
 
             except Exception as e:
                 self.logger.error(f"Failed to write aggregated metrics to output files: {e}")
-         
+
         return aggregated_metric_scalars
 
     # override of BaseMetric.compute_metrics
