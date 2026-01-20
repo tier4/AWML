@@ -40,6 +40,7 @@ DEFAULT_T4METRIC_RESULT_FOLDER = "result"
 
 @dataclass(frozen=True)
 class FrameResult:
+    """Dataclass to group data related to a PerceptionFrameResult."""
 
     perception_frame_result: PerceptionFrameResult
     sample_id: str
