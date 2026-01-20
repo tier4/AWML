@@ -81,7 +81,15 @@ def get_scene_root_dir_path(
         return scene_root_dir_path
 
 
-def get_info(cfg: Any, t4: Tier4, sample: Sample, i: int, max_sweeps: int, city: Optional[str] = None, vehicle_type: Optional[str] = None):
+def get_info(
+    cfg: Any,
+    t4: Tier4,
+    sample: Sample,
+    i: int,
+    max_sweeps: int,
+    city: Optional[str] = None,
+    vehicle_type: Optional[str] = None,
+):
     lidar_token = get_lidar_token(sample)
     if lidar_token is None:
         print_log(
