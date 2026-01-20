@@ -948,10 +948,8 @@ class T4MetricV2(BaseMetric):
         """
         iterable_metrics = {}
 
-        total_num_preds = 0
         # Detections
         for map_instance in metrics_score.mean_ap_values:
-            num_preds = 0
             matching_mode = map_instance.matching_mode.value.lower().replace(" ", "_")
 
             # Process individual AP values
