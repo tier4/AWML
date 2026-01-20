@@ -243,6 +243,7 @@ def main():
         "val": [],
         "test": [],
     }
+    t4_statistics = {"train": {}, "val": {}, "test": {}}
     metainfo = dict(classes=cfg.class_names, version=args.version)
 
     if cfg.merge_objects:
