@@ -13,7 +13,6 @@ info_val_file_name = "t4dataset_pretrain_infos_val.pkl"
 info_test_file_name = "t4dataset_pretrain_infos_test.pkl"
 
 # dataset scene setting
-dataset_version_config_root = "autoware_ml/configs/t4dataset/"
 dataset_version_list = [
     "pseudo_j6_v1",
     "pseudo_j6_v2",
