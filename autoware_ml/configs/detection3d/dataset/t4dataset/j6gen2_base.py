@@ -27,10 +27,10 @@ dataset_version_list = [
 ]
 
 dataset_test_groups = {
-    # "db_j6_gen2_v6": "t4dataset_j6gen2_v6_infos_test.pkl",
-    # "db_j6gen2": "t4dataset_j6gen2_infos_test.pkl",
+    "db_j6_gen2_v6": "t4dataset_j6gen2_v6_infos_test.pkl",
+    "db_j6gen2": "t4dataset_j6gen2_infos_test.pkl",
     "db_largebus": "t4dataset_largebus_infos_test.pkl",
-    # "db_j6_gen2_base": "t4dataset_j6gen2_base_infos_test.pkl",
+    "db_j6_gen2_base": "t4dataset_j6gen2_base_infos_test.pkl",
 }
 
 # dataset format setting
@@ -188,11 +188,7 @@ evaluator_metric_configs = dict(
     iou_2d_thresholds=None,
     iou_3d_thresholds=None,
     label_prefix="autoware",
-    # bev minimum distance ranges for each range bucket, must be the same length as max_distance,
-    # they will form bev distance ranges in [(min_distance[0], max_distance[0]), (min_distance[1], max_distance[1]), ...] when filtering
-    min_distance=[0.0, 50.0, 90.0, 0.0],
-    # bev maximum distance ranges for each range bucket, must be the same length as min_distance
-    max_distance=[50.0, 90.0, 121.0, 121.0],
+    max_distance=121.0,
+    min_distance=-121.0,
     min_point_numbers=0,
-    matching_class_agnostic_fps=False,
 )

@@ -120,9 +120,6 @@ def main():
         cfg.test_dataloader.dataset.pipeline = cfg.tta_pipeline
         cfg.model = ConfigDict(**cfg.tta_model, module=cfg.model)
 
-    # Update the checkpoint path in the config
-    cfg.test_evaluator.checkpoint_path = args.checkpoint
-
     # build the runner from config
     if "dataset_test_groups" in cfg:
         for dataset_name, dataset_file in cfg.dataset_test_groups.items():
