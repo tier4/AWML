@@ -639,7 +639,15 @@ class T4MetricV2(BaseMetric):
             # Retrieve all evaluators
             for evaluator_name, evaluator in self.evaluators.items():
                 for sample_id, perception_frame in samples.items():
-                    location, vehicle_type = perception_frame.ground_truth_objects.frame_prefix.split("/")
+                    frame_prefix = perception_frame.ground_truth_objects.frame_prefix
+                    parts = frame_prefix.split("/") if frame_prefix is not None else []
+
+                    if len(parts) != 2:
+                        raise ValueError(
+                            f"Invalid frame prefix: {frame_prefix}. Expected format: {location}/{vehicle_type}"
+                        )
+
+                    location, vehicle_type = parts
                     batch.append(
                         (
                             PerceptionFrameProcessingData(
