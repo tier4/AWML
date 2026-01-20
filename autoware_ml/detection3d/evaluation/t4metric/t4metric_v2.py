@@ -1,10 +1,11 @@
 import json
 import pickle
 import time
+from collections import defaultdict
 from concurrent.futures import Executor, ProcessPoolExecutor
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Dict, Generator, List, Optional, Sequence, Union
+from typing import Any, Dict, Generator, List, Optional, Sequence, Tuple, Union
 
 import numpy as np
 import torch
@@ -34,6 +35,7 @@ __all__ = ["T4MetricV2"]
 _UNKNOWN = "unknown"
 DEFAULT_T4METRIC_FILE_NAME = "t4metric_v2_results_{}.pkl"
 DEFAULT_T4METRIC_METRICS_FOLDER = "metrics"
+DEFAULT_T4METRIC_RESULT_FOLDER = "result"
 
 
 @dataclass(frozen=True)
@@ -45,6 +47,116 @@ class PerceptionFrameProcessingData:
     unix_time: float
     ground_truth_objects: FrameGroundTruth
     estimated_objects: List[ObjectType]
+    frame_prefix: str
+    perception_evaluator_manager: PerceptionEvaluationManager
+    frame_pass_fail_config: PerceptionPassFailConfig
+    critical_object_filter_config: Optional[CriticalObjectFilterConfig]
+    evaluator_name: str
+
+
+@dataclass(frozen=True)
+class EvaluatorData:
+    """Dataclass to save data related to a PerceptionEvaluationManager."""
+
+    perception_evaluator_manager: PerceptionEvaluationManager
+    bev_distance_range: Optional[Tuple[float]]
+    perception_evaluator_configs: PerceptionEvaluationConfig
+    frame_pass_fail_config: PerceptionPassFailConfig
+    critical_object_filter_config: Optional[CriticalObjectFilterConfig]
+    metric_score_config: MetricsScoreConfig
+
+
+@dataclass(frozen=True)
+class PerceptionFrameMultiProcessingResult:
+    """Dataclass to save data related to a PerceptionFrameResult after multiprocessing."""
+
+    perception_frame_result: PerceptionFrameResult
+    evaluator: PerceptionEvaluationManager
+    scene_id: str
+    sample_id: str
+    evaluator_name: str
+
+
+def _apply_perception_evaluator_preprocessing(
+    evaluator: PerceptionEvaluationManager,
+    evaluator_name: str,
+    scene_id: str,
+    sample_id: str,
+    unix_time: float,
+    ground_truth_objects: List[FrameGroundTruth],
+    estimated_objects: List[ObjectType],
+    critical_object_filter_config: Optional[CriticalObjectFilterConfig],
+    frame_pass_fail_config: PerceptionPassFailConfig,
+    frame_prefix: str,
+) -> PerceptionFrameMultiProcessingResult:
+    """
+    Wrapper to apply an evaluator to a list of objects for a frame in multiprocessing.
+
+    Args:
+        evaluator (PerceptionEvaluationManager): The evaluator to apply.
+        evaluator_name (str): The name of the evaluator.
+        scene_id (str): The scene id.
+        sample_id (str): The sample id.
+        unix_time (float): The unix time of the frame.
+        ground_truth_objects (List[FrameGroundTruth]): The ground truth objects of the frames.
+        estimated_objects (List[ObjectType]): The estimated objects of the frames.
+        critical_object_filter_config (Optional[CriticalObjectFilterConfig]): The critical object filter configuration.
+        frame_pass_fail_config (PerceptionPassFailConfig): The frame pass fail configuration.
+    """
+    # Disable visualization for multiprocessing
+    evaluator.__visualizer = None
+
+    perception_frame_result = evaluator.preprocess_object_results(
+        unix_time=unix_time,
+        ground_truth_now_frame=ground_truth_objects,
+        estimated_objects=estimated_objects,
+        critical_object_filter_config=critical_object_filter_config,
+        frame_pass_fail_config=frame_pass_fail_config,
+        frame_prefix=frame_prefix,
+    )
+
+    return PerceptionFrameMultiProcessingResult(
+        perception_frame_result=perception_frame_result,
+        evaluator=evaluator,
+        scene_id=scene_id,
+        sample_id=sample_id,
+        evaluator_name=evaluator_name,
+    )
+
+
+def _apply_perception_evaluator_evaluation(
+    evaluator: PerceptionEvaluationManager,
+    evaluator_name: str,
+    scene_id: str,
+    sample_id: str,
+    current_perception_frame_result: PerceptionFrameResult,
+    previous_perception_frame_result: Optional[PerceptionFrameResult],
+) -> PerceptionFrameMultiProcessingResult:
+    """
+    Wrapper to apply an evaluator to a pair of PerceptionFrameResults.
+
+    Args:
+        evaluator (PerceptionEvaluationManager): The evaluator to apply.
+        evaluator_name (str): The name of the evaluator.
+        scene_id (str): The scene id.
+        sample_id (str): The sample id.
+        current_perception_frame_result (PerceptionFrameResult): The current perception frame result.
+        previous_perception_frame_result (Optional[PerceptionFrameResult]): The previous perception frame result.
+    """
+    # Disable visualization for multiprocessing
+    evaluator.__visualizer = None
+
+    perception_frame_result = evaluator.evaluate_perception_frame(
+        perception_frame_result=current_perception_frame_result,
+        previous_perception_frame_result=previous_perception_frame_result,
+    )
+    return PerceptionFrameMultiProcessingResult(
+        perception_frame_result=perception_frame_result,
+        evaluator=evaluator,
+        scene_id=scene_id,
+        sample_id=sample_id,
+        evaluator_name=evaluator_name,
+    )
 
 
 @METRICS.register_module()
@@ -88,6 +200,10 @@ class T4MetricV2(BaseMetric):
               ground truth from the pickle file, and runs `compute_metrics()`.
 
             Defaults to None.
+      bev_distance_ranges (Optional[Tuple[float]]):
+        Bev distance ranges in meters for different range buckets. Defaults to None.
+        Example: [(0.0, 60.0), (60.0, 90.0), (90.0, 121.0), (0.0, 121.0)], which means it will compute the metrics
+        for bev distance ranges are [0.0, 60.0), [60.0, 90.0), [90.0, 121.0), [0.0, 121.0) after filtering objects by bev distance ranges, respectively.
     """
 
     def __init__(
@@ -108,35 +224,25 @@ class T4MetricV2(BaseMetric):
         frame_pass_fail_config: Optional[Dict[str, Any]] = None,
         results_pickle_path: Optional[Union[Path, str]] = None,
     ) -> None:
-
         self.default_prefix = "T4MetricV2"
         self.dataset_name = dataset_name
         super(T4MetricV2, self).__init__(collect_device=collect_device, prefix=prefix)
+
         self.ann_file = ann_file
         self.data_root = data_root
         self.num_workers = num_workers
         self.scene_batch_size = scene_batch_size
-
         self.class_names = class_names
         self.name_mapping = name_mapping
-
         if name_mapping is not None:
             self.class_names = [self.name_mapping.get(name, name) for name in self.class_names]
 
         self.target_labels = [AutowareLabel[label.upper()] for label in self.class_names]
-        self.perception_evaluator_configs = PerceptionEvaluationConfig(**perception_evaluator_configs)
-        self.critical_object_filter_config = CriticalObjectFilterConfig(
-            evaluator_config=self.perception_evaluator_configs, **critical_object_filter_config
-        )
-        self.frame_pass_fail_config = PerceptionPassFailConfig(
-            evaluator_config=self.perception_evaluator_configs, **frame_pass_fail_config
-        )
-        self.metrics_config = MetricsScoreConfig(
-            self.perception_evaluator_configs.evaluation_task, target_labels=self.target_labels
-        )
 
-        self.scene_id_to_index_map: Dict[str, int] = {}  # scene_id to index map in self.results
-        self.frame_results_with_info = []
+        # scene_id to index map in self.results
+        self.scene_id_to_index_map: Dict[str, int] = {}
+        # {evaluator_name: []}
+        self.frame_results_with_info = defaultdict(list)
 
         self.message_hub = MessageHub.get_current_instance()
         self.logger = MMLogger.get_current_instance()
@@ -144,21 +250,111 @@ class T4MetricV2(BaseMetric):
 
         # Set output directory for metrics files
         assert output_dir, f"output_dir must be provided, got: {output_dir}"
-        self.output_dir = self.logger_file_path / output_dir
+        self.output_dir = self.logger_file_path / output_dir / dataset_name
         self.output_dir.mkdir(parents=True, exist_ok=True)
         self.logger.info(f"Metrics output directory set to: {self.output_dir}")
 
-        self.results_pickle_path: Optional[Path] = (
-            self.output_dir / results_pickle_path if results_pickle_path else None
-        )
+        self.results_pickle_path: Optional[Path] = results_pickle_path
         if self.results_pickle_path and self.results_pickle_path.suffix != ".pkl":
             raise ValueError(f"results_pickle_path must end with '.pkl', got: {self.results_pickle_path}")
-
         self.results_pickle_exists = True if self.results_pickle_path and self.results_pickle_path.exists() else False
-        self.write_metric_summary = write_metric_summary
 
+        self.write_metric_summary = write_metric_summary
         self.num_running_gpus = get_world_size()
+        self.result_output_dir = self.output_dir / DEFAULT_T4METRIC_RESULT_FOLDER
+        self.evaluators = self._create_evaluators(
+            perception_evaluator_configs,
+            frame_pass_fail_config,
+            critical_object_filter_config,
+        )
+
+        # The last evaluator is the main evaluator, which will be used to get the frame id for the ground truth
+        # and predictions. Also, it's used to report the final metrics
+        self.main_evaluator_name = list(self.evaluators.keys())[-1]
+        self.main_evaluator_frame_id = self.evaluators[self.main_evaluator_name].perception_evaluator_configs.frame_id
         self.logger.info(f"{self.default_prefix} running with {self.num_running_gpus} GPUs")
+
+    def _create_evaluators(
+        self,
+        perception_evaluator_configs: Dict[str, Any],
+        frame_pass_fail_configs: Dict[str, Any],
+        critical_object_filter_configs: Optional[Dict[str, Any]] = None,
+    ) -> Dict[str, EvaluatorData]:
+        """Create and return a dictionary of evaluators.
+
+        Returns:
+            Dict[str, EvaluatorData]: A dictionary of evaluators.
+        """
+        # Overwrite result_output_dir with result_root_directory in perception_evaluator_configs
+        perception_evaluator_configs["result_root_directory"] = str(self.result_output_dir)
+
+        # min_distance and max_distance must be provided in perception_evaluator_configs since bev_range is mandatory
+        assert (
+            "min_distance" in perception_evaluator_configs["evaluation_config_dict"]
+            and "max_distance" in perception_evaluator_configs["evaluation_config_dict"]
+        ), "min_distance and max_distance must be provided in perception_evaluator_configs"
+
+        assert isinstance(perception_evaluator_configs["evaluation_config_dict"]["min_distance"], list) and isinstance(
+            perception_evaluator_configs["evaluation_config_dict"]["max_distance"], list
+        ), f"min_distance and max_distance must be a list, got: {type(perception_evaluator_configs['evaluation_config_dict']['min_distance'])} and {type(perception_evaluator_configs['evaluation_config_dict']['max_distance'])}"
+
+        # Form bev distance ranges from min_distance and max_distance, for example, [(min_distance[0], max_distance[0]), (min_distance[1], max_distance[1]), ...],
+        # and each distance range will be used to create a separate evaluator to evaluate metrics for different bev distance ranges.
+        bev_distance_ranges = []
+        for min_distance, max_distance in zip(
+            perception_evaluator_configs["evaluation_config_dict"]["min_distance"],
+            perception_evaluator_configs["evaluation_config_dict"]["max_distance"],
+        ):
+            assert isinstance(min_distance, float) and isinstance(
+                max_distance, float
+            ), f"min_distance and max_distance must be a float, got: {type(min_distance)} and {type(max_distance)}"
+            assert (
+                min_distance < max_distance
+            ), f"min_distance must be less than max_distance, got: {min_distance} and {max_distance}"
+            bev_distance_ranges.append((min_distance, max_distance))
+
+        evaluators = {}
+        for bev_distance_range in bev_distance_ranges:
+            # Update min_distance_list and max_distance_list
+            perception_evaluator_configs["evaluation_config_dict"]["min_distance"] = bev_distance_range[0]
+            perception_evaluator_configs["evaluation_config_dict"]["max_distance"] = bev_distance_range[1]
+
+            evaluator_config = PerceptionEvaluationConfig(**perception_evaluator_configs)
+            if critical_object_filter_configs is not None:
+                perception_critical_object_filter_config = CriticalObjectFilterConfig(
+                    evaluator_config=evaluator_config,
+                    **critical_object_filter_configs,
+                )
+            else:
+                perception_critical_object_filter_config = None
+            perception_frame_pass_fail_config = PerceptionPassFailConfig(
+                evaluator_config=evaluator_config,
+                **frame_pass_fail_configs,
+            )
+            perception_metrics_score_config = MetricsScoreConfig(
+                evaluator_config.evaluation_task, target_labels=self.target_labels
+            )
+
+            evaluator_name = f"bev_range_{bev_distance_range[0]}-{bev_distance_range[1]}"
+            metric_output_dir = (
+                str(Path(evaluator_config.visualization_directory) / evaluator_name)
+                if self.write_metric_summary
+                else None
+            )
+            evaluator = PerceptionEvaluationManager(
+                evaluation_config=evaluator_config,
+                load_ground_truth=False,
+                metric_output_dir=metric_output_dir,
+            )
+            evaluators[evaluator_name] = EvaluatorData(
+                perception_evaluator_manager=evaluator,
+                bev_distance_range=bev_distance_range,
+                perception_evaluator_configs=evaluator_config,
+                frame_pass_fail_config=perception_frame_pass_fail_config,
+                critical_object_filter_config=perception_critical_object_filter_config,
+                metric_score_config=perception_metrics_score_config,
+            )
+        return evaluators
 
     def evaluate(self, size: int) -> Dict[str, float]:
         """
@@ -194,6 +390,37 @@ class T4MetricV2(BaseMetric):
             perception_frame = self._parse_predictions_from_sample(current_time, data_sample, frame_ground_truth)
             self._save_perception_frame(scene_id, data_sample["sample_idx"], perception_frame)
 
+    def _process_evaluator_results(self, scenes: dict) -> Dict[str, Dict[str, float]]:
+        """Process the results for each evaluator.
+
+        Args:
+            evaluator (PerceptionEvaluationManager): The evaluator instance.
+            results (List[dict]): The results to process.
+        """
+        aggregated_metric_dict = defaultdict(dict)
+        for evaluator_name, evaluator in self.evaluators.items():
+            # Write scene-level metrics for each evaluator to an output file
+            if self.write_metric_summary:
+                try:
+                    self._write_scene_metrics(scenes, evaluator_name)
+                except Exception as e:
+                    self.logger.error(f"Failed to write scene metrics to output files: {e}")
+
+            # Aggregate metrics for each evaluator
+            final_metric_score = evaluator.perception_evaluator_manager.get_scene_result()
+            final_metric_dict = self._process_metrics_for_aggregation(final_metric_score)
+            aggregated_metric_dict[evaluator_name] = final_metric_dict
+            self.logger.info(f"====Evaluator: {evaluator_name}====")
+            self.logger.info(f"Final metrics result: {final_metric_score}")
+
+        # Write aggregated metrics for all evaluators to an output file
+        try:
+            self._write_aggregated_metrics(aggregated_metric_dict)
+        except Exception as e:
+            self.logger.error(f"Failed to write aggregated metrics to output files: {e}")
+
+        return aggregated_metric_dict
+
     # override of BaseMetric.compute_metrics
     def compute_metrics(
         self,
@@ -224,23 +451,16 @@ class T4MetricV2(BaseMetric):
             # Validate input
             self._validate_results(results)
 
-            # Initialize evaluator and process scenes
-            evaluator = self._create_evaluator()
-            scenes = self._init_scene_from_results(results)
+            # Initialize scenes
+            scenes = {scene_id: samples for scene in results for scene_id, samples in scene.items()}
 
             # Process all frames and collect results
-            self._process_all_frames(evaluator, scenes)
+            self._process_all_frames(scenes)
 
             # Compute final metrics
-            final_metric_score = evaluator.get_scene_result()
-            self.logger.info(f"Final metrics result: {final_metric_score}")
-            final_metric_dict = self._process_metrics_for_aggregation(final_metric_score)
+            aggregated_metric_dict = self._process_evaluator_results(scenes)
 
-            # Write output files
-            if self.write_metric_summary:
-                self._write_output_files(scenes, final_metric_dict)
-
-            return final_metric_dict
+            return aggregated_metric_dict[self.main_evaluator_name]  # Return the metrics from the main evaluator
 
         except Exception as e:
             raise RuntimeError(f"Error in compute_metrics: {e}")
@@ -313,35 +533,27 @@ class T4MetricV2(BaseMetric):
             List[dict]: The results to use for evaluation.
         """
         if self.results_pickle_exists:
-            self.logger.info("Loading results from pickle file")
-            return self._load_results_from_pickle(self.results_pickle_path)
+            self.logger.info(f"Loading results from pickle file: {self.results_pickle_path}")
+            with open(self.results_pickle_path, "rb") as f:
+                results = pickle.load(f)
+
+            return results
 
         # Reorganize results from multi-gpu
         if self.num_running_gpus > 1:
             results = self._collate_results(results)
 
+        # Save results to a pickle file
         current_epoch = self.message_hub.get_info("epoch", -1) + 1
-        results_pickle_path = (
-            self.results_pickle_path
-            if self.results_pickle_path is not None
-            else self.output_dir / DEFAULT_T4METRIC_FILE_NAME.format(current_epoch)
-        )
-        self.logger.info(f"Saving results of epoch: {current_epoch} to pickle file: {results_pickle_path}")
-        self._save_results_to_pickle(results_pickle_path)
+        results_output_path = self.result_output_dir / DEFAULT_T4METRIC_FILE_NAME.format(current_epoch)
+        self.logger.info(f"Saving results of epoch: {current_epoch} to pickle file: {results_output_path}")
+
+        # Create parent directory if needed
+        results_output_path.parent.mkdir(parents=True, exist_ok=True)
+        with open(results_output_path, "wb") as f:
+            pickle.dump(self.results, f)
+
         return results
-
-    def _create_evaluator(self) -> PerceptionEvaluationManager:
-        """Create and return a perception evaluation manager.
-
-        Returns:
-            PerceptionEvaluationManager: The configured evaluator.
-        """
-        metric_output_dir = self.output_dir / DEFAULT_T4METRIC_METRICS_FOLDER if self.write_metric_summary else None
-        return PerceptionEvaluationManager(
-            evaluation_config=self.perception_evaluator_configs,
-            load_ground_truth=False,
-            metric_output_dir=metric_output_dir,
-        )
 
     def _batch_scenes(
         self, scenes: dict, scene_batch_size: int
@@ -351,18 +563,25 @@ class T4MetricV2(BaseMetric):
         """
         batch = []
         for scene_batch_id, (scene_id, samples) in enumerate(scenes.items()):
-            for sample_id, perception_frame in samples.items():
-                batch.append(
-                    (
-                        PerceptionFrameProcessingData(
-                            scene_id,
-                            sample_id,
-                            time.time(),
-                            perception_frame.ground_truth_objects,
-                            perception_frame.estimated_objects,
+            # Retrieve all evaluators
+            for evaluator_name, evaluator in self.evaluators.items():
+                for sample_id, perception_frame in samples.items():
+                    batch.append(
+                        (
+                            PerceptionFrameProcessingData(
+                                scene_id=scene_id,
+                                sample_id=sample_id,
+                                unix_time=time.time(),
+                                ground_truth_objects=perception_frame.ground_truth_objects,
+                                estimated_objects=perception_frame.estimated_objects,
+                                frame_prefix=evaluator_name,
+                                perception_evaluator_manager=evaluator.perception_evaluator_manager,
+                                frame_pass_fail_config=evaluator.frame_pass_fail_config,
+                                critical_object_filter_config=evaluator.critical_object_filter_config,
+                                evaluator_name=evaluator_name,
+                            )
                         )
                     )
-                )
 
             if (scene_batch_id + 1) % scene_batch_size == 0:
                 yield batch
@@ -374,11 +593,10 @@ class T4MetricV2(BaseMetric):
 
     def _parallel_preprocess_batch_frames(
         self,
-        evaluator: PerceptionEvaluationManager,
         batch_index: int,
         batch_frames: List[PerceptionFrameProcessingData],
         executor: Executor,
-    ) -> List[PerceptionFrameResult]:
+    ) -> List[PerceptionFrameMultiProcessingResult]:
         """
         Preprocess a batch of frames using multiprocessing.
 
@@ -394,45 +612,58 @@ class T4MetricV2(BaseMetric):
         self.logger.info(f"Pre-processing batch: {batch_index+1} with frames: {len(batch_frames)}")
         future_args = [
             (
+                batch.scene_id,
+                batch.sample_id,
                 batch.unix_time,
                 batch.ground_truth_objects,
                 batch.estimated_objects,
-                self.critical_object_filter_config,
-                self.frame_pass_fail_config,
+                batch.critical_object_filter_config,
+                batch.frame_pass_fail_config,
+                batch.frame_prefix,
+                batch.perception_evaluator_manager,
+                batch.evaluator_name,
             )
             for batch in batch_frames
         ]
 
         # Unpack batched args into aligned iterables for executor.map
         (
-            unix_time,
+            scene_ids,
+            sample_ids,
+            unix_times,
             ground_truth_objects,
             estimated_objects,
-            critical_object_filter_config,
-            frame_pass_fail_config,
+            critical_object_filter_configs,
+            frame_pass_fail_configs,
+            frame_prefixes,
+            perception_evaluator_managers,
+            evaluator_names,
         ) = zip(*future_args)
+
         # Preprocessing all frames in the batch
-        perception_frame_results = list(
+        perception_frame_preprocessing_results = list(
             executor.map(
-                evaluator.preprocess_object_results,
-                unix_time,
+                _apply_perception_evaluator_preprocessing,
+                perception_evaluator_managers,
+                evaluator_names,
+                scene_ids,
+                sample_ids,
+                unix_times,
                 ground_truth_objects,
                 estimated_objects,
-                critical_object_filter_config,
-                frame_pass_fail_config,
+                critical_object_filter_configs,
+                frame_pass_fail_configs,
+                frame_prefixes,
             )
         )
-
-        return perception_frame_results
+        return perception_frame_preprocessing_results
 
     def _parallel_evaluate_batch_frames(
         self,
-        evaluator: PerceptionEvaluationManager,
-        perception_frame_results: List[PerceptionFrameResult],
+        perception_frame_preprocessing_results: List[PerceptionFrameMultiProcessingResult],
         batch_index: int,
-        batch_frames: List[PerceptionFrameProcessingData],
         executor: Executor,
-    ) -> List[PerceptionFrameResult]:
+    ) -> List[PerceptionFrameMultiProcessingResult]:
         """
         Evaluate a batch of preprocessed PerceptionFrameResults using multiprocessing.
 
@@ -446,41 +677,62 @@ class T4MetricV2(BaseMetric):
             List[PerceptionFrameResult]: List of evaluated frame results.
         """
         self.logger.info(f"Evaluating batch: {batch_index+1}")
-        future_perception_frame_evaluation_args = [(perception_frame_results[0], None)]
+        evaluation_args = []
+        previous_scene_id = None
+        previous_perception_frame_result = None
+        previous_evaluator_name = None
+        for perception_frame_preprocessing_result in perception_frame_preprocessing_results:
+            # When the scene id is different from the previous frame scene id, it's the first frame of the scene or when the previous_scene_id is None
+            if (
+                perception_frame_preprocessing_result.scene_id != previous_scene_id
+                or perception_frame_preprocessing_result.evaluator_name != previous_evaluator_name
+            ):
+                previous_perception_frame_result = None
+                previous_scene_id = None
+                previous_evaluator_name = None
 
-        # Find the mask where an scene id is different from the previous frame, and it's the first frame of the scene
-        first_sample_masks = [
-            i == 0 or batch_frames[i].scene_id != batch_frames[i - 1].scene_id for i in range(len(batch_frames))
-        ]
-
-        # Group perception frame results with pair
-        for index in range(1, len(perception_frame_results)):
-            if first_sample_masks[index]:
-                future_perception_frame_evaluation_args.append((perception_frame_results[index], None))
-            else:
-                future_perception_frame_evaluation_args.append(
-                    (perception_frame_results[index], perception_frame_results[index - 1])
+            evaluation_args.append(
+                (
+                    perception_frame_preprocessing_result.evaluator,
+                    perception_frame_preprocessing_result.evaluator_name,
+                    perception_frame_preprocessing_result.scene_id,
+                    perception_frame_preprocessing_result.sample_id,
+                    perception_frame_preprocessing_result.perception_frame_result,
+                    previous_perception_frame_result,
                 )
+            )
+
+            previous_perception_frame_result = perception_frame_preprocessing_result.perception_frame_result
+            previous_scene_id = perception_frame_preprocessing_result.scene_id
+            previous_evaluator_name = perception_frame_preprocessing_result.evaluator_name
 
         # Separate current and previous results into two sequences
-        current_perception_frame_results, previous_perception_frame_results = zip(
-            *future_perception_frame_evaluation_args
-        )
+        (
+            evaluators,
+            evaluator_names,
+            scene_ids,
+            sample_ids,
+            current_perception_frame_results,
+            previous_perception_frame_results,
+        ) = zip(*evaluation_args)
+
         # Run evaluation for all frames in the batch
-        perception_frame_results = list(
+        perception_evaluation_results = list(
             executor.map(
-                evaluator.evaluate_perception_frame,
+                _apply_perception_evaluator_evaluation,
+                evaluators,
+                evaluator_names,
+                scene_ids,
+                sample_ids,
                 current_perception_frame_results,
                 previous_perception_frame_results,
             )
         )
-        return perception_frame_results
+        return perception_evaluation_results
 
     def _postprocess_batch_frame_results(
         self,
-        evaluator: PerceptionEvaluationManager,
-        perception_frame_results: List[PerceptionFrameResult],
-        batch_frames: List[PerceptionFrameProcessingData],
+        perception_evaluation_results: List[PerceptionFrameMultiProcessingResult],
         batch_index: int,
     ) -> None:
         """Post-process the frame results.
@@ -489,19 +741,23 @@ class T4MetricV2(BaseMetric):
             frame_results (dict): The frame results to post-process.
         """
         self.logger.info(f"Post-processing batch: {batch_index+1}")
-        for scene_batch, perception_frame_result in zip(batch_frames, perception_frame_results):
+        for perception_evaluation_result in perception_evaluation_results:
             # Append results
-            self.frame_results_with_info.append(
+            self.frame_results_with_info[perception_evaluation_result.evaluator_name].append(
                 {
-                    "scene_id": scene_batch.scene_id,
-                    "sample_id": scene_batch.sample_id,
-                    "frame_result": perception_frame_result,
+                    "scene_id": perception_evaluation_result.scene_id,
+                    "sample_id": perception_evaluation_result.sample_id,
+                    "frame_result": perception_evaluation_result.perception_frame_result,
                 }
             )
-            # We append the results outside of evaluator to keep the order of the frame results
-            evaluator.frame_results.append(perception_frame_result)
 
-    def _multi_process_all_frames(self, evaluator: PerceptionEvaluationManager, scenes: dict) -> None:
+            # Since multiprocessing creates a new evaluator instance for each worker,
+            # we need to append the results outside of the evaluator
+            self.evaluators[
+                perception_evaluation_result.evaluator_name
+            ].perception_evaluator_manager.frame_results.append(perception_evaluation_result.perception_frame_result)
+
+    def _multi_process_all_frames(self, scenes: dict) -> None:
         """Process all frames in all scenes using multiprocessing to speed up frame processing.
 
         Args:
@@ -516,48 +772,52 @@ class T4MetricV2(BaseMetric):
             for batch_index, scene_batches in enumerate(
                 self._batch_scenes(scenes, scene_batch_size=self.scene_batch_size)
             ):
-                preprocessed_perception_frame_results = self._parallel_preprocess_batch_frames(
-                    evaluator=evaluator, batch_index=batch_index, batch_frames=scene_batches, executor=executor
+                perception_frame_preprocessing_results = self._parallel_preprocess_batch_frames(
+                    batch_index=batch_index, batch_frames=scene_batches, executor=executor
                 )
-                perception_frame_results = self._parallel_evaluate_batch_frames(
-                    evaluator=evaluator,
-                    perception_frame_results=preprocessed_perception_frame_results,
+
+                perception_evaluation_results = self._parallel_evaluate_batch_frames(
+                    perception_frame_preprocessing_results=perception_frame_preprocessing_results,
                     batch_index=batch_index,
-                    batch_frames=scene_batches,
                     executor=executor,
                 )
+
                 self._postprocess_batch_frame_results(
-                    evaluator=evaluator,
-                    perception_frame_results=perception_frame_results,
-                    batch_frames=scene_batches,
+                    perception_evaluation_results=perception_evaluation_results,
                     batch_index=batch_index,
                 )
 
-    def _sequential_process_all_frames(self, evaluator: PerceptionEvaluationManager, scenes: dict) -> None:
+    def _sequential_process_all_frames(self, scenes: dict) -> None:
         """Process all frames in all scenes sequentially.
 
         Args:
-              evaluator (PerceptionEvaluationManager): The evaluator instance.
               scenes (dict): Dictionary of scenes and their samples.
         """
-        for scene_id, samples in scenes.items():
-            for sample_id, perception_frame in samples.items():
-                try:
-                    frame_result: PerceptionFrameResult = evaluator.add_frame_result(
-                        unix_time=time.time(),
-                        ground_truth_now_frame=perception_frame.ground_truth_objects,
-                        estimated_objects=perception_frame.estimated_objects,
-                        critical_object_filter_config=self.critical_object_filter_config,
-                        frame_pass_fail_config=self.frame_pass_fail_config,
-                    )
+        for evaluator_name, evaluator in self.evaluators.items():
+            self.logger.info(f"Processing frames for evaluator: {evaluator_name}")
+            for scene_id, samples in scenes.items():
+                for sample_id, perception_frame in samples.items():
+                    try:
+                        frame_result: PerceptionFrameResult = evaluator.perception_evaluator_manager.add_frame_result(
+                            unix_time=time.time(),
+                            ground_truth_now_frame=perception_frame.ground_truth_objects,
+                            estimated_objects=perception_frame.estimated_objects,
+                            critical_object_filter_config=evaluator.critical_object_filter_config,
+                            frame_pass_fail_config=evaluator.frame_pass_fail_config,
+                            frame_prefix=evaluator_name,
+                        )
 
-                    self.frame_results_with_info.append(
-                        {"scene_id": scene_id, "sample_id": sample_id, "frame_result": frame_result}
-                    )
-                except Exception as e:
-                    self.logger.warning(f"Failed to process frame {scene_id}/{sample_id}: {e}")
+                        self.frame_results_with_info[evaluator_name].append(
+                            {
+                                "scene_id": scene_id,
+                                "sample_id": sample_id,
+                                "frame_result": frame_result,
+                            }
+                        )
+                    except Exception as e:
+                        self.logger.warning(f"Failed to process frame {scene_id}/{sample_id}: {e}")
 
-    def _process_all_frames(self, evaluator: PerceptionEvaluationManager, scenes: dict) -> None:
+    def _process_all_frames(self, scenes: dict) -> None:
         """Process all frames in all scenes and collect frame results.
 
         Args:
@@ -565,22 +825,9 @@ class T4MetricV2(BaseMetric):
             scenes (dict): Dictionary of scenes and their samples.
         """
         if self.num_workers > 1:
-            self._multi_process_all_frames(evaluator, scenes)
+            self._multi_process_all_frames(scenes)
         else:
-            self._sequential_process_all_frames(evaluator, scenes)
-
-    def _write_output_files(self, scenes: dict, final_metric_dict: dict) -> None:
-        """Write scene metrics and aggregated metrics to files.
-
-        Args:
-            scenes (dict): Dictionary of scenes and their samples.
-            final_metric_dict (dict): The final metrics dictionary.
-        """
-        try:
-            self._write_scene_metrics(scenes)
-            self._write_aggregated_metrics(final_metric_dict)
-        except Exception as e:
-            self.logger.error(f"Failed to write output files: {e}")
+            self._sequential_process_all_frames(scenes)
 
     def _clean_up(self) -> None:
         """Clean up resources after computation."""
@@ -622,33 +869,36 @@ class T4MetricV2(BaseMetric):
 
         return metric_dict
 
-    def _write_aggregated_metrics(self, final_metric_dict: dict):
+    def _write_aggregated_metrics(self, final_metric_dict: dict) -> None:
         """
         Writes aggregated metrics to a JSON file with the specified format.
 
         Args:
-            final_metric_dict (dict): Dictionary containing processed metrics from the evaluator.
+            final_metric_dict {evaluator_name: {metric_name: metric_value}}: Dictionary containing processed metrics from the evaluator.
         """
         try:
             # Initialize the structure
-            # TODO(vividf): change this when we have multiple metrics for different distance thresholds
-            aggregated_metrics = {"all": {"metrics": {}, "aggregated_metric_label": {}}}
+            aggregated_metrics = {}
+            for evaluator_name in final_metric_dict.keys():
+                aggregated_metrics[evaluator_name] = {"metrics": {}, "aggregated_metric_label": {}}
 
-            # Organize metrics by label
-            for key, value in final_metric_dict.items():
-                if key.startswith("T4MetricV2/mAP_") or key.startswith("T4MetricV2/mAPH_"):
-                    # These are overall metrics, put them in the metrics section
-                    aggregated_metrics["all"]["metrics"][key] = value
-                else:
-                    # These are per-label metrics, extract label name and organize
-                    # Example: T4MetricV2/car_AP_center_distance_0.5
-                    parts = key.split("/")[1].split("_")
-                    label_name = parts[0]  # car, truck, etc.
+            # Gather metrics
+            for evaluator_name, metric_dict in final_metric_dict.items():
+                # Organize metrics by label
+                for key, value in metric_dict.items():
+                    if key.startswith("T4MetricV2/mAP_") or key.startswith("T4MetricV2/mAPH_"):
+                        # These are overall metrics, put them in the metrics section
+                        aggregated_metrics[evaluator_name]["metrics"][key] = value
+                    else:
+                        # These are per-label metrics, extract label name and organize
+                        # Example: T4MetricV2/car_AP_center_distance_0.5
+                        parts = key.split("/")[1].split("_")
+                        label_name = parts[0]  # car, truck, etc.
 
-                    if label_name not in aggregated_metrics["all"]["aggregated_metric_label"]:
-                        aggregated_metrics["all"]["aggregated_metric_label"][label_name] = {}
+                        if label_name not in aggregated_metrics[evaluator_name]["aggregated_metric_label"]:
+                            aggregated_metrics[evaluator_name]["aggregated_metric_label"][label_name] = {}
 
-                    aggregated_metrics["all"]["aggregated_metric_label"][label_name][key] = value
+                        aggregated_metrics[evaluator_name]["aggregated_metric_label"][label_name][key] = value
 
             # Write to JSON file
             output_path = self.output_dir / "aggregated_metrics.json"
@@ -661,7 +911,7 @@ class T4MetricV2(BaseMetric):
             self.logger.error(f"Failed to write aggregated metrics: {e}")
             raise
 
-    def _write_scene_metrics(self, scenes: dict):
+    def _write_scene_metrics(self, scenes: dict, evaluator_name: str) -> None:
         """
         Writes scene metrics to a JSON file in nested format.
 
@@ -671,13 +921,16 @@ class T4MetricV2(BaseMetric):
         """
         try:
             # Initialize scene_metrics structure
-            scene_metrics = self._initialize_scene_metrics_structure(scenes)
+            scene_metrics = {
+                scene_id: {sample_id: {} for sample_id in samples.keys()} for scene_id, samples in scenes.items()
+            }
 
             # Process all frame results and populate metrics
-            self._populate_scene_metrics(scene_metrics)
+            self._populate_scene_metrics(scene_metrics, evaluator_name)
 
             # Write the nested metrics to JSON
-            output_path = self.output_dir / "scene_metrics.json"
+            output_path = self.output_dir / evaluator_name / "scene_metrics.json"
+            output_path.parent.mkdir(parents=True, exist_ok=True)
             with open(output_path, "w") as scene_file:
                 json.dump(scene_metrics, scene_file, indent=4)
 
@@ -687,67 +940,33 @@ class T4MetricV2(BaseMetric):
             self.logger.error(f"Failed to write scene metrics: {e}")
             raise
 
-    def _initialize_scene_metrics_structure(self, scenes: dict) -> dict:
-        """Initialize the scene metrics structure with empty dictionaries.
-
-        Args:
-            scenes (dict): Dictionary mapping scene_id to samples.
-
-        Returns:
-            dict: Initialized scene metrics structure.
-        """
-        return {scene_id: {sample_id: {} for sample_id in samples.keys()} for scene_id, samples in scenes.items()}
-
-    def _populate_scene_metrics(self, scene_metrics: dict) -> None:
+    def _populate_scene_metrics(self, scene_metrics: dict, evaluator_name: str) -> None:
         """Populate scene metrics with data from frame results.
 
         Args:
             scene_metrics (dict): The scene metrics structure to populate.
         """
-        for frame_info in self.frame_results_with_info:
+        for frame_info in self.frame_results_with_info[evaluator_name]:
             scene_id = frame_info["scene_id"]
             sample_id = frame_info["sample_id"]
             frame_result = frame_info["frame_result"]
 
             # Get or create the metrics structure for this frame
-            frame_metrics = scene_metrics[scene_id][sample_id].setdefault("all", {})
+            frame_metrics = scene_metrics[scene_id][sample_id].setdefault(evaluator_name, {})
 
-            # Process all map instances for this frame
-            self._process_frame_map_instances(frame_metrics, frame_result.metrics_score.mean_ap_values)
+            # Process all map instances for a single frame and populate the metrics structure.
+            # it iterates through map instances (e.g., center_distance, plane_distance)
+            # and processes both AP (Average Precision) and APH (Average Precision with Heading)
+            # values for each label and threshold.
+            for map_instance in frame_result.metrics_score.mean_ap_values:
+                matching_mode = map_instance.matching_mode.value.lower().replace(" ", "_")
+                matching_metrics = frame_metrics.setdefault(matching_mode, {})
 
-    def _process_frame_map_instances(self, frame_metrics: dict, map_instances) -> None:
-        """Process all map instances for a single frame and populate the metrics structure.
+                # Process AP values
+                self._process_ap_values(matching_metrics, map_instance.label_to_aps)
 
-        This method iterates through map instances (e.g., center_distance, plane_distance)
-        and processes both AP (Average Precision) and APH (Average Precision with Heading)
-        values for each label and threshold.
-
-        Args:
-            frame_metrics (dict): The metrics structure for this frame. This dictionary
-                will be populated with the processed metrics. The structure is:
-                {
-                    "matching_mode1": {
-                        "label_name": {
-                            "ap": {"threshold": value},
-                            "aph": {"threshold": value}
-                        }
-                    },
-                    "matching_mode2": {
-                        ...
-                    }
-                }
-            map_instances: List of map instances to process. Each instance contains
-                label_to_aps and label_to_aphs dictionaries.
-        """
-        for map_instance in map_instances:
-            matching_mode = map_instance.matching_mode.value.lower().replace(" ", "_")
-            matching_metrics = frame_metrics.setdefault(matching_mode, {})
-
-            # Process AP values
-            self._process_ap_values(matching_metrics, map_instance.label_to_aps)
-
-            # Process APH values
-            self._process_aph_values(matching_metrics, map_instance.label_to_aphs)
+                # Process APH values
+                self._process_aph_values(matching_metrics, map_instance.label_to_aphs)
 
     def _process_ap_values(
         self, matching_metrics: Dict[str, Dict[str, Dict[str, float]]], label_to_aps: Dict[LabelType, List[Ap]]
@@ -881,7 +1100,7 @@ class T4MetricV2(BaseMetric):
         dynamic_objects = [
             DynamicObject(
                 unix_time=time,
-                frame_id=self.perception_evaluator_configs.frame_id,
+                frame_id=self.main_evaluator_frame_id,
                 position=tuple(bbox[:3]),
                 orientation=Quaternion(np.cos(bbox[6] / 2), 0, 0, np.sin(bbox[6] / 2)),
                 shape=Shape(shape_type=ShapeType.BOUNDING_BOX, size=tuple(bbox[3:6])),
@@ -930,7 +1149,7 @@ class T4MetricV2(BaseMetric):
         estimated_objects = [
             DynamicObject(
                 unix_time=time,
-                frame_id=self.perception_evaluator_configs.frame_id,
+                frame_id=self.main_evaluator_frame_id,
                 position=tuple(bbox[:3]),
                 orientation=Quaternion(np.cos(bbox[6] / 2), 0, 0, np.sin(bbox[6] / 2)),
                 shape=Shape(shape_type=ShapeType.BOUNDING_BOX, size=tuple(bbox[3:6])),
@@ -977,48 +1196,3 @@ class T4MetricV2(BaseMetric):
             # New scene: append to results and record its index
             self.results.append({scene_id: {sample_idx: perception_frame}})
             self.scene_id_to_index_map[scene_id] = len(self.results) - 1
-
-    def _save_results_to_pickle(self, path: Path) -> None:
-        """Save self.results to the given pickle file path.
-
-        Args:
-            path (Path): The full path where the pickle file will be saved.
-        """
-        self.logger.info(f"Saving predictions and ground truth result to pickle: {path.resolve()}")
-
-        # Create parent directory if needed
-        path.parent.mkdir(parents=True, exist_ok=True)
-
-        with open(path, "wb") as f:
-            pickle.dump(self.results, f)
-
-    def _load_results_from_pickle(self, path: Path) -> List[Dict]:
-        """Load results from a pickle file.
-
-        Args:
-            path (Path): The full path to the pickle file.
-
-        Returns:
-            List[Dict]: The deserialized results from the pickle file.
-
-        Raises:
-            FileNotFoundError: If the pickle file does not exist.
-        """
-        self.logger.info(f"Loading pickle from: {path.resolve()}")
-        with open(path, "rb") as f:
-            results = pickle.load(f)
-
-        return results
-
-    def _init_scene_from_results(self, results: list[Dict[str, Dict[str, Any]]]) -> dict:
-        """
-        Flattens scene dictionaries from the results (self.results).
-
-        Args:
-            results (list): List of dictionaries mapping scene_id to sample_id-perception_frame pairs.
-
-        Returns:
-            dict: Flattened dict of {scene_id: {sample_id: perception_frame}}.
-        """
-        scenes = {scene_id: samples for scene in results for scene_id, samples in scene.items()}
-        return scenes
