@@ -224,12 +224,6 @@ def parse_args():
         help="specify the root path for yaml t4dataset split",
     )
     parser.add_argument(
-        "--use_latest_t4dataset_split",
-        action="store_true",
-        default=False,
-        help="Set this to disable legacy t4dataset yaml split format",
-    )
-    parser.add_argument(
         "--use_available_dataset_version",
         action="store_true",
         help="Will resort to using the available dataset version if the one specified in the config file does not exist.",
@@ -273,12 +267,14 @@ def main():
 
             for scene_id in dataset_list_dict.get(split, []):
                 print_log(f"Creating data info for scene: {scene_id}, steps: {sample_steps}")
-                if args.use_latest_t4dataset_split:
-                    t4_dataset_id, t4_dataset_version_id, city, vehicle_type = scene_id.split("/")
+                dataset_scene_info = scene_id.split("/")
+                if len(dataset_scene_info) == 4:
+                    t4_dataset_id, t4_dataset_version_id, city, vehicle_type = dataset_scene_info
+                elif len(dataset_scene_info) == 2:
+                    t4_dataset_id, t4_dataset_version_id = dataset_scene_info
+                    city = vehicle_type = None
                 else:
-                    t4_dataset_id, t4_dataset_version_id = scene_id.split("/")
-                    city = None
-                    vehicle_type = None
+                    raise ValueError(f"Invalid scene_id format: {scene_id}")
 
                 scene_root_dir_path = osp.join(args.root_path, dataset_version, t4_dataset_id, t4_dataset_version_id)
                 if not os.path.exists(scene_root_dir_path):
