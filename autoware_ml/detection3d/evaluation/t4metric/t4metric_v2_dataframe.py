@@ -151,7 +151,6 @@ class T4MetricV2DataFrame:
                 df[f"{metric_column_name}_values"].append(values)
             else:
                 df[metric_column_name].append(metric_value)
-            df[metric_column_name].append(metric_value)
         return df
         
     @staticmethod
