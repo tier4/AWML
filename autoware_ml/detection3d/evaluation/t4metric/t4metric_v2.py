@@ -42,6 +42,7 @@ DEFAULT_T4METRIC_RESULT_FOLDER = "result"
 
 @dataclass(frozen=True)
 class FrameResult:
+    """Dataclass to group data related to a PerceptionFrameResult."""
 
     perception_frame_result: PerceptionFrameResult
     sample_id: str
@@ -643,6 +644,14 @@ class T4MetricV2(BaseMetric):
 
         return results
 
+    @staticmethod
+    def _parse_frame_prefix(frame_prefix: str) -> Tuple[str, str]:
+        """Parse the frame prefix and return the location and vehicle type."""
+        parts = frame_prefix.split("/") if frame_prefix is not None else []
+        if len(parts) != 2:
+            raise ValueError(f"Invalid frame prefix: {frame_prefix}. Expected format: location/vehicle_type")
+        return parts[0], parts[1]
+
     def _batch_scenes(
         self, scenes: dict, scene_batch_size: int
     ) -> Generator[List[PerceptionFrameProcessingData], None, None]:
@@ -654,7 +663,8 @@ class T4MetricV2(BaseMetric):
             # Retrieve all evaluators
             for evaluator_name, evaluator in self.evaluators.items():
                 for sample_id, perception_frame in samples.items():
-                    location, vehicle_type = perception_frame.ground_truth_objects.frame_prefix.split("/")
+                    frame_prefix = perception_frame.ground_truth_objects.frame_prefix
+                    location, vehicle_type = self._parse_frame_prefix(frame_prefix)
                     batch.append(
                         (
                             PerceptionFrameProcessingData(
@@ -899,7 +909,7 @@ class T4MetricV2(BaseMetric):
             for scene_id, samples in scenes.items():
                 for sample_id, perception_frame in samples.items():
                     try:
-                        location, vehicle_type = perception_frame.frame_prefix.split("/")
+                        location, vehicle_type = self._parse_frame_prefix(perception_frame.frame_prefix)
                         frame_result: PerceptionFrameResult = evaluator.perception_evaluator_manager.add_frame_result(
                             unix_time=time.time(),
                             ground_truth_now_frame=perception_frame.ground_truth_objects,
@@ -942,7 +952,7 @@ class T4MetricV2(BaseMetric):
         metrics_score: MetricsScore,
     ) -> Dict[str, float]:
         """
-        Process Ietarable metrics, for example, detection/precisions from MetricsScore and return a dictionary of all metrics.
+        Process Iterable metrics, for example, detection/precisions from MetricsScore and return a dictionary of all metrics.
 
         Args:
             metrics_score (MetricsScore): The metrics score to process.
@@ -954,10 +964,8 @@ class T4MetricV2(BaseMetric):
         """
         iterable_metrics = {}
 
-        total_num_preds = 0
         # Detections
         for map_instance in metrics_score.mean_ap_values:
-            num_preds = 0
             matching_mode = map_instance.matching_mode.value.lower().replace(" ", "_")
 
             # Process individual AP values
