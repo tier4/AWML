@@ -1,5 +1,7 @@
+# Dataset parameters
 backend_args = None
-
+num_workers = 32
+input_modality = dict(use_lidar=True, use_camera=False)
 # range setting
 point_cloud_range = [-122.4, -122.4, -3.0, 122.4, 122.4, 5.0]
 voxel_size = [0.17, 0.17, 0.2]
@@ -121,3 +123,5 @@ test_pipeline = [
         ],
     ),
 ]
+
+filter_cfg = None

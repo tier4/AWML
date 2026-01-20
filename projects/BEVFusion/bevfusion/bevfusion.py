@@ -22,6 +22,7 @@ class BEVFusion(Base3DDetector):
     def __init__(
         self,
         data_preprocessor: OptConfigType = None,
+        voxelize_cfg: Optional[dict] = None,
         pts_voxel_encoder: Optional[dict] = None,
         pts_middle_encoder: Optional[dict] = None,
         fusion_layer: Optional[dict] = None,
@@ -35,18 +36,23 @@ class BEVFusion(Base3DDetector):
         seg_head: Optional[dict] = None,
         **kwargs,
     ) -> None:
-        voxelize_cfg = data_preprocessor.pop("voxelize_cfg")
+
         super().__init__(data_preprocessor=data_preprocessor, init_cfg=init_cfg)
 
-        self.voxelize_reduce = voxelize_cfg.pop("voxelize_reduce")
-        self.pts_voxel_layer = Voxelization(**voxelize_cfg)
-
-        self.pts_voxel_encoder = MODELS.build(pts_voxel_encoder)
+        if voxelize_cfg is not None:
+            self.voxelize_reduce = voxelize_cfg.pop("voxelize_reduce")
+            self.pts_voxel_layer = Voxelization(**voxelize_cfg)
+            self.pts_voxel_encoder = MODELS.build(pts_voxel_encoder)
+            self.pts_middle_encoder = MODELS.build(pts_middle_encoder)
+        else:
+            self.voxelize_reduce = False
+            self.pts_voxel_layer = None
+            self.pts_voxel_encoder = None
+            self.pts_middle_encoder = None
 
         self.img_backbone = MODELS.build(img_backbone) if img_backbone is not None else None
         self.img_neck = MODELS.build(img_neck) if img_neck is not None else None
         self.view_transform = MODELS.build(view_transform) if view_transform is not None else None
-        self.pts_middle_encoder = MODELS.build(pts_middle_encoder)
 
         self.fusion_layer = MODELS.build(fusion_layer) if fusion_layer is not None else None
 
@@ -333,13 +339,14 @@ class BEVFusion(Base3DDetector):
             )
             features.append(img_feature)
 
-        pts_feature = self.extract_pts_feat(
-            batch_inputs_dict.get("voxels", {}).get("voxels", None),
-            batch_inputs_dict.get("voxels", {}).get("coors", None),
-            batch_inputs_dict.get("voxels", {}).get("num_points_per_voxel", None),
-            points=points if not is_onnx_inference else None,
-        )
-        features.append(pts_feature)
+        if points is not None and self.pts_middle_encoder is not None:
+            pts_feature = self.extract_pts_feat(
+                batch_inputs_dict.get("voxels", {}).get("voxels", None),
+                batch_inputs_dict.get("voxels", {}).get("coors", None),
+                batch_inputs_dict.get("voxels", {}).get("num_points_per_voxel", None),
+                points=points if not is_onnx_inference else None,
+            )
+            features.append(pts_feature)
 
         if self.fusion_layer is not None:
             x = self.fusion_layer(features)

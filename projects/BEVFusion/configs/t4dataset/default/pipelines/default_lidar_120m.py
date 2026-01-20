@@ -1,15 +1,26 @@
+# Dataset parameters
 backend_args = None
+num_workers = 32
+input_modality = dict(use_lidar=True, use_camera=False)
 
 # range setting
 point_cloud_range = [-122.4, -122.4, -3.0, 122.4, 122.4, 5.0]
 voxel_size = [0.17, 0.17, 0.2]
 grid_size = [1440, 1440, 41]
+eval_class_range = {
+    "car": 120,
+    "truck": 120,
+    "bus": 120,
+    "bicycle": 120,
+    "pedestrian": 120,
+}
 
 # LiDAR parameters
 point_load_dim = 5  # x, y, z, intensity, ring_id
 point_use_dim = 4
 lidar_sweep_dims = [0, 1, 2, 4]  # x, y, z, time_lag
 sweeps_num = 1
+num_proposals = 500
 
 train_pipeline = [
     dict(
@@ -121,3 +132,5 @@ test_pipeline = [
         ],
     ),
 ]
+
+filter_cfg = None

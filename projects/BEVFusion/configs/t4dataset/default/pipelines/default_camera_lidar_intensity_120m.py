@@ -1,4 +1,7 @@
+# Dataset parameters
 backend_args = None
+num_workers = 32
+input_modality = dict(use_lidar=True, use_camera=True)
 
 # range setting
 point_cloud_range = [-122.4, -122.4, -3.0, 122.4, 122.4, 5.0]
@@ -10,6 +13,7 @@ point_load_dim = 5  # x, y, z, intensity, ring_id
 point_use_dim = 5
 lidar_sweep_dims = [0, 1, 2, 3, 4]  # x, y, z, intensity, time_lag
 sweeps_num = 1
+num_proposals = 500
 
 # Image parameters
 image_size = [384, 768]  # Height, Width
@@ -143,3 +147,5 @@ test_pipeline = [
         ],
     ),
 ]
+
+filter_cfg = dict(filter_frames_with_missing_image=True)

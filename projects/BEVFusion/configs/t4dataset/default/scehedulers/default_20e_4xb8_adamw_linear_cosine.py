@@ -1,23 +1,17 @@
 # learning rate
-lr = 0.0001
-t_max = 8
-max_epochs = 50
-val_interval = 5
+# lr = 0.0001
+lr = 1e-4
+t_max = 6
+max_epochs = 20
+val_interval = 1
+
+train_gpu_size = 4
+test_batch_size = 2
+train_batch_size = 8
 
 param_scheduler = [
     # learning rate scheduler
-    # During the first (max_epochs * 0.4) epochs, learning rate increases from 0 to lr * 10
-    # during the next epochs, learning rate decreases from lr * 10 to
-    # lr * 1e-4
-    dict(
-        type="CosineAnnealingLR",
-        T_max=t_max,
-        eta_min=lr * 10,
-        begin=0,
-        end=t_max,
-        by_epoch=True,
-        convert_to_iter_based=True,
-    ),
+    dict(type="LinearLR", start_factor=1.0 / 3, begin=0, end=t_max, by_epoch=True),
     dict(
         type="CosineAnnealingLR",
         T_max=(max_epochs - t_max),
@@ -50,8 +44,6 @@ param_scheduler = [
     ),
 ]
 
-# runtime settings
-# Run validation for every val_interval epochs before max_epochs - 10, and run validation every 2 epoch after max_epochs - 10
 train_cfg = dict(
     by_epoch=True, max_epochs=max_epochs, val_interval=val_interval, dynamic_intervals=[(max_epochs - 5, 1)]
 )
@@ -61,5 +53,7 @@ test_cfg = dict()
 optim_wrapper = dict(
     type="OptimWrapper",
     optimizer=dict(type="AdamW", lr=lr, weight_decay=0.01),
-    clip_grad=dict(max_norm=35, norm_type=2),
+    clip_grad=dict(max_norm=0.1, norm_type=2),
 )
+
+auto_scale_lr = dict(enable=False, base_batch_size=train_gpu_size * train_batch_size)
