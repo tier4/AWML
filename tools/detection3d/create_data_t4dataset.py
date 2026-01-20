@@ -274,7 +274,9 @@ def main():
                     t4_dataset_id, t4_dataset_version_id = dataset_scene_info
                     city = vehicle_type = None
                 else:
-                    raise ValueError(f"Invalid scene_id format: {scene_id}")
+                    raise ValueError(
+                        "Invalid scene_id format. should be : {t4_dataset_id}/{t4_dataset_version_id}/{city:optional}/{vehicle_type:optional}"
+                    )
 
                 scene_root_dir_path = osp.join(args.root_path, dataset_version, t4_dataset_id, t4_dataset_version_id)
                 if not os.path.exists(scene_root_dir_path):
