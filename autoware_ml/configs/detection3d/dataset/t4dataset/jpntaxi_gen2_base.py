@@ -13,7 +13,6 @@ info_val_file_name = "t4dataset_jpntaxi_gen2_base_infos_val.pkl"
 info_test_file_name = "t4dataset_jpntaxi_gen2_base_infos_test.pkl"
 
 # dataset scene setting
-dataset_version_config_root = "autoware_ml/configs/t4dataset/"
 dataset_test_groups = {
     "db_jpntaxi_gen2_base": "t4dataset_jpntaxi_gen2_base_infos_test.pkl",
     "db_jpntaxi_gen2_v2": "t4dataset_jpntaxi_gen2_v2_infos_test.pkl",
@@ -179,7 +178,11 @@ evaluator_metric_configs = dict(
     iou_2d_thresholds=None,
     iou_3d_thresholds=None,
     label_prefix="autoware",
-    max_distance=121.0,
-    min_distance=-121.0,
+    # bev minimum distance ranges for each range bucket, must be the same length as max_distance,
+    # they will form bev distance ranges in [(min_distance[0], max_distance[0]), (min_distance[1], max_distance[1]), ...] when filtering
+    min_distance=[0.0, 50.0, 90.0, 0.0],
+    # bev maximum distance ranges for each range bucket, must be the same length as min_distance
+    max_distance=[50.0, 90.0, 121.0, 121.0],
     min_point_numbers=0,
+    matching_class_agnostic_fps=False,
 )

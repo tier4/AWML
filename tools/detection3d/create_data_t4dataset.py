@@ -81,13 +81,7 @@ def get_scene_root_dir_path(
         return scene_root_dir_path
 
 
-def get_info(
-    cfg: Any,
-    t4: Tier4,
-    sample: Sample,
-    i: int,
-    max_sweeps: int,
-):
+def get_info(cfg: Any, t4: Tier4, sample: Sample, i: int, max_sweeps: int, city: str = None, vehicle_type: str = None):
     lidar_token = get_lidar_token(sample)
     if lidar_token is None:
         print_log(
@@ -120,6 +114,8 @@ def get_info(
         scene_token=sample.scene_token,
         location=log_record.location,
         scene_name=scene_record.name,
+        city=city,
+        vehicle_type=vehicle_type,
     )
 
     for new_info in [
@@ -214,6 +210,19 @@ def parse_args():
         help="output directory of info file",
     )
     parser.add_argument(
+        "--dataset_version_config_root",
+        type=str,
+        required=True,
+        default="autoware_ml/configs/t4dataset/",
+        help="specify the root path for yaml t4dataset split",
+    )
+    parser.add_argument(
+        "--use_latest_t4dataset_split",
+        action="store_true",
+        default=False,
+        help="Set this to disable legacy t4dataset yaml split format",
+    )
+    parser.add_argument(
         "--use_available_dataset_version",
         action="store_true",
         help="Will resort to using the available dataset version if the one specified in the config file does not exist.",
@@ -243,7 +252,7 @@ def main():
         print_log("No attribute filtering is applied!")
 
     for dataset_version in cfg.dataset_version_list:
-        dataset_list = osp.join(cfg.dataset_version_config_root, dataset_version + ".yaml")
+        dataset_list = osp.join(args.dataset_version_config_root, dataset_version + ".yaml")
         with open(dataset_list, "r") as f:
             dataset_list_dict: Dict[str, List[str]] = yaml.safe_load(f)
 
@@ -257,7 +266,13 @@ def main():
 
             for scene_id in dataset_list_dict.get(split, []):
                 print_log(f"Creating data info for scene: {scene_id}, steps: {sample_steps}")
-                t4_dataset_id, t4_dataset_version_id = scene_id.split("   ")
+                if args.use_latest_t4dataset_split:
+                    t4_dataset_id, t4_dataset_version_id, city, vehicle_type = scene_id.split("/")
+                else:
+                    t4_dataset_id, t4_dataset_version_id = scene_id.split("/")
+                    city = None
+                    vehicle_type = None
+
                 scene_root_dir_path = osp.join(args.root_path, dataset_version, t4_dataset_id, t4_dataset_version_id)
                 if not os.path.exists(scene_root_dir_path):
                     if args.use_available_dataset_version:
@@ -270,7 +285,7 @@ def main():
                 t4 = Tier4(data_root=scene_root_dir_path, verbose=False)
                 for i in range(0, len(t4.sample), sample_steps):
                     sample = t4.sample[i]
-                    info = get_info(cfg, t4, sample, i, args.max_sweeps)
+                    info = get_info(cfg, t4, sample, i, args.max_sweeps, city, vehicle_type)
                     # info["version"] = dataset_version             # used for visualizations during debugging.
                     t4_infos[split].append(info)
     assert sum(len(split) for split in t4_infos.values()) > 0, "dataset isn't available"
