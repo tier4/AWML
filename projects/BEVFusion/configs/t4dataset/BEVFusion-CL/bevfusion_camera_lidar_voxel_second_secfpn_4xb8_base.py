@@ -35,7 +35,7 @@ sweeps_num = 1
 max_num_points = 10
 max_voxels = [120000, 160000]
 num_proposals = 500
-image_size = [256, 704]
+image_size = [384, 576]  # height, width
 num_workers = 32
 lidar_sweep_dims = [0, 1, 2, 4]  # x, y, z, time_lag
 lidar_feature_dims = 4
@@ -94,14 +94,11 @@ model = dict(
         in_channels=256,
         out_channels=80,
         image_size=image_size,
-        feature_size=[32, 88],
-        # xbound=[-54.0, 54.0, 0.3],
-        # ybound=[-54.0, 54.0, 0.3],
+        feature_size=[48, 72],
         xbound=[-122.4, 122.4, 0.68],
         ybound=[-122.4, 122.4, 0.68],
         zbound=[-10.0, 10.0, 20.0],
-        # dbound=[1.0, 60.0, 0.5],
-        dbound=[1.0, 166.2, 1.4],
+        dbound=[1.0, 134, 1.4],
         downsample=2,
     ),
     fusion_layer=dict(type="ConvFuser", in_channels=[80, 256], out_channels=256),
@@ -157,14 +154,14 @@ train_pipeline = [
     dict(
         type="ImageAug3D",
         final_dim=image_size,
-        resize_lim=[0.38, 0.55],
+        resize_lim=0.02,
         bot_pct_lim=[0.0, 0.0],
         rot_lim=[-5.4, 5.4],
         rand_flip=True,
         is_train=True,
     ),
     dict(
-        type="GlobalRotScaleTrans",
+        type="BEVFusionGlobalRotScaleTrans",
         rot_range=[-1.571, 1.571],
         scale_ratio_range=[0.8, 1.2],
         translation_std=[1.0, 1.0, 0.2],
@@ -240,7 +237,7 @@ test_pipeline = [
     dict(
         type="ImageAug3D",
         final_dim=image_size,
-        resize_lim=[0.48, 0.48],
+        resize_lim=0.02,
         bot_pct_lim=[0.0, 0.0],
         rot_lim=[0.0, 0.0],
         rand_flip=False,
