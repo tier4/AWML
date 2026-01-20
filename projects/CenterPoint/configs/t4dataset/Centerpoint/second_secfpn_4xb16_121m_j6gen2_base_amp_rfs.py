@@ -3,7 +3,7 @@ _base_ = [
 ]
 
 # user setting
-work_dir = "work_dirs/centerpoint/" + _base_.dataset_type + "/second_secfpn_4xb16_121m_j6gen2_base_amp_rfs/"
+work_dir = "work_dirs/centerpoint_2_5_1/" + _base_.dataset_type + "/second_secfpn_4xb16_121m_j6gen2_base_amp_rfs_from_pretrain/"
 
 train_frame_object_sampler = dict(
     type="FrameObjectSampler",
@@ -26,6 +26,7 @@ train_frame_object_sampler = dict(
                 50.0,
                 50.0,
             ],
+            target_label_index=4  # 4 is the label index for pedestrian 
         ),
     ],
 )
@@ -38,3 +39,5 @@ train_dataloader = dict(
         frame_object_sampler=train_frame_object_sampler,
     ),
 )
+
+load_from = "work_dirs/centerpoint_2_5_1/T4Dataset/second_secfpn_4xb16_121m_pretrain_base_amp_rfs/best_epoch_47.pth"
