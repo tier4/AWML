@@ -15,6 +15,7 @@ model = dict(
     ),
     pts_voxel_encoder=None,
     pts_middle_encoder=None,
+    pts_neck=None,
     img_backbone=dict(
         type="mmdet.SwinTransformer",
         pretrain_img_size=(256, 704),

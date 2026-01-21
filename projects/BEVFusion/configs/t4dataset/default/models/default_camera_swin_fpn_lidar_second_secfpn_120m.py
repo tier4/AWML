@@ -56,4 +56,5 @@ model = dict(
         dbound=[1.0, 130, 1.0],
         downsample=2,
     ),
+    fusion_layer=dict(type="ConvFuser", in_channels=[80, 256], out_channels=256, kernel_size=5, padding=2),
 )
