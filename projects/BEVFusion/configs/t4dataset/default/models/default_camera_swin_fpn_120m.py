@@ -4,7 +4,12 @@ _base_ = [
 
 # Image network
 model = dict(
+    # Remove all lidar related configs
     voxelize_cfg=None,
+    pts_voxel_encoder=None,
+    pts_middle_encoder=None,
+    pts_neck=None,
+    pts_backbone=None,
     data_preprocessor=dict(
         type="Det3DDataPreprocessor",
         pad_size_divisor=32,
@@ -13,9 +18,6 @@ model = dict(
         bgr_to_rgb=False,
         rgb_to_bgr=False,
     ),
-    pts_voxel_encoder=None,
-    pts_middle_encoder=None,
-    pts_neck=None,
     img_backbone=dict(
         type="mmdet.SwinTransformer",
         pretrain_img_size=(256, 704),
