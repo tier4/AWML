@@ -1,6 +1,7 @@
 import json
 import pickle
 import time
+from asyncio import streams
 from collections import defaultdict
 from concurrent.futures import Executor, ProcessPoolExecutor
 from dataclasses import dataclass
@@ -235,6 +236,8 @@ class T4MetricV2(BaseMetric):
         self,
         data_root: str,
         ann_file: str,
+        training_statistics_parquet_path: str,
+        validation_statistics_parquet_path: str,
         dataset_name: str,
         output_dir: str,
         experiment_name: str,
@@ -309,8 +312,11 @@ class T4MetricV2(BaseMetric):
         self.logger.info(f"{self.default_prefix} running with {self.num_running_gpus} GPUs")
 
         # T4MetricV2 DatFrame
+        self.t4metric_v2_dataframe_output_path = self.output_dir / f"t4metricv2_metrics_{self.test_timestamp}.parquet"
         self.t4_metric_v2_dataframe = T4MetricV2DataFrame(
-            output_dataframe_path=self.output_dir / f"t4metricv2_metrics_{self.test_timestamp}.parquet"
+            output_dataframe_path=self.t4metric_v2_dataframe_output_path,
+            training_statistics_parquet_path=Path(training_statistics_parquet_path),
+            validation_statistics_parquet_path=Path(validation_statistics_parquet_path),
         )
 
     def _create_evaluators(

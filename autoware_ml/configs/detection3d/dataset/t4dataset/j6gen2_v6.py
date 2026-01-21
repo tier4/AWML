@@ -12,6 +12,10 @@ info_train_file_name = "t4dataset_j6gen2_v6_infos_train.pkl"
 info_val_file_name = "t4dataset_j6gen2_v6_infos_val.pkl"
 info_test_file_name = "t4dataset_j6gen2_v6_infos_test.pkl"
 
+info_train_statistics_file_name = "t4dataset_j6gen2_v6_statistics_train.parquet"
+info_val_statistics_file_name = "t4dataset_j6gen2_v6_statistics_val.parquet"
+info_test_statistics_file_name = "t4dataset_j6gen2_v6_statistics_test.parquet"
+
 # dataset scene setting
 dataset_version_list = [
     "db_j6gen2_v6",
