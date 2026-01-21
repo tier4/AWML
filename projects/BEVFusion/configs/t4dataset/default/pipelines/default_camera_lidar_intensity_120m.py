@@ -94,6 +94,7 @@ train_pipeline = [
             "pcd_trans",
             "img_aug_matrix",
             "lidar_aug_matrix",
+            "timestamp",
         ],
     ),
 ]
@@ -143,6 +144,7 @@ test_pipeline = [
             "img_path",
             "num_pts_feats",
             "num_views",
+            "timestamp",
         ],
     ),
 ]
