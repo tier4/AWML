@@ -319,11 +319,11 @@ def main():
                     else:
                         raise ValueError(f"{t4_dataset_id} does not exist.")
                 t4 = Tier4(data_root=scene_root_dir_path, verbose=False)
-                # for i in range(0, len(t4.sample), sample_steps):
-                #     sample = t4.sample[i]
-                #     info = get_info(cfg, t4, sample, i, args.max_sweeps, city, vehicle_type)
-                #     # info["version"] = dataset_version             # used for visualizations during debugging.
-                #     t4_infos[split].append(info)
+                for i in range(0, len(t4.sample), sample_steps):
+                    sample = t4.sample[i]
+                    info = get_info(cfg, t4, sample, i, args.max_sweeps, city, vehicle_type)
+                    # info["version"] = dataset_version             # used for visualizations during debugging.
+                    t4_infos[split].append(info)
 
                 scene_metadata = T4DatasetSceneMetadata(scene_id, city, vehicle_type)
                 for bev_distance_range in bev_distance_ranges:
