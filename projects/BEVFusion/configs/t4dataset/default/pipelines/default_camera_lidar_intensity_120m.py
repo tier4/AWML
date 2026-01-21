@@ -27,6 +27,13 @@ camera_order = ["CAM_FRONT", "CAM_FRONT_LEFT", "CAM_BACK_LEFT", "CAM_FRONT_RIGHT
 
 train_pipeline = [
     dict(
+        type="BEVLoadMultiViewImageFromFiles",
+        to_float32=True,
+        color_type="color",
+        backend_args=backend_args,
+        camera_order=camera_order,
+    ),
+    dict(
         type="LoadPointsFromFile",
         coord_type="LIDAR",
         load_dim=point_load_dim,
@@ -107,6 +114,13 @@ train_pipeline = [
 ]
 
 test_pipeline = [
+    dict(
+        type="BEVLoadMultiViewImageFromFiles",
+        to_float32=True,
+        color_type="color",
+        backend_args=backend_args,
+        camera_order=camera_order,
+    ),
     dict(
         type="LoadPointsFromFile",
         coord_type="LIDAR",

@@ -23,15 +23,17 @@ class ImageAug3D(BaseTransform):
     def sample_augmentation(self, results):
         H, W = results["ori_shape"]
         fH, fW = self.final_dim
+
         if self.is_train:
             if isinstance(self.resize_lim, (int, float)):
-                aspect_ratio = min(fH / H, fW / W)
-                resize = np.random.uniform(aspect_ratio - self.resize_lim, aspect_ratio + self.resize_lim)
+                aspect_ratio = max(fH / H, fW / W)
+                resize = np.random.uniform(aspect_ratio, aspect_ratio + self.resize_lim)
             else:
                 resize = np.random.uniform(*self.resize_lim)
 
             resize_dims = (int(W * resize), int(H * resize))
             newW, newH = resize_dims
+
             crop_h = int((1 - np.random.uniform(*self.bot_pct_lim)) * newH) - fH
             crop_w = int(np.random.uniform(0, max(0, newW - fW)))
             crop = (crop_w, crop_h, crop_w + fW, crop_h + fH)
@@ -40,14 +42,20 @@ class ImageAug3D(BaseTransform):
                 flip = True
             rotate = np.random.uniform(*self.rot_lim)
         else:
-            resize = min(fH / H, fW / W)
+            resize_lim = np.mean(self.resize_lim)
+            if isinstance(self.resize_lim, (int, float)):
+                aspect_ratio = max(fH / H, fW / W)
+                resize = aspect_ratio + resize_lim
+            else:
+                resize = resize_lim
+
             resize_dims = (int(W * resize), int(H * resize))
             newW, newH = resize_dims
             crop_h = int((1 - np.mean(self.bot_pct_lim)) * newH) - fH
             crop_w = int(max(0, newW - fW) / 2)
             crop = (crop_w, crop_h, crop_w + fW, crop_h + fH)
-            flip = False
             rotate = 0
+            flip = False
         return resize, resize_dims, crop, flip, rotate
 
     def img_transform(self, img, rotation, translation, resize, resize_dims, crop, flip, rotate):
