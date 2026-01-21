@@ -17,7 +17,7 @@ class T4DatasetSceneMetadata:
     vehicle_type: str
 
     @property
-    def get_frame_prefix(self) -> str:
+    def frame_prefix(self) -> str:
         return self.location + "/" + self.vehicle_type
 
 
@@ -47,7 +47,7 @@ class T4DatasetStatistics:
             }
 
         self.statistics[bucket_name]["metadata"][f"metadata/{self.split_name}_num_frame_distribution"][
-            scene_metadata.get_frame_prefix
+            scene_metadata.frame_prefix
         ] += len(samples)
         self.statistics[bucket_name]["metadata"][f"metadata/{self.split_name}_total_num_frames"] += len(samples)
 

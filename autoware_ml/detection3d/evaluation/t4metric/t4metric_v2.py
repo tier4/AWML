@@ -310,7 +310,7 @@ class T4MetricV2(BaseMetric):
         self.main_evaluator_frame_id = self.evaluators[selected_evaluator_name].perception_evaluator_configs.frame_id
         self.logger.info(f"{self.default_prefix} running with {self.num_running_gpus} GPUs")
 
-        # T4MetricV2 DatFrame
+        # T4MetricV2 DataFrame
         self.t4metric_v2_dataframe_output_path = self.output_dir / f"t4metricv2_metrics_{self.test_timestamp}.parquet"
         self.t4_metric_v2_dataframe = T4MetricV2DataFrame(
             output_dataframe_path=self.t4metric_v2_dataframe_output_path,

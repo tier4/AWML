@@ -150,8 +150,9 @@ class T4MetricV2DataFrame:
 
     def _parse_metric_column_data(self, metric_header_data: Dict[str, Any]) -> Dict[str, Any]:
         """
-        Parse the metric label column data.
-
+        Parse general metric column data. For nested dictionaries, it save values and keys by
+        expanding nested dictionaries into separate `<metric>_keys` and
+        `<metric>_values` columns.
         Args:
             metric_header_data (Dict[str, Any]): The metric header data.
         """
