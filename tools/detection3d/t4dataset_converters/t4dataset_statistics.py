@@ -96,7 +96,7 @@ class T4DatasetStatistics:
                 df[f"{column_name}_keys"] = list(column_value.keys())
                 df[f"{column_name}_values"] = list(column_value.values())
             else:
-                df[column_name] = column_value
+                df[column_name].append(column_value)
         return df
 
     def _dict_to_dataframe(self) -> pl.DataFrame:
@@ -115,10 +115,11 @@ class T4DatasetStatistics:
             df["vehicle_type"].append(vehicle_type)
             df["suffix_name"].append(suffix_name)
 
+            current_df = defaultdict(list)
             for _, column_data in columns.items():
-                column_df = self._parse_column_data(column_data)
+                current_df.update(self._parse_column_data(column_data))
 
-                for column_name, data in column_df.items():
-                    df[column_name].extend(data)
+            for column_name, data in current_df.items():
+                df[column_name].extend(data)
 
         return pl.from_dict(df)
