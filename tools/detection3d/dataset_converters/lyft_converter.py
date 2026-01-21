@@ -62,10 +62,8 @@ def create_lyft_infos(root_path, info_prefix, version="v1.01-train", max_sweeps=
     if test:
         print(f"test scene: {len(train_scenes)}")
     else:
-        print(
-            f"train scene: {len(train_scenes)}, \
-                val scene: {len(val_scenes)}"
-        )
+        print(f"train scene: {len(train_scenes)}, \
+                val scene: {len(val_scenes)}")
     train_lyft_infos, val_lyft_infos = _fill_trainval_infos(
         lyft, train_scenes, val_scenes, test, max_sweeps=max_sweeps
     )
@@ -78,10 +76,8 @@ def create_lyft_infos(root_path, info_prefix, version="v1.01-train", max_sweeps=
         info_path = osp.join(root_path, f"{info_name}.pkl")
         mmengine.dump(data, info_path)
     else:
-        print(
-            f"train sample: {len(train_lyft_infos)}, \
-                val sample: {len(val_lyft_infos)}"
-        )
+        print(f"train sample: {len(train_lyft_infos)}, \
+                val sample: {len(val_lyft_infos)}")
         data = dict(infos=train_lyft_infos, metadata=metadata)
         train_info_name = f"{info_prefix}_infos_train"
         info_path = osp.join(root_path, f"{train_info_name}.pkl")
@@ -234,7 +230,7 @@ def export_2d_annotation(root_path, info_path, version):
         for cam in camera_types:
             cam_info = info["cams"][cam]
             coco_infos = get_2d_boxes(lyft, cam_info["sample_data_token"], visibilities=["", "1", "2", "3", "4"])
-            (height, width, _) = mmcv.imread(cam_info["data_path"]).shape
+            height, width, _ = mmcv.imread(cam_info["data_path"]).shape
             coco_2d_dict["images"].append(
                 dict(file_name=cam_info["data_path"], id=cam_info["sample_data_token"], width=width, height=height)
             )

@@ -24,7 +24,7 @@ class _dynamic_scatter(Function):
             coordinates: [M, ndim] int tensor, voxel coordinates.
         """
         results = dynamic_point_to_voxel_forward(feats, coors, reduce_type)
-        (voxel_feats, voxel_coors, point2voxel_map, voxel_points_count) = results
+        voxel_feats, voxel_coors, point2voxel_map, voxel_points_count = results
         ctx.reduce_type = reduce_type
         ctx.save_for_backward(feats, voxel_feats, point2voxel_map, voxel_points_count)
         ctx.mark_non_differentiable(voxel_coors)
@@ -32,7 +32,7 @@ class _dynamic_scatter(Function):
 
     @staticmethod
     def backward(ctx, grad_voxel_feats, grad_voxel_coors=None):
-        (feats, voxel_feats, point2voxel_map, voxel_points_count) = ctx.saved_tensors
+        feats, voxel_feats, point2voxel_map, voxel_points_count = ctx.saved_tensors
         grad_feats = torch.zeros_like(feats)
         # TODO: whether to use index put or use cuda_backward
         # To use index put, need point to voxel index
