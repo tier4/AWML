@@ -22,7 +22,10 @@ class T4DatasetSceneMetadata:
 
 
 class T4DatasetStatistics:
-    """Class to generate statistics for a split in T4Dataset."""
+    """
+    Class to generate statistics for a split in T4Dataset.
+    TODO(KokSeang): This class will be unified with T4MetricV2DataFrame.
+    """
 
     def __init__(self, output_dir: Path, split_name: str, version: str):
         self.output_dir = output_dir
@@ -64,11 +67,39 @@ class T4DatasetStatistics:
             filename = f"t4dataset_{self.version}_statistics_{self.split_name}.parquet"
 
         output_path = self.output_dir / filename
-        df = self._dict_to_dataframe(data)
+        df = self._dict_to_dataframe()
         # Save to parquet
         df.write_parquet(output_path)
 
-    def _dict_to_dataframe(self, data: Dict[str, Any]) -> pl.DataFrame:
+    @staticmethod
+    def _parse_column_name(metric_name: str) -> str:
+        """
+        Parse the metric column name.
+
+        Args:
+            metric_name (str): The metric name.
+        """
+        # Remove prefix, such as "metrics/" or "metadata/"
+        metric_name = metric_name.split("/")[-1]
+        return metric_name.replace("/", "_").replace(".", "_")
+
+    def _parse_column_data(self, column_data: Dict[str, Any]) -> Dict[str, Any]:
+        """Parse the column data.
+
+        Args:
+            column_data: The column data.
+        """
+        df = defaultdict(list)
+        for key, column_value in column_data.items():
+            column_name = self._parse_column_name(key)
+            if isinstance(column_value, dict):
+                df[f"{column_name}_keys"] = list(column_value.keys())
+                df[f"{column_name}_values"] = list(column_value.values())
+            else:
+                df[column_name] = column_value
+        return df
+
+    def _dict_to_dataframe(self) -> pl.DataFrame:
         """Convert nested dictionary to flat DataFrame.
 
         Args:
@@ -77,53 +108,17 @@ class T4DatasetStatistics:
         Returns:
             DataFrame with flattened structure where dict values are flattened to keys and values.
         """
+        df = defaultdict(list)
         for bucket_name, columns in self.statistics.items():
-            location, vehicle_type, range_filter_name, bev_distance_range = bucket_name.split("/")
-        # rows = []
+            location, vehicle_type, suffix_name = bucket_name.split("/")
+            df["location"].append(location)
+            df["vehicle_type"].append(vehicle_type)
+            df["suffix_name"].append(suffix_name)
 
-        # def flatten_dict(d: Dict[str, Any],
-        #                  parent_key: str = "",
-        #                  sep: str = "_"):
-        #     """Recursively flatten nested dictionary. Dict values are flattened to keys and values."""
-        #     items = {}
-        #     for k, v in d.items():
-        #         new_key = f"{parent_key}{sep}{k}" if parent_key else k
-        #         if isinstance(v, defaultdict):
-        #             # Convert defaultdict to regular dict, then flatten it
-        #             v = dict(v)
-        #             if isinstance(v, dict) and v:
-        #                 # Flatten dict values: each key becomes a column, each value becomes the cell value
-        #                 for dict_key, dict_value in v.items():
-        #                     # Use dict_key as part of the column name
-        #                     column_key = f"{new_key}{sep}{dict_key}"
-        #                     items[column_key] = dict_value
-        #             else:
-        #                 items[new_key] = v
-        #         elif isinstance(v, dict):
-        #             # Flatten dict values: each key becomes a column, each value becomes the cell value
-        #             if v:
-        #                 for dict_key, dict_value in v.items():
-        #                     # Use dict_key as part of the column name
-        #                     column_key = f"{new_key}{sep}{dict_key}"
-        #                     items[column_key] = dict_value
-        #             else:
-        #                 items[new_key] = None
-        #         elif isinstance(v, (list, tuple)):
-        #             # Convert lists/tuples to JSON string for parquet compatibility
-        #             items[new_key] = json.dumps(v) if v else None
-        #         else:
-        #             items[new_key] = v
-        #     return items
+            for _, column_data in columns.items():
+                column_df = self._parse_column_data(column_data)
 
-        # # Handle top-level structure
-        # if isinstance(data, dict):
-        #     for bucket_name, bucket_data in data.items():
-        #         flattened = flatten_dict({bucket_name: bucket_data})
-        #         flattened["bucket_name"] = bucket_name
-        #         rows.append(flattened)
+                for column_name, data in column_df.items():
+                    df[column_name].extend(data)
 
-        # if rows:
-        #     return pl.DataFrame(rows)
-        # else:
-        #     # If no nested structure, create a single-row DataFrame
-        #     return pl.DataFrame([data])
+        return pl.from_dict(df)

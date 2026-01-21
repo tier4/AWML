@@ -1,9 +1,10 @@
-from collections import defaultdict
 import json
-from pathlib import Path 
-from typing import Dict, Any
+from collections import defaultdict
+from pathlib import Path
+from typing import Any, Dict
 
-import polars as pl 
+import polars as pl
+
 
 class T4MetricV2DataFrame:
 
@@ -28,11 +29,10 @@ class T4MetricV2DataFrame:
             return json.load(file)
 
     def __call__(
-        self, 
-        aggregated_metric_scalars: Dict[str, Any], 
-        aggregated_metric_data: Dict[str, Any]) -> pl.DataFrame:
+        self, aggregated_metric_scalars: Dict[str, Any], aggregated_metric_data: Dict[str, Any]
+    ) -> pl.DataFrame:
         """
-        Convert JSON compatible format to a parquet dataframe, where special characters "/" and "." 
+        Convert JSON compatible format to a parquet dataframe, where special characters "/" and "."
         are converted to "_".
         Both aggregated metric scalars and aggregated metric data share the same structure in the format of:
         ```
@@ -59,7 +59,7 @@ class T4MetricV2DataFrame:
         ```
         Args:
             aggregated_metric_scalars (Dict[str, Any]): The aggregated metric scalars and metadata.
-            aggregated_metric_data (Dict[str, Any]): The aggregated metric data for a task, 
+            aggregated_metric_data (Dict[str, Any]): The aggregated metric data for a task,
                 for example, detection/precisions.
         """
         df = defaultdict(list)
@@ -67,28 +67,26 @@ class T4MetricV2DataFrame:
             selected_evaluator_metric_data = aggregated_metric_data.get(evaluator_name, None)
             if selected_evaluator_metric_data is None:
                 raise ValueError(f"Evaluator {evaluator_name} not found in aggregated metric data.")
-            
+
             # Parse evaluator name to location/vehicle_type/evaluator_bucket_name
-            location, vehicle_type, evaluator_bucket_name = evaluator_name.split("/")
+            location, vehicle_type, suffix_name = evaluator_name.split("/")
             df["location"].append(location)
             df["vehicle_type"].append(vehicle_type)
-            df["evaluator_bucket_name"].append(evaluator_bucket_name)
-            
+            df["suffix_name"].append(suffix_name)
+
             # Parse aggregated_metric_scalars
             current_df = defaultdict(list)
             for metric_header_name, metric_header_data in metric_dict.items():
                 metric_header_data = self._parse_metric_header_data(
-                    metric_header_name=metric_header_name, 
-                    metric_header_data=metric_header_data
+                    metric_header_name=metric_header_name, metric_header_data=metric_header_data
                 )
                 # update the dataframe with the metric header data
                 current_df.update(metric_header_data)
-            
+
             # Parse aggregated_metric_data
             for metric_header_name, metric_header_data in selected_evaluator_metric_data.items():
                 metric_header_data = self._parse_metric_header_data(
-                    metric_header_name=metric_header_name, 
-                    metric_header_data=metric_header_data
+                    metric_header_name=metric_header_name, metric_header_data=metric_header_data
                 )
                 # update the dataframe with the metric header data
                 current_df.update(metric_header_data)
@@ -98,13 +96,13 @@ class T4MetricV2DataFrame:
 
         df = pl.from_dict(df)
         return df
-    
+
     def _parse_metric_header_data(self, metric_header_name: str, metric_header_data: Dict[str, Any]) -> Dict[str, Any]:
         """
         Parse the metric header data.
 
         Args:
-            metric_header_data (Dict[str, Any]): The metric header data, for example, 
+            metric_header_data (Dict[str, Any]): The metric header data, for example,
             given the metric_header_name "metrics", the metric_header_data is:
             ```
             {
@@ -116,7 +114,7 @@ class T4MetricV2DataFrame:
             return self._parse_metric_label_column_data(metric_header_data)
         else:
             return self._parse_metric_column_data(metric_header_data)
-    
+
     def _parse_metric_label_column_data(self, metric_header_data: Dict[str, Any]) -> Dict[str, Any]:
         """
         Parse the metric label column data.
@@ -130,7 +128,7 @@ class T4MetricV2DataFrame:
                 metric_column_name = self._parse_metric_column_name(metric_name)
                 df[metric_column_name].append(metric_value)
         return df
-    
+
     def _parse_metric_column_data(self, metric_header_data: Dict[str, Any]) -> Dict[str, Any]:
         """
         Parse the metric label column data.
@@ -145,14 +143,14 @@ class T4MetricV2DataFrame:
             if isinstance(metric_value, dict):
                 # Make it list of values
                 values = list(metric_value.values())
-                # Make it list of keys 
+                # Make it list of keys
                 keys = list(metric_value.keys())
                 df[f"{metric_column_name}_keys"].append(keys)
                 df[f"{metric_column_name}_values"].append(values)
             else:
                 df[metric_column_name].append(metric_value)
         return df
-        
+
     @staticmethod
     def _parse_metric_column_name(metric_name: str) -> str:
         """

@@ -309,9 +309,6 @@ def main():
                         "Invalid scene_id format. should be : {t4_dataset_id}/{t4_dataset_version_id}/{city:optional}/{vehicle_type:optional}"
                     )
 
-                # Get a bucket name, location/vehicle_type
-                bucket_name = f"{city}/{vehicle_type}"
-
                 scene_root_dir_path = osp.join(args.root_path, dataset_version, t4_dataset_id, t4_dataset_version_id)
                 if not os.path.exists(scene_root_dir_path):
                     if args.use_available_dataset_version:
@@ -322,11 +319,11 @@ def main():
                     else:
                         raise ValueError(f"{t4_dataset_id} does not exist.")
                 t4 = Tier4(data_root=scene_root_dir_path, verbose=False)
-                for i in range(0, len(t4.sample), sample_steps):
-                    sample = t4.sample[i]
-                    info = get_info(cfg, t4, sample, i, args.max_sweeps, city, vehicle_type)
-                    # info["version"] = dataset_version             # used for visualizations during debugging.
-                    t4_infos[split].append(info)
+                # for i in range(0, len(t4.sample), sample_steps):
+                #     sample = t4.sample[i]
+                #     info = get_info(cfg, t4, sample, i, args.max_sweeps, city, vehicle_type)
+                #     # info["version"] = dataset_version             # used for visualizations during debugging.
+                #     t4_infos[split].append(info)
 
                 scene_metadata = T4DatasetSceneMetadata(scene_id, city, vehicle_type)
                 for bev_distance_range in bev_distance_ranges:
@@ -338,7 +335,7 @@ def main():
                     t4_statistics[split].add_samples(t4.sample, bucket_name, scene_metadata)
 
     for t4_statistic_info in t4_statistics.values():
-        t4_statistic_info.save_to_json()
+        t4_statistic_info.save_to_parquet()
         print_log(f"Saved {t4_statistic_info.split_name} statistics to {t4_statistic_info.output_dir}")
 
     assert sum(len(split) for split in t4_infos.values()) > 0, "dataset isn't available"
