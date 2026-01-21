@@ -8,7 +8,7 @@ import polars as pl
 
 class T4MetricV2DataFrame:
 
-    def __init__(self, output_dataframe_path: Path) -> None:
+    def __init__(self, output_dataframe_path: Path, training_statistics_parquet_path: Path) -> None:
         """
         Initialize the T4MetricV2DataFrame.
 
@@ -17,6 +17,9 @@ class T4MetricV2DataFrame:
         """
         self.output_dataframe_path = output_dataframe_path
         self.output_dataframe_path.parent.mkdir(parents=True, exist_ok=True)
+        self.training_statistics_parquet_path = training_statistics_parquet_path
+        # Load the training statistics parquet file
+        self.training_statistics_df = pl.read_parquet(self.training_statistics_parquet_path)
 
     def read_json_to_dict(self, json_path: Path) -> Dict[str, Any]:
         """
@@ -95,6 +98,9 @@ class T4MetricV2DataFrame:
                 df[metric_column_name].extend(metric_column_data)
 
         df = pl.from_dict(df)
+
+        # Join the training statistics dataframe with the evaluation dataframe
+        df = df.join(self.training_statistics_df, on=["location", "vehicle_type", "suffix_name"], how="left")
         return df
 
     def _parse_metric_header_data(self, metric_header_name: str, metric_header_data: Dict[str, Any]) -> Dict[str, Any]:
