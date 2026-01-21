@@ -7,6 +7,13 @@ input_modality = dict(use_lidar=True, use_camera=True)
 point_cloud_range = [-122.4, -122.4, -3.0, 122.4, 122.4, 5.0]
 voxel_size = [0.17, 0.17, 0.2]
 grid_size = [1440, 1440, 41]
+eval_class_range = {
+    "car": 120,
+    "truck": 120,
+    "bus": 120,
+    "bicycle": 120,
+    "pedestrian": 120,
+}
 
 # LiDAR parameters
 point_load_dim = 5  # x, y, z, intensity, ring_id
