@@ -3,7 +3,6 @@ _base_ = [
     "../../../../../autoware_ml/configs/detection3d/dataset/t4dataset/j6gen2_base.py",
     "../default/pipelines/default_camera_lidar_intensity_120m.py",
     "../default/models/default_camera_swin_fpn.py",
-    "../default/models/default_lidar_second_secfpn_120m.py",
     "../default/schedulers/default_30e_4xb8_adamw_linear_cosine.py",
     "../default/default_misc.py",
 ]
@@ -23,9 +22,6 @@ work_dir = "work_dirs/" + experiment_group_name + "/" + experiment_name
 # model parameter
 model = dict(
     type="BEVFusion",
-    voxelize_cfg=None,
-    pts_voxel_encoder=None,
-    pts_middle_encoder=None,
     view_transform=dict(image_size=_base_.image_size),
     bbox_head=dict(
         class_names=_base_.class_names,
