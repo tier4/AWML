@@ -93,8 +93,8 @@ class T4DatasetStatistics:
         for key, column_value in column_data.items():
             column_name = self._parse_column_name(key)
             if isinstance(column_value, dict):
-                df[f"{column_name}_keys"] = list(column_value.keys())
-                df[f"{column_name}_values"] = list(column_value.values())
+                df[f"{column_name}_keys"] = df.append(list(column_value.keys()))
+                df[f"{column_name}_values"] = df.append(list(column_value.values()))
             else:
                 df[column_name].append(column_value)
         return df
