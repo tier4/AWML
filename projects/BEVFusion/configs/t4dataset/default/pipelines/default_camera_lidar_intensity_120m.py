@@ -170,4 +170,4 @@ test_pipeline = [
     ),
 ]
 
-filter_cfg = dict(filter_frames_with_missing_image=True)
+filter_cfg = dict(filter_frames_with_camera_order=camera_order)
