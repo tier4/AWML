@@ -146,8 +146,6 @@ class BEVLoadMultiViewImageFromFiles(LoadMultiViewImageFromFiles):
             # TODO (KokSeang): This sometime causes an error when we set num_workers > 1 during training,
             # it's likely due to multiprocessing in CPU. We should probably process this part when creating info files
             if cam_item["img_path"] is None:
-                # print_log(f"Warning: None data for cam: {camera_type} in {results['images']}")
-                # continue
                 cam_item = self.before_camera_info[camera_type]
                 print_log("Warning: fill None data")
             else:

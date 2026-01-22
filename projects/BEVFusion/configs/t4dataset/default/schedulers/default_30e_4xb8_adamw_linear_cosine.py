@@ -1,5 +1,4 @@
 # learning rate
-# lr = 0.0001
 lr = 1e-4
 t_max = 8
 max_epochs = 30
