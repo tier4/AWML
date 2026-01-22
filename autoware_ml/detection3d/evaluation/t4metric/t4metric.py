@@ -26,6 +26,7 @@ from autoware_ml.detection3d.evaluation.t4metric.evaluation import T4DetectionCo
 from autoware_ml.detection3d.evaluation.t4metric.loading import T4Box, add_center_dist, filter_eval_boxes
 
 __all__ = ["T4Metric"]
+_UNKNOWN = "unknown"
 
 
 # [TODO] This class will refactor. We will rewrite T4Metrics

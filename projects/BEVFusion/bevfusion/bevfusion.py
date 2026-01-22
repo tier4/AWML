@@ -72,8 +72,8 @@ class BEVFusion(Base3DDetector):
 
         self.fusion_layer = MODELS.build(fusion_layer) if fusion_layer is not None else None
 
-        self.pts_backbone = MODELS.build(pts_backbone)
-        self.pts_neck = MODELS.build(pts_neck)
+        self.pts_backbone = MODELS.build(pts_backbone) if pts_backbone is not None else None
+        self.pts_neck = MODELS.build(pts_neck) if pts_neck is not None else None
 
         self.bbox_head = MODELS.build(bbox_head)
 
@@ -370,8 +370,11 @@ class BEVFusion(Base3DDetector):
             assert len(features) == 1, features
             x = features[0]
 
-        x = self.pts_backbone(x)
-        x = self.pts_neck(x)
+        if self.pts_backbone is not None:
+            x = self.pts_backbone(x)
+
+        if self.pts_neck is not None:
+            x = self.pts_neck(x)
 
         return x
 
