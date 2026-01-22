@@ -2,7 +2,7 @@
 # lr = 0.0001
 lr = 1e-4
 t_max = 8
-max_epochs = 20
+max_epochs = 30
 val_interval = 1
 
 train_gpu_size = 4
