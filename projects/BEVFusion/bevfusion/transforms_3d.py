@@ -23,7 +23,6 @@ class ImageAug3D(BaseTransform):
     def sample_augmentation(self, results):
         H, W = results["ori_shape"]
         fH, fW = self.final_dim
-
         if self.is_train:
             if isinstance(self.resize_lim, (int, float)):
                 aspect_ratio = min(fH / H, fW / W)
@@ -33,7 +32,6 @@ class ImageAug3D(BaseTransform):
 
             resize_dims = (int(W * resize), int(H * resize))
             newW, newH = resize_dims
-
             crop_h = int((1 - np.random.uniform(*self.bot_pct_lim)) * newH) - fH
             crop_w = int(np.random.uniform(0, max(0, newW - fW)))
             crop = (crop_w, crop_h, crop_w + fW, crop_h + fH)
