@@ -31,6 +31,8 @@ from perception_eval.evaluation.result.perception_frame_result import Perception
 from perception_eval.manager import PerceptionEvaluationManager
 from pyquaternion import Quaternion
 
+from autoware_ml.detection3d.evaluation.t4metric.t4metric_v2_dataframe import T4MetricV2DataFrame
+
 __all__ = ["T4MetricV2"]
 _UNKNOWN = "unknown"
 DEFAULT_T4METRIC_FILE_NAME = "t4metric_v2_results_{}.pkl"
@@ -233,6 +235,8 @@ class T4MetricV2(BaseMetric):
         self,
         data_root: str,
         ann_file: str,
+        training_statistics_parquet_path: str,
+        validation_statistics_parquet_path: str,
         dataset_name: str,
         output_dir: str,
         experiment_name: str,
@@ -305,6 +309,14 @@ class T4MetricV2(BaseMetric):
         self.main_evaluator_name = f"{self.default_evaluator_prefix_name}/{selected_evaluator_name}"
         self.main_evaluator_frame_id = self.evaluators[selected_evaluator_name].perception_evaluator_configs.frame_id
         self.logger.info(f"{self.default_prefix} running with {self.num_running_gpus} GPUs")
+
+        # T4MetricV2 DataFrame
+        self.t4metric_v2_dataframe_output_path = self.output_dir / f"t4metricv2_metrics_{self.test_timestamp}.parquet"
+        self.t4_metric_v2_dataframe = T4MetricV2DataFrame(
+            output_dataframe_path=self.t4metric_v2_dataframe_output_path,
+            training_statistics_parquet_path=Path(training_statistics_parquet_path),
+            validation_statistics_parquet_path=Path(validation_statistics_parquet_path),
+        )
 
     def _create_evaluators(
         self,
@@ -478,11 +490,26 @@ class T4MetricV2(BaseMetric):
             self.logger.info(f"Final metrics result: {final_metric_score}")
 
         # Write aggregated metrics for all evaluators to an output file
-        try:
-            self._write_aggregated_metrics(aggregated_metric_scalars, "aggregated_metrics.json")
-            self._write_aggregated_metrics(aggregated_metric_data, "aggregated_metrics_data.json")
-        except Exception as e:
-            self.logger.error(f"Failed to write aggregated metrics to output files: {e}")
+        if self.write_metric_summary:
+            try:
+                metric_scalars_json = self._write_aggregated_metrics(
+                    aggregated_metric_scalars, "aggregated_metrics.json"
+                )
+                metric_data_json = self._write_aggregated_metrics(
+                    aggregated_metric_data, "aggregated_metrics_data.json"
+                )
+
+                # Write to a parquet
+                df = self.t4_metric_v2_dataframe(
+                    aggregated_metric_scalars=metric_scalars_json, aggregated_metric_data=metric_data_json
+                )
+                self.t4_metric_v2_dataframe.save_dataframe(df)
+                self.logger.info(
+                    f"Saved aggregated metrics to a parquet file: {self.t4_metric_v2_dataframe.output_dataframe_path}"
+                )
+
+            except Exception as e:
+                self.logger.error(f"Failed to write aggregated metrics to output files: {e}")
 
         return aggregated_metric_scalars
 
@@ -1061,7 +1088,7 @@ class T4MetricV2(BaseMetric):
 
     def _write_aggregated_metrics(
         self, final_metric_dict: dict, aggregated_metric_file_name: str = "aggregated_metrics.json"
-    ) -> None:
+    ) -> Dict[str, Any]:
         """
         Writes aggregated metrics to a JSON file with the specified format.
 
@@ -1114,6 +1141,7 @@ class T4MetricV2(BaseMetric):
                 json.dump(aggregated_metrics, aggregated_file, indent=4)
 
             self.logger.info(f"Aggregated metrics written to: {output_path}")
+            return aggregated_metrics
 
         except Exception as e:
             self.logger.error(f"Failed to write aggregated metrics: {e}")
