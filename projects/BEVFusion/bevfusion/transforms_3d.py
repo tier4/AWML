@@ -26,8 +26,8 @@ class ImageAug3D(BaseTransform):
 
         if self.is_train:
             if isinstance(self.resize_lim, (int, float)):
-                aspect_ratio = max(fH / H, fW / W)
-                resize = np.random.uniform(aspect_ratio, aspect_ratio + self.resize_lim)
+                aspect_ratio = min(fH / H, fW / W)
+                resize = np.random.uniform(aspect_ratio - self.resize_lim, aspect_ratio + self.resize_lim)
             else:
                 resize = np.random.uniform(*self.resize_lim)
 
@@ -42,12 +42,10 @@ class ImageAug3D(BaseTransform):
                 flip = True
             rotate = np.random.uniform(*self.rot_lim)
         else:
-            resize_lim = np.mean(self.resize_lim)
             if isinstance(self.resize_lim, (int, float)):
-                aspect_ratio = max(fH / H, fW / W)
-                resize = aspect_ratio + resize_lim
+                resize = min(fH / H, fW / W)
             else:
-                resize = resize_lim
+                resize = np.mean(self.resize_lim)
 
             resize_dims = (int(W * resize), int(H * resize))
             newW, newH = resize_dims
