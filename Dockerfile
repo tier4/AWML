@@ -67,12 +67,9 @@ RUN python3 -m pip install git+https://github.com/tier4/autoware_perception_eval
 RUN python3 -m pip --no-cache-dir install \
     setuptools==60.2.0 \
     transformers==4.51.3 \
-<<<<<<< HEAD
     onnx_graphsurgeon==0.5.8 \
-    spconv-cu120==2.3.6
-=======
+    spconv-cu120==2.3.6 \
     polars==1.37.1
->>>>>>> feat/add_object_distribution_to_metadata
 
 # NOTE(knzo25): this patch is needed to use numpy versions over 1.23.5 (version used in mmdet3d 1.4.0)
 # It can be safely deleted when mmdet3d updates the numpy version
