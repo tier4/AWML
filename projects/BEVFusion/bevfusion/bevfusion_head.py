@@ -25,11 +25,11 @@ def clip_sigmoid(x, eps=1e-4):
 @MODELS.register_module()
 class ConvFuser(nn.Sequential):
 
-    def __init__(self, in_channels: int, out_channels: int) -> None:
+    def __init__(self, in_channels: int, out_channels: int, kernel_size: int, padding: int) -> None:
         self.in_channels = in_channels
         self.out_channels = out_channels
         super().__init__(
-            nn.Conv2d(sum(in_channels), out_channels, 3, padding=1, bias=False),
+            nn.Conv2d(sum(in_channels), out_channels, kernel_size, padding, bias=False),
             nn.BatchNorm2d(out_channels),
             nn.ReLU(True),
         )

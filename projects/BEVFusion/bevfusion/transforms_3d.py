@@ -24,7 +24,12 @@ class ImageAug3D(BaseTransform):
         H, W = results["ori_shape"]
         fH, fW = self.final_dim
         if self.is_train:
-            resize = np.random.uniform(*self.resize_lim)
+            if isinstance(self.resize_lim, (int, float)):
+                aspect_ratio = min(fH / H, fW / W)
+                resize = np.random.uniform(aspect_ratio - self.resize_lim, aspect_ratio + self.resize_lim)
+            else:
+                resize = np.random.uniform(*self.resize_lim)
+
             resize_dims = (int(W * resize), int(H * resize))
             newW, newH = resize_dims
             crop_h = int((1 - np.random.uniform(*self.bot_pct_lim)) * newH) - fH
@@ -35,14 +40,18 @@ class ImageAug3D(BaseTransform):
                 flip = True
             rotate = np.random.uniform(*self.rot_lim)
         else:
-            resize = np.mean(self.resize_lim)
+            if isinstance(self.resize_lim, (int, float)):
+                resize = min(fH / H, fW / W)
+            else:
+                resize = np.mean(self.resize_lim)
+
             resize_dims = (int(W * resize), int(H * resize))
             newW, newH = resize_dims
             crop_h = int((1 - np.mean(self.bot_pct_lim)) * newH) - fH
             crop_w = int(max(0, newW - fW) / 2)
             crop = (crop_w, crop_h, crop_w + fW, crop_h + fH)
-            flip = False
             rotate = 0
+            flip = False
         return resize, resize_dims, crop, flip, rotate
 
     def img_transform(self, img, rotation, translation, resize, resize_dims, crop, flip, rotate):
@@ -52,7 +61,7 @@ class ImageAug3D(BaseTransform):
         img = img.crop(crop)
         if flip:
             img = img.transpose(method=Image.FLIP_LEFT_RIGHT)
-        img = img.rotate(rotate)
+        img = img.rotate(rotate, resample=Image.BICUBIC)  # Default rotation introduces artifacts.
 
         # post-homography transformation
         rotation *= resize

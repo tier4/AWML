@@ -5,6 +5,7 @@ import tempfile
 from collections import defaultdict
 from copy import deepcopy
 from os import path as osp
+from pathlib import Path
 from typing import Any, Dict, List, Optional, Sequence, Tuple, Union
 
 import mmengine
@@ -25,6 +26,7 @@ from autoware_ml.detection3d.evaluation.t4metric.evaluation import T4DetectionCo
 from autoware_ml.detection3d.evaluation.t4metric.loading import T4Box, add_center_dist, filter_eval_boxes
 
 __all__ = ["T4Metric"]
+_UNKNOWN = "unknown"
 
 
 # [TODO] This class will refactor. We will rewrite T4Metrics
@@ -37,6 +39,7 @@ class T4Metric(NuScenesMetric):
         self,
         data_root: str,
         ann_file: str,
+        checkpoint_path: Optional[Union[Path, str]] = None,
         save_csv: bool = False,
         dataset_name: str = "base",
         filter_attributes: Optional[List[Tuple[str, str]]] = None,
@@ -120,6 +123,7 @@ class T4Metric(NuScenesMetric):
         self.dataset_name = dataset_name
         self.class_names = class_names
         self.version = version
+        self.checkpoint_path = checkpoint_path
 
         if name_mapping is None:
             self.class_names = [self.name_mapping.get(name, name) for name in self.class_names]
