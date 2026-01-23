@@ -3,7 +3,7 @@ _base_ = [
 ]
 
 # user setting
-work_dir = "work_dirs/centerpoint_2_5_1/" + _base_.dataset_type + "/second_secfpn_4xb16_121m_j6gen2_base_amp_rfs_from_pretrain/"
+work_dir = "work_dirs/centerpoint_2_6/" + _base_.dataset_type + "/second_secfpn_4xb16_121m_j6gen2_base_amp_rfs_from_pretrain/"
 
 train_frame_object_sampler = dict(
     type="FrameObjectSampler",
@@ -40,4 +40,4 @@ train_dataloader = dict(
     ),
 )
 
-load_from = "work_dirs/centerpoint_2_5_1/T4Dataset/second_secfpn_4xb16_121m_pretrain_base_amp_rfs/best_epoch_47.pth"
+load_from = "work_dirs/centerpoint_2_6/T4Dataset/second_secfpn_4xb16_121m_base_amp_rfs/epoch_48.pth"
