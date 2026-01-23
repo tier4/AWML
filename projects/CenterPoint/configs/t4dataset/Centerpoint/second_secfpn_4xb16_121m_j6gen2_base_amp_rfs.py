@@ -40,5 +40,3 @@ train_dataloader = dict(
         frame_object_sampler=train_frame_object_sampler,
     ),
 )
-
-load_from = "work_dirs/centerpoint_2_6/T4Dataset/second_secfpn_4xb16_121m_base_amp_rfs/epoch_48.pth"

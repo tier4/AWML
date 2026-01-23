@@ -22,6 +22,11 @@ dataset_version_list = [
     "db_largebus_v2",
 ]
 
+dataset_test_groups = {
+    "largebus": "t4dataset_largebus_infos_test.pkl",
+}
+
+
 # dataset format setting
 data_prefix = dict(
     pts="",
