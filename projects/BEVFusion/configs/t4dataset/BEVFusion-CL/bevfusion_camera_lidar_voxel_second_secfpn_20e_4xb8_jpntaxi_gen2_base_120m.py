@@ -2,8 +2,7 @@ _base_ = [
     "../../../../../autoware_ml/configs/detection3d/default_runtime.py",
     "../../../../../autoware_ml/configs/detection3d/dataset/t4dataset/jpntaxi_gen2_base.py",
     "../default/pipelines/default_camera_lidar_intensity_120m.py",
-    "../default/models/default_lidar_second_secfpn_120m.py",
-    "../default/models/default_camera_swin_fpn.py",
+    "../default/models/default_camera_swin_fpn_lidar_second_secfpn_120m.py",
     "../default/schedulers/default_20e_4xb8_adamw_linear_cosine.py",
     "../default/default_misc.py",
 ]
@@ -17,7 +16,7 @@ data_root = "data/t4dataset/"
 info_directory_path = "info/user_name/"
 
 experiment_group_name = "bevfusion_camera_lidar_intensity/jpntaxi_gen2_base/" + _base_.dataset_type
-experiment_name = "camera_lidar_voxel_second_secfpn_20e_4xb8_jpntaxi_gen2_base_120m"
+experiment_name = "bevfusion_camera_lidar_voxel_second_secfpn_20e_4xb8_jpntaxi_gen2_base_120m"
 work_dir = "work_dirs/" + experiment_group_name + "/" + experiment_name
 
 # model parameter

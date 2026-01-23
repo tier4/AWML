@@ -12,6 +12,10 @@ info_train_file_name = "t4dataset_jpntaxi_gen2_base_infos_train.pkl"
 info_val_file_name = "t4dataset_jpntaxi_gen2_base_infos_val.pkl"
 info_test_file_name = "t4dataset_jpntaxi_gen2_base_infos_test.pkl"
 
+info_train_statistics_file_name = "t4dataset_jpntaxi_gen2_base_statistics_train.parquet"
+info_val_statistics_file_name = "t4dataset_jpntaxi_gen2_base_statistics_val.parquet"
+info_test_statistics_file_name = "t4dataset_jpntaxi_gen2_base_statistics_test.parquet"
+
 # dataset scene setting
 dataset_test_groups = {
     "db_jpntaxi_gen2_base": "t4dataset_jpntaxi_gen2_base_infos_test.pkl",

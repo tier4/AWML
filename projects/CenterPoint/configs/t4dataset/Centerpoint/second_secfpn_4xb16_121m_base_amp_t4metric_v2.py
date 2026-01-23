@@ -19,12 +19,20 @@ frame_pass_fail_config = dict(
     matching_threshold_list=[2.0, 2.0, 2.0, 2.0, 2.0],
     confidence_threshold_list=None,
 )
+training_statistics_parquet_path = (
+    _base_.data_root + _base_.info_directory_path + _base_.info_train_statistics_file_name
+)
+validation_statistics_parquet_path = (
+    _base_.data_root + _base_.info_directory_path + _base_.info_val_statistics_file_name
+)
 
 val_evaluator = dict(
     _delete_=True,
     type="T4MetricV2",
     data_root=_base_.data_root,
     ann_file=_base_.data_root + _base_.info_directory_path + _base_.info_val_file_name,
+    training_statistics_parquet_path=training_statistics_parquet_path,
+    validation_statistics_parquet_path=validation_statistics_parquet_path,
     output_dir="validation",
     dataset_name="base",
     perception_evaluator_configs=perception_evaluator_configs,
@@ -44,6 +52,8 @@ test_evaluator = dict(
     type="T4MetricV2",
     data_root=_base_.data_root,
     ann_file=_base_.data_root + _base_.info_directory_path + _base_.info_test_file_name,
+    training_statistics_parquet_path=training_statistics_parquet_path,
+    validation_statistics_parquet_path=validation_statistics_parquet_path,
     output_dir="testing",
     dataset_name="base",
     perception_evaluator_configs=perception_evaluator_configs,

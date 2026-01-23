@@ -7,6 +7,13 @@ input_modality = dict(use_lidar=True, use_camera=True)
 point_cloud_range = [-122.4, -122.4, -3.0, 122.4, 122.4, 5.0]
 voxel_size = [0.17, 0.17, 0.2]
 grid_size = [1440, 1440, 41]
+eval_class_range = {
+    "car": 120,
+    "truck": 120,
+    "bus": 120,
+    "bicycle": 120,
+    "pedestrian": 120,
+}
 
 # LiDAR parameters
 point_load_dim = 5  # x, y, z, intensity, ring_id
@@ -19,6 +26,13 @@ image_size = [384, 768]  # Height, Width
 camera_order = ["CAM_FRONT", "CAM_FRONT_LEFT", "CAM_BACK_LEFT", "CAM_FRONT_RIGHT", "CAM_BACK_RIGHT"]
 
 train_pipeline = [
+    dict(
+        type="BEVLoadMultiViewImageFromFiles",
+        to_float32=True,
+        color_type="color",
+        backend_args=backend_args,
+        camera_order=camera_order,
+    ),
     dict(
         type="LoadPointsFromFile",
         coord_type="LIDAR",
@@ -94,11 +108,19 @@ train_pipeline = [
             "pcd_trans",
             "img_aug_matrix",
             "lidar_aug_matrix",
+            "timestamp",
         ],
     ),
 ]
 
 test_pipeline = [
+    dict(
+        type="BEVLoadMultiViewImageFromFiles",
+        to_float32=True,
+        color_type="color",
+        backend_args=backend_args,
+        camera_order=camera_order,
+    ),
     dict(
         type="LoadPointsFromFile",
         coord_type="LIDAR",
@@ -143,8 +165,9 @@ test_pipeline = [
             "img_path",
             "num_pts_feats",
             "num_views",
+            "timestamp",
         ],
     ),
 ]
 
-filter_cfg = dict(filter_frames_with_missing_image=True)
+filter_cfg = dict(filter_frames_with_camera_order=camera_order)
