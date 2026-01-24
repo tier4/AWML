@@ -36,6 +36,49 @@ class T4DatasetStatistics:
         self.statistics = {}
         self.class_names = class_names
 
+        self.schema = {
+            "location": pl.String,
+            "vehicle_type": pl.String, 
+            "suffix_name": pl.String,
+            f"{self.split_name}_total_num_frames": pl.Int64,
+            f"{self.split_name}_num_frame_keys": pl.List(pl.String),
+            f"{self.split_name}_num_frame_values": pl.List(pl.Int64),
+            f"{self.split_name}_ego_pose_translation_x_keys": pl.List(pl.String),
+            f"{self.split_name}_ego_pose_translation_x_values": pl.List(pl.List(pl.Float64)),
+            f"{self.split_name}_ego_pose_translation_y_keys": pl.List(pl.String),
+            f"{self.split_name}_ego_pose_translation_y_values": pl.List(pl.List(pl.Float64)),
+            f"{self.split_name}_ego_pose_translation_z_keys": pl.List(pl.String),
+            f"{self.split_name}_ego_pose_translation_z_values": pl.List(pl.List(pl.Float64))
+        }
+        for class_name in self.class_names:
+            label_schema = {
+                f"{self.split_name}_{class_name}_frequency_keys": pl.List(pl.String),
+                f"{self.split_name}_{class_name}_frequency_values": pl.List(pl.Int64),
+                f"{self.split_name}_{class_name}_area_keys": pl.List(pl.String),
+                f"{self.split_name}_{class_name}_area_values": pl.List(pl.List(pl.Float64)),
+                f"{self.split_name}_{class_name}_volume_keys": pl.List(pl.String),
+                f"{self.split_name}_{class_name}_volume_values": pl.List(pl.List(pl.Float64)),
+                f"{self.split_name}_{class_name}_orientation_keys": pl.List(pl.String),
+                f"{self.split_name}_{class_name}_orientation_values": pl.List(pl.List(pl.Float64)),
+                f"{self.split_name}_{class_name}_translation_x_keys": pl.List(pl.String),
+                f"{self.split_name}_{class_name}_translation_x_values": pl.List(pl.List(pl.Float64)),
+                f"{self.split_name}_{class_name}_translation_y_keys": pl.List(pl.String),
+                f"{self.split_name}_{class_name}_translation_y_values": pl.List(pl.List(pl.Float64)),
+                f"{self.split_name}_{class_name}_translation_z_keys": pl.List(pl.String),
+                f"{self.split_name}_{class_name}_translation_z_values": pl.List(pl.List(pl.Float64)),
+                f"{self.split_name}_{class_name}_bev_radial_distance_keys": pl.List(pl.String),
+                f"{self.split_name}_{class_name}_bev_radial_distance_values": pl.List(pl.List(pl.Float64)),
+                f"{self.split_name}_{class_name}_velocity_x_keys": pl.List(pl.String),
+                f"{self.split_name}_{class_name}_velocity_x_values": pl.List(pl.List(pl.Float64)),
+                f"{self.split_name}_{class_name}_velocity_y_keys": pl.List(pl.String),
+                f"{self.split_name}_{class_name}_velocity_y_values": pl.List(pl.List(pl.Float64)),
+                f"{self.split_name}_{class_name}_speed_keys": pl.List(pl.String),
+                f"{self.split_name}_{class_name}_speed_values": pl.List(pl.List(pl.Float64)),
+                f"{self.split_name}_{class_name}_num_lidar_pts_keys": pl.List(pl.String),
+                f"{self.split_name}_{class_name}_num_lidar_pts_values": pl.List(pl.List(pl.Float64)),
+            }
+            self.schema.update(label_schema)
+
     def add_samples(
         self,
         samples: List[Sample],
@@ -49,7 +92,7 @@ class T4DatasetStatistics:
         if bucket_name not in self.statistics:
             self.statistics[bucket_name] = {
                 "metadata": {
-                    f"metadata/{self.split_name}_num_frame_distribution": defaultdict(int),
+                    f"metadata/{self.split_name}_num_frame": defaultdict(int),
                     f"metadata/{self.split_name}_total_num_frames": 0,
                     f"metadata/{self.split_name}_ego_pose_translation_x": defaultdict(list),
                     f"metadata/{self.split_name}_ego_pose_translation_y": defaultdict(list),
@@ -57,28 +100,32 @@ class T4DatasetStatistics:
                 },
                 "metadata_label": {
                     class_name: {
-                        f"metadata_label/{self.split_name}_{class_name}_frequency_distribution": defaultdict(int),
-                        f"metadata_label/{self.split_name}_{class_name}_area_distribution": defaultdict(list),
-                        f"metadata_label/{self.split_name}_{class_name}_volume_distribution": defaultdict(list),
-                        f"metadata_label/{self.split_name}_{class_name}_orientation_distribution": defaultdict(list),
-                        f"metadata_label/{self.split_name}_{class_name}_translation_x_distribution": defaultdict(list),
-                        f"metadata_label/{self.split_name}_{class_name}_translation_y_distribution": defaultdict(list),
-                        f"metadata_label/{self.split_name}_{class_name}_translation_z_distribution": defaultdict(list),
-                        f"metadata_label/{self.split_name}_{class_name}_bev_radial_distance_distribution": defaultdict(
+                        f"metadata_label/{self.split_name}_{class_name}_frequency": defaultdict(int),
+                        f"metadata_label/{self.split_name}_{class_name}_area": defaultdict(list),
+                        f"metadata_label/{self.split_name}_{class_name}_volume": defaultdict(list),
+                        f"metadata_label/{self.split_name}_{class_name}_orientation": defaultdict(list),
+                        f"metadata_label/{self.split_name}_{class_name}_translation_x": defaultdict(list),
+                        f"metadata_label/{self.split_name}_{class_name}_translation_y": defaultdict(list),
+                        f"metadata_label/{self.split_name}_{class_name}_translation_z": defaultdict(list),
+                        f"metadata_label/{self.split_name}_{class_name}_bev_radial_distance": defaultdict(
                             list
                         ),
-                        f"metadata_label/{self.split_name}_{class_name}_velocity_y_distribution": defaultdict(list),
-                        f"metadata_label/{self.split_name}_{class_name}_velocity_x_distribution": defaultdict(list),
-                        f"metadata_label/{self.split_name}_{class_name}_num_lidar_pts_distribution": defaultdict(list),
+                        f"metadata_label/{self.split_name}_{class_name}_velocity_y": defaultdict(list),
+                        f"metadata_label/{self.split_name}_{class_name}_velocity_x": defaultdict(list),
+                        f"metadata_label/{self.split_name}_{class_name}_speed": defaultdict(list),
+                        f"metadata_label/{self.split_name}_{class_name}_num_lidar_pts": defaultdict(list),
                     }
                     for class_name in self.class_names
                 },
             }
 
-        self.statistics[bucket_name]["metadata"][f"metadata/{self.split_name}_num_frame_distribution"][
+        self.statistics[bucket_name]["metadata"][f"metadata/{self.split_name}_num_frame"][
             scene_metadata.frame_prefix
         ] += len(samples)
         self.statistics[bucket_name]["metadata"][f"metadata/{self.split_name}_total_num_frames"] += len(samples)
+        
+        if not len(info):
+            return 
 
         # Save ego pose translation
         self.statistics[bucket_name]["metadata"][f"metadata/{self.split_name}_ego_pose_translation_x"][
@@ -125,17 +172,18 @@ class T4DatasetStatistics:
         """Get object distributions."""
         object_distributions = {
             class_name: {
-                f"metadata_label/{self.split_name}_{class_name}_frequency_distribution": defaultdict(int),
-                f"metadata_label/{self.split_name}_{class_name}_area_distribution": defaultdict(list),
-                f"metadata_label/{self.split_name}_{class_name}_volume_distribution": defaultdict(list),
-                f"metadata_label/{self.split_name}_{class_name}_orientation_distribution": defaultdict(list),
-                f"metadata_label/{self.split_name}_{class_name}_translation_x_distribution": defaultdict(list),
-                f"metadata_label/{self.split_name}_{class_name}_translation_y_distribution": defaultdict(list),
-                f"metadata_label/{self.split_name}_{class_name}_translation_z_distribution": defaultdict(list),
-                f"metadata_label/{self.split_name}_{class_name}_bev_radial_distance_distribution": defaultdict(list),
-                f"metadata_label/{self.split_name}_{class_name}_velocity_y_distribution": defaultdict(list),
-                f"metadata_label/{self.split_name}_{class_name}_velocity_x_distribution": defaultdict(list),
-                f"metadata_label/{self.split_name}_{class_name}_num_lidar_pts_distribution": defaultdict(list),
+                f"metadata_label/{self.split_name}_{class_name}_frequency": defaultdict(int),
+                f"metadata_label/{self.split_name}_{class_name}_area": defaultdict(list),
+                f"metadata_label/{self.split_name}_{class_name}_volume": defaultdict(list),
+                f"metadata_label/{self.split_name}_{class_name}_orientation": defaultdict(list),
+                f"metadata_label/{self.split_name}_{class_name}_translation_x": defaultdict(list),
+                f"metadata_label/{self.split_name}_{class_name}_translation_y": defaultdict(list),
+                f"metadata_label/{self.split_name}_{class_name}_translation_z": defaultdict(list),
+                f"metadata_label/{self.split_name}_{class_name}_bev_radial_distance": defaultdict(list),
+                f"metadata_label/{self.split_name}_{class_name}_velocity_y": defaultdict(list),
+                f"metadata_label/{self.split_name}_{class_name}_velocity_x": defaultdict(list),
+                f"metadata_label/{self.split_name}_{class_name}_speed": defaultdict(list),
+                f"metadata_label/{self.split_name}_{class_name}_num_lidar_pts": defaultdict(list),
             }
             for class_name in self.class_names
         }
@@ -145,43 +193,46 @@ class T4DatasetStatistics:
                 continue
 
             radial_distance = np.linalg.norm(instance["bbox_3d"][:2])
-            if radial_distance < bev_distance_range[0] or radial_distance > bev_distance_range[1]:
+            if radial_distance < bev_distance_range[0] or radial_distance >= bev_distance_range[1]:
                 continue
 
             class_name = self.class_names[instance["bbox_label_3d"]]
 
-            object_distributions[class_name][f"metadata_label/{self.split_name}_{class_name}_frequency_distribution"][
+            object_distributions[class_name][f"metadata_label/{self.split_name}_{class_name}_frequency"][
                 scene_metadata.frame_prefix
             ] += 1
-            object_distributions[class_name][f"metadata_label/{self.split_name}_{class_name}_area_distribution"][
+            object_distributions[class_name][f"metadata_label/{self.split_name}_{class_name}_area"][
                 scene_metadata.frame_prefix
             ].append(instance["bbox_3d"][3] * instance["bbox_3d"][4])
-            object_distributions[class_name][f"metadata_label/{self.split_name}_{class_name}_volume_distribution"][
+            object_distributions[class_name][f"metadata_label/{self.split_name}_{class_name}_volume"][
                 scene_metadata.frame_prefix
             ].append(instance["bbox_3d"][3] * instance["bbox_3d"][4] * instance["bbox_3d"][5])
             object_distributions[class_name][
-                f"metadata_label/{self.split_name}_{class_name}_orientation_distribution"
+                f"metadata_label/{self.split_name}_{class_name}_orientation"
             ][scene_metadata.frame_prefix].append(instance["bbox_3d"][6])
             object_distributions[class_name][
-                f"metadata_label/{self.split_name}_{class_name}_translation_x_distribution"
+                f"metadata_label/{self.split_name}_{class_name}_translation_x"
             ][scene_metadata.frame_prefix].append(instance["bbox_3d"][0])
             object_distributions[class_name][
-                f"metadata_label/{self.split_name}_{class_name}_translation_y_distribution"
+                f"metadata_label/{self.split_name}_{class_name}_translation_y"
             ][scene_metadata.frame_prefix].append(instance["bbox_3d"][1])
             object_distributions[class_name][
-                f"metadata_label/{self.split_name}_{class_name}_translation_z_distribution"
+                f"metadata_label/{self.split_name}_{class_name}_translation_z"
             ][scene_metadata.frame_prefix].append(instance["bbox_3d"][2])
             object_distributions[class_name][
-                f"metadata_label/{self.split_name}_{class_name}_bev_radial_distance_distribution"
+                f"metadata_label/{self.split_name}_{class_name}_bev_radial_distance"
             ][scene_metadata.frame_prefix].append(radial_distance)
-            object_distributions[class_name][f"metadata_label/{self.split_name}_{class_name}_velocity_x_distribution"][
+            object_distributions[class_name][f"metadata_label/{self.split_name}_{class_name}_velocity_x"][
                 scene_metadata.frame_prefix
             ].append(instance["velocity"][0])
-            object_distributions[class_name][f"metadata_label/{self.split_name}_{class_name}_velocity_y_distribution"][
+            object_distributions[class_name][f"metadata_label/{self.split_name}_{class_name}_velocity_y"][
                 scene_metadata.frame_prefix
             ].append(instance["velocity"][1])
+            object_distributions[class_name][f"metadata_label/{self.split_name}_{class_name}_speed"][
+                scene_metadata.frame_prefix
+            ].append(np.linalg.norm(instance["velocity"][:2]))
             object_distributions[class_name][
-                f"metadata_label/{self.split_name}_{class_name}_num_lidar_pts_distribution"
+                f"metadata_label/{self.split_name}_{class_name}_num_lidar_pts"
             ][scene_metadata.frame_prefix].append(instance["num_lidar_pts"])
 
         return object_distributions
@@ -240,6 +291,7 @@ class T4DatasetStatistics:
         Returns:
             DataFrame with flattened structure where dict values are flattened to keys and values.
         """
+        self.save_to_json()
         df = defaultdict(list)
         for bucket_name, columns in self.statistics.items():
             location, vehicle_type, suffix_name = bucket_name.split("/")
@@ -257,4 +309,4 @@ class T4DatasetStatistics:
             for column_name, data in current_df.items():
                 df[column_name].extend(data)
 
-        return pl.from_dict(df)
+        return pl.from_dict(df, schema=self.schema)
