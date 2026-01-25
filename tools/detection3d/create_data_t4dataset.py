@@ -318,21 +318,22 @@ def main():
                     else:
                         raise ValueError(f"{t4_dataset_id} does not exist.")
                 t4 = Tier4(data_root=scene_root_dir_path, verbose=False)
-                info = {}
+                infos = []
                 for i in range(0, len(t4.sample), sample_steps):
                     sample = t4.sample[i]
                     info = get_info(cfg, t4, sample, i, args.max_sweeps, city, vehicle_type)
                     # info["version"] = dataset_version             # used for visualizations during debugging.
                     t4_infos[split].append(info)
+                    infos.append(info)
 
                 scene_metadata = T4DatasetSceneMetadata(scene_id, city, vehicle_type)
                 for bev_distance_range in bev_distance_ranges:
                     bucket_name = _get_bucket_name(city, vehicle_type, range_filter_name, bev_distance_range)
-                    t4_statistics[split].add_samples(t4.sample, info, bucket_name, scene_metadata, bev_distance_range)
+                    t4_statistics[split].add_samples(t4.sample, infos, bucket_name, scene_metadata, bev_distance_range)
 
                     # Add version statistics without city/vehicle_type
                     bucket_name = _get_bucket_name(args.version, args.version, range_filter_name, bev_distance_range)
-                    t4_statistics[split].add_samples(t4.sample, info, bucket_name, scene_metadata, bev_distance_range)
+                    t4_statistics[split].add_samples(t4.sample, infos, bucket_name, scene_metadata, bev_distance_range)
 
     for t4_statistic_info in t4_statistics.values():
         t4_statistic_info.save_to_parquet()

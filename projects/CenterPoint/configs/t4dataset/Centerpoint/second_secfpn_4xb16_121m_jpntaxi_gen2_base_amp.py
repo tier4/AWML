@@ -7,7 +7,7 @@ custom_imports = dict(imports=["projects.CenterPoint.models"], allow_failed_impo
 custom_imports["imports"] += _base_.custom_imports["imports"]
 custom_imports["imports"] += ["autoware_ml.detection3d.datasets.transforms"]
 custom_imports["imports"] += ["autoware_ml.hooks"]
-custom_imports["imports"] += ["autoware_ml.backends.mlflowbackend"]
+# custom_imports["imports"] += ["autoware_ml.backends.mlflowbackend"]
 custom_imports["imports"] += ["autoware_ml.samplers"]
 
 # This is a base file for t4dataset, add the dataset config.
@@ -42,7 +42,7 @@ eval_class_range = {
 
 # user setting
 data_root = "data/t4dataset/"
-info_directory_path = "info/kokseang/"
+info_directory_path = "info/kokseang_2_6/"
 train_gpu_size = 4
 train_batch_size = 16
 test_batch_size = 2
@@ -50,7 +50,7 @@ num_workers = 32
 val_interval = 1
 max_epochs = 30
 
-experiment_group_name = "centerpoint/jpntaxi_gen2_base/" + _base_.dataset_type
+experiment_group_name = "centerpoint_2_6_1/jpntaxi_gen2_base/" + _base_.dataset_type
 experiment_name = "second_secfpn_4xb16_121m_jpntaxi_gen2_base_amp"
 work_dir = "work_dirs/" + experiment_group_name + "/" + experiment_name
 
@@ -111,13 +111,34 @@ test_pipeline = [
         test_mode=True,
     ),
     dict(type="PointsRangeFilter", point_cloud_range=point_cloud_range),
-    dict(type="Pack3DDetInputs", keys=["points", "gt_bboxes_3d", "gt_labels_3d"]),
+    dict(
+        type="Pack3DDetInputs",
+        keys=["points", "gt_bboxes_3d", "gt_labels_3d"],
+        # Specify the metadata keys required by the downstream pipeline.
+        # Refer to the official MMDetection3D formatting transform implementation for details:
+        # https://github.com/open-mmlab/mmdetection3d/blob/main/mmdet3d/datasets/transforms/formating.py#L67
+        # Also see the content structure in "t4dataset_base_infos_test.pkl" for reference.
+        meta_keys=(
+            "timestamp",
+            "lidar2img",
+            "depth2img",
+            "cam2img",
+            "box_type_3d",
+            "sample_idx",
+            "sample_token",
+            "lidar_path",
+            "ori_cam2img",
+            "cam2global",
+            "lidar2cam",
+            "ego2global",
+        ),
+    ),
 ]
 
 # construct a pipeline for data and gt loading in show function
 # please keep its loading function consistent with test_pipeline (e.g. client)
 eval_pipeline = [
-    dict(
+        dict(
         type="LoadPointsFromFile",
         coord_type="LIDAR",
         load_dim=point_load_dim,
@@ -135,7 +156,28 @@ eval_pipeline = [
         test_mode=True,
     ),
     dict(type="PointsRangeFilter", point_cloud_range=point_cloud_range),
-    dict(type="Pack3DDetInputs", keys=["points", "gt_bboxes_3d", "gt_labels_3d"]),
+    dict(
+        type="Pack3DDetInputs",
+        keys=["points", "gt_bboxes_3d", "gt_labels_3d"],
+        # Specify the metadata keys required by the downstream pipeline.
+        # Refer to the official MMDetection3D formatting transform implementation for details:
+        # https://github.com/open-mmlab/mmdetection3d/blob/main/mmdet3d/datasets/transforms/formating.py#L67
+        # Also see the content structure in "t4dataset_base_infos_test.pkl" for reference.
+        meta_keys=(
+            "timestamp",
+            "lidar2img",
+            "depth2img",
+            "cam2img",
+            "box_type_3d",
+            "sample_idx",
+            "sample_token",
+            "lidar_path",
+            "ori_cam2img",
+            "cam2global",
+            "lidar2cam",
+            "ego2global",
+        ),
+    ),
 ]
 
 train_dataloader = dict(
@@ -305,7 +347,7 @@ model = dict(
 
 randomness = dict(seed=0, diff_rank_seed=False, deterministic=True)
 
-lr = 3e-4
+lr = 1e-4
 param_scheduler = [
     # learning rate scheduler
     # During the first (max_epochs * 0.3) epochs, learning rate increases from 0 to lr * 10
@@ -361,7 +403,7 @@ val_cfg = dict()
 test_cfg = dict()
 
 optimizer = dict(type="AdamW", lr=lr, weight_decay=0.01)
-clip_grad = dict(max_norm=15, norm_type=2)  # max norm of gradients upper bound to be 15 since amp is used
+clip_grad = dict(max_norm=5.0, norm_type=2)  # max norm of gradients upper bound to be 15 since amp is used
 
 optim_wrapper = dict(
     type="AmpOptimWrapper",
@@ -390,13 +432,13 @@ vis_backends = [
     dict(type="LocalVisBackend"),
     dict(type="TensorboardVisBackend"),
     # Update info accordingly
-    dict(
-        type="SafeMLflowVisBackend",
-        exp_name="(UserName) CenterPoint",
-        run_name="CenterPoint base",
-        tracking_uri="http://localhost:5000",
-        artifact_suffix=(),
-    ),
+    # dict(
+    #     type="SafeMLflowVisBackend",
+    #     exp_name="(UserName) CenterPoint",
+    #     run_name="CenterPoint base",
+    #     tracking_uri="http://localhost:5000",
+    #     artifact_suffix=(),
+    # ),
 ]
 visualizer = dict(type="Det3DLocalVisualizer", vis_backends=vis_backends, name="visualizer")
 
@@ -412,6 +454,7 @@ custom_hooks = [
 ]
 
 # Update the load_from path accordingly
-load_from = "<best_checkpoint>"
+# load_from = "<best_checkpoint>"
+load_from = "work_dirs/centerpoint_2_6/T4Dataset/second_secfpn_4xb16_121m_base_amp_rfs/epoch_48.pth"
 
 activation_checkpointing = ["pts_backbone"]

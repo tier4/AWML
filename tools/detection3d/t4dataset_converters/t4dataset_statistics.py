@@ -82,7 +82,7 @@ class T4DatasetStatistics:
     def add_samples(
         self,
         samples: List[Sample],
-        info: Dict[str, Any],
+        infos: List[Dict[str, Any]],
         bucket_name: str,
         scene_metadata: T4DatasetSceneMetadata,
         bev_distance_range: Tuple[float, float],
@@ -124,27 +124,28 @@ class T4DatasetStatistics:
         ] += len(samples)
         self.statistics[bucket_name]["metadata"][f"metadata/{self.split_name}_total_num_frames"] += len(samples)
         
-        if not len(info):
-            return 
+        for info in infos:
+            if not len(info):
+                continue 
 
-        # Save ego pose translation
-        self.statistics[bucket_name]["metadata"][f"metadata/{self.split_name}_ego_pose_translation_x"][
-            scene_metadata.frame_prefix
-        ].append(info["ego2global"][0][3])
-        self.statistics[bucket_name]["metadata"][f"metadata/{self.split_name}_ego_pose_translation_y"][
-            scene_metadata.frame_prefix
-        ].append(info["ego2global"][1][3])
-        self.statistics[bucket_name]["metadata"][f"metadata/{self.split_name}_ego_pose_translation_z"][
-            scene_metadata.frame_prefix
-        ].append(info["ego2global"][2][3])
+            # Save ego pose translation
+            self.statistics[bucket_name]["metadata"][f"metadata/{self.split_name}_ego_pose_translation_x"][
+                scene_metadata.frame_prefix
+            ].append(info["ego2global"][0][3])
+            self.statistics[bucket_name]["metadata"][f"metadata/{self.split_name}_ego_pose_translation_y"][
+                scene_metadata.frame_prefix
+            ].append(info["ego2global"][1][3])
+            self.statistics[bucket_name]["metadata"][f"metadata/{self.split_name}_ego_pose_translation_z"][
+                scene_metadata.frame_prefix
+            ].append(info["ego2global"][2][3])
 
-        # Save object distribution
-        object_distributions = self._get_object_distributions(info, scene_metadata, bev_distance_range)
-        for class_name, distributions in object_distributions.items():
-            for distribution_name, distribution_data in distributions.items():
-                self.statistics[bucket_name]["metadata_label"][class_name][distribution_name][
-                    scene_metadata.frame_prefix
-                ] += distribution_data[scene_metadata.frame_prefix]
+            # Save object distribution
+            object_distributions = self._get_object_distributions(info, scene_metadata, bev_distance_range)
+            for class_name, distributions in object_distributions.items():
+                for distribution_name, distribution_data in distributions.items():
+                    self.statistics[bucket_name]["metadata_label"][class_name][distribution_name][
+                        scene_metadata.frame_prefix
+                    ] += distribution_data[scene_metadata.frame_prefix]
 
     def save_to_json(self):
         output_path = self.output_dir / f"t4dataset_{self.version}_statistics_{self.split_name}.json"
@@ -291,7 +292,6 @@ class T4DatasetStatistics:
         Returns:
             DataFrame with flattened structure where dict values are flattened to keys and values.
         """
-        self.save_to_json()
         df = defaultdict(list)
         for bucket_name, columns in self.statistics.items():
             location, vehicle_type, suffix_name = bucket_name.split("/")
