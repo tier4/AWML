@@ -144,7 +144,7 @@ class TrtModel:
             "coors": (batch_inputs_dict["coors"].shape),
             "voxel_coors": (batch_inputs_dict["voxel_coors"].shape),
             "inverse_map": (batch_inputs_dict["inverse_map"].shape),
-            "seg_logit": (batch_inputs_dict["points"].shape[0], 17),
+            "seg_logit": (batch_inputs_dict["points"].shape[0], self.deploy_cfg.num_classes),
         }
         tensors = self._allocate_buffers(shapes_dict)
         self._transfer_input_to_device(batch_inputs_dict, tensors["input"])

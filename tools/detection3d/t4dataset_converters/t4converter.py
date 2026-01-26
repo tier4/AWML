@@ -636,6 +636,41 @@ def get_lidarseg_annotations(
     )
 
 
+def get_lidar_sources_info(
+    t4: Tier4,
+) -> Dict[str, Dict[str, dict]]:
+    """Collect all lidar sensors and their calibrated extrinsics.
+
+    Args:
+        t4: Tier4 dataset instance.
+
+    Returns:
+        Dictionary containing lidar_sources with sensor tokens and extrinsics.
+        The extrinsics (translation, rotation) represent sensor_to_base transform.
+    """
+    lidar_sources: dict[str, dict] = {}
+    for cs_rec in getattr(t4, "calibrated_sensor", []):
+        try:
+            sensor_rec = t4.get("sensor", cs_rec.sensor_token)
+        except KeyError:
+            continue
+
+        modality = getattr(sensor_rec, "modality", None)
+        modality_value = modality.value if hasattr(modality, "value") else modality
+        if modality_value != "lidar":
+            continue
+
+        channel = sensor_rec.channel
+        if channel not in lidar_sources:
+            lidar_sources[channel] = dict(
+                sensor_token=sensor_rec.token,
+                translation=cs_rec.translation.tolist(),
+                rotation=cs_rec.rotation.q.tolist(),
+            )
+
+    return dict(lidar_sources=lidar_sources)
+
+
 def obtain_sensor2top(
     t4: Tier4,
     sensor_token: str,

@@ -29,7 +29,7 @@ class NuScenesSegDataset(Seg3DDataset):
             - use_camera: bool
             - use_lidar: bool
 
-            Defaults to dict(use_lidar=True, use_camera=False).
+        Defaults to dict(use_lidar=True, use_camera=False).
         ignore_index (int, optional): The label index to be ignored, e.g.
             unannotated points. If None is given, set to len(self.classes) to
             be consistent with PointSegClassMapping function in pipeline.

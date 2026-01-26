@@ -24,6 +24,7 @@ from tools.detection3d.t4dataset_converters.t4converter import (
     get_lidar_points_info,
     get_lidar_sweeps_info,
     get_lidarseg_annotations,
+    get_lidar_sources_info,
     obtain_sensor2top,
     parse_camera_path,
 )
@@ -160,6 +161,7 @@ def get_info(
             cfg,
         ),
         get_lidarseg_annotations(t4, sd_record, i, lidar_token),
+        get_lidar_sources_info(t4),
     ]:
         info.update(new_info)
 
