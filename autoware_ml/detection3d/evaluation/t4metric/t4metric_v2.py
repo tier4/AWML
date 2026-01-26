@@ -236,6 +236,7 @@ class T4MetricV2(BaseMetric):
         data_root: str,
         ann_file: str,
         training_statistics_parquet_path: str,
+        testing_statistics_parquet_path: str,
         validation_statistics_parquet_path: str,
         dataset_name: str,
         output_dir: str,
@@ -315,6 +316,7 @@ class T4MetricV2(BaseMetric):
         self.t4_metric_v2_dataframe = T4MetricV2DataFrame(
             output_dataframe_path=self.t4metric_v2_dataframe_output_path,
             training_statistics_parquet_path=Path(training_statistics_parquet_path),
+            testing_statistics_parquet_path=Path(testing_statistics_parquet_path),
             validation_statistics_parquet_path=Path(validation_statistics_parquet_path),
         )
 
