@@ -67,15 +67,23 @@ class TesterBase:
         if os.path.isfile(self.cfg.weight):
             self.logger.info(f"Loading weight at: {self.cfg.weight}")
             checkpoint = torch.load(self.cfg.weight, weights_only=False)
+            model_state_dict = model.state_dict()
             weight = OrderedDict()
             for key, value in checkpoint["state_dict"].items():
-                if key.startswith("module."):
-                    if comm.get_world_size() == 1:
-                        key = key[7:]  # module.xxx.xxx -> xxx.xxx
+                if key.startswith("enc."):
+                    key = key.replace("enc.", "backbone.enc.")
+                if not key.startswith("module."):
+                    key = "module." + key  # xxx.xxx -> module.xxx.xxx
+                if key.startswith("module.student."):
+                    continue
+                if key.startswith("module.teacher."):
+                    key = key.replace("module.teacher.", "module.")
+                if comm.get_world_size() == 1:
+                    key = key[7:]  # module.xxx.xxx -> xxx.xxx
+                if key not in model_state_dict:
+                    self.logger.warning(f"Key '{key}' from checkpoint does not exist in current model")
                 else:
-                    if comm.get_world_size() > 1:
-                        key = "module." + key  # xxx.xxx -> module.xxx.xxx
-                weight[key] = value
+                    weight[key] = value
             model.load_state_dict(weight, strict=True)
             self.logger.info("=> Loaded weight '{}' (epoch {})".format(self.cfg.weight, checkpoint["epoch"]))
         else:
