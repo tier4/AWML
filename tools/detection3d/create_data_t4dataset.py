@@ -317,6 +317,7 @@ def main():
                         scene_root_dir_path = get_scene_root_dir_path(args.root_path, dataset_version, t4_dataset_id)
                     else:
                         raise ValueError(f"{t4_dataset_id} does not exist.")
+
                 t4 = Tier4(data_root=scene_root_dir_path, verbose=False)
                 infos = []
                 for i in range(0, len(t4.sample), sample_steps):

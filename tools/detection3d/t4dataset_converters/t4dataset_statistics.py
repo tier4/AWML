@@ -38,7 +38,7 @@ class T4DatasetStatistics:
 
         self.schema = {
             "location": pl.String,
-            "vehicle_type": pl.String, 
+            "vehicle_type": pl.String,
             "suffix_name": pl.String,
             f"{self.split_name}_total_num_frames": pl.Int64,
             f"{self.split_name}_num_frame_keys": pl.List(pl.String),
@@ -48,7 +48,7 @@ class T4DatasetStatistics:
             f"{self.split_name}_ego_pose_translation_y_keys": pl.List(pl.String),
             f"{self.split_name}_ego_pose_translation_y_values": pl.List(pl.List(pl.Float64)),
             f"{self.split_name}_ego_pose_translation_z_keys": pl.List(pl.String),
-            f"{self.split_name}_ego_pose_translation_z_values": pl.List(pl.List(pl.Float64))
+            f"{self.split_name}_ego_pose_translation_z_values": pl.List(pl.List(pl.Float64)),
         }
         for class_name in self.class_names:
             label_schema = {
@@ -107,9 +107,7 @@ class T4DatasetStatistics:
                         f"metadata_label/{self.split_name}_{class_name}_translation_x": defaultdict(list),
                         f"metadata_label/{self.split_name}_{class_name}_translation_y": defaultdict(list),
                         f"metadata_label/{self.split_name}_{class_name}_translation_z": defaultdict(list),
-                        f"metadata_label/{self.split_name}_{class_name}_bev_radial_distance": defaultdict(
-                            list
-                        ),
+                        f"metadata_label/{self.split_name}_{class_name}_bev_radial_distance": defaultdict(list),
                         f"metadata_label/{self.split_name}_{class_name}_velocity_y": defaultdict(list),
                         f"metadata_label/{self.split_name}_{class_name}_velocity_x": defaultdict(list),
                         f"metadata_label/{self.split_name}_{class_name}_speed": defaultdict(list),
@@ -127,6 +125,10 @@ class T4DatasetStatistics:
         for info in infos:
             if not len(info):
                 continue 
+
+        for info in infos:
+            if not len(info):
+                continue
 
             # Save ego pose translation
             self.statistics[bucket_name]["metadata"][f"metadata/{self.split_name}_ego_pose_translation_x"][
@@ -208,21 +210,21 @@ class T4DatasetStatistics:
             object_distributions[class_name][f"metadata_label/{self.split_name}_{class_name}_volume"][
                 scene_metadata.frame_prefix
             ].append(instance["bbox_3d"][3] * instance["bbox_3d"][4] * instance["bbox_3d"][5])
-            object_distributions[class_name][
-                f"metadata_label/{self.split_name}_{class_name}_orientation"
-            ][scene_metadata.frame_prefix].append(instance["bbox_3d"][6])
-            object_distributions[class_name][
-                f"metadata_label/{self.split_name}_{class_name}_translation_x"
-            ][scene_metadata.frame_prefix].append(instance["bbox_3d"][0])
-            object_distributions[class_name][
-                f"metadata_label/{self.split_name}_{class_name}_translation_y"
-            ][scene_metadata.frame_prefix].append(instance["bbox_3d"][1])
-            object_distributions[class_name][
-                f"metadata_label/{self.split_name}_{class_name}_translation_z"
-            ][scene_metadata.frame_prefix].append(instance["bbox_3d"][2])
-            object_distributions[class_name][
-                f"metadata_label/{self.split_name}_{class_name}_bev_radial_distance"
-            ][scene_metadata.frame_prefix].append(radial_distance)
+            object_distributions[class_name][f"metadata_label/{self.split_name}_{class_name}_orientation"][
+                scene_metadata.frame_prefix
+            ].append(instance["bbox_3d"][6])
+            object_distributions[class_name][f"metadata_label/{self.split_name}_{class_name}_translation_x"][
+                scene_metadata.frame_prefix
+            ].append(instance["bbox_3d"][0])
+            object_distributions[class_name][f"metadata_label/{self.split_name}_{class_name}_translation_y"][
+                scene_metadata.frame_prefix
+            ].append(instance["bbox_3d"][1])
+            object_distributions[class_name][f"metadata_label/{self.split_name}_{class_name}_translation_z"][
+                scene_metadata.frame_prefix
+            ].append(instance["bbox_3d"][2])
+            object_distributions[class_name][f"metadata_label/{self.split_name}_{class_name}_bev_radial_distance"][
+                scene_metadata.frame_prefix
+            ].append(radial_distance)
             object_distributions[class_name][f"metadata_label/{self.split_name}_{class_name}_velocity_x"][
                 scene_metadata.frame_prefix
             ].append(instance["velocity"][0])
@@ -232,9 +234,9 @@ class T4DatasetStatistics:
             object_distributions[class_name][f"metadata_label/{self.split_name}_{class_name}_speed"][
                 scene_metadata.frame_prefix
             ].append(np.linalg.norm(instance["velocity"][:2]))
-            object_distributions[class_name][
-                f"metadata_label/{self.split_name}_{class_name}_num_lidar_pts"
-            ][scene_metadata.frame_prefix].append(instance["num_lidar_pts"])
+            object_distributions[class_name][f"metadata_label/{self.split_name}_{class_name}_num_lidar_pts"][
+                scene_metadata.frame_prefix
+            ].append(instance["num_lidar_pts"])
 
         return object_distributions
 
