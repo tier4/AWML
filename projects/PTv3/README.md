@@ -29,7 +29,7 @@ DOCKER_BUILDKIT=1 docker build -t autoware-ml-ptv3 -f projects/PTv3/Dockerfile .
 -Run docker
 
 ```sh
-docker run -it --rm --gpus '"device=0"' --shm-size=64g --name awml -p 6006:6006 -v $PWD/:/workspace -v $PWD/data:/workspace/data autoware-ml-ptv3
+docker run -it --rm --gpus all --shm-size=64g --name awml-ptv3 -p 6006:6006 -v $PWD/:/workspace -v $PWD/data:/workspace/data autoware-ml-ptv3
 ```
 
 ### 2. Train

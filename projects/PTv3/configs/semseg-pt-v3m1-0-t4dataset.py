@@ -9,19 +9,19 @@ batch_size = 8  # bs: total bs in all gpus
 num_worker = 32  # total worker in all gpu
 mix_prob = 0.8
 empty_cache = False
-enable_amp = True  # NOTE: set to False if NaN loss occurs
+enable_amp = False  # NOTE: set to False if NaN loss occurs
 
 grid_size = 0.1  # original is 0.05
 
-point_cloud_range = [-76.8, -76.8, -4, 76.8, 76.8, 8]
+point_cloud_range = [-102.4, -102.4, -2.8, 102.4, 102.4, 10.0]
 
 # dataset settings
 dataset_type = "T4Dataset"
 data_root = "data/t4dataset"
 ignore_index = -1
-info_paths_train = ["info/t4dataset_j6gen2_lidarseg_infos_train.pkl"]
-info_paths_val = ["info/t4dataset_j6gen2_lidarseg_infos_val.pkl"]
-info_paths_test = ["info/t4dataset_j6gen2_lidarseg_infos_test.pkl"]
+info_paths_train = ["info/lidarseg/t4dataset_j6gen2_lidarseg_infos_train.pkl"]
+info_paths_val = ["info/lidarseg/t4dataset_j6gen2_lidarseg_infos_val.pkl"]
+info_paths_test = ["info/lidarseg/t4dataset_j6gen2_lidarseg_infos_test.pkl"]
 class_mapping = {
     "drivable_surface": 0,
     "other_flat_surface": 1,
@@ -163,7 +163,6 @@ data = dict(
         data_root=data_root,
         info_paths=info_paths_val,
         transform=[
-            # dict(type="PointClip", point_cloud_range=(-51.2, -51.2, -4, 51.2, 51.2, 2.4)),
             dict(
                 type="PointClip",
                 point_cloud_range=point_cloud_range,

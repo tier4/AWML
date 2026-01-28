@@ -200,19 +200,30 @@ class CheckpointLoader(HookBase):
                 map_location=lambda storage, loc: storage.cuda(),
                 weights_only=False,
             )
+            model_state_dict = self.trainer.model.state_dict()
             self.trainer.logger.info(
                 f"Loading layer weights with keyword: {self.keywords}, " f"replace keyword with: {self.replacement}"
             )
             weight = OrderedDict()
             for key, value in checkpoint["state_dict"].items():
+                if key.startswith("enc."):
+                    key = key.replace("enc.", "backbone.enc.")
                 if not key.startswith("module."):
                     key = "module." + key  # xxx.xxx -> module.xxx.xxx
+                if key.startswith("module.student."):
+                    continue
+                if key.startswith("module.teacher."):
+                    key = key.replace("module.teacher.", "module.")
                 # Now all keys contain "module." no matter DDP or not.
                 if self.keywords in key:
                     key = key.replace(self.keywords, self.replacement)
                 if comm.get_world_size() == 1:
                     key = key[7:]  # module.xxx.xxx -> xxx.xxx
-                weight[key] = value
+                # Check if key exists in current model
+                if key not in model_state_dict:
+                    self.trainer.logger.warning(f"Key '{key}' from checkpoint does not exist in current model")
+                else:
+                    weight[key] = value
             load_state_info = self.trainer.model.load_state_dict(weight, strict=self.strict)
             self.trainer.logger.info(f"Missing keys: {load_state_info[0]}")
             if self.trainer.cfg.resume:
