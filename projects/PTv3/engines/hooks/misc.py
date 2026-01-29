@@ -210,10 +210,9 @@ class CheckpointLoader(HookBase):
                 if "student" in key:
                     continue
                 # Strip teacher prefix (use teacher weights for distillation checkpoints)
-                key = key.replace("teacher.", "")
+                key = key.replace("teacher.", "", 1)
                 # Normalize: remove any existing module prefix
-                if key.startswith("module."):
-                    key = key[7:]
+                key = key.replace("module.", "", 1)
                 # Architecture compatibility: enc.xxx -> backbone.enc.xxx
                 if key.startswith("enc."):
                     key = "backbone." + key
