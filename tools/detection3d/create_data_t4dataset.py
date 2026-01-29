@@ -323,6 +323,8 @@ def main():
                 for i in range(0, len(t4.sample), sample_steps):
                     sample = t4.sample[i]
                     info = get_info(cfg, t4, sample, i, args.max_sweeps, city, vehicle_type)
+                    if info is None:
+                        continue
                     # info["version"] = dataset_version             # used for visualizations during debugging.
                     t4_infos[split].append(info)
                     infos.append(info)
