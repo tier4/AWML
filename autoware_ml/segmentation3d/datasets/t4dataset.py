@@ -2,11 +2,9 @@ from os import path as osp
 from typing import Callable, Dict, List, Optional, Tuple, Union
 
 import numpy as np
-
+from mmdet3d.registry import DATASETS
 from mmengine.dataset import BaseDataset
 from mmengine.fileio import get_local_path
-
-from mmdet3d.registry import DATASETS
 
 
 @DATASETS.register_module()

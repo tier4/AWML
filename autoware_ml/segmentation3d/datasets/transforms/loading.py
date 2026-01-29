@@ -1,13 +1,13 @@
-import numpy as np
+from typing import List, Optional, Union
 
+import numpy as np
 from mmcv.transforms import BaseTransform
-from mmdet.datasets.transforms import LoadAnnotations
 from mmdet3d.structures.points import get_points_type
+from mmdet.datasets.transforms import LoadAnnotations
 from mmengine import check_file_exist
 from mmengine.fileio import get
 from mmengine.registry import TRANSFORMS
 from pyquaternion import Quaternion
-from typing import List, Optional, Union
 
 
 @TRANSFORMS.register_module()

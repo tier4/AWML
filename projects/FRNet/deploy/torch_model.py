@@ -1,11 +1,11 @@
 from time import time
+from typing import Dict, List
 
 import numpy as np
 import numpy.typing as npt
 import torch
 from mmdet3d.registry import MODELS
 from mmengine.config import Config
-from typing import Dict, List
 
 
 class TorchModel:
