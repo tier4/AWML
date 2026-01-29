@@ -51,7 +51,7 @@ class PipelineFactory:
         model_spec: ModelSpec,
         pytorch_model: Any,
         device: Optional[str] = None,
-        **kwargs,
+        components_cfg: Optional[Any] = None,
     ) -> BaseDeploymentPipeline:
         """
         Create a pipeline for the specified project.
@@ -61,7 +61,7 @@ class PipelineFactory:
             model_spec: Model specification (backend/device/path)
             pytorch_model: PyTorch model instance
             device: Override device (uses model_spec.device if None)
-            **kwargs: Project-specific arguments
+            components_cfg: Project-specific component configuration
 
         Returns:
             Pipeline instance
@@ -75,6 +75,7 @@ class PipelineFactory:
             ...     "centerpoint",
             ...     model_spec,
             ...     pytorch_model,
+            ...     components_cfg=components_cfg,
             ... )
         """
         return pipeline_registry.create_pipeline(
@@ -82,7 +83,7 @@ class PipelineFactory:
             model_spec=model_spec,
             pytorch_model=pytorch_model,
             device=device,
-            **kwargs,
+            components_cfg=components_cfg,
         )
 
     @staticmethod

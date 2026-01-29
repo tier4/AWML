@@ -36,7 +36,7 @@ class BasePipelineFactory(ABC):
         model_spec: ModelSpec,
         pytorch_model: Any,
         device: Optional[str] = None,
-        **kwargs,
+        components_cfg: Optional[Any] = None,
     ) -> BaseDeploymentPipeline:
         """Build and return a pipeline instance for the given model spec.
 
@@ -49,7 +49,7 @@ class BasePipelineFactory(ABC):
             model_spec: Describes the model path/device/backend and any metadata.
             pytorch_model: A loaded PyTorch model (used for PYTORCH backends).
             device: Optional device override (defaults to `model_spec.device`).
-            **kwargs: Project-specific options passed from evaluator/CLI.
+            components_cfg: Project-specific component configuration (e.g., file paths, IO specs).
         """
         raise NotImplementedError
 

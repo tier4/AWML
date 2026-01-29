@@ -421,7 +421,6 @@ class ExportOrchestrator:
                 output_dir=tensorrt_dir,
                 config=self.config,
                 device=cuda_device,
-                data_loader=self.data_loader,
             )
             self.artifact_manager.register_artifact(Backend.TENSORRT, artifact)
             self.logger.info(f"TensorRT export successful: {artifact.path}")
