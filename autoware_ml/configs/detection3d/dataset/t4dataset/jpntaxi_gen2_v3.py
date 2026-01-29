@@ -32,21 +32,21 @@ camera_types = {
 # class setting, for labels, they all already remapped when they're generated
 # class setting
 name_mapping = {
-	'car': 'car',
- 	'truck': 'truck',
- 	'pedestrian': 'pedestrian',
- 	'animal': 'animal',
- 	'other_vehicle': 'car',
- 	'bus': 'bus',
- 	'bicycle': 'bicycle',
- 	'trailer': 'trailer',
- 	'motorcycle': 'bicycle',
- 	'traffic_cone': 'traffic_cone',
- 	'personal_mobility': 'pedestrian',
- 	'other_pedestrian': 'pedestrian',
- 	'fake_pedestrian': 'pedestrian',
- 	'train': 'train',
- 	'barrier': 'barrier'
+    "car": "car",
+    "truck": "truck",
+    "pedestrian": "pedestrian",
+    "animal": "animal",
+    "other_vehicle": "car",
+    "bus": "bus",
+    "bicycle": "bicycle",
+    "trailer": "trailer",
+    "motorcycle": "bicycle",
+    "traffic_cone": "traffic_cone",
+    "personal_mobility": "pedestrian",
+    "other_pedestrian": "pedestrian",
+    "fake_pedestrian": "pedestrian",
+    "train": "train",
+    "barrier": "barrier",
 }
 
 class_names = [

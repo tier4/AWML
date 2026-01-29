@@ -69,7 +69,12 @@ class LowPedestriansObjectSampler(ObjectSampler):
     MAPPING_CATEGORY_NAME = "pedestrian"
     SAMPLER_CATEGORY_NAME = "low_pedestrian"
 
-    def __init__(self, height_threshold: float, bev_distance_thresholds: Tuple[float, float, float, float], target_label_index: int):
+    def __init__(
+        self,
+        height_threshold: float,
+        bev_distance_thresholds: Tuple[float, float, float, float],
+        target_label_index: int,
+    ):
         super().__init__()
         self.height_threshold = height_threshold
         self.bev_distance_thresholds = bev_distance_thresholds
