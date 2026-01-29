@@ -132,7 +132,7 @@ test_pipeline = [
             "lidar2cam",
             "ego2global",
             "vehicle_type",
-            "city"
+            "city",
         ),
     ),
 ]
@@ -140,7 +140,7 @@ test_pipeline = [
 # construct a pipeline for data and gt loading in show function
 # please keep its loading function consistent with test_pipeline (e.g. client)
 eval_pipeline = [
-        dict(
+    dict(
         type="LoadPointsFromFile",
         coord_type="LIDAR",
         load_dim=point_load_dim,
@@ -179,7 +179,7 @@ eval_pipeline = [
             "lidar2cam",
             "ego2global",
             "vehicle_type",
-            "city"
+            "city",
         ),
     ),
 ]

@@ -121,10 +121,10 @@ class T4DatasetStatistics:
             scene_metadata.frame_prefix
         ] += len(samples)
         self.statistics[bucket_name]["metadata"][f"metadata/{self.split_name}_total_num_frames"] += len(samples)
-        
+
         for info in infos:
             if not len(info):
-                continue 
+                continue
 
         for info in infos:
             if not len(info):
