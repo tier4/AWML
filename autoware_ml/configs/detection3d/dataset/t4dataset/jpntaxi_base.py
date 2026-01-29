@@ -21,7 +21,7 @@ dataset_test_groups = {
     # "db_jpntaxi_gen2_base": "t4dataset_jpntaxi_gen2_base_infos_test.pkl",
     # "db_jpntaxi_gen2_v2": "t4dataset_jpntaxi_gen2_v2_infos_test.pkl",
     # "db_jpntaxi_gen2_v3": "t4dataset_jpntaxi_gen2_v3_infos_test.pkl",
-    "db_jpntaxi_base": "t4dataset_jpntaxi_base_infos_test.pkl",
+    "jpntaxi_base": "t4dataset_jpntaxi_base_infos_test.pkl",
 }
 
 dataset_version_list = [
