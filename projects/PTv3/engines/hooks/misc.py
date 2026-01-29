@@ -206,19 +206,20 @@ class CheckpointLoader(HookBase):
             )
             weight = OrderedDict()
             for key, value in checkpoint["state_dict"].items():
-                if key.startswith("enc."):
-                    key = key.replace("enc.", "backbone.enc.")
-                if not key.startswith("module."):
-                    key = "module." + key  # xxx.xxx -> module.xxx.xxx
-                if key.startswith("module.student."):
+                # Skip student keys (from knowledge distillation)
+                if "student" in key:
                     continue
-                if key.startswith("module.teacher."):
-                    key = key.replace("module.teacher.", "module.")
-                # Now all keys contain "module." no matter DDP or not.
-                if self.keywords in key:
-                    key = key.replace(self.keywords, self.replacement)
-                if comm.get_world_size() == 1:
-                    key = key[7:]  # module.xxx.xxx -> xxx.xxx
+                # Strip teacher prefix (use teacher weights for distillation checkpoints)
+                key = key.replace("teacher.", "")
+                # Normalize: remove any existing module prefix
+                if key.startswith("module."):
+                    key = key[7:]
+                # Architecture compatibility: enc.xxx -> backbone.enc.xxx
+                if key.startswith("enc."):
+                    key = "backbone." + key
+                # Add module prefix for multi-GPU (DDP)
+                if comm.get_world_size() > 1:
+                    key = "module." + key
                 if key in model_state_dict:
                     weight[key] = value
             load_state_info = self.trainer.model.load_state_dict(weight, strict=self.strict)
