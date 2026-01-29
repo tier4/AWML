@@ -1069,12 +1069,6 @@ class T4MetricV2(BaseMetric):
         metric_dict["metadata/test_max_range"] = selected_evaluator.max_range
         metric_dict["metadata/test_range_filter_name"] = selected_evaluator.range_filter_name
 
-        # # Add a distribution of the number of frames for each prefix frame
-        # test_num_frame_distribution = defaultdict(int)
-        # for used_frame in metrics_score.used_frame:
-        #     test_num_frame_distribution[sample_id_to_prefix_frame_mapping[used_frame]] += 1
-
-        # metric_dict["metadata/test_num_frame_distribution"] = test_num_frame_distribution
         return metric_dict
 
     def _write_aggregated_metrics(
