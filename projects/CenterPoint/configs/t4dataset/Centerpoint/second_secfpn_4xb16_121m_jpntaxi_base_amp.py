@@ -50,7 +50,7 @@ num_workers = 32
 val_interval = 1
 max_epochs = 30
 
-experiment_group_name = "centerpoint_2_6_1/jpntaxi_base/" + _base_.dataset_type
+experiment_group_name = "centerpoint_2.6.1/jpntaxi_base/" + _base_.dataset_type
 experiment_name = "second_secfpn_4xb16_121m_jpntaxi_base_amp"
 work_dir = "work_dirs/" + experiment_group_name + "/" + experiment_name
 
@@ -456,7 +456,6 @@ custom_hooks = [
 ]
 
 # Update the load_from path accordingly
-# load_from = "<best_checkpoint>"
-load_from = "work_dirs/centerpoint_2_6/T4Dataset/second_secfpn_4xb16_121m_base_amp_rfs/epoch_48.pth"
+load_from = "<best_checkpoint>"
 
 activation_checkpointing = ["pts_backbone"]
