@@ -219,10 +219,7 @@ class CheckpointLoader(HookBase):
                     key = key.replace(self.keywords, self.replacement)
                 if comm.get_world_size() == 1:
                     key = key[7:]  # module.xxx.xxx -> xxx.xxx
-                # Check if key exists in current model
-                if key not in model_state_dict:
-                    self.trainer.logger.warning(f"Key '{key}' from checkpoint does not exist in current model")
-                else:
+                if key in model_state_dict:
                     weight[key] = value
             load_state_info = self.trainer.model.load_state_dict(weight, strict=self.strict)
             self.trainer.logger.info(f"Missing keys: {load_state_info[0]}")

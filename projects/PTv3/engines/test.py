@@ -80,9 +80,7 @@ class TesterBase:
                     key = key.replace("module.teacher.", "module.")
                 if comm.get_world_size() == 1:
                     key = key[7:]  # module.xxx.xxx -> xxx.xxx
-                if key not in model_state_dict:
-                    self.logger.warning(f"Key '{key}' from checkpoint does not exist in current model")
-                else:
+                if key in model_state_dict:
                     weight[key] = value
             model.load_state_dict(weight, strict=True)
             self.logger.info("=> Loaded weight '{}' (epoch {})".format(self.cfg.weight, checkpoint["epoch"]))
