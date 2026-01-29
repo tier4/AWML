@@ -18,7 +18,7 @@ info_test_statistics_file_name = "t4dataset_jpntaxi_gen2_base_statistics_test.pa
 
 # dataset scene setting
 dataset_test_groups = {
-    "jpntaxi_gen2_base": "t4dataset_jpntaxi_gen2_base_infos_test.pkl",
+    "jpntaxi_gen2_base": ("t4dataset_jpntaxi_gen2_base_infos_test.pkl", True),
 }
 
 dataset_version_list = [

@@ -125,9 +125,11 @@ def main():
 
     # build the runner from config
     if "dataset_test_groups" in cfg:
-        for dataset_name, dataset_file in cfg.dataset_test_groups.items():
+        for dataset_name, dataset_configs in cfg.dataset_test_groups.items():
+            dataset_file, evaluate_frame_prefix = dataset_configs
             cfg.test_dataloader.dataset.ann_file = osp.join(cfg.info_directory_path, dataset_file)
             cfg.test_evaluator.dataset_name = dataset_name
+            cfg.test_evaluator.evaluate_frame_prefix = evaluate_frame_prefix
             cfg.test_evaluator.ann_file = osp.join(cfg.data_root, cfg.info_directory_path, dataset_file)
 
             # build the runner from config

@@ -23,7 +23,7 @@ dataset_version_list = [
 ]
 
 dataset_test_groups = {
-    "largebus": "t4dataset_largebus_infos_test.pkl",
+    "largebus": ("t4dataset_largebus_infos_test.pkl", True),
 }
 
 

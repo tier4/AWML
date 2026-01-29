@@ -31,7 +31,7 @@ dataset_version_list = [
 ]
 
 dataset_test_groups = {
-    "j6gen2_base": "t4dataset_j6gen2_base_infos_test.pkl",
+    "j6gen2_base": ("t4dataset_j6gen2_base_infos_test.pkl", True),
 }
 
 # dataset format setting

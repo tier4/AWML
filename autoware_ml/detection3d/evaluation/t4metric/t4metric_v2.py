@@ -243,6 +243,7 @@ class T4MetricV2(BaseMetric):
         experiment_name: str,
         experiment_group_name: str,
         write_metric_summary: bool,
+        evaluate_frame_prefix: bool = True,
         checkpoint_path: Optional[Union[Path, str]] = None,
         scene_batch_size: int = 128,
         num_workers: int = 8,
@@ -319,6 +320,7 @@ class T4MetricV2(BaseMetric):
             testing_statistics_parquet_path=Path(testing_statistics_parquet_path),
             validation_statistics_parquet_path=Path(validation_statistics_parquet_path),
         )
+        self.evaluate_frame_prefix = evaluate_frame_prefix
 
     def _create_evaluators(
         self,
@@ -462,17 +464,18 @@ class T4MetricV2(BaseMetric):
                     self.logger.error(f"Failed to write scene metrics to output files: {e}")
 
             # Aggregate metrics by frame prefix, for example, location and vehicle type
-            frame_prefix_scores = evaluator.perception_evaluator_manager.get_scene_result_with_prefix()
-            for frame_prefix_name, metric_dict in frame_prefix_scores.items():
-                evaluator_frame_prefix_name = frame_prefix_name + "/" + evaluator_name
+            if self.evaluate_frame_prefix:
+                frame_prefix_scores = evaluator.perception_evaluator_manager.get_scene_result_with_prefix()
+                for frame_prefix_name, metric_dict in frame_prefix_scores.items():
+                    evaluator_frame_prefix_name = frame_prefix_name + "/" + evaluator_name
 
-                # Process scalar metrics and metadata
-                aggregated_metric_scalars[evaluator_frame_prefix_name] = self._process_metrics_for_aggregation(
-                    metric_dict, evaluator_name
-                )
+                    # Process scalar metrics and metadata
+                    aggregated_metric_scalars[evaluator_frame_prefix_name] = self._process_metrics_for_aggregation(
+                        metric_dict, evaluator_name
+                    )
 
-                # Process metric data, for example, detection/precisions
-                aggregated_metric_data[evaluator_frame_prefix_name] = self._aggregate_metrics_data(metric_dict)
+                    # Process metric data, for example, detection/precisions
+                    aggregated_metric_data[evaluator_frame_prefix_name] = self._aggregate_metrics_data(metric_dict)
 
             # Aggregate metrics without prefix for each evaluator
             evaluator_full_name = f"{self.default_evaluator_prefix_name}/{evaluator_name}"
