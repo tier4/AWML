@@ -40,6 +40,7 @@ python tools/calibration_classification/create_data_t4dataset.py --config /works
 - `-o, --out_dir` (required): Output directory for info files
 - `--lidar_channel` (optional): Lidar channel name (default: LIDAR_CONCAT)
 - `--target_cameras` (optional): List of target cameras to process (default: all cameras)
+- `--filter` (optional): Filter out likely black/corrupted images based on file size
 
 **Examples:**
 
@@ -49,7 +50,13 @@ python tools/calibration_classification/create_data_t4dataset.py --config /works
 
 # Process only specific cameras
 python tools/calibration_classification/create_data_t4dataset.py --config /workspace/autoware_ml/configs/calibration_classification/dataset/t4dataset/gen2_base.py --version gen2_base --root_path ./data/t4dataset -o ./data/t4dataset/calibration_info/ --target_cameras CAM_FRONT CAM_LEFT CAM_RIGHT
+
+# Filter out black/corrupted images (recommended for datasets with potential black images)
+python tools/calibration_classification/create_data_t4dataset.py --config /workspace/autoware_ml/configs/calibration_classification/dataset/t4dataset/gen2_base.py --version gen2_base --root_path ./data/t4dataset -o ./data/t4dataset/calibration_info/ --filter
 ```
+
+**Note on `--filter` flag:**
+The `--filter` option detects and excludes likely black/corrupted images by analyzing file sizes. It samples images from each scene to calculate an average size, then filters out images smaller than 5% of that average (with a minimum threshold of 10KB).
 
 **Output files:**
 The script generates three pickle files for train/val/test splits:
