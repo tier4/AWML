@@ -1,10 +1,13 @@
 from time import time
+from typing import List
 
 import numpy as np
 import numpy.typing as npt
 import torch
 from mmdet3d.registry import MODELS
 from mmengine.config import Config
+
+from autoware_ml.segmentation3d.datasets.utils import class_mapping_to_names
 
 
 class TorchModel:
@@ -15,8 +18,17 @@ class TorchModel:
         model_cfg: Config,
         checkpoint_path: str,
     ):
-        self.class_names = model_cfg.class_names
+        self.class_names = self.get_class_names(model_cfg)
         self.model = self._build_model(model_cfg.model, checkpoint_path)
+
+    def get_class_names(self, model_cfg: Config) -> List[str]:
+        # nuScenes
+        if hasattr(model_cfg, "class_names"):
+            return model_cfg.class_names
+        # T4dataset
+        if hasattr(model_cfg, "class_mapping"):
+            ignore_index = getattr(model_cfg, "ignore_index", -1)
+            return class_mapping_to_names(model_cfg.class_mapping, ignore_index)
 
     def _build_model(self, model_cfg: dict, checkpoint_path: str) -> "FRNet":
         deploy = {"deploy": True}

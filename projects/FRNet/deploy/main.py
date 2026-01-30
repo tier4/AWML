@@ -35,14 +35,14 @@ def parse_args():
     parser.add_argument(
         "--model-cfg",
         type=str,
-        default="/workspace/projects/FRNet/configs/nuscenes/frnet_1xb4_nus-seg.py",
         help="Model config file path.",
+        required=True,
     )
     parser.add_argument(
         "--deploy-cfg",
         type=str,
-        default="/workspace/projects/FRNet/configs/deploy/frnet_tensorrt_dynamic.py",
         help="Deploy config file path.",
+        required=True,
     )
     parser.add_argument(
         "--dataset-dir",
