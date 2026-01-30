@@ -9,6 +9,7 @@ from mmengine.fileio import get
 from mmengine.registry import TRANSFORMS
 from pyquaternion import Quaternion
 
+from autoware_ml.segmentation3d.datasets.utils import load_and_map_semantic_mask
 
 @TRANSFORMS.register_module()
 class LoadPointsWithIdentifierFromFile(BaseTransform):
@@ -252,31 +253,15 @@ class LoadSegAnnotationsWithIdentifier3D(LoadAnnotations):
         assert hasattr(results["dataset"], "metainfo"), "metainfo attribute is missing in dataset"
         assert "class_mapping" in results["dataset"].metainfo, "class_mapping key is missing in metainfo"
 
-        pts_semantic_mask_path = results["pts_semantic_mask_path"]
-
-        try:
-            mask_bytes = get(pts_semantic_mask_path, backend_args=self.backend_args)
-            # add .copy() to fix read-only bug
-            pts_semantic_mask = np.frombuffer(mask_bytes, dtype=self.seg_3d_dtype).copy()
-        except ConnectionError:
-            check_file_exist(pts_semantic_mask_path)
-            pts_semantic_mask = np.fromfile(pts_semantic_mask_path, dtype=np.int64)
-
-        selections = results["lidar_sources_selection"]
-        segments = [pts_semantic_mask[s["idx_begin"] : s["idx_begin"] + s["length"]] for s in selections]
-        pts_semantic_mask = np.concatenate(segments, axis=0) if segments else pts_semantic_mask[:0]
-
-        pts_semantic_mask_categories = results["pts_semantic_mask_categories"]
-        class_mapping = results["dataset"].metainfo["class_mapping"]
-        raw_to_category = {v: k for k, v in pts_semantic_mask_categories.items()}
-
-        def _map_segment(raw_label):
-            category = raw_to_category.get(raw_label, None)
-            if category is None:
-                return self.ignore_index
-            return class_mapping.get(category, self.ignore_index)
-
-        pts_semantic_mask = np.vectorize(_map_segment)(pts_semantic_mask).astype(np.int64)
+        pts_semantic_mask = load_and_map_semantic_mask(
+            mask_path=results["pts_semantic_mask_path"],
+            raw_categories=results["pts_semantic_mask_categories"],
+            class_mapping=results["dataset"].metainfo["class_mapping"],
+            ignore_index=self.ignore_index,
+            seg_dtype=self.seg_3d_dtype,
+            selections=results["lidar_sources_selection"],
+            backend_args=self.backend_args,
+        )
 
         if self.dataset_type == "semantickitti":
             pts_semantic_mask = pts_semantic_mask.astype(np.int64)

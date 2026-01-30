@@ -1,10 +1,12 @@
 from os import path as osp
-from typing import Callable, Dict, List, Optional, Tuple, Union
+from typing import Callable, List, Optional, Union
 
 import numpy as np
 from mmdet3d.registry import DATASETS
 from mmengine.dataset import BaseDataset
 from mmengine.fileio import get_local_path
+
+from autoware_ml.segmentation3d.datasets.utils import class_mapping_to_names_palette_label2cat
 
 
 @DATASETS.register_module()
@@ -74,7 +76,12 @@ class T4SegDataset(BaseDataset):
         base_class_names = metainfo.get("base_class_names", None)
         base_palette = metainfo.get("base_palette", None)
         metainfo["ignore_index"] = self.ignore_index
-        class_names, palette, label2cat = self._parse_classes(class_mapping, base_palette, base_class_names)
+        class_names, palette, label2cat = class_mapping_to_names_palette_label2cat(
+            class_mapping=class_mapping,
+            ignore_index=self.ignore_index,
+            base_palette=base_palette,
+            base_class_names=base_class_names,
+        )
         metainfo["class_names"] = class_names
         metainfo["palette"] = palette
         metainfo["label2cat"] = label2cat
@@ -97,51 +104,6 @@ class T4SegDataset(BaseDataset):
             # set group flag for the sampler
             if not self.test_mode:
                 self._set_group_flag()
-
-    def _parse_classes(
-        self,
-        class_mapping: Dict[str, int],
-        base_palette: List[List[int]],
-        base_class_names: List[str],
-    ) -> Tuple[List[str], List[List[int]], Dict[int, str]]:
-        """Update palette according to metainfo.
-
-        Args:
-            class_mapping: Mapping from class names to target indices.
-            base_palette: List of base palette.
-            base_class_names: List of base class names.
-
-        Returns:
-            Tuple[List[str], List[List[int]], Dict[int, str]]: Class names, palette, and label2cat for current dataset.
-        """
-        if len(base_palette) != len(base_class_names):
-            raise ValueError("Length of base_palette and base_class_names must be the same")
-
-        # Structure as {target_index: [class_name1, class_name2, ...]}
-        reverse_class_mapping: Dict[int, str] = {}
-        for class_name, idx in class_mapping.items():
-            if idx == self.ignore_index:
-                continue
-            if reverse_class_mapping.get(idx, None) is None:
-                reverse_class_mapping[idx] = [class_name]
-            else:
-                reverse_class_mapping[idx].append(class_name)
-
-        class_names: List[str] = [None] * len(reverse_class_mapping)
-        palette: List[List[int]] = [None] * len(reverse_class_mapping)
-        label2cat: Dict[int, str] = {}
-
-        for idx, classes in reverse_class_mapping.items():
-            if idx == self.ignore_index:
-                continue
-            joined_classes = "+".join(classes)
-            class_names[idx] = joined_classes
-            label2cat[idx] = joined_classes
-            palette[idx] = base_palette[
-                base_class_names.index(classes[0])
-            ]  # palette is the first class name's palette
-
-        return class_names, palette, label2cat
 
     def parse_data_info(self, info: dict) -> dict:
         """Process the raw data info.
