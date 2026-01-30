@@ -9,6 +9,7 @@ from mmengine.config import Config
 
 from autoware_ml.segmentation3d.datasets.utils import class_mapping_to_names
 
+
 class TorchModel:
 
     def __init__(

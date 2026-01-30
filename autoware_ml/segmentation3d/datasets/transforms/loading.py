@@ -11,6 +11,7 @@ from pyquaternion import Quaternion
 
 from autoware_ml.segmentation3d.datasets.utils import load_and_map_semantic_mask
 
+
 @TRANSFORMS.register_module()
 class LoadPointsWithIdentifierFromFile(BaseTransform):
     """Load Points With Identifier From File.

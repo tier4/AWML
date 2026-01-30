@@ -12,6 +12,7 @@ import utils.comm as comm
 from utils.misc import intersection_and_union_gpu
 
 from autoware_ml.segmentation3d.datasets.utils import class_mapping_to_names
+
 from .builder import HOOKS
 from .default import HookBase
 
