@@ -20,7 +20,7 @@ info_test_statistics_file_name = "t4dataset_base_statistics_test.parquet"
 dataset_version_list = [
     "db_jpntaxigen2_v1",
     "db_jpntaxigen2_v2",
-    "db_jpntaxigen2_v3",
+    # "db_jpntaxigen2_v3",
     "db_j6gen2_v1",
     "db_j6gen2_v2",
     "db_j6gen2_v3",
@@ -44,8 +44,8 @@ dataset_version_list = [
 # TODO (KokSeang): This will be removed to avoid repeatitive computation
 # Dataset set, test info files, and enable/disable evaluation of prefix
 dataset_test_groups = {
-    # "j6gen2_base": ("t4dataset_j6gen2_base_infos_test.pkl", False),
-    # "jpntaxi_base": ("t4dataset_jpntaxi_base_infos_test.pkl", False),
+    "j6gen2_base": ("t4dataset_j6gen2_base_infos_test.pkl", False),
+    "jpntaxi_base": ("t4dataset_jpntaxi_base_infos_test.pkl", False),
     "base": ("t4dataset_base_infos_test.pkl", True),
 }
 

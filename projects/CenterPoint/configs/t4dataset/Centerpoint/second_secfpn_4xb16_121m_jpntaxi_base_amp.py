@@ -50,8 +50,8 @@ num_workers = 32
 val_interval = 1
 max_epochs = 30
 
-experiment_group_name = "centerpoint_2.6.1/jpntaxi_base/" + _base_.dataset_type
-experiment_name = "second_secfpn_4xb16_121m_jpntaxi_base_amp_no_comlops"
+experiment_group_name = "centerpoint_2.5.1/jpntaxi_base/" + _base_.dataset_type
+experiment_name = "second_secfpn_4xb16_121m_jpntaxi_base_amp"
 work_dir = "work_dirs/" + experiment_group_name + "/" + experiment_name
 
 train_pipeline = [
