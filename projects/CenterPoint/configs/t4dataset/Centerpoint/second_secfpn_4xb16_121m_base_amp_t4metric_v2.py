@@ -19,15 +19,20 @@ frame_pass_fail_config = dict(
     matching_threshold_list=[2.0, 2.0, 2.0, 2.0, 2.0],
     confidence_threshold_list=None,
 )
+# training_statistics_parquet_path = (
+#     _base_.data_root + _base_.info_directory_path + _base_.info_train_statistics_file_name
+# )
 training_statistics_parquet_path = (
-    _base_.data_root + _base_.info_directory_path + _base_.info_train_statistics_file_name
+    _base_.data_root + "info/kokseang_2_5/" + _base_.info_train_statistics_file_name
 )
 
 testing_statistics_parquet_path = _base_.data_root + _base_.info_directory_path + _base_.info_test_statistics_file_name
-
 validation_statistics_parquet_path = (
-    _base_.data_root + _base_.info_directory_path + _base_.info_val_statistics_file_name
+    _base_.data_root + "info/kokseang_2_5/" + _base_.info_train_statistics_file_name
 )
+# validation_statistics_parquet_path = (
+#     _base_.data_root + _base_.info_directory_path + _base_.info_val_statistics_file_name
+# )
 
 val_evaluator = dict(
     _delete_=True,

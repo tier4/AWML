@@ -44,9 +44,9 @@ dataset_version_list = [
 # TODO (KokSeang): This will be removed to avoid repeatitive computation
 # Dataset set, test info files, and enable/disable evaluation of prefix
 dataset_test_groups = {
-    "j6gen2_base": ("t4dataset_j6gen2_base_infos_test.pkl", False),
-    "jpntaxi_base": ("t4dataset_jpntaxi_base_infos_test.pkl", False),
-    # "base": ("t4dataset_base_infos_test.pkl", True),
+    # "j6gen2_base": ("t4dataset_j6gen2_base_infos_test.pkl", False),
+    # "jpntaxi_base": ("t4dataset_jpntaxi_base_infos_test.pkl", False),
+    "base": ("t4dataset_base_infos_test.pkl", True),
 }
 
 # dataset format setting
