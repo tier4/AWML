@@ -2,7 +2,7 @@ _base_ = [
     "./second_secfpn_4xb16_121m_base_amp.py",
 ]
 
-experiment_name = "second_secfpn_4xb16_121m_base_amp_t4metric_v2"
+experiment_name = "second_secfpn_4xb16_121m_base_amp_rfs_t4metric_v2_on_2_5_dataset"
 work_dir = "work_dirs/" + _base_.experiment_group_name + "/" + experiment_name
 
 # Add evaluator configs
@@ -19,12 +19,16 @@ frame_pass_fail_config = dict(
     matching_threshold_list=[2.0, 2.0, 2.0, 2.0, 2.0],
     confidence_threshold_list=None,
 )
-training_statistics_parquet_path = (
-    _base_.data_root + _base_.info_directory_path + _base_.info_train_statistics_file_name
-)
-validation_statistics_parquet_path = (
-    _base_.data_root + _base_.info_directory_path + _base_.info_val_statistics_file_name
-)
+
+# training_statistics_parquet_path = (
+#     _base_.data_root + _base_.info_directory_path + _base_.info_train_statistics_file_name
+# )
+training_statistics_parquet_path = _base_.data_root + "info/kokseang_2_5/" + _base_.info_train_statistics_file_name
+testing_statistics_parquet_path = _base_.data_root + _base_.info_directory_path + _base_.info_test_statistics_file_name
+# validation_statistics_parquet_path = (
+#     _base_.data_root + _base_.info_directory_path + _base_.info_val_statistics_file_name
+# )
+validation_statistics_parquet_path = _base_.data_root + "info/kokseang_2_5/" + _base_.info_train_statistics_file_name
 
 val_evaluator = dict(
     _delete_=True,
@@ -32,6 +36,7 @@ val_evaluator = dict(
     data_root=_base_.data_root,
     ann_file=_base_.data_root + _base_.info_directory_path + _base_.info_val_file_name,
     training_statistics_parquet_path=training_statistics_parquet_path,
+    testing_statistics_parquet_path=testing_statistics_parquet_path,
     validation_statistics_parquet_path=validation_statistics_parquet_path,
     output_dir="validation",
     dataset_name="base",
@@ -53,6 +58,7 @@ test_evaluator = dict(
     data_root=_base_.data_root,
     ann_file=_base_.data_root + _base_.info_directory_path + _base_.info_test_file_name,
     training_statistics_parquet_path=training_statistics_parquet_path,
+    testing_statistics_parquet_path=testing_statistics_parquet_path,
     validation_statistics_parquet_path=validation_statistics_parquet_path,
     output_dir="testing",
     dataset_name="base",

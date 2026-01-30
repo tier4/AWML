@@ -20,6 +20,7 @@ info_test_statistics_file_name = "t4dataset_base_statistics_test.parquet"
 dataset_version_list = [
     "db_jpntaxigen2_v1",
     "db_jpntaxigen2_v2",
+    # "db_jpntaxigen2_v3",
     "db_j6gen2_v1",
     "db_j6gen2_v2",
     "db_j6gen2_v3",
@@ -39,14 +40,13 @@ dataset_version_list = [
     "db_j6_v3",
     "db_j6_v5",
 ]
+
+# TODO (KokSeang): This will be removed to avoid repeatitive computation
+# Dataset set, test info files, and enable/disable evaluation of prefix
 dataset_test_groups = {
-    "db_jpntaxi_gen2_base": "t4dataset_jpntaxi_gen2_base_infos_test.pkl",
-    "db_j6gen2": "t4dataset_j6gen2_infos_test.pkl",
-    "db_j6gen2_v6": "t4dataset_j6gen2_v6_infos_test.pkl",
-    "db_largebus": "t4dataset_largebus_infos_test.pkl",
-    "db_jpntaxi": "t4dataset_xx1_infos_test.pkl",
-    "db_j6": "t4dataset_x2_infos_test.pkl",
-    "db_base": "t4dataset_base_infos_test.pkl",
+    "j6gen2_base": ("t4dataset_j6gen2_base_infos_test.pkl", False),
+    "jpntaxi_base": ("t4dataset_jpntaxi_base_infos_test.pkl", False),
+    "base": ("t4dataset_base_infos_test.pkl", True),
 }
 
 # dataset format setting
@@ -140,6 +140,14 @@ name_mapping = {
     "semi_trailer": "trailer",
     "tractor_unit": "truck",
     "construction_vehicle": "truck",
+    # db_jpntaxigen2_v3
+    "other_vehicle": "car",
+    "traffic_cone": "traffic_cone",
+    "personal_mobility": "pedestrian",
+    "other_pedestrian": "pedestrian",
+    "train": "train",
+    "barrier": "barrier",
+    "fake_pedestrian": "pedestrian",
 }
 
 class_names = [

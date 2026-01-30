@@ -1,10 +1,9 @@
 _base_ = [
-    "./second_secfpn_4xb16_121m_base_amp.py",
+    "./second_secfpn_4xb16_121m_pretrain_base_amp.py",
 ]
 
 # user setting
-experiment_name = "second_secfpn_4xb16_121m_base_amp_rfs"
-work_dir = "work_dirs/" + _base_.experiment_group_name + "/" + experiment_name
+work_dir = "work_dirs/centerpoint_2_5_1/" + _base_.dataset_type + "/second_secfpn_4xb16_121m_pretrain_base_amp_rfs/"
 
 train_frame_object_sampler = dict(
     type="FrameObjectSampler",
@@ -27,7 +26,6 @@ train_frame_object_sampler = dict(
                 50.0,
                 50.0,
             ],
-            target_label_index=4,  # 4 is the label index for pedestrian
         ),
     ],
 )

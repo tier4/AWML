@@ -1,8 +1,8 @@
 _base_ = [
-    "second_secfpn_4xb16_121m_j6gen2_base_amp.py",
+    "second_secfpn_4xb16_121m_jpntaxi_base_amp.py",
 ]
 
-experiment_name = "second_secfpn_4xb16_121m_j6gen2_base_amp_rfs_t4metric_v2"
+experiment_name = "second_secfpn_4xb16_121m_jpntaxi_base_amp_rfs_t4metric_v2"
 work_dir = "work_dirs/" + _base_.experiment_group_name + "/" + experiment_name
 
 # Add evaluator configs
@@ -23,14 +23,11 @@ frame_pass_fail_config = dict(
 # training_statistics_parquet_path = (
 #     _base_.data_root + _base_.info_directory_path + _base_.info_train_statistics_file_name
 # )
-# testing_statistics_parquet_path = _base_.data_root + _base_.info_directory_path + _base_.info_test_statistics_file_name
+training_statistics_parquet_path = _base_.data_root + "info/kokseang_2_5/" + _base_.info_train_statistics_file_name
+testing_statistics_parquet_path = _base_.data_root + _base_.info_directory_path + _base_.info_test_statistics_file_name
 # validation_statistics_parquet_path = (
 #     _base_.data_root + _base_.info_directory_path + _base_.info_val_statistics_file_name
 # )
-
-training_statistics_parquet_path = _base_.data_root + "info/kokseang_2_5/" + _base_.info_train_statistics_file_name
-
-testing_statistics_parquet_path = _base_.data_root + _base_.info_directory_path + _base_.info_test_statistics_file_name
 validation_statistics_parquet_path = _base_.data_root + "info/kokseang_2_5/" + _base_.info_train_statistics_file_name
 
 val_evaluator = dict(
@@ -42,7 +39,7 @@ val_evaluator = dict(
     testing_statistics_parquet_path=testing_statistics_parquet_path,
     validation_statistics_parquet_path=validation_statistics_parquet_path,
     output_dir="validation",
-    dataset_name="j6gen2_base",
+    dataset_name="jpntaxi_base",
     perception_evaluator_configs=perception_evaluator_configs,
     critical_object_filter_config=None,
     frame_pass_fail_config=frame_pass_fail_config,
@@ -64,7 +61,7 @@ test_evaluator = dict(
     testing_statistics_parquet_path=testing_statistics_parquet_path,
     validation_statistics_parquet_path=validation_statistics_parquet_path,
     output_dir="testing",
-    dataset_name="j6gen2_base",
+    dataset_name="jpntaxi_base",
     perception_evaluator_configs=perception_evaluator_configs,
     critical_object_filter_config=None,
     frame_pass_fail_config=frame_pass_fail_config,
