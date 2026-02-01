@@ -294,7 +294,7 @@ def main():
                 sample_steps = 5
             else:
                 sample_steps = 1
-            
+
             # db_jpntaxigen2_v3 has no sweeps
             if dataset_version == "db_jpntaxigen2_v3":
                 max_sweeps = 0
