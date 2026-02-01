@@ -42,15 +42,15 @@ eval_class_range = {
 
 # user setting
 data_root = "data/t4dataset/"
-info_directory_path = "info/kokseang_2_5/"
-train_gpu_size = 4
+info_directory_path = "info/kokseang_2_6_1/"
+train_gpu_size = 8
 train_batch_size = 16
 test_batch_size = 2
 num_workers = 32
 val_interval = 5
 max_epochs = 50
 
-experiment_group_name = "centerpoint_2.5.0/base/" + _base_.dataset_type
+experiment_group_name = "centerpoint_2.6.0/base/" + _base_.dataset_type
 experiment_name = "second_secfpn_4xb16_121m_base_amp"
 work_dir = "work_dirs/" + experiment_group_name + "/" + experiment_name
 
