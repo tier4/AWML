@@ -294,6 +294,16 @@ def main():
                 sample_steps = 5
             else:
                 sample_steps = 1
+            
+            # db_jpntaxigen2_v3 has no sweeps
+            if dataset_version == "db_jpntaxigen2_v3":
+                max_sweeps = 0
+
+                # Do not add val and test to db_jpntaxigen2_v3
+                if split == "val" or split == "test":
+                    continue
+            else:
+                max_sweeps = args.max_sweeps
 
             for scene_id in dataset_list_dict.get(split, []):
                 print_log(f"Creating data info for scene: {scene_id}, steps: {sample_steps}")
@@ -321,7 +331,7 @@ def main():
                 infos = []
                 for i in range(0, len(t4.sample), sample_steps):
                     sample = t4.sample[i]
-                    info = get_info(cfg, t4, sample, i, args.max_sweeps, city, vehicle_type)
+                    info = get_info(cfg, t4, sample, i, max_sweeps, city, vehicle_type)
                     # info["version"] = dataset_version             # used for visualizations during debugging.
                     t4_infos[split].append(info)
                     infos.append(info)
