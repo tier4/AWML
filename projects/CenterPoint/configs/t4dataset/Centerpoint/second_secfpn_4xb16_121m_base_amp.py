@@ -7,7 +7,7 @@ custom_imports = dict(imports=["projects.CenterPoint.models"], allow_failed_impo
 custom_imports["imports"] += _base_.custom_imports["imports"]
 custom_imports["imports"] += ["autoware_ml.detection3d.datasets.transforms"]
 custom_imports["imports"] += ["autoware_ml.hooks"]
-custom_imports["imports"] += ["autoware_ml.backends.mlflowbackend"]
+# custom_imports["imports"] += ["autoware_ml.backends.mlflowbackend"]
 custom_imports["imports"] += ["autoware_ml.samplers"]
 
 # This is a base file for t4dataset, add the dataset config.
@@ -42,15 +42,15 @@ eval_class_range = {
 
 # user setting
 data_root = "data/t4dataset/"
-info_directory_path = "info/user_name/"
-train_gpu_size = 4
+info_directory_path = "info/kokseang_2_6_1/"
+train_gpu_size = 8
 train_batch_size = 16
 test_batch_size = 2
 num_workers = 32
 val_interval = 5
 max_epochs = 50
 
-experiment_group_name = "centerpoint/base/" + _base_.dataset_type
+experiment_group_name = "centerpoint_2.6.0/base/" + _base_.dataset_type
 experiment_name = "second_secfpn_4xb16_121m_base_amp"
 work_dir = "work_dirs/" + experiment_group_name + "/" + experiment_name
 
@@ -131,6 +131,8 @@ test_pipeline = [
             "cam2global",
             "lidar2cam",
             "ego2global",
+            "vehicle_type",
+            "city",
         ),
     ),
 ]
@@ -176,6 +178,8 @@ eval_pipeline = [
             "cam2global",
             "lidar2cam",
             "ego2global",
+            "vehicle_type",
+            "city",
         ),
     ),
 ]
@@ -350,6 +354,7 @@ randomness = dict(seed=0, diff_rank_seed=False, deterministic=True)
 # learning rate
 # Since mmengine doesn't support OneCycleMomentum yet, we use CosineAnnealing from the default configs
 lr = 0.0003
+t_max = 15
 param_scheduler = [
     # learning rate scheduler
     # During the first (max_epochs * 0.3) epochs, learning rate increases from 0 to lr * 10
@@ -357,18 +362,18 @@ param_scheduler = [
     # lr * 1e-4
     dict(
         type="CosineAnnealingLR",
-        T_max=int(max_epochs * 0.3),
+        T_max=t_max,
         eta_min=lr * 10,
         begin=0,
-        end=int(max_epochs * 0.3),
+        end=t_max,
         by_epoch=True,
         convert_to_iter_based=True,
     ),
     dict(
         type="CosineAnnealingLR",
-        T_max=max_epochs - int(max_epochs * 0.3),
+        T_max=max_epochs - t_max,
         eta_min=lr * 1e-4,
-        begin=int(max_epochs * 0.3),
+        begin=t_max,
         end=max_epochs,
         by_epoch=True,
         convert_to_iter_based=True,
@@ -378,18 +383,18 @@ param_scheduler = [
     # during the next epochs, momentum increases from 0.85 / 0.95 to 1
     dict(
         type="CosineAnnealingMomentum",
-        T_max=int(max_epochs * 0.3),
+        T_max=t_max,
         eta_min=0.85 / 0.95,
         begin=0,
-        end=int(max_epochs * 0.3),
+        end=t_max,
         by_epoch=True,
         convert_to_iter_based=True,
     ),
     dict(
         type="CosineAnnealingMomentum",
-        T_max=max_epochs - int(max_epochs * 0.3),
+        T_max=max_epochs - t_max,
         eta_min=1,
-        begin=int(max_epochs * 0.3),
+        begin=t_max,
         end=max_epochs,
         by_epoch=True,
         convert_to_iter_based=True,
@@ -434,13 +439,13 @@ vis_backends = [
     dict(type="LocalVisBackend"),
     dict(type="TensorboardVisBackend"),
     # Update info accordingly
-    dict(
-        type="SafeMLflowVisBackend",
-        exp_name="(UserName) CenterPoint",
-        run_name="CenterPoint base",
-        tracking_uri="http://localhost:5000",
-        artifact_suffix=(),
-    ),
+    # dict(
+    #     type="SafeMLflowVisBackend",
+    #     exp_name="(UserName) CenterPoint",
+    #     run_name="CenterPoint base",
+    #     tracking_uri="http://localhost:5000",
+    #     artifact_suffix=(),
+    # ),
 ]
 visualizer = dict(type="Det3DLocalVisualizer", vis_backends=vis_backends, name="visualizer")
 

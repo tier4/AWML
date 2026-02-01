@@ -103,7 +103,7 @@ def get_info(
     max_sweeps: int,
     city: Optional[str] = None,
     vehicle_type: Optional[str] = None,
-):
+) -> Dict[str, Any]:
     lidar_token = get_lidar_token(sample)
     if lidar_token is None:
         print_log(
@@ -278,9 +278,9 @@ def main():
 
     # Generate statistics for this split
     t4_statistics = {
-        "train": T4DatasetStatistics(Path(args.out_dir), "train", args.version),
-        "val": T4DatasetStatistics(Path(args.out_dir), "val", args.version),
-        "test": T4DatasetStatistics(Path(args.out_dir), "test", args.version),
+        "train": T4DatasetStatistics(Path(args.out_dir), "train", args.version, cfg.class_names),
+        "val": T4DatasetStatistics(Path(args.out_dir), "val", args.version, cfg.class_names),
+        "test": T4DatasetStatistics(Path(args.out_dir), "test", args.version, cfg.class_names),
     }
     for dataset_version in cfg.dataset_version_list:
         dataset_list = osp.join(args.dataset_version_config_root, dataset_version + ".yaml")
@@ -295,8 +295,18 @@ def main():
             else:
                 sample_steps = 1
 
+            # db_jpntaxigen2_v3 has no sweeps
+            if dataset_version == "db_jpntaxigen2_v3":
+                max_sweeps = 0
+
+                # Do not add val and test to db_jpntaxigen2_v3
+                if split == "val" or split == "test":
+                    continue
+            else:
+                max_sweeps = args.max_sweeps
+
             for scene_id in dataset_list_dict.get(split, []):
-                print_log(f"Creating data info for scene: {scene_id}, steps: {sample_steps}")
+                print_log(f"Creating data info for scene: {scene_id}, steps: {sample_steps}, sweeps: {max_sweeps}")
                 dataset_scene_info = scene_id.split("/")
                 if len(dataset_scene_info) == 4:
                     t4_dataset_id, t4_dataset_version_id, city, vehicle_type = dataset_scene_info
@@ -307,7 +317,6 @@ def main():
                     raise ValueError(
                         "Invalid scene_id format. should be : {t4_dataset_id}/{t4_dataset_version_id}/{city:optional}/{vehicle_type:optional}"
                     )
-
                 scene_root_dir_path = osp.join(args.root_path, dataset_version, t4_dataset_id, t4_dataset_version_id)
                 if not os.path.exists(scene_root_dir_path):
                     if args.use_available_dataset_version:
@@ -317,21 +326,24 @@ def main():
                         scene_root_dir_path = get_scene_root_dir_path(args.root_path, dataset_version, t4_dataset_id)
                     else:
                         raise ValueError(f"{t4_dataset_id} does not exist.")
+
                 t4 = Tier4(data_root=scene_root_dir_path, verbose=False)
+                infos = []
                 for i in range(0, len(t4.sample), sample_steps):
                     sample = t4.sample[i]
-                    info = get_info(cfg, t4, sample, i, args.max_sweeps, city, vehicle_type)
+                    info = get_info(cfg, t4, sample, i, max_sweeps, city, vehicle_type)
                     # info["version"] = dataset_version             # used for visualizations during debugging.
                     t4_infos[split].append(info)
+                    infos.append(info)
 
                 scene_metadata = T4DatasetSceneMetadata(scene_id, city, vehicle_type)
                 for bev_distance_range in bev_distance_ranges:
                     bucket_name = _get_bucket_name(city, vehicle_type, range_filter_name, bev_distance_range)
-                    t4_statistics[split].add_samples(t4.sample, bucket_name, scene_metadata)
+                    t4_statistics[split].add_samples(t4.sample, infos, bucket_name, scene_metadata, bev_distance_range)
 
                     # Add version statistics without city/vehicle_type
                     bucket_name = _get_bucket_name(args.version, args.version, range_filter_name, bev_distance_range)
-                    t4_statistics[split].add_samples(t4.sample, bucket_name, scene_metadata)
+                    t4_statistics[split].add_samples(t4.sample, infos, bucket_name, scene_metadata, bev_distance_range)
 
     for t4_statistic_info in t4_statistics.values():
         t4_statistic_info.save_to_parquet()

@@ -236,12 +236,14 @@ class T4MetricV2(BaseMetric):
         data_root: str,
         ann_file: str,
         training_statistics_parquet_path: str,
+        testing_statistics_parquet_path: str,
         validation_statistics_parquet_path: str,
         dataset_name: str,
         output_dir: str,
         experiment_name: str,
         experiment_group_name: str,
         write_metric_summary: bool,
+        evaluate_frame_prefix: bool = True,
         checkpoint_path: Optional[Union[Path, str]] = None,
         scene_batch_size: int = 128,
         num_workers: int = 8,
@@ -315,8 +317,10 @@ class T4MetricV2(BaseMetric):
         self.t4_metric_v2_dataframe = T4MetricV2DataFrame(
             output_dataframe_path=self.t4metric_v2_dataframe_output_path,
             training_statistics_parquet_path=Path(training_statistics_parquet_path),
+            testing_statistics_parquet_path=Path(testing_statistics_parquet_path),
             validation_statistics_parquet_path=Path(validation_statistics_parquet_path),
         )
+        self.evaluate_frame_prefix = evaluate_frame_prefix
 
     def _create_evaluators(
         self,
@@ -438,9 +442,7 @@ class T4MetricV2(BaseMetric):
             perception_frame = self._parse_predictions_from_sample(current_time, data_sample, frame_ground_truth)
             self._save_perception_frame(scene_id, data_sample["sample_idx"], perception_frame)
 
-    def _process_evaluator_results(
-        self, scenes: dict, sample_id_to_prefix_frame_mapping: Dict[str, str]
-    ) -> Dict[str, Dict[str, float]]:
+    def _process_evaluator_results(self, scenes: dict) -> Dict[str, Dict[str, float]]:
         """Process the results for each evaluator.
 
         Args:
@@ -462,17 +464,18 @@ class T4MetricV2(BaseMetric):
                     self.logger.error(f"Failed to write scene metrics to output files: {e}")
 
             # Aggregate metrics by frame prefix, for example, location and vehicle type
-            frame_prefix_scores = evaluator.perception_evaluator_manager.get_scene_result_with_prefix()
-            for frame_prefix_name, metric_dict in frame_prefix_scores.items():
-                evaluator_frame_prefix_name = frame_prefix_name + "/" + evaluator_name
+            if self.evaluate_frame_prefix:
+                frame_prefix_scores = evaluator.perception_evaluator_manager.get_scene_result_with_prefix()
+                for frame_prefix_name, metric_dict in frame_prefix_scores.items():
+                    evaluator_frame_prefix_name = frame_prefix_name + "/" + evaluator_name
 
-                # Process scalar metrics and metadata
-                aggregated_metric_scalars[evaluator_frame_prefix_name] = self._process_metrics_for_aggregation(
-                    metric_dict, evaluator_name, sample_id_to_prefix_frame_mapping
-                )
+                    # Process scalar metrics and metadata
+                    aggregated_metric_scalars[evaluator_frame_prefix_name] = self._process_metrics_for_aggregation(
+                        metric_dict, evaluator_name
+                    )
 
-                # Process metric data, for example, detection/precisions
-                aggregated_metric_data[evaluator_frame_prefix_name] = self._aggregate_metrics_data(metric_dict)
+                    # Process metric data, for example, detection/precisions
+                    aggregated_metric_data[evaluator_frame_prefix_name] = self._aggregate_metrics_data(metric_dict)
 
             # Aggregate metrics without prefix for each evaluator
             evaluator_full_name = f"{self.default_evaluator_prefix_name}/{evaluator_name}"
@@ -480,7 +483,7 @@ class T4MetricV2(BaseMetric):
 
             # Process scalar metrics and metadata
             aggregated_metric_scalars[evaluator_full_name] = self._process_metrics_for_aggregation(
-                final_metric_score, evaluator_name, sample_id_to_prefix_frame_mapping
+                final_metric_score, evaluator_name
             )
 
             # Process metric data, for example, detection/precisions
@@ -549,15 +552,8 @@ class T4MetricV2(BaseMetric):
             # Process all frames and collect results
             self._process_all_frames(scenes)
 
-            # Construct sample_id to prefix frame mapping, assuming sample id is unique across all scenes
-            sample_id_to_prefix_frame_mapping = {
-                sample_id: perception_frame.ground_truth_objects.frame_prefix
-                for _, samples in scenes.items()
-                for sample_id, perception_frame in samples.items()
-            }
-
             # Compute final metrics
-            aggregated_metric_dict = self._process_evaluator_results(scenes, sample_id_to_prefix_frame_mapping)
+            aggregated_metric_dict = self._process_evaluator_results(scenes)
             selected_aggregated_metric_dict = aggregated_metric_dict[self.main_evaluator_name]
 
             return selected_aggregated_metric_dict  # Return the metrics from the main evaluator
@@ -997,9 +993,7 @@ class T4MetricV2(BaseMetric):
 
         return iterable_metrics
 
-    def _process_metrics_for_aggregation(
-        self, metrics_score: MetricsScore, evaluator_name: str, sample_id_to_prefix_frame_mapping: Dict[str, str]
-    ) -> Dict[str, float]:
+    def _process_metrics_for_aggregation(self, metrics_score: MetricsScore, evaluator_name: str) -> Dict[str, float]:
         """
         Process metrics from MetricsScore and return a dictionary of all metrics.
 
@@ -1078,12 +1072,12 @@ class T4MetricV2(BaseMetric):
         metric_dict["metadata/test_max_range"] = selected_evaluator.max_range
         metric_dict["metadata/test_range_filter_name"] = selected_evaluator.range_filter_name
 
-        # Add a distribution of the number of frames for each prefix frame
-        test_num_frame_distribution = defaultdict(int)
-        for used_frame in metrics_score.used_frame:
-            test_num_frame_distribution[sample_id_to_prefix_frame_mapping[used_frame]] += 1
+        # # Add a distribution of the number of frames for each prefix frame
+        # test_num_frame_distribution = defaultdict(int)
+        # for used_frame in metrics_score.used_frame:
+        #     test_num_frame_distribution[sample_id_to_prefix_frame_mapping[used_frame]] += 1
 
-        metric_dict["metadata/test_num_frame_distribution"] = test_num_frame_distribution
+        # metric_dict["metadata/test_num_frame_distribution"] = test_num_frame_distribution
         return metric_dict
 
     def _write_aggregated_metrics(

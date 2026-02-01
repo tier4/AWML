@@ -42,7 +42,7 @@ eval_class_range = {
 
 # user setting
 data_root = "data/t4dataset/"
-info_directory_path = "info/user_name/"
+info_directory_path = "info/kokseang_2_5/"
 train_gpu_size = 4
 train_batch_size = 16
 test_batch_size = 2
@@ -50,7 +50,7 @@ num_workers = 32
 val_interval = 1
 max_epochs = 30
 
-experiment_group_name = "centerpoint/jpntaxi_base/" + _base_.dataset_type
+experiment_group_name = "centerpoint_2.6.1/jpntaxi_base/" + _base_.dataset_type
 experiment_name = "second_secfpn_4xb16_121m_jpntaxi_base_amp"
 work_dir = "work_dirs/" + experiment_group_name + "/" + experiment_name
 
@@ -111,7 +111,30 @@ test_pipeline = [
         test_mode=True,
     ),
     dict(type="PointsRangeFilter", point_cloud_range=point_cloud_range),
-    dict(type="Pack3DDetInputs", keys=["points", "gt_bboxes_3d", "gt_labels_3d"]),
+    dict(
+        type="Pack3DDetInputs",
+        keys=["points", "gt_bboxes_3d", "gt_labels_3d"],
+        # Specify the metadata keys required by the downstream pipeline.
+        # Refer to the official MMDetection3D formatting transform implementation for details:
+        # https://github.com/open-mmlab/mmdetection3d/blob/main/mmdet3d/datasets/transforms/formating.py#L67
+        # Also see the content structure in "t4dataset_base_infos_test.pkl" for reference.
+        meta_keys=(
+            "timestamp",
+            "lidar2img",
+            "depth2img",
+            "cam2img",
+            "box_type_3d",
+            "sample_idx",
+            "sample_token",
+            "lidar_path",
+            "ori_cam2img",
+            "cam2global",
+            "lidar2cam",
+            "ego2global",
+            "vehicle_type",
+            "city",
+        ),
+    ),
 ]
 
 # construct a pipeline for data and gt loading in show function
@@ -135,7 +158,30 @@ eval_pipeline = [
         test_mode=True,
     ),
     dict(type="PointsRangeFilter", point_cloud_range=point_cloud_range),
-    dict(type="Pack3DDetInputs", keys=["points", "gt_bboxes_3d", "gt_labels_3d"]),
+    dict(
+        type="Pack3DDetInputs",
+        keys=["points", "gt_bboxes_3d", "gt_labels_3d"],
+        # Specify the metadata keys required by the downstream pipeline.
+        # Refer to the official MMDetection3D formatting transform implementation for details:
+        # https://github.com/open-mmlab/mmdetection3d/blob/main/mmdet3d/datasets/transforms/formating.py#L67
+        # Also see the content structure in "t4dataset_base_infos_test.pkl" for reference.
+        meta_keys=(
+            "timestamp",
+            "lidar2img",
+            "depth2img",
+            "cam2img",
+            "box_type_3d",
+            "sample_idx",
+            "sample_token",
+            "lidar_path",
+            "ori_cam2img",
+            "cam2global",
+            "lidar2cam",
+            "ego2global",
+            "vehicle_type",
+            "city",
+        ),
+    ),
 ]
 
 train_dataloader = dict(
@@ -307,7 +353,7 @@ model = dict(
 
 randomness = dict(seed=0, diff_rank_seed=False, deterministic=True)
 
-lr = 3e-4
+lr = 1e-4
 param_scheduler = [
     # learning rate scheduler
     # During the first (max_epochs * 0.3) epochs, learning rate increases from 0 to lr * 10
@@ -414,6 +460,6 @@ custom_hooks = [
 ]
 
 # Update the load_from path accordingly
-load_from = "<best_checkpoint>"
+load_from = "work_dirs/centerpoint_2_6/T4Dataset/second_secfpn_4xb16_121m_base_amp_rfs/epoch_48.pth"
 
 activation_checkpointing = ["pts_backbone"]
