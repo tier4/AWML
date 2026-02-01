@@ -306,7 +306,7 @@ def main():
                 max_sweeps = args.max_sweeps
 
             for scene_id in dataset_list_dict.get(split, []):
-                print_log(f"Creating data info for scene: {scene_id}, steps: {sample_steps}")
+                print_log(f"Creating data info for scene: {scene_id}, steps: {sample_steps}, sweeps: {max_sweeps}")
                 dataset_scene_info = scene_id.split("/")
                 if len(dataset_scene_info) == 4:
                     t4_dataset_id, t4_dataset_version_id, city, vehicle_type = dataset_scene_info
