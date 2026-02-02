@@ -7,7 +7,7 @@ Flattened from `deployment/pipelines/common/base_pipeline.py`.
 import logging
 import time
 from abc import ABC, abstractmethod
-from typing import Any, Dict, Optional, Tuple, Union
+from typing import Any, Dict, Mapping, Optional, Tuple, Union
 
 import torch
 
@@ -104,8 +104,10 @@ class BaseDeploymentPipeline(ABC):
             latency_breakdown["preprocessing_ms"] = (preprocess_time - start_time) * 1000
 
             merged_metadata = {}
-            merged_metadata.update(metadata or {})
-            merged_metadata.update(preprocess_metadata)
+            if metadata is not None:
+                merged_metadata.update(metadata)
+            if preprocess_metadata is not None:
+                merged_metadata.update(preprocess_metadata)
 
             model_start = time.perf_counter()
             model_result = self.run_model(model_input)

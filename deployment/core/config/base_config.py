@@ -218,16 +218,32 @@ class EvaluationConfig:
 
     @classmethod
     def from_dict(cls, config_dict: Mapping[str, Any]) -> EvaluationConfig:
-        backends_raw = config_dict.get("backends", {}) or {}
+        backends_raw = config_dict.get("backends")
+        if backends_raw is None:
+            backends_raw = {}
+        if not isinstance(backends_raw, Mapping):
+            raise TypeError(f"evaluation.backends must be a mapping, got {type(backends_raw).__name__}")
         backends_frozen = {key: MappingProxyType(dict(value)) for key, value in backends_raw.items()}
 
+        models_raw = config_dict.get("models")
+        if models_raw is None:
+            models_raw = {}
+        if not isinstance(models_raw, Mapping):
+            raise TypeError(f"evaluation.models must be a mapping, got {type(models_raw).__name__}")
+
+        devices_raw = config_dict.get("devices")
+        if devices_raw is None:
+            devices_raw = {}
+        if not isinstance(devices_raw, Mapping):
+            raise TypeError(f"evaluation.devices must be a mapping, got {type(devices_raw).__name__}")
+
         return cls(
-            enabled=config_dict.get("enabled", False),
-            num_samples=config_dict.get("num_samples", 10),
-            verbose=config_dict.get("verbose", False),
+            enabled=bool(config_dict.get("enabled", False)),
+            num_samples=int(config_dict.get("num_samples", 10)),
+            verbose=bool(config_dict.get("verbose", False)),
             backends=MappingProxyType(backends_frozen),
-            models=MappingProxyType(dict(config_dict.get("models", {}))),
-            devices=MappingProxyType(dict(config_dict.get("devices", {}))),
+            models=MappingProxyType(dict(models_raw)),
+            devices=MappingProxyType(dict(devices_raw)),
         )
 
 
@@ -243,18 +259,35 @@ class VerificationConfig:
 
     @classmethod
     def from_dict(cls, config_dict: Mapping[str, Any]) -> VerificationConfig:
-        scenarios_raw = config_dict.get("scenarios", {}) or {}
+        scenarios_raw = config_dict.get("scenarios")
+        if scenarios_raw is None:
+            scenarios_raw = {}
+        if not isinstance(scenarios_raw, Mapping):
+            raise TypeError(f"verification.scenarios must be a mapping, got {type(scenarios_raw).__name__}")
+
         scenario_map: Dict[ExportMode, Tuple[VerificationScenario, ...]] = {}
         for mode_key, scenario_list in scenarios_raw.items():
             mode = ExportMode.from_value(mode_key)
-            scenario_entries = tuple(VerificationScenario.from_dict(entry) for entry in (scenario_list or []))
+            if scenario_list is None:
+                scenario_list = []
+            elif not isinstance(scenario_list, (list, tuple)):
+                raise TypeError(
+                    f"verification.scenarios.{mode_key} must be a list or tuple, got {type(scenario_list).__name__}"
+                )
+            scenario_entries = tuple(VerificationScenario.from_dict(entry) for entry in scenario_list)
             scenario_map[mode] = scenario_entries
 
+        devices_raw = config_dict.get("devices")
+        if devices_raw is None:
+            devices_raw = {}
+        if not isinstance(devices_raw, Mapping):
+            raise TypeError(f"verification.devices must be a mapping, got {type(devices_raw).__name__}")
+
         return cls(
-            enabled=config_dict.get("enabled", True),
-            num_verify_samples=config_dict.get("num_verify_samples", 3),
-            tolerance=config_dict.get("tolerance", 0.1),
-            devices=MappingProxyType(dict(config_dict.get("devices", {}))),
+            enabled=bool(config_dict.get("enabled", True)),
+            num_verify_samples=int(config_dict.get("num_verify_samples", 3)),
+            tolerance=float(config_dict.get("tolerance", 0.1)),
+            devices=MappingProxyType(dict(devices_raw)),
             scenarios=MappingProxyType(scenario_map),
         )
 
@@ -310,12 +343,12 @@ class BaseDeploymentConfig:
         self._validate_config()
 
         self._checkpoint_path: Optional[str] = deploy_cfg.get("checkpoint_path")
-        self._device_config = DeviceConfig.from_dict(deploy_cfg.get("devices", {}) or {})
+        self._device_config = DeviceConfig.from_dict(deploy_cfg.get("devices", {}))
 
         # Initialize config sections
         self.export_config = ExportConfig.from_dict(deploy_cfg.get("export", {}))
         self.runtime_config = RuntimeConfig.from_dict(deploy_cfg.get("runtime_io", {}))
-        self.tensorrt_config = TensorRTConfig.from_dict(deploy_cfg.get("tensorrt_config", {}) or {})
+        self.tensorrt_config = TensorRTConfig.from_dict(deploy_cfg.get("tensorrt_config", {}))
         self._evaluation_config = EvaluationConfig.from_dict(deploy_cfg.get("evaluation", {}))
         self._verification_config = VerificationConfig.from_dict(deploy_cfg.get("verification", {}))
 
@@ -336,7 +369,11 @@ class BaseDeploymentConfig:
             raise ValueError(str(exc)) from exc
 
         # Validate precision policy if present
-        tensorrt_config = self.deploy_cfg.get("tensorrt_config", {}) or {}
+        tensorrt_config = self.deploy_cfg.get("tensorrt_config")
+        if tensorrt_config is None:
+            tensorrt_config = {}
+        if not isinstance(tensorrt_config, Mapping):
+            raise TypeError(f"tensorrt_config must be a mapping, got {type(tensorrt_config).__name__}")
         precision_policy = tensorrt_config.get("precision_policy", PrecisionPolicy.AUTO.value)
         if precision_policy not in PRECISION_POLICIES:
             raise ValueError(

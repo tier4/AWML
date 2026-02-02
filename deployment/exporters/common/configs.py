@@ -48,10 +48,20 @@ class TensorRTModelInputConfig:
 
     @classmethod
     def from_dict(cls, data: Mapping[str, Any]) -> TensorRTModelInputConfig:
-        input_shapes_raw = data.get("input_shapes", {}) or {}
-        profile_map = {
-            name: TensorRTProfileConfig.from_dict(shape_dict or {}) for name, shape_dict in input_shapes_raw.items()
-        }
+        input_shapes_raw = data.get("input_shapes")
+        if input_shapes_raw is None:
+            input_shapes_raw = {}
+        if not isinstance(input_shapes_raw, Mapping):
+            raise TypeError(f"input_shapes must be a mapping, got {type(input_shapes_raw).__name__}")
+
+        profile_map = {}
+        for name, shape_dict in input_shapes_raw.items():
+            if shape_dict is None:
+                shape_dict = {}
+            elif not isinstance(shape_dict, Mapping):
+                raise TypeError(f"input_shapes.{name} must be a mapping, got {type(shape_dict).__name__}")
+            profile_map[name] = TensorRTProfileConfig.from_dict(shape_dict)
+
         return cls(input_shapes=MappingProxyType(profile_map))
 
 
@@ -142,7 +152,7 @@ class TensorRTExportConfig(BaseExporterConfig):
         )
         return cls(
             precision_policy=str(data.get("precision_policy", cls.precision_policy)),
-            policy_flags=MappingProxyType(dict(data.get("policy_flags", {}))),
+            policy_flags=MappingProxyType(data.get("policy_flags", {})),
             max_workspace_size=int(data.get("max_workspace_size", cls.max_workspace_size)),
             model_inputs=parsed_inputs,
         )

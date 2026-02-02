@@ -358,7 +358,12 @@ class TensorRTExporter(BaseExporter):
         if isinstance(entry, TensorRTModelInputConfig):
             return entry.input_shapes
         if isinstance(entry, Mapping):
-            return entry.get("input_shapes", {}) or {}
+            input_shapes = entry.get("input_shapes")
+            if input_shapes is None:
+                input_shapes = {}
+            if not isinstance(input_shapes, Mapping):
+                raise TypeError(f"input_shapes must be a mapping, got {type(input_shapes).__name__}")
+            return input_shapes
         raise TypeError(f"Unsupported TensorRT model input entry: {type(entry)}")
 
     def _resolve_profile_shapes(
