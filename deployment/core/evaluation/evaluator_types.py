@@ -103,7 +103,7 @@ class InferenceInput:
     """
 
     data: Any
-    metadata: Dict[str, Any] = field(default_factory=dict)
+    metadata: Mapping[str, Any] = field(default_factory=dict)
 
 
 @dataclass(frozen=True)
