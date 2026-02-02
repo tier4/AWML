@@ -369,7 +369,7 @@ class VerificationMixin:
         logger.info(f"\nInitializing {test.backend.value} test pipeline...")
         test_pipeline = self._create_pipeline_for_verification(test, test_device, logger)
 
-        actual_samples = min(num_samples, data_loader.get_num_samples())
+        actual_samples = min(num_samples, data_loader.num_samples)
         for i in range(actual_samples):
             logger.info(f"\n{'='*60}")
             logger.info(f"Verifying sample {i}")

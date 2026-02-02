@@ -124,8 +124,8 @@ class ExportOrchestrator:
 
         result = ExportResult()
 
-        should_export_onnx = self.config.export_config.should_export_onnx()
-        should_export_trt = self.config.export_config.should_export_tensorrt()
+        should_export_onnx = self.config.export_config.export_onnx
+        should_export_trt = self.config.export_config.export_tensorrt
         checkpoint_path = self.config.checkpoint_path
         external_onnx_path = self.config.export_config.onnx_path
 
@@ -158,7 +158,7 @@ class ExportOrchestrator:
         Returns:
             True if PyTorch model is needed, False otherwise
         """
-        if self.config.export_config.should_export_onnx():
+        if self.config.export_config.export_onnx:
             return True
 
         eval_config = self.config.evaluation_config
@@ -317,7 +317,7 @@ class ExportOrchestrator:
         Returns:
             Artifact representing the exported ONNX model or None if export is not configured
         """
-        if not self.config.export_config.should_export_onnx():
+        if not self.config.export_config.export_onnx:
             return None
 
         if self._onnx_pipeline is None and self._onnx_wrapper_cls is None:
@@ -386,7 +386,7 @@ class ExportOrchestrator:
         Returns:
             Artifact representing the exported TensorRT engine or None if export is not configured
         """
-        if not self.config.export_config.should_export_tensorrt():
+        if not self.config.export_config.export_tensorrt:
             return None
 
         if not onnx_path:
@@ -406,7 +406,7 @@ class ExportOrchestrator:
         output_path = self._get_tensorrt_output_path(onnx_path, tensorrt_dir)
 
         cuda_device = self.config.devices.cuda
-        device_id = self.config.devices.get_cuda_device_index()
+        device_id = self.config.devices.cuda_device_index
         if cuda_device is None or device_id is None:
             raise RuntimeError("TensorRT export requires a CUDA device. Set deploy_cfg.devices['cuda'].")
         torch.cuda.set_device(device_id)

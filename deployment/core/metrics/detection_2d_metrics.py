@@ -451,7 +451,8 @@ class Detection2DMetricsInterface(BaseMetricsInterface):
 
         return metric_dict
 
-    def get_summary(self) -> DetectionSummary:
+    @property
+    def summary(self) -> DetectionSummary:
         """Get a summary of the evaluation including mAP and per-class metrics for all matching modes."""
         metrics = self.compute_metrics()
 

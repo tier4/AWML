@@ -91,12 +91,14 @@ class ExportConfig:
             onnx_path=config_dict.get("onnx_path"),
         )
 
-    def should_export_onnx(self) -> bool:
-        """Check if ONNX export is requested."""
+    @property
+    def export_onnx(self) -> bool:
+        """Whether ONNX export is requested."""
         return self.mode in (ExportMode.ONNX, ExportMode.BOTH)
 
-    def should_export_tensorrt(self) -> bool:
-        """Check if TensorRT export is requested."""
+    @property
+    def export_tensorrt(self) -> bool:
+        """Whether TensorRT export is requested."""
         return self.mode in (ExportMode.TRT, ExportMode.BOTH)
 
 
@@ -149,7 +151,8 @@ class DeviceConfig:
             raise ValueError("CUDA device index must be non-negative")
         return f"cuda:{device_id}"
 
-    def get_cuda_device_index(self) -> Optional[int]:
+    @property
+    def cuda_device_index(self) -> Optional[int]:
         """Return CUDA device index as integer (if configured)."""
         if self.cuda is None:
             return None
@@ -196,17 +199,10 @@ class TensorRTConfig:
             max_workspace_size=config_dict.get("max_workspace_size", DEFAULT_WORKSPACE_SIZE),
         )
 
-    def get_precision_policy(self) -> str:
-        """Get precision policy name."""
-        return self.precision_policy
-
-    def get_precision_flags(self) -> Mapping[str, bool]:
-        """Get TensorRT precision flags for the configured policy."""
+    @property
+    def precision_flags(self) -> Mapping[str, bool]:
+        """TensorRT precision flags for the configured policy."""
         return PRECISION_POLICIES.get(self.precision_policy, {})
-
-    def get_max_workspace_size(self) -> int:
-        """Get maximum workspace size for TensorRT."""
-        return self.max_workspace_size
 
 
 @dataclass(frozen=True)
@@ -353,7 +349,7 @@ class BaseDeploymentConfig:
             return
 
         cuda_device = self.devices.cuda
-        device_idx = self.devices.get_cuda_device_index()
+        device_idx = self.devices.cuda_device_index
 
         if cuda_device is None or device_idx is None:
             raise RuntimeError(
@@ -375,7 +371,7 @@ class BaseDeploymentConfig:
 
     def _needs_cuda_device(self) -> bool:
         """Determine if current deployment config requires a CUDA device."""
-        if self.export_config.should_export_tensorrt():
+        if self.export_config.export_tensorrt:
             return True
 
         evaluation_cfg = self.evaluation_config
@@ -428,7 +424,8 @@ class BaseDeploymentConfig:
         """Get normalized device settings."""
         return self._device_config
 
-    def get_evaluation_backends(self) -> Mapping[Any, Mapping[str, Any]]:
+    @property
+    def evaluation_backends(self) -> Mapping[Any, Mapping[str, Any]]:
         """
         Get evaluation backends configuration.
 
@@ -533,9 +530,9 @@ class BaseDeploymentConfig:
         model_inputs = self._build_model_inputs_from_components()
 
         settings_dict = {
-            "max_workspace_size": self.tensorrt_config.get_max_workspace_size(),
-            "precision_policy": self.tensorrt_config.get_precision_policy(),
-            "policy_flags": self.tensorrt_config.get_precision_flags(),
+            "max_workspace_size": self.tensorrt_config.max_workspace_size,
+            "precision_policy": self.tensorrt_config.precision_policy,
+            "policy_flags": self.tensorrt_config.precision_flags,
             "model_inputs": model_inputs,
         }
         return TensorRTExportConfig.from_mapping(settings_dict)

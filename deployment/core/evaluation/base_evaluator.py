@@ -255,7 +255,7 @@ class BaseEvaluator(VerificationMixin, ABC):
         latencies = []
         latency_breakdowns = []
 
-        actual_samples = min(num_samples, data_loader.get_num_samples())
+        actual_samples = min(num_samples, data_loader.num_samples)
 
         for idx in range(actual_samples):
             if verbose and idx % EVALUATION_DEFAULTS.LOG_INTERVAL == 0:

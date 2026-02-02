@@ -40,12 +40,14 @@ class Artifact:
     path: str
     multi_file: bool = False
 
+    @property
     def exists(self) -> bool:
-        """Check if the artifact exists on disk."""
+        """Whether the artifact exists on disk."""
         return os.path.exists(self.path)
 
+    @property
     def is_directory(self) -> bool:
-        """Check if the artifact is a directory."""
+        """Whether the artifact is a directory."""
         return os.path.isdir(self.path)
 
     def __str__(self) -> str:

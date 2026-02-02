@@ -84,8 +84,9 @@ class BaseDataLoader(ABC):
         """
         raise NotImplementedError
 
+    @property
     @abstractmethod
-    def get_num_samples(self) -> int:
+    def num_samples(self) -> int:
         """
         Get total number of samples in the dataset.
 

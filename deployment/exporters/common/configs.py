@@ -34,7 +34,9 @@ class TensorRTProfileConfig:
             return tuple()
         return tuple(int(dim) for dim in shape)
 
+    @property
     def has_complete_profile(self) -> bool:
+        """Whether all three shape profiles (min, opt, max) are configured."""
         return bool(self.min_shape and self.opt_shape and self.max_shape)
 
 

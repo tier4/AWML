@@ -76,7 +76,7 @@ class EvaluationOrchestrator:
 
         num_samples = eval_config.num_samples
         if num_samples == -1:
-            num_samples = self.data_loader.get_num_samples()
+            num_samples = self.data_loader.num_samples
 
         verbose_mode = eval_config.verbose
         all_results: Dict[str, Any] = {}
@@ -119,7 +119,7 @@ class EvaluationOrchestrator:
         Returns:
             List of model specifications
         """
-        backends = self.config.get_evaluation_backends()
+        backends = self.config.evaluation_backends
         models_to_evaluate: List[ModelSpec] = []
 
         for backend_key, backend_cfg in backends.items():

@@ -149,8 +149,9 @@ class BaseMetricsInterface(ABC):
         """
         pass
 
+    @property
     @abstractmethod
-    def get_summary(self) -> Any:
+    def summary(self) -> Any:
         """
         Get a summary of the evaluation including primary metrics.
 
