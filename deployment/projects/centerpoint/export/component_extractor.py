@@ -36,12 +36,17 @@ class CenterPointComponentExtractor(ModelComponentExtractor):
     @property
     def _components_cfg(self) -> Dict[str, Any]:
         """Get unified components configuration."""
-        return dict((self.config.deploy_cfg or {}).get("components", {}) or {})
+        return dict(self.config.deploy_cfg.get("components", {}))
 
     @property
     def _onnx_config(self) -> Dict[str, Any]:
         """Get shared ONNX export settings."""
-        return dict(self.config.onnx_config or {})
+        onnx_config_raw = self.config.onnx_config
+        if onnx_config_raw is None:
+            onnx_config_raw = {}
+        if not isinstance(onnx_config_raw, Mapping):
+            raise TypeError(f"onnx_config must be a mapping, got {type(onnx_config_raw).__name__}")
+        return dict(onnx_config_raw)
 
     def extract_components(self, model: torch.nn.Module, sample_data: Any) -> List[ExportableComponent]:
         input_features, voxel_dict = self._unpack_sample(sample_data)
@@ -68,7 +73,7 @@ class CenterPointComponentExtractor(ModelComponentExtractor):
             )
 
         def _require_fields(comp_key: str, fields: Tuple[str, ...]) -> None:
-            comp = dict(components.get(comp_key, {}) or {})
+            comp = dict(components.get(comp_key, {}))
             missing_fields = [f for f in fields if not comp.get(f)]
             if missing_fields:
                 raise KeyError(

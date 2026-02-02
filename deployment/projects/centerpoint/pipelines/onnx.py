@@ -49,7 +49,11 @@ class CenterPointONNXPipeline(CenterPointDeploymentPipeline):
         super().__init__(pytorch_model, device, backend_type="onnx")
 
         self.onnx_dir = onnx_dir
-        self._components_cfg = components_cfg or {}
+        if components_cfg is None:
+            components_cfg = {}
+        if not isinstance(components_cfg, Mapping):
+            raise TypeError(f"components_cfg must be a mapping, got {type(components_cfg).__name__}")
+        self._components_cfg = components_cfg
         self._load_onnx_models(device)
         logger.info(f"ONNX pipeline initialized with models from: {onnx_dir}")
 
