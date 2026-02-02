@@ -4,13 +4,12 @@ import logging
 import os
 import os.path as osp
 from copy import deepcopy
-from functools import partial
 from typing import Any
 
 import numpy as np
 import onnx
 import torch
-from containers import TrtBevFusionImageBackboneContainer, TrtBevFusionMainContainer
+from containers import TrtBevFusionCameraOnlyContainer, TrtBevFusionImageBackboneContainer, TrtBevFusionMainContainer
 from mmdeploy.apis import build_task_processor
 from mmdeploy.apis.onnx.passes import optimize_onnx
 from mmdeploy.core import RewriterContext, patch_model
@@ -26,7 +25,6 @@ from mmdeploy.utils import (
 )
 from mmdet3d.registry import MODELS
 from mmengine.registry import RUNNERS
-from mmengine.runner import load_checkpoint
 from torch.multiprocessing import set_start_method
 
 
@@ -44,7 +42,7 @@ def parse_args():
         help="module to export",
         required=True,
         default="main_body",
-        choices=["main_body", "image_backbone"],
+        choices=["main_body", "image_backbone", "camera_bev_only_network"],
     )
     args = parser.parse_args()
     return args
@@ -62,20 +60,43 @@ if __name__ == "__main__":
     checkpoint_path = args.checkpoint
     device = args.device
     work_dir = args.work_dir
+    os.makedirs(work_dir, exist_ok=True)
 
     deploy_cfg, model_cfg = load_config(deploy_cfg_path, model_cfg_path)
-
     model_cfg.randomness = dict(seed=0, diff_rank_seed=False, deterministic=False)
     model_cfg.launcher = "none"
 
+    onnx_cfg = get_onnx_config(deploy_cfg)
+    input_names = onnx_cfg["input_names"]
+    output_names = onnx_cfg["output_names"]
+
+    extract_pts_inputs = True if "points" in input_names or "voxels" in input_names else False
     data_preprocessor_cfg = deepcopy(model_cfg.model.data_preprocessor)
 
-    voxelize_cfg = data_preprocessor_cfg.pop("voxelize_cfg")
-    voxelize_cfg.pop("voxelize_reduce")
-    data_preprocessor_cfg["voxel_layer"] = voxelize_cfg
-    data_preprocessor_cfg.voxel = True
+    # TODO(KokSeang): Move out from data_preprocessor
+    voxelize_cfg = deepcopy(model_cfg.get("voxelize_cfg", None))
+
+    if extract_pts_inputs and voxelize_cfg is None:
+        # TODO(KokSeang): Remove this
+        # Default voxelize_layer
+        voxelize_cfg = dict(
+            max_num_points=10,
+            voxel_size=[0.17, 0.17, 0.2],
+            point_cloud_range=[-122.4, -122.4, -3.0, 122.4, 122.4, 5.0],
+            max_voxels=[120000, 160000],
+            deterministic=True,
+        )
+
+    if voxelize_cfg is not None:
+        voxelize_cfg.pop("voxelize_reduce", None)
+        data_preprocessor_cfg["voxel_layer"] = voxelize_cfg
+        data_preprocessor_cfg.voxel = True
 
     data_preprocessor = MODELS.build(data_preprocessor_cfg)
+
+    # load a sample
+    if "work_dir" not in model_cfg:
+        model_cfg["work_dir"] = work_dir
 
     # load a sample
     runner = RUNNERS.build(model_cfg)
@@ -152,6 +173,7 @@ if __name__ == "__main__":
         verbose=verbose,
         keep_initializers_as_inputs=keep_initializers_as_inputs,
     )
+
     _add_or_update(deploy_cfg, "ir_config", ir_config)
     ir = IR.get(get_ir_config(deploy_cfg)["type"])
     if isinstance(backend, Backend):
@@ -173,6 +195,7 @@ if __name__ == "__main__":
     if "onnx_custom_passes" not in context_info:
         onnx_custom_passes = optimize_onnx if optimize else None
         context_info["onnx_custom_passes"] = onnx_custom_passes
+
     with RewriterContext(**context_info), torch.no_grad():
         image_feats = None
 
@@ -184,7 +207,7 @@ if __name__ == "__main__":
             model_inputs = (imgs.to(device=device, dtype=torch.uint8),)
 
             if args.module == "image_backbone":
-                return_value = torch.onnx.export(
+                torch.onnx.export(
                     image_backbone_container,
                     model_inputs,
                     output_path,
@@ -196,10 +219,27 @@ if __name__ == "__main__":
                     keep_initializers_as_inputs=keep_initializers_as_inputs,
                     verbose=verbose,
                 )
-            else:
-                image_feats = image_backbone_container(*model_inputs)
+                logger.info(f"Image backbone exported to {output_path}")
+                exit()
 
-        if args.module == "main_body":
+            image_feats = image_backbone_container(*model_inputs)
+            logger.info(f"Converted Image backbone")
+
+        if args.module == "camera_bev_only_network":
+            main_container = TrtBevFusionCameraOnlyContainer(patched_model)
+            model_inputs = (
+                lidar2img.to(device).float(),
+                img_aug_matrix.to(device).float(),
+                geom_feats.to(device).float(),
+                kept.to(device),
+                ranks.to(device).long(),
+                indices.to(device).long(),
+                image_feats,
+            )
+            if "points" in input_names:
+                model_inputs += (points.to(device).float(),)
+
+        elif args.module == "main_body":
             main_container = TrtBevFusionMainContainer(patched_model)
             model_inputs = (
                 voxels.to(device),
@@ -217,40 +257,41 @@ if __name__ == "__main__":
                     indices.to(device).long(),
                     image_feats,
                 )
-            torch.onnx.export(
-                main_container,
-                model_inputs,
-                output_path.replace(".onnx", "_temp_to_be_fixed.onnx"),
-                export_params=True,
-                input_names=input_names,
-                output_names=output_names,
-                opset_version=opset_version,
-                dynamic_axes=dynamic_axes,
-                keep_initializers_as_inputs=keep_initializers_as_inputs,
-                verbose=verbose,
-            )
 
-            logger.info("Attempting to fix the graph (TopK's K becoming a tensor)")
+        torch.onnx.export(
+            main_container,
+            model_inputs,
+            output_path.replace(".onnx", "_temp_to_be_fixed.onnx"),
+            export_params=True,
+            input_names=input_names,
+            output_names=output_names,
+            opset_version=opset_version,
+            dynamic_axes=dynamic_axes,
+            keep_initializers_as_inputs=keep_initializers_as_inputs,
+            verbose=verbose,
+        )
 
-            import onnx_graphsurgeon as gs
+        logger.info("Attempting to fix the graph (TopK's K becoming a tensor)")
 
-            model = onnx.load(output_path.replace(".onnx", "_temp_to_be_fixed.onnx"))
-            graph = gs.import_onnx(model)
+        import onnx_graphsurgeon as gs
 
-            # Fix TopK
-            topk_nodes = [node for node in graph.nodes if node.op == "TopK"]
-            assert len(topk_nodes) == 1
-            topk = topk_nodes[0]
-            k = model_cfg.num_proposals
-            topk.inputs[1] = gs.Constant("K", values=np.array([k], dtype=np.int64))
-            topk.outputs[0].shape = [1, k]
-            topk.outputs[0].dtype = topk.inputs[0].dtype if topk.inputs[0].dtype else np.float32
-            topk.outputs[1].shape = [1, k]
-            topk.outputs[1].dtype = np.int64
+        model = onnx.load(output_path.replace(".onnx", "_temp_to_be_fixed.onnx"))
+        graph = gs.import_onnx(model)
 
-            graph.cleanup().toposort()
-            onnx.save_model(gs.export_onnx(graph), output_path)
+        # Fix TopK
+        topk_nodes = [node for node in graph.nodes if node.op == "TopK"]
+        assert len(topk_nodes) == 1
+        topk = topk_nodes[0]
+        k = model_cfg.num_proposals
+        topk.inputs[1] = gs.Constant("K", values=np.array([k], dtype=np.int64))
+        topk.outputs[0].shape = [1, k]
+        topk.outputs[0].dtype = topk.inputs[0].dtype if topk.inputs[0].dtype else np.float32
+        topk.outputs[1].shape = [1, k]
+        topk.outputs[1].dtype = np.int64
 
-            logger.info(f"(Fixed) ONNX exported to {output_path}")
+        graph.cleanup().toposort()
+        onnx.save_model(gs.export_onnx(graph), output_path)
 
-        logger.info(f"ONNX exported to {output_path}")
+        logger.info(f"(Fixed) ONNX exported to {output_path}")
+
+    logger.info(f"ONNX exported to {output_path}")

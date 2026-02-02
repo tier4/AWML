@@ -87,3 +87,39 @@ class TrtBevFusionMainContainer(torch.nn.Module):
         )
 
         return bbox_pred, score, outputs["query_labels"][0]
+
+
+class TrtBevFusionCameraOnlyContainer(TrtBevFusionMainContainer):
+    def __init__(self, mod, *args, **kwargs) -> None:
+        super().__init__(mod=mod, *args, **kwargs)
+
+    def forward(
+        self,
+        lidar2img,
+        img_aug_matrix,
+        geom_feats,
+        kept,
+        ranks,
+        indices,
+        image_feats,
+        points=None,
+    ):
+        mod = self.mod
+        lidar_aug_matrix = torch.eye(4).unsqueeze(0).to(image_feats.device)
+        batch_inputs_dict = {
+            "imgs": image_feats.unsqueeze(0),
+            "lidar2img": lidar2img.unsqueeze(0),
+            "cam2img": None,
+            "cam2lidar": None,
+            "img_aug_matrix": img_aug_matrix.unsqueeze(0),
+            "img_aug_matrix_inverse": None,
+            "lidar_aug_matrix": lidar_aug_matrix,
+            "lidar_aug_matrix_inverse": lidar_aug_matrix,
+            "geom_feats": (geom_feats, kept, ranks, indices),
+            "points": [points] if points is not None else None,
+        }
+
+        outputs = mod._forward(batch_inputs_dict, using_image_features=True)
+        bbox_pred, score, label_pred = self.postprocessing(outputs)
+
+        return bbox_pred, score, label_pred
