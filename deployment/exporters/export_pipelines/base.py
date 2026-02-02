@@ -55,7 +55,6 @@ class TensorRTExportPipeline(ABC):
         output_dir: str,
         config: BaseDeploymentConfig,
         device: str,
-        data_loader: BaseDataLoader,
     ) -> Artifact:
         """
         Execute the TensorRT export pipeline and return the produced artifact.
@@ -65,7 +64,6 @@ class TensorRTExportPipeline(ABC):
             output_dir: Directory for output files
             config: Deployment configuration
             device: CUDA device string
-            data_loader: Data loader for samples
 
         Returns:
             Artifact describing the exported TensorRT output
