@@ -130,7 +130,7 @@ class CenterPointTensorRTExportPipeline(TensorRTExportPipeline):
 
     def _get_components_cfg(self, config: BaseDeploymentConfig) -> Mapping[str, Any]:
         """Get unified components configuration from deploy config."""
-        return dict((config.deploy_cfg or {}).get("components", {}) or {})
+        return dict(config.deploy_cfg.get("components", {}))
 
     def _build_tensorrt_exporter_for_component(
         self,
@@ -144,7 +144,7 @@ class CenterPointTensorRTExportPipeline(TensorRTExportPipeline):
         into the `model_inputs` format expected by TensorRTExporter.
         """
         # Get base TensorRT settings from config
-        trt_cfg = config.deploy_cfg.get("tensorrt_config", {}) or {}
+        trt_cfg = config.deploy_cfg.get("tensorrt_config", {})
         precision_policy = trt_cfg.get("precision_policy", "auto")
         max_workspace_size = trt_cfg.get("max_workspace_size", 1 << 30)
 
