@@ -63,7 +63,7 @@ class LatencyStats:
     median_ms: float
 
     @classmethod
-    def empty(cls) -> "LatencyStats":
+    def empty(cls) -> LatencyStats:
         """Return a zero-initialized stats object."""
         return cls(0.0, 0.0, 0.0, 0.0, 0.0)
 
@@ -84,7 +84,7 @@ class LatencyBreakdown:
     stages: Dict[str, LatencyStats]
 
     @classmethod
-    def empty(cls) -> "LatencyBreakdown":
+    def empty(cls) -> LatencyBreakdown:
         """Return an empty breakdown."""
         return cls(stages={})
 
@@ -115,7 +115,7 @@ class InferenceResult:
     breakdown: Optional[Dict[str, float]] = None
 
     @classmethod
-    def empty(cls) -> "InferenceResult":
+    def empty(cls) -> InferenceResult:
         """Return an empty inference result."""
         return cls(output=None, latency_ms=0.0, breakdown={})
 

@@ -190,7 +190,7 @@ class TensorRTConfig:
     max_workspace_size: int = DEFAULT_WORKSPACE_SIZE
 
     @classmethod
-    def from_dict(cls, config_dict: Mapping[str, Any]) -> "TensorRTConfig":
+    def from_dict(cls, config_dict: Mapping[str, Any]) -> TensorRTConfig:
         return cls(
             precision_policy=config_dict.get("precision_policy", PrecisionPolicy.AUTO.value),
             max_workspace_size=config_dict.get("max_workspace_size", DEFAULT_WORKSPACE_SIZE),
