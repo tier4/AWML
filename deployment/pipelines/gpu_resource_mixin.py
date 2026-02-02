@@ -80,7 +80,8 @@ class TensorRTResourceManager:
         self._allocations.append(allocation)
         return allocation
 
-    def get_stream(self) -> Any:
+    @property
+    def stream(self) -> Any:
         """Return a lazily-created CUDA stream shared by the manager."""
         if self._stream is None:
             self._stream = cuda.Stream()

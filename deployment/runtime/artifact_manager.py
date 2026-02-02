@@ -74,13 +74,13 @@ class ArtifactManager:
         """
         artifact = self.artifacts.get(backend.value)
         if artifact:
-            return artifact, artifact.exists()
+            return artifact, artifact.exists
 
         config_path = self._get_config_path(backend)
         if config_path:
             is_dir = osp.isdir(config_path) if osp.exists(config_path) else False
             artifact = Artifact(path=config_path, multi_file=is_dir)
-            return artifact, artifact.exists()
+            return artifact, artifact.exists
 
         return None, False
 

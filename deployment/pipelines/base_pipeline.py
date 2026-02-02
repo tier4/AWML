@@ -7,7 +7,7 @@ Flattened from `deployment/pipelines/common/base_pipeline.py`.
 import logging
 import time
 from abc import ABC, abstractmethod
-from typing import Any, Dict, Optional, Tuple, Union
+from typing import Any, Dict, Mapping, Optional, Tuple, Union
 
 import torch
 
@@ -44,7 +44,7 @@ class BaseDeploymentPipeline(ABC):
         logger.info(f"Initialized {self.__class__.__name__} on device: {self.device}")
 
     @abstractmethod
-    def preprocess(self, input_data: Any, **kwargs) -> Any:
+    def preprocess(self, input_data: Any) -> Any:
         """Convert raw input into model-ready tensors/arrays.
 
         Implementations may optionally return a tuple `(model_input, metadata_dict)`
@@ -63,12 +63,12 @@ class BaseDeploymentPipeline(ABC):
         raise NotImplementedError
 
     @abstractmethod
-    def postprocess(self, model_output: Any, metadata: Dict = None) -> Any:
+    def postprocess(self, model_output: Any, metadata: Optional[Mapping[str, Any]] = None) -> Any:
         """Convert raw model outputs into final predictions/results."""
         raise NotImplementedError
 
     def infer(
-        self, input_data: Any, metadata: Optional[Dict] = None, return_raw_outputs: bool = False, **kwargs
+        self, input_data: Any, metadata: Optional[Mapping[str, Any]] = None, return_raw_outputs: bool = False
     ) -> InferenceResult:
         """Run end-to-end inference with latency breakdown.
 
@@ -81,7 +81,6 @@ class BaseDeploymentPipeline(ABC):
             input_data: Raw input sample(s) in a project-defined format.
             metadata: Optional auxiliary context merged with preprocess metadata.
             return_raw_outputs: If True, skip `postprocess` and return raw model output.
-            **kwargs: Forwarded to `preprocess` for project-specific options.
 
         Returns:
             InferenceResult with `output`, total latency, and per-stage breakdown.
@@ -94,7 +93,7 @@ class BaseDeploymentPipeline(ABC):
         try:
             start_time = time.perf_counter()
 
-            preprocessed = self.preprocess(input_data, **kwargs)
+            preprocessed = self.preprocess(input_data)
 
             preprocess_metadata = {}
             model_input = preprocessed
@@ -105,8 +104,10 @@ class BaseDeploymentPipeline(ABC):
             latency_breakdown["preprocessing_ms"] = (preprocess_time - start_time) * 1000
 
             merged_metadata = {}
-            merged_metadata.update(metadata or {})
-            merged_metadata.update(preprocess_metadata)
+            if metadata is not None:
+                merged_metadata.update(metadata)
+            if preprocess_metadata is not None:
+                merged_metadata.update(preprocess_metadata)
 
             model_start = time.perf_counter()
             model_result = self.run_model(model_input)

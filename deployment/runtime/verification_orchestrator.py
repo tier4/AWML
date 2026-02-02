@@ -84,7 +84,12 @@ class VerificationOrchestrator:
 
         num_verify_samples = verification_cfg.num_verify_samples
         tolerance = verification_cfg.tolerance
-        devices_map = dict(verification_cfg.devices or {})
+        devices_raw = verification_cfg.devices
+        if devices_raw is None:
+            devices_raw = {}
+        if not isinstance(devices_raw, Mapping):
+            raise TypeError(f"verification.devices must be a mapping, got {type(devices_raw).__name__}")
+        devices_map = dict(devices_raw)
         devices_map.setdefault("cpu", self.config.devices.cpu or "cpu")
         if self.config.devices.cuda:
             devices_map.setdefault("cuda", self.config.devices.cuda)
