@@ -166,8 +166,7 @@ class CenterPointEvaluator(BaseEvaluator):
     def print_results(self, results: EvalResultDict) -> None:
         """Print evaluation results including metrics, latency, and breakdown."""
         # Print metrics report
-        interface = self.metrics_interface  # type: ignore[assignment]
-        metrics_report = interface.format_last_report()
+        metrics_report = self.metrics_interface.format_metrics_report()
         if not metrics_report:
             raise ValueError(
                 "Metrics report is empty. Ensure that frames have been added and metrics have been computed."
