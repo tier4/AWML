@@ -160,31 +160,45 @@ class CenterPointEvaluator(BaseEvaluator):
         return result
 
     def print_results(self, results: EvalResultDict) -> None:
+        """Print evaluation results including metrics, latency, and breakdown."""
+        # Print metrics report
         interface = self.metrics_interface  # type: ignore[assignment]
-        text = interface.format_last_report()
-        if text:
-            print(text)
-            print(f"\nTotal Samples: {results.get('num_samples', 0)}")
-            return
+        metrics_report = interface.format_last_report()
+        if not metrics_report:
+            raise ValueError(
+                "Metrics report is empty. Ensure that frames have been added and metrics have been computed."
+            )
+        print(metrics_report)
 
-        if "latency" in results:
-            latency = results["latency"].to_dict()
-            print("\nLatency Statistics:")
-            print(f"  Mean:   {latency['mean_ms']:.2f} ms")
-            print(f"  Std:    {latency['std_ms']:.2f} ms")
-            print(f"  Min:    {latency['min_ms']:.2f} ms")
-            print(f"  Max:    {latency['max_ms']:.2f} ms")
-            print(f"  Median: {latency['median_ms']:.2f} ms")
+        # Print latency statistics
+        if "latency" not in results:
+            raise ValueError(
+                "Latency statistics not found in results. Ensure that evaluation has been run with latency tracking."
+            )
+        latency_stats = results["latency"]
+        latency_dict = latency_stats.to_dict()
+        print("\nLatency Statistics:")
+        print(f"  Mean:   {latency_dict['mean_ms']:.2f} ms")
+        print(f"  Std:    {latency_dict['std_ms']:.2f} ms")
+        print(f"  Min:    {latency_dict['min_ms']:.2f} ms")
+        print(f"  Max:    {latency_dict['max_ms']:.2f} ms")
+        print(f"  Median: {latency_dict['median_ms']:.2f} ms")
 
-            if "latency_breakdown" in latency:
-                breakdown = latency["latency_breakdown"]
+        # Print stage-wise latency breakdown
+        if "latency_breakdown" in results:
+            breakdown = results["latency_breakdown"]
+            breakdown_dict = breakdown.to_dict() if hasattr(breakdown, "to_dict") else breakdown
+
+            if breakdown_dict:
                 print("\nStage-wise Latency Breakdown:")
-                model_substages = {"voxel_encoder_ms", "middle_encoder_ms", "backbone_head_ms"}
-                for stage, stats in breakdown.items():
+                top_level_stages = {"preprocessing_ms", "model_ms", "postprocessing_ms"}
+                for stage, stats in breakdown_dict.items():
+                    stats_dict = stats.to_dict() if hasattr(stats, "to_dict") else stats
                     stage_name = stage.replace("_ms", "").replace("_", " ").title()
-                    if stage in model_substages:
-                        print(f"    {stage_name:16s}: {stats['mean_ms']:.2f} ± {stats['std_ms']:.2f} ms")
+
+                    if stage in top_level_stages:
+                        print(f"  {stage_name:18s}: {stats_dict['mean_ms']:.2f} ± {stats_dict['std_ms']:.2f} ms")
                     else:
-                        print(f"  {stage_name:18s}: {stats['mean_ms']:.2f} ± {stats['std_ms']:.2f} ms")
+                        print(f"    {stage_name:16s}: {stats_dict['mean_ms']:.2f} ± {stats_dict['std_ms']:.2f} ms")
 
         print(f"\nTotal Samples: {results.get('num_samples', 0)}")

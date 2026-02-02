@@ -6,7 +6,8 @@ from __future__ import annotations
 
 import logging
 import os.path as osp
-from typing import Any, List, Mapping, Tuple
+import time
+from typing import Any, Dict, List, Mapping, Tuple
 
 import numpy as np
 import pycuda.autoinit  # noqa: F401
@@ -65,6 +66,12 @@ class CenterPointTensorRTPipeline(GPUResourceMixin, CenterPointDeploymentPipelin
         self._contexts: dict = {}
         self._logger = trt.Logger(trt.Logger.WARNING)
         self._cleanup_called = False
+
+        # Create CUDA events for GPU timing measurements
+        self._backbone_start_event = cuda.Event()
+        self._backbone_end_event = cuda.Event()
+        self._voxel_encoder_start_event = cuda.Event()
+        self._voxel_encoder_end_event = cuda.Event()
 
         self._load_tensorrt_engines()
         logger.info(f"TensorRT pipeline initialized with engines from: {tensorrt_dir}")
@@ -183,8 +190,15 @@ class CenterPointTensorRTPipeline(GPUResourceMixin, CenterPointDeploymentPipelin
             context.set_tensor_address(input_name, int(d_input))
             context.set_tensor_address(output_name, int(d_output))
 
+            # Memory transfer: CPU -> GPU (not timed)
             cuda.memcpy_htod_async(d_input, input_array, stream)
+
+            # Record start event and execute inference (pure GPU time)
+            self._voxel_encoder_start_event.record(stream)
             context.execute_async_v3(stream_handle=stream.handle)
+            self._voxel_encoder_end_event.record(stream)
+
+            # Memory transfer: GPU -> CPU (not timed)
             cuda.memcpy_dtoh_async(output_array, d_output, stream)
             manager.synchronize()
 
@@ -232,11 +246,18 @@ class CenterPointTensorRTPipeline(GPUResourceMixin, CenterPointDeploymentPipelin
             for output_name in output_names:
                 context.set_tensor_address(output_name, int(d_outputs[output_name]))
 
+            # Memory transfer: CPU -> GPU (not timed)
             cuda.memcpy_htod_async(d_input, input_array, stream)
-            context.execute_async_v3(stream_handle=stream.handle)
 
+            # Record start event and execute inference (pure GPU time)
+            self._backbone_start_event.record(stream)
+            context.execute_async_v3(stream_handle=stream.handle)
+            self._backbone_end_event.record(stream)
+
+            # Memory transfer: GPU -> CPU (not timed)
             for output_name in output_names:
                 cuda.memcpy_dtoh_async(output_arrays[output_name], d_outputs[output_name], stream)
+
             manager.synchronize()
 
         head_outputs = [torch.from_numpy(output_arrays[name]).to(self.device) for name in output_names]
@@ -246,8 +267,76 @@ class CenterPointTensorRTPipeline(GPUResourceMixin, CenterPointDeploymentPipelin
 
         return head_outputs
 
+    def run_model(
+        self,
+        preprocessed_input: Dict[str, torch.Tensor],
+    ) -> Tuple[List[torch.Tensor], Dict[str, float]]:
+        """Run complete multi-stage model inference with GPU timing using CUDA events.
+
+        This override uses CUDA events to measure pure GPU inference time for
+        TensorRT operations, matching the C++ implementation's timing methodology.
+
+        Args:
+            preprocessed_input: Dict from preprocess() containing:
+                - 'input_features': Input features for voxel encoder [N_voxels, max_points, 11]
+                - 'coors': Voxel coordinates [N_voxels, 4]
+                - 'voxels': Raw voxel data
+                - 'num_points': Number of points per voxel
+
+        Returns:
+            Tuple of (head_outputs, stage_latencies):
+            - head_outputs: List of head outputs [heatmap, reg, height, dim, rot, vel]
+            - stage_latencies: Dict mapping stage names to latency in ms
+                - 'voxel_encoder_ms': Pure GPU inference time (CUDA events)
+                - 'middle_encoder_ms': Wall-clock time (PyTorch)
+                - 'backbone_head_ms': Pure GPU inference time (CUDA events)
+        """
+        # Use local variable for thread safety
+        stage_latencies: Dict[str, float] = {}
+
+        # Stage 1: Voxel Encoder
+        voxel_features = self.run_voxel_encoder(preprocessed_input["input_features"])
+        self._voxel_encoder_end_event.synchronize()
+        voxel_encoder_gpu_time_ms = self._voxel_encoder_end_event.time_since(self._voxel_encoder_start_event)
+        stage_latencies["voxel_encoder_ms"] = voxel_encoder_gpu_time_ms
+
+        # Stage 2: Middle Encoder
+        start = time.perf_counter()
+        spatial_features = self.process_middle_encoder(voxel_features, preprocessed_input["coors"])
+        stage_latencies["middle_encoder_ms"] = (time.perf_counter() - start) * 1000
+
+        # Stage 3: Backbone + Head
+        head_outputs = self.run_backbone_head(spatial_features)
+        self._backbone_end_event.synchronize()
+        backbone_head_gpu_time_ms = self._backbone_end_event.time_since(self._backbone_start_event)
+        stage_latencies["backbone_head_ms"] = backbone_head_gpu_time_ms
+
+        return head_outputs, stage_latencies
+
     def _release_gpu_resources(self) -> None:
-        """Release TensorRT resources (engines and contexts)."""
+        """Release TensorRT resources (engines and contexts) and CUDA events."""
+        # Destroy CUDA events
+        if hasattr(self, "_backbone_start_event"):
+            try:
+                del self._backbone_start_event
+            except Exception:
+                pass
+        if hasattr(self, "_backbone_end_event"):
+            try:
+                del self._backbone_end_event
+            except Exception:
+                pass
+        if hasattr(self, "_voxel_encoder_start_event"):
+            try:
+                del self._voxel_encoder_start_event
+            except Exception:
+                pass
+        if hasattr(self, "_voxel_encoder_end_event"):
+            try:
+                del self._voxel_encoder_end_event
+            except Exception:
+                pass
+
         release_tensorrt_resources(
             engines=getattr(self, "_engines", None),
             contexts=getattr(self, "_contexts", None),

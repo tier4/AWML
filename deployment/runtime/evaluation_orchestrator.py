@@ -204,6 +204,12 @@ class EvaluationOrchestrator:
                         for mode, map_value in mAP_by_mode.items():
                             self.logger.info(f"  mAP ({mode}): {map_value:.4f}")
 
+                if "mAPH_by_mode" in results:
+                    mAPH_by_mode = results.get("mAPH_by_mode", {})
+                    if mAPH_by_mode:
+                        for mode, maph_value in mAPH_by_mode.items():
+                            self.logger.info(f"  mAPH ({mode}): {maph_value:.4f}")
+
                 if "latency" in results:
                     latency = results["latency"]
                     self.logger.info(f"  Latency: {latency.mean_ms:.2f} ± {latency.std_ms:.2f} ms")
