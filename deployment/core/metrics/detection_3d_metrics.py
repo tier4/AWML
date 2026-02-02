@@ -525,7 +525,7 @@ class Detection3DMetricsInterface(BaseMetricsInterface):
                 eval_metrics = self._process_metrics_score(metrics_score, prefix=eval_name)
                 all_metrics.update(eval_metrics)
 
-            # Cache results for reuse by format_last_report() and get_summary()
+            # Cache results for reuse by format_metrics_report() and summary property
             self._last_metrics_by_eval_name = scene_results
 
             return all_metrics
@@ -537,8 +537,8 @@ class Detection3DMetricsInterface(BaseMetricsInterface):
             traceback.print_exc()
             return {}
 
-    def format_last_report(self) -> str:
-        """Format the last metrics report using perception_eval's own __str__ implementation.
+    def format_metrics_report(self) -> str:
+        """Format the metrics report as a human-readable string.
 
         For multi-evaluator mode, returns reports for all evaluators with distance range labels.
         Uses cached results from compute_metrics() if available to avoid recomputation.
@@ -630,30 +630,6 @@ class Detection3DMetricsInterface(BaseMetricsInterface):
         # Remove duplicates while preserving order
         return list(dict.fromkeys(modes))
 
-    def get_thresholds_for_mode(
-        self, mode: str, metrics: Optional[Mapping[str, float]] = None
-    ) -> Optional[List[float]]:
-        """Return thresholds for a matching mode from config or inferred from metric keys."""
-        cfg = self._evaluation_cfg_dict
-        threshold_key = f"{mode}_thresholds"
-        thresholds = cfg.get(threshold_key)
-        if thresholds is not None:
-            return [float(x) for x in thresholds]
-
-        if not metrics:
-            return None
-
-        pattern = re.compile(rf"_AP(H)?_{re.escape(mode)}_([-+]?\d*\.?\d+(?:[eE][-+]?\d+)?)$")
-        found: List[float] = []
-        for k in metrics.keys():
-            m = pattern.search(k)
-            if m:
-                try:
-                    found.append(float(m.group(2)))
-                except Exception:
-                    pass
-        return sorted(set(found)) if found else None
-
     @property
     def summary(self) -> DetectionSummary:
         """Get a summary of the evaluation including mAP and per-class metrics for all matching modes.
@@ -676,6 +652,15 @@ class Detection3DMetricsInterface(BaseMetricsInterface):
         last_evaluator_name = f"bev_center_{last_min_dist}-{last_max_dist}"
 
         last_metrics_score = self._last_metrics_by_eval_name.get(last_evaluator_name)
+        if last_metrics_score is None:
+            return DetectionSummary(
+                mAP_by_mode={},
+                mAPH_by_mode={},
+                per_class_ap_by_mode={},
+                num_frames=self._frame_count,
+                detailed_metrics=metrics,
+            )
+
         last_bucket_metrics = self._process_metrics_score(last_metrics_score, prefix=None)
 
         modes = self._extract_matching_modes(last_bucket_metrics)

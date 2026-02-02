@@ -63,12 +63,12 @@ class BaseDeploymentPipeline(ABC):
         raise NotImplementedError
 
     @abstractmethod
-    def postprocess(self, model_output: Any, metadata: Dict = None) -> Any:
+    def postprocess(self, model_output: Any, metadata: Optional[Mapping[str, Any]] = None) -> Any:
         """Convert raw model outputs into final predictions/results."""
         raise NotImplementedError
 
     def infer(
-        self, input_data: Any, metadata: Optional[Dict] = None, return_raw_outputs: bool = False
+        self, input_data: Any, metadata: Optional[Mapping[str, Any]] = None, return_raw_outputs: bool = False
     ) -> InferenceResult:
         """Run end-to-end inference with latency breakdown.
 
