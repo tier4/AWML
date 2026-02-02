@@ -41,6 +41,24 @@
 docker run -it --rm --gpus all --shm-size=64g --name awml -p 6006:6006 -v $PWD/:/workspace -v $PWD/data:/workspace/data autoware-ml
 ```
 
+For ONNX and TensorRT evaluation
+
+- If you need to use deployment, ONNX runtime, or TensorRT evaluation, please build the docker image first:
+
+```sh
+# Build the base autoware-ml image (if not already built)
+DOCKER_BUILDKIT=1 docker build -t autoware-ml .
+
+# Build the centerpoint-deployment image
+docker build -t centerpoint-deployment:latest -f projects/CenterPoint/Dockerfile .
+```
+
+- Run the docker container:
+
+```sh
+docker run -it --rm --gpus all --shm-size=64g --name awml_deployment -p 6006:6006 -v $PWD/:/workspace -v $PWD/data:/workspace/data centerpoint-deployment:latest
+```
+
 ### 2. Train
 #### 2.1 Environment set up
 
@@ -110,12 +128,21 @@ where `frame-range` represents the range of frames to visualize.
 
 ### 5. Deploy
 
-- Make an onnx file for a CenterPoint model.
+- Run the deployment pipeline:
+  - Export ONNX/TensorRT artifacts.
+  - Verify the exported artifacts.
+  - (Optionally) run evaluation.
+  - Update `deployment/projects/centerpoint/config/deploy_config.py` so that the following entries point to your experiment:
+    - `checkpoint_path` (e.g., `checkpoint_path="work_dirs/centerpoint/t4dataset/second_secfpn_2xb8_121m_base/epoch_50.pth"`).
+    - `runtime_io.info_file`.
+    - `export.work_dir`.
 
 ```sh
-# Deploy for t4dataset
-DIR="work_dirs/centerpoint/t4dataset/second_secfpn_2xb8_121m_base/" &&
-python projects/CenterPoint/scripts/deploy.py projects/CenterPoint/configs/t4dataset/second_secfpn_2xb8_121m_base.py $DIR/epoch_50.pth --replace_onnx_models --device gpu --rot_y_axis_reference
+# Deploy for t4dataset (export + verification + evaluation)
+python -m deployment.cli.main centerpoint \
+    deployment/projects/centerpoint/config/deploy_config.py \
+    projects/CenterPoint/configs/t4dataset/second_secfpn_2xb8_121m_base.py \
+    --rot-y-axis-reference
 ```
 
 where `rot_y_axis_reference` can be removed if we would like to use the original counterclockwise x-axis rotation system.
