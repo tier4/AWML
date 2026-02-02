@@ -230,8 +230,49 @@ class CenterPointTensorRTPipeline(GPUResourceMixin, CenterPointDeploymentPipelin
 
         input_array = self.to_numpy(spatial_features, dtype=np.float32)
 
-        input_name, output_names = self._get_io_names(engine, single_output=False)
+        input_name, trt_output_names = self._get_io_names(engine, single_output=False)
         context.set_input_shape(input_name, input_array.shape)
+
+        # Get expected output order from components_cfg
+        backbone_head_cfg = self._components_cfg.get("backbone_head", {})
+        io_cfg = backbone_head_cfg.get("io", {})
+        outputs = io_cfg.get("outputs", [])
+
+        if not outputs:
+            raise ValueError(
+                "Output names must be provided via components_cfg.backbone_head.io.outputs. "
+                "No fallback values are allowed in deployment framework."
+            )
+
+        expected_output_names = [out.get("name") for out in outputs if out.get("name")]
+        if not expected_output_names:
+            raise ValueError(
+                "Output names must be provided via components_cfg.backbone_head.io.outputs. "
+                "Each output must have a 'name' field."
+            )
+
+        # Validate outputs: check for missing or extra outputs
+        trt_output_set = set(trt_output_names)
+        expected_output_set = set(expected_output_names)
+
+        missing_outputs = expected_output_set - trt_output_set
+        if missing_outputs:
+            raise ValueError(
+                f"Missing outputs in TensorRT engine: {sorted(missing_outputs)}. "
+                f"Expected: {sorted(expected_output_set)}, Got: {sorted(trt_output_set)}"
+            )
+
+        extra_outputs = trt_output_set - expected_output_set
+        if extra_outputs:
+            raise ValueError(
+                f"Extra outputs in TensorRT engine: {sorted(extra_outputs)}. "
+                f"Expected: {sorted(expected_output_set)}, Got: {sorted(trt_output_set)}"
+            )
+
+        # Use expected order to sort outputs (critical for CenterPoint head ordering)
+        # After validation, we know expected_output_names == trt_output_names (as sets)
+        # So we can use expected_output_names directly to maintain the correct order
+        output_names = expected_output_names
 
         output_arrays = {}
         for output_name in output_names:
