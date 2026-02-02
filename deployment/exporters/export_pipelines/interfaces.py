@@ -7,7 +7,7 @@ model-specific knowledge to generic deployment export pipelines.
 
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
-from typing import Any, List, Optional, Tuple
+from typing import Any, List, Optional
 
 import torch
 
@@ -63,4 +63,29 @@ class ModelComponentExtractor(ABC):
         Returns:
             List of ExportableComponent instances ready for ONNX export
         """
-        pass
+        ...
+
+    @abstractmethod
+    def extract_features(
+        self,
+        model: torch.nn.Module,
+        data_loader: Any,
+        sample_idx: int,
+    ) -> Any:
+        """
+        Extract model-specific intermediate features required for multi-component export.
+
+        Some models require running a portion of the network to generate the input
+        tensor(s) for later components. This method encapsulates that model-specific
+        logic and returns a standardized tuple used by `extract_components`.
+
+        Args:
+            model: PyTorch model used for feature extraction
+            data_loader: Data loader used to access the sample
+            sample_idx: Sample index used for tracing/feature extraction
+
+        Returns:
+            A tuple of (input_features, voxel_dict) or other model-specific payload
+            that `extract_components` expects.
+        """
+        ...

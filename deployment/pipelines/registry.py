@@ -73,7 +73,7 @@ class PipelineRegistry:
         model_spec: ModelSpec,
         pytorch_model: Any,
         device: Optional[str] = None,
-        **kwargs,
+        components_cfg: Optional[Any] = None,
     ) -> BaseDeploymentPipeline:
         """Create a project-specific pipeline instance using the registered factory.
 
@@ -85,7 +85,7 @@ class PipelineRegistry:
             model_spec=model_spec,
             pytorch_model=pytorch_model,
             device=device,
-            **kwargs,
+            components_cfg=components_cfg,
         )
 
     def list_projects(self) -> list:
