@@ -646,10 +646,29 @@ class Detection3DMetricsInterface(BaseMetricsInterface):
         return sorted(set(found)) if found else None
 
     def get_summary(self) -> DetectionSummary:
-        """Get a summary of the evaluation including mAP and per-class metrics for all matching modes."""
+        """Get a summary of the evaluation including mAP and per-class metrics for all matching modes.
+
+        Only uses metrics from the last distance bucket.
+        """
         metrics = self.compute_metrics()
 
-        modes = self._extract_matching_modes(metrics)
+        if not self._bev_distance_ranges:
+            return DetectionSummary(
+                mAP_by_mode={},
+                mAPH_by_mode={},
+                per_class_ap_by_mode={},
+                num_frames=self._frame_count,
+                detailed_metrics=metrics,
+            )
+
+        # Use the last distance bucket (should be the full range)
+        last_min_dist, last_max_dist = self._bev_distance_ranges[-1]
+        last_evaluator_name = f"bev_center_{last_min_dist}-{last_max_dist}"
+
+        last_metrics_score = self._last_metrics_by_eval_name.get(last_evaluator_name)
+        last_bucket_metrics = self._process_metrics_score(last_metrics_score, prefix=None)
+
+        modes = self._extract_matching_modes(last_bucket_metrics)
         if not modes:
             return DetectionSummary(
                 mAP_by_mode={},
@@ -659,47 +678,32 @@ class Detection3DMetricsInterface(BaseMetricsInterface):
                 detailed_metrics=metrics,
             )
 
-        # Collect mAP/mAPH and per-class AP for each matching mode
-        # Handle both prefixed (multi-evaluator) and non-prefixed metrics
         mAP_by_mode: Dict[str, float] = {}
         mAPH_by_mode: Dict[str, float] = {}
         per_class_ap_by_mode: Dict[str, Dict[str, float]] = {}
 
         for mode in modes:
-            map_values = []
-            maph_values = []
+            # Get mAP and mAPH directly from last bucket metrics
+            map_key = f"mAP_{mode}"
+            maph_key = f"mAPH_{mode}"
 
-            # Use regex to match both prefixed and non-prefixed formats
-            map_pattern = re.compile(rf"(?:^|_)mAP_{re.escape(mode)}$")
-            maph_pattern = re.compile(rf"(?:^|_)mAPH_{re.escape(mode)}$")
+            mAP_by_mode[mode] = last_bucket_metrics.get(map_key, 0.0)
+            mAPH_by_mode[mode] = last_bucket_metrics.get(maph_key, 0.0)
 
-            for key, value in metrics.items():
-                if map_pattern.search(key):
-                    map_values.append(float(value))
-                if maph_pattern.search(key):
-                    maph_values.append(float(value))
-
-            if map_values:
-                mAP_by_mode[mode] = float(np.mean(map_values))
-            else:
-                mAP_by_mode[mode] = 0.0
-
-            if maph_values:
-                mAPH_by_mode[mode] = float(np.mean(maph_values))
-
-            # Collect AP values per class for this mode
-            # Parse class name from key format: "{prefix}_<label>_AP_{mode}_{threshold}"
-            # Find the label token right before "_AP_{mode}_"
+            # Collect AP values per class for this mode from the last bucket
             per_class_ap_values: Dict[str, List[float]] = {}
             ap_key_separator = f"_AP_{mode}_"
-            for key, value in metrics.items():
+
+            for key, value in last_bucket_metrics.items():
                 idx = key.find(ap_key_separator)
                 if idx < 0:
                     continue
+
                 # Label is the token right before "_AP_{mode}_"
                 prefix_part = key[:idx]
-                class_name = prefix_part.split("_")[-1]
-                per_class_ap_values.setdefault(class_name, []).append(float(value))
+                class_name = prefix_part.split("_")[-1] if prefix_part else ""
+                if class_name:
+                    per_class_ap_values.setdefault(class_name, []).append(float(value))
 
             if per_class_ap_values:
                 per_class_ap_by_mode[mode] = {k: float(np.mean(v)) for k, v in per_class_ap_values.items() if v}
