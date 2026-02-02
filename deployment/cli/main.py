@@ -71,6 +71,7 @@ def build_parser() -> argparse.ArgumentParser:
         adapter.add_args(sub)
         sub.set_defaults(_adapter_name=project_name)
 
+
     if not project_registry.list_projects():
         details = "\n".join(failed_projects) if failed_projects else "(no project packages discovered)"
         raise RuntimeError(
