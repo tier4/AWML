@@ -145,8 +145,47 @@ class CenterPointONNXPipeline(CenterPointDeploymentPipeline):
         input_array = self.to_numpy(spatial_features, dtype=np.float32)
 
         input_name = self.backbone_head_session.get_inputs()[0].name
-        output_names = [output.name for output in self.backbone_head_session.get_outputs()]
+        onnx_output_names = [output.name for output in self.backbone_head_session.get_outputs()]
 
+        # Get expected output order from components_cfg
+        backbone_head_cfg = self._components_cfg.get("backbone_head", {})
+        io_cfg = backbone_head_cfg.get("io", {})
+        outputs = io_cfg.get("outputs", [])
+
+        if not outputs:
+            raise ValueError(
+                "Output names must be provided via components_cfg.backbone_head.io.outputs. "
+                "No fallback values are allowed in deployment framework."
+            )
+
+        expected_output_names = [out.get("name") for out in outputs if out.get("name")]
+        if not expected_output_names:
+            raise ValueError(
+                "Output names must be provided via components_cfg.backbone_head.io.outputs. "
+                "Each output must have a 'name' field."
+            )
+
+        # Validate outputs: check for missing or extra outputs
+        onnx_output_set = set(onnx_output_names)
+        expected_output_set = set(expected_output_names)
+
+        missing_outputs = expected_output_set - onnx_output_set
+        if missing_outputs:
+            raise ValueError(
+                f"Missing outputs in ONNX model: {sorted(missing_outputs)}. "
+                f"Expected: {sorted(expected_output_set)}, Got: {sorted(onnx_output_set)}"
+            )
+
+        extra_outputs = onnx_output_set - expected_output_set
+        if extra_outputs:
+            raise ValueError(
+                f"Extra outputs in ONNX model: {sorted(extra_outputs)}. "
+                f"Expected: {sorted(expected_output_set)}, Got: {sorted(onnx_output_set)}"
+            )
+
+        output_names = expected_output_names
+
+        # Run inference with ordered output names (ONNX Runtime returns outputs in the same order)
         outputs = self.backbone_head_session.run(output_names, {input_name: input_array})
         head_outputs = [torch.from_numpy(out).to(self.device) for out in outputs]
 
