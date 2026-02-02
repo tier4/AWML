@@ -93,6 +93,19 @@ class LatencyBreakdown:
         return {stage: stats.to_dict() for stage, stats in self.stages.items()}
 
 
+@dataclass
+class InferenceInput:
+    """Prepared input for pipeline inference.
+
+    Attributes:
+        data: The actual input data (e.g., points tensor, image tensor).
+        metadata: Sample metadata forwarded to postprocess().
+    """
+
+    data: Any
+    metadata: Dict[str, Any] = field(default_factory=dict)
+
+
 @dataclass(frozen=True)
 class InferenceInput:
     """Prepared input for pipeline inference.
