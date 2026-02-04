@@ -67,15 +67,24 @@ class TesterBase:
         if os.path.isfile(self.cfg.weight):
             self.logger.info(f"Loading weight at: {self.cfg.weight}")
             checkpoint = torch.load(self.cfg.weight, weights_only=False)
+            model_state_dict = model.state_dict()
             weight = OrderedDict()
             for key, value in checkpoint["state_dict"].items():
-                if key.startswith("module."):
-                    if comm.get_world_size() == 1:
-                        key = key[7:]  # module.xxx.xxx -> xxx.xxx
-                else:
-                    if comm.get_world_size() > 1:
-                        key = "module." + key  # xxx.xxx -> module.xxx.xxx
-                weight[key] = value
+                # Skip student keys (from knowledge distillation)
+                if "student" in key:
+                    continue
+                # Strip teacher prefix (use teacher weights for distillation checkpoints)
+                key = key.replace("teacher.", "", 1)
+                # Normalize: remove any existing module prefix
+                key = key.replace("module.", "", 1)
+                # Architecture compatibility: enc.xxx -> backbone.enc.xxx
+                if key.startswith("enc."):
+                    key = "backbone." + key
+                # Add module prefix for multi-GPU (DDP)
+                if comm.get_world_size() > 1:
+                    key = "module." + key
+                if key in model_state_dict:
+                    weight[key] = value
             model.load_state_dict(weight, strict=True)
             self.logger.info("=> Loaded weight '{}' (epoch {})".format(self.cfg.weight, checkpoint["epoch"]))
         else:

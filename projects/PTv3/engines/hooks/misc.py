@@ -200,19 +200,27 @@ class CheckpointLoader(HookBase):
                 map_location=lambda storage, loc: storage.cuda(),
                 weights_only=False,
             )
+            model_state_dict = self.trainer.model.state_dict()
             self.trainer.logger.info(
                 f"Loading layer weights with keyword: {self.keywords}, " f"replace keyword with: {self.replacement}"
             )
             weight = OrderedDict()
             for key, value in checkpoint["state_dict"].items():
-                if not key.startswith("module."):
-                    key = "module." + key  # xxx.xxx -> module.xxx.xxx
-                # Now all keys contain "module." no matter DDP or not.
-                if self.keywords in key:
-                    key = key.replace(self.keywords, self.replacement)
-                if comm.get_world_size() == 1:
-                    key = key[7:]  # module.xxx.xxx -> xxx.xxx
-                weight[key] = value
+                # Skip student keys (from knowledge distillation)
+                if "student" in key:
+                    continue
+                # Strip teacher prefix (use teacher weights for distillation checkpoints)
+                key = key.replace("teacher.", "", 1)
+                # Normalize: remove any existing module prefix
+                key = key.replace("module.", "", 1)
+                # Architecture compatibility: enc.xxx -> backbone.enc.xxx
+                if key.startswith("enc."):
+                    key = "backbone." + key
+                # Add module prefix for multi-GPU (DDP)
+                if comm.get_world_size() > 1:
+                    key = "module." + key
+                if key in model_state_dict:
+                    weight[key] = value
             load_state_info = self.trainer.model.load_state_dict(weight, strict=self.strict)
             self.trainer.logger.info(f"Missing keys: {load_state_info[0]}")
             if self.trainer.cfg.resume:
