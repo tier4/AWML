@@ -16,7 +16,7 @@ NUM_WORKERS = 4
 ITERATIONS = 150000
 VAL_INTERVAL = 1500
 
-# LiDAR settings (NuScenes)
+# LiDAR settings (Velodyne HDL-32E)
 LIDAR_H = 32
 RANGE_W = 1920
 FRUSTUM_W = 480  # 1920 / 4
