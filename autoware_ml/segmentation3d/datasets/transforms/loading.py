@@ -22,6 +22,15 @@ class LoadPointsWithIdentifierFromFile(BaseTransform):
 
         - lidar_path (str)
 
+    Optional Keys (from dataset):
+
+    - lidar_sources_to_load (List[str] with single element, or None):
+        Which single LiDAR source to load. Set via ``lidar_sources`` parameter
+        in T4SegDataset. When T4SegDataset has lidar_sources configured, each
+        sample contains exactly one source - the dataset expands frames into
+        separate samples per source.
+        If None, loads all points without source filtering (backward compatible).
+
     Added Keys:
 
     - points (np.float32)
@@ -50,7 +59,6 @@ class LoadPointsWithIdentifierFromFile(BaseTransform):
     def __init__(
         self,
         coord_type: str,
-        lidar_sources: List[str],
         load_dim: int = 6,
         use_dim: Union[int, List[int]] = [0, 1, 2],
         shift_height: bool = False,
@@ -61,11 +69,6 @@ class LoadPointsWithIdentifierFromFile(BaseTransform):
     ) -> None:
         self.shift_height = shift_height
         self.use_color = use_color
-        if not isinstance(lidar_sources, list):
-            raise TypeError("lidar_sources must be a list of channel names.")
-        if len(lidar_sources) == 0:
-            raise ValueError("lidar_sources must not be empty.")
-        self.lidar_sources = lidar_sources
         if isinstance(use_dim, int):
             use_dim = list(range(use_dim))
         assert max(use_dim) < load_dim, f"Expect all used dimensions < {load_dim}, got {use_dim}"
@@ -115,36 +118,58 @@ class LoadPointsWithIdentifierFromFile(BaseTransform):
         points = self._load_points(pts_file_path)
         points = points.reshape(-1, self.load_dim)
         points = points[:, self.use_dim]
-        if "lidar_sources_info" not in results or "lidar_sources" not in results:
-            raise KeyError("Expected 'lidar_sources_info' and 'lidar_sources' in results.")
-        source_map = results["lidar_sources"]
-        sources_info = results["lidar_sources_info"]
-        sources = sources_info.get("sources", [])
-        token_to_range = {s["sensor_token"]: (s["idx_begin"], s["length"]) for s in sources}
-        selected_points = []
-        selected_sources = []
-        for channel in self.lidar_sources:
+
+        # Check if a specific LiDAR source should be loaded (set by T4SegDataset).
+        # When lidar_sources is configured in the dataset, each sample contains
+        # exactly one source - no mixing of sources.
+        lidar_sources_to_load = results.get("lidar_sources_to_load")
+
+        if lidar_sources_to_load is not None:
+            # Single source loading - extract points from one LiDAR only
+            if "lidar_sources_info" not in results or "lidar_sources" not in results:
+                raise KeyError("Expected 'lidar_sources_info' and 'lidar_sources' in results.")
+
+            # lidar_sources_to_load is always a single-element list from dataset
+            assert (
+                len(lidar_sources_to_load) == 1
+            ), f"Expected single source, got {len(lidar_sources_to_load)}: {lidar_sources_to_load}"
+            channel = lidar_sources_to_load[0]
+
+            source_map = results["lidar_sources"]
+            sources_info = results["lidar_sources_info"]
+            sources = sources_info.get("sources", [])
+            token_to_range = {s["sensor_token"]: (s["idx_begin"], s["length"]) for s in sources}
+
             if channel not in source_map:
                 raise KeyError(f"lidar_sources does not contain channel '{channel}'.")
+
             sensor_token = source_map[channel]["sensor_token"]
             if sensor_token not in token_to_range:
                 raise KeyError(f"lidar_sources_info missing sensor_token '{sensor_token}'.")
+
+            # Extract points for this single source
             idx_begin, length = token_to_range[sensor_token]
-            points_transformed = points[idx_begin : idx_begin + length]
+            points = points[idx_begin : idx_begin + length]
+
+            # Transform points from base frame back to sensor frame
             translation = source_map[channel]["translation"]
             rotation = Quaternion(source_map[channel]["rotation"]).rotation_matrix
             # Stored transform is sensor_to_base (T_sensor_to_base).
             # Points are stored in base frame; transform back to sensor frame (inverse).
             # p_sensor = (p_base - t_sensor_to_base) @ R_sensor_to_base
-            points_transformed[:, :3] = (points_transformed[:, :3] - translation) @ rotation
-            selected_points.append(points_transformed)
-            selected_sources.append(dict(sensor_token=sensor_token, idx_begin=idx_begin, length=length))
-        points = np.concatenate(selected_points, axis=0) if selected_points else points[:0]
-        results["lidar_sources_info"] = dict(
-            stamp=sources_info.get("stamp"),
-            sources=selected_sources,
-        )
-        results["lidar_sources_selection"] = selected_sources
+            points[:, :3] = (points[:, :3] - translation) @ rotation
+
+            # Update source info for this single source
+            source_selection = dict(sensor_token=sensor_token, idx_begin=idx_begin, length=length)
+            results["lidar_sources_info"] = dict(
+                stamp=sources_info.get("stamp"),
+                sources=[source_selection],
+            )
+            results["lidar_sources_selection"] = source_selection
+        else:
+            # No source filtering - load all points as-is (backward compatible)
+            results["lidar_sources_selection"] = None
+
         if self.norm_intensity:
             assert (
                 len(self.use_dim) >= 4
@@ -246,7 +271,6 @@ class LoadSegAnnotationsWithIdentifier3D(LoadAnnotations):
             dict: The dict containing the semantic segmentation annotations.
         """
         assert "pts_semantic_mask_path" in results, "pts_semantic_mask_path key is missing in input dictionary"
-        assert "lidar_sources_selection" in results, "lidar_sources_selection key is missing in input dictionary"
         assert (
             "pts_semantic_mask_categories" in results
         ), "pts_semantic_mask_categories key is missing in input dictionary"
@@ -254,13 +278,19 @@ class LoadSegAnnotationsWithIdentifier3D(LoadAnnotations):
         assert hasattr(results["dataset"], "metainfo"), "metainfo attribute is missing in dataset"
         assert "class_mapping" in results["dataset"].metainfo, "class_mapping key is missing in metainfo"
 
+        # Get source selection - single dict or None if loading all points
+        source_selection = results.get("lidar_sources_selection")
+
+        # Convert single selection to list format for load_and_map_semantic_mask
+        selections = [source_selection] if source_selection is not None else None
+
         pts_semantic_mask = load_and_map_semantic_mask(
             mask_path=results["pts_semantic_mask_path"],
             raw_categories=results["pts_semantic_mask_categories"],
             class_mapping=results["dataset"].metainfo["class_mapping"],
             ignore_index=self.ignore_index,
             seg_dtype=self.seg_3d_dtype,
-            selections=results["lidar_sources_selection"],
+            selections=selections,
             backend_args=self.backend_args,
         )
 

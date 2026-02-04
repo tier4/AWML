@@ -49,6 +49,12 @@ class T4SegDataset(BaseDataset):
             in Evaluator. Defaults to True.
         backend_args (dict, optional): Arguments to instantiate the
             corresponding backend. Defaults to None.
+        lidar_sources (List[str], optional): List of LiDAR source names to use.
+            When specified, each frame is expanded into N separate samples
+            (one per source). The transforms will receive which source to load
+            via ``lidar_sources_to_load`` in data_info.
+            When None, all points are loaded as-is without source filtering.
+            Defaults to None.
     """
 
     def __init__(
@@ -65,12 +71,15 @@ class T4SegDataset(BaseDataset):
         serialize_data: bool = False,
         load_eval_anns: bool = True,
         backend_args: Optional[dict] = None,
+        lidar_sources: Optional[List[str]] = None,
         **kwargs,
     ) -> None:
         self.backend_args = backend_args
         self.modality = modality
         self.load_eval_anns = load_eval_anns
         self.ignore_index = ignore_index
+        self.lidar_sources = lidar_sources
+        self._num_sources = len(lidar_sources) if lidar_sources else 1
 
         class_mapping = metainfo.get("class_mapping", None)
         base_class_names = metainfo.get("base_class_names", None)
@@ -138,11 +147,53 @@ class T4SegDataset(BaseDataset):
 
         return info
 
+    def _map_index(self, idx: int) -> tuple:
+        """Map expanded index to (frame_idx, source_idx).
+
+        Args:
+            idx (int): The expanded index.
+
+        Returns:
+            tuple: (frame_idx, source_idx) where source_idx is None if not expanded.
+        """
+        if self.lidar_sources is not None:
+            frame_idx = idx // self._num_sources
+            source_idx = idx % self._num_sources
+            return frame_idx, source_idx
+        return idx, None
+
+    def get_data_info(self, idx: int) -> dict:
+        """Get data info by index.
+
+        When ``lidar_sources`` is set, the index is mapped from the expanded
+        dataset space to a frame index, and the selected source is injected
+        into data_info as ``lidar_sources_to_load``.
+
+        Args:
+            idx (int): The index of ``data_info``. When lidar_sources is set,
+                this is an expanded index that maps to a specific frame and source.
+
+        Returns:
+            dict: Data info dict.
+        """
+        frame_idx, source_idx = self._map_index(idx)
+        # Call parent's get_data_info with frame index
+        data_info = super().get_data_info(frame_idx)
+
+        # Inject source information
+        if source_idx is not None:
+            data_info["lidar_sources_to_load"] = [self.lidar_sources[source_idx]]
+        else:
+            data_info["lidar_sources_to_load"] = None
+
+        return data_info
+
     def prepare_data(self, idx: int) -> dict:
         """Get data processed by ``self.pipeline``.
 
         Args:
-            idx (int): The index of ``data_info``.
+            idx (int): The index of ``data_info``. When lidar_sources is set,
+                this is an expanded index that maps to a specific frame and source.
 
         Returns:
             dict: Results passed through ``self.pipeline``.
@@ -151,19 +202,37 @@ class T4SegDataset(BaseDataset):
         data_info["dataset"] = self
         return self.pipeline(data_info)
 
+    def __len__(self) -> int:
+        """Return the expanded dataset length.
+
+        When ``lidar_sources`` is set, the length is multiplied by the number
+        of sources, as each frame becomes N separate samples.
+
+        Returns:
+            int: The total number of samples in the dataset.
+        """
+        base_len = len(self.data_list)
+        if self.lidar_sources is not None:
+            return base_len * self._num_sources
+        return base_len
+
     def get_scene_idxs(self, scene_idxs: Union[None, str, np.ndarray]) -> np.ndarray:
         """Compute scene_idxs for data sampling.
 
         We sample more times for scenes with more points.
+        Note: scene_idxs operates on frame indices (base data_list), not expanded indices.
         """
+        # Use base frame count, not expanded length
+        base_len = len(self.data_list)
+
         if self.test_mode:
             # when testing, we load one whole scene every time
-            return np.arange(len(self)).astype(np.int32)
+            return np.arange(base_len).astype(np.int32)
 
         # we may need to re-sample different scenes according to scene_idxs
         # this is necessary for indoor scene segmentation such as ScanNet
         if scene_idxs is None:
-            scene_idxs = np.arange(len(self))
+            scene_idxs = np.arange(base_len)
         if isinstance(scene_idxs, str):
             scene_idxs = osp.join(self.data_root, scene_idxs)
             with get_local_path(scene_idxs, backend_args=self.backend_args) as local_path:
@@ -180,4 +249,7 @@ class T4SegDataset(BaseDataset):
         otherwise group 0. In 3D datasets, they are all the same, thus are all
         zeros.
         """
-        self.flag = np.zeros(len(self), dtype=np.uint8)
+        # Use explicit length calculation to avoid calling __len__ before full init
+        base_len = len(self.data_list)
+        total_len = base_len * self._num_sources if self.lidar_sources else base_len
+        self.flag = np.zeros(total_len, dtype=np.uint8)

@@ -38,11 +38,12 @@ docker run -it --rm --gpus all --shm-size=64g --name awml -p 6006:6006 -v $PWD/:
 
 ### 2. Config
 
-Change parameters for your environment by changing [base config file](configs/nuscenes/frnet_1xb4_nus-seg.py). `TRAIN_BATCH = 2` is appropriate for GPU with 8 GB VRAM.
+Change parameters for your environment by changing [base config file](configs/nuscenes/frnet_1xb4_nus-seg.py). `BATCH_SIZE = 2` is appropriate for GPU with 8 GB VRAM.
 
 ```py
 # user settings
-TRAIN_BATCH = 4
+BATCH_SIZE = 4
+NUM_WORKERS = 4
 ITERATIONS = 50000
 VAL_INTERVAL = 1000
 ```
@@ -64,7 +65,7 @@ python tools/detection3d/train.py projects/FRNet/configs/nuscenes/frnet_1xb4_nus
 
 - Train for T4dataset
 ```sh
-python tools/detection3d/train.py projects/FRNet/configs/t4dataset/frnet_1xb8_t4dataset-seg.py
+python tools/detection3d/train.py projects/FRNet/configs/t4dataset/frnet_1xb8_t4dataset-ot128-seg.py
 ```
 
 ### 5. Test
@@ -76,7 +77,7 @@ python tools/detection3d/test.py projects/FRNet/configs/nuscenes/frnet_1xb4_nus-
 
 - Test for T4dataset
 ```sh
-python tools/detection3d/test.py projects/FRNet/configs/t4dataset/frnet_1xb8_t4dataset-seg.py work_dirs/frnet_1xb8_t4dataset-seg/best_miou_iter_<ITER>.pth
+python tools/detection3d/test.py projects/FRNet/configs/t4dataset/frnet_1xb8_t4dataset-ot128-seg.py work_dirs/frnet_1xb8_t4dataset-ot128-seg/best_miou_iter_<ITER>.pth
 ```
 
 - Visualize inference for nuScenes
@@ -86,7 +87,7 @@ python tools/detection3d/test.py projects/FRNet/configs/nuscenes/frnet_1xb4_nus-
 
 - Visualize inference for T4dataset
 ```sh
-python tools/detection3d/test.py projects/FRNet/configs/t4dataset/frnet_1xb8_t4dataset-seg.py work_dirs/frnet_1xb8_t4dataset-seg/best_miou_iter_<ITER>.pth --show --task lidar_seg
+python tools/detection3d/test.py projects/FRNet/configs/t4dataset/frnet_1xb8_t4dataset-ot128-seg.py work_dirs/frnet_1xb8_t4dataset-ot128-seg/best_miou_iter_<ITER>.pth --show --task lidar_seg
 ```
 
 For ONNX & TensorRT execution, check the next section.
@@ -102,7 +103,7 @@ python projects/FRNet/deploy/main.py work_dirs/frnet_1xb4_nus-seg/best_miou_iter
 
 - Deploy for T4dataset
 ```sh
-python projects/FRNet/deploy/main.py work_dirs/frnet_1xb8_t4dataset-seg/best_miou_iter_<ITER>.pth --model-cfg projects/FRNet/configs/t4dataset/frnet_1xb8_t4dataset-seg.py --deploy-cfg projects/FRNet/configs/deploy/t4dataset/frnet_tensorrt_dynamic.py --execution tensorrt --verbose
+python projects/FRNet/deploy/main.py work_dirs/frnet_1xb8_t4dataset-ot128-seg/best_miou_iter_<ITER>.pth --model-cfg projects/FRNet/configs/t4dataset/frnet_1xb8_t4dataset-ot128-seg.py --deploy-cfg projects/FRNet/configs/deploy/t4dataset/frnet_tensorrt_dynamic.py --execution tensorrt --verbose
 ```
 
 For more information:

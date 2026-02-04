@@ -1,87 +1,72 @@
-_base_ = ["../model/frnet.py", "../../../../autoware_ml/configs/detection3d/default_runtime.py"]
+_base_ = [
+    "../model/frnet.py",
+    "../../../../autoware_ml/configs/detection3d/default_runtime.py",
+    "../../../../autoware_ml/configs/segmentation3d/dataset/t4dataset/j6gen2_base.py",
+]
 
 custom_imports = dict(
     imports=[
-        "autoware_ml.segmentation3d.datasets.nuscenes",
         "projects.FRNet.frnet.datasets",
         "projects.FRNet.frnet.datasets.transforms",
         "projects.FRNet.frnet.models",
     ],
     allow_failed_imports=False,
 )
+custom_imports["imports"] += _base_.custom_imports["imports"]
 
 # user settings
-BATCH_SIZE = 4
-NUM_WORKERS = 4
+BATCH_SIZE = 8
+NUM_WORKERS = 16
 ITERATIONS = 150000
 VAL_INTERVAL = 1500
 
-# LiDAR settings (NuScenes)
-LIDAR_H = 32
-RANGE_W = 1920
-FRUSTUM_W = 480  # 1920 / 4
-FOV_UP = 10.0
-FOV_DOWN = -30.0
+# LiDAR settings (Hesai OT128)
+LIDAR_H = 128
+RANGE_W = 1024
+FRUSTUM_W = 256  # 1024 / 4
+FOV_UP = 52.6
+FOV_DOWN = -52.6
+SOURCES = ["LIDAR_FRONT_LOWER", "LIDAR_LEFT_LOWER", "LIDAR_RIGHT_LOWER", "LIDAR_REAR_LOWER"]
 
-dataset_type = "NuScenesSegDataset"
-data_root = "data/nuscenes/"
-ignore_index = 16
-class_names = [
-    "barrier",
-    "bicycle",
-    "bus",
-    "car",
-    "construction_vehicle",
-    "motorcycle",
-    "pedestrian",
-    "traffic_cone",
-    "trailer",
-    "truck",
-    "driveable_surface",
-    "other_flat",
-    "sidewalk",
-    "terrain",
-    "manmade",
-    "vegetation",
-]
-labels_map = {
-    0: 16,
-    1: 16,
-    2: 6,
-    3: 6,
-    4: 6,
-    5: 16,
-    6: 6,
-    7: 16,
-    8: 16,
-    9: 0,
-    10: 16,
-    11: 16,
-    12: 7,
-    13: 16,
-    14: 1,
-    15: 2,
-    16: 2,
-    17: 3,
-    18: 4,
-    19: 16,
-    20: 16,
-    21: 5,
-    22: 8,
-    23: 9,
-    24: 10,
-    25: 11,
-    26: 12,
-    27: 13,
-    28: 14,
-    29: 16,
-    30: 15,
-    31: 16,
+dataset_type = _base_.dataset_type
+data_root = "data/t4dataset/"
+ignore_index = 26
+
+class_mapping = {
+    "drivable_surface": 0,
+    "other_flat_surface": 1,
+    "sidewalk": 2,
+    "manmade": 3,
+    "vegetation": 4,
+    "car": 5,
+    "bus": 6,
+    "emergency_vehicle": 7,
+    "train": 8,
+    "truck": 9,
+    "tractor_unit": 10,
+    "semi_trailer": 11,
+    "construction_vehicle": 12,
+    "forklift": 13,
+    "kart": 14,
+    "motorcycle": 15,
+    "bicycle": 16,
+    "pedestrian": 17,
+    "personal_mobility": 18,
+    "animal": 19,
+    "pushable_pullable": 20,
+    "traffic_cone": 21,
+    "stroller": 22,
+    "debris": 23,
+    "other_stuff": 24,
+    "noise": 25,
+    "ghost_point": 25,
+    "out_of_sync": ignore_index,
+    "unpainted": ignore_index,
 }
-num_classes = 17  # 16 classes + 1 for unknown
-metainfo = dict(classes=class_names, seg_label_mapping=labels_map, max_label=31)
+num_classes = 27  # 26 classes + 1 for unknown
+metainfo = _base_.metainfo
+metainfo.update(dict(class_mapping=class_mapping))
 input_modality = dict(use_lidar=True, use_camera=False)
-data_prefix = dict(pts="samples/LIDAR_TOP", img="", pts_semantic_mask="lidarseg/v1.0-trainval")
 backend_args = None
 
 model = dict(
@@ -140,16 +125,18 @@ model = dict(
 )
 
 pre_transform = [
-    dict(type="LoadPointsFromFile", coord_type="LIDAR", load_dim=5, use_dim=4, backend_args=backend_args),
     dict(
-        type="LoadAnnotations3D",
-        with_bbox_3d=False,
-        with_label_3d=False,
-        with_seg_3d=True,
+        type="LoadPointsWithIdentifierFromFile",
+        coord_type="LIDAR",
+        load_dim=5,
+        use_dim=4,
+        backend_args=backend_args,
+    ),
+    dict(
+        type="LoadSegAnnotationsWithIdentifier3D",
         seg_3d_dtype="np.uint8",
         backend_args=backend_args,
     ),
-    dict(type="PointSegClassMapping"),
     dict(type="RandomFlip3D", sync_2d=False, flip_ratio_bev_horizontal=0.5, flip_ratio_bev_vertical=0.5),
     dict(
         type="GlobalRotScaleTrans",
@@ -159,16 +146,18 @@ pre_transform = [
     ),
 ]
 train_pipeline = [
-    dict(type="LoadPointsFromFile", coord_type="LIDAR", load_dim=5, use_dim=4, backend_args=backend_args),
     dict(
-        type="LoadAnnotations3D",
-        with_bbox_3d=False,
-        with_label_3d=False,
-        with_seg_3d=True,
+        type="LoadPointsWithIdentifierFromFile",
+        coord_type="LIDAR",
+        load_dim=5,
+        use_dim=4,
+        backend_args=backend_args,
+    ),
+    dict(
+        type="LoadSegAnnotationsWithIdentifier3D",
         seg_3d_dtype="np.uint8",
         backend_args=backend_args,
     ),
-    dict(type="PointSegClassMapping"),
     dict(type="RandomFlip3D", sync_2d=False, flip_ratio_bev_horizontal=0.5, flip_ratio_bev_vertical=0.5),
     dict(
         type="GlobalRotScaleTrans",
@@ -187,35 +176,60 @@ train_pipeline = [
         prob=1.0,
     ),
     dict(type="InstanceCopy", instance_classes=[0, 1, 2, 3, 4, 5, 6, 7, 8, 9], pre_transform=pre_transform, prob=1.0),
-    dict(type="RangeInterpolation", H=LIDAR_H, W=RANGE_W, fov_up=FOV_UP, fov_down=FOV_DOWN, ignore_index=ignore_index),
+    dict(
+        type="RangeInterpolation",
+        H=LIDAR_H,
+        W=RANGE_W,
+        fov_up=FOV_UP,
+        fov_down=FOV_DOWN,
+        ignore_index=ignore_index,
+    ),
     dict(type="Pack3DDetInputs", keys=["points", "pts_semantic_mask"]),
 ]
 test_pipeline = [
-    dict(type="LoadPointsFromFile", coord_type="LIDAR", load_dim=5, use_dim=4, backend_args=backend_args),
     dict(
-        type="LoadAnnotations3D",
-        with_bbox_3d=False,
-        with_label_3d=False,
-        with_seg_3d=True,
+        type="LoadPointsWithIdentifierFromFile",
+        coord_type="LIDAR",
+        load_dim=5,
+        use_dim=4,
+        backend_args=backend_args,
+    ),
+    dict(
+        type="LoadSegAnnotationsWithIdentifier3D",
         seg_3d_dtype="np.uint8",
         backend_args=backend_args,
     ),
-    dict(type="PointSegClassMapping"),
-    dict(type="RangeInterpolation", H=LIDAR_H, W=RANGE_W, fov_up=FOV_UP, fov_down=FOV_DOWN, ignore_index=ignore_index),
+    dict(
+        type="RangeInterpolation",
+        H=LIDAR_H,
+        W=RANGE_W,
+        fov_up=FOV_UP,
+        fov_down=FOV_DOWN,
+        ignore_index=ignore_index,
+    ),
     dict(type="Pack3DDetInputs", keys=["points"], meta_keys=["num_points", "lidar_path", "num_pts_feats"]),
 ]
 tta_pipeline = [
-    dict(type="LoadPointsFromFile", coord_type="LIDAR", load_dim=5, use_dim=4, backend_args=backend_args),
     dict(
-        type="LoadAnnotations3D",
-        with_bbox_3d=False,
-        with_label_3d=False,
-        with_seg_3d=True,
+        type="LoadPointsWithIdentifierFromFile",
+        coord_type="LIDAR",
+        load_dim=5,
+        use_dim=4,
+        backend_args=backend_args,
+    ),
+    dict(
+        type="LoadSegAnnotationsWithIdentifier3D",
         seg_3d_dtype="np.uint8",
         backend_args=backend_args,
     ),
-    dict(type="PointSegClassMapping"),
-    dict(type="RangeInterpolation", H=LIDAR_H, W=RANGE_W, fov_up=FOV_UP, fov_down=FOV_DOWN, ignore_index=ignore_index),
+    dict(
+        type="RangeInterpolation",
+        H=LIDAR_H,
+        W=RANGE_W,
+        fov_up=FOV_UP,
+        fov_down=FOV_DOWN,
+        ignore_index=ignore_index,
+    ),
     dict(
         type="TestTimeAug",
         transforms=[
@@ -246,8 +260,8 @@ train_dataloader = dict(
     dataset=dict(
         type=dataset_type,
         data_root=data_root,
-        ann_file="nuscenes_infos_train.pkl",
-        data_prefix=data_prefix,
+        lidar_sources=SOURCES,
+        ann_file="info/lidarseg/t4dataset_j6gen2_lidarseg_infos_train.pkl",
         pipeline=train_pipeline,
         metainfo=metainfo,
         modality=input_modality,
@@ -264,8 +278,8 @@ val_dataloader = dict(
     dataset=dict(
         type=dataset_type,
         data_root=data_root,
-        ann_file="nuscenes_infos_val.pkl",
-        data_prefix=data_prefix,
+        lidar_sources=SOURCES,
+        ann_file="info/lidarseg/t4dataset_j6gen2_lidarseg_infos_val.pkl",
         pipeline=test_pipeline,
         metainfo=metainfo,
         modality=input_modality,

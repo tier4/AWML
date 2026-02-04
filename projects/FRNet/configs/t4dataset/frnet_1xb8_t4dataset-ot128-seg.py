@@ -15,16 +15,18 @@ custom_imports = dict(
 custom_imports["imports"] += _base_.custom_imports["imports"]
 
 # user settings
-TRAIN_BATCH = 8
+BATCH_SIZE = 8
+NUM_WORKERS = 16
 ITERATIONS = 150000
 VAL_INTERVAL = 1500
 
 # LiDAR settings (Hesai OT128)
 LIDAR_H = 128
-RANGE_W = 2048
-FRUSTUM_W = 512  # 2048 / 4
+RANGE_W = 4096
+FRUSTUM_W = 1024  # 4096 / 4
 FOV_UP = 15.0
 FOV_DOWN = -25.0
+SOURCES = ["LIDAR_FRONT_UPPER", "LIDAR_LEFT_UPPER", "LIDAR_RIGHT_UPPER", "LIDAR_REAR_UPPER"]
 
 dataset_type = _base_.dataset_type
 data_root = "data/t4dataset/"
@@ -126,7 +128,6 @@ pre_transform = [
     dict(
         type="LoadPointsWithIdentifierFromFile",
         coord_type="LIDAR",
-        lidar_sources=["LIDAR_FRONT_UPPER"],
         load_dim=5,
         use_dim=4,
         backend_args=backend_args,
@@ -148,7 +149,6 @@ train_pipeline = [
     dict(
         type="LoadPointsWithIdentifierFromFile",
         coord_type="LIDAR",
-        lidar_sources=["LIDAR_FRONT_UPPER"],
         load_dim=5,
         use_dim=4,
         backend_args=backend_args,
@@ -190,7 +190,6 @@ test_pipeline = [
     dict(
         type="LoadPointsWithIdentifierFromFile",
         coord_type="LIDAR",
-        lidar_sources=["LIDAR_FRONT_UPPER"],
         load_dim=5,
         use_dim=4,
         backend_args=backend_args,
@@ -214,7 +213,6 @@ tta_pipeline = [
     dict(
         type="LoadPointsWithIdentifierFromFile",
         coord_type="LIDAR",
-        lidar_sources=["LIDAR_FRONT_UPPER"],
         load_dim=5,
         use_dim=4,
         backend_args=backend_args,
@@ -255,13 +253,14 @@ tta_pipeline = [
 ]
 
 train_dataloader = dict(
-    batch_size=TRAIN_BATCH,
-    num_workers=16,
+    batch_size=BATCH_SIZE,
+    num_workers=NUM_WORKERS,
     persistent_workers=True,
     sampler=dict(type="InfiniteSampler", shuffle=True),
     dataset=dict(
         type=dataset_type,
         data_root=data_root,
+        lidar_sources=SOURCES,
         ann_file="info/lidarseg/t4dataset_j6gen2_lidarseg_infos_train.pkl",
         pipeline=train_pipeline,
         metainfo=metainfo,
@@ -271,14 +270,15 @@ train_dataloader = dict(
     ),
 )
 val_dataloader = dict(
-    batch_size=TRAIN_BATCH,
-    num_workers=16,
+    batch_size=BATCH_SIZE,
+    num_workers=NUM_WORKERS,
     persistent_workers=True,
     drop_last=False,
     sampler=dict(type="DefaultSampler", shuffle=False),
     dataset=dict(
         type=dataset_type,
         data_root=data_root,
+        lidar_sources=SOURCES,
         ann_file="info/lidarseg/t4dataset_j6gen2_lidarseg_infos_val.pkl",
         pipeline=test_pipeline,
         metainfo=metainfo,
