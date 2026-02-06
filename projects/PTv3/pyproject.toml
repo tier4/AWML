@@ -57,6 +57,10 @@ no-build-isolation-package = [
 
 [tool.uv.extra-build-dependencies]
 pointrope = [{ requirement = "torch", match-runtime = true }]
+torch-cluster = [
+  { requirement = "setuptools", match-runtime = false },
+  { requirement = "torch", match-runtime = true },
+]
 
 [tool.uv.sources]
 torch = [{ index = "pytorch-cu129", marker = "sys_platform == 'linux'" }]
@@ -73,3 +77,16 @@ explicit = true
 
 [tool.uv.workspace]
 members = ["libs/pointgroup_ops", "libs/pointops", "libs/pointrope"]
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = [
+  "datasets",
+  "datasets.*",
+  "engines",
+  "engines.*",
+  "models",
+  "models.*",
+  "utils",
+  "utils.*",
+]
