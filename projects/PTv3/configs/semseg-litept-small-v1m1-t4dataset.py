@@ -117,6 +117,7 @@ data = dict(
         type=dataset_type,
         split="train",
         data_root=data_root,
+        info_paths=info_paths_train,
         transform=[
             # dict(type="RandomDropout", dropout_ratio=0.2, dropout_application_ratio=0.2),
             # dict(type="RandomRotateTargetAngle", angle=(1/2, 1, 3/2), center=[0, 0, 0], axis="z", p=0.75),
@@ -133,6 +134,7 @@ data = dict(
                 grid_size=grid_size,
                 hash_type="fnv",
                 mode="train",
+                keys=("coord", "strength", "segment"),
                 return_grid_coord=True,
             ),
             # dict(type="SphereCrop", point_max=1000000, mode="random"),
@@ -153,6 +155,7 @@ data = dict(
         type=dataset_type,
         split="val",
         data_root=data_root,
+        info_paths=info_paths_val,
         transform=[
             dict(type="Copy", keys_dict={"segment": "origin_segment"}),
             # dict(type="PointClip", point_cloud_range=(-51.2, -51.2, -4, 51.2, 51.2, 2.4)),
@@ -161,6 +164,7 @@ data = dict(
                 grid_size=grid_size,
                 hash_type="fnv",
                 mode="train",
+                keys=("coord", "strength", "segment"),
                 return_grid_coord=True,
                 return_inverse=True,
             ),
@@ -180,6 +184,7 @@ data = dict(
         type=dataset_type,
         split="val",
         data_root=data_root,
+        info_paths=info_paths_test,
         transform=[
             dict(type="Copy", keys_dict={"segment": "origin_segment"}),
             dict(
@@ -187,6 +192,7 @@ data = dict(
                 grid_size=grid_size,
                 hash_type="fnv",
                 mode="train",
+                keys=("coord", "strength", "segment"),
                 return_inverse=True,
             ),
         ],
@@ -197,6 +203,7 @@ data = dict(
                 grid_size=grid_size,
                 hash_type="fnv",
                 mode="test",
+                keys=("coord", "strength", "segment"),
                 return_grid_coord=True,
             ),
             crop=None,

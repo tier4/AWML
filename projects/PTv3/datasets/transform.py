@@ -65,6 +65,19 @@ class Copy(object):
 
 
 @TRANSFORMS.register_module()
+class Update(object):
+    def __init__(self, keys_dict=None):
+        if keys_dict is None:
+            keys_dict = dict()
+        self.keys_dict = keys_dict
+
+    def __call__(self, data_dict):
+        for key, value in self.keys_dict.items():
+            data_dict[key] = value
+        return data_dict
+
+
+@TRANSFORMS.register_module()
 class ToTensor(object):
     def __call__(self, data):
         if isinstance(data, torch.Tensor):
