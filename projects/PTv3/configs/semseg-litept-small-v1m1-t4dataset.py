@@ -4,6 +4,8 @@ _base_ = [
     "../../../autoware_ml/configs/segmentation3d/dataset/t4dataset/j6gen2_base.py",
 ]
 
+save_path = "work_dirs/litept"
+
 # misc custom setting
 batch_size = 12  # bs: total bs in all gpus
 num_worker = 24
