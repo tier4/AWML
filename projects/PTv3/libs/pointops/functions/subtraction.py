@@ -1,7 +1,6 @@
 import torch
+from pointops._C import subtraction_backward_cuda, subtraction_forward_cuda
 from torch.autograd import Function
-
-from pointops._C import subtraction_forward_cuda, subtraction_backward_cuda
 
 
 class Subtraction(Function):
@@ -29,9 +28,7 @@ class Subtraction(Function):
         n, nsample, c = grad_output.shape
         grad_input1 = torch.cuda.FloatTensor(n, c).zero_()
         grad_input2 = torch.cuda.FloatTensor(n, c).zero_()
-        subtraction_backward_cuda(
-            n, nsample, c, idx, grad_output, grad_input1, grad_input2
-        )
+        subtraction_backward_cuda(n, nsample, c, idx, grad_output, grad_input1, grad_input2)
         return grad_input1, grad_input2, None
 
 

@@ -1,7 +1,6 @@
 import torch
+from pointops._C import grouping_backward_cuda, grouping_forward_cuda
 from torch.autograd import Function
-
-from pointops._C import grouping_forward_cuda, grouping_backward_cuda
 
 
 class Grouping(Function):
@@ -40,21 +39,13 @@ def grouping(idx, feat, xyz, new_xyz=None, with_xyz=False):
     m, nsample, c = idx.shape[0], idx.shape[1], feat.shape[1]
     xyz = torch.cat([xyz, torch.zeros([1, 3]).to(xyz.device)], dim=0)
     feat = torch.cat([feat, torch.zeros([1, c]).to(feat.device)], dim=0)
-    grouped_feat = feat[idx.view(-1).long(), :].view(
-        m, nsample, c
-    )  # (m, num_sample, c)
+    grouped_feat = feat[idx.view(-1).long(), :].view(m, nsample, c)  # (m, num_sample, c)
 
     if with_xyz:
         assert new_xyz.is_contiguous()
         mask = torch.sign(idx + 1)
-        grouped_xyz = xyz[idx.view(-1).long(), :].view(
-            m, nsample, 3
-        ) - new_xyz.unsqueeze(
-            1
-        )  # (m, num_sample, 3)
-        grouped_xyz = torch.einsum(
-            "n s c, n s -> n s c", grouped_xyz, mask
-        )  # (m, num_sample, 3)
+        grouped_xyz = xyz[idx.view(-1).long(), :].view(m, nsample, 3) - new_xyz.unsqueeze(1)  # (m, num_sample, 3)
+        grouped_xyz = torch.einsum("n s c, n s -> n s c", grouped_xyz, mask)  # (m, num_sample, 3)
         return torch.cat((grouped_xyz, grouped_feat), -1)
     else:
         return grouped_feat

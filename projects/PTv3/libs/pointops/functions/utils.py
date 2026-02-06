@@ -1,5 +1,5 @@
 import torch
-from pointops import knn_query, ball_query, grouping
+from pointops import ball_query, grouping, knn_query
 
 
 def knn_query_and_group(
@@ -33,9 +33,7 @@ def ball_query_and_group(
     if idx is None:
         assert nsample is not None and offset is not None
         assert max_radio is not None and min_radio is not None
-        idx, _ = ball_query(
-            nsample, max_radio, min_radio, xyz, offset, new_xyz, new_offset
-        )
+        idx, _ = ball_query(nsample, max_radio, min_radio, xyz, offset, new_xyz, new_offset)
     return grouping(idx, feat, xyz, new_xyz, with_xyz), idx
 
 
@@ -62,9 +60,7 @@ def query_and_group(
     if idx is None:
         num_samples_total = 1 + (nsample - 1) * (dilation + 1)
         # num points in a batch might < num_samples_total => [n1, n2, ..., nk, ns, ns, ns, ...]
-        idx_no_dilation, _ = knn_query(
-            num_samples_total, xyz, offset, new_xyz, new_offset
-        )  # (m, nsample * (d + 1))
+        idx_no_dilation, _ = knn_query(num_samples_total, xyz, offset, new_xyz, new_offset)  # (m, nsample * (d + 1))
         idx = []
         batch_end = offset.tolist()
         batch_start = [0] + batch_end[:-1]
@@ -103,11 +99,7 @@ def offset2batch(offset):
     return (
         torch.cat(
             [
-                (
-                    torch.tensor([i] * (o - offset[i - 1]))
-                    if i > 0
-                    else torch.tensor([i] * o)
-                )
+                (torch.tensor([i] * (o - offset[i - 1])) if i > 0 else torch.tensor([i] * o))
                 for i, o in enumerate(offset)
             ],
             dim=0,

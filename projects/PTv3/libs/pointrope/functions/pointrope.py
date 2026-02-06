@@ -5,9 +5,7 @@ from torch.onnx.symbolic_helper import _get_tensor_sizes
 try:
     import pointrope_cuda as _kernels  # run `python setup.py install`
 except ModuleNotFoundError:
-    from . import (
-        pointrope_cuda as _kernels,  # run `python setup.py build_ext --inplace`
-    )
+    from . import pointrope_cuda as _kernels  # run `python setup.py build_ext --inplace`
 
 
 class PointROPE_func(Function):
@@ -78,19 +76,14 @@ class PointROPE(torch.nn.Module):
             assert positions.shape[0] == B * N and positions.shape[1] == 3
             pos_bn3 = positions.view(B, N, 3)
         else:
-            assert positions.shape == (B, N, 3), (
-                f"{positions.shape=} vs {tokens.shape=}"
-            )
+            assert positions.shape == (B, N, 3), f"{positions.shape=} vs {tokens.shape=}"
             pos_bn3 = positions
 
         # inv_freq: [Q]
         # inv_freq[q] = fwd / base^(q/Q)
         q = torch.arange(Q, device=tokens.device, dtype=tokens.dtype)
-        inv_freq = torch.tensor(
-            float(self.F0), device=tokens.device, dtype=tokens.dtype
-        ) / (
-            torch.tensor(float(self.base), device=tokens.device, dtype=tokens.dtype)
-            ** (q / float(Q))
+        inv_freq = torch.tensor(float(self.F0), device=tokens.device, dtype=tokens.dtype) / (
+            torch.tensor(float(self.base), device=tokens.device, dtype=tokens.dtype) ** (q / float(Q))
         )
 
         # freq: [B, N, 3, Q]
