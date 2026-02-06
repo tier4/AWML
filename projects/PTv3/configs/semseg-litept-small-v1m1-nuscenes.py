@@ -1,5 +1,7 @@
 _base_ = ["./_base_/default_runtime.py"]
 
+save_path = "work_dirs/litept"
+
 # misc custom setting
 batch_size = 12  # bs: total bs in all gpus
 num_worker = 24
