@@ -67,6 +67,7 @@ The script generates three pickle files for train/val/test splits:
 Each file contains calibration information including:
 - Camera and LiDAR data paths
 - Transformation matrices (lidar2cam, cam2ego, etc.)
+- LiDAR sources info (all lidar sensors and their calibrated extrinsics per scene, if available)
 - Timestamps and metadata
 
 **Example data structure:**
@@ -110,6 +111,15 @@ Each file contains calibration information including:
         'sample_data_token': 'lidar_token_456',
         'timestamp': 1234567890
     },
+    'lidar_sources': {  # optional, present if lidar sensors exist in the scene
+        'lidar_sources': {
+            'LIDAR_CONCAT': {
+                'sensor_token': 'lidar_sensor_token_789',
+                'translation': [0.0, 0.0, 1.8],
+                'rotation': [1.0, 0.0, 0.0, 0.0],
+            }
+        }
+    },
     'sample_idx': 3,
     'scene_id': 'scene_001'
 }
@@ -120,6 +130,7 @@ Each file contains calibration information including:
 - `frame_idx`: Frame index in the sequence
 - `image`: Camera-specific data including intrinsic/extrinsic parameters
 - `lidar_points`: LiDAR data with transformation matrices
+- `lidar_sources` (optional): All lidar sensors in the scene with their calibrated extrinsics (sensor_token, translation, rotation representing sensor-to-base transform). Present if lidar sensors exist in the scene
 - `sample_idx`: Sample index in the dataset
 - `scene_id`: Scene identifier
 
