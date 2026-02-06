@@ -1,6 +1,6 @@
+import pointgroup_ops_cuda
 import torch
 from torch.autograd import Function
-import pointgroup_ops_cuda
 
 
 class BallQueryBatchP(Function):
@@ -95,9 +95,7 @@ class Clustering:
 
         mask_non_ignored = torch.ones_like(labels).bool()
         for ignored_label in self.ignored_labels:
-            mask_non_ignored = mask_non_ignored & (
-                self.class_mapping[labels] != ignored_label
-            )
+            mask_non_ignored = mask_non_ignored & (self.class_mapping[labels] != ignored_label)
         object_idxs = mask_non_ignored.nonzero().view(-1)
 
         vertices_ = vertices[object_idxs].float()
@@ -109,12 +107,8 @@ class Clustering:
         batch_idxs_ = batch_idxs[object_idxs].int()
         batch_offsets_ = torch.FloatTensor([0, object_idxs.shape[0]]).int().cuda()
 
-        idx, start_len = ballquery_batch_p(
-            vertices_, batch_idxs_, batch_offsets_, self.thresh, self.closed_points
-        )
-        proposals_idx, proposals_offset = bfs_cluster(
-            labels_.cpu(), idx.cpu(), start_len.cpu(), self.min_points
-        )
+        idx, start_len = ballquery_batch_p(vertices_, batch_idxs_, batch_offsets_, self.thresh, self.closed_points)
+        proposals_idx, proposals_offset = bfs_cluster(labels_.cpu(), idx.cpu(), start_len.cpu(), self.min_points)
         proposals_idx[:, 1] = object_idxs[proposals_idx[:, 1].long()].int()
 
         return proposals_idx, proposals_offset
@@ -128,9 +122,7 @@ class Clustering:
             score = self.score_func(score)
             instances[proposal_id] = {}
             instances[proposal_id]["conf"] = score.cpu().numpy()
-            instances[proposal_id]["label_id"] = self.class_mapping.cpu()[
-                labels[proposal_id]
-            ]
+            instances[proposal_id]["label_id"] = self.class_mapping.cpu()[labels[proposal_id]]
             instances[proposal_id]["pred_mask"] = clusters_i.cpu().numpy()
         return instances
 

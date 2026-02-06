@@ -18,7 +18,7 @@ void pointrope_cpu( torch::Tensor tokens, const torch::Tensor positions, const f
     for (int b = 0; b < B; b++) {
       for (int x = 0; x < 3; x++) { // x and then y then z (3d)
         for (int n = 0; n < N; n++) {
-        
+
             // grab the token position
             const int p = pos[b][n][x];
 
@@ -43,9 +43,9 @@ void pointrope_cpu( torch::Tensor tokens, const torch::Tensor positions, const f
     }
 }
 
-void pointrope( torch::Tensor tokens,   
+void pointrope( torch::Tensor tokens,
         const torch::Tensor positions,
-        const float base, 
+        const float base,
         const float fwd )
 {
     TORCH_CHECK(tokens.dim() == 4, "tokens must have 4 dimensions");

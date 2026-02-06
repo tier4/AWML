@@ -145,5 +145,3 @@ void attention_fusion_step_backward_cuda_launcher(int m, int g, int c,
                                                                        index_target, index_refer,
                                                                        grad_output);
 }
-
-

@@ -36,7 +36,7 @@ void subtraction_forward_cuda_launcher(int n, int nsample, int c, const float *i
     subtraction_forward_cuda_kernel<<<blocks, threads, 0>>>(n, nsample, c, input1, input2, idx, output);
 }
 
-void subtraction_backward_cuda_launcher(int n, int nsample, int c, const int *idx, const float *grad_output, float *grad_input1, float *grad_input2) {  
+void subtraction_backward_cuda_launcher(int n, int nsample, int c, const int *idx, const float *grad_output, float *grad_input1, float *grad_input2) {
     // input: grad_output: (n, nsample, c), output: grad_input1: (n, c), grad_input2: (n, c)
     dim3 blocks(DIVUP(n * nsample * c, THREADS_PER_BLOCK));
     dim3 threads(THREADS_PER_BLOCK);

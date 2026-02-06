@@ -32,7 +32,7 @@ void grouping_forward_cuda_launcher(int m, int nsample, int c, const float *inpu
 }
 
 void grouping_backward_cuda_launcher(int m, int nsample, int c, const float *grad_output, const int *idx, float *grad_input)
-{  
+{
     // input: grad_output: (m, nsample, c), idx: (m, nsample), output: grad_input: (n, c)
     dim3 blocks(DIVUP(m * nsample * c, THREADS_PER_BLOCK));
     dim3 threads(THREADS_PER_BLOCK);

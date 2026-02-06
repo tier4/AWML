@@ -1,7 +1,7 @@
 import torch
+from pointops._C import interpolation_backward_cuda, interpolation_forward_cuda
 from torch.autograd import Function
 
-from pointops._C import interpolation_forward_cuda, interpolation_backward_cuda
 from .query import knn_query
 
 

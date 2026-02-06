@@ -1,12 +1,11 @@
 import torch
-from torch.autograd import Function
-
 from pointops._C import (
-    attention_relation_step_forward_cuda,
-    attention_relation_step_backward_cuda,
-    attention_fusion_step_forward_cuda,
     attention_fusion_step_backward_cuda,
+    attention_fusion_step_forward_cuda,
+    attention_relation_step_backward_cuda,
+    attention_relation_step_forward_cuda,
 )
+from torch.autograd import Function
 
 
 class AttentionRelationStep(Function):
@@ -84,9 +83,7 @@ class AttentionFusionStep(Function):
         n, g, c = value.shape
         m = index_refer.shape[0]
         output = torch.cuda.FloatTensor(n, g, c).zero_()
-        attention_fusion_step_forward_cuda(
-            m, g, c, weight, value, index_target.int(), index_refer.int(), output
-        )
+        attention_fusion_step_forward_cuda(m, g, c, weight, value, index_target.int(), index_refer.int(), output)
         ctx.save_for_backward(weight, value, index_target, index_refer)
         return output
 

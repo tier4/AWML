@@ -1,7 +1,6 @@
 import torch
+from pointops._C import ball_query_cuda, knn_query_cuda, random_ball_query_cuda
 from torch.autograd import Function
-
-from pointops._C import knn_query_cuda, random_ball_query_cuda, ball_query_cuda
 
 
 class KNNQuery(Function):
@@ -18,9 +17,7 @@ class KNNQuery(Function):
         m = new_xyz.shape[0]
         idx = torch.cuda.IntTensor(m, nsample).zero_()
         dist2 = torch.cuda.FloatTensor(m, nsample).zero_()
-        knn_query_cuda(
-            m, nsample, xyz, new_xyz, offset.int(), new_offset.int(), idx, dist2
-        )
+        knn_query_cuda(m, nsample, xyz, new_xyz, offset.int(), new_offset.int(), idx, dist2)
         return idx, torch.sqrt(dist2)
 
 
@@ -31,9 +28,7 @@ class RandomBallQuery(Function):
     """
 
     @staticmethod
-    def forward(
-        ctx, nsample, max_radius, min_radius, xyz, offset, new_xyz=None, new_offset=None
-    ):
+    def forward(ctx, nsample, max_radius, min_radius, xyz, offset, new_xyz=None, new_offset=None):
         """
         input: coords: (n, 3), new_xyz: (m, 3), offset: (b), new_offset: (b)
         output: idx: (m, nsample), dist2: (m, nsample)
@@ -48,9 +43,7 @@ class RandomBallQuery(Function):
         order = []
         for k in range(offset.shape[0]):
             s_k, e_k = (0, offset[0]) if k == 0 else (offset[k - 1], offset[k])
-            order.append(
-                torch.randperm(e_k - s_k, dtype=torch.int32, device=offset.device) + s_k
-            )
+            order.append(torch.randperm(e_k - s_k, dtype=torch.int32, device=offset.device) + s_k)
         order = torch.cat(order, dim=0)
         idx = torch.cuda.IntTensor(m, nsample).zero_()
         dist2 = torch.cuda.FloatTensor(m, nsample).zero_()
@@ -77,9 +70,7 @@ class BallQuery(Function):
     """
 
     @staticmethod
-    def forward(
-        ctx, nsample, max_radius, min_radius, xyz, offset, new_xyz=None, new_offset=None
-    ):
+    def forward(ctx, nsample, max_radius, min_radius, xyz, offset, new_xyz=None, new_offset=None):
         """
         input: coords: (n, 3), new_xyz: (m, 3), offset: (b), new_offset: (b)
         output: idx: (m, nsample), dist2: (m, nsample)
