@@ -269,14 +269,14 @@ def main():
         print_log("No attribute filtering is applied!")
 
     # Get every pair of min-max distance filtering thresholds
-    min_distance = cfg.evaluator_metric_configs["min_distance"]
-    max_distance = cfg.evaluator_metric_configs["max_distance"]
-
-    # TODO(KokSeang): make this configurable, and consistent with evaluation config
-    range_filter_name = "bev_center"
     bev_distance_ranges = []
-    for min_dist, max_dist in zip(min_distance, max_distance):
-        bev_distance_ranges.append((min_dist, max_dist))
+    if hasattr(cfg, "evaluator_metric_configs"):
+        min_distance = cfg.evaluator_metric_configs["min_distance"]
+        max_distance = cfg.evaluator_metric_configs["max_distance"]
+        # TODO(KokSeang): make this configurable, and consistent with evaluation config
+        range_filter_name = "bev_center"
+        for min_dist, max_dist in zip(min_distance, max_distance):
+            bev_distance_ranges.append((min_dist, max_dist))
 
     # Generate statistics for this split
     t4_statistics = {

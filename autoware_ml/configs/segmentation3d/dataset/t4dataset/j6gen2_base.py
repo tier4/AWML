@@ -18,6 +18,7 @@ dataset_version_list = [
 ]
 
 camera_types = {}
+class_names = []
 
 # segmentation only uses lidar
 input_modality = dict(use_lidar=True, use_camera=False)
