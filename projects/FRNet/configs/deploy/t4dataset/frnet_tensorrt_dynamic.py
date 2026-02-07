@@ -1,3 +1,5 @@
+_base_ = ["../../t4dataset/frnet_1xb8_t4dataset-ot128-seg.py"]
+
 custom_imports = dict(
     imports=[
         "projects.FRNet.frnet.models",
@@ -5,7 +7,7 @@ custom_imports = dict(
     allow_failed_imports=False,
 )
 
-num_classes = 27
+num_classes = _base_.num_classes
 tensorrt_config = dict(
     points=dict(min_shape=[5000, 4], opt_shape=[30000, 4], max_shape=[60000, 4]),
     coors=dict(min_shape=[5000, 3], opt_shape=[30000, 3], max_shape=[60000, 3]),
