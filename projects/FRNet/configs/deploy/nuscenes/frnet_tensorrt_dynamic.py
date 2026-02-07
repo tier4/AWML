@@ -1,3 +1,5 @@
+_base_ = ["../../nuscenes/frnet_1xb4_nus-seg.py"]
+
 custom_imports = dict(
     imports=[
         "projects.FRNet.frnet.models",
@@ -5,12 +7,13 @@ custom_imports = dict(
     allow_failed_imports=False,
 )
 
+num_classes = _base_.num_classes
 tensorrt_config = dict(
     points=dict(min_shape=[5000, 4], opt_shape=[30000, 4], max_shape=[60000, 4]),
     coors=dict(min_shape=[5000, 3], opt_shape=[30000, 3], max_shape=[60000, 3]),
     voxel_coors=dict(min_shape=[5000, 3], opt_shape=[30000, 3], max_shape=[60000, 3]),
     inverse_map=dict(min_shape=[5000], opt_shape=[30000], max_shape=[60000]),
-    seg_logit=dict(min_shape=[5000, 17], opt_shape=[30000, 17], max_shape=[60000, 17]),
+    seg_logit=dict(min_shape=[5000, num_classes], opt_shape=[30000, num_classes], max_shape=[60000, num_classes]),
 )
 
 onnx_config = dict(
