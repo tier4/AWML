@@ -9,11 +9,11 @@ custom_imports = dict(
 
 num_classes = _base_.num_classes
 tensorrt_config = dict(
-    points=dict(min_shape=[5000, 4], opt_shape=[30000, 4], max_shape=[60000, 4]),
-    coors=dict(min_shape=[5000, 3], opt_shape=[30000, 3], max_shape=[60000, 3]),
-    voxel_coors=dict(min_shape=[5000, 3], opt_shape=[30000, 3], max_shape=[60000, 3]),
-    inverse_map=dict(min_shape=[5000], opt_shape=[30000], max_shape=[60000]),
-    seg_logit=dict(min_shape=[5000, num_classes], opt_shape=[30000, num_classes], max_shape=[60000, num_classes]),
+    points=dict(min_shape=[5000, 4], opt_shape=[60000, 4], max_shape=[120000, 4]),
+    coors=dict(min_shape=[5000, 3], opt_shape=[60000, 3], max_shape=[120000, 3]),
+    voxel_coors=dict(min_shape=[3000, 3], opt_shape=[30000, 3], max_shape=[60000, 3]),
+    inverse_map=dict(min_shape=[5000], opt_shape=[60000], max_shape=[120000]),
+    seg_logit=dict(min_shape=[5000, num_classes], opt_shape=[60000, num_classes], max_shape=[120000, num_classes]),
 )
 
 onnx_config = dict(

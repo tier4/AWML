@@ -1,38 +1,39 @@
+"""PyTorch model wrapper for FRNet deployment.
+
+Builds FRNet in deploy mode, loads checkpoint and runs inference.
+"""
+
+from __future__ import annotations
+
 from time import time
-from typing import List
 
 import numpy as np
 import numpy.typing as npt
 import torch
 from mmdet3d.registry import MODELS
 from mmengine.config import Config
-
-from autoware_ml.segmentation3d.datasets.utils import class_mapping_to_names
+from mmengine.logging import MMLogger
 
 
 class TorchModel:
+    """FRNet PyTorch model wrapper."""
 
-    def __init__(
-        self,
-        deploy_cfg: Config,
-        model_cfg: Config,
-        checkpoint_path: str,
-    ):
-        self.class_names = self.get_class_names(model_cfg)
+    def __init__(self, model_cfg: Config, checkpoint_path: str) -> None:
+        self.logger = MMLogger.get_current_instance()
         self.model = self._build_model(model_cfg.model, checkpoint_path)
 
-    def get_class_names(self, model_cfg: Config) -> List[str]:
-        # nuScenes
-        if hasattr(model_cfg, "class_names"):
-            return model_cfg.class_names
-        # T4dataset
-        elif hasattr(model_cfg, "class_mapping"):
-            ignore_index = getattr(model_cfg, "ignore_index", -1)
-            return class_mapping_to_names(model_cfg.class_mapping, ignore_index)
-        else:
-            raise KeyError("Class names or class mapping not found in model config.")
+    def inference(self, batch_inputs_dict: dict) -> npt.NDArray[np.float32]:
+        """Forward pass, returns segmentation logits (N, num_classes)."""
+        t_start = time()
+        predictions = self.model(batch_inputs_dict)
+        t_end = time()
+        latency = np.round((t_end - t_start) * 1e3, 2)
+        self.logger.info(f"Inference latency: {latency} ms")
+        return predictions["seg_logit"].cpu().detach().numpy()
 
-    def _build_model(self, model_cfg: dict, checkpoint_path: str) -> "FRNet":
+    @staticmethod
+    def _build_model(model_cfg: dict, checkpoint_path: str) -> torch.nn.Module:
+        """Build the FRNet model in deploy mode and load weights."""
         deploy = {"deploy": True}
         model_cfg["backbone"].update(deploy)
         model_cfg["decode_head"].update(deploy)
@@ -40,11 +41,3 @@ class TorchModel:
         model.load_state_dict(torch.load(checkpoint_path, weights_only=False)["state_dict"])
         model.eval()
         return model
-
-    def inference(self, batch_inputs_dict: dict) -> npt.ArrayLike:
-        t_start = time()
-        predictions = self.model(batch_inputs_dict)
-        t_end = time()
-        latency = np.round((t_end - t_start) * 1e3, 2)
-        print(f"Inference latency: {latency} ms")
-        return predictions["seg_logit"].cpu().detach().numpy()

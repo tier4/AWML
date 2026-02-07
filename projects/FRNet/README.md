@@ -65,7 +65,7 @@ python tools/detection3d/train.py projects/FRNet/configs/nuscenes/frnet_1xb4_nus
 
 - Train for T4dataset
 ```sh
-python tools/detection3d/train.py projects/FRNet/configs/t4dataset/frnet_1xb8_t4dataset-ot128-seg.py
+python tools/detection3d/train.py projects/FRNet/configs/t4dataset/frnet_1xb8_t4dataset-<SENSOR>-seg.py
 ```
 
 ### 5. Test
@@ -77,7 +77,7 @@ python tools/detection3d/test.py projects/FRNet/configs/nuscenes/frnet_1xb4_nus-
 
 - Test for T4dataset
 ```sh
-python tools/detection3d/test.py projects/FRNet/configs/t4dataset/frnet_1xb8_t4dataset-ot128-seg.py work_dirs/frnet_1xb8_t4dataset-ot128-seg/best_miou_iter_<ITER>.pth
+python tools/detection3d/test.py projects/FRNet/configs/t4dataset/frnet_1xb8_t4dataset-<SENSOR>-seg.py work_dirs/frnet_1xb8_t4dataset-<SENSOR>-seg/best_miou_iter_<ITER>.pth
 ```
 
 - Visualize inference for nuScenes
@@ -87,23 +87,23 @@ python tools/detection3d/test.py projects/FRNet/configs/nuscenes/frnet_1xb4_nus-
 
 - Visualize inference for T4dataset
 ```sh
-python tools/detection3d/test.py projects/FRNet/configs/t4dataset/frnet_1xb8_t4dataset-ot128-seg.py work_dirs/frnet_1xb8_t4dataset-ot128-seg/best_miou_iter_<ITER>.pth --show --task lidar_seg
+python tools/detection3d/test.py projects/FRNet/configs/t4dataset/frnet_1xb8_t4dataset-<SENSOR>-seg.py work_dirs/frnet_1xb8_t4dataset-<SENSOR>-seg/best_miou_iter_<ITER>.pth --show --task lidar_seg
 ```
 
 For ONNX & TensorRT execution, check the next section.
 
 ### 6. Deploy & inference
 
-Provided script allows for deploying at once to ONNX and TensorRT. In addition, it's possible to perform inference on test set with chosen execution method.
+Provided script allows for deploying at once to ONNX and TensorRT. In addition, it's possible to perform inference on test set with chosen execution method. The script automatically detects the dataset type (`NuScenesSegDataset` or `T4SegDataset`) from the model config and uses the corresponding `data_root` as the default dataset directory. Use `--dataset-dir` to override.
 
 - Deploy for nuScenes
 ```sh
-python projects/FRNet/deploy/main.py work_dirs/frnet_1xb4_nus-seg/best_miou_iter_<ITER>.pth --model-cfg projects/FRNet/configs/nuscenes/frnet_1xb4_nus-seg.py --deploy-cfg projects/FRNet/configs/deploy/frnet_tensorrt_dynamic.py --execution tensorrt --verbose
+python projects/FRNet/deploy/main.py work_dirs/frnet_1xb4_nus-seg/best_miou_iter_<ITER>.pth --model-cfg projects/FRNet/configs/nuscenes/frnet_1xb4_nus-seg.py --deploy-cfg projects/FRNet/configs/deploy/nuscenes/frnet_tensorrt_dynamic.py --execution tensorrt --verbose
 ```
 
 - Deploy for T4dataset
 ```sh
-python projects/FRNet/deploy/main.py work_dirs/frnet_1xb8_t4dataset-ot128-seg/best_miou_iter_<ITER>.pth --model-cfg projects/FRNet/configs/t4dataset/frnet_1xb8_t4dataset-ot128-seg.py --deploy-cfg projects/FRNet/configs/deploy/t4dataset/frnet_tensorrt_dynamic.py --execution tensorrt --verbose
+python projects/FRNet/deploy/main.py work_dirs/frnet_1xb8_t4dataset-<SENSOR>-seg/best_miou_iter_<ITER>.pth --model-cfg projects/FRNet/configs/t4dataset/frnet_1xb8_t4dataset-<SENSOR>-seg.py --deploy-cfg projects/FRNet/configs/deploy/t4dataset/frnet_tensorrt_dynamic.py --execution tensorrt --verbose
 ```
 
 For more information:
