@@ -1,5 +1,5 @@
 _base_ = [
-    "./second_secfpn_4xb16_121m_base_amp.py",
+    "./second_secfpn_8xb16_121m_base_amp.py",
 ]
 
 # user setting
