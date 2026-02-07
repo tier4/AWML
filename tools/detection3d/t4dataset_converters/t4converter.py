@@ -665,7 +665,7 @@ def get_lidar_sources_info(
             lidar_sources[channel] = dict(
                 sensor_token=sensor_rec.token,
                 translation=cs_rec.translation.tolist(),
-                rotation=cs_rec.rotation.q.tolist(),
+                rotation=cs_rec.rotation.rotation_matrix.tolist(),
             )
 
     return dict(lidar_sources=lidar_sources)
