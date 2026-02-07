@@ -26,9 +26,11 @@ class TorchModel:
         if hasattr(model_cfg, "class_names"):
             return model_cfg.class_names
         # T4dataset
-        if hasattr(model_cfg, "class_mapping"):
+        elif hasattr(model_cfg, "class_mapping"):
             ignore_index = getattr(model_cfg, "ignore_index", -1)
             return class_mapping_to_names(model_cfg.class_mapping, ignore_index)
+        else:
+            raise KeyError("Class names or class mapping not found in model config.")
 
     def _build_model(self, model_cfg: dict, checkpoint_path: str) -> "FRNet":
         deploy = {"deploy": True}
