@@ -229,7 +229,7 @@ class T4DatasetHandler(DatasetHandler):
         samples: List[Dict[str, Any]] = []
         for info in data_list:
             pcd_path = os.path.join(self._dataset_dir, info["lidar_points"]["lidar_path"])
-            mask_path = info.get("pts_semantic_mask_path")
+            mask_path = os.path.join(self._dataset_dir, info.get("pts_semantic_mask_path"))
             mask_categories = info.get("pts_semantic_mask_categories")
             for channel in lidar_sources:
                 samples.append(
@@ -260,7 +260,7 @@ class T4DatasetHandler(DatasetHandler):
 
     def load_gt(self, sample: Dict[str, Any]) -> Optional[npt.NDArray[np.int64]]:
         """Load merged GT mask, slice to source and remap via class_mapping."""
-        mask_path = sample.get("pts_semantic_mask_path")
+        mask_path = os.path.join(self._dataset_dir, sample.get("pts_semantic_mask_path"))
         mask_categories = sample.get("pts_semantic_mask_categories")
         if mask_path is None or mask_categories is None:
             return None

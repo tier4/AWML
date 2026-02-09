@@ -630,7 +630,7 @@ def get_lidarseg_annotations(
     assert i < len(t4.lidarseg), "Index exceeds number of lidarseg records!"
     assert t4.lidarseg[i].sample_data_token == lidar_token, "Sample data token mismatch!"
     return dict(
-        pts_semantic_mask_path=osp.join(t4.data_root, t4.lidarseg[i].filename),
+        pts_semantic_mask_path=parse_lidar_path(osp.join(t4.data_root, t4.lidarseg[i].filename)),
         pts_semantic_mask_categories={c.name: c.index for c in t4.category},
         lidar_sources_info=load_json(osp.join(t4.data_root, sd_record.info_filename)),
     )

@@ -43,7 +43,7 @@ class T4Dataset(DefaultDataset):
         coord = points[:, :3]
         strength = points[:, 3].reshape([-1, 1]) / 255  # scale strength to [0, 1]
 
-        lidarseg_path = data["pts_semantic_mask_path"]
+        lidarseg_path = os.path.join(self.data_root, data["pts_semantic_mask_path"])
         lidarseg_categories = data["pts_semantic_mask_categories"]
         segment = load_and_map_semantic_mask(
             mask_path=str(lidarseg_path),
