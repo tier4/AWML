@@ -17,6 +17,7 @@ class SetupConfigs:
     sample_idx: int
     module: str
     onnx_cfg: dict
+    work_dir: str
 
 
 @dataclass(frozen=True)

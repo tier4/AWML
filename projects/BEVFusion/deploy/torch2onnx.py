@@ -32,8 +32,8 @@ if __name__ == "__main__":
     args = parse_args()
     set_start_method("spawn", force=True)
     setup_config = setup_configs(
-        args.deploy_cfg_path,
-        args.model_cfg_path,
+        args.deploy_cfg,
+        args.model_cfg,
         args.checkpoint,
         args.device,
         args.work_dir,

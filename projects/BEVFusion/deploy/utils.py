@@ -74,4 +74,5 @@ def setup_configs(
         sample_idx=sample_idx,
         module=module,
         onnx_cfg=onnx_cfg,
+        work_dir=work_dir,
     )
