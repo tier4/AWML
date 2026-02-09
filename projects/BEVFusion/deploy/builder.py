@@ -1,23 +1,17 @@
-import logging
-import os.path as osp
+# Copyright (c) OpenMMLab. All rights reserved.
 from typing import Any
 
-import numpy as np
 import torch
-from containers import TrtBevFusionCameraOnlyContainer, TrtBevFusionImageBackboneContainer, TrtBevFusionMainContainer
-from data_classes import BackendConfigs, BuilderData, ModelData, ModelInputs, SetupConfigs
+from data_classes import BuilderData, ModelData, ModelInputs, SetupConfigs
 from mmdeploy.apis import build_task_processor
 from mmdeploy.apis.onnx.passes import optimize_onnx
-from mmdeploy.core import RewriterContext, patch_model
+from mmdeploy.core import patch_model
 from mmdeploy.utils import (
     IR,
     Backend,
     get_backend,
     get_dynamic_axes,
     get_ir_config,
-    get_onnx_config,
-    get_root_logger,
-    load_config,
 )
 from mmdet3d.registry import MODELS
 from mmengine.registry import RUNNERS

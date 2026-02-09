@@ -1,3 +1,5 @@
+# Copyright (c) OpenMMLab. All rights reserved.
+
 import logging
 import os.path as osp
 from typing import Optional
