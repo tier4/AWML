@@ -67,9 +67,7 @@ RUN python3 -m pip install git+https://github.com/tier4/autoware_perception_eval
 RUN python3 -m pip --no-cache-dir install \
     setuptools==60.2.0 \
     transformers==4.51.3 \
-    polars==1.37.1 \
-		onnx_graphsurgeon \
-		spconv-cu120
+    polars==1.37.1
 
 
 # NOTE(knzo25): this patch is needed to use numpy versions over 1.23.5 (version used in mmdet3d 1.4.0)
