@@ -69,12 +69,13 @@ class TesterBase:
             checkpoint = torch.load(self.cfg.weight, weights_only=False)
             weight = OrderedDict()
             for key, value in checkpoint["state_dict"].items():
-                if key.startswith("module."):
-                    if comm.get_world_size() == 1:
-                        key = key[7:]  # module.xxx.xxx -> xxx.xxx
-                else:
-                    if comm.get_world_size() > 1:
-                        key = "module." + key  # xxx.xxx -> module.xxx.xxx
+                if not key.startswith("module."):
+                    key = "module." + key  # xxx.xxx -> module.xxx.xxx
+                # Now all keys contain "module." no matter DDP or not.
+                if self.keywords in key:
+                    key = key.replace(self.keywords, self.replacement, 1)
+                if comm.get_world_size() == 1:
+                    key = key[7:]  # module.xxx.xxx -> xxx.xxx
                 weight[key] = value
             model.load_state_dict(weight, strict=True)
             self.logger.info("=> Loaded weight '{}' (epoch {})".format(self.cfg.weight, checkpoint["epoch"]))
