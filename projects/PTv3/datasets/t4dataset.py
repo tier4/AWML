@@ -12,6 +12,8 @@ from typing import Dict
 import numpy as np
 import numpy.typing as npt
 
+from autoware_ml.segmentation3d.datasets.utils import load_and_map_semantic_mask
+
 from .builder import DATASETS
 from .defaults import DefaultDataset
 
@@ -34,27 +36,6 @@ class T4Dataset(DefaultDataset):
                 data_list.extend(info["data_list"])
         return data_list
 
-    def map_segments(self, segment: npt.NDArray, lidarseg_categories: Dict[str, int]) -> npt.NDArray:
-        """Map raw segment labels to unified learning labels.
-
-        Args:
-            segment: Raw segment array with scene-specific labels
-            lidarseg_categories: Dict mapping category names to raw label values
-                (e.g., {"car": 2})
-
-        Returns:
-            Mapped segment array with unified learning labels
-        """
-        raw_to_category = {v: k for k, v in lidarseg_categories.items()}
-
-        def _map_segment(raw_label):
-            category = raw_to_category.get(raw_label, None)
-            if category is None:
-                return self.ignore_index
-            return self.learning_map.get(category, self.ignore_index)
-
-        return np.vectorize(_map_segment)(segment).astype(np.int64)
-
     def get_data(self, idx):
         data = self.data_list[idx % len(self.data_list)]
         lidar_path = os.path.join(self.data_root, data["lidar_points"]["lidar_path"])
@@ -62,10 +43,15 @@ class T4Dataset(DefaultDataset):
         coord = points[:, :3]
         strength = points[:, 3].reshape([-1, 1]) / 255  # scale strength to [0, 1]
 
-        lidarseg_path = data["pts_semantic_mask_path"]
+        lidarseg_path = os.path.join(self.data_root, data["pts_semantic_mask_path"])
         lidarseg_categories = data["pts_semantic_mask_categories"]
-        segment = np.fromfile(str(lidarseg_path), dtype=np.uint8, count=-1).reshape([-1])
-        segment = self.map_segments(segment, lidarseg_categories)
+        segment = load_and_map_semantic_mask(
+            mask_path=str(lidarseg_path),
+            raw_categories=lidarseg_categories,
+            class_mapping=self.learning_map,
+            ignore_index=self.ignore_index,
+            seg_dtype=np.uint8,
+        )
 
         data_dict = dict(
             coord=coord,
