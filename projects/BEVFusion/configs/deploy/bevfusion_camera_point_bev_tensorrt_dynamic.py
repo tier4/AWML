@@ -12,7 +12,7 @@ custom_imports = dict(
 )
 
 depth_bins = 129
-feature_dims = (60, 80)
+feature_dims = (48, 96)
 # image_dims = (640, 576)
 
 backend_config = dict(
