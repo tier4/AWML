@@ -69,7 +69,6 @@ RUN python3 -m pip --no-cache-dir install \
     transformers==4.51.3 \
     polars==1.37.1
 
-
 # NOTE(knzo25): this patch is needed to use numpy versions over 1.23.5 (version used in mmdet3d 1.4.0)
 # It can be safely deleted when mmdet3d updates the numpy version
 # NOTE(amadeuszsz): patches for torch.load can be removed after mmlab's PyTorch 2.6+ support
