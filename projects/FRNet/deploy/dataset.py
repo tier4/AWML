@@ -46,6 +46,7 @@ class DatasetHandler(ABC):
     @abstractmethod
     def class_names(self) -> List[str]:
         """Ordered class names including the unknown class at ignore_index."""
+        raise NotImplementedError
 
     @property
     @abstractmethod
