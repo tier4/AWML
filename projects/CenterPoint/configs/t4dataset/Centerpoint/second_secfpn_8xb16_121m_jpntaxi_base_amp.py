@@ -42,7 +42,7 @@ eval_class_range = {
 
 # user setting
 data_root = "data/t4dataset/"
-info_directory_path = "info/kokseang_2_6_1/"
+info_directory_path = "info/kokseang_2_6/"
 train_gpu_size = 8
 train_batch_size = 16
 test_batch_size = 2
@@ -353,7 +353,7 @@ model = dict(
 
 randomness = dict(seed=0, diff_rank_seed=False, deterministic=True)
 
-lr = 1e-4
+lr = 3e-4
 param_scheduler = [
     # learning rate scheduler
     # During the first (max_epochs * 0.3) epochs, learning rate increases from 0 to lr * 10
@@ -409,7 +409,7 @@ val_cfg = dict()
 test_cfg = dict()
 
 optimizer = dict(type="AdamW", lr=lr, weight_decay=0.01)
-clip_grad = dict(max_norm=15, norm_type=2)  # max norm of gradients upper bound to be 15 since amp is used
+clip_grad = dict(max_norm=5.0, norm_type=2)  # max norm of gradients upper bound to be 15 since amp is used
 
 optim_wrapper = dict(
     type="AmpOptimWrapper",

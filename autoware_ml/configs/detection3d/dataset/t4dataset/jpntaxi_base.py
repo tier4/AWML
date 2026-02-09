@@ -24,7 +24,7 @@ dataset_test_groups = {
 dataset_version_list = [
     "db_jpntaxigen2_v1",
     "db_jpntaxigen2_v2",
-    # "db_jpntaxigen2_v3",
+    "db_jpntaxigen2_v3",
     "db_jpntaxi_v1",
     "db_jpntaxi_v2",
     "db_jpntaxi_v4",
