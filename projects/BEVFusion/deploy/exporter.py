@@ -178,6 +178,7 @@ class Torch2OnnxExporter:
             Main body.
         """
         main_container = TrtBevFusionMainContainer(patched_model)
+        data_samples = model_data.input_metas["data_samples"]
         voxels = model_data.model_inputs.voxels
         coors = model_data.model_inputs.coors
         num_points_per_voxel = model_data.model_inputs.num_points_per_voxel
@@ -189,9 +190,10 @@ class Torch2OnnxExporter:
         )
 
         if image_feats is not None:
+            imgs = model_data.model_inputs.imgs
             points = model_data.model_inputs.points
             lidar2img = model_data.model_inputs.lidar2img
-            img_aug_matrix = model_data.model_inputs.img_aug_matrix
+            img_aug_matrix = imgs.new_tensor(np.stack(data_samples[0].img_aug_matrix))
             geom_feats = model_data.model_inputs.geom_feats
             kept = model_data.model_inputs.kept
             ranks = model_data.model_inputs.ranks

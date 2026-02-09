@@ -21,6 +21,7 @@ class TrtBevFusionImageBackboneContainer(torch.nn.Module):
 
 
 class TrtBevFusionMainContainer(torch.nn.Module):
+
     def __init__(self, mod, *args, **kwargs) -> None:
         super().__init__(*args, **kwargs)
         self.mod = mod
@@ -72,7 +73,18 @@ class TrtBevFusionMainContainer(torch.nn.Module):
             )
 
         outputs = mod._forward(batch_inputs_dict, using_image_features=True)
+        bbox_pred, score, label_pred = self.postprocessing(outputs)
+        return bbox_pred, score, label_pred
 
+    def postprocessing(self, outputs: dict):
+        """Postprocess the outputs of the model to get the final predictions.
+
+        Args:
+            outputs (dict): The outputs of the model.
+
+        Returns:
+            dict: The final predictions.
+        """
         # The following code is taken from
         # projects/BEVFusion/bevfusion/bevfusion_head.py
         # It is used to simplify the post process in deployment
