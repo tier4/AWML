@@ -1,43 +1,42 @@
 import os
 from copy import deepcopy
-from dataclasses import dataclass
 
 from mmdeploy.utils import (
-    IR,
-    Backend,
-    get_backend,
-    get_dynamic_axes,
-    get_ir_config,
     get_onnx_config,
-    get_root_logger,
     load_config,
 )
-from mmdet3d.registry import MODELS
-from mmengine.registry import RUNNERS
+
+from .data_classes import SetupConfigs
 
 
-@dataclass(frozen=True)
-class SetupConfigs:
-  deploy_cfg_path: str
-  model_cfg: dict
-  checkpoint_path: str
-  device: str
-  work_dir: str
-  sample_idx: int
-  data_preprocessor_cfg: dict
+def setup_configs(
+    deploy_cfg_path: str,
+    model_cfg_path: str,
+    checkpoint_path: str,
+    device: str,
+    work_dir: str,
+    sample_idx: int,
+    module: str,
+) -> SetupConfigs:
+    """
+    Setup configuration for the model.
 
-
-def setup_configs(deploy_cfg_path, model_cfg_path, checkpoint_path, device, work_dir, sample_idx, module):
-
+    Args:
+        deploy_cfg_path: Path to the deploy config file.
+        model_cfg_path: Path to the model config file.
+        checkpoint_path: Path to the checkpoint file.
+        device: Device to use for the model.
+        work_dir: Directory to save the model.
+        sample_idx: Index of the sample to use for the model.
+        module: Module to export.
+    """
     os.makedirs(work_dir, exist_ok=True)
-
     deploy_cfg, model_cfg = load_config(deploy_cfg_path, model_cfg_path)
     model_cfg.randomness = dict(seed=0, diff_rank_seed=False, deterministic=False)
     model_cfg.launcher = "none"
 
     onnx_cfg = get_onnx_config(deploy_cfg)
     input_names = onnx_cfg["input_names"]
-    output_names = onnx_cfg["output_names"]
 
     extract_pts_inputs = True if "points" in input_names or "voxels" in input_names else False
     data_preprocessor_cfg = deepcopy(model_cfg.model.data_preprocessor)
@@ -66,50 +65,12 @@ def setup_configs(deploy_cfg_path, model_cfg_path, checkpoint_path, device, work
         model_cfg["work_dir"] = work_dir
 
     return SetupConfigs(
-      deploy_cfg_path=deploy_cfg_path,
-      model_cfg_path=model_cfg_path,
-      checkpoint_path=checkpoint_path,
-      device=device,
-      work_dir=work_dir,
-      data_preprocessor_cfg=data_preprocessor_cfg,
+        deploy_cfg=deploy_cfg,
+        model_cfg=model_cfg,
+        checkpoint_path=checkpoint_path,
+        device=device,
+        data_preprocessor_cfg=data_preprocessor_cfg,
+        sample_idx=sample_idx,
+        module=module,
+        onnx_cfg=onnx_cfg,
     )
-
-
-
-def build_model(model_cfg, checkpoint_path, device):
-
-  data_preprocessor = MODELS.build(data_preprocessor_cfg)
-
-
-  # load a sample
-  runner = RUNNERS.build(model_cfg)
-  runner.load_or_resume()
-
-    data = runner.test_dataloader.dataset[args.sample_idx]
-
-    # create model an inputs
-    task_processor = build_task_processor(model_cfg, deploy_cfg, device)
-
-    torch_model = task_processor.build_pytorch_model(checkpoint_path)
-    data, model_inputs = task_processor.create_input(data, data_preprocessor=data_preprocessor, model=torch_model)
-
-    if isinstance(model_inputs, list) and len(model_inputs) == 1:
-        model_inputs = model_inputs[0]
-    data_samples = data["data_samples"]
-    input_metas = {"data_samples": data_samples, "mode": "predict", "data_preprocessor": data_preprocessor}
-
-    (
-        voxels,
-        coors,
-        num_points_per_voxel,
-        points,
-        camera_mask,
-        imgs,
-        lidar2img,
-        cam2image,
-        camera2lidar,
-        geom_feats,
-        kept,
-        ranks,
-        indices,
-    ) = model_inputs
