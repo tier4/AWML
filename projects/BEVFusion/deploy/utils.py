@@ -3,12 +3,11 @@
 import os
 from copy import deepcopy
 
+from data_classes import SetupConfigs
 from mmdeploy.utils import (
     get_onnx_config,
     load_config,
 )
-
-from .data_classes import SetupConfigs
 
 
 def setup_configs(

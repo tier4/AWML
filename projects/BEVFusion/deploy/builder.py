@@ -16,8 +16,6 @@ from mmdeploy.utils import (
 from mmdet3d.registry import MODELS
 from mmengine.registry import RUNNERS
 
-from projects.BEVFusion.deploy.torch2onnx import backend
-
 
 class ExportBuilder:
 
