@@ -38,14 +38,14 @@ docker run -it --rm --gpus all --shm-size=64g --name awml -p 6006:6006 -v $PWD/:
 
 ### 2. Config
 
-Change parameters for your environment by changing [base config file](configs/nuscenes/frnet_1xb4_nus-seg.py). `BATCH_SIZE = 2` is appropriate for GPU with 8 GB VRAM.
+Change parameters for your environment by changing [base config file](configs/nuscenes/frnet_1xb4_nus-seg.py). `batch_size = 2` is appropriate for GPU with 8 GB VRAM.
 
 ```py
 # user settings
-BATCH_SIZE = 4
-NUM_WORKERS = 4
-ITERATIONS = 50000
-VAL_INTERVAL = 1000
+batch_size = 4
+num_workers = 4
+iterations = 50000
+val_interval = 1000
 ```
 
 ### 3. Dataset

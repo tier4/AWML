@@ -15,17 +15,17 @@ custom_imports = dict(
 custom_imports["imports"] += _base_.custom_imports["imports"]
 
 # user settings
-BATCH_SIZE = 8
-NUM_WORKERS = 16
-ITERATIONS = 150000
-VAL_INTERVAL = 1500
+batch_size = 8
+num_workers = 16
+iterations = 150000
+val_interval = 1500
 
 # LiDAR settings (Hesai QT128)
-LIDAR_H = 128
-RANGE_W = 1024
-FRUSTUM_W = 256  # 1024 / 4
-FOV_UP = 52.6
-FOV_DOWN = -52.6
+lidar_h = 128
+range_w = 1024
+frustum_w = 256  # 1024 / 4
+fov_up = 52.6
+fov_down = -52.6
 SOURCES = ["LIDAR_FRONT_LOWER", "LIDAR_LEFT_LOWER", "LIDAR_RIGHT_LOWER", "LIDAR_REAR_LOWER"]
 
 dataset_type = _base_.dataset_type
@@ -70,8 +70,8 @@ input_modality = dict(use_lidar=True, use_camera=False)
 backend_args = None
 
 model = dict(
-    data_preprocessor=dict(H=LIDAR_H, W=FRUSTUM_W, fov_up=FOV_UP, fov_down=FOV_DOWN, ignore_index=ignore_index),
-    backbone=dict(output_shape=(LIDAR_H, FRUSTUM_W)),
+    data_preprocessor=dict(H=lidar_h, W=frustum_w, fov_up=fov_up, fov_down=fov_down, ignore_index=ignore_index),
+    backbone=dict(output_shape=(lidar_h, frustum_w)),
     decode_head=dict(num_classes=num_classes, ignore_index=ignore_index),
     auxiliary_head=[
         dict(
@@ -167,10 +167,10 @@ train_pipeline = [
     ),
     dict(
         type="FrustumMix",
-        H=LIDAR_H,
-        W=FRUSTUM_W,
-        fov_up=FOV_UP,
-        fov_down=FOV_DOWN,
+        H=lidar_h,
+        W=frustum_w,
+        fov_up=fov_up,
+        fov_down=fov_down,
         num_areas=[3, 4, 5, 6],
         pre_transform=pre_transform,
         prob=1.0,
@@ -178,10 +178,10 @@ train_pipeline = [
     dict(type="InstanceCopy", instance_classes=[0, 1, 2, 3, 4, 5, 6, 7, 8, 9], pre_transform=pre_transform, prob=1.0),
     dict(
         type="RangeInterpolation",
-        H=LIDAR_H,
-        W=RANGE_W,
-        fov_up=FOV_UP,
-        fov_down=FOV_DOWN,
+        H=lidar_h,
+        W=range_w,
+        fov_up=fov_up,
+        fov_down=fov_down,
         ignore_index=ignore_index,
     ),
     dict(type="Pack3DDetInputs", keys=["points", "pts_semantic_mask"]),
@@ -201,10 +201,10 @@ test_pipeline = [
     ),
     dict(
         type="RangeInterpolation",
-        H=LIDAR_H,
-        W=RANGE_W,
-        fov_up=FOV_UP,
-        fov_down=FOV_DOWN,
+        H=lidar_h,
+        W=range_w,
+        fov_up=fov_up,
+        fov_down=fov_down,
         ignore_index=ignore_index,
     ),
     dict(type="Pack3DDetInputs", keys=["points"], meta_keys=["num_points", "lidar_path", "num_pts_feats"]),
@@ -224,10 +224,10 @@ tta_pipeline = [
     ),
     dict(
         type="RangeInterpolation",
-        H=LIDAR_H,
-        W=RANGE_W,
-        fov_up=FOV_UP,
-        fov_down=FOV_DOWN,
+        H=lidar_h,
+        W=range_w,
+        fov_up=fov_up,
+        fov_down=fov_down,
         ignore_index=ignore_index,
     ),
     dict(
@@ -253,8 +253,8 @@ tta_pipeline = [
 ]
 
 train_dataloader = dict(
-    batch_size=BATCH_SIZE,
-    num_workers=NUM_WORKERS,
+    batch_size=batch_size,
+    num_workers=num_workers,
     persistent_workers=True,
     sampler=dict(type="InfiniteSampler", shuffle=True),
     dataset=dict(
@@ -270,8 +270,8 @@ train_dataloader = dict(
     ),
 )
 val_dataloader = dict(
-    batch_size=BATCH_SIZE,
-    num_workers=NUM_WORKERS,
+    batch_size=batch_size,
+    num_workers=num_workers,
     persistent_workers=True,
     drop_last=False,
     sampler=dict(type="DefaultSampler", shuffle=False),
@@ -306,7 +306,7 @@ optim_wrapper = dict(
 param_scheduler = [
     dict(
         type="OneCycleLR",
-        total_steps=ITERATIONS,
+        total_steps=iterations,
         by_epoch=False,
         eta_max=lr,
         pct_start=0.2,
@@ -315,7 +315,7 @@ param_scheduler = [
     )
 ]
 
-train_cfg = dict(type="IterBasedTrainLoop", max_iters=ITERATIONS, val_interval=VAL_INTERVAL)
+train_cfg = dict(type="IterBasedTrainLoop", max_iters=iterations, val_interval=val_interval)
 val_cfg = dict()
 test_cfg = dict()
 
