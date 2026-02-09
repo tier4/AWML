@@ -630,10 +630,45 @@ def get_lidarseg_annotations(
     assert i < len(t4.lidarseg), "Index exceeds number of lidarseg records!"
     assert t4.lidarseg[i].sample_data_token == lidar_token, "Sample data token mismatch!"
     return dict(
-        pts_semantic_mask_path=osp.join(t4.data_root, t4.lidarseg[i].filename),
+        pts_semantic_mask_path=parse_lidar_path(osp.join(t4.data_root, t4.lidarseg[i].filename)),
         pts_semantic_mask_categories={c.name: c.index for c in t4.category},
         lidar_sources_info=load_json(osp.join(t4.data_root, sd_record.info_filename)),
     )
+
+
+def get_lidar_sources_info(
+    t4: Tier4,
+) -> Dict[str, Dict[str, dict]]:
+    """Collect all lidar sensors and their calibrated extrinsics.
+
+    Args:
+        t4: Tier4 dataset instance.
+
+    Returns:
+        Dictionary containing lidar_sources with sensor tokens and extrinsics.
+        The extrinsics (translation, rotation) represent sensor_to_base transform.
+    """
+    lidar_sources: dict[str, dict] = {}
+    for cs_rec in getattr(t4, "calibrated_sensor", []):
+        try:
+            sensor_rec = t4.get("sensor", cs_rec.sensor_token)
+        except KeyError:
+            continue
+
+        modality = getattr(sensor_rec, "modality", None)
+        modality_value = modality.value if hasattr(modality, "value") else modality
+        if modality_value != "lidar":
+            continue
+
+        channel = sensor_rec.channel
+        if channel not in lidar_sources:
+            lidar_sources[channel] = dict(
+                sensor_token=sensor_rec.token,
+                translation=cs_rec.translation.tolist(),
+                rotation=cs_rec.rotation.rotation_matrix.tolist(),
+            )
+
+    return dict(lidar_sources=lidar_sources)
 
 
 def obtain_sensor2top(

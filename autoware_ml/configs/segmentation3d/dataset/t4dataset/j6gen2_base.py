@@ -1,5 +1,12 @@
+custom_imports = dict(
+    imports=[
+        "autoware_ml.segmentation3d.datasets.t4dataset",
+        "autoware_ml.segmentation3d.datasets.transforms",
+    ]
+)
+
 # dataset type setting
-dataset_type = "T4Dataset"
+dataset_type = "T4SegDataset"
 info_train_file_name = "t4dataset_j6gen2_base_infos_train.pkl"
 info_val_file_name = "t4dataset_j6gen2_base_infos_val.pkl"
 info_test_file_name = "t4dataset_j6gen2_base_infos_test.pkl"
@@ -11,14 +18,15 @@ dataset_version_list = [
 ]
 
 camera_types = {}
+class_names = []
 
 # segmentation only uses lidar
 input_modality = dict(use_lidar=True, use_camera=False)
 
 # class setting
-class_names = [
+base_class_names = [
     "unpainted",
-    "driveable_surface",
+    "drivable_surface",
     "other_flat_surface",
     "sidewalk",
     "manmade",
@@ -47,45 +55,44 @@ class_names = [
     "ghost_point",
     "out_of_sync",
 ]
+base_palette = [
+    [0, 0, 0],  # Black - unpainted
+    [255, 0, 255],  # Magenta - drivable_surface
+    [139, 137, 137],  # Grey - other_flat_surface
+    [75, 0, 75],  # Dark Purple - sidewalk
+    [230, 230, 250],  # Lavender - manmade
+    [0, 175, 0],  # Green - vegetation
+    [0, 150, 245],  # Blue - car
+    [255, 255, 0],  # Yellow - bus
+    [199, 21, 133],  # Medium Violet Red - emergency_vehicle
+    [0, 139, 139],  # Dark Cyan - train
+    [160, 32, 240],  # Purple - truck
+    [184, 134, 11],  # Dark Goldenrod - tractor_unit
+    [135, 60, 0],  # Brown - semi_trailer
+    [0, 255, 255],  # Cyan - construction_vehicle
+    [128, 128, 0],  # Olive - forklift
+    [124, 252, 0],  # Lawn Green - kart
+    [255, 127, 0],  # Orange - motorcycle
+    [255, 192, 203],  # Pink - bicycle
+    [255, 0, 0],  # Red - pedestrian
+    [210, 105, 30],  # Chocolate - personal_mobility
+    [189, 183, 107],  # Dark Khaki - animal
+    [153, 50, 204],  # Dark Orchid - pushable_pullable
+    [255, 240, 150],  # Light Yellow - traffic_cone
+    [70, 130, 180],  # Steel Blue - stroller
+    [210, 180, 140],  # Tan - debris
+    [188, 143, 143],  # Rosy Brown - other_stuff
+    [64, 224, 208],  # Turquoise - noise
+    [245, 245, 220],  # Beige - ghost_point
+    [50, 50, 50],  # Very Dark Grey - out_of_sync
+]
 
 metainfo = dict(
-    classes=class_names,
+    base_class_names=base_class_names,
+    base_palette=base_palette,
 )
 
 merge_objects = None
 merge_type = None
-
-# visualization
-class_colors = {
-    0: (0, 0, 0),  # Black
-    1: (0, 255, 255),  # Cyan / Aqua
-    2: (233, 233, 229),  # Light Beige/Grey
-    3: (110, 110, 110),  # Dark Grey
-    4: (0, 175, 0),  # Green
-    5: (232, 35, 244),  # Magenta
-    6: (255, 158, 0),  # Orange
-    7: (0, 0, 230),  # Blue
-    8: (255, 0, 0),  # Bright Red
-    9: (255, 127, 80),  # Coral
-    10: (160, 60, 60),  # Brownish Red
-    11: (255, 140, 0),  # Dark Orange
-    12: (255, 215, 0),  # Gold
-    13: (220, 20, 60),  # Crimson
-    14: (255, 61, 99),  # Reddish Pink
-    15: (230, 230, 0),  # Yellow
-    16: (128, 128, 128),  # Medium Grey
-    17: (255, 0, 255),  # Bright Fuchsia
-    18: (47, 79, 79),  # Dark Slate Grey
-    19: (139, 69, 19),  # Saddle Brown
-    20: (218, 165, 32),  # Goldenrod
-    21: (128, 0, 128),  # Purple
-    22: (135, 206, 235),  # Sky Blue
-    23: (0, 0, 128),  # Navy Blue
-    24: (170, 170, 170),  # Light Grey
-    25: (205, 133, 63),  # Peru
-    26: (255, 99, 71),  # Tomato Red
-    27: (240, 240, 240),  # Ghost White
-    28: (50, 50, 50),  # Very Dark Grey
-}
 
 filter_attributes = None
