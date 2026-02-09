@@ -1,6 +1,6 @@
-FROM autoware-ml
-
-ARG TRT_MAJOR=10.4.0
+ARG AWML_BASE_IMAGE="ghcr.io/tier4/awml:base-latest"
+FROM ${AWML_BASE_IMAGE}
+ARG TRT_VERSION=10.8.0.43
 
 # Install pip dependencies
 RUN python3 -m pip --no-cache-dir install \
@@ -9,8 +9,7 @@ RUN python3 -m pip --no-cache-dir install \
     onnx_graphsurgeon \
     polygraphy \
     pycuda \
-    tensorrt==${TRT_MAJOR} \
-    tensorrt-cu12==${TRT_MAJOR}
+    tensorrt-cu12==${TRT_VERSION}
 
 WORKDIR /workspace
 RUN pip install --no-cache-dir -e .
