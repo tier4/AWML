@@ -18,7 +18,7 @@ from typing import List
 
 import numpy as np
 import torch
-from dataset import create_dataset_handler
+from dataset import create_dataset_loader
 from mmdeploy.utils import load_config
 from mmdet3d.evaluation.functional import seg_eval
 from mmdet3d.utils import register_all_modules
@@ -78,7 +78,7 @@ def main() -> None:
     logger.info(f"Dataset type: {model_cfg.dataset_type}")
     logger.info(f"Dataset directory: {dataset_dir}")
 
-    dataset = create_dataset_handler(model_cfg, dataset_dir)
+    dataset = create_dataset_loader(model_cfg, dataset_dir)
 
     samples = dataset.get_samples()
     num_samples = min(args.num_samples, len(samples))

@@ -1,14 +1,13 @@
-"""Dataset handlers for FRNet deployment.
+"""Dataset loaders for FRNet deployment.
 
 Unified API for loading point clouds, ground-truth labels and class metadata
-from NuScenes and T4Dataset formats.  All handlers share the same interface
+from NuScenes and T4Dataset formats.  All loaders share the same interface
 so the rest of the pipeline doesn't need to know which dataset is used.
 """
 
 from __future__ import annotations
 
 import os
-from abc import ABC, abstractmethod
 from typing import Any, Dict, List, Optional
 
 import mmengine
@@ -25,54 +24,54 @@ from autoware_ml.segmentation3d.datasets.utils import (
 )
 
 
-class DatasetHandler(ABC):
+class DatasetLoader:
     """Base class for dataset-specific point cloud loading and metadata.
 
-    Subclasses must implement:
-      - class_names: ordered list of class names (last = unknown/ignore).
-      - palette: RGB colour palette aligned with class_names.
-      - label2cat: mapping {label_index: class_name} for seg_eval.
-      - get_samples(): list available samples.
-      - load_points(sample): load one point cloud.
-      - load_gt(sample): load ground-truth labels (or None).
+    Subclasses must override ``_build_class_info`` to provide class metadata
+    and implement ``get_samples``, ``load_points``, and ``load_gt`` for
+    dataset-specific I/O.
     """
 
     def __init__(self, model_cfg: Config, dataset_dir: str) -> None:
         self._model_cfg = model_cfg
         self._dataset_dir = dataset_dir
         self.logger = MMLogger.get_current_instance()
+        self._class_names, self._palette, self._label2cat = self._build_class_info()
 
     @property
-    @abstractmethod
     def class_names(self) -> List[str]:
         """Ordered class names including the unknown class at ignore_index."""
-        raise NotImplementedError
+        return self._class_names
 
     @property
-    @abstractmethod
     def palette(self) -> List[List[int]]:
         """RGB palette aligned with class_names (same length)."""
+        return self._palette
 
     @property
-    @abstractmethod
     def label2cat(self) -> Dict[int, str]:
         """Mapping from label index to class name, used by seg_eval."""
+        return self._label2cat
 
-    @abstractmethod
+    def _build_class_info(self) -> tuple:
+        """Return (class_names, palette, label2cat).  Must be overridden."""
+        raise NotImplementedError
+
     def get_samples(self) -> List[Dict[str, Any]]:
         """Return list of sample dicts for load_points/load_gt."""
+        raise NotImplementedError
 
-    @abstractmethod
     def load_points(self, sample: Dict[str, Any]) -> npt.NDArray[np.float32]:
         """Load point cloud for the given sample, shape (N, D)."""
+        raise NotImplementedError
 
-    @abstractmethod
     def load_gt(self, sample: Dict[str, Any]) -> Optional[npt.NDArray[np.int64]]:
         """Load ground-truth semantic labels, shape (N,). Returns None if unavailable."""
+        raise NotImplementedError
 
 
-class NuScenesHandler(DatasetHandler):
-    """NuScenes lidar-segmentation dataset handler.
+class NuScenesLoader(DatasetLoader):
+    """NuScenes lidar-segmentation dataset loader.
 
     Loads point clouds from .bin files using the nuscenes-devkit.
     GT labels come from the lidarseg table (available in v1.0-mini and
@@ -101,24 +100,13 @@ class NuScenesHandler(DatasetHandler):
 
     def __init__(self, model_cfg: Config, dataset_dir: str) -> None:
         super().__init__(model_cfg, dataset_dir)
-        self._class_names: List[str] = list(model_cfg.class_names) + ["unknown"]
-        self._label2cat: Dict[int, str] = {i: n for i, n in enumerate(model_cfg.class_names)}
         self._labels_map = self._build_labels_map()
 
-    @property
-    def class_names(self) -> List[str]:
-        """Return class names from model config + unknown."""
-        return self._class_names
-
-    @property
-    def palette(self) -> List[List[int]]:
-        """Return hardcoded NuScenes palette."""
-        return self._PALETTE
-
-    @property
-    def label2cat(self) -> Dict[int, str]:
-        """Return label-to-category mapping."""
-        return self._label2cat
+    def _build_class_info(self) -> tuple:
+        """Build class names, palette and label2cat for NuScenes."""
+        class_names = list(self._model_cfg.class_names) + ["unknown"]
+        label2cat = {i: n for i, n in enumerate(self._model_cfg.class_names)}
+        return class_names, self._PALETTE, label2cat
 
     def get_samples(self) -> List[Dict[str, Any]]:
         """Load scenes from NuScenes and return one sample per scene."""
@@ -181,8 +169,8 @@ class NuScenesHandler(DatasetHandler):
         return self._labels_map[raw_labels]
 
 
-class T4DatasetHandler(DatasetHandler):
-    """T4 lidar-segmentation dataset handler.
+class T4DatasetLoader(DatasetLoader):
+    """T4 lidar-segmentation dataset loader.
 
     T4 stores merged multi-LiDAR point clouds in one file.  This handler
     splits them back per configured source using LoadPointsWithIdentifierFromFile
@@ -195,22 +183,6 @@ class T4DatasetHandler(DatasetHandler):
     def __init__(self, model_cfg: Config, dataset_dir: str) -> None:
         super().__init__(model_cfg, dataset_dir)
         self._load_transform = self._build_load_transform()
-        self._class_names, self._palette, self._label2cat = self._build_class_info()
-
-    @property
-    def class_names(self) -> List[str]:
-        """Return class names derived from class_mapping."""
-        return self._class_names
-
-    @property
-    def palette(self) -> List[List[int]]:
-        """Return palette derived from class_mapping."""
-        return self._palette
-
-    @property
-    def label2cat(self) -> Dict[int, str]:
-        """Return label-to-category mapping."""
-        return self._label2cat
 
     def get_samples(self) -> List[Dict[str, Any]]:
         """Load annotation pickle and expand each frame by lidar_sources."""
@@ -293,7 +265,7 @@ class T4DatasetHandler(DatasetHandler):
         cfg.pop("type")
         return LoadPointsWithIdentifierFromFile(**cfg)
 
-    def _build_class_info(self):
+    def _build_class_info(self) -> tuple:
         """Derive class names, palette and label2cat from class_mapping config."""
         names, palette, label2cat = class_mapping_to_names_palette_label2cat(
             class_mapping=self._model_cfg.class_mapping,
@@ -327,15 +299,15 @@ class T4DatasetHandler(DatasetHandler):
         return {"idx_begin": idx_begin, "length": length}
 
 
-_HANDLERS: Dict[str, type] = {
-    "NuScenesSegDataset": NuScenesHandler,
-    "T4SegDataset": T4DatasetHandler,
+_LOADERS: Dict[str, type] = {
+    "NuScenesSegDataset": NuScenesLoader,
+    "T4SegDataset": T4DatasetLoader,
 }
 
 
-def create_dataset_handler(model_cfg: Config, dataset_dir: str) -> DatasetHandler:
-    """Create the right DatasetHandler based on model_cfg.dataset_type."""
+def create_dataset_loader(model_cfg: Config, dataset_dir: str) -> DatasetLoader:
+    """Create the right DatasetLoader based on model_cfg.dataset_type."""
     dataset_type = model_cfg.dataset_type
-    if dataset_type not in _HANDLERS:
-        raise ValueError(f"Unsupported dataset_type: {dataset_type!r}. Supported: {list(_HANDLERS)}")
-    return _HANDLERS[dataset_type](model_cfg, dataset_dir)
+    if dataset_type not in _LOADERS:
+        raise ValueError(f"Unsupported dataset_type: {dataset_type!r}. Supported: {list(_LOADERS)}")
+    return _LOADERS[dataset_type](model_cfg, dataset_dir)
