@@ -3,6 +3,10 @@ import argparse
 import logging
 import os
 
+from mmdet3d.utils import register_all_modules
+
+register_all_modules(init_default_scope=True)
+
 from exporter import Torch2OnnxExporter
 from torch.multiprocessing import set_start_method
 from utils import setup_configs
@@ -40,8 +44,8 @@ if __name__ == "__main__":
         args.sample_idx,
         args.module,
     )
-    # Build the exporter
+    # # Build the exporter
     exporter = Torch2OnnxExporter(setup_config, args.log_level)
 
-    # Export the model
+    # # Export the model
     exporter.export()

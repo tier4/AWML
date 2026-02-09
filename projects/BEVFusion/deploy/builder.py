@@ -41,10 +41,10 @@ class ExportBuilder:
         ir_configs = self._build_ir_configs()
 
         # Update the deploy config
-        self._update_dpeloy_cfg(ir_configs, backend)
+        self._update_deploy_cfg(ir_configs, backend)
 
         # Build the intermediate representations
-        ir = self._build_intermediate_representations(ir_configs)
+        ir = self._build_intermediate_representations()
 
         # Build the context info
         context_info = self._build_context_info(ir, ir_configs, backend, optimize)
@@ -132,7 +132,7 @@ class ExportBuilder:
         else:
             cfg[key] = val
 
-    def update_deploy_cfg(self, ir_configs: dict, backend: Backend) -> None:
+    def _update_deploy_cfg(self, ir_configs: dict, backend: Backend) -> None:
         """Update the deploy config.
 
         Args:

@@ -74,7 +74,9 @@ class Torch2OnnxExporter:
 
             # Export the main network with camera or lidar-only
             elif self.setup_configs.module == "main_body":
-                self._export_main_body(model_data=model_data, ir_configs=ir_configs, patched_model=patched_model)
+                self._export_main_body(
+                    model_data=model_data, ir_configs=ir_configs, patched_model=patched_model, image_feats=image_feats
+                )
 
     def _export_image_backbone(self, model_data: ModelData, ir_configs: dict, patched_model: torch.nn.Module) -> None:
         """Export the image backbone.
@@ -217,7 +219,11 @@ class Torch2OnnxExporter:
             keep_initializers_as_inputs=ir_configs["keep_initializers_as_inputs"],
             verbose=ir_configs["verbose"],
         )
-        self.logger.info(f"Camera bev only network exported to {self.output_path}")
+        if image_feats is None:
+            model_name = "lidar-only"
+        else:
+            model_name = "camera-lidar"
+        self.logger.info(f"Main body network with {model_name} exported to {self.output_path}")
 
     def _fix_onnx_graph(self) -> None:
         """Fix the ONNX graph.
