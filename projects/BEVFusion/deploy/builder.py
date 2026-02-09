@@ -22,11 +22,11 @@ class ExportBuilder:
     def __init__(self, setup_configs: SetupConfigs):
         self.setup_configs = setup_configs
 
-    def build(self):
-        """Build the model.
+    def build(self) -> BuilderData:
+        """Build configs and a PyTorch model for ONNX export.
 
         Returns:
-            Model data.
+            BuilderData with ModelData, ir_configs, context_info, and patched_model (Pytorch model).
         """
         # Build the model data
         model_data = self._build_model_data()
@@ -59,7 +59,7 @@ class ExportBuilder:
             patched_model=patched_model,
         )
 
-    def _build_model_data(self):
+    def _build_model_data(self) -> ModelData:
         """Build the model.
 
         Args:
@@ -127,6 +127,9 @@ class ExportBuilder:
 
     @staticmethod
     def _add_or_update(cfg: dict, key: str, val: Any) -> None:
+        """
+        Update key with the values to cfg.
+        """
         if key in cfg and isinstance(cfg[key], dict) and isinstance(val, dict):
             cfg[key].update(val)
         else:

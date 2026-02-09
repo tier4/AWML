@@ -20,6 +20,7 @@ from mmdeploy.utils import (
 class Torch2OnnxExporter:
 
     def __init__(self, setup_configs: SetupConfigs, log_level: str):
+        """Initialization of Torch2OnnxExporter."""
         self.setup_configs = setup_configs
         log_level = logging.getLevelName(log_level)
         self.logger = get_root_logger()
@@ -31,7 +32,10 @@ class Torch2OnnxExporter:
         self.output_path = self.output_prefix + ".onnx"
         self.builder = ExportBuilder(self.setup_configs)
 
-    def export(self):
+    def export(self) -> None:
+        """
+        Export Pytorch Model to ONNX.
+        """
         self.logger.info(f"Export PyTorch model to ONNX: {self.output_path}.")
 
         # Build the model data and configs
@@ -53,10 +57,13 @@ class Torch2OnnxExporter:
     def _export_model(
         self, model_data: ModelData, context_info: dict, patched_model: torch.nn.Module, ir_configs: dict
     ) -> None:
-        """Rewrite the context info.
-
-        Returns:
-            Context info.
+        """
+        Export torch model to ONNX.
+        Args:
+          model_data (ModelData): Dataclass with data inputs.
+          context_info (dict): Context when deploying to rewrite some configs.
+          patched_model (torch.nn.Module): Patched Pytorch model.
+          ir_configs (dict): Configs for intermediate representations in ONNX.
         """
         with RewriterContext(**context_info), torch.no_grad():
             image_feats = None
@@ -78,11 +85,19 @@ class Torch2OnnxExporter:
                     model_data=model_data, ir_configs=ir_configs, patched_model=patched_model, image_feats=image_feats
                 )
 
-    def _export_image_backbone(self, model_data: ModelData, ir_configs: dict, patched_model: torch.nn.Module) -> None:
+    def _export_image_backbone(
+        self, model_data: ModelData, ir_configs: dict, patched_model: torch.nn.Module
+    ) -> Optional[torch.Tensor]:
         """Export the image backbone.
 
+        Args:
+          model_data (ModelData): Dataclass with data inputs.
+          context_info (dict): Context when deploying to rewrite some configs.
+          patched_model (torch.nn.Module): Patched Pytorch model.
+          ir_configs (dict): Configs for intermediate representations in ONNX.
+
         Returns:
-            Image backbone.
+            Image feats.
         """
         data_preprocessor = model_data.input_metas["data_preprocessor"]
         model_inputs_data = model_data.model_inputs
@@ -121,10 +136,13 @@ class Torch2OnnxExporter:
         patched_model: torch.nn.Module,
         image_feats: Optional[torch.Tensor],
     ) -> None:
-        """Export the camera bev only network.
+        """Export the camera bev only network to an ONNX file.
 
-        Returns:
-            Camera bev only network.
+        Args:
+          model_data (ModelData): Dataclass with data inputs.
+          context_info (dict): Context when deploying to rewrite some configs.
+          patched_model (torch.nn.Module): Patched Pytorch model.
+          ir_configs (dict): Configs for intermediate representations in ONNX.
         """
         main_container = TrtBevFusionCameraOnlyContainer(patched_model)
         data_samples = model_data.input_metas["data_samples"]
@@ -172,10 +190,13 @@ class Torch2OnnxExporter:
         patched_model: torch.nn.Module,
         image_feats: Optional[torch.Tensor],
     ) -> None:
-        """Export the main body.
+        """Export the main body (lidar-only or camera-lidar) to an ONNX file.
 
-        Returns:
-            Main body.
+        Args:
+          model_data (ModelData): Dataclass with data inputs.
+          context_info (dict): Context when deploying to rewrite some configs.
+          patched_model (torch.nn.Module): Patched Pytorch model.
+          ir_configs (dict): Configs for intermediate representations in ONNX.
         """
         main_container = TrtBevFusionMainContainer(patched_model)
         data_samples = model_data.input_metas["data_samples"]
@@ -228,11 +249,7 @@ class Torch2OnnxExporter:
         self.logger.info(f"Main body network with {model_name} exported to {self.output_path}")
 
     def _fix_onnx_graph(self) -> None:
-        """Fix the ONNX graph.
-
-        Returns:
-            ONNX graph.
-        """
+        """Fix the ONNX graph with an ONNX file."""
         self.logger.info("Attempting to fix the graph (TopK's K becoming a tensor)")
         model = onnx.load(self.output_path.replace(".onnx", "_temp_to_be_fixed.onnx"))
         graph = gs.import_onnx(model)
