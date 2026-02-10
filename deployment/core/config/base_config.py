@@ -247,9 +247,9 @@ class EvaluationConfig:
             raise TypeError(f"evaluation.devices must be a mapping, got {type(devices_raw).__name__}")
 
         return cls(
-            enabled=bool(config_dict.get("enabled", False)),
-            num_samples=int(config_dict.get("num_samples", 10)),
-            verbose=bool(config_dict.get("verbose", False)),
+            enabled=config_dict.get("enabled", False),
+            num_samples=config_dict.get("num_samples", 10),
+            verbose=config_dict.get("verbose", False),
             backends=MappingProxyType(backends_frozen),
             models=MappingProxyType(dict(models_raw)),
             devices=MappingProxyType(dict(devices_raw)),
