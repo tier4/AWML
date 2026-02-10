@@ -93,7 +93,7 @@ class LatencyBreakdown:
         return {stage: stats.to_dict() for stage, stats in self.stages.items()}
 
 
-@dataclass
+@dataclass(frozen=True)
 class InferenceInput:
     """Prepared input for pipeline inference.
 
