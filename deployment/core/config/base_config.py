@@ -22,6 +22,7 @@ from deployment.exporters.common.configs import (
     ONNXExportConfig,
     TensorRTExportConfig,
     TensorRTModelInputConfig,
+    TensorRTProfileConfig,
 )
 
 # Constants
@@ -192,6 +193,14 @@ class TensorRTConfig:
     precision_policy: str = PrecisionPolicy.AUTO.value
     max_workspace_size: int = DEFAULT_WORKSPACE_SIZE
 
+    def __post_init__(self) -> None:
+        """Validate TensorRT precision policy at construction time."""
+        if self.precision_policy not in PRECISION_POLICIES:
+            raise ValueError(
+                f"Invalid precision_policy '{self.precision_policy}'. "
+                f"Must be one of {list(PRECISION_POLICIES.keys())}"
+            )
+
     @classmethod
     def from_dict(cls, config_dict: Mapping[str, Any]) -> TensorRTConfig:
         return cls(
@@ -202,7 +211,7 @@ class TensorRTConfig:
     @property
     def precision_flags(self) -> Mapping[str, bool]:
         """TensorRT precision flags for the configured policy."""
-        return PRECISION_POLICIES.get(self.precision_policy, {})
+        return PRECISION_POLICIES[self.precision_policy]
 
 
 @dataclass(frozen=True)
@@ -218,29 +227,29 @@ class EvaluationConfig:
 
     @classmethod
     def from_dict(cls, config_dict: Mapping[str, Any]) -> EvaluationConfig:
-        backends_raw = config_dict.get("backends")
+        backends_raw = config_dict.get("backends", None)
         if backends_raw is None:
             backends_raw = {}
         if not isinstance(backends_raw, Mapping):
             raise TypeError(f"evaluation.backends must be a mapping, got {type(backends_raw).__name__}")
         backends_frozen = {key: MappingProxyType(dict(value)) for key, value in backends_raw.items()}
 
-        models_raw = config_dict.get("models")
+        models_raw = config_dict.get("models", None)
         if models_raw is None:
             models_raw = {}
         if not isinstance(models_raw, Mapping):
             raise TypeError(f"evaluation.models must be a mapping, got {type(models_raw).__name__}")
 
-        devices_raw = config_dict.get("devices")
+        devices_raw = config_dict.get("devices", None)
         if devices_raw is None:
             devices_raw = {}
         if not isinstance(devices_raw, Mapping):
             raise TypeError(f"evaluation.devices must be a mapping, got {type(devices_raw).__name__}")
 
         return cls(
-            enabled=bool(config_dict.get("enabled", False)),
-            num_samples=int(config_dict.get("num_samples", 10)),
-            verbose=bool(config_dict.get("verbose", False)),
+            enabled=config_dict.get("enabled", False),
+            num_samples=config_dict.get("num_samples", 10),
+            verbose=config_dict.get("verbose", False),
             backends=MappingProxyType(backends_frozen),
             models=MappingProxyType(dict(models_raw)),
             devices=MappingProxyType(dict(devices_raw)),
@@ -284,9 +293,9 @@ class VerificationConfig:
             raise TypeError(f"verification.devices must be a mapping, got {type(devices_raw).__name__}")
 
         return cls(
-            enabled=bool(config_dict.get("enabled", True)),
-            num_verify_samples=int(config_dict.get("num_verify_samples", 3)),
-            tolerance=float(config_dict.get("tolerance", 0.1)),
+            enabled=config_dict.get("enabled", True),
+            num_verify_samples=config_dict.get("num_verify_samples", 3),
+            tolerance=config_dict.get("tolerance", 0.1),
             devices=MappingProxyType(dict(devices_raw)),
             scenarios=MappingProxyType(scenario_map),
         )
@@ -547,8 +556,8 @@ class BaseDeploymentConfig:
             comp_cfg = components["model"]
             io_cfg = comp_cfg.get("io", {})
             return {
-                "inputs": io_cfg.get("inputs", []),
-                "outputs": io_cfg.get("outputs", []),
+                "inputs": io_cfg.get("inputs", None),
+                "outputs": io_cfg.get("outputs", None),
                 "dynamic_axes": io_cfg.get("dynamic_axes"),
                 "onnx_file": comp_cfg.get("onnx_file"),
             }
@@ -564,7 +573,7 @@ class BaseDeploymentConfig:
         Returns:
             TensorRTExportConfig instance containing TensorRT export parameters
         """
-        model_inputs = self._build_model_inputs_from_components()
+        model_inputs = self._build_model_inputs()
 
         settings_dict = {
             "max_workspace_size": self.tensorrt_config.max_workspace_size,
@@ -574,7 +583,7 @@ class BaseDeploymentConfig:
         }
         return TensorRTExportConfig.from_mapping(settings_dict)
 
-    def _build_model_inputs_from_components(self) -> Tuple[TensorRTModelInputConfig, ...]:
+    def _build_model_inputs(self) -> Optional[Tuple[TensorRTModelInputConfig, ...]]:
         """
         Build model_inputs from components configuration.
 
@@ -582,33 +591,31 @@ class BaseDeploymentConfig:
         from components.model and converts to TensorRTModelInputConfig format.
 
         Returns:
-            Tuple of TensorRTModelInputConfig, or empty tuple if not configured.
+            Tuple of TensorRTModelInputConfig, or None if not configured.
         """
         components = self.deploy_cfg.get("components", {})
         if not components or "model" not in components:
-            return ()
+            return None
 
         comp_cfg = components["model"]
         tensorrt_profile = comp_cfg.get("tensorrt_profile", {})
 
         if not tensorrt_profile:
-            return ()
-
-        from deployment.exporters.common.configs import TensorRTProfileConfig
+            return None
 
         input_shapes = {}
         for input_name, shape_cfg in tensorrt_profile.items():
             if isinstance(shape_cfg, Mapping):
                 input_shapes[input_name] = TensorRTProfileConfig(
-                    min_shape=tuple(shape_cfg.get("min_shape", [])),
-                    opt_shape=tuple(shape_cfg.get("opt_shape", [])),
-                    max_shape=tuple(shape_cfg.get("max_shape", [])),
+                    min_shape=shape_cfg.get("min_shape", None),
+                    opt_shape=shape_cfg.get("opt_shape", None),
+                    max_shape=shape_cfg.get("max_shape", None),
                 )
 
         if input_shapes:
             return (TensorRTModelInputConfig(input_shapes=MappingProxyType(input_shapes)),)
 
-        return ()
+        return None
 
 
 def setup_logging(level: str = "INFO") -> logging.Logger:

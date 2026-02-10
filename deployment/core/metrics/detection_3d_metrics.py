@@ -186,7 +186,7 @@ class Detection3DMetricsInterface(BaseMetricsInterface):
                 f"Got len(min_distance)={len(min_distance)}, len(max_distance)={len(max_distance)}"
             )
 
-        if len(min_distance) == 0:
+        if not min_distance or not max_distance:
             raise ValueError("min_distance and max_distance lists cannot be empty")
 
         # Create distance ranges and evaluators

@@ -165,13 +165,13 @@ class BaseMetricsInterface(ABC):
         """Return the number of frames added so far."""
         return self._frame_count
 
-    def format_metrics_report(self) -> str:
+    def format_metrics_report(self) -> Optional[str]:
         """Format the metrics report as a human-readable string.
 
         This is an optional method that can be overridden by subclasses to provide
-        task-specific formatting. By default, returns an empty string.
+        task-specific formatting. By default, returns None.
 
         Returns:
-            Formatted metrics report string. Empty string if not implemented.
+            Formatted metrics report string. None if not implemented.
         """
-        return ""
+        return None
