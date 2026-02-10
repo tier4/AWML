@@ -127,6 +127,10 @@ data = dict(
             # dict(type="RandomRotate", angle=[-1/6, 1/6], axis="x", p=0.5),
             # dict(type="RandomRotate", angle=[-1/6, 1/6], axis="y", p=0.5),
             dict(type="RandomScale", scale=[0.9, 1.1]),
+            dict(
+                type="PointClip",
+                point_cloud_range=point_cloud_range,
+            ),
             # dict(type="RandomShift", shift=[0.2, 0.2, 0.2]),
             dict(type="RandomFlip", p=0.5),
             dict(type="RandomJitter", sigma=0.005, clip=0.02),
@@ -139,7 +143,7 @@ data = dict(
                 keys=("coord", "strength", "segment"),
                 return_grid_coord=True,
             ),
-            # dict(type="SphereCrop", point_max=1000000, mode="random"),
+            dict(type="SphereCrop", point_max=128000, mode="random"),
             # dict(type="CenterShift", apply_z=False),
             dict(type="ToTensor"),
             dict(type="Update", keys_dict={"grid_size": grid_size}),
@@ -160,7 +164,7 @@ data = dict(
         info_paths=info_paths_val,
         transform=[
             dict(type="Copy", keys_dict={"segment": "origin_segment"}),
-            # dict(type="PointClip", point_cloud_range=(-51.2, -51.2, -4, 51.2, 51.2, 2.4)),
+            dict(type="PointClip", point_cloud_range=point_cloud_range),
             dict(
                 type="GridSample",
                 grid_size=grid_size,
