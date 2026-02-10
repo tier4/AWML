@@ -80,3 +80,67 @@ class PointSequential(PointModule):
                 else:
                     input = module(input)
         return input
+
+
+class MLP(nn.Module):
+    def __init__(
+        self,
+        in_channels,
+        hidden_channels=None,
+        out_channels=None,
+        act_layer=nn.GELU,
+        drop=0.0,
+    ):
+        super().__init__()
+        out_channels = out_channels or in_channels
+        hidden_channels = hidden_channels or in_channels
+        self.fc1 = nn.Linear(in_channels, hidden_channels)
+        self.act = act_layer()
+        self.fc2 = nn.Linear(hidden_channels, out_channels)
+        self.drop = nn.Dropout(drop)
+
+    def forward(self, x):
+        x = self.fc1(x)
+        x = self.act(x)
+        x = self.drop(x)
+        x = self.fc2(x)
+        x = self.drop(x)
+        return x
+
+
+class Embedding(PointModule):
+    def __init__(
+        self,
+        in_channels,
+        embed_channels,
+        norm_layer=None,
+        act_layer=None,
+        export_mode=False,
+    ):
+        super().__init__()
+        self.in_channels = in_channels
+        self.embed_channels = embed_channels
+
+        if export_mode:
+            from SparseConvolution.sparse_conv import SubMConv3d
+        else:
+            from spconv.pytorch import SubMConv3d
+
+        self.stem = PointSequential(
+            conv=SubMConv3d(
+                in_channels,
+                embed_channels,
+                kernel_size=5,
+                padding=1,
+                bias=False,
+                indice_key="stem",
+            )
+        )
+        if norm_layer is not None:
+            self.stem.add(norm_layer(embed_channels), name="norm")
+        if act_layer is not None:
+            self.stem.add(act_layer(), name="act")
+
+    def forward(self, point: Point):
+        point = self.stem(point)
+        return point
