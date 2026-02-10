@@ -93,12 +93,12 @@ class ExportConfig:
         )
 
     @property
-    def export_onnx(self) -> bool:
+    def should_export_onnx(self) -> bool:
         """Whether ONNX export is requested."""
         return self.mode in (ExportMode.ONNX, ExportMode.BOTH)
 
     @property
-    def export_tensorrt(self) -> bool:
+    def should_export_tensorrt(self) -> bool:
         """Whether TensorRT export is requested."""
         return self.mode in (ExportMode.TRT, ExportMode.BOTH)
 
@@ -417,7 +417,7 @@ class BaseDeploymentConfig:
 
     def _needs_cuda_device(self) -> bool:
         """Determine if current deployment config requires a CUDA device."""
-        if self.export_config.export_tensorrt:
+        if self.export_config.should_export_tensorrt:
             return True
 
         evaluation_cfg = self.evaluation_config
