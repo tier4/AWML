@@ -59,24 +59,27 @@ class ClassificationSummary:
 
 @dataclass(frozen=True)
 class DetectionSummary:
-    """Structured summary for detection metrics (2D/3D)."""
+    """Structured summary for detection metrics (2D/3D).
 
-    mAP: float = 0.0
-    per_class_ap: Dict[str, float] = field(default_factory=dict)
+    All matching modes computed by autoware_perception_evaluation are included.
+    The `mAP_by_mode` and `mAPH_by_mode` dicts contain results for each matching mode.
+    """
+
+    mAP_by_mode: Dict[str, float] = field(default_factory=dict)
+    mAPH_by_mode: Dict[str, float] = field(default_factory=dict)
+    per_class_ap_by_mode: Dict[str, Dict[str, float]] = field(default_factory=dict)
     num_frames: int = 0
     detailed_metrics: Dict[str, float] = field(default_factory=dict)
-    mAPH: Optional[float] = None
 
     def to_dict(self) -> Dict[str, Any]:
-        data = {
-            "mAP": self.mAP,
-            "per_class_ap": dict(self.per_class_ap),
+        """Convert to dict."""
+        return {
+            "mAP_by_mode": dict(self.mAP_by_mode),
+            "mAPH_by_mode": dict(self.mAPH_by_mode),
+            "per_class_ap_by_mode": {k: dict(v) for k, v in self.per_class_ap_by_mode.items()},
             "num_frames": self.num_frames,
             "detailed_metrics": dict(self.detailed_metrics),
         }
-        if self.mAPH is not None:
-            data["mAPH"] = self.mAPH
-        return data
 
 
 class BaseMetricsInterface(ABC):
@@ -125,7 +128,7 @@ class BaseMetricsInterface(ABC):
         pass
 
     @abstractmethod
-    def add_frame(self, *args, **kwargs) -> None:
+    def add_frame(self, *args) -> None:
         """
         Add a frame of predictions and ground truths for evaluation.
 
@@ -146,8 +149,9 @@ class BaseMetricsInterface(ABC):
         """
         pass
 
+    @property
     @abstractmethod
-    def get_summary(self) -> Any:
+    def summary(self) -> Any:
         """
         Get a summary of the evaluation including primary metrics.
 
@@ -160,3 +164,14 @@ class BaseMetricsInterface(ABC):
     def frame_count(self) -> int:
         """Return the number of frames added so far."""
         return self._frame_count
+
+    def format_metrics_report(self) -> Optional[str]:
+        """Format the metrics report as a human-readable string.
+
+        This is an optional method that can be overridden by subclasses to provide
+        task-specific formatting. By default, returns None.
+
+        Returns:
+            Formatted metrics report string. None if not implemented.
+        """
+        return None

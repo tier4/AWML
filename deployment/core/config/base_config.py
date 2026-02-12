@@ -12,7 +12,7 @@ import logging
 from dataclasses import dataclass, field
 from enum import Enum
 from types import MappingProxyType
-from typing import Any, Dict, Iterable, Mapping, Optional, Tuple, Union
+from typing import Any, Dict, Mapping, Optional, Tuple, Union
 
 import torch
 from mmengine.config import Config
@@ -22,6 +22,7 @@ from deployment.exporters.common.configs import (
     ONNXExportConfig,
     TensorRTExportConfig,
     TensorRTModelInputConfig,
+    TensorRTProfileConfig,
 )
 
 # Constants
@@ -91,12 +92,14 @@ class ExportConfig:
             onnx_path=config_dict.get("onnx_path"),
         )
 
+    @property
     def should_export_onnx(self) -> bool:
-        """Check if ONNX export is requested."""
+        """Whether ONNX export is requested."""
         return self.mode in (ExportMode.ONNX, ExportMode.BOTH)
 
+    @property
     def should_export_tensorrt(self) -> bool:
-        """Check if TensorRT export is requested."""
+        """Whether TensorRT export is requested."""
         return self.mode in (ExportMode.TRT, ExportMode.BOTH)
 
 
@@ -149,7 +152,8 @@ class DeviceConfig:
             raise ValueError("CUDA device index must be non-negative")
         return f"cuda:{device_id}"
 
-    def get_cuda_device_index(self) -> Optional[int]:
+    @property
+    def cuda_device_index(self) -> Optional[int]:
         """Return CUDA device index as integer (if configured)."""
         if self.cuda is None:
             return None
@@ -173,36 +177,41 @@ class RuntimeConfig:
 
 
 @dataclass(frozen=True)
-class BackendConfig:
-    """Configuration for backend-specific settings."""
+class TensorRTConfig:
+    """
+    Configuration for TensorRT backend-specific settings.
 
-    common_config: Mapping[str, Any] = field(default_factory=_empty_mapping)
-    model_inputs: Tuple[TensorRTModelInputConfig, ...] = field(default_factory=tuple)
+    Uses config structure:
+        tensorrt_config = dict(precision_policy="auto", max_workspace_size=1<<30)
+
+    TensorRT profiles are defined in components.*.tensorrt_profile.
+
+    Note:
+        The deploy config key for this section is **`tensorrt_config`**.
+    """
+
+    precision_policy: str = PrecisionPolicy.AUTO.value
+    max_workspace_size: int = DEFAULT_WORKSPACE_SIZE
+
+    def __post_init__(self) -> None:
+        """Validate TensorRT precision policy at construction time."""
+        if self.precision_policy not in PRECISION_POLICIES:
+            raise ValueError(
+                f"Invalid precision_policy '{self.precision_policy}'. "
+                f"Must be one of {list(PRECISION_POLICIES.keys())}"
+            )
 
     @classmethod
-    def from_dict(cls, config_dict: Mapping[str, Any]) -> BackendConfig:
-        common_config = dict(config_dict.get("common_config", {}))
-        model_inputs_raw: Iterable[Mapping[str, Any]] = config_dict.get("model_inputs", []) or []
-        model_inputs: Tuple[TensorRTModelInputConfig, ...] = tuple(
-            TensorRTModelInputConfig.from_dict(item) for item in model_inputs_raw
-        )
+    def from_dict(cls, config_dict: Mapping[str, Any]) -> TensorRTConfig:
         return cls(
-            common_config=MappingProxyType(common_config),
-            model_inputs=model_inputs,
+            precision_policy=config_dict.get("precision_policy", PrecisionPolicy.AUTO.value),
+            max_workspace_size=config_dict.get("max_workspace_size", DEFAULT_WORKSPACE_SIZE),
         )
 
-    def get_precision_policy(self) -> str:
-        """Get precision policy name."""
-        return self.common_config.get("precision_policy", PrecisionPolicy.AUTO.value)
-
-    def get_precision_flags(self) -> Mapping[str, bool]:
-        """Get TensorRT precision flags for the configured policy."""
-        policy = self.get_precision_policy()
-        return PRECISION_POLICIES.get(policy, {})
-
-    def get_max_workspace_size(self) -> int:
-        """Get maximum workspace size for TensorRT."""
-        return self.common_config.get("max_workspace_size", DEFAULT_WORKSPACE_SIZE)
+    @property
+    def precision_flags(self) -> Mapping[str, bool]:
+        """TensorRT precision flags for the configured policy."""
+        return PRECISION_POLICIES[self.precision_policy]
 
 
 @dataclass(frozen=True)
@@ -218,16 +227,32 @@ class EvaluationConfig:
 
     @classmethod
     def from_dict(cls, config_dict: Mapping[str, Any]) -> EvaluationConfig:
-        backends_raw = config_dict.get("backends", {}) or {}
+        backends_raw = config_dict.get("backends", None)
+        if backends_raw is None:
+            backends_raw = {}
+        if not isinstance(backends_raw, Mapping):
+            raise TypeError(f"evaluation.backends must be a mapping, got {type(backends_raw).__name__}")
         backends_frozen = {key: MappingProxyType(dict(value)) for key, value in backends_raw.items()}
+
+        models_raw = config_dict.get("models", None)
+        if models_raw is None:
+            models_raw = {}
+        if not isinstance(models_raw, Mapping):
+            raise TypeError(f"evaluation.models must be a mapping, got {type(models_raw).__name__}")
+
+        devices_raw = config_dict.get("devices", None)
+        if devices_raw is None:
+            devices_raw = {}
+        if not isinstance(devices_raw, Mapping):
+            raise TypeError(f"evaluation.devices must be a mapping, got {type(devices_raw).__name__}")
 
         return cls(
             enabled=config_dict.get("enabled", False),
             num_samples=config_dict.get("num_samples", 10),
             verbose=config_dict.get("verbose", False),
             backends=MappingProxyType(backends_frozen),
-            models=MappingProxyType(dict(config_dict.get("models", {}))),
-            devices=MappingProxyType(dict(config_dict.get("devices", {}))),
+            models=MappingProxyType(dict(models_raw)),
+            devices=MappingProxyType(dict(devices_raw)),
         )
 
 
@@ -243,18 +268,35 @@ class VerificationConfig:
 
     @classmethod
     def from_dict(cls, config_dict: Mapping[str, Any]) -> VerificationConfig:
-        scenarios_raw = config_dict.get("scenarios", {}) or {}
+        scenarios_raw = config_dict.get("scenarios")
+        if scenarios_raw is None:
+            scenarios_raw = {}
+        if not isinstance(scenarios_raw, Mapping):
+            raise TypeError(f"verification.scenarios must be a mapping, got {type(scenarios_raw).__name__}")
+
         scenario_map: Dict[ExportMode, Tuple[VerificationScenario, ...]] = {}
         for mode_key, scenario_list in scenarios_raw.items():
             mode = ExportMode.from_value(mode_key)
-            scenario_entries = tuple(VerificationScenario.from_dict(entry) for entry in (scenario_list or []))
+            if scenario_list is None:
+                scenario_list = []
+            elif not isinstance(scenario_list, (list, tuple)):
+                raise TypeError(
+                    f"verification.scenarios.{mode_key} must be a list or tuple, got {type(scenario_list).__name__}"
+                )
+            scenario_entries = tuple(VerificationScenario.from_dict(entry) for entry in scenario_list)
             scenario_map[mode] = scenario_entries
+
+        devices_raw = config_dict.get("devices")
+        if devices_raw is None:
+            devices_raw = {}
+        if not isinstance(devices_raw, Mapping):
+            raise TypeError(f"verification.devices must be a mapping, got {type(devices_raw).__name__}")
 
         return cls(
             enabled=config_dict.get("enabled", True),
             num_verify_samples=config_dict.get("num_verify_samples", 3),
             tolerance=config_dict.get("tolerance", 0.1),
-            devices=MappingProxyType(dict(config_dict.get("devices", {}))),
+            devices=MappingProxyType(dict(devices_raw)),
             scenarios=MappingProxyType(scenario_map),
         )
 
@@ -310,12 +352,12 @@ class BaseDeploymentConfig:
         self._validate_config()
 
         self._checkpoint_path: Optional[str] = deploy_cfg.get("checkpoint_path")
-        self._device_config = DeviceConfig.from_dict(deploy_cfg.get("devices", {}) or {})
+        self._device_config = DeviceConfig.from_dict(deploy_cfg.get("devices", {}))
 
         # Initialize config sections
         self.export_config = ExportConfig.from_dict(deploy_cfg.get("export", {}))
         self.runtime_config = RuntimeConfig.from_dict(deploy_cfg.get("runtime_io", {}))
-        self.backend_config = BackendConfig.from_dict(deploy_cfg.get("backend_config", {}))
+        self.tensorrt_config = TensorRTConfig.from_dict(deploy_cfg.get("tensorrt_config", {}))
         self._evaluation_config = EvaluationConfig.from_dict(deploy_cfg.get("evaluation", {}))
         self._verification_config = VerificationConfig.from_dict(deploy_cfg.get("verification", {}))
 
@@ -336,9 +378,12 @@ class BaseDeploymentConfig:
             raise ValueError(str(exc)) from exc
 
         # Validate precision policy if present
-        backend_cfg = self.deploy_cfg.get("backend_config", {})
-        common_cfg = backend_cfg.get("common_config", {})
-        precision_policy = common_cfg.get("precision_policy", PrecisionPolicy.AUTO.value)
+        tensorrt_config = self.deploy_cfg.get("tensorrt_config")
+        if tensorrt_config is None:
+            tensorrt_config = {}
+        if not isinstance(tensorrt_config, Mapping):
+            raise TypeError(f"tensorrt_config must be a mapping, got {type(tensorrt_config).__name__}")
+        precision_policy = tensorrt_config.get("precision_policy", PrecisionPolicy.AUTO.value)
         if precision_policy not in PRECISION_POLICIES:
             raise ValueError(
                 f"Invalid precision_policy '{precision_policy}'. " f"Must be one of {list(PRECISION_POLICIES.keys())}"
@@ -350,7 +395,7 @@ class BaseDeploymentConfig:
             return
 
         cuda_device = self.devices.cuda
-        device_idx = self.devices.get_cuda_device_index()
+        device_idx = self.devices.cuda_device_index
 
         if cuda_device is None or device_idx is None:
             raise RuntimeError(
@@ -372,7 +417,7 @@ class BaseDeploymentConfig:
 
     def _needs_cuda_device(self) -> bool:
         """Determine if current deployment config requires a CUDA device."""
-        if self.export_config.should_export_tensorrt():
+        if self.export_config.should_export_tensorrt:
             return True
 
         evaluation_cfg = self.evaluation_config
@@ -425,7 +470,8 @@ class BaseDeploymentConfig:
         """Get normalized device settings."""
         return self._device_config
 
-    def get_evaluation_backends(self) -> Mapping[Any, Mapping[str, Any]]:
+    @property
+    def evaluation_backends(self) -> Mapping[Any, Mapping[str, Any]]:
         """
         Get evaluation backends configuration.
 
@@ -453,71 +499,123 @@ class BaseDeploymentConfig:
 
     def get_onnx_settings(self) -> ONNXExportConfig:
         """
-        Get ONNX export settings.
+        Get ONNX export settings from unified components configuration.
+
+        Reads I/O from components.model.io.{inputs, outputs, dynamic_axes}
 
         Returns:
             ONNXExportConfig instance containing ONNX export parameters
         """
         onnx_config = self.onnx_config
-        model_io = self.deploy_cfg.get("model_io", {})
+        components_io = self._get_model_io_from_components()
 
-        # Get batch size and dynamic axes from model_io
-        batch_size = model_io.get("batch_size", None)
-        dynamic_axes = model_io.get("dynamic_axes", None)
+        # Get input/output names from components
+        input_names = [inp.get("name", "input") for inp in components_io.get("inputs", [])]
+        output_names = [out.get("name", "output") for out in components_io.get("outputs", [])]
 
-        # If batch_size is set to a number, disable dynamic_axes
-        if batch_size is not None and isinstance(batch_size, int):
-            dynamic_axes = None
-
-        # Handle multiple inputs and outputs
-        input_names = [model_io.get("input_name", "input")]
-        output_names = [model_io.get("output_name", "output")]
-
-        # Add additional inputs if specified
-        additional_inputs = model_io.get("additional_inputs", [])
-        for additional_input in additional_inputs:
-            if isinstance(additional_input, dict):
-                input_names.append(additional_input.get("name", "input"))
-
-        # Add additional outputs if specified
-        additional_outputs = model_io.get("additional_outputs", [])
-        for additional_output in additional_outputs:
-            if isinstance(additional_output, str):
-                output_names.append(additional_output)
+        # Fallback to defaults if components not configured
+        if not input_names:
+            input_names = ["input"]
+        if not output_names:
+            output_names = ["output"]
 
         settings_dict = {
             "opset_version": onnx_config.get("opset_version", 16),
             "do_constant_folding": onnx_config.get("do_constant_folding", True),
             "input_names": tuple(input_names),
             "output_names": tuple(output_names),
-            "dynamic_axes": dynamic_axes,
+            "dynamic_axes": components_io.get("dynamic_axes"),
             "export_params": onnx_config.get("export_params", True),
             "keep_initializers_as_inputs": onnx_config.get("keep_initializers_as_inputs", False),
             "verbose": onnx_config.get("verbose", False),
-            "save_file": onnx_config.get("save_file", "model.onnx"),
-            "batch_size": batch_size,
+            "save_file": components_io.get("onnx_file") or onnx_config.get("save_file", "model.onnx"),
+            "batch_size": None,
         }
 
-        # Note: simplify is typically True by default, but can be overridden
         if "simplify" in onnx_config:
             settings_dict["simplify"] = onnx_config["simplify"]
 
         return ONNXExportConfig.from_mapping(settings_dict)
 
+    def _get_model_io_from_components(self) -> Dict[str, Any]:
+        """
+        Extract model I/O configuration from components.
+
+        For end-to-end models (single component), returns the io config
+        from components.model.
+
+        Returns:
+            Dictionary with inputs, outputs, dynamic_axes, and onnx_file.
+        """
+        components = self.deploy_cfg.get("components", {})
+        if not components:
+            return {}
+
+        # For single-component models, look for 'model' component
+        if "model" in components:
+            comp_cfg = components["model"]
+            io_cfg = comp_cfg.get("io", {})
+            return {
+                "inputs": io_cfg.get("inputs", None),
+                "outputs": io_cfg.get("outputs", None),
+                "dynamic_axes": io_cfg.get("dynamic_axes"),
+                "onnx_file": comp_cfg.get("onnx_file"),
+            }
+
+        return {}
+
     def get_tensorrt_settings(self) -> TensorRTExportConfig:
         """
-        Get TensorRT export settings with precision policy support.
+        Get TensorRT export settings from unified components configuration.
+
+        TensorRT profiles are read from components.model.tensorrt_profile.
 
         Returns:
             TensorRTExportConfig instance containing TensorRT export parameters
         """
+        model_inputs = self._build_model_inputs()
+
         settings_dict = {
-            "max_workspace_size": self.backend_config.get_max_workspace_size(),
-            "precision_policy": self.backend_config.get_precision_policy(),
-            "policy_flags": self.backend_config.get_precision_flags(),
-            "model_inputs": self.backend_config.model_inputs,
+            "max_workspace_size": self.tensorrt_config.max_workspace_size,
+            "precision_policy": self.tensorrt_config.precision_policy,
+            "policy_flags": self.tensorrt_config.precision_flags,
+            "model_inputs": model_inputs,
         }
         return TensorRTExportConfig.from_mapping(settings_dict)
+
+    def _build_model_inputs(self) -> Optional[Tuple[TensorRTModelInputConfig, ...]]:
+        """
+        Build model_inputs from components configuration.
+
+        For end-to-end models (single component), extracts tensorrt_profile
+        from components.model and converts to TensorRTModelInputConfig format.
+
+        Returns:
+            Tuple of TensorRTModelInputConfig, or None if not configured.
+        """
+        components = self.deploy_cfg.get("components", {})
+        if not components or "model" not in components:
+            return None
+
+        comp_cfg = components["model"]
+        tensorrt_profile = comp_cfg.get("tensorrt_profile", {})
+
+        if not tensorrt_profile:
+            return None
+
+        input_shapes = {}
+        for input_name, shape_cfg in tensorrt_profile.items():
+            if isinstance(shape_cfg, Mapping):
+                input_shapes[input_name] = TensorRTProfileConfig(
+                    min_shape=shape_cfg.get("min_shape", None),
+                    opt_shape=shape_cfg.get("opt_shape", None),
+                    max_shape=shape_cfg.get("max_shape", None),
+                )
+
+        if input_shapes:
+            return (TensorRTModelInputConfig(input_shapes=MappingProxyType(input_shapes)),)
+
+        return None
 
 
 def setup_logging(level: str = "INFO") -> logging.Logger:

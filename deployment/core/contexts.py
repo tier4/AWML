@@ -1,18 +1,6 @@
 """
 Typed context objects for deployment workflows.
 
-This module defines typed dataclasses that replace **kwargs with explicit,
-type-checked parameters. This improves:
-- Type safety: Catches mismatches at type-check time
-- Discoverability: IDE autocomplete shows available parameters
-- Refactoring safety: Renamed fields are caught by type checkers
-
-Design Principles:
-    1. Base contexts define common parameters across all projects
-    2. Project-specific contexts extend base with additional fields
-    3. Optional fields have sensible defaults
-    4. Contexts are immutable (frozen=True) for safety
-
 Usage:
     # Create context for export
     ctx = ExportContext(sample_idx=0)

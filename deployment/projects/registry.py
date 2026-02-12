@@ -48,7 +48,7 @@ class ProjectRegistry:
             raise KeyError(f"Unknown project '{name}'. Available: [{available}]")
         return self._adapters[key]
 
-    def list(self) -> list[str]:
+    def list_projects(self) -> list[str]:
         return sorted(self._adapters.keys())
 
 
