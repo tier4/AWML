@@ -314,7 +314,8 @@ class ClassificationMetricsInterface(BaseMetricsInterface):
         return metric_dict
 
     # TODO(vividf): Remove after autoware_perception_evaluation supports confusion matrix.
-    def get_confusion_matrix(self) -> np.ndarray:
+    @property
+    def confusion_matrix(self) -> np.ndarray:
         """Get the confusion matrix.
 
         Returns:
@@ -352,7 +353,8 @@ class ClassificationMetricsInterface(BaseMetricsInterface):
 
         return confusion_matrix
 
-    def get_summary(self) -> ClassificationSummary:
+    @property
+    def summary(self) -> ClassificationSummary:
         """Get a summary of the evaluation.
 
         Returns:
@@ -373,7 +375,7 @@ class ClassificationMetricsInterface(BaseMetricsInterface):
             recall=metrics.get("recall", 0.0),
             f1score=metrics.get("f1score", 0.0),
             per_class_accuracy=per_class_accuracy,
-            confusion_matrix=self.get_confusion_matrix().tolist(),
+            confusion_matrix=self.confusion_matrix.tolist(),
             num_samples=self._frame_count,
             detailed_metrics=metrics,
         )

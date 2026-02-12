@@ -1,15 +1,21 @@
 """Core components for deployment framework."""
 
-from deployment.core.artifacts import Artifact
+from deployment.core.artifacts import (
+    Artifact,
+    get_component_files,
+    resolve_artifact_path,
+    resolve_engine_path,
+    resolve_onnx_path,
+)
 from deployment.core.backend import Backend
 from deployment.core.config.base_config import (
-    BackendConfig,
     BaseDeploymentConfig,
     DeviceConfig,
     EvaluationConfig,
     ExportConfig,
     ExportMode,
     RuntimeConfig,
+    TensorRTConfig,
     VerificationConfig,
     VerificationScenario,
     parse_base_args,
@@ -26,6 +32,7 @@ from deployment.core.evaluation.base_evaluator import (
     BaseEvaluator,
     EvalResultDict,
     EvaluationDefaults,
+    InferenceInput,
     ModelSpec,
     TaskProfile,
     VerifyResultDict,
@@ -56,7 +63,7 @@ __all__ = [
     "ExportConfig",
     "ExportMode",
     "RuntimeConfig",
-    "BackendConfig",
+    "TensorRTConfig",
     "DeviceConfig",
     "EvaluationConfig",
     "VerificationConfig",
@@ -71,11 +78,16 @@ __all__ = [
     # Evaluation
     "BaseEvaluator",
     "TaskProfile",
+    "InferenceInput",
     "EvalResultDict",
     "VerifyResultDict",
     "VerificationMixin",
     # Artifacts
     "Artifact",
+    "resolve_artifact_path",
+    "resolve_onnx_path",
+    "resolve_engine_path",
+    "get_component_files",
     "ModelSpec",
     # Preprocessing
     "build_preprocessing_pipeline",

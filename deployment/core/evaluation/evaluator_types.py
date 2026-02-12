@@ -7,8 +7,8 @@ runners, and orchestrators.
 
 from __future__ import annotations
 
-from dataclasses import asdict, dataclass
-from typing import Any, Dict, Optional, TypedDict
+from dataclasses import asdict, dataclass, field
+from typing import Any, Dict, Mapping, Optional, TypedDict
 
 from deployment.core.artifacts import Artifact
 from deployment.core.backend import Backend
@@ -63,7 +63,7 @@ class LatencyStats:
     median_ms: float
 
     @classmethod
-    def empty(cls) -> "LatencyStats":
+    def empty(cls) -> LatencyStats:
         """Return a zero-initialized stats object."""
         return cls(0.0, 0.0, 0.0, 0.0, 0.0)
 
@@ -84,13 +84,26 @@ class LatencyBreakdown:
     stages: Dict[str, LatencyStats]
 
     @classmethod
-    def empty(cls) -> "LatencyBreakdown":
+    def empty(cls) -> LatencyBreakdown:
         """Return an empty breakdown."""
         return cls(stages={})
 
     def to_dict(self) -> Dict[str, Dict[str, float]]:
         """Convert to ``Dict[str, Dict[str, float]]`` for downstream use."""
         return {stage: stats.to_dict() for stage, stats in self.stages.items()}
+
+
+@dataclass(frozen=True)
+class InferenceInput:
+    """Prepared input for pipeline inference.
+
+    Attributes:
+        data: The actual input data (e.g., points tensor, image tensor).
+        metadata: Sample metadata forwarded to postprocess().
+    """
+
+    data: Any
+    metadata: Mapping[str, Any] = field(default_factory=dict)
 
 
 @dataclass(frozen=True)
@@ -102,7 +115,7 @@ class InferenceResult:
     breakdown: Optional[Dict[str, float]] = None
 
     @classmethod
-    def empty(cls) -> "InferenceResult":
+    def empty(cls) -> InferenceResult:
         """Return an empty inference result."""
         return cls(output=None, latency_ms=0.0, breakdown={})
 
