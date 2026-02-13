@@ -8,7 +8,7 @@ custom_imports = dict(
 )
 
 # dataset type setting
-dataset_type = "T4Dataset"
+dataset_type = "T4CalibrationClassificationDataset"
 info_train_file_name = "t4dataset_gen2_base_infos_train.pkl"
 info_val_file_name = "t4dataset_gen2_base_infos_val.pkl"
 info_test_file_name = "t4dataset_gen2_base_infos_test.pkl"

@@ -246,17 +246,19 @@ def get_available_cameras(t4: Tier4, target_cameras: Optional[List[str]] = None)
     return all_cameras
 
 
-def get_lidar_sources_info(t4: Tier4) -> Dict[str, Dict[str, dict]]:
+def get_lidar_sources_info(t4: Tier4) -> Dict[str, Dict[str, Any]]:
     """Collect all lidar sensors and their calibrated extrinsics.
 
     Args:
         t4: Tier4 dataset instance.
 
     Returns:
-        Dictionary containing lidar_sources with sensor tokens and extrinsics.
-        The extrinsics (translation, rotation) represent sensor_to_base transform.
+        Dictionary mapping channel name (e.g. LIDAR_CONCAT) to sensor info:
+        - sensor_token: Sensor token from the dataset.
+        - translation: [x, y, z] in meters (sensor-to-base).
+        - rotation: 3x3 rotation matrix as nested list (sensor-to-base).
     """
-    lidar_sources: dict[str, dict] = {}
+    lidar_sources: Dict[str, Dict[str, Any]] = {}
     for cs_rec in getattr(t4, "calibrated_sensor", []):
         try:
             sensor_rec = t4.get("sensor", cs_rec.sensor_token)
@@ -269,13 +271,14 @@ def get_lidar_sources_info(t4: Tier4) -> Dict[str, Dict[str, dict]]:
 
         channel = sensor_rec.channel
         if channel not in lidar_sources:
+            rot_matrix = cs_rec.rotation.rotation_matrix
             lidar_sources[channel] = dict(
                 sensor_token=sensor_rec.token,
-                translation=cs_rec.translation.tolist(),
-                rotation=cs_rec.rotation.q.tolist(),
+                translation=np.array(cs_rec.translation).tolist(),
+                rotation=rot_matrix.tolist(),
             )
 
-    return dict(lidar_sources=lidar_sources)
+    return lidar_sources
 
 
 def build_sample_infos(
@@ -300,7 +303,7 @@ def build_sample_infos(
         target_cameras: List of camera channels to process.
         lidar_channel: Name of the lidar channel.
         scene_id: ID of the scene.
-        lidar_sources: Lidar sources info dict (computed once per scene).
+        lidar_sources: Dict mapping lidar channel names to sensor info (sensor_token, translation [x,y,z], rotation 3x3 matrix). Computed once per scene.
         root_path: Absolute root path of the dataset for image validation.
         size_threshold: File size threshold in bytes for filtering likely black images.
 
