@@ -258,7 +258,9 @@ class Torch2OnnxExporter:
         topk_nodes = [node for node in graph.nodes if node.op == "TopK"]
         assert len(topk_nodes) == 1
         topk = topk_nodes[0]
-        k = self.setup_configs.model_cfg.num_proposals
+        k = self.setup_configs.model_cfg.get("num_proposals", None)
+        if k is None:
+            raise ValueError(f"num_proposals is not found in the model configs!")
         topk.inputs[1] = gs.Constant("K", values=np.array([k], dtype=np.int64))
         topk.outputs[0].shape = [1, k]
         topk.outputs[0].dtype = topk.inputs[0].dtype if topk.inputs[0].dtype else np.float32
