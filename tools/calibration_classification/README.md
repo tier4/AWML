@@ -40,6 +40,7 @@ python tools/calibration_classification/create_data_t4dataset.py --config /works
 - `-o, --out_dir` (required): Output directory for info files
 - `--lidar_channel` (optional): Lidar channel name (default: LIDAR_CONCAT)
 - `--target_cameras` (optional): List of target cameras to process (default: all cameras)
+- `--filter` (optional): Filter out likely black/corrupted images based on file size
 
 **Examples:**
 
@@ -49,7 +50,13 @@ python tools/calibration_classification/create_data_t4dataset.py --config /works
 
 # Process only specific cameras
 python tools/calibration_classification/create_data_t4dataset.py --config /workspace/autoware_ml/configs/calibration_classification/dataset/t4dataset/gen2_base.py --version gen2_base --root_path ./data/t4dataset -o ./data/t4dataset/calibration_info/ --target_cameras CAM_FRONT CAM_LEFT CAM_RIGHT
+
+# Filter out black/corrupted images (recommended for datasets with potential black images)
+python tools/calibration_classification/create_data_t4dataset.py --config /workspace/autoware_ml/configs/calibration_classification/dataset/t4dataset/gen2_base.py --version gen2_base --root_path ./data/t4dataset -o ./data/t4dataset/calibration_info/ --filter
 ```
+
+**Note on `--filter` flag:**
+The `--filter` option detects and excludes likely black/corrupted images by analyzing file sizes. It samples images from each scene to calculate an average size, then filters out images smaller than 5% of that average (with a minimum threshold of 10KB).
 
 **Output files:**
 The script generates three pickle files for train/val/test splits:
@@ -60,6 +67,7 @@ The script generates three pickle files for train/val/test splits:
 Each file contains calibration information including:
 - Camera and LiDAR data paths
 - Transformation matrices (lidar2cam, cam2ego, etc.)
+- LiDAR sources info (all lidar sensors and their calibrated extrinsics per scene, if available)
 - Timestamps and metadata
 
 **Example data structure:**
@@ -103,6 +111,15 @@ Each file contains calibration information including:
         'sample_data_token': 'lidar_token_456',
         'timestamp': 1234567890
     },
+    'lidar_sources': {  # optional, present if lidar sensors exist in the scene
+        'LIDAR_CONCAT': {
+            'sensor_token': 'lidar_sensor_token_789',
+            'translation': [0.0, 0.0, 1.8],
+            'rotation': [[1.0, 0.0, 0.0],
+                        [0.0, 1.0, 0.0],
+                        [0.0, 0.0, 1.0]],
+        }
+    },
     'sample_idx': 3,
     'scene_id': 'scene_001'
 }
@@ -113,6 +130,7 @@ Each file contains calibration information including:
 - `frame_idx`: Frame index in the sequence
 - `image`: Camera-specific data including intrinsic/extrinsic parameters
 - `lidar_points`: LiDAR data with transformation matrices
+- `lidar_sources` (optional): All lidar sensors in the scene with their calibrated extrinsics. Keys are channel names (e.g. LIDAR_CONCAT). Each value has: sensor_token, translation [x,y,z] in meters, and rotation as a 3x3 matrix (sensor-to-base transform). Present if lidar sensors exist in the scene
 - `sample_idx`: Sample index in the dataset
 - `scene_id`: Scene identifier
 
