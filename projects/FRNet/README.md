@@ -27,13 +27,13 @@
 - Docker build for FRNet
 
 ```sh
-DOCKER_BUILDKIT=1 docker build -t autoware-ml-frnet projects/FRNet/
+DOCKER_BUILDKIT=1 docker build -t awml-frnet projects/FRNet/
 ```
 
 - Run docker
 
 ```sh
-docker run -it --rm --gpus all --shm-size=64g --name awml -p 6006:6006 -v $PWD/:/workspace -v $PWD/data:/workspace/data autoware-ml-frnet
+docker run -it --rm --gpus all --shm-size=64g --name awml -p 6006:6006 -v $PWD/:/workspace -v $PWD/data:/workspace/data awml-frnet
 ```
 
 ### 2. Config
