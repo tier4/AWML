@@ -26,7 +26,7 @@ def parse_args():
         help="module to export",
         required=True,
         default="main_body",
-        choices=["main_body", "image_backbone", "camera_bev_only_network"],
+        choices=["main_body", "image_backbone", "camera_bev_only"],
     )
     args = parser.parse_args()
     return args

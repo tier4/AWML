@@ -74,8 +74,8 @@ class Torch2OnnxExporter:
                     return
 
             # Export the camera bev only network
-            if self.setup_configs.module == "camera_bev_only_network":
-                self._export_camera_bev_only_network(
+            if self.setup_configs.module == "camera_bev_only":
+                self._export_camera_bev_only(
                     model_data=model_data, ir_configs=ir_configs, patched_model=patched_model, image_feats=image_feats
                 )
 
@@ -129,7 +129,7 @@ class Torch2OnnxExporter:
         self.logger.info(f"Converted Image backbone")
         return image_feats
 
-    def _export_camera_bev_only_network(
+    def _export_camera_bev_only(
         self,
         model_data: ModelData,
         ir_configs: dict,
