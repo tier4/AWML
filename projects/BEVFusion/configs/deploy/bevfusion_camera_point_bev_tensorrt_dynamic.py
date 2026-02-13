@@ -1,4 +1,11 @@
 # Deploy camera with lidar inputs
+_base_ = [
+    "../default/pipelines/default_camera_lidar_intensity_120m.py",
+    "../default/models/default_camera_swin_fpn_120m.py",
+    "../default/schedulers/default_30e_4xb8_adamw_linear_cosine.py",
+    "../default/default_misc.py",
+]
+
 
 codebase_config = dict(type="mmdet3d", task="VoxelDetection", model_type="end2end")
 
@@ -12,6 +19,7 @@ custom_imports = dict(
 )
 
 depth_bins = 129
+# TODO(KokSeang): Read this parameter from a base config
 feature_dims = (48, 96)
 # image_dims = (640, 576)
 
