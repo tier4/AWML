@@ -22,6 +22,7 @@ from tools.detection3d.t4dataset_converters.t4converter import (
     get_annotations,
     get_ego2global,
     get_lidar_points_info,
+    get_lidar_sources_info,
     get_lidar_sweeps_info,
     get_lidarseg_annotations,
     obtain_sensor2top,
@@ -103,7 +104,7 @@ def get_info(
     max_sweeps: int,
     city: Optional[str] = None,
     vehicle_type: Optional[str] = None,
-):
+) -> Dict[str, Any]:
     lidar_token = get_lidar_token(sample)
     if lidar_token is None:
         print_log(
@@ -160,6 +161,7 @@ def get_info(
             cfg,
         ),
         get_lidarseg_annotations(t4, sd_record, i, lidar_token),
+        get_lidar_sources_info(t4),
     ]:
         info.update(new_info)
 
@@ -267,20 +269,20 @@ def main():
         print_log("No attribute filtering is applied!")
 
     # Get every pair of min-max distance filtering thresholds
-    min_distance = cfg.evaluator_metric_configs["min_distance"]
-    max_distance = cfg.evaluator_metric_configs["max_distance"]
-
-    # TODO(KokSeang): make this configurable, and consistent with evaluation config
-    range_filter_name = "bev_center"
     bev_distance_ranges = []
-    for min_dist, max_dist in zip(min_distance, max_distance):
-        bev_distance_ranges.append((min_dist, max_dist))
+    if hasattr(cfg, "evaluator_metric_configs"):
+        min_distance = cfg.evaluator_metric_configs["min_distance"]
+        max_distance = cfg.evaluator_metric_configs["max_distance"]
+        # TODO(KokSeang): make this configurable, and consistent with evaluation config
+        range_filter_name = "bev_center"
+        for min_dist, max_dist in zip(min_distance, max_distance):
+            bev_distance_ranges.append((min_dist, max_dist))
 
     # Generate statistics for this split
     t4_statistics = {
-        "train": T4DatasetStatistics(Path(args.out_dir), "train", args.version),
-        "val": T4DatasetStatistics(Path(args.out_dir), "val", args.version),
-        "test": T4DatasetStatistics(Path(args.out_dir), "test", args.version),
+        "train": T4DatasetStatistics(Path(args.out_dir), "train", args.version, cfg.class_names),
+        "val": T4DatasetStatistics(Path(args.out_dir), "val", args.version, cfg.class_names),
+        "test": T4DatasetStatistics(Path(args.out_dir), "test", args.version, cfg.class_names),
     }
     for dataset_version in cfg.dataset_version_list:
         dataset_list = osp.join(args.dataset_version_config_root, dataset_version + ".yaml")
@@ -317,21 +319,26 @@ def main():
                         scene_root_dir_path = get_scene_root_dir_path(args.root_path, dataset_version, t4_dataset_id)
                     else:
                         raise ValueError(f"{t4_dataset_id} does not exist.")
+
                 t4 = Tier4(data_root=scene_root_dir_path, verbose=False)
+                infos = []
                 for i in range(0, len(t4.sample), sample_steps):
                     sample = t4.sample[i]
                     info = get_info(cfg, t4, sample, i, args.max_sweeps, city, vehicle_type)
+                    if info is None:
+                        continue
                     # info["version"] = dataset_version             # used for visualizations during debugging.
                     t4_infos[split].append(info)
+                    infos.append(info)
 
                 scene_metadata = T4DatasetSceneMetadata(scene_id, city, vehicle_type)
                 for bev_distance_range in bev_distance_ranges:
                     bucket_name = _get_bucket_name(city, vehicle_type, range_filter_name, bev_distance_range)
-                    t4_statistics[split].add_samples(t4.sample, bucket_name, scene_metadata)
+                    t4_statistics[split].add_samples(t4.sample, infos, bucket_name, scene_metadata, bev_distance_range)
 
                     # Add version statistics without city/vehicle_type
                     bucket_name = _get_bucket_name(args.version, args.version, range_filter_name, bev_distance_range)
-                    t4_statistics[split].add_samples(t4.sample, bucket_name, scene_metadata)
+                    t4_statistics[split].add_samples(t4.sample, infos, bucket_name, scene_metadata, bev_distance_range)
 
     for t4_statistic_info in t4_statistics.values():
         t4_statistic_info.save_to_parquet()
