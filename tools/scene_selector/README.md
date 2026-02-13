@@ -18,7 +18,7 @@
 ### 1. setup environment
 
 ```
-DOCKER_BUILDKIT=1 docker build -t autoware-ml-ros2 ./tools/setting_environment/ros2/
+DOCKER_BUILDKIT=1 docker build -t awml-ros2 ./tools/setting_environment/ros2/
 ```
 
 ### 2. select scene

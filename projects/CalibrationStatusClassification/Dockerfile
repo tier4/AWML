@@ -1,4 +1,4 @@
-ARG AWML_BASE_IMAGE="autoware-ml:latest"
+ARG AWML_BASE_IMAGE="ghcr.io/tier4/awml:base-latest"
 FROM ${AWML_BASE_IMAGE}
 ARG TRT_VERSION=10.8.0.43
 

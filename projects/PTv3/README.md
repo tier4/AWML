@@ -23,13 +23,13 @@ AWML's implementation is a port of the [original code](https://github.com/Pointc
 - This project requires a different docker environment that most other projects.
 
 ```sh
-DOCKER_BUILDKIT=1 docker build -t autoware-ml-ptv3 -f projects/PTv3/Dockerfile . --progress=plain
+DOCKER_BUILDKIT=1 docker build -t awml-ptv3 -f projects/PTv3/Dockerfile . --progress=plain
 ```
 
 -Run docker
 
 ```sh
-docker run -it --rm --gpus all --shm-size=64g --name awml-ptv3 -p 6006:6006 -v $PWD/:/workspace -v $PWD/data:/workspace/data autoware-ml-ptv3
+docker run -it --rm --gpus all --shm-size=64g --name awml-ptv3 -p 6006:6006 -v $PWD/:/workspace -v $PWD/data:/workspace/data awml-ptv3
 ```
 
 ### 2. Train
