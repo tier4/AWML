@@ -33,13 +33,13 @@
 - Docker build for TransFusion
 
 ```sh
-DOCKER_BUILDKIT=1 docker build -t autoware-ml-transfusion projects/TransFusion/
+DOCKER_BUILDKIT=1 docker build -t awml-transfusion projects/TransFusion/
 ```
 
 - Run docker
 
 ```sh
-docker run -it --rm --gpus all --shm-size=64g --name awml -p 6006:6006 -v $PWD/:/workspace -v $PWD/data:/workspace/data autoware-ml-transfusion
+docker run -it --rm --gpus all --shm-size=64g --name awml -p 6006:6006 -v $PWD/:/workspace -v $PWD/data:/workspace/data awml-transfusion
 ```
 
 - Build and install dependency (required only at first run).
