@@ -44,8 +44,8 @@ if __name__ == "__main__":
         args.sample_idx,
         args.module,
     )
-    # # Build the exporter
+    # Build the exporter
     exporter = Torch2OnnxExporter(setup_config, args.log_level)
 
-    # # Export the model
+    # Export the model
     exporter.export()
