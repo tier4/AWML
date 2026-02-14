@@ -18,13 +18,13 @@ info_test_statistics_file_name = "t4dataset_jpntaxi_base_statistics_test.parquet
 
 # dataset scene setting
 dataset_test_groups = {
+    "jpntaxi_gen2_base": ("t4dataset_jpntaxi_gen2_base_infos_test.pkl", False),
     "jpntaxi_base": ("t4dataset_jpntaxi_base_infos_test.pkl", True),
 }
 
 dataset_version_list = [
     "db_jpntaxigen2_v1",
     "db_jpntaxigen2_v2",
-    "db_jpntaxigen2_v3",
     "db_jpntaxi_v1",
     "db_jpntaxi_v2",
     "db_jpntaxi_v4",
@@ -121,14 +121,6 @@ name_mapping = {
     "semi_trailer": "trailer",
     "tractor_unit": "truck",
     "construction_vehicle": "truck",
-    # db_jpntaxigen2_v3
-    "other_vehicle": "car",
-    "traffic_cone": "traffic_cone",
-    "personal_mobility": "pedestrian",
-    "other_pedestrian": "pedestrian",
-    "train": "train",
-    "barrier": "barrier",
-    "fake_pedestrian": "pedestrian",
 }
 
 class_names = [

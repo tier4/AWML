@@ -20,7 +20,6 @@ info_test_statistics_file_name = "t4dataset_base_statistics_test.parquet"
 dataset_version_list = [
     "db_jpntaxigen2_v1",
     "db_jpntaxigen2_v2",
-    # "db_jpntaxigen2_v3",
     "db_j6gen2_v1",
     "db_j6gen2_v2",
     "db_j6gen2_v3",
@@ -29,8 +28,10 @@ dataset_version_list = [
     "db_j6gen2_v6",
     "db_j6gen2_v7",
     "db_j6gen2_v8",
+    "db_j6gen2_v9",
     "db_largebus_v1",
     "db_largebus_v2",
+    "db_largebus_v3",
     "db_jpntaxi_v1",
     "db_jpntaxi_v2",
     "db_jpntaxi_v4",
@@ -45,7 +46,9 @@ dataset_version_list = [
 # Dataset set, test info files, and enable/disable evaluation of prefix
 dataset_test_groups = {
     "j6gen2_base": ("t4dataset_j6gen2_base_infos_test.pkl", False),
+    "largebus": ("t4dataset_largebus_infos_test.pkl", False),
     "jpntaxi_base": ("t4dataset_jpntaxi_base_infos_test.pkl", False),
+    "jpntaxi_gen2_base": ("t4dataset_jpntaxi_gen2_base_infos_test.pkl", False),
     "base": ("t4dataset_base_infos_test.pkl", True),
 }
 
@@ -140,14 +143,6 @@ name_mapping = {
     "semi_trailer": "trailer",
     "tractor_unit": "truck",
     "construction_vehicle": "truck",
-    # db_jpntaxigen2_v3
-    "other_vehicle": "car",
-    "traffic_cone": "traffic_cone",
-    "personal_mobility": "pedestrian",
-    "other_pedestrian": "pedestrian",
-    "train": "train",
-    "barrier": "barrier",
-    "fake_pedestrian": "pedestrian",
 }
 
 class_names = [
