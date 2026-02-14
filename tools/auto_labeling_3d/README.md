@@ -82,7 +82,17 @@ docker run -it --gpus '"device=0"' --name auto_labeling_3d --shm-size=64g -d -v 
 
 ## 2. Prepare Dataset
 
-Prepare your non-annotated T4dataset in the following structure:
+### From a T4dataset ID List
+
+If you have locally installed webauto and a list of UUIDs, you can automatically download and prepare the data using the following script. You'll need to create a simple text file with the list of IDs you wish to download, e.g. `tools/auto_labeling_3d/scripts/id_list_example.txt`:
+```
+bash tools/auto_labeling_3d/scripts/download_id_list_from_webauto.sh <ID_FILE.txt> <OUTPUT_DIR> [PROJECT_ID := x2_dev] [MAX_JOBS := 5]
+```
+You won't usually need to, but you can also flatten/unflatten a subdirectory of non-annotated t4datasets manually using `flatten_webauto_artifacts.sh` and `unflatten_webauto_artifacts.sh`.
+
+### Manually
+
+You can also prepare manually your non-annotated T4dataset in the following structure (note there must not be a `version_id` folder, like `0/` or `1/`):
 
 ```
 - data/t4dataset/
