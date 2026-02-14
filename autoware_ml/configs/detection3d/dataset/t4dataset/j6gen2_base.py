@@ -34,6 +34,7 @@ dataset_version_list = [
 
 dataset_test_groups = {
     "largebus": ("t4dataset_largebus_infos_test.pkl", False),
+    "j6gen2": ("t4dataset_j6gen2_infos_test.pkl", False),
     "j6gen2_base": ("t4dataset_j6gen2_base_infos_test.pkl", True),
 }
 

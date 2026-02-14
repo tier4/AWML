@@ -46,9 +46,10 @@ dataset_version_list = [
 # Dataset set, test info files, and enable/disable evaluation of prefix
 dataset_test_groups = {
     "j6gen2_base": ("t4dataset_j6gen2_base_infos_test.pkl", False),
+    "j6gen2": ("t4dataset_j6gen2_infos_test.pkl", False),
     "largebus": ("t4dataset_largebus_infos_test.pkl", False),
     "jpntaxi_base": ("t4dataset_jpntaxi_base_infos_test.pkl", False),
-    "jpntaxi_gen2_base": ("t4dataset_jpntaxi_gen2_base_infos_test.pkl", False),
+    "jpntaxi_gen2": ("t4dataset_jpntaxi_gen2_infos_test.pkl", False),
     "base": ("t4dataset_base_infos_test.pkl", True),
 }
 
