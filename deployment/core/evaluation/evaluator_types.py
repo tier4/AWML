@@ -107,19 +107,6 @@ class InferenceInput:
 
 
 @dataclass(frozen=True)
-class InferenceInput:
-    """Prepared input for pipeline inference.
-
-    Attributes:
-        data: The actual input data (e.g., points tensor, image tensor).
-        metadata: Sample metadata forwarded to postprocess().
-    """
-
-    data: Any
-    metadata: Mapping[str, Any] = field(default_factory=dict)
-
-
-@dataclass(frozen=True)
 class InferenceResult:
     """Standard inference return payload."""
 

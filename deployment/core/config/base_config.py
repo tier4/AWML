@@ -295,6 +295,7 @@ class VerificationConfig:
         return cls(
             enabled=config_dict.get("enabled", True),
             num_verify_samples=config_dict.get("num_verify_samples", 3),
+            tolerance=config_dict.get("tolerance", 0.1),
             devices=MappingProxyType(dict(devices_raw)),
             scenarios=MappingProxyType(scenario_map),
         )
