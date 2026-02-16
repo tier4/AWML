@@ -630,7 +630,6 @@ class Detection3DMetricsInterface(BaseMetricsInterface):
         # Remove duplicates while preserving order
         return list(dict.fromkeys(modes))
 
-
     @property
     def summary(self) -> DetectionSummary:
         """Get a summary of the evaluation including mAP and per-class metrics for all matching modes.
