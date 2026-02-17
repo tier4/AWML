@@ -30,8 +30,10 @@ class VoxelDetection(_VoxelDetection):
         """ """
 
         points = collate_data["inputs"]["points"][0]
-        voxels = collate_data["inputs"]["voxels"]
+        if "voxels" not in collate_data["inputs"]:
+            return None, None, None, points
 
+        voxels = collate_data["inputs"]["voxels"]
         feats = voxels["voxels"]
         num_points_per_voxel = voxels["num_points"]
         # NOTE(knzo25): preprocessing in BEVFusion and the
@@ -102,7 +104,6 @@ class VoxelDetection(_VoxelDetection):
 
         data = [batch]
         collate_data = pseudo_collate(data)
-
         """ cam2img = data[0]["data_samples"].cam2img
         cam2lidar = data[0]["data_samples"].cam2lidar
         lidar2image = data[0]["data_samples"].lidar2img
