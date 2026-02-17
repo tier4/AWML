@@ -25,13 +25,13 @@
 - Docker build for CalibrationStatusClassification
 
 ```sh
-DOCKER_BUILDKIT=1 docker build -t autoware-ml-calib projects/CalibrationStatusClassification/
+DOCKER_BUILDKIT=1 docker build -t awml-calib projects/CalibrationStatusClassification/
 ```
 
 - Run docker
 
 ```sh
-docker run -it --rm --gpus all --shm-size=64g --name awml-calib -p 6006:6006 -v $PWD/:/workspace -v $PWD/data:/workspace/data autoware-ml-calib
+docker run -it --rm --gpus all --shm-size=64g --name awml-calib -p 6006:6006 -v $PWD/:/workspace -v $PWD/data:/workspace/data awml-calib
 ```
 
 ### 2. Config

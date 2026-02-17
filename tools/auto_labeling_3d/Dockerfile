@@ -1,5 +1,5 @@
-ARG BASE_IMAGE=ghcr.io/tier4/awml:base-latest
-FROM ${BASE_IMAGE}
+ARG AWML_BASE_IMAGE=ghcr.io/tier4/awml:base-latest
+FROM ${AWML_BASE_IMAGE}
 
 # Install pip dependencies
 RUN pip install python-json-logger filterpy==1.4.5

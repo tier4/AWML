@@ -1,4 +1,4 @@
-ARG AWML_BASE_IMAGE="autoware-ml"
+ARG AWML_BASE_IMAGE="ghcr.io/tier4/awml:base-latest"
 FROM ${AWML_BASE_IMAGE}
 
 ENV FLASH_ATTN_CUDA_ARCHS="120"
