@@ -50,7 +50,7 @@ class CenterPointONNXPipeline(CenterPointDeploymentPipeline):
 
         self.onnx_dir = onnx_dir
         if components_cfg is None:
-            components_cfg = {}
+            raise ValueError("components_cfg is required for CenterPoint ONNX pipeline.")
         if not isinstance(components_cfg, Mapping):
             raise TypeError(f"components_cfg must be a mapping, got {type(components_cfg).__name__}")
         self._components_cfg = components_cfg
@@ -148,21 +148,14 @@ class CenterPointONNXPipeline(CenterPointDeploymentPipeline):
         onnx_output_names = [output.name for output in self.backbone_head_session.get_outputs()]
 
         # Get expected output order from components_cfg
-        backbone_head_cfg = self._components_cfg.get("backbone_head", {})
-        io_cfg = backbone_head_cfg.get("io", {})
-        outputs = io_cfg.get("outputs", [])
-
-        if not outputs:
+        try:
+            outputs = self._components_cfg["backbone_head"]["io"]["outputs"]
+        except KeyError as exc:
+            raise KeyError("Missing required config path: components_cfg['backbone_head']['io']['outputs']") from exc
+        expected_output_names = [out["name"] for out in outputs]
+        if not expected_output_names or any(not name for name in expected_output_names):
             raise ValueError(
-                "Output names must be provided via components_cfg.backbone_head.io.outputs. "
-                "No fallback values are allowed in deployment framework."
-            )
-
-        expected_output_names = [out.get("name") for out in outputs if out.get("name")]
-        if not expected_output_names:
-            raise ValueError(
-                "Output names must be provided via components_cfg.backbone_head.io.outputs. "
-                "Each output must have a 'name' field."
+                "Each entry in components_cfg['backbone_head']['io']['outputs'] must define a non-empty 'name'."
             )
 
         # Validate outputs: check for missing or extra outputs

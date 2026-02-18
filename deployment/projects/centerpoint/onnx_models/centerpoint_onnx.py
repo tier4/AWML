@@ -4,10 +4,8 @@ These modules provide ONNX-friendly model wrappers and detector variants used by
 the deployment/export pipeline (not training).
 """
 
-import os
 from typing import Dict, List, Tuple
 
-import numpy as np
 import torch
 from mmdet3d.models.detectors.centerpoint import CenterPoint
 from mmdet3d.registry import MODELS
@@ -88,33 +86,6 @@ class CenterPointONNX(CenterPoint):
         points = points.to(self._torch_device)
         points = [points]
         return {"points": points, "data_samples": None}
-
-    def _load_point_cloud(self, lidar_path: str) -> np.ndarray:
-        """
-        Load point cloud from file.
-
-        Args:
-            lidar_path: Path to point cloud file (.bin or .pcd)
-
-        Returns:
-            Point cloud array (N, 5) where 5 = (x, y, z, intensity, ring_id)
-        """
-        if lidar_path.endswith(".bin"):
-            # Load binary point cloud (KITTI/nuScenes format)
-            # T4 dataset has 5 features: x, y, z, intensity, ring_id
-            points = np.fromfile(lidar_path, dtype=np.float32).reshape(-1, 5)
-
-            # Don't pad here - let the voxelization process handle feature expansion
-            # The voxelization process will add cluster_center (+3) and voxel_center (+3) features
-            # So 5 + 3 + 3 = 11 features total
-
-        elif lidar_path.endswith(".pcd"):
-            # Load PCD format (placeholder - would need pypcd or similar)
-            raise NotImplementedError("PCD format loading not implemented yet")
-        else:
-            raise ValueError(f"Unsupported point cloud format: {lidar_path}")
-
-        return points
 
     def _extract_features(self, data_loader, sample_idx=0):
         """

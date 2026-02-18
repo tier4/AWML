@@ -7,7 +7,7 @@ from __future__ import annotations
 import logging
 import re
 from pathlib import Path
-from typing import Any, Dict, List, Mapping, Optional
+from typing import Any, Dict, List, Mapping
 
 import torch
 
@@ -77,14 +77,16 @@ class CenterPointTensorRTExportPipeline(TensorRTExportPipeline):
         num_files = len(onnx_files)
         for i, onnx_file in enumerate(onnx_files, 1):
             onnx_stem = onnx_file.stem
-            engine_file = engine_file_map.get(onnx_stem, f"{onnx_stem}.engine")
+            if onnx_stem not in engine_file_map:
+                raise KeyError(f"ONNX file '{onnx_file.name}' is not declared in deploy config components.*.onnx_file")
+            engine_file = engine_file_map[onnx_stem]
             trt_path = output_dir_path / engine_file
             trt_path.parent.mkdir(parents=True, exist_ok=True)
 
             self.logger.info(f"\n[{i}/{num_files}] Converting {onnx_file.name} → {trt_path.name}...")
 
             # Get component-specific TensorRT profile
-            component_name = onnx_stem_to_component.get(onnx_stem)
+            component_name = onnx_stem_to_component[onnx_stem]
             exporter = self._build_tensorrt_exporter_for_component(config, components_cfg, component_name)
 
             artifact = exporter.export(
@@ -107,13 +109,13 @@ class CenterPointTensorRTExportPipeline(TensorRTExportPipeline):
     def _build_engine_file_map(self, components_cfg: Mapping[str, Any]) -> Dict[str, str]:
         """Build mapping from ONNX stem -> engine_file."""
         mapping: Dict[str, str] = {}
-        for comp in components_cfg.values():
+        for comp_name, comp in components_cfg.items():
             if not isinstance(comp, Mapping):
-                continue
-            onnx_file = comp.get("onnx_file")
-            engine_file = comp.get("engine_file")
-            if not onnx_file or not engine_file:
-                continue
+                raise TypeError(f"components['{comp_name}'] must be a mapping, got {type(comp).__name__}")
+            if "onnx_file" not in comp or "engine_file" not in comp:
+                raise KeyError(f"components['{comp_name}'] must define both 'onnx_file' and 'engine_file'.")
+            onnx_file = comp["onnx_file"]
+            engine_file = comp["engine_file"]
             mapping[Path(onnx_file).stem] = str(engine_file)
         return mapping
 
@@ -122,21 +124,24 @@ class CenterPointTensorRTExportPipeline(TensorRTExportPipeline):
         mapping: Dict[str, str] = {}
         for comp_name, comp_cfg in components_cfg.items():
             if not isinstance(comp_cfg, Mapping):
-                continue
-            onnx_file = comp_cfg.get("onnx_file")
-            if onnx_file:
-                mapping[Path(onnx_file).stem] = comp_name
+                raise TypeError(f"components['{comp_name}'] must be a mapping, got {type(comp_cfg).__name__}")
+            if "onnx_file" not in comp_cfg:
+                raise KeyError(f"components['{comp_name}'] must define 'onnx_file'.")
+            onnx_file = comp_cfg["onnx_file"]
+            mapping[Path(onnx_file).stem] = comp_name
         return mapping
 
     def _get_components_cfg(self, config: BaseDeploymentConfig) -> Mapping[str, Any]:
         """Get unified components configuration from deploy config."""
-        return dict(config.deploy_cfg.get("components", {}))
+        if "components" not in config.deploy_cfg:
+            raise KeyError("deploy_cfg must define 'components' for CenterPoint TensorRT export.")
+        return dict(config.deploy_cfg["components"])
 
     def _build_tensorrt_exporter_for_component(
         self,
         config: BaseDeploymentConfig,
         components_cfg: Mapping[str, Any],
-        component_name: Optional[str],
+        component_name: str,
     ):
         """Build TensorRT exporter with component-specific profile.
 
@@ -144,34 +149,47 @@ class CenterPointTensorRTExportPipeline(TensorRTExportPipeline):
         into the `model_inputs` format expected by TensorRTExporter.
         """
         # Get base TensorRT settings from config
-        trt_cfg = config.deploy_cfg.get("tensorrt_config", {})
-        precision_policy = trt_cfg.get("precision_policy", "auto")
-        max_workspace_size = trt_cfg.get("max_workspace_size", 1 << 30)
+        if "tensorrt_config" not in config.deploy_cfg:
+            raise KeyError("deploy_cfg must define 'tensorrt_config' for TensorRT export.")
+        trt_cfg = config.deploy_cfg["tensorrt_config"]
+        precision_policy = trt_cfg["precision_policy"]
+        max_workspace_size = trt_cfg["max_workspace_size"]
 
         # Build model_inputs from component's tensorrt_profile
         model_inputs = ()
-        if component_name and component_name in components_cfg:
-            comp_cfg = components_cfg[component_name]
-            tensorrt_profile = comp_cfg.get("tensorrt_profile", {})
+        if component_name not in components_cfg:
+            raise KeyError(f"Component '{component_name}' missing from deploy config.")
 
-            if tensorrt_profile:
-                # Convert tensorrt_profile to TensorRTModelInputConfig format
-                input_shapes = {}
-                for input_name, shape_cfg in tensorrt_profile.items():
-                    if isinstance(shape_cfg, Mapping):
-                        input_shapes[input_name] = TensorRTProfileConfig(
-                            min_shape=tuple(shape_cfg.get("min_shape", [])),
-                            opt_shape=tuple(shape_cfg.get("opt_shape", [])),
-                            max_shape=tuple(shape_cfg.get("max_shape", [])),
-                        )
+        comp_cfg = components_cfg[component_name]
+        if "tensorrt_profile" not in comp_cfg:
+            raise KeyError(f"components['{component_name}'] must define 'tensorrt_profile'.")
+        tensorrt_profile = comp_cfg["tensorrt_profile"]
+        if not isinstance(tensorrt_profile, Mapping):
+            raise TypeError(
+                f"components['{component_name}']['tensorrt_profile'] must be a mapping, "
+                f"got {type(tensorrt_profile).__name__}"
+            )
+        if not tensorrt_profile:
+            raise ValueError(f"components['{component_name}']['tensorrt_profile'] must not be empty.")
 
-                if input_shapes:
-                    from types import MappingProxyType
+        # Convert tensorrt_profile to TensorRTModelInputConfig format
+        input_shapes = {}
+        for input_name, shape_cfg in tensorrt_profile.items():
+            if not isinstance(shape_cfg, Mapping):
+                raise TypeError(
+                    f"Profile for input '{input_name}' in component '{component_name}' must be a mapping, "
+                    f"got {type(shape_cfg).__name__}"
+                )
+            input_shapes[input_name] = TensorRTProfileConfig(
+                min_shape=tuple(shape_cfg["min_shape"]),
+                opt_shape=tuple(shape_cfg["opt_shape"]),
+                max_shape=tuple(shape_cfg["max_shape"]),
+            )
 
-                    model_inputs = (TensorRTModelInputConfig(input_shapes=MappingProxyType(input_shapes)),)
-                    self.logger.info(
-                        f"Using TensorRT profile for component '{component_name}': {list(input_shapes.keys())}"
-                    )
+        from types import MappingProxyType
+
+        model_inputs = (TensorRTModelInputConfig(input_shapes=MappingProxyType(input_shapes)),)
+        self.logger.info(f"Using TensorRT profile for component '{component_name}': {list(input_shapes.keys())}")
 
         # Create TensorRT export config with component-specific model_inputs
         trt_export_config = TensorRTExportConfig(

@@ -5,7 +5,7 @@ This module extracts metrics configuration from MMEngine model configs.
 """
 
 import logging
-from typing import List, Optional
+from typing import Any, List, Optional
 
 from mmengine.config import Config
 
@@ -51,23 +51,37 @@ def extract_t4metric_v2_config(
     else:
         raise ValueError("No val_evaluator or test_evaluator found in model_cfg")
 
-    def get_cfg_value(cfg, key, default=None):
+    def read_cfg_value(cfg: Any, key: str, *, required: bool, default: Any = None) -> Any:
         if cfg is None:
+            if required:
+                raise KeyError(f"Missing required config object while reading '{key}'")
             return default
-        if isinstance(cfg, dict):
-            return cfg.get(key, default)
-        return getattr(cfg, key, default)
 
-    evaluator_type = get_cfg_value(evaluator_cfg, "type")
+        if isinstance(cfg, dict):
+            if key in cfg:
+                return cfg[key]
+            if required:
+                raise KeyError(f"Missing required key '{key}' in evaluator config dict")
+            return default
+
+        if hasattr(cfg, key):
+            return getattr(cfg, key)
+        if required:
+            raise KeyError(f"Missing required attribute '{key}' in evaluator config object")
+        return default
+
+    evaluator_type = read_cfg_value(evaluator_cfg, "type", required=True)
     if evaluator_type != "T4MetricV2":
         raise ValueError(f"Evaluator type is '{evaluator_type}', not 'T4MetricV2'")
 
-    perception_configs = get_cfg_value(evaluator_cfg, "perception_evaluator_configs", {})
-    evaluation_config_dict = get_cfg_value(perception_configs, "evaluation_config_dict")
-    frame_id = get_cfg_value(perception_configs, "frame_id", "base_link")
+    perception_configs = read_cfg_value(evaluator_cfg, "perception_evaluator_configs", required=True)
+    evaluation_config_dict = read_cfg_value(perception_configs, "evaluation_config_dict", required=True)
+    frame_id = read_cfg_value(perception_configs, "frame_id", required=True)
 
-    critical_object_filter_config = get_cfg_value(evaluator_cfg, "critical_object_filter_config")
-    frame_pass_fail_config = get_cfg_value(evaluator_cfg, "frame_pass_fail_config")
+    critical_object_filter_config = read_cfg_value(
+        evaluator_cfg, "critical_object_filter_config", required=False, default=None
+    )
+    frame_pass_fail_config = read_cfg_value(evaluator_cfg, "frame_pass_fail_config", required=False, default=None)
 
     if evaluation_config_dict and hasattr(evaluation_config_dict, "to_dict"):
         evaluation_config_dict = dict(evaluation_config_dict)
