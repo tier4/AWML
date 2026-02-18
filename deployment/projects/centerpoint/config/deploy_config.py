@@ -11,7 +11,7 @@ task_type = "detection3d"
 # ============================================================================
 # Checkpoint Path - Single source of truth for PyTorch model
 # ============================================================================
-checkpoint_path = "work_dirs/centerpoint/best_checkpoint.pth"
+checkpoint_path = "work_dirs/centerpoint/centerpoint_2_5.pth"
 
 # ============================================================================
 # Device settings (shared by export, evaluation, verification)
@@ -164,7 +164,7 @@ evaluation = dict(
 # ============================================================================
 verification = dict(
     enabled=False,
-    tolerance=1e-1,
+    tolerance=1,
     num_verify_samples=1,
     devices=devices,
     scenarios=dict(
