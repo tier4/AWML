@@ -35,7 +35,9 @@ def run(args: argparse.Namespace) -> int:
     config = BaseDeploymentConfig(deploy_cfg)
 
     # Extract components config for dependency injection
-    components_cfg: Mapping[str, Any] = deploy_cfg.get("components", {})
+    if "components" not in deploy_cfg:
+        raise KeyError("deploy_cfg must define 'components' for CenterPoint deployment.")
+    components_cfg: Mapping[str, Any] = deploy_cfg["components"]
 
     logger.info("=" * 80)
     logger.info("CenterPoint Deployment Pipeline (Unified CLI)")

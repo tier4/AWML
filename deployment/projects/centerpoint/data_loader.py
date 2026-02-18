@@ -109,7 +109,9 @@ class CenterPointDataLoader(BaseDataLoader):
         data = self.dataset[index]
 
         # Extract inputs
-        pipeline_inputs = data.get("inputs", {})
+        if "inputs" not in data:
+            raise KeyError(f"Dataset sample must contain 'inputs'. Got keys: {list(data.keys())}")
+        pipeline_inputs = data["inputs"]
         if "points" not in pipeline_inputs:
             raise ValueError(f"Expected 'points' in inputs. Got keys: {list(pipeline_inputs.keys())}")
 
@@ -118,19 +120,25 @@ class CenterPointDataLoader(BaseDataLoader):
             raise ValueError(f"Expected points tensor with shape [N, features], got {points_tensor.shape}")
 
         # Extract metainfo and eval_ann_info from data_samples
-        data_samples = data.get("data_samples")
-        metainfo: Dict[str, Any] = {}
-        ground_truth: Dict[str, Any] = {}
+        if "data_samples" not in data:
+            raise KeyError(f"Dataset sample must contain 'data_samples'. Got keys: {list(data.keys())}")
+        data_samples = data["data_samples"]
+        if data_samples is None:
+            raise ValueError("Dataset sample contains None 'data_samples', cannot build evaluation ground truth.")
 
-        if data_samples is not None:
-            metainfo = getattr(data_samples, "metainfo", {}) or {}
-            eval_ann_info = getattr(data_samples, "eval_ann_info", {}) or {}
-            # Keep raw eval_ann_info here; evaluator will convert to the metrics format.
-            ground_truth = dict(eval_ann_info)
+        metainfo = getattr(data_samples, "metainfo", None)
+        if metainfo is None:
+            raise AttributeError("data_samples.metainfo is required for CenterPoint deployment.")
+
+        eval_ann_info = getattr(data_samples, "eval_ann_info", None)
+        if eval_ann_info is None:
+            raise AttributeError("data_samples.eval_ann_info is required for CenterPoint evaluation.")
+        # Keep raw eval_ann_info here; evaluator will convert to the metrics format.
+        ground_truth = dict(eval_ann_info)
 
         return {
             "points": points_tensor,
-            "metainfo": metainfo,
+            "metainfo": dict(metainfo),
             "ground_truth": ground_truth,
         }
 

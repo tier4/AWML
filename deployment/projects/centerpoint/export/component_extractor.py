@@ -36,14 +36,16 @@ class CenterPointComponentExtractor(ModelComponentExtractor):
     @property
     def _components_cfg(self) -> Dict[str, Any]:
         """Get unified components configuration."""
-        return dict(self.config.deploy_cfg.get("components", {}))
+        if "components" not in self.config.deploy_cfg:
+            raise KeyError("deploy_cfg must define 'components' for CenterPoint export.")
+        return dict(self.config.deploy_cfg["components"])
 
     @property
     def _onnx_config(self) -> Dict[str, Any]:
         """Get shared ONNX export settings."""
         onnx_config_raw = self.config.onnx_config
         if onnx_config_raw is None:
-            onnx_config_raw = {}
+            raise KeyError("onnx_config is required for CenterPoint export.")
         if not isinstance(onnx_config_raw, Mapping):
             raise TypeError(f"onnx_config must be a mapping, got {type(onnx_config_raw).__name__}")
         return dict(onnx_config_raw)
@@ -73,8 +75,10 @@ class CenterPointComponentExtractor(ModelComponentExtractor):
             )
 
         def _require_fields(comp_key: str, fields: Tuple[str, ...]) -> None:
-            comp = dict(components.get(comp_key, {}))
-            missing_fields = [f for f in fields if not comp.get(f)]
+            comp = components[comp_key]
+            if not isinstance(comp, Mapping):
+                raise TypeError(f"components['{comp_key}'] must be a mapping, got {type(comp).__name__}")
+            missing_fields = [f for f in fields if f not in comp or comp[f] in (None, "")]
             if missing_fields:
                 raise KeyError(
                     f"Missing required fields in components['{comp_key}']: {missing_fields}. "
@@ -104,11 +108,6 @@ class CenterPointComponentExtractor(ModelComponentExtractor):
             raise KeyError("voxel_dict must contain key 'coors' for CenterPoint export")
         return input_features, voxel_dict
 
-    def _get_component_io(self, component: str) -> Mapping[str, Any]:
-        """Get IO specification for a component."""
-        comp_cfg = self._components_cfg.get(component, {})
-        return comp_cfg.get("io", {})
-
     def _build_onnx_config_for_component(
         self,
         component: str,
@@ -117,22 +116,22 @@ class CenterPointComponentExtractor(ModelComponentExtractor):
         dynamic_axes: Dict[str, Dict[int, str]] | None = None,
     ) -> ONNXExportConfig:
         """Build ONNX export config for a component using unified config."""
-        comp_cfg = self._components_cfg.get(component, {})
-        comp_io = comp_cfg.get("io", {})
+        comp_cfg = self._components_cfg[component]
+        comp_io = comp_cfg["io"]
         onnx_settings = self._onnx_config
 
         # Use dynamic_axes from component IO config if not explicitly provided
         if dynamic_axes is None:
-            dynamic_axes = comp_io.get("dynamic_axes", {})
+            dynamic_axes = comp_io["dynamic_axes"]
 
         return ONNXExportConfig(
             input_names=input_names,
             output_names=output_names,
             dynamic_axes=dynamic_axes,
-            opset_version=onnx_settings.get("opset_version", 16),
-            do_constant_folding=onnx_settings.get("do_constant_folding", True),
-            simplify=bool(onnx_settings.get("simplify", True)),
-            save_file=comp_cfg.get("onnx_file", f"{component}.onnx"),
+            opset_version=onnx_settings["opset_version"],
+            do_constant_folding=onnx_settings["do_constant_folding"],
+            simplify=bool(onnx_settings["simplify"]),
+            save_file=comp_cfg["onnx_file"],
         )
 
     def _create_voxel_encoder_component(
@@ -140,13 +139,15 @@ class CenterPointComponentExtractor(ModelComponentExtractor):
     ) -> ExportableComponent:
         """Create exportable component for voxel encoder."""
         comp_cfg = self._components_cfg["voxel_encoder"]
-        comp_io = comp_cfg.get("io", {})
+        comp_io = comp_cfg["io"]
 
         # Get input/output names from IO config
-        inputs = comp_io.get("inputs", [])
-        outputs = comp_io.get("outputs", [])
-        input_names = tuple(inp.get("name", "input_features") for inp in inputs) or ("input_features",)
-        output_names = tuple(out.get("name", "pillar_features") for out in outputs) or ("pillar_features",)
+        inputs = comp_io["inputs"]
+        outputs = comp_io["outputs"]
+        input_names = tuple(inp["name"] for inp in inputs)
+        output_names = tuple(out["name"] for out in outputs)
+        if not input_names or not output_names:
+            raise ValueError("voxel_encoder.io.inputs/outputs must contain at least one named entry.")
 
         return ExportableComponent(
             name=comp_cfg["name"],
@@ -167,12 +168,14 @@ class CenterPointComponentExtractor(ModelComponentExtractor):
         backbone_module = self._create_backbone_module(model)
 
         comp_cfg = self._components_cfg["backbone_head"]
-        comp_io = comp_cfg.get("io", {})
+        comp_io = comp_cfg["io"]
 
         # Get input/output names from IO config
-        inputs = comp_io.get("inputs", [])
-        outputs = comp_io.get("outputs", [])
-        input_names = tuple(inp.get("name", "spatial_features") for inp in inputs) or ("spatial_features",)
+        inputs = comp_io["inputs"]
+        outputs = comp_io["outputs"]
+        input_names = tuple(inp["name"] for inp in inputs)
+        if not input_names:
+            raise ValueError("backbone_head.io.inputs must contain at least one named entry.")
         output_names = self._get_output_names(model, outputs)
 
         return ExportableComponent(
@@ -200,29 +203,12 @@ class CenterPointComponentExtractor(ModelComponentExtractor):
         return CenterPointHeadONNX(model.pts_backbone, model.pts_neck, model.pts_bbox_head)
 
     def _get_output_names(self, model: torch.nn.Module, io_outputs: List[Dict[str, Any]]) -> Tuple[str, ...]:
-        """Get output names from config or model.
-
-        Priority:
-        1. Component IO config outputs
-        2. model.pts_bbox_head.output_names
-        3. Raise error if neither available
-        """
-        # Try from component IO config first
-        if io_outputs:
-            return tuple(out.get("name") for out in io_outputs if out.get("name"))
-
-        # Try from model
-        if hasattr(model, "pts_bbox_head") and hasattr(model.pts_bbox_head, "output_names"):
-            output_names = model.pts_bbox_head.output_names
-            if isinstance(output_names, (list, tuple)):
-                return tuple(output_names)
-            return (output_names,)
-
-        raise KeyError(
-            "Missing head output names for CenterPoint export. "
-            "Set `components.backbone_head.io.outputs` in the deployment config, "
-            "or define `model.pts_bbox_head.output_names`."
-        )
+        """Get output names from component IO config (required)."""
+        del model
+        output_names = tuple(out["name"] for out in io_outputs)
+        if not output_names or any(not name for name in output_names):
+            raise KeyError("components.backbone_head.io.outputs must define non-empty 'name' for every output.")
+        return output_names
 
     def extract_features(self, model: torch.nn.Module, data_loader: Any, sample_idx: int) -> Tuple[torch.Tensor, dict]:
         if hasattr(model, "_extract_features"):
