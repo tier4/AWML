@@ -120,7 +120,12 @@ class CenterPointDeploymentRunner(BaseDeploymentRunner):
         """
         if isinstance(context, CenterPointExportContext):
             return context.rot_y_axis_reference
-        return context.get("rot_y_axis_reference", False)
+        if "rot_y_axis_reference" not in context.extra:
+            raise KeyError(
+                "CenterPoint export requires 'rot_y_axis_reference' in context. "
+                "Use CenterPointExportContext or pass it in ExportContext.extra."
+            )
+        return bool(context.extra["rot_y_axis_reference"])
 
     def _setup_evaluator(self, model: torch.nn.Module, onnx_cfg: Config) -> None:
         """Setup evaluator with loaded model and config.
