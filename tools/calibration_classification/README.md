@@ -66,7 +66,7 @@ python tools/calibration_classification/create_data_t4dataset.py --config /works
 The `--filter-black-images` option detects and excludes likely black/corrupted images by analyzing file sizes. It samples images from each scene to calculate an average size, then filters out images smaller than 5% of that average (with a minimum threshold of 10KB).
 
 **Note on `--filter-velocity` flag:**
-The `--filter-velocity` option filters out samples whose speed exceeds the given threshold (m/s). Speed is estimated from the derivative of ego pose translation (from consecutive samples’ lidar ego_pose). The first sample in each scene is always excluded (no previous sample for derivative).
+The `--filter-velocity` option filters out samples whose speed exceeds the given threshold (m/s). Speed is the magnitude of velocity (direction/sign ignored). The threshold is interpreted as absolute (e.g. `-5.0` is treated as `5.0`). Speed is estimated from the derivative of ego pose translation (from consecutive samples’ lidar ego_pose). The first sample in each scene is always excluded (no previous sample for derivative). Use `--filter-velocity 0.0` to keep only stationary samples.
 
 **Output files:**
 The script generates three pickle files for train/val/test splits:

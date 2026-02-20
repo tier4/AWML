@@ -113,20 +113,21 @@ def get_samples_excluded_by_velocity(
     """Compute which sample indices to exclude based on velocity from pose derivative.
 
     Velocity is estimated as (position[i] - position[i-1]) / (time[i] - time[i-1]) using
-    ego pose translation and timestamp. The first sample is always excluded (no derivative).
-    Samples with speed above max_velocity_mps are excluded.
+    ego pose translation and timestamp. Vehicle speed is the magnitude of velocity (sign
+    and direction do not matter). The first sample is always excluded (no derivative).
+    Samples with speed above the threshold are excluded.
 
     Args:
         t4: Tier4 dataset instance for the scene.
         lidar_channel: Name of the lidar channel used to get ego pose per sample.
-        max_velocity_mps: Maximum acceptable speed in m/s; samples above this are excluded.
+        max_velocity_mps: Maximum acceptable speed in m/s (interpreted as absolute value;
+            negative input is treated as positive). Samples with speed above this are excluded.
+            Use 0.0 to keep only stationary samples.
 
     Returns:
-        Set of 0-based sample indices to exclude. Empty set if max_velocity_mps <= 0.
+        Set of 0-based sample indices to exclude.
     """
-    if max_velocity_mps <= 0:
-        return set()
-
+    max_velocity_mps = abs(max_velocity_mps)
     excluded: set = set()
     samples = t4.sample
 
@@ -513,7 +514,7 @@ def generate_scene_calib_info(
 
     # Compute samples to exclude by velocity (first sample + those above threshold)
     velocity_excluded: set = set()
-    if max_velocity_mps is not None and max_velocity_mps > 0:
+    if max_velocity_mps is not None:
         velocity_excluded = get_samples_excluded_by_velocity(t4, lidar_channel, max_velocity_mps)
         if velocity_excluded:
             logger.info(
@@ -629,7 +630,7 @@ def main() -> None:
         logger.info(f"Target cameras: {args.target_cameras}")
     if args.filter_black_images:
         logger.info("Black image filtering is enabled")
-    if args.filter_velocity is not None and args.filter_velocity > 0:
+    if args.filter_velocity is not None:
         logger.info(f"Velocity filtering is enabled (max {args.filter_velocity} m/s)")
 
     abs_root_path = osp.abspath(args.root_path)
