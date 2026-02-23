@@ -346,7 +346,7 @@ def export_2d_annotation(root_path, info_path, version, mono3d=True):
             coco_infos = get_2d_boxes(
                 nusc, cam_info["sample_data_token"], visibilities=["", "1", "2", "3", "4"], mono3d=mono3d
             )
-            (height, width, _) = mmcv.imread(cam_info["data_path"]).shape
+            height, width, _ = mmcv.imread(cam_info["data_path"]).shape
             coco_2d_dict["images"].append(
                 dict(
                     file_name=cam_info["data_path"].split("data/nuscenes/")[-1],
