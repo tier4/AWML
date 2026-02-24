@@ -35,7 +35,7 @@ class GeneralizedLSSFPN(BaseModule):
 
         if end_level == -1:
             self.backbone_end_level = self.num_ins - 1
-            # assert num_outs >= self.num_ins - start_level
+            assert num_outs >= self.num_ins - start_level
         else:
             # if end_level < inputs, no extra level is allowed
             self.backbone_end_level = end_level

@@ -89,7 +89,8 @@ class VoxelDetection(_VoxelDetection):
             # but needed to comply with the signature
             camera2lidar,
             geom_feats.int(),
-            kept.bool(),  # TensorRT treats bool as uint8
+            kept.bool(),  # tensorrt treats bool as uint8
+            # kept.int(),  # tensorrt treats bool as uint8
             ranks,
             indices,
         )

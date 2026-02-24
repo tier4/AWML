@@ -1,7 +1,9 @@
+import os
 from collections import OrderedDict
 from copy import deepcopy
 from typing import Dict, List, Optional, Tuple
 
+import matplotlib.pyplot as plt
 import numpy as np
 import torch
 import torch.distributed as dist
@@ -180,6 +182,30 @@ class BEVFusion(Base3DDetector):
 
         if not using_image_features:
             x = self.get_image_backbone_features(x)
+
+        # Save image_feats as images for every camera and first 20 channels
+        # save_dir = "image_feats_outputs"
+        # os.makedirs(save_dir, exist_ok=True)
+        # feats = x[0].detach().cpu().float()  # first batch, shape: (N, C, H, W)
+        # num_cameras = feats.shape[0]
+        # num_channels = min(20, feats.shape[1])
+        # for cam_idx in range(num_cameras):
+        #     for ch in range(num_channels):
+        #         fig, ax = plt.subplots(1, 1, figsize=(8, 6))
+        #         ax.imshow(feats[cam_idx, ch].numpy(), cmap="viridis")
+        #         ax.set_title(f"image_feats - Camera {cam_idx} / Channel {ch}")
+        #         ax.axis("off")
+        #         plt.colorbar(ax.images[0], ax=ax, fraction=0.046, pad=0.04)
+        #         fig.savefig(
+        #             os.path.join(save_dir, f"cam_{cam_idx:02d}_ch_{ch:02d}.png"),
+        #             dpi=150,
+        #             bbox_inches="tight",
+        #         )
+        #         plt.close(fig)
+        # print(f"[BEVFusion] Saved image_feats for {num_cameras} cameras x {num_channels} channels to '{save_dir}/'")
+
+        # if geom_feats is not None:
+        #     print("Running gemo_feats")
 
         with torch.cuda.amp.autocast(enabled=False):
             # with torch.autocast(device_type='cuda', dtype=torch.float32):

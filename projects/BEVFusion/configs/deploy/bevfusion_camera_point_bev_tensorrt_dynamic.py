@@ -20,8 +20,6 @@ backend_config = dict(
     model_inputs=[
         dict(
             input_shapes=dict(
-                # TODO(TIERIV): Optimize. Now, using points will increase latency significantly
-                points=dict(min_shape=[5000, 4], opt_shape=[50000, 4], max_shape=[200000, 4]),
                 lidar2image=dict(min_shape=[1, 4, 4], opt_shape=[6, 4, 4], max_shape=[6, 4, 4]),
                 img_aug_matrix=dict(min_shape=[1, 4, 4], opt_shape=[6, 4, 4], max_shape=[6, 4, 4]),
                 geom_feats=dict(
@@ -45,10 +43,13 @@ backend_config = dict(
                     max_shape=[6 * depth_bins * feature_dims[0] * feature_dims[1]],
                 ),
                 image_feats=dict(
-                    min_shape=[0, 256, feature_dims[0], feature_dims[1]],
+                    min_shape=[1, 256, feature_dims[0], feature_dims[1]],
                     opt_shape=[6, 256, feature_dims[0], feature_dims[1]],
                     max_shape=[6, 256, feature_dims[0], feature_dims[1]],
                 ),
+                # TODO(TIERIV): Optimize. Now, using points will increase latency significantly,
+                # we always include intensity as well even we dont need them
+                points=dict(min_shape=[5000, 5], opt_shape=[50000, 5], max_shape=[200000, 5]),
             )
         )
     ],
@@ -60,12 +61,9 @@ onnx_config = dict(
     keep_initializers_as_inputs=False,
     opset_version=17,
     save_file="camera_point_bev.onnx",
-    input_names=["points", "lidar2image", "img_aug_matrix", "geom_feats", "kept", "ranks", "indices", "image_feats"],
+    input_names=["lidar2image", "img_aug_matrix", "geom_feats", "kept", "ranks", "indices", "image_feats", "points"],
     output_names=["bbox_pred", "score", "label_pred"],
     dynamic_axes={
-        "points": {
-            0: "num_points",
-        },
         "lidar2image": {
             0: "num_imgs",
         },
@@ -86,6 +84,9 @@ onnx_config = dict(
         },
         "image_feats": {
             0: "num_imgs",
+        },
+        "points": {
+            0: "num_points",
         },
     },
     input_shape=None,

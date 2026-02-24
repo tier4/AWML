@@ -1,6 +1,8 @@
 # modify from https://github.com/mit-han-lab/bevfusion
+import os
 from typing import Tuple
 
+import matplotlib.pyplot as plt
 import torch
 from mmdet3d.registry import MODELS
 from torch import nn
@@ -337,21 +339,21 @@ class BaseViewTransform(nn.Module):
         lidar_aug_matrix_inverse,
         geom_feats_precomputed,
     ):
-        intrins = camera_intrinsics[..., :3, :3]
-        post_rots = img_aug_matrix[..., :3, :3]
-        post_trans = img_aug_matrix[..., :3, 3]
-        camera2lidar_rots = camera2lidar[..., :3, :3]
-        camera2lidar_trans = camera2lidar[..., :3, 3]
-
-        extra_rots = lidar_aug_matrix[..., :3, :3]
-        extra_trans = lidar_aug_matrix[..., :3, 3]
-
         if geom_feats_precomputed is not None:
             geom_feats, kept, ranks, indices = geom_feats_precomputed
             x = self.get_cam_feats(img)
             x = self.bev_pool_precomputed(x, geom_feats, kept, ranks, indices)
 
         else:
+            intrins = camera_intrinsics[..., :3, :3]
+            post_rots = img_aug_matrix[..., :3, :3]
+            post_trans = img_aug_matrix[..., :3, 3]
+            camera2lidar_rots = camera2lidar[..., :3, :3]
+            camera2lidar_trans = camera2lidar[..., :3, 3]
+
+            extra_rots = lidar_aug_matrix[..., :3, :3]
+            extra_trans = lidar_aug_matrix[..., :3, 3]
+
             geom = self.get_geometry(
                 camera2lidar_rots,
                 camera2lidar_trans,
@@ -536,6 +538,21 @@ class BaseDepthTransform(BaseViewTransform):
 
             x = self.get_cam_feats(img, depth)
             x = self.bev_pool(x, geom)
+
+        # Save first 10 channels of bev_pool output as images
+        # save_dir = "bev_pool_outputs"
+        # os.makedirs(save_dir, exist_ok=True)
+        # bev_output = x[0].detach().cpu().float()  # take first batch, shape: (C, H, W)
+        # num_channels = min(10, bev_output.shape[0])
+        # for ch in range(num_channels):
+        #     fig, ax = plt.subplots(1, 1, figsize=(8, 8))
+        #     ax.imshow(bev_output[ch].numpy(), cmap="viridis")
+        #     ax.set_title(f"BEV Pool Output - Channel {ch}")
+        #     ax.axis("off")
+        #     plt.colorbar(ax.images[0], ax=ax, fraction=0.046, pad=0.04)
+        #     fig.savefig(os.path.join(save_dir, f"bev_pool_ch_{ch:02d}.png"), dpi=150, bbox_inches="tight")
+        #     plt.close(fig)
+        # print(f"[BaseDepthTransform] Saved {num_channels} bev_pool channel images to '{save_dir}/'")
 
         return x
 
