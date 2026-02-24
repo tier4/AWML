@@ -75,7 +75,6 @@ class GeneralizedLSSFPN(BaseModule):
         """Forward function."""
         # upsample -> cat -> conv1x1 -> conv3x3
         assert len(inputs) == len(self.in_channels)
-
         # build laterals
         laterals = [inputs[i + self.start_level] for i in range(len(inputs))]
 
