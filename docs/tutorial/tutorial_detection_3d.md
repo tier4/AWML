@@ -64,5 +64,5 @@ python projects/CenterPoint/scripts/deploy.py projects/CenterPoint/configs/t4dat
   - You may need `sudo` to use `docker` command.
 
 ```sh
-DOCKER_BUILDKIT=1 docker build -t autoware-ml .
+DOCKER_BUILDKIT=1 docker build -t awml .
 ```
