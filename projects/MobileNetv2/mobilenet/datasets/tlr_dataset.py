@@ -41,15 +41,35 @@ class TLRClassificationDataset(BaseDataset):
         *args,
         false_instances: int = 0,
         false_label: int = -1,
-        min_size=0,
+        filter_min_bbox_area: float = 0.0,
+        filter_truncation: Optional[Sequence[str]] = None,
+        filter_occlusion: Optional[Sequence[str]] = None,
         **kwargs,
     ) -> None:
         self.false_instances = false_instances
         self.false_label = false_label
-        self.min_size = min_size
         if self.false_instances > 0:
             assert self.false_label >= 0, "false_label must be non-negative when false_instances > 0"
+        self.filter_min_bbox_area = filter_min_bbox_area
+        self.filter_truncation = self._normalize_attr_filters("truncation_state.", filter_truncation)
+        self.filter_occlusion = self._normalize_attr_filters("occlusion_state.", filter_occlusion)
         super().__init__(*args, **kwargs)
+
+    @staticmethod
+    def _normalize_attr_filters(prefix: str, values: Optional[Sequence[str]]) -> Optional[set]:
+        if not values:
+            return None
+        normalized = set()
+        for v in values:
+            if not isinstance(v, str):
+                continue
+            v = v.strip().lower()
+            if not v:
+                continue
+            if not v.startswith(prefix):
+                v = f"{prefix}{v}"
+            normalized.add(v)
+        return normalized or None
 
     def _check_bbox_overlap(
         self,
@@ -108,6 +128,19 @@ class TLRClassificationDataset(BaseDataset):
 
             # Add original instances
             for instance in instances:
+                if self.filter_min_bbox_area and self.filter_min_bbox_area > 0:
+                    bbox = instance.get("bbox")
+                    if bbox and len(bbox) == 4:
+                        area = (bbox[2] - bbox[0]) * (bbox[3] - bbox[1])
+                        if area < self.filter_min_bbox_area:
+                            continue
+
+                extra_anns = {a.lower() for a in instance.get("extra_anns", []) if isinstance(a, str)}
+                if self.filter_truncation and extra_anns & self.filter_truncation:
+                    continue
+                if self.filter_occlusion and extra_anns & self.filter_occlusion:
+                    continue
+
                 single_instance_info = data_info.copy()
                 single_instance_info["img_id"] = img_id
                 single_instance_info["bbox"] = instance["bbox"]
