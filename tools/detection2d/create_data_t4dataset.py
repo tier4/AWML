@@ -50,7 +50,7 @@ def update_detection_data_annotations(
         if ann.sample_data_token not in data_list:
             print(f"Warning: {ann.sample_data_token} not found in data_list, data conversion may be errorneous")
             continue
-        
+
         # Get class name
         class_name = categories[ann.category_token]
         if class_name not in allowed_classes:
@@ -59,7 +59,7 @@ def update_detection_data_annotations(
                 continue
             if class_name not in allowed_classes:
                 raise ValueError(f"Class name {class_name} is not in allowed classes {allowed_classes}")
-        
+
         # Populate box
         bbox_label = allowed_classes.index(class_name)
         instance = Instance(

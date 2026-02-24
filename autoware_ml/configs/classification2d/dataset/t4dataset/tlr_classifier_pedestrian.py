@@ -46,7 +46,6 @@ class_mappings = {
     "red_straight_right": "SKIP_CLASS",
     "red_straight_left_right": "SKIP_CLASS",
     "red_leftdiagonal": "SKIP_CLASS",
-
     # Skip the following semantic TLR if present
     "traffic_light_back": "SKIP_CLASS",
     "crosswalk_light_back": "SKIP_CLASS",
@@ -54,21 +53,18 @@ class_mappings = {
     "red_bulb": "SKIP_CLASS",
     "green_bulb": "SKIP_CLASS",
     "yellow_bulb": "SKIP_CLASS",
-
     "red_left_arrow_bulb": "SKIP_CLASS",
     "red_right_arrow_bulb": "SKIP_CLASS",
     "red_straight_arrow_bulb": "SKIP_CLASS",
     "red_up_left_arrow_bulb": "SKIP_CLASS",
     "red_up_right_arrow_bulb": "SKIP_CLASS",
     "red_arrow_unknown_bulb": "SKIP_CLASS",
-
     "green_left_arrow_bulb": "SKIP_CLASS",
     "green_right_arrow_bulb": "SKIP_CLASS",
     "green_straight_arrow_bulb": "SKIP_CLASS",
     "green_up_left_arrow_bulb": "SKIP_CLASS",
     "green_up_right_arrow_bulb": "SKIP_CLASS",
     "green_arrow_unknown_bulb": "SKIP_CLASS",
-
     "yellow_left_arrow_bulb": "SKIP_CLASS",
     "yellow_right_arrow_bulb": "SKIP_CLASS",
     "yellow_straight_arrow_bulb": "SKIP_CLASS",

@@ -116,9 +116,9 @@ train_dataloader = dict(
         ann_file=ANN_FILE + "tlr_infos_train.json",
         type=dataset_type,
         pipeline=train_pipeline,
-        filter_min_bbox_area=0, # 16x16 = 256
-        filter_truncation=None, # should be None or subset of ["truncated", "non-truncated", "unknown"]
-        filter_occlusion=None, # should be None or subset of ["none","partial","most","full","unknown"]
+        filter_min_bbox_area=0,  # 16x16 = 256
+        filter_truncation=None,  # should be None or subset of ["truncated", "non-truncated", "unknown"]
+        filter_occlusion=None,  # should be None or subset of ["none","partial","most","full","unknown"]
     ),
     collate_fn=dict(type="default_collate"),
 )
@@ -137,8 +137,8 @@ val_dataloader = dict(
         type=dataset_type,
         pipeline=resize_pipeline,
         filter_min_bbox_area=0,
-        filter_truncation=None, # should be None or subset of ["truncated", "non-truncated", "unknown"]
-        filter_occlusion=None, # should be None or subset of ["none","partial","most","full","unknown"]
+        filter_truncation=None,  # should be None or subset of ["truncated", "non-truncated", "unknown"]
+        filter_occlusion=None,  # should be None or subset of ["none","partial","most","full","unknown"]
     ),
     collate_fn=dict(type="default_collate"),
 )
@@ -155,8 +155,8 @@ test_dataloader = dict(
         type=dataset_type,
         pipeline=resize_pipeline,
         filter_min_bbox_area=0.0,
-        filter_truncation=None, # should be None or subset of ["truncated", "non-truncated", "unknown"]
-        filter_occlusion=None, # should be None or subset of ["none","partial","most","full","unknown"]
+        filter_truncation=None,  # should be None or subset of ["truncated", "non-truncated", "unknown"]
+        filter_occlusion=None,  # should be None or subset of ["none","partial","most","full","unknown"]
     ),
     collate_fn=dict(type="default_collate"),
 )
