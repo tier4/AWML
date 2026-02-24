@@ -63,7 +63,6 @@ train_pipeline = [
         backend_args=backend_args,
         norm_intensity=False
     ),
-    dict(type="IntensityLogNormalization"),
     dict(
         type="LoadPointsFromMultiSweeps",
         sweeps_num=sweeps_num,
@@ -103,7 +102,6 @@ test_pipeline = [
         backend_args=backend_args,
         norm_intensity=False
     ),
-    dict(type="IntensityLogNormalization"),
     dict(
         type="LoadPointsFromMultiSweeps",
         sweeps_num=sweeps_num,

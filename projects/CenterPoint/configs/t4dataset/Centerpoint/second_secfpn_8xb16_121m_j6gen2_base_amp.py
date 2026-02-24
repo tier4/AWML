@@ -42,7 +42,7 @@ eval_class_range = {
 
 # user setting
 data_root = "data/t4dataset/"
-info_directory_path = "info/kokseang_2_6_1/"
+info_directory_path = "info/kokseang_2_6/"
 train_gpu_size = 8
 train_batch_size = 16
 test_batch_size = 2
@@ -352,7 +352,7 @@ model = dict(
 
 randomness = dict(seed=0, diff_rank_seed=False, deterministic=True)
 
-lr = 1e-4
+lr = 3e-4
 param_scheduler = [
     # learning rate scheduler
     # During the first (max_epochs * 0.3) epochs, learning rate increases from 0 to lr * 10
