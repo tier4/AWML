@@ -29,7 +29,7 @@ create_info:
       checkpoint_path: /workspace/work_dirs/checkpoints/streampetr_2.5.0_model.pth
       model_zoo_url: https://download.autoware-ml-model-zoo.tier4.jp/autoware-ml/models/streampetr/streampetr-vov99/t4base/v2.5/best_NuScenesmetric_T4Metric_mAP_epoch_34.pth
   - name: centerpoint
-    model_config: 
+    model_config:
       config_path: /workspace/work_dirs/checkpoints/centerpoint_2.5.1_config.py
       model_zoo_url: https://download.autoware-ml-model-zoo.tier4.jp/autoware-ml/models/centerpoint/centerpoint/j6gen2/v2.5.1/centerpoint_2.5.1_auto_labeling_3d_config.py
     checkpoint:
