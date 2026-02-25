@@ -42,7 +42,7 @@ create_info:
     checkpoint:
       checkpoint_path: /workspace/work_dirs/checkpoints/bevfusion_L_2.5.1_model.pth
       model_zoo_url: https://download.autoware-ml-model-zoo.tier4.jp/autoware-ml/models/bevfusion/bevfusion-l/j6gen2/2.5.1/best_NuScenes metric_T4Metric_mAP_epoch_30.pth
-      
+
 # ensemble_infos configuration
 # Please update the config file for ensemble_infos when changing the latest model_config in create_info
 ensemble_infos:
