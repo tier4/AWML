@@ -64,19 +64,19 @@ filter_pipelines = dict(
     ),
     inputs=[
         dict(
+            name="streampetr",
+            info_path="/workspace/data/t4dataset/info/pseudo_infos_raw_streampetr.pkl",
+            filter_pipeline=streampetr_pipeline,
+        ),
+        dict(
             name="centerpoint",
-            info_path="/workspace/work_dirs/auto_labeling_3d/pipeline_example/pseudo_infos_raw_centerpoint.pkl",
+            info_path="/workspace/data/t4dataset/info/pseudo_infos_raw_centerpoint.pkl",
             filter_pipeline=centerpoint_pipeline,
         ),
         dict(
             name="bevfusion",
-            info_path="/workspace/work_dirs/auto_labeling_3d/pipeline_example/pseudo_infos_raw_bevfusion.pkl",
+            info_path="/workspace/data/t4dataset/info/pseudo_infos_raw_bevfusion.pkl",
             filter_pipeline=bevfusion_pipeline,
-        ),
-        dict(
-            name="streampetr",
-            info_path="/workspace/work_dirs/auto_labeling_3d/pipeline_example/pseudo_infos_raw_streampetr.pkl",
-            filter_pipeline=streampetr_pipeline,
         ),
     ],
 )

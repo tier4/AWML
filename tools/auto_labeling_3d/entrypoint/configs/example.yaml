@@ -8,7 +8,8 @@ logging:
   work_dir: /workspace/work_dirs/auto_labeling_3d/pipeline_example  # Directory for logs and intermediate outputs
 
 # Path to non-annotated T4dataset directory
-root_path: /workspace/data/t4dataset/t4x2_pseudo
+# root_path: /workspace/data/t4dataset/t4x2_pseudo
+root_path: /workspace/data/t4dataset/x2_omika_test
 
 
 # create_info_data configuration
@@ -42,11 +43,11 @@ create_info:
       model_zoo_url: https://download.autoware-ml-model-zoo.tier4.jp/autoware-ml/models/centerpoint/centerpoint/j6gen2/v2.5.1/best_NuScenes metric_T4Metric_mAP_epoch_28.pth
   - name: bevfusion
     model_config:
-      config_path: /workspace/work_dirs/checkpoints/bevfusion_L_1.0_config.py
-      model_zoo_url: https://download.autoware-ml-model-zoo.tier4.jp/autoware-ml/models/bevfusion/bevfusion-l/t4base/v1.0/bevfusion_L_1.0_auto_labeling_3d_config.py
+      config_path: /workspace/work_dirs/checkpoints/bevfusion_L_2.5.1_config.py
+      model_zoo_url: https://download.autoware-ml-model-zoo.tier4.jp/autoware-ml/models/bevfusion/bevfusion-l/j6gen2/2.5.1/bevfusion_L_2.5.1_auto_labeling_3d_config.py
     checkpoint:
-      checkpoint_path: /workspace/work_dirs/checkpoints/bevfusion_L_1.0_model.pth
-      model_zoo_url: https://download.autoware-ml-model-zoo.tier4.jp/autoware-ml/models/bevfusion/bevfusion-l/t4base/v1.0/best_NuScenes_metric_T4Metric_mAP_epoch_24.pth
+      checkpoint_path: /workspace/work_dirs/checkpoints/bevfusion_L_2.5.1_model.pth
+      model_zoo_url: https://download.autoware-ml-model-zoo.tier4.jp/autoware-ml/models/bevfusion/bevfusion-l/j6gen2/2.5.1/best_NuScenes metric_T4Metric_mAP_epoch_30.pth
 
 # ensemble_infos configuration
 # Please update the config file for ensemble_infos when changing the latest model_config in create_info
