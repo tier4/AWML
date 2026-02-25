@@ -8,9 +8,7 @@ logging:
   work_dir: /workspace/work_dirs/auto_labeling_3d/pipeline_example  # Directory for logs and intermediate outputs
 
 # Path to non-annotated T4dataset directory
-# root_path: /workspace/data/t4dataset/t4x2_pseudo
-root_path: /workspace/data/t4dataset/x2_omika_test
-
+root_path: /workspace/data/t4dataset/t4x2_pseudo
 
 # create_info_data configuration
 # Please update here to use the latest checkpoints and model configs
