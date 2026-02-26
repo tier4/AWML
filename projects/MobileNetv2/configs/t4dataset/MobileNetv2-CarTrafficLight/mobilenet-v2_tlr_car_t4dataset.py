@@ -79,7 +79,7 @@ env_cfg = dict(
 )
 
 launcher = "none"
-load_from = "https://download.openmmlab.com/mmclassification/v0/mobilenet_v2/mobilenet_v2_batch256_imagenet_20200708-3b2dc3af.pth"
+load_from = "work_dirs/mobilenet-v2_tlr_car_t4dataset/best_multi-label_f1-score_top1_epoch_255.pth"
 log_level = "INFO"
 
 # Model Definition
@@ -133,7 +133,7 @@ val_dataloader = dict(
     sampler=dict(type="DefaultSampler", shuffle=False),
     dataset=dict(
         ann_file=ANN_FILE
-        + "tlr_infos_test.json",  # For the current dataset, val and test set are same. Needs to be fixed in future.
+        + "tlr_infos_train.json",  # For the current dataset, val and test set are same. Needs to be fixed in future.
         type=dataset_type,
         pipeline=resize_pipeline,
         filter_min_bbox_area=0,
@@ -151,7 +151,7 @@ test_dataloader = dict(
     pin_memory=True,
     sampler=dict(type="DefaultSampler", shuffle=False),
     dataset=dict(
-        ann_file=ANN_FILE + "tlr_infos_test.json",
+        ann_file=ANN_FILE + "tlr_infos_train.json",
         type=dataset_type,
         pipeline=resize_pipeline,
         filter_min_bbox_area=0.0,
@@ -186,4 +186,4 @@ vis_backends = [dict(type="LocalVisBackend")]
 visualizer = dict(type="UniversalVisualizer", vis_backends=vis_backends)
 
 # Working Directory
-work_dir = "./work_dirs/mobilenet-v2_tlr_car_t4dataset"
+work_dir = "./work_dirs/mobilenet-v2_tlr_car_t4dataset_australia"

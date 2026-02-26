@@ -1,13 +1,14 @@
 dataset_version_config_root = "autoware_ml/configs/t4dataset/"
 dataset_version_list = [
-    "db_tlr_v1",
-    "db_tlr_v2",
-    "db_tlr_v3",
-    "db_tlr_v4",
-    "db_tlr_v5",
-    "db_tlr_v6",
-    "db_tlr_v7",
-    "db_tlr_semseg_v1",
+#     "db_tlr_v1",
+#     "db_tlr_v2",
+#     "db_tlr_v3",
+#     "db_tlr_v4",
+#     "db_tlr_v5",
+#     "db_tlr_v6",
+#     "db_tlr_v7",
+#     "db_tlr_semseg_v1",
+      "db_tlr_au_v1",
 ]
 
 classes = (
@@ -22,6 +23,15 @@ classes = (
     "red,up_left",
     "red,right,straight",
     "red,up_right",
+    # new classes
+    "red,right_red",
+    "red,right_yellow",
+    "yellow,right_red",
+    "yellow,right_yellow",
+    "yellow,right",
+    "green,right_red",
+    "green,right_yellow",
+    "green,right"
 )
 class_mappings = {
     "green": "green",
@@ -40,8 +50,23 @@ class_mappings = {
     "red-right-straight": "red,right,straight",
     "unknown": "unknown",
     "yellow": "yellow",
-    "yellow_right": "unknown",
-    "yellow_straight": "yellow",
+    'yellow,up_right_red':"yellow,right_red",
+    # "yellow_right": "unknown",
+    # "yellow_straight": "yellow",
+    # au new ignore
+    'right': "SKIP_CLASS",
+    'left': "SKIP_CLASS",
+    'straight': "SKIP_CLASS",
+    'right_yellow': "SKIP_CLASS",
+    'left_yellow': "SKIP_CLASS",
+    'straight_yellow': "SKIP_CLASS",
+    'right_red': "SKIP_CLASS",
+    'left_red': "SKIP_CLASS",
+    'straight_red': "SKIP_CLASS",
+    'up_right,right_red': "SKIP_CLASS",
+    'right,up_right': "SKIP_CLASS",
+    'green,right,left_red': "SKIP_CLASS",
+        
     # Skip the following classes if present like in AWMLDetection2d.
     "red-rightdiagonal": "SKIP_CLASS",
     "right-yellow": "SKIP_CLASS",

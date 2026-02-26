@@ -181,7 +181,7 @@ def main() -> None:
                     )
                     scene_root_dir_path = get_scene_root_dir_path(args.root_path, dataset_version, t4_dataset_id)
                 else:
-                    raise ValueError(f"{t4_dataset_id} does not exist.")
+                    raise ValueError(f"{t4_dataset_id} does not exist: {args.root_path, dataset_version, t4_dataset_id}")
                 t4 = Tier4(
                     data_root=scene_root_dir_path,
                     verbose=False,
