@@ -34,14 +34,14 @@ create_info:
       model_zoo_url: https://download.autoware-ml-model-zoo.tier4.jp/autoware-ml/models/centerpoint/centerpoint/j6gen2/v2.5.1/centerpoint_2.5.1_auto_labeling_3d_config.py
     checkpoint:
       checkpoint_path: /workspace/work_dirs/checkpoints/centerpoint_2.5.1_model.pth
-      model_zoo_url: https://download.autoware-ml-model-zoo.tier4.jp/autoware-ml/models/centerpoint/centerpoint/j6gen2/v2.5.1/best_NuScenes metric_T4Metric_mAP_epoch_28.pth
+      model_zoo_url: https://download.autoware-ml-model-zoo.tier4.jp/autoware-ml/models/centerpoint/centerpoint/j6gen2/v2.5.1/best_NuScenes%20metric_T4Metric_mAP_epoch_28.pth
   - name: bevfusion
     model_config:
       config_path: /workspace/work_dirs/checkpoints/bevfusion_L_2.5.1_config.py
       model_zoo_url: https://download.autoware-ml-model-zoo.tier4.jp/autoware-ml/models/bevfusion/bevfusion-l/j6gen2/2.5.1/bevfusion_L_2.5.1_auto_labeling_3d_config.py
     checkpoint:
       checkpoint_path: /workspace/work_dirs/checkpoints/bevfusion_L_2.5.1_model.pth
-      model_zoo_url: https://download.autoware-ml-model-zoo.tier4.jp/autoware-ml/models/bevfusion/bevfusion-l/j6gen2/2.5.1/best_NuScenes metric_T4Metric_mAP_epoch_30.pth
+      model_zoo_url: https://download.autoware-ml-model-zoo.tier4.jp/autoware-ml/models/bevfusion/bevfusion-l/j6gen2/2.5.1/best_NuScenes%20metric_T4Metric_mAP_epoch_30.pth
 
 # ensemble_infos configuration
 # Please update the config file for ensemble_infos when changing the latest model_config in create_info
