@@ -182,7 +182,7 @@ class Torch2OnnxExporter:
             opset_version=ir_configs["opset_version"],
             dynamic_axes=ir_configs["dynamic_axes"],
             keep_initializers_as_inputs=ir_configs["keep_initializers_as_inputs"],
-            verbose=False,
+            verbose=ir_configs["verbose"],
         )
         self.logger.info(f"Camera bev only network exported to {self.output_path}")
 
@@ -243,7 +243,7 @@ class Torch2OnnxExporter:
             opset_version=ir_configs["opset_version"],
             dynamic_axes=ir_configs["dynamic_axes"],
             keep_initializers_as_inputs=ir_configs["keep_initializers_as_inputs"],
-            verbose=False,
+            verbose=ir_configs["verbose"],
         )
         if image_feats is None:
             model_name = "lidar-only"
