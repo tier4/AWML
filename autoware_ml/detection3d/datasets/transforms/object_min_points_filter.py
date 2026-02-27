@@ -1,4 +1,3 @@
-import numpy as np
 from mmcv.transforms import BaseTransform
 from mmdet3d.structures.ops import box_np_ops
 from mmengine.registry import TRANSFORMS
@@ -122,39 +121,4 @@ class ObjectRangeMinPointsFilter(BaseTransform):
         """str: Return a string that describes the module."""
         repr_str = self.__class__.__name__
         repr_str += f"(range_radius={self.range_radius}, min_num_points={self.min_num_points})"
-        return repr_str
-
-
-@TRANSFORMS.register_module()
-class IntensityLogNormalization(BaseTransform):
-    """Filter objects by the number of points in them, if it's less than min_num_points.
-
-    Args:
-        min_num_points: (int): the number of points to filter objects
-    """
-
-    def __init__(self) -> None:
-        pass
-
-    def transform(self, input_dict: dict) -> dict:
-        """Call function to filter objects the number of points in them.
-
-        Args:
-            input_dict (dict): Result dict from loading pipeline.
-
-        Returns:
-            dict: Results after filtering, 'gt_bboxes_3d', 'gt_labels_3d' \
-                keys are updated in the result dict.
-        """
-        points = input_dict["points"]
-        intensity = points.tensor[:, 3]
-        intensity = np.log(1 + intensity)
-        points.tensor[:, 3] = intensity
-        # input_dict["points"] = points
-
-        return input_dict
-
-    def __repr__(self) -> str:
-        """str: Return a string that describes the module."""
-        repr_str = self.__class__.__name__
         return repr_str
