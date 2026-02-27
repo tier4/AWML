@@ -313,7 +313,7 @@ def main():
     t4dataset_ids = get_t4dataset_ids(config_path)
 
     for t4dataset_id, t4dataset_version_id in t4dataset_ids:
-        with TemporaryDirectory(dir="/mnt/nvme0n1/tier4_dataset/tmp") as temp_dir:
+        with TemporaryDirectory() as temp_dir:
             download_t4dataset(
                 config_path,
                 args.webauto_path,
