@@ -9,7 +9,6 @@ custom_imports = dict(
     allow_failed_imports=False,
 )
 
-# image_dims = (384, 576)
 image_dims = (384, 768)
 
 backend_config = dict(
