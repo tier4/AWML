@@ -21,13 +21,13 @@
 /projects/YOLOX_opt/ kokseang.tan@tier4.jp yihsiang.fang@tier4.jp
 /projects/StreamPETR/ kokseang.tan@tier4.jp yihsiang.fang@tier4.jp
 /tools/analysis_3d/ kokseang.tan@tier4.jp
-/tools/auto_labeling_2d/ kokseang.tan@tier4.jp yacob.lambert@gmail.com
-/tools/auto_labeling_3d/ kokseang.tan@tier4.jp yacob.lambert@gmail.com
+/tools/auto_labeling_2d/ kokseang.tan@tier4.jp yacob.lambert@tier4.jp
+/tools/auto_labeling_3d/ kokseang.tan@tier4.jp yacob.lambert@tier4.jp
 /tools/calibration_classification/ amadeusz.szymko.2@tier4.jp yihsiang.fang@tier4.jp
-/tools/classification2d/ kokseang.tan@tier4.jp yacob.lambert@gmail.com
-/tools/detection2d/ kokseang.tan@tier4.jp yacob.lambert@gmail.com
-/tools/detection3d/ kokseang.tan@tier4.jp yacob.lambert@gmail.com
+/tools/classification2d/ kokseang.tan@tier4.jp yacob.lambert@tier4.jp
+/tools/detection2d/ kokseang.tan@tier4.jp yacob.lambert@tier4.jp
+/tools/detection3d/ kokseang.tan@tier4.jp yacob.lambert@tier4.jp
 /tools/rerun_visualization kokseang.tan@tier4.jp
-/tools/scene_selector/ kokseang.tan@tier4.jp yacob.lambert@gmail.com
-/tools/segmentation2d/ kokseang.tan@tier4.jp yacob.lambert@gmail.com
-/tools/setting_environment/ kokseang.tan@tier4.jp yacob.lambert@gmail.com
+/tools/scene_selector/ kokseang.tan@tier4.jp yacob.lambert@tier4.jp
+/tools/segmentation2d/ kokseang.tan@tier4.jp yacob.lambert@tier4.jp
+/tools/setting_environment/ kokseang.tan@tier4.jp yacob.lambert@tier4.jp
