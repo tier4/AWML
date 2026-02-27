@@ -42,22 +42,18 @@ class Torch2OnnxExporter:
         builder_data = self.builder.build()
 
         # Export the model
-        fixed_model = self._export_model(
+        self._export_model(
             model_data=builder_data.model_data,
             context_info=builder_data.context_info,
             patched_model=builder_data.patched_model,
             ir_configs=builder_data.ir_configs,
         )
 
-        if not fixed_model:
-            # Fix the ONNX graph
-            self._fix_onnx_graph()
-
         self.logger.info(f"ONNX exported to {self.output_path}")
 
     def _export_model(
         self, model_data: ModelData, context_info: dict, patched_model: torch.nn.Module, ir_configs: dict
-    ) -> bool:
+    ) -> None:
         """
         Export torch model to ONNX.
         Args:
@@ -74,7 +70,7 @@ class Torch2OnnxExporter:
                 image_feats = self._export_image_backbone(model_data, ir_configs, patched_model)
                 # If the image backbone feat is None, it's exported to ONNX and exit
                 if image_feats is None:
-                    return True
+                    return
 
             # Export the camera bev only network
             if self.setup_configs.module == "camera_bev_only":
@@ -87,7 +83,9 @@ class Torch2OnnxExporter:
                 self._export_main_body(
                     model_data=model_data, ir_configs=ir_configs, patched_model=patched_model, image_feats=image_feats
                 )
-            return False
+
+            # Fix the ONNX graph
+            self._fix_onnx_graph()
 
     def _export_image_backbone(
         self, model_data: ModelData, ir_configs: dict, patched_model: torch.nn.Module
@@ -167,7 +165,6 @@ class Torch2OnnxExporter:
             indices.to(device).long(),
             image_feats,
         )
-        print(ir_configs["input_names"])
         if "points" in ir_configs["input_names"]:
             model_inputs += (points.to(device).float(),)
         if "lidar2image" in ir_configs["input_names"]:
