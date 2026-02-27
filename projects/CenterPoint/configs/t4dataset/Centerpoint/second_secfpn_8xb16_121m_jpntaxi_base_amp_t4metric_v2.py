@@ -2,7 +2,7 @@ _base_ = [
     "second_secfpn_8xb16_121m_jpntaxi_base_amp.py",
 ]
 
-experiment_name = "second_secfpn_8xb16_121m_jpntaxi_base_amp_rfs_t4metric_v2"
+experiment_name = "second_secfpn_8xb16_121m_jpntaxi_base_amp_rfs_t4metric_v2_test_on_2_6"
 work_dir = "work_dirs/" + _base_.experiment_group_name + "/" + experiment_name
 
 # Add evaluator configs
