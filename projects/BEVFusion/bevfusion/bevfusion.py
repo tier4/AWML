@@ -94,6 +94,7 @@ class BEVFusion(Base3DDetector):
 
         if self.with_bbox_head:
             outputs = self.bbox_head(feats, batch_input_metas)
+
         return outputs[0][0]
 
     def parse_losses(self, losses: Dict[str, torch.Tensor]) -> Tuple[torch.Tensor, Dict[str, torch.Tensor]]:

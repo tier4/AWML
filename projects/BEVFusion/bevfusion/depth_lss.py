@@ -301,7 +301,6 @@ class BaseViewTransform(nn.Module):
 
         # collapse Z
         final = torch.cat(x.unbind(dim=2), 1)
-
         return final
 
     def bev_pool_precomputed(self, x, geom_feats, kept, ranks, indices):
@@ -402,9 +401,11 @@ class LSSTransform(BaseViewTransform):
         B, N, C, fH, fW = x.shape
 
         x = x.view(B * N, C, fH, fW)
+
         x = self.depthnet(x)
         depth = x[:, : self.D].softmax(dim=1)
         x = depth.unsqueeze(1) * x[:, self.D : (self.D + self.C)].unsqueeze(2)
+
         x = x.view(B, N, self.C, self.D, fH, fW)
         x = x.permute(0, 1, 3, 4, 5, 2)
         return x
@@ -412,7 +413,6 @@ class LSSTransform(BaseViewTransform):
     def forward(self, *args, **kwargs):
         x = super().forward(*args, **kwargs)
         x = self.downsample(x)
-
         return x
 
 
