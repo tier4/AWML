@@ -1,7 +1,7 @@
+import numpy as np
 from mmcv.transforms import BaseTransform
 from mmdet3d.structures.ops import box_np_ops
 from mmengine.registry import TRANSFORMS
-import numpy as np 
 
 
 @TRANSFORMS.register_module()
@@ -151,7 +151,7 @@ class IntensityLogNormalization(BaseTransform):
         intensity = np.log(1 + intensity)
         points.tensor[:, 3] = intensity
         # input_dict["points"] = points
-        
+
         return input_dict
 
     def __repr__(self) -> str:

@@ -61,7 +61,7 @@ train_pipeline = [
         load_dim=point_load_dim,
         use_dim=point_load_dim,
         backend_args=backend_args,
-        norm_intensity=False
+        norm_intensity=False,
     ),
     dict(
         type="LoadPointsFromMultiSweeps",
@@ -100,7 +100,7 @@ test_pipeline = [
         load_dim=point_load_dim,
         use_dim=point_load_dim,
         backend_args=backend_args,
-        norm_intensity=False
+        norm_intensity=False,
     ),
     dict(
         type="LoadPointsFromMultiSweeps",
@@ -148,7 +148,7 @@ eval_pipeline = [
         load_dim=point_load_dim,
         use_dim=point_load_dim,
         backend_args=backend_args,
-        norm_intensity=True
+        norm_intensity=True,
     ),
     dict(
         type="LoadPointsFromMultiSweeps",
