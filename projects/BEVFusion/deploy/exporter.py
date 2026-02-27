@@ -49,9 +49,6 @@ class Torch2OnnxExporter:
             ir_configs=builder_data.ir_configs,
         )
 
-        # Fix the ONNX graph
-        self._fix_onnx_graph()
-
         self.logger.info(f"ONNX exported to {self.output_path}")
 
     def _export_model(
@@ -84,6 +81,9 @@ class Torch2OnnxExporter:
                 self._export_main_body(
                     model_data=model_data, ir_configs=ir_configs, patched_model=patched_model, image_feats=image_feats
                 )
+
+            # Fix the ONNX graph
+            self._fix_onnx_graph()
 
     def _export_image_backbone(
         self, model_data: ModelData, ir_configs: dict, patched_model: torch.nn.Module
@@ -157,17 +157,18 @@ class Torch2OnnxExporter:
         device = self.setup_configs.device
 
         model_inputs = (
-            lidar2img.to(device).float(),
-            img_aug_matrix.to(device).float(),
-            geom_feats.to(device).float(),
+            geom_feats.to(device).int(),
             kept.to(device),
             ranks.to(device).long(),
             indices.to(device).long(),
             image_feats,
         )
-
         if "points" in ir_configs["input_names"]:
             model_inputs += (points.to(device).float(),)
+        if "lidar2image" in ir_configs["input_names"]:
+            model_inputs += (lidar2img.to(device).float(),)
+        if "img_aug_matrix" in ir_configs["input_names"]:
+            model_inputs += (img_aug_matrix.to(device).float(),)
 
         torch.onnx.export(
             main_container,

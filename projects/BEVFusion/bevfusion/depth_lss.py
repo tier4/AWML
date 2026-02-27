@@ -319,7 +319,6 @@ class BaseViewTransform(nn.Module):
 
         # collapse Z
         final = torch.cat(x.unbind(dim=2), 1)
-
         return final
 
     def forward(
@@ -337,21 +336,21 @@ class BaseViewTransform(nn.Module):
         lidar_aug_matrix_inverse,
         geom_feats_precomputed,
     ):
-        intrins = camera_intrinsics[..., :3, :3]
-        post_rots = img_aug_matrix[..., :3, :3]
-        post_trans = img_aug_matrix[..., :3, 3]
-        camera2lidar_rots = camera2lidar[..., :3, :3]
-        camera2lidar_trans = camera2lidar[..., :3, 3]
-
-        extra_rots = lidar_aug_matrix[..., :3, :3]
-        extra_trans = lidar_aug_matrix[..., :3, 3]
-
         if geom_feats_precomputed is not None:
             geom_feats, kept, ranks, indices = geom_feats_precomputed
             x = self.get_cam_feats(img)
             x = self.bev_pool_precomputed(x, geom_feats, kept, ranks, indices)
 
         else:
+            intrins = camera_intrinsics[..., :3, :3]
+            post_rots = img_aug_matrix[..., :3, :3]
+            post_trans = img_aug_matrix[..., :3, 3]
+            camera2lidar_rots = camera2lidar[..., :3, :3]
+            camera2lidar_trans = camera2lidar[..., :3, 3]
+
+            extra_rots = lidar_aug_matrix[..., :3, :3]
+            extra_trans = lidar_aug_matrix[..., :3, 3]
+
             geom = self.get_geometry(
                 camera2lidar_rots,
                 camera2lidar_trans,

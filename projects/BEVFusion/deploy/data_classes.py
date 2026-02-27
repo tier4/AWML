@@ -18,6 +18,7 @@ class SetupConfigs:
     module: str
     onnx_cfg: dict
     work_dir: str
+    extract_pts_inputs: bool
 
 
 @dataclass(frozen=True)

@@ -29,9 +29,15 @@ class VoxelDetection(_VoxelDetection):
     def extract_pts_inputs(self, collate_data):
         """ """
 
-        points = collate_data["inputs"]["points"][0]
-        voxels = collate_data["inputs"]["voxels"]
+        if "points" in collate_data["inputs"]:
+            points = collate_data["inputs"]["points"][0]
+        else:
+            points = None
 
+        if "voxels" not in collate_data["inputs"]:
+            return None, None, None, points
+
+        voxels = collate_data["inputs"]["voxels"]
         feats = voxels["voxels"]
         num_points_per_voxel = voxels["num_points"]
         # NOTE(knzo25): preprocessing in BEVFusion and the
@@ -87,7 +93,7 @@ class VoxelDetection(_VoxelDetection):
             # but needed to comply with the signature
             camera2lidar,
             geom_feats.int(),
-            kept.bool(),  # TensorRT treats bool as uint8
+            kept.bool(),  # tensorrt treats bool as uint8
             ranks,
             indices,
         )
@@ -102,24 +108,6 @@ class VoxelDetection(_VoxelDetection):
 
         data = [batch]
         collate_data = pseudo_collate(data)
-
-        """ cam2img = data[0]["data_samples"].cam2img
-        cam2lidar = data[0]["data_samples"].cam2lidar
-        lidar2image = data[0]["data_samples"].lidar2img
-        lidar2camera = data[0]["data_samples"].lidar2cam
-        img_aux_matrix = data[0]["data_samples"].img_aug_matrix
-
-        import pickle
-        d = {}
-        d["cam2img"] = cam2img
-        d["cam2lidar"] = cam2lidar
-        d["lidar2image"] = lidar2image
-        d["lidar2camera"] = lidar2camera
-        d["img_aux_matrix"] = img_aux_matrix
-        d["points"] = data[0]['inputs']['points'].cpu().numpy()
-
-        with open("example.pkl", "wb") as f:
-            pickle.dump(d, f) """
 
         assert data_preprocessor is not None
         collate_data = data_preprocessor(collate_data, False)
