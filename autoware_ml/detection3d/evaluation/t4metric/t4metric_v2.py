@@ -477,6 +477,9 @@ class T4MetricV2(BaseMetric):
                     # Process metric data, for example, detection/precisions
                     aggregated_metric_data[evaluator_frame_prefix_name] = self._aggregate_metrics_data(metric_dict)
 
+                    # Process metric data, for example, detection/precisions
+                    aggregated_metric_data[evaluator_frame_prefix_name] = self._aggregate_metrics_data(metric_dict)
+
             # Aggregate metrics without prefix for each evaluator
             evaluator_full_name = f"{self.default_evaluator_prefix_name}/{evaluator_name}"
             final_metric_score = evaluator.perception_evaluator_manager.get_scene_result()
@@ -1072,12 +1075,6 @@ class T4MetricV2(BaseMetric):
         metric_dict["metadata/test_max_range"] = selected_evaluator.max_range
         metric_dict["metadata/test_range_filter_name"] = selected_evaluator.range_filter_name
 
-        # # Add a distribution of the number of frames for each prefix frame
-        # test_num_frame_distribution = defaultdict(int)
-        # for used_frame in metrics_score.used_frame:
-        #     test_num_frame_distribution[sample_id_to_prefix_frame_mapping[used_frame]] += 1
-
-        # metric_dict["metadata/test_num_frame_distribution"] = test_num_frame_distribution
         return metric_dict
 
     def _write_aggregated_metrics(

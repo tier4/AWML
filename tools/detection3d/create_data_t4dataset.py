@@ -22,6 +22,7 @@ from tools.detection3d.t4dataset_converters.t4converter import (
     get_annotations,
     get_ego2global,
     get_lidar_points_info,
+    get_lidar_sources_info,
     get_lidar_sweeps_info,
     get_lidarseg_annotations,
     obtain_sensor2top,
@@ -160,6 +161,7 @@ def get_info(
             cfg,
         ),
         get_lidarseg_annotations(t4, sd_record, i, lidar_token),
+        get_lidar_sources_info(t4),
     ]:
         info.update(new_info)
 
@@ -267,14 +269,14 @@ def main():
         print_log("No attribute filtering is applied!")
 
     # Get every pair of min-max distance filtering thresholds
-    min_distance = cfg.evaluator_metric_configs["min_distance"]
-    max_distance = cfg.evaluator_metric_configs["max_distance"]
-
-    # TODO(KokSeang): make this configurable, and consistent with evaluation config
-    range_filter_name = "bev_center"
     bev_distance_ranges = []
-    for min_dist, max_dist in zip(min_distance, max_distance):
-        bev_distance_ranges.append((min_dist, max_dist))
+    if hasattr(cfg, "evaluator_metric_configs"):
+        min_distance = cfg.evaluator_metric_configs["min_distance"]
+        max_distance = cfg.evaluator_metric_configs["max_distance"]
+        # TODO(KokSeang): make this configurable, and consistent with evaluation config
+        range_filter_name = "bev_center"
+        for min_dist, max_dist in zip(min_distance, max_distance):
+            bev_distance_ranges.append((min_dist, max_dist))
 
     # Generate statistics for this split
     t4_statistics = {
@@ -331,7 +333,9 @@ def main():
                 infos = []
                 for i in range(0, len(t4.sample), sample_steps):
                     sample = t4.sample[i]
-                    info = get_info(cfg, t4, sample, i, max_sweeps, city, vehicle_type)
+                    info = get_info(cfg, t4, sample, i, args.max_sweeps, city, vehicle_type)
+                    if info is None:
+                        continue
                     # info["version"] = dataset_version             # used for visualizations during debugging.
                     t4_infos[split].append(info)
                     infos.append(info)

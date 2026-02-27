@@ -1,53 +1,50 @@
+"""Point-cloud visualizer for FRNet deployment.
+
+Shows a 3D point cloud coloured by predicted semantic class using Open3D.
+"""
+
+from __future__ import annotations
+
 from typing import List
 
 import numpy as np
 import numpy.typing as npt
 import open3d
 import open3d.visualization
-
-PALETTE = [
-    ([255, 120, 50], "orange"),  # barrier
-    ([255, 192, 203], "pink"),  # bicycle
-    ([255, 255, 0], "yellow"),  # bus
-    ([0, 150, 245], "blue"),  # car
-    ([0, 255, 255], "cyan"),  # construction_vehicle
-    ([255, 127, 0], "dark orange"),  # motorcycle
-    ([255, 0, 0], "red"),  # pedestrian
-    ([255, 240, 150], "light yellow"),  # traffic_cone
-    ([135, 60, 0], "brown"),  # trailer
-    ([160, 32, 240], "purple"),  # truck
-    ([255, 0, 255], "dark pink"),  # driveable_surface
-    ([139, 137, 137], "dark red"),  # other_flat
-    ([75, 0, 75], "dark purple"),  # sidewalk
-    ([150, 240, 80], "light green"),  # terrain
-    ([230, 230, 250], "white"),  # manmade
-    ([0, 175, 0], "green"),  # vegetation
-    ([0, 0, 0], "black"),  # unknown
-]
+from mmengine.logging import MMLogger
 
 
 class Visualizer:
+    """Semantic segmentation point-cloud visualizer."""
 
-    def __init__(self, class_names: List[str]) -> None:
-        self.class_names = class_names + ["unknown"]
+    def __init__(self, class_names: List[str], palette: List[List[int]]) -> None:
+        self._class_names = class_names
+        self._palette = palette
+        self.logger = MMLogger.get_current_instance()
 
     def visualize(
         self,
         batch_inputs_dict: dict,
-        predictions: npt.ArrayLike,
+        predictions: npt.NDArray[np.intp],
         num_points: int = -1,
     ) -> None:
-        predictions = predictions[:num_points]
+        """Log per-class summary and open interactive Open3D viewer."""
+        if num_points > 0:
+            predictions = predictions[:num_points]
 
         unique_values, counts = np.unique(predictions, return_counts=True)
-        print(f"Predictions of total {predictions.shape[0]} points:")
-        for key, value in enumerate(unique_values):
-            print(f"{self.class_names[value]} - {counts[key]} points ({PALETTE[value][1]})")
+        self.logger.info(f"Predictions of total {predictions.shape[0]} points:")
+        for value, count in zip(unique_values, counts):
+            name = self._class_names[value] if value < len(self._class_names) else f"class_{value}"
+            self.logger.info(f"  {name} - {count} points")
 
-        points = batch_inputs_dict["points"][:num_points]
+        points = batch_inputs_dict["points"]
+        if num_points > 0:
+            points = points[:num_points]
+
         point_cloud = open3d.geometry.PointCloud()
         point_cloud.points = open3d.utility.Vector3dVector(points[:, :3])
-        colors = np.array([PALETTE[i][0] for i in predictions])
+        colors = np.array([self._palette[i] if i < len(self._palette) else [128, 128, 128] for i in predictions])
         point_cloud.colors = open3d.utility.Vector3dVector(colors / 255.0)
 
         vis = open3d.visualization.Visualizer()

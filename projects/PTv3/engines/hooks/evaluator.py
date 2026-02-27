@@ -9,7 +9,9 @@ import numpy as np
 import torch
 import torch.distributed as dist
 import utils.comm as comm
-from utils.misc import intersection_and_union_gpu, invert_class_mapping
+from utils.misc import intersection_and_union_gpu
+
+from autoware_ml.segmentation3d.datasets.utils import class_mapping_to_names
 
 from .builder import HOOKS
 from .default import HookBase
@@ -69,7 +71,14 @@ class SemSegEvaluator(HookBase):
         all_acc = sum(intersection) / (sum(target) + 1e-10)
         self.trainer.logger.info("Val result: mIoU/mAcc/allAcc {:.4f}/{:.4f}/{:.4f}.".format(m_iou, m_acc, all_acc))
 
-        mapped_class_names = invert_class_mapping(self.trainer.cfg.class_mapping)
+        mapped_class_names = class_mapping_to_names(
+            self.trainer.cfg.class_mapping,
+            self.trainer.cfg.data.ignore_index,
+        )
+        assert len(mapped_class_names) == self.trainer.cfg.data.num_classes, (
+            "class_mapping_to_names length must match num_classes: "
+            f"{len(mapped_class_names)} vs {self.trainer.cfg.data.num_classes}"
+        )
         for i in range(self.trainer.cfg.data.num_classes):
             self.trainer.logger.info(
                 "Class_{idx}-{name} Result: iou/accuracy {iou:.4f}/{accuracy:.4f}".format(
@@ -85,6 +94,10 @@ class SemSegEvaluator(HookBase):
             self.trainer.writer.add_scalar("val/mIoU", m_iou, current_epoch)
             self.trainer.writer.add_scalar("val/mAcc", m_acc, current_epoch)
             self.trainer.writer.add_scalar("val/allAcc", all_acc, current_epoch)
+            for i in range(self.trainer.cfg.data.num_classes):
+                name = mapped_class_names[i]
+                self.trainer.writer.add_scalar(f"val_class_iou/{name}", iou_class[i], current_epoch)
+                self.trainer.writer.add_scalar(f"val_class_acc/{name}", acc_class[i], current_epoch)
         self.trainer.logger.info("<<<<<<<<<<<<<<<<< End Evaluation <<<<<<<<<<<<<<<<<")
         self.trainer.comm_info["current_metric_value"] = m_iou  # save for saver
         self.trainer.comm_info["current_metric_name"] = "mIoU"  # save for saver

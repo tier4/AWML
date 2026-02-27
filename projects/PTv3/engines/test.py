@@ -20,11 +20,12 @@ from utils.logger import get_root_logger
 from utils.misc import (
     AverageMeter,
     intersection_and_union,
-    invert_class_mapping,
     make_dirs,
 )
 from utils.registry import Registry
 from utils.visualization import get_segmentation_colors, visualize_point_cloud
+
+from autoware_ml.segmentation3d.datasets.utils import class_mapping_to_names
 
 from .defaults import create_ddp_model
 
@@ -69,12 +70,13 @@ class TesterBase:
             checkpoint = torch.load(self.cfg.weight, weights_only=False)
             weight = OrderedDict()
             for key, value in checkpoint["state_dict"].items():
-                if key.startswith("module."):
-                    if comm.get_world_size() == 1:
-                        key = key[7:]  # module.xxx.xxx -> xxx.xxx
-                else:
-                    if comm.get_world_size() > 1:
-                        key = "module." + key  # xxx.xxx -> module.xxx.xxx
+                if not key.startswith("module."):
+                    key = "module." + key  # xxx.xxx -> module.xxx.xxx
+                # Now all keys contain "module." no matter DDP or not.
+                if self.keywords in key:
+                    key = key.replace(self.keywords, self.replacement, 1)
+                if comm.get_world_size() == 1:
+                    key = key[7:]  # module.xxx.xxx -> xxx.xxx
                 weight[key] = value
             model.load_state_dict(weight, strict=True)
             self.logger.info("=> Loaded weight '{}' (epoch {})".format(self.cfg.weight, checkpoint["epoch"]))
@@ -287,7 +289,14 @@ class SemSegTester(TesterBase):
             allAcc = sum(intersection) / (sum(target) + 1e-10)
 
             logger.info("Val result: mIoU/mAcc/allAcc {:.4f}/{:.4f}/{:.4f}".format(mIoU, mAcc, allAcc))
-            mapped_class_names = invert_class_mapping(self.cfg.class_mapping)
+            mapped_class_names = class_mapping_to_names(
+                self.cfg.class_mapping,
+                self.cfg.data.ignore_index,
+            )
+            assert len(mapped_class_names) == self.cfg.data.num_classes, (
+                "class_mapping_to_names length must match num_classes: "
+                f"{len(mapped_class_names)} vs {self.cfg.data.num_classes}"
+            )
             for i in range(self.cfg.data.num_classes):
                 logger.info(
                     "Class_{idx} - {name} Result: iou/accuracy {iou:.4f}/{accuracy:.4f}".format(

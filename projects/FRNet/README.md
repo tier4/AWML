@@ -2,10 +2,10 @@
 ## Summary
 
 - [Support priority](https://github.com/tier4/AWML/blob/main/docs/design/autoware_ml_design.md#support-priority): Tier B
-- ROS package: [lidar_frnet_py](https://github.com/tier4/lidar_frnet_py) (prototype)
+- ROS package: [lidar_frnet](https://github.com/autowarefoundation/autoware_universe/tree/main/perception/autoware_lidar_frnet)
 - Supported dataset
   - [x] NuScenes
-  - [ ] T4dataset
+  - [x] T4dataset
 - Other supported feature
   - [x] Add script to make .onnx file (ONNX runtime)
   - [x] Add script to perform ONNX inference
@@ -27,24 +27,25 @@
 - Docker build for FRNet
 
 ```sh
-DOCKER_BUILDKIT=1 docker build -t autoware-ml-frnet projects/FRNet/
+DOCKER_BUILDKIT=1 docker build -t awml-frnet projects/FRNet/
 ```
 
 - Run docker
 
 ```sh
-docker run -it --rm --gpus all --shm-size=64g --name awml -p 6006:6006 -v $PWD/:/workspace -v $PWD/data:/workspace/data autoware-ml-frnet
+docker run -it --rm --gpus all --shm-size=64g --name awml -p 6006:6006 -v $PWD/:/workspace -v $PWD/data:/workspace/data awml-frnet
 ```
 
 ### 2. Config
 
-Change parameters for your environment by changing [base config file](configs/nuscenes/frnet_1xb4_nus-seg.py). `TRAIN_BATCH = 2` is appropriate for GPU with 8 GB VRAM.
+Change parameters for your environment by changing [base config file](configs/nuscenes/frnet_1xb4_nus-seg.py). `batch_size = 2` is appropriate for GPU with 8 GB VRAM.
 
 ```py
 # user settings
-TRAIN_BATCH = 4
-ITERATIONS = 50000
-VAL_INTERVAL = 1000
+batch_size = 4
+num_workers = 4
+iterations = 50000
+val_interval = 1000
 ```
 
 ### 3. Dataset
@@ -57,29 +58,52 @@ python projects/FRNet/scripts/create_nuscenes.py
 
 ### 4. Train
 
+- Train for nuScenes
 ```sh
 python tools/detection3d/train.py projects/FRNet/configs/nuscenes/frnet_1xb4_nus-seg.py
 ```
 
+- Train for T4dataset
+```sh
+python tools/detection3d/train.py projects/FRNet/configs/t4dataset/frnet_1xb8_t4dataset-<SENSOR>-seg.py
+```
+
 ### 5. Test
 
+- Test for nuScenes
 ```sh
 python tools/detection3d/test.py projects/FRNet/configs/nuscenes/frnet_1xb4_nus-seg.py work_dirs/frnet_1xb4_nus-seg/best_miou_iter_<ITER>.pth
 ```
 
-You can also visualize inference using Torch checkpoint via MMDet3D backend.
+- Test for T4dataset
+```sh
+python tools/detection3d/test.py projects/FRNet/configs/t4dataset/frnet_1xb8_t4dataset-<SENSOR>-seg.py work_dirs/frnet_1xb8_t4dataset-<SENSOR>-seg/best_miou_iter_<ITER>.pth
+```
+
+- Visualize inference for nuScenes
 ```sh
 python tools/detection3d/test.py projects/FRNet/configs/nuscenes/frnet_1xb4_nus-seg.py work_dirs/frnet_1xb4_nus-seg/best_miou_iter_<ITER>.pth --show --task lidar_seg
+```
+
+- Visualize inference for T4dataset
+```sh
+python tools/detection3d/test.py projects/FRNet/configs/t4dataset/frnet_1xb8_t4dataset-<SENSOR>-seg.py work_dirs/frnet_1xb8_t4dataset-<SENSOR>-seg/best_miou_iter_<ITER>.pth --show --task lidar_seg
 ```
 
 For ONNX & TensorRT execution, check the next section.
 
 ### 6. Deploy & inference
 
-Provided script allows for deploying at once to ONNX and TensorRT. In addition, it's possible to perform inference on test set with chosen execution method.
+Provided script allows for deploying at once to ONNX and TensorRT. In addition, it's possible to perform inference on test set with chosen execution method. The script automatically detects the dataset type (`NuScenesSegDataset` or `T4SegDataset`) from the model config and uses the corresponding `data_root` as the default dataset directory. Use `--dataset-dir` to override.
 
+- Deploy for nuScenes
 ```sh
-python projects/FRNet/deploy/main.py work_dirs/frnet_1xb4_nus-seg/best_miou_iter_<ITER>.pth --execution tensorrt --verbose
+python projects/FRNet/deploy/main.py work_dirs/frnet_1xb4_nus-seg/best_miou_iter_<ITER>.pth --model-cfg projects/FRNet/configs/nuscenes/frnet_1xb4_nus-seg.py --deploy-cfg projects/FRNet/configs/deploy/nuscenes/frnet_tensorrt_dynamic.py --execution tensorrt --verbose
+```
+
+- Deploy for T4dataset
+```sh
+python projects/FRNet/deploy/main.py work_dirs/frnet_1xb8_t4dataset-<SENSOR>-seg/best_miou_iter_<ITER>.pth --model-cfg projects/FRNet/configs/t4dataset/frnet_1xb8_t4dataset-<SENSOR>-seg.py --deploy-cfg projects/FRNet/configs/deploy/t4dataset/frnet_tensorrt_dynamic.py --execution tensorrt --verbose
 ```
 
 For more information:

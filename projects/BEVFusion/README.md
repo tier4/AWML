@@ -173,6 +173,35 @@ python projects/BEVFusion/deploy/torch2onnx.py \
 
 ```
 
+To export a camera-only model, please use the following command:
+
+```bash
+DEPLOY_CFG_MAIN_BODY=configs/deploy/bevfusion_camera_point_bev_tensorrt_dynamic.py.py
+DEPLOY_CFG_IMAGE_BACKBONE=configs/deploy/bevfusion_camera_backbone_tensorrt_dynamic.py
+
+MODEL_CFG=...
+CHECKPOINT_PATH=...
+WORK_DIR=...
+
+python projects/BEVFusion/deploy/torch2onnx.py \
+  ${DEPLOY_CFG_MAIN_BODY} \
+  ${MODEL_CFG} \
+  ${CHECKPOINT_PATH} \
+  --device cuda:0 \
+  --work-dir ${WORK_DIR} \
+  --module camera_bev_only_network
+
+
+python projects/BEVFusion/deploy/torch2onnx.py \
+  ${DEPLOY_CFG_IMAGE_BACKBONE} \
+  ${MODEL_CFG} \
+  ${CHECKPOINT_PATH} \
+  --device cuda:0 \
+  --work-dir ${WORK_DIR} \
+  --module image_backbone
+```
+Note that this camera-only model takes lidar pointclouds as an input for a depth map, and we will release a model without lidar pointclouds in another release.
+
 This will generate two models in the `WORK_DIR` folder. `end2end.onnx` corresponds to the standard exported model ,whereas `end2end_fixed.onnx` contains a fix for the `TopK` operator (compatibility issues between `mmdeploy` and `TensorRT`).
 
 ## TODO

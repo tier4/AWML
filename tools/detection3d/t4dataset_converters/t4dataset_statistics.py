@@ -126,10 +126,6 @@ class T4DatasetStatistics:
             if not len(info):
                 continue
 
-        for info in infos:
-            if not len(info):
-                continue
-
             # Save ego pose translation
             self.statistics[bucket_name]["metadata"][f"metadata/{self.split_name}_ego_pose_translation_x"][
                 scene_metadata.frame_prefix
