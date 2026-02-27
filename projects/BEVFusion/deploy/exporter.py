@@ -61,8 +61,6 @@ class Torch2OnnxExporter:
           context_info (dict): Context when deploying to rewrite some configs.
           patched_model (torch.nn.Module): Patched Pytorch model.
           ir_configs (dict): Configs for intermediate representations in ONNX.
-        Returns:
-            True if the model don't need to be fixed after exporting, False otherwise.
         """
         with RewriterContext(**context_info), torch.no_grad():
             image_feats = None
