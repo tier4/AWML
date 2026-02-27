@@ -1,8 +1,8 @@
 _base_ = [
-    "second_secfpn_4xb16_121m_j6gen2_base_amp.py",
+    "./second_secfpn_8xb16_121m_base_amp.py",
 ]
 
-experiment_name = "second_secfpn_4xb16_121m_j6gen2_base_amp_t4metric_v2"
+experiment_name = "second_secfpn_8xb16_121m_base_amp_rfs_t4metric_v2"
 work_dir = "work_dirs/" + _base_.experiment_group_name + "/" + experiment_name
 
 # Add evaluator configs
@@ -37,7 +37,7 @@ val_evaluator = dict(
     testing_statistics_parquet_path=testing_statistics_parquet_path,
     validation_statistics_parquet_path=validation_statistics_parquet_path,
     output_dir="validation",
-    dataset_name="largebus",
+    dataset_name="base",
     perception_evaluator_configs=perception_evaluator_configs,
     critical_object_filter_config=None,
     frame_pass_fail_config=frame_pass_fail_config,
@@ -59,7 +59,7 @@ test_evaluator = dict(
     testing_statistics_parquet_path=testing_statistics_parquet_path,
     validation_statistics_parquet_path=validation_statistics_parquet_path,
     output_dir="testing",
-    dataset_name="largebus",
+    dataset_name="base",
     perception_evaluator_configs=perception_evaluator_configs,
     critical_object_filter_config=None,
     frame_pass_fail_config=frame_pass_fail_config,

@@ -1,6 +1,6 @@
 _base_ = [
     "../../../../../autoware_ml/configs/detection3d/default_runtime.py",
-    "../../../../../autoware_ml/configs/detection3d/dataset/t4dataset/j6gen2_base.py",
+    "../../../../../autoware_ml/configs/detection3d/dataset/t4dataset/jpntaxi_base.py",
     "../../default/second_secfpn_base.py",
 ]
 custom_imports = dict(imports=["projects.CenterPoint.models"], allow_failed_imports=False)
@@ -42,16 +42,16 @@ eval_class_range = {
 
 # user setting
 data_root = "data/t4dataset/"
-info_directory_path = "info/user_name/"
-train_gpu_size = 4
+info_directory_path = "info/kokseang_2_6/"
+train_gpu_size = 8
 train_batch_size = 16
 test_batch_size = 2
-num_workers = 32
+num_workers = 16
 val_interval = 1
 max_epochs = 30
 
-experiment_group_name = "centerpoint/j6gen2_base/" + _base_.dataset_type
-experiment_name = "second_secfpn_4xb16_121m_j6gen2_base_amp"
+experiment_group_name = "centerpoint_2.5.1/jpntaxi_base/" + _base_.dataset_type
+experiment_name = "second_secfpn_8xb16_121m_jpntaxi_base_amp"
 work_dir = "work_dirs/" + experiment_group_name + "/" + experiment_name
 
 train_pipeline = [
@@ -61,6 +61,7 @@ train_pipeline = [
         load_dim=point_load_dim,
         use_dim=point_load_dim,
         backend_args=backend_args,
+        norm_intensity=False,
     ),
     dict(
         type="LoadPointsFromMultiSweeps",
@@ -99,6 +100,7 @@ test_pipeline = [
         load_dim=point_load_dim,
         use_dim=point_load_dim,
         backend_args=backend_args,
+        norm_intensity=False,
     ),
     dict(
         type="LoadPointsFromMultiSweeps",
@@ -131,8 +133,8 @@ test_pipeline = [
             "cam2global",
             "lidar2cam",
             "ego2global",
-            "city",
             "vehicle_type",
+            "city",
         ),
     ),
 ]
@@ -146,6 +148,7 @@ eval_pipeline = [
         load_dim=point_load_dim,
         use_dim=point_load_dim,
         backend_args=backend_args,
+        norm_intensity=True,
     ),
     dict(
         type="LoadPointsFromMultiSweeps",
@@ -178,8 +181,8 @@ eval_pipeline = [
             "cam2global",
             "lidar2cam",
             "ego2global",
-            "city",
             "vehicle_type",
+            "city",
         ),
     ),
 ]
@@ -203,7 +206,6 @@ train_dataloader = dict(
         box_type_3d="LiDAR",
     ),
 )
-
 val_dataloader = dict(
     batch_size=test_batch_size,
     num_workers=num_workers,
@@ -324,8 +326,10 @@ model = dict(
             post_center_range=[-200.0, -200.0, -10.0, 200.0, 200.0, 10.0],
             out_size_factor=out_size_factor,
         ),
-        # sigmoid(-4.595) = 0.01 for initial small values
+        # sigmoid(-9.2103) = 0.0001 for initial small values
+        # separate_head=dict(type="CustomSeparateHead", init_bias=-9.2103, final_kernel=1),
         separate_head=dict(type="CustomSeparateHead", init_bias=-4.595, final_kernel=1),
+        # loss_cls=dict(type="mmdet.GaussianFocalLoss", reduction="none", loss_weight=1.0),
         loss_cls=dict(type="mmdet.AmpGaussianFocalLoss", reduction="none", loss_weight=1.0),
         loss_bbox=dict(type="mmdet.L1Loss", reduction="mean", loss_weight=0.25),
         norm_bbox=True,
@@ -408,7 +412,7 @@ val_cfg = dict()
 test_cfg = dict()
 
 optimizer = dict(type="AdamW", lr=lr, weight_decay=0.01)
-clip_grad = dict(max_norm=15, norm_type=2)  # max norm of gradients upper bound to be 15 since amp is used
+clip_grad = dict(max_norm=5.0, norm_type=2)  # max norm of gradients upper bound to be 15 since amp is used
 
 optim_wrapper = dict(
     type="AmpOptimWrapper",
@@ -437,13 +441,13 @@ vis_backends = [
     dict(type="LocalVisBackend"),
     dict(type="TensorboardVisBackend"),
     # Update info accordingly
-    dict(
-        type="SafeMLflowVisBackend",
-        exp_name="(UserName) CenterPoint",
-        run_name="CenterPoint base",
-        tracking_uri="http://localhost:5000",
-        artifact_suffix=(),
-    ),
+    # dict(
+    #     type="SafeMLflowVisBackend",
+    #     exp_name="(UserName) CenterPoint",
+    #     run_name="CenterPoint base",
+    #     tracking_uri="http://localhost:5000",
+    #     artifact_suffix=(),
+    # ),
 ]
 visualizer = dict(type="Det3DLocalVisualizer", vis_backends=vis_backends, name="visualizer")
 
@@ -459,6 +463,6 @@ custom_hooks = [
 ]
 
 # Update the load_from path accordingly
-load_from = "<best_checkpoint>"
+load_from = "work_dirs/centerpoint_2.6.0/base/T4Dataset/second_secfpn_8xb16_121m_base_amp_rfs/epoch_49.pth"
 
 activation_checkpointing = ["pts_backbone"]

@@ -1,13 +1,13 @@
 _base_ = [
     "../../../../../autoware_ml/configs/detection3d/default_runtime.py",
-    "../../../../../autoware_ml/configs/detection3d/dataset/t4dataset/jpntaxi_gen2_base.py",
+    "../../../../../autoware_ml/configs/detection3d/dataset/t4dataset/base.py",
     "../../default/second_secfpn_base.py",
 ]
 custom_imports = dict(imports=["projects.CenterPoint.models"], allow_failed_imports=False)
 custom_imports["imports"] += _base_.custom_imports["imports"]
 custom_imports["imports"] += ["autoware_ml.detection3d.datasets.transforms"]
 custom_imports["imports"] += ["autoware_ml.hooks"]
-custom_imports["imports"] += ["autoware_ml.backends.mlflowbackend"]
+# custom_imports["imports"] += ["autoware_ml.backends.mlflowbackend"]
 custom_imports["imports"] += ["autoware_ml.samplers"]
 
 # This is a base file for t4dataset, add the dataset config.
@@ -29,7 +29,7 @@ backend_args = None
 # backend_args = dict(backend="disk")
 point_load_dim = 5  # x, y, z, intensity, ring_id
 point_use_dim = 3  # x, y, z
-lidar_sweep_dims = [0, 1, 2, 3, 4]
+lidar_sweep_dims = [0, 1, 2, 4]
 
 # eval parameter
 eval_class_range = {
@@ -42,16 +42,16 @@ eval_class_range = {
 
 # user setting
 data_root = "data/t4dataset/"
-info_directory_path = "info/kokseang/"
-train_gpu_size = 4
+info_directory_path = "info/kokseang_2_6/"
+train_gpu_size = 8
 train_batch_size = 16
 test_batch_size = 2
 num_workers = 32
-val_interval = 1
-max_epochs = 30
+val_interval = 5
+max_epochs = 50
 
-experiment_group_name = "centerpoint/jpntaxi_gen2_base/" + _base_.dataset_type
-experiment_name = "second_secfpn_4xb16_121m_jpntaxi_gen2_base_amp"
+experiment_group_name = "centerpoint_2.5.0/base/" + _base_.dataset_type
+experiment_name = "second_secfpn_8xb16_121m_base_amp"
 work_dir = "work_dirs/" + experiment_group_name + "/" + experiment_name
 
 train_pipeline = [
@@ -111,7 +111,30 @@ test_pipeline = [
         test_mode=True,
     ),
     dict(type="PointsRangeFilter", point_cloud_range=point_cloud_range),
-    dict(type="Pack3DDetInputs", keys=["points", "gt_bboxes_3d", "gt_labels_3d"]),
+    dict(
+        type="Pack3DDetInputs",
+        keys=["points", "gt_bboxes_3d", "gt_labels_3d"],
+        # Specify the metadata keys required by the downstream pipeline.
+        # Refer to the official MMDetection3D formatting transform implementation for details:
+        # https://github.com/open-mmlab/mmdetection3d/blob/main/mmdet3d/datasets/transforms/formating.py#L67
+        # Also see the content structure in "t4dataset_base_infos_test.pkl" for reference.
+        meta_keys=(
+            "timestamp",
+            "lidar2img",
+            "depth2img",
+            "cam2img",
+            "box_type_3d",
+            "sample_idx",
+            "sample_token",
+            "lidar_path",
+            "ori_cam2img",
+            "cam2global",
+            "lidar2cam",
+            "ego2global",
+            "vehicle_type",
+            "city",
+        ),
+    ),
 ]
 
 # construct a pipeline for data and gt loading in show function
@@ -135,7 +158,30 @@ eval_pipeline = [
         test_mode=True,
     ),
     dict(type="PointsRangeFilter", point_cloud_range=point_cloud_range),
-    dict(type="Pack3DDetInputs", keys=["points", "gt_bboxes_3d", "gt_labels_3d"]),
+    dict(
+        type="Pack3DDetInputs",
+        keys=["points", "gt_bboxes_3d", "gt_labels_3d"],
+        # Specify the metadata keys required by the downstream pipeline.
+        # Refer to the official MMDetection3D formatting transform implementation for details:
+        # https://github.com/open-mmlab/mmdetection3d/blob/main/mmdet3d/datasets/transforms/formating.py#L67
+        # Also see the content structure in "t4dataset_base_infos_test.pkl" for reference.
+        meta_keys=(
+            "timestamp",
+            "lidar2img",
+            "depth2img",
+            "cam2img",
+            "box_type_3d",
+            "sample_idx",
+            "sample_token",
+            "lidar_path",
+            "ori_cam2img",
+            "cam2global",
+            "lidar2cam",
+            "ego2global",
+            "vehicle_type",
+            "city",
+        ),
+    ),
 ]
 
 train_dataloader = dict(
@@ -235,7 +281,7 @@ model = dict(
     ),
     pts_voxel_encoder=dict(
         type="PillarFeatureNet",
-        in_channels=5,
+        in_channels=4,
         feat_channels=[32, 32],
         with_distance=False,
         with_cluster_center=True,
@@ -305,7 +351,10 @@ model = dict(
 
 randomness = dict(seed=0, diff_rank_seed=False, deterministic=True)
 
-lr = 3e-4
+# learning rate
+# Since mmengine doesn't support OneCycleMomentum yet, we use CosineAnnealing from the default configs
+lr = 0.0003
+t_max = 15
 param_scheduler = [
     # learning rate scheduler
     # During the first (max_epochs * 0.3) epochs, learning rate increases from 0 to lr * 10
@@ -313,18 +362,18 @@ param_scheduler = [
     # lr * 1e-4
     dict(
         type="CosineAnnealingLR",
-        T_max=8,
+        T_max=t_max,
         eta_min=lr * 10,
         begin=0,
-        end=8,
+        end=t_max,
         by_epoch=True,
         convert_to_iter_based=True,
     ),
     dict(
         type="CosineAnnealingLR",
-        T_max=22,
+        T_max=max_epochs - t_max,
         eta_min=lr * 1e-4,
-        begin=8,
+        begin=t_max,
         end=max_epochs,
         by_epoch=True,
         convert_to_iter_based=True,
@@ -334,18 +383,18 @@ param_scheduler = [
     # during the next epochs, momentum increases from 0.85 / 0.95 to 1
     dict(
         type="CosineAnnealingMomentum",
-        T_max=8,
+        T_max=t_max,
         eta_min=0.85 / 0.95,
         begin=0,
-        end=8,
+        end=t_max,
         by_epoch=True,
         convert_to_iter_based=True,
     ),
     dict(
         type="CosineAnnealingMomentum",
-        T_max=22,
+        T_max=max_epochs - t_max,
         eta_min=1,
-        begin=8,
+        begin=t_max,
         end=max_epochs,
         by_epoch=True,
         convert_to_iter_based=True,
@@ -370,8 +419,8 @@ optim_wrapper = dict(
     clip_grad=clip_grad,
     # Update it accordingly
     loss_scale={
-        "init_scale": 2.0**12,  # intial_scale: 256
-        "growth_interval": 600,
+        "init_scale": 2.0**8,  # intial_scale: 256
+        "growth_interval": 2000,
     },
 )
 
@@ -390,28 +439,25 @@ vis_backends = [
     dict(type="LocalVisBackend"),
     dict(type="TensorboardVisBackend"),
     # Update info accordingly
-    dict(
-        type="SafeMLflowVisBackend",
-        exp_name="(UserName) CenterPoint",
-        run_name="CenterPoint base",
-        tracking_uri="http://localhost:5000",
-        artifact_suffix=(),
-    ),
+    # dict(
+    #     type="SafeMLflowVisBackend",
+    #     exp_name="(UserName) CenterPoint",
+    #     run_name="CenterPoint base",
+    #     tracking_uri="http://localhost:5000",
+    #     artifact_suffix=(),
+    # ),
 ]
 visualizer = dict(type="Det3DLocalVisualizer", vis_backends=vis_backends, name="visualizer")
 
 logger_interval = 50
 default_hooks = dict(
     logger=dict(type="LoggerHook", interval=logger_interval),
-    checkpoint=dict(type="CheckpointHook", interval=1, max_keep_ckpts=10, save_best="NuScenes metric/T4Metric/mAP"),
+    checkpoint=dict(type="CheckpointHook", interval=1, max_keep_ckpts=3, save_best="NuScenes metric/T4Metric/mAP"),
 )
 
 custom_hooks = [
     dict(type="MomentumInfoHook"),
     dict(type="LossScaleInfoHook"),
 ]
-
-# Update the load_from path accordingly
-load_from = "<best_checkpoint>"
 
 activation_checkpointing = ["pts_backbone"]
