@@ -206,9 +206,9 @@ class BEVFusionGlobalRotScaleTransNoPoints(GlobalRotScaleTrans):
         translation_std = np.array(self.translation_std, dtype=np.float32)
         trans_factor = np.random.normal(scale=translation_std, size=3).T
 
-        input_dict['pcd_trans'] = trans_factor
-        if 'gt_bboxes_3d' in input_dict:
-            input_dict['gt_bboxes_3d'].translate(trans_factor)
+        input_dict["pcd_trans"] = trans_factor
+        if "gt_bboxes_3d" in input_dict:
+            input_dict["gt_bboxes_3d"].translate(trans_factor)
 
     def _rot_bbox(self, input_dict: dict) -> None:
         """Private function to rotate bounding boxes and points.
@@ -222,18 +222,16 @@ class BEVFusionGlobalRotScaleTransNoPoints(GlobalRotScaleTrans):
         """
         rotation = self.rot_range
         noise_rotation = np.random.uniform(rotation[0], rotation[1])
-        
-        if 'gt_bboxes_3d' in input_dict and \
-                len(input_dict['gt_bboxes_3d'].tensor) != 0:
+
+        if "gt_bboxes_3d" in input_dict and len(input_dict["gt_bboxes_3d"].tensor) != 0:
             # rotate points with bboxes
-            input_dict['gt_bboxes_3d'].rotate(
-                noise_rotation)
-            
-            angles = input_dict['gt_bboxes_3d'].tensor.new_tensor(noise_rotation)
-            points = input_dict['gt_bboxes_3d'].tensor[:, 0:3]
+            input_dict["gt_bboxes_3d"].rotate(noise_rotation)
+
+            angles = input_dict["gt_bboxes_3d"].tensor.new_tensor(noise_rotation)
+            points = input_dict["gt_bboxes_3d"].tensor[:, 0:3]
             batch_free = len(points.shape) == 2
             if batch_free:
-              points = points[None]
+                points = points[None]
 
             angles = torch.full(points.shape[:1], angles)
 
@@ -241,18 +239,20 @@ class BEVFusionGlobalRotScaleTransNoPoints(GlobalRotScaleTrans):
             rot_cos = torch.cos(angles)
             ones = torch.ones_like(rot_cos)
             zeros = torch.zeros_like(rot_cos)
-            rot_mat = torch.stack([
+            rot_mat = torch.stack(
+                [
                     torch.stack([rot_cos, rot_sin, zeros]),
                     torch.stack([-rot_sin, rot_cos, zeros]),
-                    torch.stack([zeros, zeros, ones])
-                ])
-            
-            rot_mat_T = torch.einsum('jka->ajk', rot_mat)
+                    torch.stack([zeros, zeros, ones]),
+                ]
+            )
+
+            rot_mat_T = torch.einsum("jka->ajk", rot_mat)
             if batch_free:
-              rot_mat_T = rot_mat_T.squeeze(0)
+                rot_mat_T = rot_mat_T.squeeze(0)
             # rot_mat_T = rot_mat_T.squeeze(0)
-            input_dict['pcd_rotation'] = rot_mat_T
-            input_dict['pcd_rotation_angle'] = noise_rotation
+            input_dict["pcd_rotation"] = rot_mat_T
+            input_dict["pcd_rotation_angle"] = noise_rotation
 
     def _scale_bbox(self, input_dict: dict) -> None:
         """Private function to scale bounding boxes and points.
@@ -264,10 +264,9 @@ class BEVFusionGlobalRotScaleTransNoPoints(GlobalRotScaleTrans):
             dict: Results after scaling, 'points' and
             `gt_bboxes_3d` is updated in the result dict.
         """
-        scale = input_dict['pcd_scale_factor']
-        if 'gt_bboxes_3d' in input_dict and \
-                len(input_dict['gt_bboxes_3d'].tensor) != 0:
-            input_dict['gt_bboxes_3d'].scale(scale)
+        scale = input_dict["pcd_scale_factor"]
+        if "gt_bboxes_3d" in input_dict and len(input_dict["gt_bboxes_3d"].tensor) != 0:
+            input_dict["gt_bboxes_3d"].scale(scale)
 
     def transform(self, input_dict: dict) -> dict:
         """Private function to rotate, scale and translate bounding boxes and
@@ -283,8 +282,8 @@ class BEVFusionGlobalRotScaleTransNoPoints(GlobalRotScaleTrans):
         """
         if "transformation_3d_flow" not in input_dict:
             input_dict["transformation_3d_flow"] = []
-        
-        # Roate only bboxes 
+
+        # Roate only bboxes
 
         self._rot_bbox(input_dict)
 
@@ -297,8 +296,8 @@ class BEVFusionGlobalRotScaleTransNoPoints(GlobalRotScaleTrans):
 
         lidar_augs = np.eye(4)
         if "pcd_rotation" not in input_dict:
-          input_dict["pcd_rotation"] = np.eye(3)
-        
+            input_dict["pcd_rotation"] = np.eye(3)
+
         lidar_augs[:3, :3] = input_dict["pcd_rotation"].T * input_dict["pcd_scale_factor"]
         lidar_augs[:3, 3] = input_dict["pcd_trans"] * input_dict["pcd_scale_factor"]
 

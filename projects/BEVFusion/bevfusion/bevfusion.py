@@ -15,7 +15,7 @@ from mmengine.utils import is_list_of
 from torch import Tensor
 from torch.nn import functional as F
 
-from .ops import Voxelization
+from .ops import Voxelization, bev_pool
 
 
 @MODELS.register_module()
@@ -96,7 +96,6 @@ class BEVFusion(Base3DDetector):
 
         if self.with_bbox_head:
             outputs = self.bbox_head(feats, batch_input_metas)
-
         return outputs[0][0]
 
     def parse_losses(self, losses: Dict[str, torch.Tensor]) -> Tuple[torch.Tensor, Dict[str, torch.Tensor]]:
@@ -183,33 +182,9 @@ class BEVFusion(Base3DDetector):
         if not using_image_features:
             x = self.get_image_backbone_features(x)
 
-        # Save image_feats as images for every camera and first 20 channels
-        # save_dir = "image_feats_outputs"
-        # os.makedirs(save_dir, exist_ok=True)
-        # feats = x[0].detach().cpu().float()  # first batch, shape: (N, C, H, W)
-        # num_cameras = feats.shape[0]
-        # num_channels = min(20, feats.shape[1])
-        # for cam_idx in range(num_cameras):
-        #     for ch in range(num_channels):
-        #         fig, ax = plt.subplots(1, 1, figsize=(8, 6))
-        #         ax.imshow(feats[cam_idx, ch].numpy(), cmap="viridis")
-        #         ax.set_title(f"image_feats - Camera {cam_idx} / Channel {ch}")
-        #         ax.axis("off")
-        #         plt.colorbar(ax.images[0], ax=ax, fraction=0.046, pad=0.04)
-        #         fig.savefig(
-        #             os.path.join(save_dir, f"cam_{cam_idx:02d}_ch_{ch:02d}.png"),
-        #             dpi=150,
-        #             bbox_inches="tight",
-        #         )
-        #         plt.close(fig)
-        # print(f"[BEVFusion] Saved image_feats for {num_cameras} cameras x {num_channels} channels to '{save_dir}/'")
-
-        # if geom_feats is not None:
-        #     print("Running gemo_feats")
-
         with torch.cuda.amp.autocast(enabled=False):
             # with torch.autocast(device_type='cuda', dtype=torch.float32):
-            x = self.view_transform(
+            x, bev_pool_feats = self.view_transform(
                 x,
                 points,
                 lidar2image,
@@ -223,7 +198,7 @@ class BEVFusion(Base3DDetector):
                 lidar_aug_matrix_inverse,
                 geom_feats,
             )
-        return x
+        return x, bev_pool_feats
 
     def extract_pts_feat(self, feats, coords, sizes, points=None) -> torch.Tensor:
         if points is not None:
@@ -367,7 +342,7 @@ class BEVFusion(Base3DDetector):
             lidar_aug_matrix = batch_inputs_dict["lidar_aug_matrix"]
             geom_feats = batch_inputs_dict["geom_feats"]
 
-            img_feature = self.extract_img_feat(
+            img_feature, bev_pool_feats = self.extract_img_feat(
                 imgs,
                 points,
                 lidar2image,
@@ -402,7 +377,7 @@ class BEVFusion(Base3DDetector):
         if self.pts_neck is not None:
             x = self.pts_neck(x)
 
-        return x
+        return x, bev_pool_feats
 
     def loss(
         self,

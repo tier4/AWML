@@ -161,17 +161,19 @@ class Torch2OnnxExporter:
         device = self.setup_configs.device
 
         model_inputs = (
-            lidar2img.to(device).float(),
-            img_aug_matrix.to(device).float(),
-            geom_feats.to(device).float(),
+            geom_feats.to(device).int(),
             kept.to(device),
             ranks.to(device).long(),
             indices.to(device).long(),
             image_feats,
         )
-
+        print(ir_configs["input_names"])
         if "points" in ir_configs["input_names"]:
             model_inputs += (points.to(device).float(),)
+        if "lidar2image" in ir_configs["input_names"]:
+            model_inputs += (lidar2img.to(device).float(),)
+        if "img_aug_matrix" in ir_configs["input_names"]:
+            model_inputs += (img_aug_matrix.to(device).float(),)
 
         torch.onnx.export(
             main_container,

@@ -29,7 +29,11 @@ class VoxelDetection(_VoxelDetection):
     def extract_pts_inputs(self, collate_data):
         """ """
 
-        points = collate_data["inputs"]["points"][0]
+        if "points" in collate_data["inputs"]:
+            points = collate_data["inputs"]["points"][0]
+        else:
+            points = None
+
         if "voxels" not in collate_data["inputs"]:
             return None, None, None, points
 

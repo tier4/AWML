@@ -237,7 +237,6 @@ class BaseViewTransform(nn.Module):
         if "extra_trans" in kwargs:
             extra_trans = kwargs["extra_trans"]
             points += extra_trans.view(B, 1, 1, 1, 1, 3).repeat(1, N, 1, 1, 1, 1)
-
         return points
 
     def get_cam_feats(self, x):
@@ -298,7 +297,6 @@ class BaseViewTransform(nn.Module):
         assert x.shape[0] == geom_feats.shape[0]
 
         x = x[indices]
-
         x = bev_pool(x, geom_feats, ranks, B, self.nx[2], self.nx[0], self.nx[1], self.training)
 
         # collapse Z
@@ -321,7 +319,6 @@ class BaseViewTransform(nn.Module):
 
         # collapse Z
         final = torch.cat(x.unbind(dim=2), 1)
-
         return final
 
     def forward(
@@ -343,7 +340,6 @@ class BaseViewTransform(nn.Module):
             geom_feats, kept, ranks, indices = geom_feats_precomputed
             x = self.get_cam_feats(img)
             x = self.bev_pool_precomputed(x, geom_feats, kept, ranks, indices)
-
         else:
             intrins = camera_intrinsics[..., :3, :3]
             post_rots = img_aug_matrix[..., :3, :3]
@@ -405,11 +401,9 @@ class LSSTransform(BaseViewTransform):
         B, N, C, fH, fW = x.shape
 
         x = x.view(B * N, C, fH, fW)
-
         x = self.depthnet(x)
         depth = x[:, : self.D].softmax(dim=1)
         x = depth.unsqueeze(1) * x[:, self.D : (self.D + self.C)].unsqueeze(2)
-
         x = x.view(B, N, self.C, self.D, fH, fW)
         x = x.permute(0, 1, 3, 4, 5, 2)
         return x
@@ -417,6 +411,7 @@ class LSSTransform(BaseViewTransform):
     def forward(self, *args, **kwargs):
         x = super().forward(*args, **kwargs)
         x = self.downsample(x)
+
         return x
 
 
@@ -539,21 +534,6 @@ class BaseDepthTransform(BaseViewTransform):
             x = self.get_cam_feats(img, depth)
             x = self.bev_pool(x, geom)
 
-        # Save first 10 channels of bev_pool output as images
-        # save_dir = "bev_pool_outputs"
-        # os.makedirs(save_dir, exist_ok=True)
-        # bev_output = x[0].detach().cpu().float()  # take first batch, shape: (C, H, W)
-        # num_channels = min(10, bev_output.shape[0])
-        # for ch in range(num_channels):
-        #     fig, ax = plt.subplots(1, 1, figsize=(8, 8))
-        #     ax.imshow(bev_output[ch].numpy(), cmap="viridis")
-        #     ax.set_title(f"BEV Pool Output - Channel {ch}")
-        #     ax.axis("off")
-        #     plt.colorbar(ax.images[0], ax=ax, fraction=0.046, pad=0.04)
-        #     fig.savefig(os.path.join(save_dir, f"bev_pool_ch_{ch:02d}.png"), dpi=150, bbox_inches="tight")
-        #     plt.close(fig)
-        # print(f"[BaseDepthTransform] Saved {num_channels} bev_pool channel images to '{save_dir}/'")
-
         return x
 
 
@@ -610,6 +590,6 @@ class DepthLSSTransform(BaseDepthTransform):
         return x
 
     def forward(self, *args, **kwargs):
-        x = super().forward(*args, **kwargs)
-        x = self.downsample(x)
-        return x
+        bev_pool_feats = super().forward(*args, **kwargs)
+        x = self.downsample(bev_pool_feats)
+        return x, bev_pool_feats
