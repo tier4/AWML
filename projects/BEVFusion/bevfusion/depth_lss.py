@@ -1,8 +1,6 @@
 # modify from https://github.com/mit-han-lab/bevfusion
-import os
 from typing import Tuple
 
-import matplotlib.pyplot as plt
 import torch
 from mmdet3d.registry import MODELS
 from torch import nn
@@ -237,6 +235,7 @@ class BaseViewTransform(nn.Module):
         if "extra_trans" in kwargs:
             extra_trans = kwargs["extra_trans"]
             points += extra_trans.view(B, 1, 1, 1, 1, 3).repeat(1, N, 1, 1, 1, 1)
+
         return points
 
     def get_cam_feats(self, x):
@@ -297,10 +296,12 @@ class BaseViewTransform(nn.Module):
         assert x.shape[0] == geom_feats.shape[0]
 
         x = x[indices]
+
         x = bev_pool(x, geom_feats, ranks, B, self.nx[2], self.nx[0], self.nx[1], self.training)
 
         # collapse Z
         final = torch.cat(x.unbind(dim=2), 1)
+
         return final
 
     def bev_pool_precomputed(self, x, geom_feats, kept, ranks, indices):
@@ -590,6 +591,6 @@ class DepthLSSTransform(BaseDepthTransform):
         return x
 
     def forward(self, *args, **kwargs):
-        bev_pool_feats = super().forward(*args, **kwargs)
-        x = self.downsample(bev_pool_feats)
-        return x, bev_pool_feats
+        x = super().forward(*args, **kwargs)
+        x = self.downsample(x)
+        return x

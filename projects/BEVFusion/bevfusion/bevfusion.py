@@ -1,9 +1,7 @@
-import os
 from collections import OrderedDict
 from copy import deepcopy
 from typing import Dict, List, Optional, Tuple
 
-import matplotlib.pyplot as plt
 import numpy as np
 import torch
 import torch.distributed as dist
@@ -15,7 +13,7 @@ from mmengine.utils import is_list_of
 from torch import Tensor
 from torch.nn import functional as F
 
-from .ops import Voxelization, bev_pool
+from .ops import Voxelization
 
 
 @MODELS.register_module()
@@ -184,7 +182,7 @@ class BEVFusion(Base3DDetector):
 
         with torch.cuda.amp.autocast(enabled=False):
             # with torch.autocast(device_type='cuda', dtype=torch.float32):
-            x, bev_pool_feats = self.view_transform(
+            x = self.view_transform(
                 x,
                 points,
                 lidar2image,
@@ -198,7 +196,7 @@ class BEVFusion(Base3DDetector):
                 lidar_aug_matrix_inverse,
                 geom_feats,
             )
-        return x, bev_pool_feats
+        return x
 
     def extract_pts_feat(self, feats, coords, sizes, points=None) -> torch.Tensor:
         if points is not None:
@@ -342,7 +340,7 @@ class BEVFusion(Base3DDetector):
             lidar_aug_matrix = batch_inputs_dict["lidar_aug_matrix"]
             geom_feats = batch_inputs_dict["geom_feats"]
 
-            img_feature, bev_pool_feats = self.extract_img_feat(
+            img_feature = self.extract_img_feat(
                 imgs,
                 points,
                 lidar2image,
@@ -377,7 +375,7 @@ class BEVFusion(Base3DDetector):
         if self.pts_neck is not None:
             x = self.pts_neck(x)
 
-        return x, bev_pool_feats
+        return x
 
     def loss(
         self,
