@@ -32,7 +32,7 @@ onnx_config = dict(
     export_params=True,
     keep_initializers_as_inputs=False,
     opset_version=17,
-    save_file="image_backbone.onnx",
+    save_file="bevfusion_image_backbone.onnx",
     input_names=[
         "imgs",
     ],
