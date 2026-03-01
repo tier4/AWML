@@ -105,6 +105,73 @@ def calculate_size_threshold(
     return threshold
 
 
+def get_samples_excluded_by_velocity(
+    t4: Tier4,
+    lidar_channel: str,
+    max_velocity_mps: float,
+) -> set:
+    """Compute which sample indices to exclude based on velocity from pose derivative.
+
+    Velocity is estimated as (position[i] - position[i-1]) / (time[i] - time[i-1]) using
+    ego pose translation and timestamp. Vehicle speed is the magnitude of velocity (sign
+    and direction do not matter). The first sample is always excluded (no derivative).
+    Samples with speed above the threshold are excluded.
+
+    Args:
+        t4: Tier4 dataset instance for the scene.
+        lidar_channel: Name of the lidar channel used to get ego pose per sample.
+        max_velocity_mps: Maximum acceptable speed in m/s (interpreted as absolute value;
+            negative input is treated as positive). Samples with speed above this are excluded.
+            Use 0.0 to keep only stationary samples.
+
+    Returns:
+        Set of 0-based sample indices to exclude.
+    """
+    max_velocity_mps = abs(max_velocity_mps)
+    excluded: set = set()
+    samples = t4.sample
+
+    if len(samples) == 0:
+        return excluded
+
+    # First sample has no previous sample for derivative; always exclude
+    excluded.add(0)
+
+    for i in range(1, len(samples)):
+        sample_curr = samples[i]
+        sample_prev = samples[i - 1]
+
+        lidar_token_curr = sample_curr.data.get(lidar_channel)
+        lidar_token_prev = sample_prev.data.get(lidar_channel)
+        if lidar_token_curr is None or lidar_token_prev is None:
+            excluded.add(i)
+            continue
+
+        sd_curr = t4.get("sample_data", lidar_token_curr)
+        sd_prev = t4.get("sample_data", lidar_token_prev)
+        if not sd_curr.is_valid or not sd_prev.is_valid:
+            excluded.add(i)
+            continue
+
+        ep_curr = t4.get("ego_pose", sd_curr.ego_pose_token)
+        ep_prev = t4.get("ego_pose", sd_prev.ego_pose_token)
+
+        pos_curr = np.array(ep_curr.translation)
+        pos_prev = np.array(ep_prev.translation)
+        # Timestamps are in microseconds
+        dt_sec = (ep_curr.timestamp - ep_prev.timestamp) * 1e-6
+        if dt_sec <= 0:
+            excluded.add(i)
+            continue
+
+        velocity = (pos_curr - pos_prev) / dt_sec
+        speed_mps = float(np.linalg.norm(velocity))
+        if speed_mps > max_velocity_mps:
+            excluded.add(i)
+
+    return excluded
+
+
 def build_transform_matrix(rotation: Quaternion, translation: np.ndarray) -> List[List[float]]:
     """Build a 4x4 transformation matrix from rotation quaternion and translation vector.
 
@@ -411,6 +478,7 @@ def generate_scene_calib_info(
     lidar_channel: str = DEFAULT_LIDAR_CHANNEL,
     root_path: Optional[str] = None,
     filter_black_images: bool = False,
+    max_velocity_mps: Optional[float] = None,
 ) -> Tuple[List[Dict[str, Any]], int]:
     """Generate calibration info for all keyframe samples in a scene.
 
@@ -427,6 +495,8 @@ def generate_scene_calib_info(
         lidar_channel: Name of the lidar channel.
         root_path: Absolute root path of the dataset for image validation.
         filter_black_images: Whether to filter out black images.
+        max_velocity_mps: If set and > 0, exclude samples with velocity above this (m/s),
+            estimated from pose derivative. First sample per scene is always excluded.
 
     Returns:
         Tuple of (infos, next_sample_idx) where infos is a list of calibration
@@ -442,6 +512,16 @@ def generate_scene_calib_info(
     if filter_black_images and root_path is not None:
         size_threshold = calculate_size_threshold(t4, root_path, scene_root, target_cameras)
 
+    # Compute samples to exclude by velocity (first sample + those above threshold)
+    velocity_excluded: set = set()
+    if max_velocity_mps is not None:
+        velocity_excluded = get_samples_excluded_by_velocity(t4, lidar_channel, max_velocity_mps)
+        if velocity_excluded:
+            logger.info(
+                f"Velocity filter: excluding {len(velocity_excluded)} samples in scene {scene_id} "
+                f"(max_velocity_mps={max_velocity_mps})"
+            )
+
     # Compute lidar sources info (once per scene)
     lidar_sources = get_lidar_sources_info(t4)
 
@@ -450,7 +530,9 @@ def generate_scene_calib_info(
     infos: List[Dict[str, Any]] = []
     sample_idx = start_sample_idx
 
-    for sample in t4.sample:
+    for i, sample in enumerate(t4.sample):
+        if i in velocity_excluded:
+            continue
         try:
             sample_infos = build_sample_infos(
                 t4,
@@ -491,7 +573,16 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--target_cameras", nargs="*", default=None, help="Target cameras to generate info for (default: all cameras)"
     )
-    parser.add_argument("--filter", action="store_true", help="Filter out black images (all pixels are zero)")
+    parser.add_argument(
+        "--filter-black-images", action="store_true", help="Filter out black images (all pixels are zero)"
+    )
+    parser.add_argument(
+        "--filter-velocity",
+        type=float,
+        default=None,
+        metavar="MPS",
+        help="Filter out samples with velocity above threshold (m/s). Velocity is estimated from pose derivative; the first sample per scene is always excluded. Example: --filter-velocity 50.0",
+    )
     return parser.parse_args()
 
 
@@ -537,8 +628,10 @@ def main() -> None:
     logger.info(f"Lidar channel: {args.lidar_channel}")
     if args.target_cameras:
         logger.info(f"Target cameras: {args.target_cameras}")
-    if args.filter:
+    if args.filter_black_images:
         logger.info("Black image filtering is enabled")
+    if args.filter_velocity is not None:
+        logger.info(f"Velocity filtering is enabled (max {args.filter_velocity} m/s)")
 
     abs_root_path = osp.abspath(args.root_path)
 
@@ -578,7 +671,8 @@ def main() -> None:
                         args.target_cameras,
                         args.lidar_channel,
                         abs_root_path,
-                        args.filter,
+                        args.filter_black_images,
+                        args.filter_velocity,
                     )
                     split_infos[split].extend(scene_infos)
                 except ValueError as e:
