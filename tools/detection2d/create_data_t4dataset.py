@@ -46,9 +46,21 @@ def update_detection_data_annotations(
     allowed_classes: List[str],
 ) -> None:
     for ann in object_ann:
-        class_name = class_mappings[categories[ann.category_token]]
+        # Fallback for malformed FastLabel data
+        if ann.sample_data_token not in data_list:
+            print(f"Warning: {ann.sample_data_token} not found in data_list, data conversion may be errorneous")
+            continue
+
+        # Get class name
+        class_name = categories[ann.category_token]
         if class_name not in allowed_classes:
-            raise ValueError(f"Class name {class_name} is not in allowed classes {allowed_classes}")
+            class_name = class_mappings[categories[ann.category_token]]
+            if class_name == "SKIP_CLASS":
+                continue
+            if class_name not in allowed_classes:
+                raise ValueError(f"Class name {class_name} is not in allowed classes {allowed_classes}")
+
+        # Populate box
         bbox_label = allowed_classes.index(class_name)
         instance = Instance(
             bbox=ann.bbox,
