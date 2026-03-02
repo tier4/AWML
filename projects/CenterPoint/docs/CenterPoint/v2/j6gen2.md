@@ -189,6 +189,184 @@
 
 ## Release
 
+### CenterPoint J6Gen2/2.6.1
+
+<details>
+<summary> Changes  </summary>
+
+- Finetune from `CenterPoint base/2.6.0` with j6gen2 base dataset
+- Include intensity as an extra feature and Repeat Sampling Factor (RFS)
+- Train with new datatasets:
+  - `db_j6gen2_v9`
+- Overall:
+  - Performance is generally better than `CenterPoint base/2.5.0` and `CenterPoint J6Gen2/2.5.1`, especially in new locations
+</details>
+
+<details>
+<summary> Artifacts </summary>
+
+- Deployed onnx and ROS parameter files (for internal)
+	- [WebAuto](https://evaluation.tier4.jp/evaluation/mlpackages/7156b453-2861-4ae9-b135-e24e48cc9029/releases/5599b337-e151-4f11-abe3-480943d9edec?project_id=zWhWRzei)
+	- [model-zoo](https://download.autoware-ml-model-zoo.tier4.jp/autoware-ml/models/centerpoint/centerpoint/j6gen2/v2.5.1/deployment.zip)
+	- [Google drive](https://drive.google.com/file/d/1PLhgM8vAJCeI0TvOi7wsg4seWzfJTi7m/view?usp=drive_link)
+- Logs (for internal)
+	- [model-zoo](https://download.autoware-ml-model-zoo.tier4.jp/autoware-ml/models/centerpoint/centerpoint/j6gen2/v2.5.1/logs.zip)
+	- [Google drive](https://drive.google.com/file/d/1Lw_k5QUs0Wx1W-7mY-KrwtjW-eBc17pv/view?usp=drive_link)
+
+</details>
+
+<details>
+<summary> Training configs </summary>
+
+- [Config file path]()
+- Train time: NVIDIA H100 80GB * 8 * 30 epochs = 1 days 12 hours
+- Batch size: 8*16 = 128
+- Training Dataset (frames: 55,714):
+  - j6gen2: db_j6gen2_v1 + db_j6gen2_v2 + db_j6gen2_v3 + db_j6gen2_v4 + db_j6gen2_v5 + db_j6gen2_v6 + db_j6gen2_v7 + db_j6gen2_v8 (43,109 frames)
+  - largebus: db_largebus_v1 + db_largebus_v2 (12,605 frames)
+
+</details>
+
+<details>
+<summary> Evaluation </summary>
+
+**Base Datasets (5,179 frames)**:
+
+  - j6gen2 (3,951 frames): db_j6gen2_v1 + db_j6gen2_v2 + db_j6gen2_v3 + db_j6gen2_v4 + db_j6gen2_v5 + db_j6gen2_v6 + db_j6gen2_v7 + db_j6gen2_v8 + db_j6gen2_v9
+  - largebus (1,228 frames): db_largebus_v1 + db_largebus_v2 + db_largebus_v3
+
+**Total BEV Center Distance mAP (eval range = 0.0 - 50.0m): 0.8465**
+
+| class_name | Count | mAP | AP@0.5/1.0/2.0/4.0 | max_f1@0.5/1.0/2.0/4.0 | Optimal_conf@0.5/1.0/2.0/4.0 |
+| :--- | :--- | :--- | :--- | :--- | :--- |
+| **car** | 64,520 | 0.9473 | 0.9174 / 0.9555 / 0.9578 / 0.9586 | 0.9286 / 0.9532 / 0.9583 / 0.9591 | 0.4267 / 0.3893 / 0.3609 / 0.3609 |
+| **truck** | 6,947 | 0.8193 | 0.7199 / 0.8304 / 0.8559 / 0.8712 | 0.7871 / 0.8403 / 0.8655 / 0.8781 | 0.4232 / 0.4023 / 0.3821 / 0.3683 |
+| **bus** | 2,275 | 0.9196 | 0.8561 / 0.9290 / 0.9465 / 0.9469 | 0.8808 / 0.9291 / 0.9455 / 0.9460 | 0.5055 / 0.3693 / 0.3827 / 0.3827 |
+| **bicycle** | 1,379 | 0.8016 | 0.7795 / 0.7977 / 0.8142 / 0.8151 | 0.8611 / 0.8704 / 0.8719 / 0.8719 | 0.4786 / 0.4786 / 0.4786 / 0.4786 |
+| **pedestrian** | 19,421 | 0.7445 | 0.7203 / 0.7379 / 0.7492 / 0.7706 | 0.7840 / 0.7905 / 0.7942 / 0.7996 | 0.4337 / 0.4337 / 0.4280 / 0.4280 |
+
+**Total BEV Center Distance mAP (eval range = 50.0 - 90.0m): 0.6560**
+
+| class_name | Count | mAP | AP@0.5/1.0/2.0/4.0 | max_f1@0.5/1.0/2.0/4.0 | Optimal_conf@0.5/1.0/2.0/4.0 |
+| :--- | :--- | :--- | :--- | :--- | :--- |
+| **car** | 58,562 | 0.8103 | 0.7319 / 0.8183 / 0.8403 / 0.8506 | 0.7935 / 0.8422 / 0.8597 / 0.8639 | 0.4078 / 0.3597 / 0.3501 / 0.3456 |
+| **truck** | 5,101 | 0.6117 | 0.4765 / 0.6147 / 0.6647 / 0.6909 | 0.6037 / 0.6882 / 0.7319 / 0.7501 | 0.3751 / 0.3479 / 0.3481 / 0.3481 |
+| **bus** | 2,078 | 0.7508 | 0.6110 / 0.7572 / 0.8093 / 0.8256 | 0.6898 / 0.7781 / 0.8260 / 0.8346 | 0.4799 / 0.3950 / 0.3589 / 0.3584 |
+| **bicycle** | 758 | 0.5245 | 0.4535 / 0.5404 / 0.5511 / 0.5531 | 0.6299 / 0.6741 / 0.6800 / 0.6800 | 0.3801 / 0.3415 / 0.3415 / 0.3415 |
+| **pedestrian** | 10,283 | 0.5827 | 0.5576 / 0.5772 / 0.5897 / 0.6066 | 0.6566 / 0.6648 / 0.6684 / 0.6764 | 0.4178 / 0.4178 / 0.4032 / 0.3851 |
+
+**Total BEV Center Distance mAP (eval range = 90.0 - 121.0m): 0.4152**
+
+| class_name | Count | mAP | AP@0.5/1.0/2.0/4.0 | max_f1@0.5/1.0/2.0/4.0 | Optimal_conf@0.5/1.0/2.0/4.0 |
+| :--- | :--- | :--- | :--- | :--- | :--- |
+| **car** | 20,371 | 0.5837 | 0.4893 / 0.5868 / 0.6226 / 0.6361 | 0.6206 / 0.6785 / 0.7043 / 0.7118 | 0.3629 / 0.3372 / 0.3195 / 0.3195 |
+| **truck** | 3,172 | 0.4235 | 0.2313 / 0.4091 / 0.5016 / 0.5520 | 0.4159 / 0.5372 / 0.6063 / 0.6504 | 0.3769 / 0.3211 / 0.3373 / 0.3374 |
+| **bus** | 376 | 0.3537 | 0.1950 / 0.3539 / 0.4269 / 0.4391 | 0.3911 / 0.5120 / 0.5622 / 0.5758 | 0.4537 / 0.3145 / 0.3786 / 0.3786 |
+| **bicycle** | 155 | 0.3432 | 0.2689 / 0.3480 / 0.3779 / 0.3779 | 0.4755 / 0.5358 / 0.5512 / 0.5512 | 0.4093 / 0.4093 / 0.4329 / 0.4329 |
+| **pedestrian** | 2,794 | 0.3719 | 0.3590 / 0.3666 / 0.3759 / 0.3863 | 0.5188 / 0.5229 / 0.5275 / 0.5319 | 0.3749 / 0.3532 / 0.3749 / 0.3749 |
+
+**Total BEV Center Distance mAP (eval range = 0.0 - 121.0m): 0.7426**
+
+| class_name | Count | mAP | AP@0.5/1.0/2.0/4.0 | max_f1@0.5/1.0/2.0/4.0 | Optimal_conf@0.5/1.0/2.0/4.0 |
+| :--- | :--- | :--- | :--- | :--- | :--- |
+| **car** | 143,453 | 0.8533 | 0.7946 / 0.8592 / 0.8752 / 0.8841 | 0.8363 / 0.8747 / 0.8873 / 0.8901 | 0.4077 / 0.3705 / 0.3594 / 0.3501 |
+| **truck** | 15,220 | 0.6800 | 0.5477 / 0.6838 / 0.7323 / 0.7560 | 0.6584 / 0.7332 / 0.7731 / 0.7945 | 0.4053 / 0.3748 / 0.3703 / 0.3472 |
+| **bus** | 4,729 | 0.8144 | 0.7090 / 0.8247 / 0.8568 / 0.8671 | 0.7707 / 0.8377 / 0.8707 / 0.8750 | 0.4792 / 0.3950 / 0.3698 / 0.3698 |
+| **bicycle** | 2,292 | 0.6907 | 0.6508 / 0.6931 / 0.7090 / 0.7099 | 0.7654 / 0.7876 / 0.7910 / 0.7910 | 0.4362 / 0.4362 / 0.4362 / 0.4362 |
+| **pedestrian** | 32,498 | 0.6745 | 0.6521 / 0.6675 / 0.6804 / 0.6978 | 0.7223 / 0.7292 / 0.7330 / 0.7390 | 0.4165 / 0.4165 / 0.4165 / 0.4165 |
+
+---
+
+**LargeBus**: db_largebus_v1 + db_largebus_v2 + db_largebus_v3 (1,228 frames)  
+
+**Total BEV Center Distance mAP (eval range = 0.0 - 50.0m): 0.8400**
+
+| class_name | Count | mAP | AP@0.5/1.0/2.0/4.0 | max_f1@0.5/1.0/2.0/4.0 | Optimal_conf@0.5/1.0/2.0/4.0 |
+| :--- | :--- | :--- | :--- | :--- | :--- |
+| **car** | 14,883 | 0.9589 | 0.9293 / 0.9673 / 0.9690 / 0.9698 | 0.9394 / 0.9632 / 0.9667 / 0.9675 | 0.3785 / 0.3785 / 0.3669 / 0.3669 |
+| **truck** | 1,193 | 0.8414 | 0.7609 / 0.8503 / 0.8730 / 0.8815 | 0.8231 / 0.8755 / 0.8941 / 0.8941 | 0.4168 / 0.4018 / 0.4018 / 0.4018 |
+| **bus** | 336 | 0.8803 | 0.7821 / 0.8873 / 0.9260 / 0.9260 | 0.8349 / 0.9127 / 0.9403 / 0.9403 | 0.5058 / 0.4651 / 0.4651 / 0.4651 |
+| **bicycle** | 740 | 0.7693 | 0.7365 / 0.7618 / 0.7892 / 0.7895 | 0.8357 / 0.8487 / 0.8516 / 0.8516 | 0.4488 / 0.4488 / 0.4488 / 0.4488 |
+| **pedestrian** | 5,059 | 0.7503 | 0.7295 / 0.7446 / 0.7540 / 0.7730 | 0.7984 / 0.8022 / 0.8042 / 0.8089 | 0.4707 / 0.4676 / 0.4304 / 0.4096 |
+
+**Total BEV Center Distance mAP (eval range = 50.0 - 90.0m): 0.7084**
+
+| class_name | Count | mAP | AP@0.5/1.0/2.0/4.0 | max_f1@0.5/1.0/2.0/4.0 | Optimal_conf@0.5/1.0/2.0/4.0 |
+| :--- | :--- | :--- | :--- | :--- | :--- |
+| **car** | 10,994 | 0.8788 | 0.8079 / 0.8886 / 0.9053 / 0.9133 | 0.8410 / 0.8848 / 0.8971 / 0.8989 | 0.3960 / 0.3957 / 0.3358 / 0.3358 |
+| **truck** | 1,011 | 0.6753 | 0.5558 / 0.6842 / 0.7251 / 0.7363 | 0.6715 / 0.7357 / 0.7633 / 0.7694 | 0.3596 / 0.3596 / 0.3481 / 0.3361 |
+| **bus** | 143 | 0.8829 | 0.8238 / 0.8966 / 0.9020 / 0.9092 | 0.8339 / 0.8881 / 0.9085 / 0.9085 | 0.4181 / 0.4181 / 0.4181 / 0.4181 |
+| **bicycle** | 463 | 0.4908 | 0.3946 / 0.5106 / 0.5261 / 0.5321 | 0.6178 / 0.6692 / 0.6776 / 0.6776 | 0.3415 / 0.3415 / 0.3040 / 0.3040 |
+| **pedestrian** | 3,754 | 0.6144 | 0.5966 / 0.6089 / 0.6169 / 0.6351 | 0.7034 / 0.7084 / 0.7105 / 0.7184 | 0.3641 / 0.3641 / 0.3641 / 0.3641 |
+
+**Total BEV Center Distance mAP (eval range = 90.0 - 121.0m): 0.4939**
+
+| class_name | Count | mAP | AP@0.5/1.0/2.0/4.0 | max_f1@0.5/1.0/2.0/4.0 | Optimal_conf@0.5/1.0/2.0/4.0 |
+| :--- | :--- | :--- | :--- | :--- | :--- |
+| **car** | 3,018 | 0.6761 | 0.5922 / 0.6870 / 0.7080 / 0.7172 | 0.6886 / 0.7387 / 0.7563 / 0.7618 | 0.3999 / 0.3508 / 0.3508 / 0.3542 |
+| **truck** | 602 | 0.5818 | 0.3836 / 0.6007 / 0.6603 / 0.6825 | 0.5388 / 0.6604 / 0.7240 / 0.7428 | 0.3785 / 0.3146 / 0.3592 / 0.3592 |
+| **bus** | 60 | 0.4930 | 0.2325 / 0.5471 / 0.5961 / 0.5961 | 0.4719 / 0.6809 / 0.6990 / 0.6990 | 0.5795 / 0.5144 / 0.4290 / 0.4290 |
+| **bicycle** | 85 | 0.2799 | 0.1738 / 0.2970 / 0.3243 / 0.3243 | 0.3976 / 0.4969 / 0.5217 / 0.5217 | 0.3084 / 0.3218 / 0.3218 / 0.3218 |
+| **pedestrian** | 1,121 | 0.4386 | 0.4214 / 0.4334 / 0.4415 / 0.4582 | 0.5726 / 0.5777 / 0.5801 / 0.5850 | 0.3807 / 0.3807 / 0.3585 / 0.3585 |
+
+**Total BEV Center Distance mAP (eval range = 0.0 - 121.0m): 0.7601**
+
+| class_name | Count | mAP | AP@0.5/1.0/2.0/4.0 | max_f1@0.5/1.0/2.0/4.0 | Optimal_conf@0.5/1.0/2.0/4.0 |
+| :--- | :--- | :--- | :--- | :--- | :--- |
+| **car** | 28,895 | 0.9083 | 0.8584 / 0.9144 / 0.9267 / 0.9338 | 0.8799 / 0.9137 / 0.9213 / 0.9228 | 0.3978 / 0.3959 / 0.3704 / 0.3503 |
+| **truck** | 2,806 | 0.7345 | 0.6158 / 0.7479 / 0.7814 / 0.7927 | 0.7125 / 0.7821 / 0.8140 / 0.8202 | 0.4175 / 0.3596 / 0.3623 / 0.3623 |
+| **bus** | 539 | 0.8380 | 0.7329 / 0.8522 / 0.8805 / 0.8864 | 0.7980 / 0.8806 / 0.9074 / 0.9074 | 0.5177 / 0.4575 / 0.4575 / 0.4575 |
+| **bicycle** | 1,288 | 0.6463 | 0.5898 / 0.6512 / 0.6718 / 0.6723 | 0.7313 / 0.7639 / 0.7727 / 0.7735 | 0.3618 / 0.3527 / 0.3415 / 0.3415 |
+| **pedestrian** | 9,934 | 0.6736 | 0.6553 / 0.6681 / 0.6766 / 0.6946 | 0.7367 / 0.7418 / 0.7442 / 0.7503 | 0.3847 / 0.3847 / 0.3798 / 0.3798 |
+
+---
+
+**J6Gen2**: db_j6gen2_v1 + db_j6gen2_v2 + db_j6gen2_v3 + db_j6gen2_v4 + db_j6gen2_v5 + db_j6gen2_v6 + db_j6gen2_v7 + db_j6gen2_v8 + db_j6gen2_v9 (3,951 frames)
+
+**Total BEV Center Distance mAP (eval range = 0.0 - 50.0m): 0.8465**
+
+| class_name | Count | mAP | AP@0.5/1.0/2.0/4.0 | max_f1@0.5/1.0/2.0/4.0 | Optimal_conf@0.5/1.0/2.0/4.0 |
+| :--- | :--- | :--- | :--- | :--- | :--- |
+| **car** | 64,520 | 0.9473 | 0.9174 / 0.9555 / 0.9578 / 0.9586 | 0.9286 / 0.9532 / 0.9583 / 0.9591 | 0.4267 / 0.3893 / 0.3609 / 0.3609 |
+| **truck** | 6,947 | 0.8193 | 0.7199 / 0.8304 / 0.8559 / 0.8712 | 0.7871 / 0.8403 / 0.8655 / 0.8781 | 0.4232 / 0.4023 / 0.3821 / 0.3683 |
+| **bus** | 2,275 | 0.9196 | 0.8561 / 0.9290 / 0.9465 / 0.9469 | 0.8808 / 0.9291 / 0.9455 / 0.9460 | 0.5055 / 0.3693 / 0.3827 / 0.3827 |
+| **bicycle** | 1,379 | 0.8016 | 0.7795 / 0.7977 / 0.8142 / 0.8151 | 0.8611 / 0.8704 / 0.8719 / 0.8719 | 0.4786 / 0.4786 / 0.4786 / 0.4786 |
+| **pedestrian** | 19,421 | 0.7445 | 0.7203 / 0.7379 / 0.7492 / 0.7706 | 0.7840 / 0.7905 / 0.7942 / 0.7996 | 0.4337 / 0.4337 / 0.4280 / 0.4280 |
+
+**Total BEV Center Distance mAP (eval range = 50.0 - 90.0m): 0.6560**
+
+| class_name | Count | mAP | AP@0.5/1.0/2.0/4.0 | max_f1@0.5/1.0/2.0/4.0 | Optimal_conf@0.5/1.0/2.0/4.0 |
+| :--- | :--- | :--- | :--- | :--- | :--- |
+| **car** | 58,562 | 0.8103 | 0.7319 / 0.8183 / 0.8403 / 0.8506 | 0.7935 / 0.8422 / 0.8597 / 0.8639 | 0.4078 / 0.3597 / 0.3501 / 0.3456 |
+| **truck** | 5,101 | 0.6117 | 0.4765 / 0.6147 / 0.6647 / 0.6909 | 0.6037 / 0.6882 / 0.7319 / 0.7501 | 0.3751 / 0.3479 / 0.3481 / 0.3481 |
+| **bus** | 2,078 | 0.7508 | 0.6110 / 0.7572 / 0.8093 / 0.8256 | 0.6898 / 0.7781 / 0.8260 / 0.8346 | 0.4799 / 0.3950 / 0.3589 / 0.3584 |
+| **bicycle** | 758 | 0.5245 | 0.4535 / 0.5404 / 0.5511 / 0.5531 | 0.6299 / 0.6741 / 0.6800 / 0.6800 | 0.3801 / 0.3415 / 0.3415 / 0.3415 |
+| **pedestrian** | 10,283 | 0.5827 | 0.5576 / 0.5772 / 0.5897 / 0.6066 | 0.6566 / 0.6648 / 0.6684 / 0.6764 | 0.4178 / 0.4178 / 0.4032 / 0.3851 |
+
+**Total BEV Center Distance mAP (eval range = 90.0 - 121.0m): 0.4152**
+
+| class_name | Count | mAP | AP@0.5/1.0/2.0/4.0 | max_f1@0.5/1.0/2.0/4.0 | Optimal_conf@0.5/1.0/2.0/4.0 |
+| :--- | :--- | :--- | :--- | :--- | :--- |
+| **car** | 20,371 | 0.5837 | 0.4893 / 0.5868 / 0.6226 / 0.6361 | 0.6206 / 0.6785 / 0.7043 / 0.7118 | 0.3629 / 0.3372 / 0.3195 / 0.3195 |
+| **truck** | 3,172 | 0.4235 | 0.2313 / 0.4091 / 0.5016 / 0.5520 | 0.4159 / 0.5372 / 0.6063 / 0.6504 | 0.3769 / 0.3211 / 0.3373 / 0.3374 |
+| **bus** | 376 | 0.3537 | 0.1950 / 0.3539 / 0.4269 / 0.4391 | 0.3911 / 0.5120 / 0.5622 / 0.5758 | 0.4537 / 0.3145 / 0.3786 / 0.3786 |
+| **bicycle** | 155 | 0.3432 | 0.2689 / 0.3480 / 0.3779 / 0.3779 | 0.4755 / 0.5358 / 0.5512 / 0.5512 | 0.4093 / 0.4093 / 0.4329 / 0.4329 |
+| **pedestrian** | 2,794 | 0.3719 | 0.3590 / 0.3666 / 0.3759 / 0.3863 | 0.5188 / 0.5229 / 0.5275 / 0.5319 | 0.3749 / 0.3532 / 0.3749 / 0.3749 |
+
+**Total BEV Center Distance mAP (eval range = 0.0 - 121.0m): 0.7426**
+
+| class_name | Count | mAP | AP@0.5/1.0/2.0/4.0 | max_f1@0.5/1.0/2.0/4.0 | Optimal_conf@0.5/1.0/2.0/4.0 |
+| :--- | :--- | :--- | :--- | :--- | :--- |
+| **car** | 143,453 | 0.8533 | 0.7946 / 0.8592 / 0.8752 / 0.8841 | 0.8363 / 0.8747 / 0.8873 / 0.8901 | 0.4077 / 0.3705 / 0.3594 / 0.3501 |
+| **truck** | 15,220 | 0.6800 | 0.5477 / 0.6838 / 0.7323 / 0.7560 | 0.6584 / 0.7332 / 0.7731 / 0.7945 | 0.4053 / 0.3748 / 0.3703 / 0.3472 |
+| **bus** | 4,729 | 0.8144 | 0.7090 / 0.8247 / 0.8568 / 0.8671 | 0.7707 / 0.8377 / 0.8707 / 0.8750 | 0.4792 / 0.3950 / 0.3698 / 0.3698 |
+| **bicycle** | 2,292 | 0.6907 | 0.6508 / 0.6931 / 0.7090 / 0.7099 | 0.7654 / 0.7876 / 0.7910 / 0.7910 | 0.4362 / 0.4362 / 0.4362 / 0.4362 |
+| **pedestrian** | 32,498 | 0.6745 | 0.6521 / 0.6675 / 0.6804 / 0.6978 | 0.7223 / 0.7292 / 0.7330 / 0.7390 | 0.4165 / 0.4165 / 0.4165 / 0.4165 |
+
+</details>
+
+---
+
 ### CenterPoint J6Gen2/2.5.1
 
 <details>
@@ -567,37 +745,50 @@
 ---
 
 ### CenterPoint J6Gen2/2.1.1
-- Changes:
-  - Finetune from `CenterPoint base/2.1.0`
-	- Include intensity as an extra feature
 
+<details>
+<summary> Changes  </summary>
+
+- Finetune from `CenterPoint base/2.1.0`
+- Include intensity as an extra feature
 - Overall:
 	- Similar performance compared to `CenterPoint J6Gen2/2.0.1`
 
+</details>
+
 <details>
-<summary> The link of data and evaluation result </summary>
+<summary> Artifacts </summary>
 
-- Model
-  - Training dataset: DB J6 Gen2 v1.0 + DB J6 Gen2 v2.0 + DB J6 Gen2 V4.0 + DB LargeBus v1.0 (total frames: 20,777)
-  - [Config file path](https://github.com/tier4/AWML/blob/69aba0d001fd26282880a7a3e7622b89115042de/autoware_ml/configs/detection3d/dataset/t4dataset/gen2_base.py)
-  - Deployed onnx model and ROS parameter files [[WebAuto (for internal)]](https://evaluation.tier4.jp/evaluation/mlpackages/7156b453-2861-4ae9-b135-e24e48cc9029/releases/ae4e48e2-d9ed-4db0-8ee9-daf1f566e8f1?project_id=zWhWRzei)
-  - Deployed onnx and ROS parameter files [[model-zoo]]
-    - [detection_class_remapper.param.yaml](https://download.autoware-ml-model-zoo.tier4.jp/autoware-ml/models/centerpoint/centerpoint/j6gen2/v2.1.1/detection_class_remapper.param.yaml)
-    - [centerpoint_ml_package.param.yaml](https://download.autoware-ml-model-zoo.tier4.jp/autoware-ml/models/centerpoint/centerpoint/j6gen2/v2.1.1/centerpoint_ml_package.param.yaml)
-    - [deploy_metadata.yaml](https://download.autoware-ml-model-zoo.tier4.jp/autoware-ml/models/centerpoint/centerpoint/j6gen2/v2.0.1/deploy_metadata.yaml)
-    - [pts_voxel_encoder_centerpoint.onnx](https://download.autoware-ml-model-zoo.tier4.jp/autoware-ml/models/centerpoint/centerpoint/j6gen2/v2.1.1/pts_voxel_encoder_centerpoint.onnx)
-    - [pts_backbone_neck_head_centerpoint.onnx](https://download.autoware-ml-model-zoo.tier4.jp/autoware-ml/models/centerpoint/centerpoint/j6gen2/v2.1.1/pts_backbone_neck_head_centerpoint.onnx)
-  - Training results [[Google drive (for internal)]](https://drive.google.com/drive/u/0/folders/1Kie3hE91QgjemJlv0WlK_WHO37q47Mi1)
-  - Training results [model-zoo]
-    - [logs.zip](https://download.autoware-ml-model-zoo.tier4.jp/autoware-ml/models/centerpoint/centerpoint/j6gen2/v2.1.1/logs.zip)
-    - [checkpoint_best.pth](https://download.autoware-ml-model-zoo.tier4.jp/autoware-ml/models/centerpoint/centerpoint/j6gen2/v2.1.1/best_NuScenes_metric_T4Metric_mAP_epoch_28.pth)
-    - [config.py](https://download.autoware-ml-model-zoo.tier4.jp/autoware-ml/models/centerpoint/centerpoint/j6gen2/v2.1.1/second_secfpn_4xb16_121m_j6gen2.py)
-  - Train time: NVIDIA H100 80GB * 4 * 30 epochs = 12 hours
-  - Batch size: 4*16 = 64
+- Deployed onnx model and ROS parameter files [[WebAuto (for internal)]](https://evaluation.tier4.jp/evaluation/mlpackages/7156b453-2861-4ae9-b135-e24e48cc9029/releases/ae4e48e2-d9ed-4db0-8ee9-daf1f566e8f1?project_id=zWhWRzei)
+- Deployed onnx and ROS parameter files [[model-zoo]]
+	- [detection_class_remapper.param.yaml](https://download.autoware-ml-model-zoo.tier4.jp/autoware-ml/models/centerpoint/centerpoint/j6gen2/v2.1.1/detection_class_remapper.param.yaml)
+	- [centerpoint_ml_package.param.yaml](https://download.autoware-ml-model-zoo.tier4.jp/autoware-ml/models/centerpoint/centerpoint/j6gen2/v2.1.1/centerpoint_ml_package.param.yaml)
+	- [deploy_metadata.yaml](https://download.autoware-ml-model-zoo.tier4.jp/autoware-ml/models/centerpoint/centerpoint/j6gen2/v2.0.1/deploy_metadata.yaml)
+	- [pts_voxel_encoder_centerpoint.onnx](https://download.autoware-ml-model-zoo.tier4.jp/autoware-ml/models/centerpoint/centerpoint/j6gen2/v2.1.1/pts_voxel_encoder_centerpoint.onnx)
+	- [pts_backbone_neck_head_centerpoint.onnx](https://download.autoware-ml-model-zoo.tier4.jp/autoware-ml/models/centerpoint/centerpoint/j6gen2/v2.1.1/pts_backbone_neck_head_centerpoint.onnx)
+- Training results [[Google drive (for internal)]](https://drive.google.com/drive/u/0/folders/1Kie3hE91QgjemJlv0WlK_WHO37q47Mi1)
+- Training results [model-zoo]
+	- [logs.zip](https://download.autoware-ml-model-zoo.tier4.jp/autoware-ml/models/centerpoint/centerpoint/j6gen2/v2.1.1/logs.zip)
+	- [checkpoint_best.pth](https://download.autoware-ml-model-zoo.tier4.jp/autoware-ml/models/centerpoint/centerpoint/j6gen2/v2.1.1/best_NuScenes_metric_T4Metric_mAP_epoch_28.pth)
+	- [config.py](https://download.autoware-ml-model-zoo.tier4.jp/autoware-ml/models/centerpoint/centerpoint/j6gen2/v2.1.1/second_secfpn_4xb16_121m_j6gen2.py)
 
-- Evaluation
-  - db_j6gen2_v1 + db_j6gen2_v2 + db_j6gen2_v4 + + db_largebus_v1 (total frames: 1,761):
-  - Total mAP (eval range = 120m): 0.7410
+</details>
+
+<details>
+<summary> Training configs </summary>
+
+- [Config file path](https://github.com/tier4/AWML/blob/69aba0d001fd26282880a7a3e7622b89115042de/autoware_ml/configs/detection3d/dataset/t4dataset/gen2_base.py)
+- Train time: NVIDIA H100 80GB * 4 * 30 epochs = 12 hours
+- Batch size: 4*16 = 64
+- Training dataset: DB J6 Gen2 v1.0 + DB J6 Gen2 v2.0 + DB J6 Gen2 V4.0 + DB LargeBus v1.0 (total frames: 20,777)
+
+</details>
+
+<details>
+<summary> Evaluation </summary>
+
+- db_j6gen2_v1 + db_j6gen2_v2 + db_j6gen2_v4 + + db_largebus_v1 (total frames: 1,761):
+- Total mAP (eval range = 120m): 0.7410
 
 | class_name | Count    | mAP    | AP@0.5m | AP@1.0m | AP@2.0m | AP@4.0m |
 | -----------| -------  | ------ | ------- | ------- | ------- | ------- |
@@ -606,6 +797,8 @@
 | bus        |   1,559  | 84.9 | 80.4    | 84.3    | 87.5    | 87.5    |
 | bicycle    |   1,057  | 70.6 | 67.3    | 71.0    | 72.1    | 72.1    |
 | pedestrian |  10,375  | 67.2 | 65.6    | 66.7    | 67.5    | 69.1    |
+
+---
 
 - db_largebus_v1 (total frames: 604):
   - Total mAP (eval range = 120m): 0.75
@@ -618,6 +811,8 @@
 | bicycle    |    724   | 67.5 | 63.1    | 67.9    | 69.1    | 69.9    |
 | pedestrian |  3,916   | 67.0 | 65.2    | 66.6    | 67.3    | 68.9    |
 
+---
+
 - db_j6gen2_v1 + db_j6gen2_v2 +db_j6gen2_v4 (total frames: 1,157):
   - Total mAP (eval range = 120m): 0.7460
 
@@ -629,13 +824,43 @@
 | bicycle     |    333  | 79.1 | 78.2    | 79.4    | 79.4    | 79.4    |
 | pedestrian  |  6,459  | 67.4 | 65.7    | 66.7    | 67.7    | 69.4    |
 
+---
+
+- db_largebus_v1 (total frames: 604):
+- Total mAP (eval range = 120m): 0.7467
+
+| class_name | Count    | mAP  | AP@0.5m | AP@1.0m | AP@2.0m | AP@4.0m |
+| ----       | -------  | ---- | ---- | ---- | ---- | ---- |
+| car        |  13,831  | 90.2 | 85.1    | 91.1    | 92.3    | 92.5    |
+| truck      |  2,137   | 70.6 | 55.1    | 72.7    | 76.1    | 78.4    |
+| bus        |     95   | 78.2 | 74.0    | 78.1    | 80.3    | 80.3    |
+| bicycle    |    724   | 66.5 | 59.3    | 68.1    | 69.4    | 69.4    |
+| pedestrian |  3,916   | 67.8 | 66.1    | 67.3    | 68.2    | 69.6    |
+
+---
+
+- db_j6gen2_v1 + db_j6gen2_v2 + db_j6gen2_v2 (total frames: 1,157):
+- Total mAP (eval range = 120m): 0.7524
+
+| class_name | Count   | mAP  | AP@0.5m | AP@1.0m | AP@2.0m | AP@4.0m |
+| ----       | ------  | ---- | ---- | ---- | ---- | ---- |
+| car        | 44,008  | 84.7 | 78.4    | 85.0    | 87.3    | 88.3    |
+| truck      |  2,471  | 57.4 | 46.6    | 57.6    | 60.0    | 65.4    |
+| bus        |  1,464  | 85.5 | 81.8    | 84.5    | 87.8    | 87.9    |
+| bicycle    |    333  | 80.7 | 80.4    | 80.8    | 80.8    | 80.8    |
+| pedestrian |  6,459  | 67.8 | 66.4    | 67.1    | 68.0    | 69.7    |
+
 </details>
 
-### CenterPoint J6Gen2/2.0.1
-- Changes:
-  - Finetune from `CenterPoint base/2.0.0`
-	- Include intensity as an extra feature
+---
 
+### CenterPoint J6Gen2/2.0.1
+
+<details>
+<summary> Changes  </summary>
+
+- Finetune from `CenterPoint base/2.0.0`
+- Include intensity as an extra feature
 - Overall:
   - Better than `CenterPoint base/v2.0.0` even when finetuning from `J6Gen2`
   - `CenterPoint J6Gen2/2.0.1` performs better overall, with improvements across most classes
@@ -644,30 +869,41 @@
   - Bicycle detection slightly drops in 2.0.1 but by a negligible margin (`−0.21 AP`).
   - `J6Gen2/2.0.1` is a clear upgrade over `J6Gen2/1.7.1` in terms of detection accuracy, especially for trucks and pedestrians, with only a very minor tradeoff in bicycle detection
 
+</details>
+
 <details>
-<summary> The link of data and evaluation result </summary>
+<summary> Artifacts </summary>
 
-- Model
-  - Training dataset: DB J6 Gen2 v1.0 + DB J6 Gen2 v2.0 + DB J6 Gen2 V4.0 + DB LargeBus v1.0 (total frames: 20,777)
-  - [Config file path](https://github.com/tier4/AWML/blob/b1f498a6802f68c36a1d02b9780f72e25a413ee3/autoware_ml/configs/detection3d/dataset/t4dataset/gen2_base.py)
-  - Deployed onnx model and ROS parameter files [[WebAuto (for internal)]](https://evaluation.tier4.jp/evaluation/mlpackages/7156b453-2861-4ae9-b135-e24e48cc9029/releases/2ea64514-ad8b-4943-830f-5bd570988828?project_id=zWhWRzei)
-  - Deployed onnx and ROS parameter files [[model-zoo]]
-    - [detection_class_remapper.param.yaml](https://download.autoware-ml-model-zoo.tier4.jp/autoware-ml/models/centerpoint/centerpoint/j6gen2/v2.0.1/detection_class_remapper.param.yaml)
-    - [centerpoint_ml_package.param.yaml](https://download.autoware-ml-model-zoo.tier4.jp/autoware-ml/models/centerpoint/centerpoint/j6gen2/v2.0.1/centerpoint_ml_package.param.yaml)
-    - [deploy_metadata.yaml](https://download.autoware-ml-model-zoo.tier4.jp/autoware-ml/models/centerpoint/centerpoint/j6gen2/v2.0.1/deploy_metadata.yaml)
-    - [pts_voxel_encoder_centerpoint.onnx](https://download.autoware-ml-model-zoo.tier4.jp/autoware-ml/models/centerpoint/centerpoint/j6gen2/v2.0.1/pts_voxel_encoder.onnx)
-    - [pts_backbone_neck_head_centerpoint.onnx](https://download.autoware-ml-model-zoo.tier4.jp/autoware-ml/models/centerpoint/centerpoint/j6gen2/v2.0.1/pts_backbone_neck_head.onnx)
-  - Training results [[Google drive (for internal)]](https://drive.google.com/drive/folders/1x2LUu1hyoeroOdRtTxAPQsKLXDi2TuAc?usp=drive_link)
-  - Training results [model-zoo]
-    - [logs.zip](https://download.autoware-ml-model-zoo.tier4.jp/autoware-ml/models/centerpoint/centerpoint/j6gen2/v2.0.1/logs.zip)
-    - [checkpoint_best.pth](https://download.autoware-ml-model-zoo.tier4.jp/autoware-ml/models/centerpoint/centerpoint/j6gen2/v2.0.1/best_NuScenes_metric_T4Metric_mAP_epoch_28.pth)
-    - [config.py](https://download.autoware-ml-model-zoo.tier4.jp/autoware-ml/models/centerpoint/centerpoint/j6gen2/v2.0.1/second_secfpn_4xb16_121m_j6gen2.py)
-  - Train time: NVIDIA H100 80GB * 4 * 30 epochs = 12 hours
-  - Batch size: 4*16 = 64
+- Deployed onnx model and ROS parameter files [[WebAuto (for internal)]](https://evaluation.tier4.jp/evaluation/mlpackages/7156b453-2861-4ae9-b135-e24e48cc9029/releases/2ea64514-ad8b-4943-830f-5bd570988828?project_id=zWhWRzei)
+- Deployed onnx and ROS parameter files [[model-zoo]]
+	- [detection_class_remapper.param.yaml](https://download.autoware-ml-model-zoo.tier4.jp/autoware-ml/models/centerpoint/centerpoint/j6gen2/v2.0.1/detection_class_remapper.param.yaml)
+	- [centerpoint_ml_package.param.yaml](https://download.autoware-ml-model-zoo.tier4.jp/autoware-ml/models/centerpoint/centerpoint/j6gen2/v2.0.1/centerpoint_ml_package.param.yaml)
+	- [deploy_metadata.yaml](https://download.autoware-ml-model-zoo.tier4.jp/autoware-ml/models/centerpoint/centerpoint/j6gen2/v2.0.1/deploy_metadata.yaml)
+	- [pts_voxel_encoder_centerpoint.onnx](https://download.autoware-ml-model-zoo.tier4.jp/autoware-ml/models/centerpoint/centerpoint/j6gen2/v2.0.1/pts_voxel_encoder.onnx)
+	- [pts_backbone_neck_head_centerpoint.onnx](https://download.autoware-ml-model-zoo.tier4.jp/autoware-ml/models/centerpoint/centerpoint/j6gen2/v2.0.1/pts_backbone_neck_head.onnx)
+- Training results [[Google drive (for internal)]](https://drive.google.com/drive/folders/1x2LUu1hyoeroOdRtTxAPQsKLXDi2TuAc?usp=drive_link)
+- Training results [model-zoo]
+	- [logs.zip](https://download.autoware-ml-model-zoo.tier4.jp/autoware-ml/models/centerpoint/centerpoint/j6gen2/v2.0.1/logs.zip)
+	- [checkpoint_best.pth](https://download.autoware-ml-model-zoo.tier4.jp/autoware-ml/models/centerpoint/centerpoint/j6gen2/v2.0.1/best_NuScenes_metric_T4Metric_mAP_epoch_28.pth)
+	- [config.py](https://download.autoware-ml-model-zoo.tier4.jp/autoware-ml/models/centerpoint/centerpoint/j6gen2/v2.0.1/second_secfpn_4xb16_121m_j6gen2.py)
 
-- Evaluation
-  - db_j6gen2_v1 + db_j6gen2_v2 + db_j6gen2_v4 + + db_largebus_v1 (total frames: 1,761):
-  - Total mAP (eval range = 120m): 0.7401
+</details>
+
+<details>
+<summary> Training configs </summary>
+
+- [Config file path](https://github.com/tier4/AWML/blob/b1f498a6802f68c36a1d02b9780f72e25a413ee3/autoware_ml/configs/detection3d/dataset/t4dataset/gen2_base.py)
+- Train time: NVIDIA H100 80GB * 4 * 30 epochs = 12 hours
+- Batch size: 4*16 = 64
+- Training dataset: DB J6 Gen2 v1.0 + DB J6 Gen2 v2.0 + DB J6 Gen2 V4.0 + DB LargeBus v1.0 (total frames: 20,777)
+
+</details>
+
+<details>
+<summary> Evaluation </summary>
+
+- db_j6gen2_v1 + db_j6gen2_v2 + db_j6gen2_v4 + + db_largebus_v1 (total frames: 1,761):
+- Total mAP (eval range = 120m): 0.7401
 
 | class_name | Count    | mAP    | AP@0.5m | AP@1.0m | AP@2.0m | AP@4.0m |
 | -----------| -------  | ------ | ------- | ------- | ------- | ------- |
@@ -677,8 +913,10 @@
 | bicycle    |   1,057  | 71.05  | 65.6    | 72.2    | 73.2    | 73.2    |
 | pedestrian |  10,375  | 67.10  | 65.2    | 66.3    | 67.6    | 69.4    |
 
+---
+
 - db_largebus_v1 (total frames: 604):
-  - Total mAP (eval range = 120m): 0.7473
+- Total mAP (eval range = 120m): 0.7473
 
 | class_name | Count    | mAP    | AP@0.5m | AP@1.0m | AP@2.0m | AP@4.0m |
 | -----------| -------  | -----  | ------- | ------- | ------- | ------- |
@@ -688,8 +926,10 @@
 | bicycle    |    724   | 65.72  | 58.8    | 66.7    | 68.7    | 68.7    |
 | pedestrian |  3,916   | 67.82  | 66.1    | 67.3    | 68.0    | 69.9    |
 
+---
+
 - db_j6gen2_v1 + db_j6gen2_v2 +db_j6gen2_v4 (total frames: 1,157):
-  - Total mAP (eval range = 120m): 0.7460
+- Total mAP (eval range = 120m): 0.7460
 
 | class_name  | Count   | mAP  | AP@0.5m | AP@1.0m | AP@2.0m | AP@4.0m |
 | ----------  | ------  | ---- | ------- | ------- | ------- | ------- |
@@ -700,3 +940,5 @@
 | pedestrian  |  6,459  | 66.91 | 65.1    | 66.0    | 67.5    | 69.1    |
 
 </details>
+
+---
