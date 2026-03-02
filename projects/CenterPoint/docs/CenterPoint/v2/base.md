@@ -7,7 +7,7 @@
   - **Voxel Size:** [0.24, 0.24, 8.0]
   - **Grid Size:** [510, 510, 1]
 
-### Testing Datsets
+### Testing Datasets
 
 - **Total Frames: 19,096**
   <details>

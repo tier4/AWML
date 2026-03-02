@@ -8,7 +8,7 @@
   - **Grid Size:** [510, 510, 1]
   - **With Intensity**
 
-### Testing Datsets
+### Testing Datasets
 
 - **Total Frames: 5,179**
   <details>
@@ -384,7 +384,7 @@
 	- `db_j6gen2_v8`
 - Around a total frames of `18,000` is added compared to `CenterPoint J6Gen2/2.4.1`
 - Overall:
-  - Performance is generally better than `CenterPoint base/2.5.0` and `CenterPoint J6Gen2/2.5.1`
+  - Performance is generally better than `CenterPoint base/2.5.0` and `CenterPoint J6Gen2/2.4.1`
 	- However, the performance in `largebus` slightly degrades
 
 </details>
@@ -527,90 +527,6 @@
 </details>
 
 ---
-
-<details>
-<summary> Changes  </summary>
-
-- Finetune from `CenterPoint base/2.5.0` with j6gen2 base dataset
-- Include intensity as an extra feature and Repeat Sampling Factor (RFS)
-- Train with new datatasets:
-  - `db_j6gen2_v6`
-	- `db_j6gen2_v7`
-	- `db_j6gen2_v8`
-- Around a total frames of `18,000` is added compared to `CenterPoint J6Gen2/2.4.1`
-- Overall:
-  - Performance is generally better than `CenterPoint base/2.5.0` and `CenterPoint J6Gen2/2.5.1`
-	- However, the performance in `largebus` slightly degrades
-
-</details>
-
-<details>
-<summary> Artifacts </summary>
-
-- Deployed onnx and ROS parameter files (for internal)
-	- [WebAuto](https://evaluation.tier4.jp/evaluation/mlpackages/7156b453-2861-4ae9-b135-e24e48cc9029/releases/5599b337-e151-4f11-abe3-480943d9edec?project_id=zWhWRzei)
-	- [model-zoo](https://download.autoware-ml-model-zoo.tier4.jp/autoware-ml/models/centerpoint/centerpoint/j6gen2/v2.5.1/deployment.zip)
-	- [Google drive](https://drive.google.com/file/d/1PLhgM8vAJCeI0TvOi7wsg4seWzfJTi7m/view?usp=drive_link)
-- Logs (for internal)
-	- [model-zoo](https://download.autoware-ml-model-zoo.tier4.jp/autoware-ml/models/centerpoint/centerpoint/j6gen2/v2.5.1/logs.zip)
-	- [Google drive](https://drive.google.com/file/d/1Lw_k5QUs0Wx1W-7mY-KrwtjW-eBc17pv/view?usp=drive_link)
-
-</details>
-
-<details>
-<summary> Training configs </summary>
-
-- [Config file path](https://github.com/tier4/AWML/blob/dee55764f5381ef75dcac7a17a303b0bf527d400/projects/CenterPoint/configs/t4dataset/Centerpoint/second_secfpn_4xb16_121m_j6gen2_base_amp_rfs.py)
-- Train time: NVIDIA H100 80GB * 4 * 30 epochs = 1 day 3 hours
-- Batch size: 4*16 = 64
-- Training Dataset (frames: 48,108):
-  - j6gen2: j6gen2: db_j6gen2_v1 + db_j6gen2_v2 + db_j6gen2_v3 + db_j6gen2_v4 + db_j6gen2_v5 + db_j6gen2_v6 + db_j6gen2_v7 + db_j6gen2_v8 (37,002 frames)
-	- largebus: db_largebus_v1 + db_largebus_v2 (11,106 frames)
-
-</details>
-
-<details>
-<summary> Evaluation </summary>
-
-**LargeBus**: db_largebus_v1 + db_largebus_v2 (859 frames)  
-**Total mAP (eval range = 120m): 0.765**
-
-| class_name | Count        | mAP  | AP@0.5m | AP@1.0m | AP@2.0m | AP@4.0m |
-| ----       | -------------| ---- | ---- | ---- | ---- | ---- |
-| car        | 16,604       | 90.8 | 85.9 | 91.4 | 92.8 | 93.1 |
-| truck      |  1,961       | 69.1 | 56.2 | 69.3 | 74.6 | 76.5 |
-| bus        |    171       | 77.9 | 63.0 | 82.8 | 82.9 | 82.9 |
-| bicycle    |    863       | 73.4 | 69.4 | 73.9 | 75.1 | 75.3 |
-| pedestrian |   4,659      | 71.1 | 69.7 | 70.7 | 71.3 | 72.7 |
-
----
-
-
-**J6Gen2_V6**: db_j6gen2_v6 (636 frames)  
-**Total mAP (eval range = 120m): 0.734**
-
-| class_name | Count      | mAP  | AP@0.5m | AP@1.0m | AP@2.0m | AP@4.0m |
-| ----       | ---------- | ---- | ---- | ---- | ---- | ---- |
-| car        | 23,898     | 85.5 | 79.3 | 85.6 | 88.3 | 88.6 |
-| truck      |  1,534     | 59.2 | 48.5 | 56.1 | 60.2 | 72.0 |
-| bus        |    957     | 74.0 | 66.6 | 74.3 | 77.4 | 77.6 |
-| bicycle    |    163     | 79.3 | 76.4 | 80.3 | 80.3 | 80.3 |
-| pedestrian |  4,556     | 69.1 | 67.6 | 68.7 | 69.4 | 70.8 |
-
----
-
-**J6Gen2:** db_j6gen2_v1 + db_j6gen2_v2 + db_j6gen2_v3 + db_j6gen2_v4 + db_j6gen2_v5 + db_j6gen2_v6  
-**Total mAP (eval range = 120m): 0.752**
-
-| class_name | Count      | mAP  | AP@0.5m | AP@1.0m | AP@2.0m | AP@4.0m |
-| ----       | ---------- | ---- | ---- | ---- | ---- | ---- |
-| car        | 66,293     | 84.8 | 78.6 | 84.9 | 87.3 | 88.2 |
-| truck      |  4,417     | 56.2 | 46.1 | 54.5 | 57.9 | 66.5 |
-| bus        |  2,353     | 80.7 | 75.6 | 80.6 | 83.0 | 83.7 |
-| bicycle    |    500     | 84.7 | 83.3 | 85.1 | 85.1 | 85.5 |
-| pedestrian |  11,417    | 69.7 | 67.8 | 69.3 | 70.1 | 71.4 |
-
-</details>
 
 ### CenterPoint J6Gen2/2.3.1
 

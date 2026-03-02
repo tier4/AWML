@@ -1,4 +1,4 @@
-# Deployed model for CenterPoint JpnTaxi-Base/2.X
+# Deployed model for CenterPoint JPNTaxi-Base/2.X
 ## Summary
 The main difference between `JPNTaxi-Base/2.x` and `JPNTaxi-Gen2/2.x` is that all `JPNTaxi` data from Gen1 and Gen2 are used for training/validation/testing in `JPNTaxi-Base/2.x` to reduce overfitting since they share similar
 vehicle and sensor setups.
@@ -10,7 +10,7 @@ vehicle and sensor setups.
   - **Grid Size:** [510, 510, 1]
   - **With Intensity**
 
-### Testing Datsets
+### Testing Datasets
 
 - **Total Frames: 11,482**
   <details>
@@ -138,7 +138,7 @@ vehicle and sensor setups.
 - Finetune from `CenterPoint base/2.5.0` with `db_jpntaxi_base` datasets, where it includes both JPNTaxi Gen1 and Gen2 data
 - Include intensity as an extra feature and Repeat Sampling Factor (RFS)
 - Overall:
-  - Performance is better than `CenterPoint base/2.6.0`, but almost similar compared to `CenterPoint JPJPNTaxi_Base/2.5.1`
+  - Performance is better than `CenterPoint base/2.6.0`, but almost similar compared to `CenterPoint JPNTaxi_Base/2.5.1`
 
 </details>
 
