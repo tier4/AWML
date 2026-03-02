@@ -305,7 +305,7 @@
 <details>
 <summary> Training configs </summary>
 
-- [Config file path]()
+- [Config file path](https://github.com/KSeangTan/AWML/blob/0913734976758079c3e2452fa3a866453a00710d/projects/CenterPoint/configs/t4dataset/Centerpoint/second_secfpn_8xb16_121m_base_amp_rfs.py)
 - Train time: NVIDIA H100 80GB * 8 * 50 epochs = 3 days 15 hours
 - Batch size: 8*16 = 128
 - Training Dataset (frames: 134,554):
