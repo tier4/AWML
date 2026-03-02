@@ -66,6 +66,7 @@ class_mappings = {
     'up_right,right_red': "SKIP_CLASS",
     'right,up_right': "SKIP_CLASS",
     'green,right,left_red': "SKIP_CLASS",
+    "up_right,right_yellow": "SKIP_CLASS",
         
     # Skip the following classes if present like in AWMLDetection2d.
     "red-rightdiagonal": "SKIP_CLASS",

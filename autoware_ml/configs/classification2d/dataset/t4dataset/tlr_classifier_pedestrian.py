@@ -46,6 +46,7 @@ class_mappings = {
     "red_straight_right": "SKIP_CLASS",
     "red_straight_left_right": "SKIP_CLASS",
     "red_leftdiagonal": "SKIP_CLASS",
+    "up_right,right_yellow": ",SKIP_CLASS",
 
     # Skip the following semantic TLR if present
     "traffic_light_back": "SKIP_CLASS",
