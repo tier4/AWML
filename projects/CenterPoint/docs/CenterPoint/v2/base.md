@@ -56,6 +56,7 @@
     - `db_jpntaxigen2_v2`
 
   </details>
+
 ### mAP
 
 - **Class mAP for BEV Center Distance: 0.5m, 1.0m, 2.0m, 4.0m**

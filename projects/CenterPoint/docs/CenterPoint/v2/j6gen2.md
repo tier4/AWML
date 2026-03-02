@@ -32,6 +32,7 @@
   </details>
 
 ### mAP
+
 - **Class mAP for BEV Center Distance: 0.5m, 1.0m, 2.0m, 4.0m**
 
 	<details>
@@ -126,7 +127,6 @@
 
   </details>
 
-
 </details>
 
 <details>
@@ -206,12 +206,15 @@
 <summary> Artifacts </summary>
 
 - Deployed onnx and ROS parameter files (for internal)
-	- [WebAuto](https://evaluation.tier4.jp/evaluation/mlpackages/7156b453-2861-4ae9-b135-e24e48cc9029/releases/5599b337-e151-4f11-abe3-480943d9edec?project_id=zWhWRzei)
-	- [model-zoo](https://download.autoware-ml-model-zoo.tier4.jp/autoware-ml/models/centerpoint/centerpoint/j6gen2/v2.5.1/deployment.zip)
-	- [Google drive](https://drive.google.com/file/d/1PLhgM8vAJCeI0TvOi7wsg4seWzfJTi7m/view?usp=drive_link)
+	- [WebAuto]()
+	- [model-zoo]()
+	- [Google drive]()
 - Logs (for internal)
-	- [model-zoo](https://download.autoware-ml-model-zoo.tier4.jp/autoware-ml/models/centerpoint/centerpoint/j6gen2/v2.5.1/logs.zip)
-	- [Google drive](https://drive.google.com/file/d/1Lw_k5QUs0Wx1W-7mY-KrwtjW-eBc17pv/view?usp=drive_link)
+	- [model-zoo]()
+	- [Google drive]()
+- Pytorch Best checkpoints:
+  - [model-zoo]()
+  - [Google drive]()
 
 </details>
 
@@ -219,7 +222,7 @@
 <summary> Training configs </summary>
 
 - [Config file path]()
-- Train time: NVIDIA H100 80GB * 8 * 30 epochs = 1 days 12 hours
+- Train time: NVIDIA H100 80GB * 8 * 30 epochs = 20 hours
 - Batch size: 8*16 = 128
 - Training Dataset (frames: 55,714):
   - j6gen2: db_j6gen2_v1 + db_j6gen2_v2 + db_j6gen2_v3 + db_j6gen2_v4 + db_j6gen2_v5 + db_j6gen2_v6 + db_j6gen2_v7 + db_j6gen2_v8 (43,109 frames)
