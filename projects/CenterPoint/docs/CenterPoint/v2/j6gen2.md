@@ -198,6 +198,7 @@
 - Include intensity as an extra feature and Repeat Sampling Factor (RFS)
 - Train with new datatasets:
   - `db_j6gen2_v9`
+	- `db_largebus_v3`
 - Overall:
   - Performance is generally better than `CenterPoint base/2.5.0` and `CenterPoint J6Gen2/2.5.1`, especially in new locations
 </details>
@@ -226,7 +227,7 @@
 - Batch size: 8*16 = 128
 - Training Dataset (frames: 55,714):
   - j6gen2: db_j6gen2_v1 + db_j6gen2_v2 + db_j6gen2_v3 + db_j6gen2_v4 + db_j6gen2_v5 + db_j6gen2_v6 + db_j6gen2_v7 + db_j6gen2_v8 (43,109 frames)
-  - largebus: db_largebus_v1 + db_largebus_v2 (12,605 frames)
+  - largebus: db_largebus_v1 + db_largebus_v2 + db_largebus_v3 (12,605 frames)
 
 </details>
 
