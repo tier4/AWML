@@ -477,9 +477,6 @@ class T4MetricV2(BaseMetric):
                     # Process metric data, for example, detection/precisions
                     aggregated_metric_data[evaluator_frame_prefix_name] = self._aggregate_metrics_data(metric_dict)
 
-                    # Process metric data, for example, detection/precisions
-                    aggregated_metric_data[evaluator_frame_prefix_name] = self._aggregate_metrics_data(metric_dict)
-
             # Aggregate metrics without prefix for each evaluator
             evaluator_full_name = f"{self.default_evaluator_prefix_name}/{evaluator_name}"
             final_metric_score = evaluator.perception_evaluator_manager.get_scene_result()
