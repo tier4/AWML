@@ -1,4 +1,4 @@
-# Deployed model for CenterPoint JPNTaxi-Base/2.X
+# Deployed model for CenterPoint JPNTaxi_Base/2.X
 ## Summary
 The main difference between `JPNTaxi-Base/2.x` and `JPNTaxi-Gen2/2.x` is that all `JPNTaxi` data from Gen1 and Gen2 are used for training/validation/testing in `JPNTaxi-Base/2.x` to reduce overfitting since they share similar
 vehicle and sensor setups.
