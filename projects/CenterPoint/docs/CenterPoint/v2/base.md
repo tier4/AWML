@@ -291,14 +291,14 @@
 
 - Deployed onnx and ROS parameter files (for internal)
   - [WebAuto]()
-  - [model-zoo]()
-  - [Google drive]()
+  - [model-zoo](https://download.autoware-ml-model-zoo.tier4.jp/autoware-ml/models/centerpoint/centerpoint/t4base/v2.6.0/deployment.zip)
+  - [Google drive](https://drive.google.com/file/d/1C95Snr1K7G6pSV7_UFmS4weBqUFa-AMi/view?usp=drive_link)
 - Logs (for internal)
-  - [model-zoo]()
-  - [Google drive]()
+  - [model-zoo](https://download.autoware-ml-model-zoo.tier4.jp/autoware-ml/models/centerpoint/centerpoint/t4base/v2.6.0/logs.zip)
+  - [Google drive](https://drive.google.com/file/d/1jij8iHk3M8f-h8kLQFfPaWQijuuBI2xv/view?usp=drive_link)
 - Pytorch Best checkpoints:
-  - [model-zoo]()
-  - [Google drive]()
+  - [model-zoo](https://download.autoware-ml-model-zoo.tier4.jp/autoware-ml/models/centerpoint/centerpoint/t4base/v2.6.0/epoch_49.pth)
+  - [Google drive](https://drive.google.com/file/d/1wos2V55HiqFTu7ryIwJ8VDCET4Z5kfL1/view?usp=drive_link)
 
 </details>
 

@@ -147,14 +147,14 @@ vehicle and sensor setups.
 
 - Deployed onnx and ROS parameter files (for internal)
   - [WebAuto]()
-  - [model-zoo]()
-  - [Google drive]()
+  - [model-zoo](https://download.autoware-ml-model-zoo.tier4.jp/autoware-ml/models/centerpoint/centerpoint/jpntaxi_base/v2.6.1/deployment.zip)
+  - [Google drive](https://drive.google.com/file/d/1fYfVSUO3VkHO9l-TsBXM9QA7MlnTMhjb/view?usp=drive_link)
 - Logs (for internal)
-  - [model-zoo]()
-  - [Google drive]()
+  - [model-zoo](https://download.autoware-ml-model-zoo.tier4.jp/autoware-ml/models/centerpoint/centerpoint/jpntaxi_base/v2.6.1/logs.zip)
+  - [Google drive](https://drive.google.com/file/d/1gR-X7Kv9qXXiPewhXQROyGAOVKrTbidL/view?usp=drive_link)
 - Pytorch Best checkpoints:
-  - [model-zoo]()
-  - [Google drive]()
+  - [model-zoo](https://download.autoware-ml-model-zoo.tier4.jp/autoware-ml/models/centerpoint/centerpoint/jpntaxi_base/v2.6.1/epoch_29.pth)
+  - [Google drive](https://drive.google.com/file/d/1krGzK_EYdf5FbmCXqT0yOKqjMshAHyzC/view?usp=drive_link)
 
 </details>
 

@@ -207,15 +207,15 @@
 <summary> Artifacts </summary>
 
 - Deployed onnx and ROS parameter files (for internal)
-	- [WebAuto]()
-	- [model-zoo]()
-	- [Google drive]()
+  - [WebAuto]()
+  - [model-zoo](https://download.autoware-ml-model-zoo.tier4.jp/autoware-ml/models/centerpoint/centerpoint/j6gen2/v2.6.1/deployment.zip)
+  - [Google drive](https://drive.google.com/file/d/1qP3qV-1HpHpyWnmEwOvl_zv6gjw-DfW3/view?usp=drive_link)
 - Logs (for internal)
-	- [model-zoo]()
-	- [Google drive]()
+  - [model-zoo](https://download.autoware-ml-model-zoo.tier4.jp/autoware-ml/models/centerpoint/centerpoint/j6gen2/v2.6.1/logs.zip)
+  - [Google drive](https://drive.google.com/file/d/1gykcFv1auDYSVCPggkrI6ieUH-vyp_D_/view?usp=drive_link)
 - Pytorch Best checkpoints:
-  - [model-zoo]()
-  - [Google drive]()
+  - [model-zoo](https://download.autoware-ml-model-zoo.tier4.jp/autoware-ml/models/centerpoint/centerpoint/j6gen2/v2.6.1/epoch_29.pth)
+  - [Google drive](https://drive.google.com/file/d/1xUvDvyoSi67nuT_a_6Ke61B5etn6yc7W/view?usp=drive_link)
 
 </details>
 
