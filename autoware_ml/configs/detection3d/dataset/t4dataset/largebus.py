@@ -20,7 +20,13 @@ info_test_statistics_file_name = "t4dataset_largebus_statistics_test.parquet"
 dataset_version_list = [
     "db_largebus_v1",
     "db_largebus_v2",
+    "db_largebus_v3",
 ]
+
+dataset_test_groups = {
+    "largebus": ("t4dataset_largebus_infos_test.pkl", True),
+}
+
 
 # dataset format setting
 data_prefix = dict(

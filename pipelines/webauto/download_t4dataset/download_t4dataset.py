@@ -67,13 +67,18 @@ def get_t4dataset_ids(config_path: str) -> list[str]:
     all_t4dataset_ids = set()
     for key in required_keys:
         for t4dataset_ids in data_splits[key]:
-            t4dataset_ids = t4dataset_ids.split("   ")
-            if len(t4dataset_ids) == 2:
-                all_t4dataset_ids.add((t4dataset_ids[0], t4dataset_ids[1]))  # (id, version)
+            t4dataset_ids = t4dataset_ids.split("/")
+            if len(t4dataset_ids) == 4:
+                t4dataset_id, t4dataset_version_id, city, vehicle_type = t4dataset_ids
+            elif len(t4dataset_ids) == 2:
+                t4dataset_id, t4dataset_version_id = t4dataset_ids
             elif len(t4dataset_ids) == 1:
-                all_t4dataset_ids.add((t4dataset_ids[0], -1))  # -1 indicates no version specified
+                t4dataset_id = t4dataset_ids[0]
+                t4dataset_version_id = -1  # -1 indicates no version specified
             else:
                 raise ValueError(f"Invalid T4Dataset format in {t4dataset_ids}. Use format 'id   version' or 'id'.")
+
+            all_t4dataset_ids.add((t4dataset_id, t4dataset_version_id))
     return list(all_t4dataset_ids)
 
 

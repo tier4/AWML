@@ -391,7 +391,7 @@ def export_2d_annotation(root_path, info_path, mono3d=True):
 
     for info in mmengine.track_iter_progress(kitti_infos):
         coco_infos = get_2d_boxes(info, occluded=[0, 1, 2, 3], mono3d=mono3d)
-        (height, width, _) = mmcv.imread(osp.join(root_path, info["image"]["image_path"])).shape
+        height, width, _ = mmcv.imread(osp.join(root_path, info["image"]["image_path"])).shape
         coco_2d_dict["images"].append(
             dict(
                 file_name=info["image"]["image_path"],
