@@ -123,7 +123,7 @@ class T4DatasetStatistics:
         self.statistics[bucket_name]["metadata"][f"metadata/{self.split_name}_total_num_frames"] += len(infos)
 
         for info in infos:
-            if len(info):
+            if not len(info):
                 continue
 
             # Save ego pose translation
