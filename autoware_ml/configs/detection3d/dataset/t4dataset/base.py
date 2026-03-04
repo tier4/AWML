@@ -28,8 +28,10 @@ dataset_version_list = [
     "db_j6gen2_v6",
     "db_j6gen2_v7",
     "db_j6gen2_v8",
+    "db_j6gen2_v9",
     "db_largebus_v1",
     "db_largebus_v2",
+    "db_largebus_v3",
     "db_jpntaxi_v1",
     "db_jpntaxi_v2",
     "db_jpntaxi_v4",
@@ -39,14 +41,16 @@ dataset_version_list = [
     "db_j6_v3",
     "db_j6_v5",
 ]
+
+# TODO (KokSeang): This will be removed to avoid repeatitive computation
+# Dataset set, test info files, and enable/disable evaluation of prefix
 dataset_test_groups = {
-    "db_jpntaxi_gen2_base": "t4dataset_jpntaxi_gen2_base_infos_test.pkl",
-    "db_j6gen2": "t4dataset_j6gen2_infos_test.pkl",
-    "db_j6gen2_v6": "t4dataset_j6gen2_v6_infos_test.pkl",
-    "db_largebus": "t4dataset_largebus_infos_test.pkl",
-    "db_jpntaxi": "t4dataset_xx1_infos_test.pkl",
-    "db_j6": "t4dataset_x2_infos_test.pkl",
-    "db_base": "t4dataset_base_infos_test.pkl",
+    "j6gen2_base": ("t4dataset_j6gen2_base_infos_test.pkl", False),
+    "j6gen2": ("t4dataset_j6gen2_infos_test.pkl", False),
+    "largebus": ("t4dataset_largebus_infos_test.pkl", False),
+    "jpntaxi_base": ("t4dataset_jpntaxi_base_infos_test.pkl", False),
+    "jpntaxi_gen2": ("t4dataset_jpntaxi_gen2_infos_test.pkl", False),
+    "base": ("t4dataset_base_infos_test.pkl", True),
 }
 
 # dataset format setting
