@@ -2,7 +2,7 @@ import argparse
 import os
 import os.path as osp
 import re
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Optional, Set, Tuple
 
 import mmengine
 import numpy as np
@@ -109,7 +109,7 @@ def get_samples_excluded_by_velocity(
     t4: Tier4,
     lidar_channel: str,
     max_velocity_mps: float,
-) -> set:
+) -> Set[int]:
     """Compute which sample indices to exclude based on velocity from pose derivative.
 
     Velocity is estimated as (position[i] - position[i-1]) / (time[i] - time[i-1]) using
@@ -128,7 +128,7 @@ def get_samples_excluded_by_velocity(
         Set of 0-based sample indices to exclude.
     """
     max_velocity_mps = abs(max_velocity_mps)
-    excluded: set = set()
+    excluded: Set[int] = set()
     samples = t4.sample
 
     if len(samples) == 0:
@@ -513,13 +513,15 @@ def generate_scene_calib_info(
         size_threshold = calculate_size_threshold(t4, root_path, scene_root, target_cameras)
 
     # Compute samples to exclude by velocity (first sample + those above threshold)
-    velocity_excluded: set = set()
+    velocity_excluded: Set[int] = set()
     if max_velocity_mps is not None:
         velocity_excluded = get_samples_excluded_by_velocity(t4, lidar_channel, max_velocity_mps)
         if velocity_excluded:
             logger.info(
-                f"Velocity filter: excluding {len(velocity_excluded)} samples in scene {scene_id} "
-                f"(max_velocity_mps={max_velocity_mps})"
+                "Velocity filter: excluding %d samples in scene %s (max_velocity_mps=%f)",
+                len(velocity_excluded),
+                scene_id,
+                max_velocity_mps,
             )
 
     # Compute lidar sources info (once per scene)
@@ -631,7 +633,7 @@ def main() -> None:
     if args.filter_black_images:
         logger.info("Black image filtering is enabled")
     if args.filter_velocity is not None:
-        logger.info(f"Velocity filtering is enabled (max {args.filter_velocity} m/s)")
+        logger.info("Velocity filtering is enabled (max %f m/s)", args.filter_velocity)
 
     abs_root_path = osp.abspath(args.root_path)
 
