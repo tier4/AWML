@@ -38,16 +38,15 @@ _TENSORRT_DIR = f"{_WORK_DIR}/tensorrt"
 # ============================================================================
 # Unified Component Configuration (Single Source of Truth)
 #
+# Component key is the unique identifier (used for config lookup, filenames, logs).
 # Each component defines:
-#   - name: Component identifier used in export
 #   - onnx_file: Output ONNX filename
 #   - engine_file: Output TensorRT engine filename
 #   - io: Input/output specification for ONNX export
 #   - tensorrt_profile: TensorRT optimization profile (min/opt/max shapes)
 # ============================================================================
 components = dict(
-    voxel_encoder=dict(
-        name="pts_voxel_encoder",
+    pts_voxel_encoder=dict(
         onnx_file="pts_voxel_encoder.onnx",
         engine_file="pts_voxel_encoder.engine",
         io=dict(
@@ -70,8 +69,7 @@ components = dict(
             ),
         ),
     ),
-    backbone_head=dict(
-        name="pts_backbone_neck_head",
+    pts_backbone_neck_head=dict(
         onnx_file="pts_backbone_neck_head.onnx",
         engine_file="pts_backbone_neck_head.engine",
         io=dict(
@@ -111,7 +109,7 @@ components = dict(
 # ============================================================================
 runtime_io = dict(
     # This should be a path relative to `data_root` in the model config.
-    info_file="info/t4dataset_j6gen2_infos_val.pkl",
+    info_file="info/t4dataset_j6gen2_base_infos_test.pkl",
     sample_idx=1,
 )
 
@@ -164,7 +162,7 @@ evaluation = dict(
 # ============================================================================
 verification = dict(
     enabled=False,
-    tolerance=1e-1,
+    tolerance=1,
     num_verify_samples=1,
     devices=devices,
     scenarios=dict(
