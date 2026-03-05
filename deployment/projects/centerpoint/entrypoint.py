@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import argparse
 import logging
-from typing import Any, Mapping
 
 from mmengine.config import Config
 
@@ -15,12 +14,17 @@ from deployment.projects.centerpoint.evaluator import CenterPointEvaluator
 from deployment.projects.centerpoint.metrics_utils import extract_t4metric_v2_config
 from deployment.projects.centerpoint.runner import CenterPointDeploymentRunner
 
+_REQUIRED_COMPONENTS = ("pts_voxel_encoder", "pts_backbone_neck_head")
+
+
+def _validate_required_components(components_cfg) -> None:
+    """Validate that all CenterPoint required components exist."""
+    for component_name in _REQUIRED_COMPONENTS:
+        components_cfg.get_component(component_name)
+
 
 def run(args: argparse.Namespace) -> int:
     """Run the CenterPoint deployment workflow for the unified CLI.
-
-    This wires together the CenterPoint bundle components (data loader, evaluator,
-    runner) and executes export/verification/evaluation according to `deploy_cfg`.
 
     Args:
         args: Parsed command-line arguments containing deploy_cfg and model_cfg paths.
@@ -34,10 +38,7 @@ def run(args: argparse.Namespace) -> int:
     model_cfg = Config.fromfile(args.model_cfg)
     config = BaseDeploymentConfig(deploy_cfg)
 
-    # Extract components config for dependency injection
-    if "components" not in deploy_cfg:
-        raise KeyError("deploy_cfg must define 'components' for CenterPoint deployment.")
-    components_cfg: Mapping[str, Any] = deploy_cfg["components"]
+    _validate_required_components(config.components_cfg)
 
     logger.info("=" * 80)
     logger.info("CenterPoint Deployment Pipeline (Unified CLI)")
@@ -56,7 +57,7 @@ def run(args: argparse.Namespace) -> int:
     evaluator = CenterPointEvaluator(
         model_cfg=model_cfg,
         metrics_config=metrics_config,
-        components_cfg=components_cfg,
+        components_cfg=config.components_cfg,
     )
 
     runner = CenterPointDeploymentRunner(

@@ -7,7 +7,7 @@ from __future__ import annotations
 import logging
 import os.path as osp
 import time
-from typing import Any, Dict, List, Mapping, Tuple
+from typing import Dict, List, Tuple
 
 import numpy as np
 import pycuda.autoinit  # noqa: F401
@@ -16,6 +16,7 @@ import tensorrt as trt
 import torch
 
 from deployment.core.artifacts import resolve_artifact_path
+from deployment.core.config.base_config import ComponentsConfig
 from deployment.pipelines.gpu_resource_mixin import (
     GPUResourceMixin,
     TensorRTResourceManager,
@@ -29,7 +30,7 @@ logger = logging.getLogger(__name__)
 class CenterPointTensorRTPipeline(GPUResourceMixin, CenterPointDeploymentPipeline):
     """TensorRT-based CenterPoint pipeline (engine-per-component inference).
 
-    Loads separate TensorRT engines for voxel_encoder and backbone_head components
+    Loads separate TensorRT engines for pts_voxel_encoder and pts_backbone_neck_head components
     and runs inference using TensorRT execution contexts.
 
     Attributes:
@@ -40,20 +41,19 @@ class CenterPointTensorRTPipeline(GPUResourceMixin, CenterPointDeploymentPipelin
         self,
         pytorch_model: torch.nn.Module,
         tensorrt_dir: str,
+        components_cfg: ComponentsConfig,
         device: str = "cuda",
-        components_cfg: Mapping[str, Any] | None = None,
     ) -> None:
         """Initialize TensorRT pipeline.
 
         Args:
             pytorch_model: Reference PyTorch model for preprocessing.
             tensorrt_dir: Directory containing TensorRT engine files.
+            components_cfg: Component configuration from deploy_config (use ComponentsConfig.from_dict).
             device: Target CUDA device ('cuda:N').
-            components_cfg: Component configuration dict from deploy_config.
-                           If None, uses default component names.
 
         Raises:
-            ValueError: If device is not a CUDA device.
+            ValueError: If device is not a CUDA device or components_cfg is None.
         """
         if not device.startswith("cuda"):
             raise ValueError("TensorRT requires CUDA device")
@@ -63,8 +63,6 @@ class CenterPointTensorRTPipeline(GPUResourceMixin, CenterPointDeploymentPipelin
         self.tensorrt_dir = tensorrt_dir
         if components_cfg is None:
             raise ValueError("components_cfg is required for CenterPoint TensorRT pipeline.")
-        if not isinstance(components_cfg, Mapping):
-            raise TypeError(f"components_cfg must be a mapping, got {type(components_cfg).__name__}")
         self._components_cfg = components_cfg
         self._engines: dict = {}
         self._contexts: dict = {}
@@ -91,21 +89,21 @@ class CenterPointTensorRTPipeline(GPUResourceMixin, CenterPointDeploymentPipelin
         runtime = trt.Runtime(self._logger)
 
         engine_files = {
-            "voxel_encoder": resolve_artifact_path(
+            "pts_voxel_encoder": resolve_artifact_path(
                 base_dir=self.tensorrt_dir,
                 components_cfg=self._components_cfg,
-                component="voxel_encoder",
+                component_name="pts_voxel_encoder",
                 file_key="engine_file",
             ),
-            "backbone_head": resolve_artifact_path(
+            "pts_backbone_neck_head": resolve_artifact_path(
                 base_dir=self.tensorrt_dir,
                 components_cfg=self._components_cfg,
-                component="backbone_head",
+                component_name="pts_backbone_neck_head",
                 file_key="engine_file",
             ),
         }
 
-        for component, engine_path in engine_files.items():
+        for component_name, engine_path in engine_files.items():
             if not osp.exists(engine_path):
                 raise FileNotFoundError(f"TensorRT engine not found: {engine_path}")
 
@@ -117,12 +115,13 @@ class CenterPointTensorRTPipeline(GPUResourceMixin, CenterPointDeploymentPipelin
             context = engine.create_execution_context()
             if context is None:
                 raise RuntimeError(
-                    f"Failed to create execution context for {component}. " "This is likely due to GPU out-of-memory."
+                    f"Failed to create execution context for {component_name}. "
+                    "This is likely due to GPU out-of-memory."
                 )
 
-            self._engines[component] = engine
-            self._contexts[component] = context
-            logger.info(f"Loaded TensorRT engine: {component}")
+            self._engines[component_name] = engine
+            self._contexts[component_name] = context
+            logger.info(f"Loaded TensorRT engine: {component_name}")
 
     def _get_io_names(
         self,
@@ -172,10 +171,10 @@ class CenterPointTensorRTPipeline(GPUResourceMixin, CenterPointDeploymentPipelin
         Raises:
             RuntimeError: If context is None (initialization failed).
         """
-        engine = self._engines["voxel_encoder"]
-        context = self._contexts["voxel_encoder"]
+        engine = self._engines["pts_voxel_encoder"]
+        context = self._contexts["pts_voxel_encoder"]
         if context is None:
-            raise RuntimeError("voxel_encoder context is None - likely failed to initialize due to GPU OOM")
+            raise RuntimeError("pts_voxel_encoder context is None - likely failed to initialize due to GPU OOM")
 
         input_array = self.to_numpy(input_features, dtype=np.float32)
 
@@ -223,26 +222,19 @@ class CenterPointTensorRTPipeline(GPUResourceMixin, CenterPointDeploymentPipelin
             RuntimeError: If context is None (initialization failed).
             ValueError: If output count is not 6.
         """
-        engine = self._engines["backbone_head"]
-        context = self._contexts["backbone_head"]
+        engine = self._engines["pts_backbone_neck_head"]
+        context = self._contexts["pts_backbone_neck_head"]
         if context is None:
-            raise RuntimeError("backbone_head context is None - likely failed to initialize due to GPU OOM")
+            raise RuntimeError("pts_backbone_neck_head context is None - likely failed to initialize due to GPU OOM")
 
         input_array = self.to_numpy(spatial_features, dtype=np.float32)
 
         input_name, trt_output_names = self._get_io_names(engine, single_output=False)
         context.set_input_shape(input_name, input_array.shape)
 
-        # Get expected output order from components_cfg
-        try:
-            outputs = self._components_cfg["backbone_head"]["io"]["outputs"]
-        except KeyError as exc:
-            raise KeyError("Missing required config path: components_cfg['backbone_head']['io']['outputs']") from exc
-        expected_output_names = [out["name"] for out in outputs]
-        if not expected_output_names or any(not name for name in expected_output_names):
-            raise ValueError(
-                "Each entry in components_cfg['backbone_head']['io']['outputs'] must define a non-empty 'name'."
-            )
+        expected_output_names = [
+            out.name for out in self._components_cfg.get_component("pts_backbone_neck_head").io.outputs
+        ]
 
         # Validate outputs: check for missing or extra outputs
         trt_output_set = set(trt_output_names)

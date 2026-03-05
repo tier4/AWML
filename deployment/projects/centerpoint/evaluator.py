@@ -3,7 +3,7 @@ CenterPoint Evaluator for deployment.
 """
 
 import logging
-from typing import Any, Dict, List, Mapping, Optional
+from typing import Any, Dict, List, Optional
 
 import numpy as np
 from mmengine.config import Config
@@ -17,6 +17,7 @@ from deployment.core import (
     ModelSpec,
     TaskProfile,
 )
+from deployment.core.config.base_config import ComponentsConfig
 from deployment.core.io.base_data_loader import BaseDataLoader
 from deployment.pipelines.factory import PipelineFactory
 
@@ -32,15 +33,15 @@ class CenterPointEvaluator(BaseEvaluator):
     Args:
         model_cfg: Model configuration with class_names
         metrics_config: Configuration for 3D detection metrics
-        components_cfg: Optional unified components configuration dict.
-                       Used to get output names from components.backbone_head.io.outputs
+        components_cfg: Unified components configuration (ComponentsConfig).
+                       Used to get output names from pts_backbone_neck_head.io.outputs
     """
 
     def __init__(
         self,
         model_cfg: Config,
         metrics_config: Detection3DMetricsConfig,
-        components_cfg: Optional[Mapping[str, Any]] = None,
+        components_cfg: ComponentsConfig,
     ):
         if hasattr(model_cfg, "class_names"):
             class_names = model_cfg.class_names
@@ -48,9 +49,7 @@ class CenterPointEvaluator(BaseEvaluator):
             raise ValueError("class_names must be provided via model_cfg.class_names.")
 
         if components_cfg is None:
-            components_cfg = {}
-        if not isinstance(components_cfg, Mapping):
-            raise TypeError(f"components_cfg must be a mapping, got {type(components_cfg).__name__}")
+            raise ValueError("components_cfg is required for CenterPoint evaluator.")
         self._components_cfg = components_cfg
 
         task_profile = TaskProfile(
@@ -73,17 +72,7 @@ class CenterPointEvaluator(BaseEvaluator):
 
     def _get_output_names(self) -> List[str]:
         """Get head output names from components config."""
-        try:
-            outputs = self._components_cfg["backbone_head"]["io"]["outputs"]
-        except KeyError as exc:
-            raise KeyError("Missing required config path: components_cfg['backbone_head']['io']['outputs']") from exc
-
-        output_names = [out["name"] for out in outputs]
-        if not output_names or any(not name for name in output_names):
-            raise ValueError(
-                "Each entry in components_cfg['backbone_head']['io']['outputs'] must define a non-empty 'name'."
-            )
-        return output_names
+        return [out.name for out in self._components_cfg.get_component("pts_backbone_neck_head").io.outputs]
 
     def _create_pipeline(self, model_spec: ModelSpec, device: str) -> Any:
         return PipelineFactory.create(
