@@ -42,7 +42,7 @@ eval_class_range = {
 
 # user setting
 data_root = "data/t4dataset/"
-info_directory_path = "info/user_name/"
+info_directory_path = "info/kokseang_2_6_1/"
 train_gpu_size = 8
 train_batch_size = 16
 test_batch_size = 2
@@ -50,7 +50,7 @@ num_workers = 32
 val_interval = 5
 max_epochs = 50
 
-experiment_group_name = "centerpoint/base/" + _base_.dataset_type
+experiment_group_name = "centerpoint_2.6.1/base/" + _base_.dataset_type
 experiment_name = "second_secfpn_8xb16_121m_base_amp"
 work_dir = "work_dirs/" + experiment_group_name + "/" + experiment_name
 
@@ -353,7 +353,8 @@ randomness = dict(seed=0, diff_rank_seed=False, deterministic=True)
 
 # learning rate
 # Since mmengine doesn't support OneCycleMomentum yet, we use CosineAnnealing from the default configs
-lr = 0.0003
+# 0.0003 * sqrt(2) = 0.0004242
+lr = 0.00042
 t_max = 15
 param_scheduler = [
     # learning rate scheduler
@@ -439,13 +440,13 @@ vis_backends = [
     dict(type="LocalVisBackend"),
     dict(type="TensorboardVisBackend"),
     # Update info accordingly
-    dict(
-        type="SafeMLflowVisBackend",
-        exp_name="(UserName) CenterPoint",
-        run_name="CenterPoint base",
-        tracking_uri="http://localhost:5000",
-        artifact_suffix=(),
-    ),
+    # dict(
+    #     type="SafeMLflowVisBackend",
+    #     exp_name="(UserName) CenterPoint",
+    #     run_name="CenterPoint base",
+    #     tracking_uri="http://localhost:5000",
+    #     artifact_suffix=(),
+    # ),
 ]
 visualizer = dict(type="Det3DLocalVisualizer", vis_backends=vis_backends, name="visualizer")
 
