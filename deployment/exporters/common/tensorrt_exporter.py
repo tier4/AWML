@@ -102,7 +102,7 @@ class TensorRTExporter(BaseExporter):
                 self._configure_input_profiles(builder, builder_config, network, sample_input)
                 serialized_engine = self._build_engine(builder, builder_config, network)
                 self._save_engine(serialized_engine, output_path)
-                return Artifact(path=output_path, multi_file=False)
+                return Artifact(path=output_path)
             finally:
                 del parser
                 del network
