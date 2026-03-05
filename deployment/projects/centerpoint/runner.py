@@ -5,7 +5,7 @@ CenterPoint-specific deployment runner.
 from __future__ import annotations
 
 import logging
-from typing import Any, Optional
+from typing import Optional
 
 import torch
 from mmengine.config import Config
@@ -56,7 +56,10 @@ class CenterPointDeploymentRunner(BaseDeploymentRunner):
             onnx_pipeline: Optional custom ONNX export pipeline.
             tensorrt_pipeline: Optional custom TensorRT export pipeline.
         """
-        component_extractor = CenterPointComponentExtractor(config=config, logger=logger)
+        component_extractor = CenterPointComponentExtractor(
+            components_cfg=config.components_cfg,
+            logger=logger,
+        )
 
         super().__init__(
             data_loader=data_loader,
@@ -79,6 +82,7 @@ class CenterPointDeploymentRunner(BaseDeploymentRunner):
         if self._tensorrt_pipeline is None:
             self._tensorrt_pipeline = CenterPointTensorRTExportPipeline(
                 exporter_factory=ExporterFactory,
+                components_cfg=config.components_cfg,
                 logger=self.logger,
             )
 
@@ -101,12 +105,8 @@ class CenterPointDeploymentRunner(BaseDeploymentRunner):
             rot_y_axis_reference=rot_y_axis_reference,
         )
 
-        # Update model_cfg with ONNX-compatible version
         self.model_cfg = onnx_cfg
-
-        # Notify evaluator of model availability
         self._setup_evaluator(model, onnx_cfg)
-
         return model
 
     def _extract_rot_y_axis_reference(self, context: ExportContext) -> bool:

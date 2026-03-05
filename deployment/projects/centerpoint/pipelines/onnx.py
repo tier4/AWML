@@ -6,13 +6,14 @@ from __future__ import annotations
 
 import logging
 import os.path as osp
-from typing import Any, List, Mapping
+from typing import List
 
 import numpy as np
 import onnxruntime as ort
 import torch
 
 from deployment.core.artifacts import resolve_artifact_path
+from deployment.core.config.base_config import ComponentsConfig
 from deployment.projects.centerpoint.pipelines.centerpoint_pipeline import CenterPointDeploymentPipeline
 
 logger = logging.getLogger(__name__)
@@ -21,7 +22,7 @@ logger = logging.getLogger(__name__)
 class CenterPointONNXPipeline(CenterPointDeploymentPipeline):
     """ONNXRuntime-based CenterPoint pipeline (componentized inference).
 
-    Loads separate ONNX models for voxel_encoder and backbone_head components
+    Loads separate ONNX models for pts_voxel_encoder and pts_backbone_neck_head components
     and runs inference using ONNXRuntime.
 
     Attributes:
@@ -35,7 +36,7 @@ class CenterPointONNXPipeline(CenterPointDeploymentPipeline):
         pytorch_model: torch.nn.Module,
         onnx_dir: str,
         device: str = "cpu",
-        components_cfg: Mapping[str, Any] | None = None,
+        components_cfg: ComponentsConfig | None = None,
     ) -> None:
         """Initialize ONNX pipeline.
 
@@ -43,16 +44,14 @@ class CenterPointONNXPipeline(CenterPointDeploymentPipeline):
             pytorch_model: Reference PyTorch model for preprocessing.
             onnx_dir: Directory containing ONNX model files.
             device: Target device ('cpu' or 'cuda:N').
-            components_cfg: Component configuration dict from deploy_config.
-                           If None, uses default component names.
+            components_cfg: Component configuration from deploy_config (use ComponentsConfig.from_dict).
+                           If None, raises.
         """
         super().__init__(pytorch_model, device, backend_type="onnx")
 
         self.onnx_dir = onnx_dir
         if components_cfg is None:
             raise ValueError("components_cfg is required for CenterPoint ONNX pipeline.")
-        if not isinstance(components_cfg, Mapping):
-            raise TypeError(f"components_cfg must be a mapping, got {type(components_cfg).__name__}")
         self._components_cfg = components_cfg
         self._load_onnx_models(device)
         logger.info(f"ONNX pipeline initialized with models from: {onnx_dir}")
@@ -70,13 +69,13 @@ class CenterPointONNXPipeline(CenterPointDeploymentPipeline):
         voxel_encoder_path = resolve_artifact_path(
             base_dir=self.onnx_dir,
             components_cfg=self._components_cfg,
-            component="voxel_encoder",
+            component_name="pts_voxel_encoder",
             file_key="onnx_file",
         )
         backbone_head_path = resolve_artifact_path(
             base_dir=self.onnx_dir,
             components_cfg=self._components_cfg,
-            component="backbone_head",
+            component_name="pts_backbone_neck_head",
             file_key="onnx_file",
         )
 
@@ -101,14 +100,10 @@ class CenterPointONNXPipeline(CenterPointDeploymentPipeline):
         try:
             self.voxel_encoder_session = ort.InferenceSession(voxel_encoder_path, sess_options=so, providers=providers)
             logger.info(f"Loaded voxel encoder: {voxel_encoder_path}")
-        except Exception as e:
-            raise RuntimeError(f"Failed to load voxel encoder ONNX: {e}")
-
-        try:
             self.backbone_head_session = ort.InferenceSession(backbone_head_path, sess_options=so, providers=providers)
             logger.info(f"Loaded backbone+head: {backbone_head_path}")
         except Exception as e:
-            raise RuntimeError(f"Failed to load backbone+head ONNX: {e}")
+            raise RuntimeError(f"Failed to load ONNX model: {e}") from e
 
     def run_voxel_encoder(self, input_features: torch.Tensor) -> torch.Tensor:
         """Run voxel encoder using ONNXRuntime.
@@ -147,16 +142,9 @@ class CenterPointONNXPipeline(CenterPointDeploymentPipeline):
         input_name = self.backbone_head_session.get_inputs()[0].name
         onnx_output_names = [output.name for output in self.backbone_head_session.get_outputs()]
 
-        # Get expected output order from components_cfg
-        try:
-            outputs = self._components_cfg["backbone_head"]["io"]["outputs"]
-        except KeyError as exc:
-            raise KeyError("Missing required config path: components_cfg['backbone_head']['io']['outputs']") from exc
-        expected_output_names = [out["name"] for out in outputs]
-        if not expected_output_names or any(not name for name in expected_output_names):
-            raise ValueError(
-                "Each entry in components_cfg['backbone_head']['io']['outputs'] must define a non-empty 'name'."
-            )
+        expected_output_names = [
+            out.name for out in self._components_cfg.get_component("pts_backbone_neck_head").io.outputs
+        ]
 
         # Validate outputs: check for missing or extra outputs
         onnx_output_set = set(onnx_output_names)

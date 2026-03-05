@@ -9,34 +9,22 @@ This module contains model variants that support ONNX export:
 - ``BackwardPillarFeatureNetONNX``: Backward-compatible pillar feature network.
 
 **Note**: These are model *definitions* for ONNX export, not exported model artifacts.
-They are registered into MMEngine's ``MODELS`` registry via ``@MODELS.register_module()``.
+Importing this package (or its submodules) triggers ``@MODELS.register_module()``,
+registering types for config strings (e.g., "CenterPointONNX", "CenterHeadONNX").
 
 Usage:
-    Call ``register_models()`` before building models that reference types like
-    "CenterPointONNX", "CenterHeadONNX", etc.
+    Import this package before building models that reference ONNX types:
 
-Example:
-    >>> from deployment.projects.centerpoint.onnx_models import register_models
-    >>> register_models()  # Register ONNX model variants
+    >>> from deployment.projects.centerpoint import onnx_models  # noqa: F401
     >>> # Now you can build models with type="CenterPointONNX" in config
 """
 
 from __future__ import annotations
 
+from deployment.projects.centerpoint.onnx_models import centerpoint_head_onnx, centerpoint_onnx, pillar_encoder_onnx
 
-def register_models() -> None:
-    """Register CenterPoint ONNX model variants into MMEngine's MODELS registry.
-
-    Importing the submodules triggers ``@MODELS.register_module()`` decorators,
-    which registers the types referenced by config strings (e.g., "CenterPointONNX").
-
-    This function should be called before ``MODELS.build()`` for configs that
-    use ONNX model variants.
-    """
-    # Import triggers @MODELS.register_module() registrations
-    from deployment.projects.centerpoint.onnx_models import centerpoint_head_onnx as _head  # noqa: F401
-    from deployment.projects.centerpoint.onnx_models import centerpoint_onnx as _model  # noqa: F401
-    from deployment.projects.centerpoint.onnx_models import pillar_encoder_onnx as _encoder  # noqa: F401
-
-
-__all__ = ["register_models"]
+__all__ = [
+    "centerpoint_head_onnx",
+    "centerpoint_onnx",
+    "pillar_encoder_onnx",
+]

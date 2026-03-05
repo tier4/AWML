@@ -14,7 +14,7 @@ from mmengine.config import Config
 from mmengine.registry import MODELS, init_default_scope
 from mmengine.runner import load_checkpoint
 
-from deployment.projects.centerpoint.onnx_models import register_models
+from deployment.projects.centerpoint import onnx_models  # noqa: F401
 
 
 def create_onnx_model_cfg(
@@ -76,8 +76,7 @@ def build_model_from_cfg(
     Returns:
         Loaded and initialized PyTorch model in eval mode.
     """
-    # Ensure CenterPoint ONNX variants are registered into MODELS before building.
-    register_models()
+    # Importing onnx_models above triggers MODELS registration for ONNX variants.
     init_default_scope("mmdet3d")
 
     model_config = copy.deepcopy(model_cfg.model)
