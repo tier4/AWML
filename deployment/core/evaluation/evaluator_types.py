@@ -147,8 +147,3 @@ class ModelSpec:
     def path(self) -> str:
         """Backward-compatible access to artifact path."""
         return self.artifact.path
-
-    @property
-    def multi_file(self) -> bool:
-        """True if the artifact represents a multi-file bundle."""
-        return self.artifact.multi_file

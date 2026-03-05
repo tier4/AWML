@@ -2,7 +2,6 @@
 
 import logging
 import os
-from dataclasses import replace
 from typing import Any, Optional
 
 import onnx
@@ -71,27 +70,21 @@ class ONNXExporter(BaseExporter):
         model: torch.nn.Module,
         sample_input: Any,
         output_path: str,
-        *,
-        config_override: Optional[ONNXExportConfig] = None,
     ) -> None:
-        """
-        Export model to ONNX format.
+        """Export model to ONNX format.
 
         Args:
             model: PyTorch model to export
             sample_input: Sample input tensor
             output_path: Path to save ONNX model
-            config_override: Optional configuration override. If provided, will be merged
-                           with base config using dataclasses.replace.
 
         Raises:
             RuntimeError: If export fails
             ValueError: If configuration is invalid
         """
         model = self._prepare_for_onnx(model)
-        export_cfg = self._build_export_config(config_override)
-        self._do_onnx_export(model, sample_input, output_path, export_cfg)
-        if export_cfg.simplify:
+        self._do_onnx_export(model, sample_input, output_path, self.config)
+        if self.config.simplify:
             self._simplify_model(output_path)
 
     def _prepare_for_onnx(self, model: torch.nn.Module) -> torch.nn.Module:
@@ -109,29 +102,6 @@ class ONNXExporter(BaseExporter):
         model = self.prepare_model(model)
         model.eval()
         return model
-
-    def _build_export_config(self, config_override: Optional[ONNXExportConfig] = None) -> ONNXExportConfig:
-        """
-        Build export configuration by merging base config with override.
-
-        Args:
-            config_override: Optional configuration override. If provided, all fields
-                           from the override will replace corresponding fields in base config.
-
-        Returns:
-            Merged configuration ready for export
-
-        Raises:
-            ValueError: If merged configuration is invalid
-        """
-        if config_override is None:
-            export_cfg = self.config
-        else:
-            export_cfg = replace(self.config, **config_override.__dict__)
-
-        # Validate merged config
-        self._validate_config(export_cfg)
-        return export_cfg
 
     def _do_onnx_export(
         self,

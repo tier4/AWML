@@ -2,9 +2,15 @@
 
 from deployment.core.config.base_config import (
     BaseDeploymentConfig,
+    ComponentCfg,
+    ComponentIO,
+    ComponentsConfig,
     EvaluationConfig,
     ExportConfig,
     ExportMode,
+    InputSpec,
+    OnnxConfig,
+    OutputSpec,
     PrecisionPolicy,
     RuntimeConfig,
     TensorRTConfig,
@@ -29,4 +35,10 @@ __all__ = [
     "EVALUATION_DEFAULTS",
     "EvaluationDefaults",
     "RuntimeConfig",
+    "ComponentCfg",
+    "ComponentIO",
+    "ComponentsConfig",
+    "InputSpec",
+    "OnnxConfig",
+    "OutputSpec",
 ]
