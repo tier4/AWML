@@ -15,6 +15,9 @@ RUN git clone -b ${perception_dataset_version} ${perception_dataset_url} \
 WORKDIR /workspace
 COPY projects projects
 
+## Setup Auto Labeling 3D
+RUN pip install polars
+
 ## Setup CenterPoint
 ENV CUBLAS_WORKSPACE_CONFIG=:4096:8
 
