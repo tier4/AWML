@@ -1,12 +1,12 @@
 # Constants and Shared Configurations
-BATCH_SIZE = 32
-NUM_WORKERS = 8
+BATCH_SIZE = 128
+NUM_WORKERS = 16
 NUM_EPOCHS = 300
 VAL_INTERVAL = 20
 IMG_SCALE = 224
 CHECKPOINT_INTERVAL = 1
 LOG_INTERVAL = 100
-ANN_FILE = "./data/info/tlr_classifier_car/"
+ANN_FILE = "./infos/tlr_classifier_car/"
 
 # Base Configurations
 _base_ = [
@@ -112,7 +112,14 @@ train_dataloader = dict(
     persistent_workers=True,
     pin_memory=True,
     sampler=dict(type="DefaultSampler", shuffle=True),
-    dataset=dict(ann_file=ANN_FILE + "tlr_infos_train.json", type=dataset_type, pipeline=train_pipeline),
+    dataset=dict(
+        ann_file=ANN_FILE + "tlr_infos_train.json",
+        type=dataset_type,
+        pipeline=train_pipeline,
+        filter_min_bbox_area=0,  # 16x16 = 256
+        filter_truncation=None,  # should be None or subset of ["truncated", "non-truncated", "unknown"]
+        filter_occlusion=None,  # should be None or subset of ["none","partial","most","full","unknown"]
+    ),
     collate_fn=dict(type="default_collate"),
 )
 
@@ -129,6 +136,9 @@ val_dataloader = dict(
         + "tlr_infos_test.json",  # For the current dataset, val and test set are same. Needs to be fixed in future.
         type=dataset_type,
         pipeline=resize_pipeline,
+        filter_min_bbox_area=0,
+        filter_truncation=None,  # should be None or subset of ["truncated", "non-truncated", "unknown"]
+        filter_occlusion=None,  # should be None or subset of ["none","partial","most","full","unknown"]
     ),
     collate_fn=dict(type="default_collate"),
 )
@@ -140,7 +150,14 @@ test_dataloader = dict(
     persistent_workers=True,
     pin_memory=True,
     sampler=dict(type="DefaultSampler", shuffle=False),
-    dataset=dict(ann_file=ANN_FILE + "tlr_infos_test.json", type=dataset_type, pipeline=resize_pipeline),
+    dataset=dict(
+        ann_file=ANN_FILE + "tlr_infos_test.json",
+        type=dataset_type,
+        pipeline=resize_pipeline,
+        filter_min_bbox_area=0.0,
+        filter_truncation=None,  # should be None or subset of ["truncated", "non-truncated", "unknown"]
+        filter_occlusion=None,  # should be None or subset of ["none","partial","most","full","unknown"]
+    ),
     collate_fn=dict(type="default_collate"),
 )
 
