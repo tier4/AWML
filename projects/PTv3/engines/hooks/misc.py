@@ -13,9 +13,10 @@ from collections import OrderedDict
 
 import torch
 import utils.comm as comm
-from engines.test import TESTERS
 from utils.comm import is_main_process
 from utils.timer import Timer
+
+from engines.test import TESTERS
 
 from .builder import HOOKS
 from .default import HookBase
@@ -213,6 +214,12 @@ class CheckpointLoader(HookBase):
                 if comm.get_world_size() == 1:
                     key = key[7:]  # module.xxx.xxx -> xxx.xxx
                 weight[key] = value
+
+            # Preserve metadata and force spconv module version to 2 for layout-aware loading.
+            weight._metadata = getattr(checkpoint["state_dict"], "_metadata", OrderedDict())
+            for meta in weight._metadata.values():
+                if isinstance(meta, dict):
+                    meta["version"] = 2
             load_state_info = self.trainer.model.load_state_dict(weight, strict=self.strict)
             self.trainer.logger.info(f"Missing keys: {load_state_info[0]}")
             if self.trainer.cfg.resume:

@@ -77,6 +77,12 @@ class TesterBase:
                     if comm.get_world_size() > 1:
                         key = "module." + key  # xxx.xxx -> module.xxx.xxx
                 weight[key] = value
+
+            # Keep state_dict metadata and force spconv module version to 2.
+            weight._metadata = getattr(checkpoint["state_dict"], "_metadata", OrderedDict())
+            for meta in weight._metadata.values():
+                if isinstance(meta, dict):
+                    meta["version"] = 2
             model.load_state_dict(weight, strict=True)
             self.logger.info("=> Loaded weight '{}' (epoch {})".format(self.cfg.weight, checkpoint["epoch"]))
         else:
