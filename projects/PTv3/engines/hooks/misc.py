@@ -13,10 +13,9 @@ from collections import OrderedDict
 
 import torch
 import utils.comm as comm
+from engines.test import TESTERS
 from utils.comm import is_main_process
 from utils.timer import Timer
-
-from engines.test import TESTERS
 
 from .builder import HOOKS
 from .default import HookBase
