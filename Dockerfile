@@ -77,6 +77,7 @@ COPY .patches/mmengine.patch /tmp/mmengine.patch
 RUN cd $(python -c "import site; print(site.getsitepackages()[0])") \
   && git apply < /tmp/mmdet3d.patch \
   && git apply < /tmp/mmengine.patch \
+  && git apply < /tmp/spconv.patch \
   && rm -rf /tmp/* \
   && cd /
 
