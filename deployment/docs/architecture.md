@@ -51,7 +51,7 @@
 - `VerificationMixin` – recursive comparer for nested outputs.
 - `BaseEvaluator` – task-specific evaluation contract.
 - `BaseDataLoader` – data-loading abstraction.
-- `build_preprocessing_pipeline` – extracts preprocessing steps from MMDet/MMDet3D configs.
+- Preprocessing is built per-project from model config (e.g. test pipeline).
 - Typed value objects (`constants.py`, `runtime_config.py`, `task_config.py`, `results.py`) keep configuration and metrics structured.
 
 ### Exporters & Export Pipelines

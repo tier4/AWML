@@ -5,8 +5,12 @@ Flattened from `deployment/pipelines/common/registry.py`.
 """
 
 import logging
-from typing import Any, Dict, Optional, Type
+from typing import Dict, Type
 
+import torch
+
+from deployment.configs import ComponentsConfig
+from deployment.core.device import DeviceSpec
 from deployment.core.evaluation.evaluator_types import ModelSpec
 from deployment.pipelines.base_factory import BasePipelineFactory
 from deployment.pipelines.base_pipeline import BaseDeploymentPipeline
@@ -18,7 +22,7 @@ class PipelineRegistry:
     """Registry for mapping project names to pipeline factories.
 
     Factories are responsible for creating a `BaseDeploymentPipeline` instance
-    given a `ModelSpec` and (optionally) a loaded PyTorch model.
+    given a `ModelSpec`, a loaded PyTorch model, and a `DeviceSpec`.
     """
 
     def __init__(self):
@@ -71,9 +75,9 @@ class PipelineRegistry:
         self,
         project_name: str,
         model_spec: ModelSpec,
-        pytorch_model: Any,
-        device: Optional[str] = None,
-        components_cfg: Optional[Any] = None,
+        pytorch_model: torch.nn.Module,
+        device: DeviceSpec,
+        components_cfg: ComponentsConfig,
     ) -> BaseDeploymentPipeline:
         """Create a project-specific pipeline instance using the registered factory.
 

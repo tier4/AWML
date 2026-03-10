@@ -45,7 +45,7 @@ Evaluators return typed results via `EvalResultDict` (TypedDict) ensuring consis
 
 ### Pipeline Architecture
 
-Shared preprocessing/postprocessing steps plug into backend-specific inference. Preprocessing can be generated from MMDet/MMDet3D configs via `build_preprocessing_pipeline`.
+Shared preprocessing/postprocessing steps plug into backend-specific inference. Project data loaders build preprocessing from model config (e.g. MMDet/MMDet3D test pipeline).
 
 ### Flexible Export Modes
 

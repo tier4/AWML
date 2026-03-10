@@ -8,7 +8,7 @@ a concrete DataLoader that extends this base class.
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
-from typing import Any, Dict, Mapping, TypedDict
+from typing import Any, Dict, Mapping, Optional, TypedDict
 
 import torch
 
@@ -37,14 +37,14 @@ class BaseDataLoader(ABC):
     it into a format suitable for model inference.
     """
 
-    def __init__(self, config: Mapping[str, Any]):
+    def __init__(self, config: Optional[Mapping[str, Any]] = None):
         """
         Initialize data loader.
 
         Args:
             config: Configuration dictionary containing task-specific settings
         """
-        self.config = config
+        self.config = config or {}
 
     @abstractmethod
     def load_sample(self, index: int) -> SampleData:

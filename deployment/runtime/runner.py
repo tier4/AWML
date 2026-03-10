@@ -15,8 +15,10 @@ from typing import Any, Dict, Optional, Type
 
 from mmengine.config import Config
 
-from deployment.core import BaseDataLoader, BaseDeploymentConfig, BaseEvaluator
+from deployment.configs import BaseDeploymentConfig
 from deployment.core.contexts import ExportContext
+from deployment.core.evaluation.base_evaluator import BaseEvaluator
+from deployment.core.io.base_data_loader import BaseDataLoader
 from deployment.exporters.common.model_wrappers import BaseModelWrapper
 from deployment.exporters.export_pipelines.base import OnnxExportPipeline, TensorRTExportPipeline
 from deployment.runtime.artifact_manager import ArtifactManager

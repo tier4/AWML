@@ -8,7 +8,11 @@ import logging
 from abc import ABC, abstractmethod
 from typing import Any, Optional
 
+import torch
+
+from deployment.configs import ComponentsConfig
 from deployment.core.backend import Backend
+from deployment.core.device import DeviceSpec
 from deployment.core.evaluation.evaluator_types import ModelSpec
 from deployment.pipelines.base_pipeline import BaseDeploymentPipeline
 
@@ -34,9 +38,9 @@ class BasePipelineFactory(ABC):
     def create_pipeline(
         cls,
         model_spec: ModelSpec,
-        pytorch_model: Any,
-        device: Optional[str] = None,
-        components_cfg: Optional[Any] = None,
+        pytorch_model: torch.nn.Module,
+        device: DeviceSpec,
+        components_cfg: ComponentsConfig,
     ) -> BaseDeploymentPipeline:
         """Build and return a pipeline instance for the given model spec.
 

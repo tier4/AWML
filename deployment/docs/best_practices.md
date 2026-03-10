@@ -73,7 +73,6 @@ runner = YOLOXOptElanDeploymentRunner(
 4. **Evaluation errors**
    - Double-check data loader paths.
    - Ensure model outputs match evaluator expectations.
-   - Confirm the correct `task_type` in config.
 
 ## Future Enhancements
 

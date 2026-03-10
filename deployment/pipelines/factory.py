@@ -22,6 +22,10 @@ Usage:
 import logging
 from typing import Any, List, Optional
 
+import torch
+
+import deployment.configs.schema as ComponentsConfig
+from deployment.core.device import DeviceSpec
 from deployment.core.evaluation.evaluator_types import ModelSpec
 from deployment.pipelines.base_pipeline import BaseDeploymentPipeline
 from deployment.pipelines.registry import pipeline_registry
@@ -49,9 +53,9 @@ class PipelineFactory:
     def create(
         project_name: str,
         model_spec: ModelSpec,
-        pytorch_model: Any,
-        device: Optional[str] = None,
-        components_cfg: Optional[Any] = None,
+        pytorch_model: torch.nn.Module,
+        device: DeviceSpec,
+        components_cfg: ComponentsConfig,
     ) -> BaseDeploymentPipeline:
         """
         Create a pipeline for the specified project.

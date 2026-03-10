@@ -3,7 +3,7 @@ from __future__ import annotations
 import logging
 from typing import Type
 
-from deployment.core import BaseDeploymentConfig
+from deployment.configs import BaseDeploymentConfig
 from deployment.exporters.common.model_wrappers import BaseModelWrapper
 from deployment.exporters.common.onnx_exporter import ONNXExporter
 from deployment.exporters.common.tensorrt_exporter import TensorRTExporter

@@ -9,8 +9,9 @@ from __future__ import annotations
 import logging
 from typing import Any, Dict, List, Mapping
 
+from deployment.configs import BaseDeploymentConfig
 from deployment.core.backend import Backend
-from deployment.core.config.base_config import BaseDeploymentConfig
+from deployment.core.device import DeviceSpec
 from deployment.core.evaluation.base_evaluator import BaseEvaluator
 from deployment.core.evaluation.evaluator_types import ModelSpec
 from deployment.core.io.base_data_loader import BaseDataLoader
@@ -127,7 +128,8 @@ class EvaluationOrchestrator:
             if not backend_cfg.get("enabled", False):
                 continue
 
-            device = str(backend_cfg.get("device", "cpu") or "cpu")
+            raw_device = backend_cfg.get("device") or str(self._get_default_device(backend_enum))
+            device = DeviceSpec.from_value(raw_device)
             artifact, is_valid = artifact_manager.resolve_artifact(backend_enum)
 
             if is_valid and artifact:
@@ -139,7 +141,7 @@ class EvaluationOrchestrator:
 
         return models_to_evaluate
 
-    def _normalize_device_for_backend(self, backend: Backend, device: str) -> str:
+    def _normalize_device_for_backend(self, backend: Backend, device: DeviceSpec) -> DeviceSpec:
         """
         Normalize the device for a backend.
 
@@ -147,29 +149,23 @@ class EvaluationOrchestrator:
             backend: Backend to normalize the device for
             device: Device to normalize
         Returns:
-            Normalized device string
+            Normalized device
         """
-        normalized_device = str(device or self._get_default_device(backend) or "cpu")
+        normalized_device = device or self._get_default_device(backend)
 
         if backend in (Backend.PYTORCH, Backend.ONNX):
-            if normalized_device not in ("cpu",) and not normalized_device.startswith("cuda"):
-                self.logger.warning(
-                    f"Unsupported device '{normalized_device}' for backend '{backend.value}'. Falling back to CPU."
-                )
-                normalized_device = "cpu"
+            return normalized_device
         elif backend is Backend.TENSORRT:
-            if not normalized_device or normalized_device == "cpu":
-                normalized_device = self.config.devices.cuda or "cuda:0"
-            if not normalized_device.startswith("cuda"):
+            if not normalized_device.is_cuda:
                 self.logger.warning(
                     "TensorRT evaluation requires CUDA device. "
-                    f"Overriding device from '{normalized_device}' to 'cuda:0'."
+                    f"Overriding device from '{normalized_device}' to '{self._get_default_device(backend)}'."
                 )
-                normalized_device = "cuda:0"
+                normalized_device = self._get_default_device(backend)
 
         return normalized_device
 
-    def _get_default_device(self, backend: Backend) -> str:
+    def _get_default_device(self, backend: Backend) -> DeviceSpec:
         """
         Get the default device for a backend.
 
@@ -179,8 +175,8 @@ class EvaluationOrchestrator:
             Default device string
         """
         if backend is Backend.TENSORRT:
-            return self.config.devices.cuda or "cuda:0"
-        return self.config.devices.cpu or "cpu"
+            return DeviceSpec.from_value(self.config.devices.cuda or "cuda:0")
+        return DeviceSpec.from_value(self.config.devices.cpu or "cpu")
 
     def _print_cross_backend_comparison(self, all_results: Mapping[str, Any]) -> None:
         """

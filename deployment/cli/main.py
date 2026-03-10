@@ -15,7 +15,7 @@ import traceback
 from typing import List
 
 import deployment.projects as projects_pkg
-from deployment.core.config.base_config import parse_base_args
+from deployment.cli.args import parse_base_args
 from deployment.projects import project_registry
 
 

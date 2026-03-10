@@ -9,8 +9,9 @@ from __future__ import annotations
 import logging
 from typing import Any, Dict, Mapping
 
+from deployment.configs import BaseDeploymentConfig
 from deployment.core.backend import Backend
-from deployment.core.config.base_config import BaseDeploymentConfig
+from deployment.core.device import DeviceSpec
 from deployment.core.evaluation.base_evaluator import BaseEvaluator
 from deployment.core.evaluation.evaluator_types import ModelSpec
 from deployment.core.io.base_data_loader import BaseDataLoader
@@ -164,7 +165,7 @@ class VerificationOrchestrator:
 
         return all_results
 
-    def _resolve_device(self, device_key: str, devices_map: Mapping[str, str]) -> str:
+    def _resolve_device(self, device_key: str, devices_map: Mapping[str, str]) -> DeviceSpec:
         """
         Resolve a device key to a full device string.
 
@@ -172,9 +173,9 @@ class VerificationOrchestrator:
             device_key: Device key to resolve
             devices_map: Mapping of device keys to full device strings
         Returns:
-            Resolved device string
+            Resolved device
         """
         if device_key in devices_map:
-            return devices_map[device_key]
+            return DeviceSpec.from_value(devices_map[device_key])
         self.logger.warning(f"Device alias '{device_key}' not found in devices map, using as-is")
-        return device_key
+        return DeviceSpec.from_value(device_key)

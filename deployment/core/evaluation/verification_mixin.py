@@ -16,6 +16,7 @@ import numpy as np
 import torch
 
 from deployment.core.backend import Backend
+from deployment.core.device import DeviceSpec
 from deployment.core.evaluation.evaluator_types import InferenceInput, ModelSpec, VerifyResultDict
 from deployment.core.io.base_data_loader import BaseDataLoader
 
@@ -59,7 +60,7 @@ class VerificationMixin:
     def _create_pipeline_for_verification(
         self,
         model_spec: ModelSpec,
-        device: str,
+        device: DeviceSpec,
         logger: logging.Logger,
     ) -> Any:
         """Create a pipeline for the specified backend."""
@@ -70,7 +71,7 @@ class VerificationMixin:
         self,
         sample_idx: int,
         data_loader: BaseDataLoader,
-        device: str,
+        device: DeviceSpec,
     ) -> InferenceInput:
         """Get input data for verification.
 
@@ -81,6 +82,7 @@ class VerificationMixin:
         """
         raise NotImplementedError
 
+    @abstractmethod
     def _get_output_names(self) -> Optional[List[str]]:
         """
         Optional: Provide meaningful names for list/tuple outputs.
@@ -320,20 +322,22 @@ class VerificationMixin:
     def _normalize_verification_device(
         self,
         backend: Backend,
-        device: str,
+        device: DeviceSpec,
         logger: logging.Logger,
-    ) -> Optional[str]:
-        """Normalize device for verification based on backend requirements."""
-        if backend is Backend.PYTORCH and device.startswith("cuda"):
+    ) -> DeviceSpec:
+        """Normalize runtime DeviceSpec for backend-specific verification requirements.
+
+        Note:
+            Device aliases/defaults are resolved upstream via config-level DeviceConfig.
+            This method only enforces backend runtime constraints on a concrete DeviceSpec.
+        """
+        if backend is Backend.PYTORCH and device.is_cuda:
             logger.warning("PyTorch verification is forced to CPU; overriding device to 'cpu'")
-            return "cpu"
+            return DeviceSpec.from_value("cpu")
 
         if backend is Backend.TENSORRT:
-            if not device.startswith("cuda"):
-                return None
-            if device != "cuda:0":
-                logger.warning("TensorRT verification only supports 'cuda:0'. Overriding.")
-                return "cuda:0"
+            if not device.is_cuda:
+                raise ValueError(f"TensorRT verification requires CUDA, got '{device}'.")
 
         return device
 
@@ -354,11 +358,11 @@ class VerificationMixin:
             "samples": {},
         }
 
-        ref_device = self._normalize_verification_device(reference.backend, reference.device, logger)
-        test_device = self._normalize_verification_device(test.backend, test.device, logger)
-
-        if test_device is None:
-            results["error"] = f"{test.backend.value} requires CUDA"
+        try:
+            ref_device = self._normalize_verification_device(reference.backend, reference.device, logger)
+            test_device = self._normalize_verification_device(test.backend, test.device, logger)
+        except ValueError as exc:
+            results["error"] = str(exc)
             return results
 
         self._log_verification_header(reference, test, ref_device, test_device, num_samples, tolerance, logger)
@@ -415,8 +419,8 @@ class VerificationMixin:
         ref_pipeline: Any,
         test_pipeline: Any,
         data_loader: BaseDataLoader,
-        ref_device: str,
-        test_device: str,
+        ref_device: DeviceSpec,
+        test_device: DeviceSpec,
         ref_backend: Backend,
         test_backend: Backend,
         tolerance: float,
@@ -447,9 +451,9 @@ class VerificationMixin:
         passed, _ = self._compare_backend_outputs(ref_result.output, test_result.output, tolerance, test_name, logger)
         return passed
 
-    def _move_input_to_device(self, input_data: Any, device: str) -> Any:
+    def _move_input_to_device(self, input_data: Any, device: DeviceSpec) -> Any:
         """Move input data to specified device."""
-        device_obj = torch.device(device)
+        device_obj = device.to_torch_device()
 
         if isinstance(input_data, torch.Tensor):
             return input_data.to(device_obj) if input_data.device != device_obj else input_data
@@ -463,8 +467,8 @@ class VerificationMixin:
         self,
         reference: ModelSpec,
         test: ModelSpec,
-        ref_device: str,
-        test_device: str,
+        ref_device: DeviceSpec,
+        test_device: DeviceSpec,
         num_samples: int,
         tolerance: float,
         logger: logging.Logger,

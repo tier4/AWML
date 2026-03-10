@@ -11,6 +11,8 @@ from typing import Any, Dict, Mapping, Optional, Tuple, Union
 
 import torch
 
+from deployment.core.backend import Backend
+from deployment.core.device import DeviceSpec
 from deployment.core.evaluation.evaluator_types import InferenceResult
 
 logger = logging.getLogger(__name__)
@@ -26,22 +28,29 @@ class BaseDeploymentPipeline(ABC):
     `InferenceResult` with optional breakdown information.
     """
 
-    def __init__(self, model: Any, device: str = "cpu", task_type: str = "unknown", backend_type: str = "unknown"):
+    def __init__(
+        self,
+        model: torch.nn.Module,
+        backend_type: Backend,
+        device: DeviceSpec,
+    ):
         """Create a pipeline bound to a model and a device.
 
         Args:
             model: Backend-specific callable/model wrapper used by `run_model`.
-            device: Target device string (e.g. "cpu", "cuda:0") or torch.device.
-            task_type: High-level task label (e.g. "detection3d") for logging/metrics.
-            backend_type: Backend label (e.g. "pytorch", "onnx", "tensorrt") for logging/metrics.
+            device: Target runtime device (string/torch.device/DeviceSpec).
+            backend_type: Deployment backend enum for logging/metrics. Required.
         """
         self.model = model
-        self.device = torch.device(device) if isinstance(device, str) else device
-        self.task_type = task_type
+        self.device = device
         self.backend_type = backend_type
-        self._stage_latencies: Dict[str, float] = {}
 
         logger.info(f"Initialized {self.__class__.__name__} on device: {self.device}")
+
+    @property
+    def torch_device(self) -> torch.device:
+        """Return torch.device converted from canonical DeviceSpec."""
+        return self.device.to_torch_device()
 
     @abstractmethod
     def preprocess(self, input_data: Any) -> Any:
@@ -91,53 +100,34 @@ class BaseDeploymentPipeline(ABC):
         latency_breakdown: Dict[str, float] = {}
 
         try:
+            # Preprocess
             start_time = time.perf_counter()
-
-            preprocessed = self.preprocess(input_data)
-
-            preprocess_metadata = {}
-            model_input = preprocessed
-            if isinstance(preprocessed, tuple) and len(preprocessed) == 2 and isinstance(preprocessed[1], dict):
-                model_input, preprocess_metadata = preprocessed
-
+            model_input, preprocess_metadata = self.preprocess(input_data)
             preprocess_time = time.perf_counter()
             latency_breakdown["preprocessing_ms"] = (preprocess_time - start_time) * 1000
+            metadata.update(preprocess_metadata)
 
-            merged_metadata = {}
-            if metadata is not None:
-                merged_metadata.update(metadata)
-            if preprocess_metadata is not None:
-                merged_metadata.update(preprocess_metadata)
-
+            # Run model
             model_start = time.perf_counter()
-            model_result = self.run_model(model_input)
+            model_output, model_latency = self.run_model(model_input)
             model_time = time.perf_counter()
             latency_breakdown["model_ms"] = (model_time - model_start) * 1000
 
-            if isinstance(model_result, tuple) and len(model_result) == 2:
-                model_output, stage_latencies = model_result
-                if isinstance(stage_latencies, dict):
-                    latency_breakdown.update(stage_latencies)
-            else:
-                model_output = model_result
-
-            # Legacy stage latency aggregation (kept)
-            if hasattr(self, "_stage_latencies") and isinstance(self._stage_latencies, dict):
-                latency_breakdown.update(self._stage_latencies)
-                self._stage_latencies = {}
+            latency_breakdown.update(model_latency)
 
             total_latency = (time.perf_counter() - start_time) * 1000
 
             if return_raw_outputs:
                 return InferenceResult(output=model_output, latency_ms=total_latency, breakdown=latency_breakdown)
 
+            # Postprocess
             postprocess_start = time.perf_counter()
-            predictions = self.postprocess(model_output, merged_metadata)
+            postprocess_output = self.postprocess(model_output, metadata)
             postprocess_time = time.perf_counter()
             latency_breakdown["postprocessing_ms"] = (postprocess_time - postprocess_start) * 1000
 
             total_latency = (time.perf_counter() - start_time) * 1000
-            return InferenceResult(output=predictions, latency_ms=total_latency, breakdown=latency_breakdown)
+            return InferenceResult(output=postprocess_output, latency_ms=total_latency, breakdown=latency_breakdown)
 
         except Exception:
             logger.exception("Inference failed.")
@@ -154,12 +144,7 @@ class BaseDeploymentPipeline(ABC):
         pass
 
     def __repr__(self):
-        return (
-            f"{self.__class__.__name__}("
-            f"device={self.device}, "
-            f"task={self.task_type}, "
-            f"backend={self.backend_type})"
-        )
+        return f"{self.__class__.__name__}(" f"device={self.device}, " f"backend={self.backend_type})"
 
     def __enter__(self):
         return self

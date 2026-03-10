@@ -14,9 +14,9 @@ from typing import Any, Callable, Mapping, Optional, Type
 
 import torch
 
+from deployment.configs import BaseDeploymentConfig
 from deployment.core.artifacts import Artifact
 from deployment.core.backend import Backend
-from deployment.core.config.base_config import BaseDeploymentConfig
 from deployment.core.contexts import ExportContext
 from deployment.core.io.base_data_loader import BaseDataLoader
 from deployment.exporters.common.factory import ExporterFactory

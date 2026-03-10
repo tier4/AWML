@@ -9,9 +9,6 @@ Configurations remain dictionary-driven for flexibility, with typed dataclasses 
 For simple models with a single ONNX/TensorRT output:
 
 ```python
-# Task type
-task_type = "detection3d"  # or "detection2d", "classification"
-
 # Checkpoint (single source of truth)
 checkpoint_path = "model.pth"
 
@@ -57,7 +54,6 @@ tensorrt_config = dict(
 For models that export to multiple ONNX/TensorRT files, use the `components` config:
 
 ```python
-task_type = "detection3d"
 checkpoint_path = "work_dirs/centerpoint/best_checkpoint.pth"
 
 devices = dict(

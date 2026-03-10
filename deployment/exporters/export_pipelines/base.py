@@ -7,8 +7,8 @@ from __future__ import annotations
 from abc import ABC, abstractmethod
 from typing import Any
 
+from deployment.configs import BaseDeploymentConfig
 from deployment.core.artifacts import Artifact
-from deployment.core.config.base_config import BaseDeploymentConfig
 from deployment.core.io.base_data_loader import BaseDataLoader
 
 

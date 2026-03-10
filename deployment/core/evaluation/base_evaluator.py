@@ -19,8 +19,10 @@ from typing import Any, Dict, List, Mapping, Optional, Tuple, Union
 
 import numpy as np
 import torch
+from mmengine.config import Config
 
 from deployment.core.backend import Backend
+from deployment.core.device import DeviceSpec
 from deployment.core.evaluation.evaluator_types import (
     EvalResultDict,
     InferenceInput,
@@ -33,21 +35,6 @@ from deployment.core.evaluation.evaluator_types import (
 from deployment.core.evaluation.verification_mixin import VerificationMixin
 from deployment.core.io.base_data_loader import BaseDataLoader
 from deployment.core.metrics import BaseMetricsInterface
-
-# Re-export types
-__all__ = [
-    "EvalResultDict",
-    "VerifyResultDict",
-    "ModelSpec",
-    "InferenceInput",
-    "InferenceResult",
-    "LatencyStats",
-    "LatencyBreakdown",
-    "TaskProfile",
-    "BaseEvaluator",
-    "EvaluationDefaults",
-    "EVALUATION_DEFAULTS",
-]
 
 logger = logging.getLogger(__name__)
 
@@ -108,7 +95,7 @@ class BaseEvaluator(VerificationMixin, ABC):
         self,
         metrics_interface: BaseMetricsInterface,
         task_profile: TaskProfile,
-        model_cfg: Any,
+        model_cfg: Config,
     ):
         """
         Initialize evaluator.
@@ -132,7 +119,7 @@ class BaseEvaluator(VerificationMixin, ABC):
         """Set PyTorch model (called by deployment runner)."""
         self.pytorch_model = pytorch_model
 
-    def _ensure_model_on_device(self, device: str) -> Any:
+    def _ensure_model_on_device(self, device: DeviceSpec) -> Any:
         """Ensure PyTorch model is on the correct device."""
         if self.pytorch_model is None:
             raise RuntimeError(
@@ -141,7 +128,7 @@ class BaseEvaluator(VerificationMixin, ABC):
             )
 
         current_device = next(self.pytorch_model.parameters()).device
-        target_device = torch.device(device)
+        target_device = device.to_torch_device()
 
         if current_device != target_device:
             logger.info(f"Moving PyTorch model from {current_device} to {target_device}")
@@ -152,7 +139,7 @@ class BaseEvaluator(VerificationMixin, ABC):
     # ================== Abstract Methods (Task-Specific) ==================
 
     @abstractmethod
-    def _create_pipeline(self, model_spec: ModelSpec, device: str) -> Any:
+    def _create_pipeline(self, model_spec: ModelSpec, device: DeviceSpec) -> Any:
         """Create a pipeline for the specified backend."""
         raise NotImplementedError
 
@@ -161,7 +148,7 @@ class BaseEvaluator(VerificationMixin, ABC):
         self,
         sample: Mapping[str, Any],
         data_loader: BaseDataLoader,
-        device: str,
+        device: DeviceSpec,
     ) -> InferenceInput:
         """Prepare model input from a sample.
 
@@ -207,7 +194,7 @@ class BaseEvaluator(VerificationMixin, ABC):
     def _create_pipeline_for_verification(
         self,
         model_spec: ModelSpec,
-        device: str,
+        device: DeviceSpec,
         log: logging.Logger,
     ) -> Any:
         """Create pipeline for verification."""
@@ -218,7 +205,7 @@ class BaseEvaluator(VerificationMixin, ABC):
         self,
         sample_idx: int,
         data_loader: BaseDataLoader,
-        device: str,
+        device: DeviceSpec,
     ) -> InferenceInput:
         """Get verification input."""
         sample = data_loader.load_sample(sample_idx)

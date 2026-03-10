@@ -187,11 +187,6 @@ class BaseDeploymentConfig:
         """
         return self.verification_config.get_scenarios(export_mode)
 
-    @property
-    def task_type(self) -> Optional[str]:
-        """Get task type for pipeline building."""
-        return self.deploy_cfg.get("task_type")
-
     def get_onnx_settings(self, component_name: str) -> ONNXExportConfig:
         """Get ONNX export settings for a component. I/O and save_file come from ComponentCfg."""
         component_cfg = self.components_cfg.get_component(component_name)

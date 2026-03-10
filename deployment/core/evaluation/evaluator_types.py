@@ -12,6 +12,7 @@ from typing import Any, Dict, Mapping, Optional, TypedDict
 
 from deployment.core.artifacts import Artifact
 from deployment.core.backend import Backend
+from deployment.core.device import DeviceSpec
 
 
 class EvalResultDict(TypedDict, total=False):
@@ -135,12 +136,12 @@ class ModelSpec:
 
     Attributes:
         backend: Backend identifier such as 'pytorch', 'onnx', or 'tensorrt'.
-        device: Target device string (e.g., 'cpu', 'cuda:0').
+        device: Target runtime device.
         artifact: Filesystem representation of the produced model.
     """
 
     backend: Backend
-    device: str
+    device: DeviceSpec
     artifact: Artifact
 
     @property
