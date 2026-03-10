@@ -128,7 +128,7 @@ class EvaluationOrchestrator:
             if not backend_cfg.get("enabled", False):
                 continue
 
-            raw_device = backend_cfg.get("device") or str(self._get_default_device(backend_enum))
+            raw_device = backend_cfg.get("device") or self._get_default_device(backend_enum)
             device = DeviceSpec.from_value(raw_device)
             artifact, is_valid = artifact_manager.resolve_artifact(backend_enum)
 
@@ -175,8 +175,10 @@ class EvaluationOrchestrator:
             Default device string
         """
         if backend is Backend.TENSORRT:
-            return DeviceSpec.from_value(self.config.devices.cuda or "cuda:0")
-        return DeviceSpec.from_value(self.config.devices.cpu or "cpu")
+            if self.config.devices.cuda is None:
+                raise RuntimeError("TensorRT backend requires a configured CUDA device.")
+            return self.config.devices.cuda
+        return self.config.devices.cpu
 
     def _print_cross_backend_comparison(self, all_results: Mapping[str, Any]) -> None:
         """

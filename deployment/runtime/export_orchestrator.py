@@ -400,9 +400,9 @@ class ExportOrchestrator:
         os.makedirs(tensorrt_dir, exist_ok=True)
 
         cuda_device = self.config.devices.cuda
-        device_id = self.config.devices.cuda_device_index
-        if cuda_device is None or device_id is None:
+        if cuda_device is None:
             raise RuntimeError("TensorRT export requires a CUDA device. Set deploy_cfg.devices['cuda'].")
+        device_id = cuda_device.index
         torch.cuda.set_device(device_id)
         self.logger.info(f"Using CUDA device for TensorRT export: {cuda_device}")
 

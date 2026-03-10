@@ -17,6 +17,7 @@ from deployment.configs.enums import (
     PrecisionPolicy,
 )
 from deployment.core.backend import Backend
+from deployment.core.device import DeviceSpec
 from deployment.exporters.common.configs import TensorRTProfileConfig
 
 
@@ -72,8 +73,8 @@ class ExportConfig:
 class DeviceConfig:
     """Normalized device settings shared across deployment stages."""
 
-    cpu: str = "cpu"
-    cuda: Optional[str] = "cuda:0"
+    cpu: DeviceSpec = field(default_factory=lambda: DeviceSpec.from_value("cpu"))
+    cuda: Optional[DeviceSpec] = field(default_factory=lambda: DeviceSpec.from_value("cuda:0"))
 
     def __post_init__(self) -> None:
         object.__setattr__(self, "cpu", self._normalize_cpu(self.cpu))
@@ -82,47 +83,32 @@ class DeviceConfig:
     @classmethod
     def from_dict(cls, config_dict: Mapping[str, Any]) -> DeviceConfig:
         """Create DeviceConfig from dict."""
-        return cls(cpu=config_dict.get("cpu", cls.cpu), cuda=config_dict.get("cuda", cls.cuda))
+        return cls(cpu=config_dict.get("cpu", "cpu"), cuda=config_dict.get("cuda", "cuda:0"))
 
     @staticmethod
-    def _normalize_cpu(device: Optional[str]) -> str:
-        """Normalize CPU device string."""
-        if not device:
-            return "cpu"
-        normalized = str(device).strip().lower()
-        if normalized.startswith("cuda"):
+    def _normalize_cpu(device: Any) -> DeviceSpec:
+        """Normalize CPU device."""
+        normalized = DeviceSpec.from_value(device if device is not None else "cpu")
+        if normalized.is_cuda:
             raise ValueError("CPU device cannot be a CUDA device")
         return normalized
 
     @staticmethod
-    def _normalize_cuda(device: Optional[str]) -> Optional[str]:
-        """Normalize CUDA device string to 'cuda:N' format."""
+    def _normalize_cuda(device: Any) -> Optional[DeviceSpec]:
+        """Normalize CUDA device to DeviceSpec."""
         if device is None:
             return None
-        if not isinstance(device, str):
-            raise ValueError("cuda device must be a string (e.g., 'cuda:0')")
-        normalized = device.strip().lower()
-        if normalized == "":
-            return None
-        if normalized == "cuda":
-            normalized = "cuda:0"
-        if not normalized.startswith("cuda"):
-            raise ValueError(f"Invalid CUDA device '{device}'. Must start with 'cuda'")
-        suffix = normalized.split(":", 1)[1] if ":" in normalized else "0"
-        suffix = suffix.strip() or "0"
-        if not suffix.isdigit():
-            raise ValueError(f"Invalid CUDA device index in '{device}'")
-        device_id = int(suffix)
-        if device_id < 0:
-            raise ValueError("CUDA device index must be non-negative")
-        return f"cuda:{device_id}"
+        normalized = DeviceSpec.from_value(device)
+        if not normalized.is_cuda:
+            raise ValueError(f"Invalid CUDA device '{device}'.")
+        return normalized
 
     @property
     def cuda_device_index(self) -> Optional[int]:
         """Return CUDA device index as integer (if configured)."""
         if self.cuda is None:
             return None
-        return int(self.cuda.split(":", 1)[1])
+        return self.cuda.index
 
 
 @dataclass(frozen=True)
@@ -360,7 +346,7 @@ class EvaluationConfig:
     verbose: bool = False
     backends: Mapping[Any, Mapping[str, Any]] = field(default_factory=_empty_mapping)
     models: Mapping[Any, Any] = field(default_factory=_empty_mapping)
-    devices: Mapping[str, str] = field(default_factory=_empty_mapping)
+    devices: Mapping[str, DeviceSpec] = field(default_factory=_empty_mapping)
 
     @classmethod
     def from_dict(cls, config_dict: Mapping[str, Any]) -> EvaluationConfig:
@@ -383,13 +369,15 @@ class EvaluationConfig:
         if not isinstance(devices_raw, Mapping):
             raise TypeError(f"evaluation.devices must be a mapping, got {type(devices_raw).__name__}")
 
+        normalized_devices = {str(key): DeviceSpec.from_value(value) for key, value in devices_raw.items()}
+
         return cls(
             enabled=config_dict.get("enabled", False),
             num_samples=config_dict.get("num_samples", 10),
             verbose=config_dict.get("verbose", False),
             backends=MappingProxyType(backends_frozen),
             models=MappingProxyType(dict(models_raw)),
-            devices=MappingProxyType(dict(devices_raw)),
+            devices=MappingProxyType(normalized_devices),
         )
 
 
@@ -398,9 +386,9 @@ class VerificationScenario:
     """Immutable verification scenario specification."""
 
     ref_backend: Backend
-    ref_device: str
+    ref_device: DeviceSpec
     test_backend: Backend
-    test_device: str
+    test_device: DeviceSpec
 
     @classmethod
     def from_dict(cls, data: Mapping[str, Any]) -> VerificationScenario:
@@ -410,9 +398,9 @@ class VerificationScenario:
 
         return cls(
             ref_backend=Backend.from_value(data["ref_backend"]),
-            ref_device=str(data["ref_device"]),
+            ref_device=DeviceSpec.from_value(data["ref_device"]),
             test_backend=Backend.from_value(data["test_backend"]),
-            test_device=str(data["test_device"]),
+            test_device=DeviceSpec.from_value(data["test_device"]),
         )
 
 
@@ -423,7 +411,7 @@ class VerificationConfig:
     enabled: bool = True
     num_verify_samples: int = 3
     tolerance: float = 0.1
-    devices: Mapping[str, str] = field(default_factory=_empty_mapping)
+    devices: Mapping[str, DeviceSpec] = field(default_factory=_empty_mapping)
     scenarios: Mapping[ExportMode, Tuple[VerificationScenario, ...]] = field(default_factory=_empty_mapping)
 
     @classmethod
@@ -452,11 +440,13 @@ class VerificationConfig:
         if not isinstance(devices_raw, Mapping):
             raise TypeError(f"verification.devices must be a mapping, got {type(devices_raw).__name__}")
 
+        normalized_devices = {str(key): DeviceSpec.from_value(value) for key, value in devices_raw.items()}
+
         return cls(
             enabled=config_dict.get("enabled", True),
             num_verify_samples=config_dict.get("num_verify_samples", 3),
             tolerance=config_dict.get("tolerance", 0.1),
-            devices=MappingProxyType(dict(devices_raw)),
+            devices=MappingProxyType(normalized_devices),
             scenarios=MappingProxyType(scenario_map),
         )
 

@@ -9,6 +9,7 @@ from typing import Any
 
 from deployment.configs import BaseDeploymentConfig
 from deployment.core.artifacts import Artifact
+from deployment.core.device import DeviceSpec
 from deployment.core.io.base_data_loader import BaseDataLoader
 
 
@@ -54,7 +55,7 @@ class TensorRTExportPipeline(ABC):
         onnx_path: str,
         output_dir: str,
         config: BaseDeploymentConfig,
-        device: str,
+        device: DeviceSpec,
     ) -> Artifact:
         """
         Execute the TensorRT export pipeline and return the produced artifact.
@@ -63,7 +64,7 @@ class TensorRTExportPipeline(ABC):
             onnx_path: Path to ONNX model file/directory
             output_dir: Directory for output files
             config: Deployment configuration
-            device: CUDA device string
+            device: CUDA device specification
 
         Returns:
             Artifact describing the exported TensorRT output

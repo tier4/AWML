@@ -7,11 +7,10 @@ This module handles scenario-based verification across different backends.
 from __future__ import annotations
 
 import logging
-from typing import Any, Dict, Mapping
+from typing import Any, Dict
 
 from deployment.configs import BaseDeploymentConfig
 from deployment.core.backend import Backend
-from deployment.core.device import DeviceSpec
 from deployment.core.evaluation.base_evaluator import BaseEvaluator
 from deployment.core.evaluation.evaluator_types import ModelSpec
 from deployment.core.io.base_data_loader import BaseDataLoader
@@ -85,16 +84,6 @@ class VerificationOrchestrator:
 
         num_verify_samples = verification_cfg.num_verify_samples
         tolerance = verification_cfg.tolerance
-        devices_raw = verification_cfg.devices
-        if devices_raw is None:
-            devices_raw = {}
-        if not isinstance(devices_raw, Mapping):
-            raise TypeError(f"verification.devices must be a mapping, got {type(devices_raw).__name__}")
-        devices_map = dict(devices_raw)
-        devices_map.setdefault("cpu", self.config.devices.cpu or "cpu")
-        if self.config.devices.cuda:
-            devices_map.setdefault("cuda", self.config.devices.cuda)
-
         self.logger.info("=" * 80)
         self.logger.info(f"Running Verification (mode: {export_mode.value})")
         self.logger.info("=" * 80)
@@ -104,8 +93,8 @@ class VerificationOrchestrator:
         total_failed = 0
 
         for i, policy in enumerate(scenarios):
-            ref_device = self._resolve_device(policy.ref_device, devices_map)
-            test_device = self._resolve_device(policy.test_device, devices_map)
+            ref_device = policy.ref_device
+            test_device = policy.test_device
 
             self.logger.info(
                 f"\nScenario {i+1}/{len(scenarios)}: "
@@ -164,18 +153,3 @@ class VerificationOrchestrator:
         }
 
         return all_results
-
-    def _resolve_device(self, device_key: str, devices_map: Mapping[str, str]) -> DeviceSpec:
-        """
-        Resolve a device key to a full device string.
-
-        Args:
-            device_key: Device key to resolve
-            devices_map: Mapping of device keys to full device strings
-        Returns:
-            Resolved device
-        """
-        if device_key in devices_map:
-            return DeviceSpec.from_value(devices_map[device_key])
-        self.logger.warning(f"Device alias '{device_key}' not found in devices map, using as-is")
-        return DeviceSpec.from_value(device_key)
