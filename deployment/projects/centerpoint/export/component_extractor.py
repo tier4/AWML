@@ -36,7 +36,19 @@ class CenterPointComponentExtractor(ModelComponentExtractor):
     def extract_components(
         self, model: torch.nn.Module, sample_data: Tuple[torch.Tensor, dict]
     ) -> List[ExportableComponent]:
-        """Extract exportable submodules from the CenterPoint model for multi-file ONNX export."""
+        """Extract exportable submodules from the CenterPoint model for multi-file ONNX export.
+
+        Builds two components: pts_voxel_encoder and pts_backbone_neck_head, each with
+        name, module, and sample_input from the config and the given sample.
+
+        Args:
+            model: CenterPoint model containing pts_voxel_encoder, pts_middle_encoder,
+                pts_backbone, pts_neck, pts_bbox_head.
+            sample_data: 2-tuple (input_features, voxel_dict) for a single sample.
+
+        Returns:
+            List of two ExportableComponent instances (voxel encoder, backbone+neck+head).
+        """
         input_features, voxel_dict = self._unpack_sample(sample_data)
         self.logger.info("Extracting CenterPoint components for export...")
 
@@ -47,7 +59,19 @@ class CenterPointComponentExtractor(ModelComponentExtractor):
         return [voxel_component, backbone_component]
 
     def _unpack_sample(self, sample_data: Tuple[torch.Tensor, dict]) -> Tuple[torch.Tensor, dict]:
-        """Unpack (input_features, voxel_dict) from sample_data. Validates structure once."""
+        """Unpack (input_features, voxel_dict) from sample_data. Validates structure once.
+
+        Args:
+            sample_data: 2-tuple of (input_features, voxel_dict).
+
+        Returns:
+            input_features: Tensor for pts_voxel_encoder.
+            voxel_dict: Dict with at least "coors" for middle encoder.
+
+        Raises:
+            TypeError: If sample_data is not a 2-tuple or types are wrong.
+            KeyError: If voxel_dict does not contain "coors".
+        """
         if not (isinstance(sample_data, (list, tuple)) and len(sample_data) == 2):
             raise TypeError(
                 "Invalid sample_data for CenterPoint export. Expected a 2-tuple "
@@ -65,7 +89,15 @@ class CenterPointComponentExtractor(ModelComponentExtractor):
     def _create_voxel_encoder_component(
         self, model: torch.nn.Module, input_features: torch.Tensor
     ) -> ExportableComponent:
-        """Create exportable component for voxel encoder."""
+        """Create exportable component for the voxel encoder (pts_voxel_encoder).
+
+        Args:
+            model: CenterPoint model with pts_voxel_encoder.
+            input_features: Sample voxel features used as sample_input for export.
+
+        Returns:
+            ExportableComponent with name from config, model.pts_voxel_encoder, sample_input.
+        """
         component_cfg = self._components_cfg.get_component("pts_voxel_encoder")
         return ExportableComponent(
             name=component_cfg.name,
@@ -76,7 +108,19 @@ class CenterPointComponentExtractor(ModelComponentExtractor):
     def _create_backbone_component(
         self, model: torch.nn.Module, input_features: torch.Tensor, voxel_dict: dict
     ) -> ExportableComponent:
-        """Create exportable component for backbone + neck + head."""
+        """Create exportable component for backbone + neck + head (pts_backbone_neck_head).
+
+        Computes backbone input via _prepare_backbone_input and wraps backbone, neck,
+        and bbox head in CenterPointHeadONNX.
+
+        Args:
+            model: CenterPoint model (voxel/middle encoders and backbone/neck/head).
+            input_features: Voxel features for the voxel encoder.
+            voxel_dict: Dict with "coors" for middle encoder and batch size.
+
+        Returns:
+            ExportableComponent with name from config, backbone module, and spatial sample_input.
+        """
         backbone_input = self._prepare_backbone_input(model, input_features, voxel_dict)
         backbone_module = self._create_backbone_module(model)
 
@@ -90,6 +134,19 @@ class CenterPointComponentExtractor(ModelComponentExtractor):
     def _prepare_backbone_input(
         self, model: torch.nn.Module, input_features: torch.Tensor, voxel_dict: dict
     ) -> torch.Tensor:
+        """Compute spatial features for the backbone from voxel input and coordinates.
+
+        Runs voxel encoder and middle encoder (no grad) to produce the tensor
+        expected by pts_backbone. Uses voxel_dict["coors"] to infer batch_size.
+
+        Args:
+            model: CenterPoint model (pts_voxel_encoder, pts_middle_encoder).
+            input_features: Voxel features tensor for pts_voxel_encoder.
+            voxel_dict: Dict with "coors" used for middle encoder and batch size.
+
+        Returns:
+            spatial_features: Tensor fed to pts_backbone (e.g. [B, C, H, W]).
+        """
         with torch.no_grad():
             voxel_features = model.pts_voxel_encoder(input_features).squeeze(1)
             coors = voxel_dict["coors"]
@@ -98,11 +155,28 @@ class CenterPointComponentExtractor(ModelComponentExtractor):
         return spatial_features
 
     def _create_backbone_module(self, model: torch.nn.Module) -> torch.nn.Module:
+        """Wrap pts_backbone, pts_neck, and pts_bbox_head into a single ONNX module."""
         return CenterPointHeadONNX(model.pts_backbone, model.pts_neck, model.pts_bbox_head)
 
     def extract_features(
         self, model: torch.nn.Module, data_loader: BaseDataLoader, sample_idx: int
     ) -> Tuple[torch.Tensor, dict]:
+        """Extract (input_features, voxel_dict) for a sample for ONNX export.
+
+        Delegates to model._extract_features if present; otherwise raises.
+        Return value is suitable for _unpack_sample and component extraction.
+
+        Args:
+            model: CenterPoint model with optional _extract_features.
+            data_loader: Loader to fetch sample from.
+            sample_idx: Index of the sample to extract.
+
+        Returns:
+            Tuple of (input_features, voxel_dict) for the given sample.
+
+        Raises:
+            AttributeError: If model does not define _extract_features.
+        """
         if hasattr(model, "_extract_features"):
             raw = model._extract_features(data_loader, sample_idx)
             return self._unpack_sample(raw)

@@ -302,4 +302,5 @@ class CenterPointDeploymentPipeline(BaseDeploymentPipeline):
         raise NotImplementedError
 
     def __repr__(self) -> str:
+        """Return string representation with class name, device, and backend."""
         return f"{self.__class__.__name__}(device={self.device}, backend={self.backend_type})"

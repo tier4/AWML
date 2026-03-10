@@ -44,6 +44,20 @@ def extract_t4metric_v2_config(
         required: bool,
         default: Optional[object] = None,
     ) -> object:
+        """Read a key from config dict or object; return default or raise if required and missing.
+
+        Args:
+            cfg: Config dict or object with attributes.
+            key: Key or attribute name to read.
+            required: If True, raise KeyError when key is missing.
+            default: Value to return when key is missing and not required.
+
+        Returns:
+            The value for key, or default.
+
+        Raises:
+            KeyError: If required and key/attribute is missing.
+        """
         if cfg is None:
             if required:
                 raise KeyError(f"Missing required config object while reading '{key}'")

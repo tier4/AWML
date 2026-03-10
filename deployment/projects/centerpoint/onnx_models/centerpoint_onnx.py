@@ -17,6 +17,13 @@ class CenterPointHeadONNX(nn.Module):
     """Head module for centerpoint with BACKBONE, NECK and BBOX_HEAD"""
 
     def __init__(self, backbone: nn.Module, neck: nn.Module, bbox_head: nn.Module):
+        """Wrap backbone, neck, and bbox_head into a single module for ONNX export.
+
+        Args:
+            backbone: pts_backbone module.
+            neck: pts_neck module (may be None).
+            bbox_head: pts_bbox_head module.
+        """
         super(CenterPointHeadONNX, self).__init__()
         self.backbone: nn.Module = backbone
         self.neck: nn.Module = neck
@@ -48,6 +55,13 @@ class CenterPointONNX(CenterPoint):
     """onnx support impl of mmdet3d.models.detectors.CenterPoint"""
 
     def __init__(self, point_channels: int = 5, device: str = "cpu", **kwargs):
+        """Initialize CenterPoint ONNX detector.
+
+        Args:
+            point_channels: Number of point feature channels (e.g. from voxel encoder).
+            device: Target device string ('cpu', 'cuda:0', or 'gpu').
+            **kwargs: Passed to CenterPoint base class.
+        """
         super().__init__(**kwargs)
         self._point_channels = point_channels
         self._device = device
@@ -88,8 +102,21 @@ class CenterPointONNX(CenterPoint):
         return {"points": points, "data_samples": None}
 
     def _extract_features(self, data_loader, sample_idx=0):
-        """
-        Extract features using samples from the provided data loader.
+        """Extract (input_features, voxel_dict) using a sample from the data loader.
+
+        Runs data preprocessor voxelization and voxel encoder get_input_features.
+        Used by the ONNX export pipeline to get sample data for tracing.
+
+        Args:
+            data_loader: Loader with load_sample(sample_idx); must not be None.
+            sample_idx: Index of the sample to use (default 0).
+
+        Returns:
+            Tuple of (input_features, voxel_dict) for backbone input and export.
+
+        Raises:
+            ValueError: If data_loader is None.
+            KeyError/AttributeError: If sample or model components are invalid.
         """
         if data_loader is None:
             raise ValueError("data_loader is required to extract features")

@@ -46,6 +46,16 @@ class CenterPointEvaluator(BaseEvaluator):
         metrics_config: Detection3DMetricsConfig,
         components_cfg: ComponentsConfig,
     ):
+        """Initialize CenterPoint evaluator with model config, metrics config, and components config.
+
+        Args:
+            model_cfg: Model configuration; must have class_names.
+            metrics_config: Configuration for 3D detection metrics (e.g. T4MetricV2).
+            components_cfg: Unified components config; used for output names of pts_backbone_neck_head.
+
+        Raises:
+            ValueError: If model_cfg does not have class_names.
+        """
         if hasattr(model_cfg, "class_names"):
             class_names = model_cfg.class_names
         else:
@@ -69,6 +79,7 @@ class CenterPointEvaluator(BaseEvaluator):
         )
 
     def set_onnx_config(self, model_cfg: Config) -> None:
+        """Set the evaluator's model config to the given ONNX-compatible config."""
         self.model_cfg = model_cfg
 
     # VerificationMixin
@@ -79,6 +90,7 @@ class CenterPointEvaluator(BaseEvaluator):
 
     @override
     def _create_pipeline(self, model_spec: ModelSpec, device: DeviceSpec) -> BaseDeploymentPipeline:
+        """Create a CenterPoint deployment pipeline for the given backend and device."""
         return PipelineFactory.create(
             project_name="centerpoint",
             model_spec=model_spec,
@@ -94,6 +106,20 @@ class CenterPointEvaluator(BaseEvaluator):
         data_loader: BaseDataLoader,
         device: DeviceSpec,
     ) -> InferenceInput:
+        """Build InferenceInput from sample (points + metainfo).
+
+        Args:
+            sample: Dict with 'points' and 'metainfo'.
+            data_loader: Unused; kept for interface compatibility.
+            device: Unused; kept for interface compatibility.
+
+        Returns:
+            InferenceInput with data=points and metadata=metainfo.
+
+        Raises:
+            ValueError: If 'points' is missing from sample.
+            KeyError: If 'metainfo' is missing from sample.
+        """
         if "points" not in sample:
             raise ValueError(f"Expected 'points' in sample. Got keys: {list(sample.keys())}")
         if "metainfo" not in sample:
@@ -104,10 +130,22 @@ class CenterPointEvaluator(BaseEvaluator):
 
     @override
     def _parse_predictions(self, pipeline_output: object) -> List[Dict]:
+        """Return pipeline output as a list of prediction dicts (or empty list if not a list)."""
         return pipeline_output if isinstance(pipeline_output, list) else []
 
     @override
     def _parse_ground_truths(self, gt_data: Mapping[str, object]) -> List[Dict]:
+        """Convert gt_bboxes_3d and gt_labels_3d into list of dicts with bbox_3d and label.
+
+        Args:
+            gt_data: Dict with 'gt_bboxes_3d' and 'gt_labels_3d'.
+
+        Returns:
+            List of {"bbox_3d": [...], "label": int}.
+
+        Raises:
+            KeyError: If gt_bboxes_3d or gt_labels_3d is missing.
+        """
         ground_truths = []
 
         if "gt_bboxes_3d" not in gt_data:
@@ -130,6 +168,7 @@ class CenterPointEvaluator(BaseEvaluator):
 
     @override
     def _add_to_interface(self, predictions: List[Dict], ground_truths: List[Dict]) -> None:
+        """Add one frame of predictions and ground truths to the metrics interface."""
         self.metrics_interface.add_frame(predictions, ground_truths)
 
     @override
@@ -139,6 +178,20 @@ class CenterPointEvaluator(BaseEvaluator):
         latency_breakdowns: List[Dict[str, float]],
         num_samples: int,
     ) -> EvalResultDict:
+        """Build evaluation result dict with mAP/mAPH, per-class AP, latency, and optional breakdown.
+
+        Args:
+            latencies: Per-sample inference latencies (ms).
+            latency_breakdowns: Per-sample stage-wise latencies (optional).
+            num_samples: Number of evaluated samples.
+
+        Returns:
+            EvalResultDict with mAP_by_mode, mAPH_by_mode, per_class_ap_by_mode,
+            detailed_metrics, latency stats, num_samples, and optionally latency_breakdown.
+
+        Raises:
+            KeyError: If metrics summary is missing required keys.
+        """
         latency_stats = self.compute_latency_stats(latencies)
 
         map_results = self.metrics_interface.compute_metrics()

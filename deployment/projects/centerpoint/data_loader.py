@@ -36,6 +36,12 @@ class CenterPointDataLoader(BaseDataLoader):
         info_file: str,
         model_cfg: Config,
     ):
+        """Initialize CenterPoint data loader.
+
+        Args:
+            info_file: Path to dataset info file (e.g. pkl) used as ann_file.
+            model_cfg: MMEngine model config; must have test_dataloader.dataset.
+        """
         super().__init__()
 
         self.model_cfg = model_cfg
@@ -124,10 +130,19 @@ class CenterPointDataLoader(BaseDataLoader):
     @property
     @override
     def num_samples(self) -> int:
+        """Return the number of samples in the dataset."""
         return len(self.dataset)
 
     @property
     def class_names(self) -> List[str]:
+        """Return class names from dataset metainfo or model_cfg.
+
+        Returns:
+            List of class name strings.
+
+        Raises:
+            ValueError: If class_names not found in dataset.metainfo or model_cfg.
+        """
         # Get from dataset's metainfo or model_cfg
         if hasattr(self.dataset, "metainfo") and "classes" in self.dataset.metainfo:
             return list(self.dataset.metainfo["classes"])

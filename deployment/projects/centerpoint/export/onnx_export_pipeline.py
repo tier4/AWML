@@ -1,5 +1,9 @@
 """
 CenterPoint ONNX export pipeline using composition.
+
+Splits the CenterPoint model into exportable components (e.g. voxel encoder,
+backbone+neck+head) via a ModelComponentExtractor and exports each component
+to a separate ONNX file in the given output directory.
 """
 
 from __future__ import annotations
@@ -34,6 +38,13 @@ class CenterPointONNXExportPipeline(OnnxExportPipeline):
         component_extractor: ModelComponentExtractor,
         logger: Optional[logging.Logger] = None,
     ):
+        """Initialize the pipeline with exporter factory and component extractor.
+
+        Args:
+            exporter_factory: Factory used to create ONNX exporters per component.
+            component_extractor: Extractor that splits the model into exportable components.
+            logger: Optional logger; defaults to module logger if not provided.
+        """
         self.exporter_factory = exporter_factory
         self.component_extractor = component_extractor
         self.logger = logger or logging.getLogger(__name__)
@@ -47,6 +58,21 @@ class CenterPointONNXExportPipeline(OnnxExportPipeline):
         config: BaseDeploymentConfig,
         sample_idx: int = 0,
     ) -> Artifact:
+        """Export CenterPoint to multi-file ONNX (one file per component).
+
+        Extracts sample data, splits the model into components, and exports each
+        component to ``<output_dir>/<component_name>.onnx``.
+
+        Args:
+            model: CenterPoint model to export.
+            data_loader: Loader used to get sample data for tracing.
+            output_dir: Directory where ONNX files are written.
+            config: Deployment config for exporter options.
+            sample_idx: Index of the sample to use for export (default 0).
+
+        Returns:
+            Artifact whose path is the output directory.
+        """
         output_dir_path = Path(output_dir)
         output_dir_path.mkdir(parents=True, exist_ok=True)
 
@@ -60,6 +86,7 @@ class CenterPointONNXExportPipeline(OnnxExportPipeline):
         return Artifact(path=str(output_dir_path))
 
     def _log_header(self, output_dir: Path, sample_idx: int) -> None:
+        """Log export header with output directory and sample index."""
         self.logger.info("=" * 80)
         self.logger.info("Exporting CenterPoint to ONNX (multi-file)")
         self.logger.info("=" * 80)
@@ -72,6 +99,19 @@ class CenterPointONNXExportPipeline(OnnxExportPipeline):
         data_loader: BaseDataLoader,
         sample_idx: int,
     ) -> Tuple[torch.Tensor, dict]:
+        """Get (input_features, voxel_dict) for the given sample via component extractor.
+
+        Args:
+            model: CenterPoint model (must have _extract_features for ONNX export).
+            data_loader: Loader to fetch the sample from.
+            sample_idx: Index of the sample.
+
+        Returns:
+            Tuple of (input_features, voxel_dict) for component extraction.
+
+        Raises:
+            RuntimeError: If feature extraction fails.
+        """
         self.logger.info("Extracting features from sample data...")
         try:
             return self.component_extractor.extract_features(model, data_loader, sample_idx)
@@ -84,7 +124,20 @@ class CenterPointONNXExportPipeline(OnnxExportPipeline):
         components: Iterable[ExportableComponent],
         output_dir: Path,
         config: BaseDeploymentConfig,
-    ) -> Tuple[str, ...]:
+    ) -> list[str]:
+        """Export each component to ONNX under output_dir (one file per component).
+
+        Args:
+            components: Exportable components (name, module, sample_input).
+            output_dir: Directory to write <component.name>.onnx files.
+            config: Deployment config for building the ONNX exporter.
+
+        Returns:
+            List of absolute paths of exported ONNX files.
+
+        Raises:
+            RuntimeError: If any component export fails.
+        """
         exported_paths: list[str] = []
         component_list = list(components)
         total = len(component_list)
@@ -107,9 +160,10 @@ class CenterPointONNXExportPipeline(OnnxExportPipeline):
             exported_paths.append(str(output_path))
             self.logger.info(f"Exported {component.name}: {output_path}")
 
-        return tuple(exported_paths)
+        return exported_paths
 
     def _build_onnx_exporter(self, config: BaseDeploymentConfig, component_name: str) -> ONNXExporter:
+        """Create an ONNX exporter for the given component using the factory."""
         return self.exporter_factory.create_onnx_exporter(
             config=config,
             wrapper_cls=IdentityWrapper,
@@ -117,7 +171,8 @@ class CenterPointONNXExportPipeline(OnnxExportPipeline):
             component_name=component_name,
         )
 
-    def _log_summary(self, exported_paths: Tuple[str, ...]) -> None:
+    def _log_summary(self, exported_paths: list[str]) -> None:
+        """Log success summary and list of exported ONNX file paths."""
         self.logger.info("\n" + "=" * 80)
         self.logger.info("CenterPoint ONNX export successful")
         self.logger.info("=" * 80)

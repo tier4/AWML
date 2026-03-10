@@ -34,6 +34,7 @@ class PillarFeatureNetONNX(PillarFeatureNet):
     """onnx support impl of mmdet3d.models.voxel_encoders.pillar_encoder.PillarFeatureNet"""
 
     def __init__(self, **kwargs):
+        """Initialize PillarFeatureNetONNX; arguments passed to PillarFeatureNet."""
         super().__init__(**kwargs)
         self._logger = MMLogger.get_current_instance()
         self._logger.info("Running PillarFeatureNetONNX!")
@@ -149,6 +150,7 @@ class BackwardPillarFeatureNetONNX(BackwardPillarFeatureNet):
     """
 
     def __init__(self, **kwargs):
+        """Initialize BackwardPillarFeatureNetONNX; arguments passed to BackwardPillarFeatureNet."""
         super(BackwardPillarFeatureNetONNX, self).__init__(**kwargs)
 
     def get_input_features(self, features: Tensor, num_points: Tensor, coors: Tensor, *args, **kwargs) -> Tensor:

@@ -7,7 +7,7 @@ from __future__ import annotations
 import logging
 import os.path as osp
 import time
-from typing import Dict, List, Tuple
+from typing import Dict, List, Tuple, Union
 
 import numpy as np
 import pycuda.autoinit  # noqa: F401

@@ -34,6 +34,7 @@ class SeparateHeadONNX(SeparateHead):
     """onnx support impl of mmdet3d.models.dense_heads.centerpoint_head.SeparateHead"""
 
     def __init__(self, **kwargs):
+        """Initialize SeparateHeadONNX with fixed output order (heatmap, reg, height, dim, rot, vel)."""
         super().__init__(**kwargs)
         self._logger = MMLogger.get_current_instance()
         self._logger.info("Running SeparateHeadONNX!")
@@ -124,9 +125,7 @@ class CenterHeadONNX(CenterHead):
         )
 
     def _export_forward_single(self, head_tensors: Dict[str, torch.Tensor]) -> Tuple[torch.Tensor]:
-        """
-        Forward normally that uses the x-axis reference.
-        """
+        """Forward using x-axis reference; return head tensors in output_names order."""
         ret_list: List[torch.Tensor] = [head_tensors[head_name] for head_name in self.output_names]
         return tuple(ret_list)
 

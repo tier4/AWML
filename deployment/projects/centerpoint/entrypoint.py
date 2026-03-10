@@ -19,7 +19,14 @@ _REQUIRED_COMPONENTS = ("pts_voxel_encoder", "pts_backbone_neck_head")
 
 
 def _validate_required_components(components_cfg) -> None:
-    """Validate that all CenterPoint required components exist."""
+    """Validate that all CenterPoint required components exist in the config.
+
+    Args:
+        components_cfg: Components config with get_component(name).
+
+    Raises:
+        KeyError or similar: If any of _REQUIRED_COMPONENTS is missing.
+    """
     for component_name in _REQUIRED_COMPONENTS:
         components_cfg.get_component(component_name)
 

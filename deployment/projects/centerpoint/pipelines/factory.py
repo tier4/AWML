@@ -36,6 +36,7 @@ class CenterPointPipelineFactory(BasePipelineFactory):
     @classmethod
     @override
     def get_project_name(cls) -> str:
+        """Return the project name used in pipeline registry and deploy config."""
         return "centerpoint"
 
     @classmethod

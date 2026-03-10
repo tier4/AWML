@@ -1,5 +1,9 @@
 """
 CenterPoint TensorRT export pipeline using composition.
+
+Consumes a directory of ONNX files (from the CenterPoint ONNX export) and
+converts each to a TensorRT engine, writing engines according to the
+components config (e.g. engine_file paths).
 """
 
 from __future__ import annotations
@@ -32,11 +36,29 @@ class CenterPointTensorRTExportPipeline(TensorRTExportPipeline):
         components_cfg: ComponentsConfig,
         logger: Optional[logging.Logger] = None,
     ):
+        """Initialize the pipeline with exporter factory and components config.
+
+        Args:
+            exporter_factory: Factory used to create TensorRT exporters per component.
+            components_cfg: Config defining component names, onnx_file and engine_file paths.
+            logger: Optional logger; defaults to module logger if not provided.
+        """
         self.exporter_factory = exporter_factory
         self._components_cfg = components_cfg
         self.logger = logger or logging.getLogger(__name__)
 
     def _validate_cuda_device(self, device: str) -> int:
+        """Ensure device string is 'cuda:N' and return the device index N.
+
+        Args:
+            device: CUDA device string (e.g. 'cuda:0').
+
+        Returns:
+            The integer device index.
+
+        Raises:
+            ValueError: If device does not match 'cuda:N'.
+        """
         if not self._CUDA_DEVICE_PATTERN.match(device):
             raise ValueError(
                 f"Invalid CUDA device format: '{device}'. Expected format: 'cuda:N' (e.g., 'cuda:0', 'cuda:1')"
@@ -51,6 +73,25 @@ class CenterPointTensorRTExportPipeline(TensorRTExportPipeline):
         config: BaseDeploymentConfig,
         device: str,
     ) -> Artifact:
+        """Convert all ONNX files in onnx_path to TensorRT engines in output_dir.
+
+        Discovers *.onnx files in the given directory, maps each to a component
+        and engine path from config, and builds one TensorRT engine per file.
+
+        Args:
+            onnx_path: Directory containing ONNX files (multi-file export).
+            output_dir: Directory where TensorRT engine files are written.
+            config: Deployment config for TensorRT exporter options.
+            device: CUDA device string (e.g. 'cuda:0') for building engines.
+
+        Returns:
+            Artifact whose path is the output directory.
+
+        Raises:
+            ValueError: If device or onnx_path is invalid or onnx_path is not a directory.
+            FileNotFoundError: If no ONNX files are found in onnx_path.
+            KeyError: If an ONNX file stem is not declared in components config.
+        """
         if device is None:
             raise ValueError("CUDA device must be provided for TensorRT export")
         if onnx_path is None:
@@ -104,20 +145,31 @@ class CenterPointTensorRTExportPipeline(TensorRTExportPipeline):
         return Artifact(path=str(output_dir_path))
 
     def _discover_onnx_files(self, onnx_dir: Path) -> List[Path]:
+        """Return sorted list of .onnx file paths in the given directory."""
         return sorted(
             (path for path in onnx_dir.iterdir() if path.is_file() and path.suffix.lower() == ".onnx"),
             key=lambda p: p.name,
         )
 
     def _build_engine_file_map(self) -> Dict[str, str]:
-        """Build mapping from ONNX stem -> engine_file from ComponentsConfig."""
+        """Build mapping from ONNX file stem to engine_file path from ComponentsConfig.
+
+        Returns:
+            Dict mapping each component's ONNX stem (e.g. 'pts_voxel_encoder') to
+            its configured engine_file name/path.
+        """
         mapping: Dict[str, str] = {}
         for name, comp in self._components_cfg.items():
             mapping[Path(comp.onnx_file).stem] = comp.engine_file
         return mapping
 
     def _build_onnx_stem_to_component_map(self) -> Dict[str, str]:
-        """Build mapping from ONNX stem -> component name."""
+        """Build mapping from ONNX file stem to component name from ComponentsConfig.
+
+        Returns:
+            Dict mapping each ONNX stem (e.g. 'pts_voxel_encoder') to its
+            component name in the config.
+        """
         return {
             Path(component_cfg.onnx_file).stem: component_name
             for component_name, component_cfg in self._components_cfg.items()
