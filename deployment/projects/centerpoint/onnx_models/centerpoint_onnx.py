@@ -60,14 +60,16 @@ class CenterPointONNX(CenterPoint):
         self,
         point_channels: int = 5,
         device: DeviceSpec = DeviceSpec.from_value("cpu"),
+        **kwargs,
     ):
         """Initialize CenterPoint ONNX detector.
 
         Args:
             point_channels: Number of point feature channels (e.g. from voxel encoder).
             device: Target device specification.
+            **kwargs: Passed to CenterPoint base class.
         """
-        super().__init__()
+        super().__init__(**kwargs)
         self._point_channels = point_channels
         self._device = device
         self._torch_device = self._device.to_torch_device()
