@@ -9,7 +9,6 @@ components config (e.g. engine_file paths).
 from __future__ import annotations
 
 import logging
-import re
 from pathlib import Path
 from typing import Dict, List, Optional
 
@@ -17,6 +16,7 @@ import torch
 
 from deployment.configs import BaseDeploymentConfig, ComponentsConfig
 from deployment.core.artifacts import Artifact
+from deployment.core.device import DeviceSpec
 from deployment.exporters.common.factory import ExporterFactory
 from deployment.exporters.export_pipelines.base import TensorRTExportPipeline
 
@@ -27,8 +27,6 @@ class CenterPointTensorRTExportPipeline(TensorRTExportPipeline):
     Consumes a directory of ONNX files (multi-file export) and builds a TensorRT
     engine per component into ``output_dir``.
     """
-
-    _CUDA_DEVICE_PATTERN = re.compile(r"^cuda:\d+$")
 
     def __init__(
         self,
@@ -47,23 +45,21 @@ class CenterPointTensorRTExportPipeline(TensorRTExportPipeline):
         self._components_cfg = components_cfg
         self.logger = logger or logging.getLogger(__name__)
 
-    def _validate_cuda_device(self, device: str) -> int:
-        """Ensure device string is 'cuda:N' and return the device index N.
+    def _validate_cuda_device(self, device: DeviceSpec) -> int:
+        """Ensure device is CUDA and return the device index.
 
         Args:
-            device: CUDA device string (e.g. 'cuda:0').
+            device: CUDA device specification.
 
         Returns:
             The integer device index.
 
         Raises:
-            ValueError: If device does not match 'cuda:N'.
+            ValueError: If device is not CUDA.
         """
-        if not self._CUDA_DEVICE_PATTERN.match(device):
-            raise ValueError(
-                f"Invalid CUDA device format: '{device}'. Expected format: 'cuda:N' (e.g., 'cuda:0', 'cuda:1')"
-            )
-        return int(device.split(":")[1])
+        if not device.is_cuda:
+            raise ValueError(f"TensorRT export requires CUDA device, got: {device}")
+        return device.index
 
     def export(
         self,
@@ -71,7 +67,7 @@ class CenterPointTensorRTExportPipeline(TensorRTExportPipeline):
         onnx_path: str,
         output_dir: str,
         config: BaseDeploymentConfig,
-        device: str,
+        device: DeviceSpec,
     ) -> Artifact:
         """Convert all ONNX files in onnx_path to TensorRT engines in output_dir.
 
@@ -82,7 +78,7 @@ class CenterPointTensorRTExportPipeline(TensorRTExportPipeline):
             onnx_path: Directory containing ONNX files (multi-file export).
             output_dir: Directory where TensorRT engine files are written.
             config: Deployment config for TensorRT exporter options.
-            device: CUDA device string (e.g. 'cuda:0') for building engines.
+            device: CUDA device for building engines.
 
         Returns:
             Artifact whose path is the output directory.

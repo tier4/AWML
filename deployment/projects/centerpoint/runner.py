@@ -12,6 +12,7 @@ from mmengine.config import Config
 
 from deployment.configs import BaseDeploymentConfig
 from deployment.core.contexts import CenterPointExportContext, ExportContext
+from deployment.core.device import DeviceSpec
 from deployment.core.io.base_data_loader import BaseDataLoader
 from deployment.exporters.common.factory import ExporterFactory
 from deployment.exporters.common.model_wrappers import IdentityWrapper
@@ -106,7 +107,7 @@ class CenterPointDeploymentRunner(BaseDeploymentRunner):
         model, onnx_cfg = build_centerpoint_onnx_model(
             base_model_cfg=self.model_cfg,
             checkpoint_path=checkpoint_path,
-            device="cpu",
+            device=DeviceSpec.from_value("cpu"),
             rot_y_axis_reference=rot_y_axis_reference,
         )
 

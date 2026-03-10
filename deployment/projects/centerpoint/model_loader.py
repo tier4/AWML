@@ -14,12 +14,13 @@ from mmengine.config import Config
 from mmengine.registry import MODELS, init_default_scope
 from mmengine.runner import load_checkpoint
 
+from deployment.core.device import DeviceSpec
 from deployment.projects.centerpoint import onnx_models  # noqa: F401
 
 
 def create_onnx_model_cfg(
     model_cfg: Config,
-    device: str,
+    device: DeviceSpec,
     rot_y_axis_reference: bool = False,
 ) -> Config:
     """Create a model config that swaps modules to ONNX-friendly variants.
@@ -29,7 +30,7 @@ def create_onnx_model_cfg(
 
     Args:
         model_cfg: Original MMEngine model configuration.
-        device: Target device string (e.g., 'cpu', 'cuda:0').
+        device: Target device specification.
         rot_y_axis_reference: Whether to use y-axis rotation reference.
 
     Returns:
@@ -64,14 +65,14 @@ def create_onnx_model_cfg(
 def build_model_from_cfg(
     model_cfg: Config,
     checkpoint_path: str,
-    device: str,
+    device: DeviceSpec,
 ) -> torch.nn.Module:
     """Build a model from MMEngine config and load checkpoint weights.
 
     Args:
         model_cfg: MMEngine model configuration.
         checkpoint_path: Path to the checkpoint file.
-        device: Target device string.
+        device: Target device specification.
 
     Returns:
         Loaded and initialized PyTorch model in eval mode.
@@ -81,8 +82,9 @@ def build_model_from_cfg(
 
     model_config = copy.deepcopy(model_cfg.model)
     model = MODELS.build(model_config)
-    model.to(device)
-    load_checkpoint(model, checkpoint_path, map_location=device)
+    torch_device = device.to_torch_device()
+    model.to(torch_device)
+    load_checkpoint(model, checkpoint_path, map_location=torch_device)
     model.eval()
     model.cfg = model_cfg
     return model
@@ -91,7 +93,7 @@ def build_model_from_cfg(
 def build_centerpoint_onnx_model(
     base_model_cfg: Config,
     checkpoint_path: str,
-    device: str,
+    device: DeviceSpec,
     rot_y_axis_reference: bool = False,
 ) -> Tuple[torch.nn.Module, Config]:
     """Build an ONNX-compatible CenterPoint model.
@@ -101,7 +103,7 @@ def build_centerpoint_onnx_model(
     Args:
         base_model_cfg: Base MMEngine model configuration.
         checkpoint_path: Path to the checkpoint file.
-        device: Target device string.
+        device: Target device specification.
         rot_y_axis_reference: Whether to use y-axis rotation reference.
 
     Returns:

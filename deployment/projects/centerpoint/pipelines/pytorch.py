@@ -24,12 +24,16 @@ class CenterPointPyTorchPipeline(CenterPointDeploymentPipeline):
     the execution to match the ONNX/TensorRT staged inference for consistency.
     """
 
-    def __init__(self, pytorch_model: torch.nn.Module, device: DeviceSpec | str = "cuda:0") -> None:
+    def __init__(
+        self,
+        pytorch_model: torch.nn.Module,
+        device: DeviceSpec,
+    ) -> None:
         """Initialize PyTorch pipeline.
 
         Args:
             pytorch_model: PyTorch model for inference.
-            device: Target device ('cpu' or 'cuda:N').
+            device: Target runtime device.
         """
         super().__init__(pytorch_model=pytorch_model, backend_type=Backend.PYTORCH, device=device)
         logger.info("PyTorch pipeline initialized (ONNX-compatible staged inference)")

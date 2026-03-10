@@ -12,6 +12,8 @@ from mmdet3d.registry import MODELS
 from mmengine.logging import MMLogger
 from torch import nn
 
+from deployment.core.device import DeviceSpec
+
 
 class CenterPointHeadONNX(nn.Module):
     """Head module for centerpoint with BACKBONE, NECK and BBOX_HEAD"""
@@ -54,22 +56,21 @@ class CenterPointHeadONNX(nn.Module):
 class CenterPointONNX(CenterPoint):
     """onnx support impl of mmdet3d.models.detectors.CenterPoint"""
 
-    def __init__(self, point_channels: int = 5, device: str = "cpu", **kwargs):
+    def __init__(
+        self,
+        point_channels: int = 5,
+        device: DeviceSpec = DeviceSpec.from_value("cpu"),
+    ):
         """Initialize CenterPoint ONNX detector.
 
         Args:
             point_channels: Number of point feature channels (e.g. from voxel encoder).
-            device: Target device string ('cpu', 'cuda:0', or 'gpu').
-            **kwargs: Passed to CenterPoint base class.
+            device: Target device specification.
         """
-        super().__init__(**kwargs)
+        super().__init__()
         self._point_channels = point_channels
         self._device = device
-        # Handle both "cuda:0" and "gpu" device strings
-        if self._device.startswith("cuda") or self._device == "gpu":
-            self._torch_device = torch.device(self._device if self._device.startswith("cuda") else "cuda:0")
-        else:
-            self._torch_device = torch.device("cpu")
+        self._torch_device = self._device.to_torch_device()
         self._logger = MMLogger.get_current_instance()
         self._logger.info("Running CenterPointONNX!")
 
