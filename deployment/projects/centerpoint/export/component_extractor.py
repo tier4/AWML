@@ -9,7 +9,7 @@ from typing import Any, List, Tuple
 
 import torch
 
-from deployment.core.config.base_config import ComponentsConfig
+from deployment.configs import ComponentsConfig
 from deployment.exporters.export_pipelines.interfaces import ExportableComponent, ModelComponentExtractor
 from deployment.projects.centerpoint.onnx_models.centerpoint_onnx import CenterPointHeadONNX
 

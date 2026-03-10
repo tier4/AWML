@@ -8,7 +8,10 @@ import logging
 from typing import List
 
 import torch
+from typing_extensions import override
 
+from deployment.core.backend import Backend
+from deployment.core.device import DeviceSpec
 from deployment.projects.centerpoint.pipelines.centerpoint_pipeline import CenterPointDeploymentPipeline
 
 logger = logging.getLogger(__name__)
@@ -21,16 +24,17 @@ class CenterPointPyTorchPipeline(CenterPointDeploymentPipeline):
     the execution to match the ONNX/TensorRT staged inference for consistency.
     """
 
-    def __init__(self, pytorch_model: torch.nn.Module, device: str = "cuda") -> None:
+    def __init__(self, pytorch_model: torch.nn.Module, device: DeviceSpec | str = "cuda:0") -> None:
         """Initialize PyTorch pipeline.
 
         Args:
             pytorch_model: PyTorch model for inference.
             device: Target device ('cpu' or 'cuda:N').
         """
-        super().__init__(pytorch_model, device, backend_type="pytorch")
+        super().__init__(pytorch_model=pytorch_model, backend_type=Backend.PYTORCH, device=device)
         logger.info("PyTorch pipeline initialized (ONNX-compatible staged inference)")
 
+    @override
     def run_voxel_encoder(self, input_features: torch.Tensor) -> torch.Tensor:
         """Run voxel encoder using PyTorch model.
 
@@ -44,9 +48,6 @@ class CenterPointPyTorchPipeline(CenterPointDeploymentPipeline):
             ValueError: If input_features is None.
             RuntimeError: If output shape is unexpected.
         """
-        if input_features is None:
-            raise ValueError("input_features is None. This should not happen for ONNX models.")
-
         input_features = self.to_device_tensor(input_features)
 
         with torch.no_grad():
@@ -71,6 +72,7 @@ class CenterPointPyTorchPipeline(CenterPointDeploymentPipeline):
 
         return voxel_features
 
+    @override
     def run_backbone_head(self, spatial_features: torch.Tensor) -> List[torch.Tensor]:
         """Run backbone and head using PyTorch model.
 

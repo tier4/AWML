@@ -11,8 +11,8 @@ from typing import Dict, List, Optional
 
 import torch
 
-from deployment.core import Artifact, BaseDeploymentConfig
-from deployment.core.config.base_config import ComponentsConfig
+from deployment.configs import BaseDeploymentConfig, ComponentsConfig
+from deployment.core.artifacts import Artifact
 from deployment.exporters.common.factory import ExporterFactory
 from deployment.exporters.export_pipelines.base import TensorRTExportPipeline
 

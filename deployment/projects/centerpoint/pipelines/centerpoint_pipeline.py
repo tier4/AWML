@@ -15,7 +15,10 @@ from typing import Any, Dict, List, Optional, Tuple, Union
 import numpy as np
 import torch
 from mmdet3d.structures import Det3DDataSample, LiDARInstance3DBoxes
+from typing_extensions import override
 
+from deployment.core.backend import Backend
+from deployment.core.device import DeviceSpec
 from deployment.pipelines.base_pipeline import BaseDeploymentPipeline
 
 logger = logging.getLogger(__name__)
@@ -39,15 +42,15 @@ class CenterPointDeploymentPipeline(BaseDeploymentPipeline):
     def __init__(
         self,
         pytorch_model: torch.nn.Module,
-        device: str = "cuda",
-        backend_type: str = "unknown",
+        backend_type: Backend,
+        device: DeviceSpec,
     ) -> None:
         """Initialize CenterPoint pipeline.
 
         Args:
             pytorch_model: PyTorch model for preprocessing/postprocessing.
-            device: Target device ('cpu' or 'cuda:N').
-            backend_type: Backend identifier ('pytorch', 'onnx', 'tensorrt').
+            device: Target runtime device (DeviceSpec).
+            backend_type: Deployment backend enum. Required.
 
         Raises:
             ValueError: If class_names not found in pytorch_model.cfg.
@@ -55,17 +58,20 @@ class CenterPointDeploymentPipeline(BaseDeploymentPipeline):
         cfg = getattr(pytorch_model, "cfg", None)
 
         class_names = getattr(cfg, "class_names", None)
-        if class_names is None:
-            raise ValueError("class_names not found in pytorch_model.cfg")
-
         point_cloud_range = getattr(cfg, "point_cloud_range", None)
         voxel_size = getattr(cfg, "voxel_size", None)
 
+        if class_names is None:
+            raise ValueError("class_names not found in pytorch_model.cfg")
+        if point_cloud_range is None:
+            raise ValueError("point_cloud_range not found in pytorch_model.cfg")
+        if voxel_size is None:
+            raise ValueError("voxel_size not found in pytorch_model.cfg")
+
         super().__init__(
             model=pytorch_model,
-            device=device,
-            task_type="detection3d",
             backend_type=backend_type,
+            device=device,
         )
 
         self.num_classes: int = len(class_names)
@@ -73,7 +79,6 @@ class CenterPointDeploymentPipeline(BaseDeploymentPipeline):
         self.point_cloud_range: Optional[List[float]] = point_cloud_range
         self.voxel_size: Optional[List[float]] = voxel_size
         self.pytorch_model: torch.nn.Module = pytorch_model
-        self._stage_latencies: Dict[str, float] = {}
 
     def to_device_tensor(self, data: Union[torch.Tensor, np.ndarray]) -> torch.Tensor:
         """Convert data to tensor on the pipeline's device.
@@ -82,11 +87,11 @@ class CenterPointDeploymentPipeline(BaseDeploymentPipeline):
             data: Input data (torch.Tensor or np.ndarray).
 
         Returns:
-            Tensor on self.device.
+            Tensor on pipeline torch device.
         """
         if isinstance(data, np.ndarray):
             data = torch.from_numpy(data)
-        return data.to(self.device)
+        return data.to(self.torch_device)
 
     def to_numpy(self, data: torch.Tensor, dtype: np.dtype = np.float32) -> np.ndarray:
         """Convert tensor to contiguous numpy array.
@@ -103,6 +108,7 @@ class CenterPointDeploymentPipeline(BaseDeploymentPipeline):
             arr = np.ascontiguousarray(arr)
         return arr
 
+    @override
     def preprocess(
         self,
         points: torch.Tensor,
@@ -122,6 +128,7 @@ class CenterPointDeploymentPipeline(BaseDeploymentPipeline):
         points_tensor = self.to_device_tensor(points)
 
         data_samples = [Det3DDataSample()]
+        # Run data preprocessor
         with torch.no_grad():
             batch_inputs = self.pytorch_model.data_preprocessor(
                 {"inputs": {"points": [points_tensor]}, "data_samples": data_samples}
@@ -134,8 +141,7 @@ class CenterPointDeploymentPipeline(BaseDeploymentPipeline):
 
         input_features: Optional[torch.Tensor] = None
         with torch.no_grad():
-            if hasattr(self.pytorch_model.pts_voxel_encoder, "get_input_features"):
-                input_features = self.pytorch_model.pts_voxel_encoder.get_input_features(voxels, num_points, coors)
+            input_features = self.pytorch_model.pts_voxel_encoder.get_input_features(voxels, num_points, coors)
 
         preprocessed_dict = {
             "input_features": input_features,
@@ -173,6 +179,36 @@ class CenterPointDeploymentPipeline(BaseDeploymentPipeline):
 
         return spatial_features
 
+    @override
+    def run_model(
+        self,
+        preprocessed_input: Dict[str, torch.Tensor],
+    ) -> Tuple[List[torch.Tensor], Dict[str, float]]:
+        """Run the full model pipeline with latency tracking.
+
+        Args:
+            preprocessed_input: Dict with keys: input_features, coors.
+
+        Returns:
+            Tuple of (head_outputs, stage_latencies).
+        """
+        stage_latencies: Dict[str, float] = {}
+
+        start = time.perf_counter()
+        voxel_features = self.run_voxel_encoder(preprocessed_input["input_features"])
+        stage_latencies["voxel_encoder_ms"] = (time.perf_counter() - start) * 1000
+
+        start = time.perf_counter()
+        spatial_features = self.process_middle_encoder(voxel_features, preprocessed_input["coors"])
+        stage_latencies["middle_encoder_ms"] = (time.perf_counter() - start) * 1000
+
+        start = time.perf_counter()
+        head_outputs = self.run_backbone_head(spatial_features)
+        stage_latencies["backbone_head_ms"] = (time.perf_counter() - start) * 1000
+
+        return head_outputs, stage_latencies
+
+    @override
     def postprocess(
         self,
         head_outputs: List[torch.Tensor],
@@ -264,34 +300,6 @@ class CenterPointDeploymentPipeline(BaseDeploymentPipeline):
             List of 6 head output tensors.
         """
         raise NotImplementedError
-
-    def run_model(
-        self,
-        preprocessed_input: Dict[str, torch.Tensor],
-    ) -> Tuple[List[torch.Tensor], Dict[str, float]]:
-        """Run the full model pipeline with latency tracking.
-
-        Args:
-            preprocessed_input: Dict with keys: input_features, coors.
-
-        Returns:
-            Tuple of (head_outputs, stage_latencies).
-        """
-        stage_latencies: Dict[str, float] = {}
-
-        start = time.perf_counter()
-        voxel_features = self.run_voxel_encoder(preprocessed_input["input_features"])
-        stage_latencies["voxel_encoder_ms"] = (time.perf_counter() - start) * 1000
-
-        start = time.perf_counter()
-        spatial_features = self.process_middle_encoder(voxel_features, preprocessed_input["coors"])
-        stage_latencies["middle_encoder_ms"] = (time.perf_counter() - start) * 1000
-
-        start = time.perf_counter()
-        head_outputs = self.run_backbone_head(spatial_features)
-        stage_latencies["backbone_head_ms"] = (time.perf_counter() - start) * 1000
-
-        return head_outputs, stage_latencies
 
     def __repr__(self) -> str:
         return f"{self.__class__.__name__}(device={self.device}, backend={self.backend_type})"

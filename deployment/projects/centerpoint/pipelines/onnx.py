@@ -11,9 +11,12 @@ from typing import List
 import numpy as np
 import onnxruntime as ort
 import torch
+from typing_extensions import override
 
+from deployment.configs import ComponentsConfig
 from deployment.core.artifacts import resolve_artifact_path
-from deployment.core.config.base_config import ComponentsConfig
+from deployment.core.backend import Backend
+from deployment.core.device import DeviceSpec
 from deployment.projects.centerpoint.pipelines.centerpoint_pipeline import CenterPointDeploymentPipeline
 
 logger = logging.getLogger(__name__)
@@ -35,32 +38,30 @@ class CenterPointONNXPipeline(CenterPointDeploymentPipeline):
         self,
         pytorch_model: torch.nn.Module,
         onnx_dir: str,
-        device: str = "cpu",
-        components_cfg: ComponentsConfig | None = None,
+        device: DeviceSpec,
+        components_cfg: ComponentsConfig,
     ) -> None:
         """Initialize ONNX pipeline.
 
         Args:
             pytorch_model: Reference PyTorch model for preprocessing.
             onnx_dir: Directory containing ONNX model files.
-            device: Target device ('cpu' or 'cuda:N').
+            device: Target runtime device (DeviceSpec).
             components_cfg: Component configuration from deploy_config (use ComponentsConfig.from_dict).
                            If None, raises.
         """
-        super().__init__(pytorch_model, device, backend_type="onnx")
+        super().__init__(pytorch_model=pytorch_model, backend_type=Backend.ONNX, device=device)
 
         self.onnx_dir = onnx_dir
-        if components_cfg is None:
-            raise ValueError("components_cfg is required for CenterPoint ONNX pipeline.")
         self._components_cfg = components_cfg
-        self._load_onnx_models(device)
+        self._load_onnx_models()
         logger.info(f"ONNX pipeline initialized with models from: {onnx_dir}")
 
-    def _load_onnx_models(self, device: str) -> None:
+    def _load_onnx_models(self) -> None:
         """Load ONNX models for each component.
 
         Args:
-            device: Target device for execution provider selection.
+            Uses `self.device` (DeviceSpec) for execution provider selection.
 
         Raises:
             FileNotFoundError: If ONNX model files are not found.
@@ -87,14 +88,13 @@ class CenterPointONNXPipeline(CenterPointDeploymentPipeline):
         # Configure session options
         so = ort.SessionOptions()
         so.graph_optimization_level = ort.GraphOptimizationLevel.ORT_DISABLE_ALL
-        so.log_severity_level = 3
+        so.log_severity_level = 0  # Verbose
 
         # Select execution providers based on device
-        if device.startswith("cuda"):
-            providers = ["CUDAExecutionProvider", "CPUExecutionProvider"]
+        providers = self.device.to_ort_provider()
+        if self.device.is_cuda:
             logger.info("Using CUDA execution provider for ONNX")
         else:
-            providers = ["CPUExecutionProvider"]
             logger.info("Using CPU execution provider for ONNX")
 
         try:
@@ -105,6 +105,7 @@ class CenterPointONNXPipeline(CenterPointDeploymentPipeline):
         except Exception as e:
             raise RuntimeError(f"Failed to load ONNX model: {e}") from e
 
+    @override
     def run_voxel_encoder(self, input_features: torch.Tensor) -> torch.Tensor:
         """Run voxel encoder using ONNXRuntime.
 
@@ -120,11 +121,14 @@ class CenterPointONNXPipeline(CenterPointDeploymentPipeline):
 
         outputs = self.voxel_encoder_session.run([output_name], {input_name: input_array})
 
-        voxel_features = torch.from_numpy(outputs[0]).to(self.device)
-        if voxel_features.ndim == 3 and voxel_features.shape[1] == 1:
-            voxel_features = voxel_features.squeeze(1)
+        voxel_features = torch.from_numpy(outputs[0]).to(self.torch_device)
+
+        # Squeeze [N, 1, 32] to [N, 32]
+        voxel_features = voxel_features.squeeze(1)
+
         return voxel_features
 
+    @override
     def run_backbone_head(self, spatial_features: torch.Tensor) -> List[torch.Tensor]:
         """Run backbone and head using ONNXRuntime.
 
@@ -168,7 +172,7 @@ class CenterPointONNXPipeline(CenterPointDeploymentPipeline):
 
         # Run inference with ordered output names (ONNX Runtime returns outputs in the same order)
         outputs = self.backbone_head_session.run(output_names, {input_name: input_array})
-        head_outputs = [torch.from_numpy(out).to(self.device) for out in outputs]
+        head_outputs = [torch.from_numpy(out).to(self.torch_device) for out in outputs]
 
         if len(head_outputs) != 6:
             raise ValueError(f"Expected 6 head outputs, got {len(head_outputs)}")

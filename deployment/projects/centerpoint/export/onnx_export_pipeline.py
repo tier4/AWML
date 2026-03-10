@@ -11,7 +11,9 @@ from typing import Any, Iterable, Optional, Tuple
 
 import torch
 
-from deployment.core import Artifact, BaseDataLoader, BaseDeploymentConfig
+from deployment.configs import BaseDeploymentConfig
+from deployment.core.artifacts import Artifact
+from deployment.core.io.base_data_loader import BaseDataLoader
 from deployment.exporters.common.factory import ExporterFactory
 from deployment.exporters.common.model_wrappers import IdentityWrapper
 from deployment.exporters.export_pipelines.base import OnnxExportPipeline

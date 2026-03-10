@@ -8,7 +8,12 @@ via `deployment.pipelines.factory.PipelineFactory`.
 import logging
 from typing import Any, Mapping, Optional
 
+import torch
+from typing_extensions import override
+
+import deployment.configs.schema as ComponentsConfig
 from deployment.core.backend import Backend
+from deployment.core.device import DeviceSpec
 from deployment.core.evaluation.evaluator_types import ModelSpec
 from deployment.pipelines.base_factory import BasePipelineFactory
 from deployment.pipelines.base_pipeline import BaseDeploymentPipeline
@@ -29,16 +34,18 @@ class CenterPointPipelineFactory(BasePipelineFactory):
     """
 
     @classmethod
+    @override
     def get_project_name(cls) -> str:
         return "centerpoint"
 
     @classmethod
+    @override
     def create_pipeline(
         cls,
         model_spec: ModelSpec,
-        pytorch_model: Any,
-        device: Optional[str] = None,
-        components_cfg: Optional[Mapping[str, Any]] = None,
+        pytorch_model: torch.nn.Module,
+        device: DeviceSpec,
+        components_cfg: ComponentsConfig,
     ) -> BaseDeploymentPipeline:
         """Create a CenterPoint pipeline for the specified backend.
 

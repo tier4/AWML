@@ -7,7 +7,8 @@ import logging
 
 from mmengine.config import Config
 
-from deployment.core.config.base_config import BaseDeploymentConfig, setup_logging
+from deployment.cli.args import setup_logging
+from deployment.configs import BaseDeploymentConfig
 from deployment.core.contexts import CenterPointExportContext
 from deployment.projects.centerpoint.data_loader import CenterPointDataLoader
 from deployment.projects.centerpoint.evaluator import CenterPointEvaluator
@@ -47,8 +48,6 @@ def run(args: argparse.Namespace) -> int:
     data_loader = CenterPointDataLoader(
         info_file=config.runtime_config.info_file,
         model_cfg=model_cfg,
-        device="cpu",
-        task_type=config.task_type,
     )
     logger.info(f"Loaded {data_loader.num_samples} samples")
 

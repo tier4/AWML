@@ -13,6 +13,7 @@ import numpy as np
 import torch
 from mmengine.config import Config
 from mmengine.registry import DATASETS, init_default_scope
+from typing_extensions import override
 
 from deployment.core import BaseDataLoader
 
@@ -34,18 +35,11 @@ class CenterPointDataLoader(BaseDataLoader):
         self,
         info_file: str,
         model_cfg: Config,
-        device: str = "cpu",
-        task_type: Optional[str] = None,
     ):
-        super().__init__(
-            config={
-                "info_file": info_file,
-                "device": device,
-            }
-        )
+        super().__init__()
 
         self.model_cfg = model_cfg
-        self.device = device
+        self.device = "cpu"
         self.info_file = info_file
         self.dataset = self._build_dataset(model_cfg, info_file)
 
@@ -65,35 +59,7 @@ class CenterPointDataLoader(BaseDataLoader):
         dataset = DATASETS.build(dataset_cfg)
         return dataset
 
-    def _to_tensor(
-        self,
-        data: Union[torch.Tensor, np.ndarray, List[Union[torch.Tensor, np.ndarray]]],
-        name: str = "data",
-    ) -> torch.Tensor:
-        if isinstance(data, torch.Tensor):
-            return data.to(self.device)
-
-        if isinstance(data, np.ndarray):
-            return torch.from_numpy(data).to(self.device)
-
-        if isinstance(data, list):
-            if len(data) == 0:
-                raise ValueError(f"Empty list for '{name}' in pipeline output.")
-
-            first_item = data[0]
-            if isinstance(first_item, torch.Tensor):
-                return first_item.to(self.device)
-            if isinstance(first_item, np.ndarray):
-                return torch.from_numpy(first_item).to(self.device)
-
-            raise ValueError(
-                f"Unexpected type for {name}[0]: {type(first_item)}. Expected torch.Tensor or np.ndarray."
-            )
-
-        raise ValueError(
-            f"Unexpected type for '{name}': {type(data)}. Expected torch.Tensor, np.ndarray, or list of tensors/arrays."
-        )
-
+    @override
     def load_sample(self, index: int) -> Dict[str, Any]:
         """Load sample by running the full pipeline once.
 
@@ -115,7 +81,7 @@ class CenterPointDataLoader(BaseDataLoader):
         if "points" not in pipeline_inputs:
             raise ValueError(f"Expected 'points' in inputs. Got keys: {list(pipeline_inputs.keys())}")
 
-        points_tensor = self._to_tensor(pipeline_inputs["points"], name="points")
+        points_tensor = pipeline_inputs["points"].to("cpu")
         if points_tensor.ndim != 2:
             raise ValueError(f"Expected points tensor with shape [N, features], got {points_tensor.shape}")
 
@@ -142,6 +108,7 @@ class CenterPointDataLoader(BaseDataLoader):
             "ground_truth": ground_truth,
         }
 
+    @override
     def preprocess(self, sample: Dict[str, Any]) -> Dict[str, Any]:
         """Extract points and metainfo from loaded sample.
 
@@ -153,6 +120,7 @@ class CenterPointDataLoader(BaseDataLoader):
         }
 
     @property
+    @override
     def num_samples(self) -> int:
         return len(self.dataset)
 

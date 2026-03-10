@@ -14,9 +14,12 @@ import pycuda.autoinit  # noqa: F401
 import pycuda.driver as cuda
 import tensorrt as trt
 import torch
+from typing_extensions import override
 
+from deployment.configs import ComponentsConfig
 from deployment.core.artifacts import resolve_artifact_path
-from deployment.core.config.base_config import ComponentsConfig
+from deployment.core.backend import Backend
+from deployment.core.device import DeviceSpec
 from deployment.pipelines.gpu_resource_mixin import (
     GPUResourceMixin,
     TensorRTResourceManager,
@@ -42,7 +45,7 @@ class CenterPointTensorRTPipeline(GPUResourceMixin, CenterPointDeploymentPipelin
         pytorch_model: torch.nn.Module,
         tensorrt_dir: str,
         components_cfg: ComponentsConfig,
-        device: str = "cuda",
+        device: DeviceSpec,
     ) -> None:
         """Initialize TensorRT pipeline.
 
@@ -55,19 +58,13 @@ class CenterPointTensorRTPipeline(GPUResourceMixin, CenterPointDeploymentPipelin
         Raises:
             ValueError: If device is not a CUDA device or components_cfg is None.
         """
-        if not device.startswith("cuda"):
-            raise ValueError("TensorRT requires CUDA device")
-
-        super().__init__(pytorch_model, device, backend_type="tensorrt")
+        super().__init__(pytorch_model=pytorch_model, backend_type=Backend.TENSORRT, device=device)
 
         self.tensorrt_dir = tensorrt_dir
-        if components_cfg is None:
-            raise ValueError("components_cfg is required for CenterPoint TensorRT pipeline.")
         self._components_cfg = components_cfg
         self._engines: dict = {}
         self._contexts: dict = {}
         self._logger = trt.Logger(trt.Logger.WARNING)
-        self._cleanup_called = False
 
         # Create CUDA events for GPU timing measurements
         self._backbone_start_event = cuda.Event()
@@ -125,9 +122,9 @@ class CenterPointTensorRTPipeline(GPUResourceMixin, CenterPointDeploymentPipelin
 
     def _get_io_names(
         self,
-        engine: Any,
+        engine: trt.ICudaEngine,
         single_output: bool = False,
-    ) -> Tuple[str, Any]:
+    ) -> Tuple[str, Union[str, List[str]]]:
         """Get input and output tensor names from engine.
 
         Args:
@@ -159,6 +156,7 @@ class CenterPointTensorRTPipeline(GPUResourceMixin, CenterPointDeploymentPipelin
             return input_name, output_names[0]
         return input_name, output_names
 
+    @override
     def run_voxel_encoder(self, input_features: torch.Tensor) -> torch.Tensor:
         """Run voxel encoder using TensorRT.
 
@@ -193,22 +191,23 @@ class CenterPointTensorRTPipeline(GPUResourceMixin, CenterPointDeploymentPipelin
             context.set_tensor_address(input_name, int(d_input))
             context.set_tensor_address(output_name, int(d_output))
 
-            # Memory transfer: CPU -> GPU (not timed)
+            # Memory transfer: CPU -> GPU
             cuda.memcpy_htod_async(d_input, input_array, stream)
 
-            # Record start event and execute inference (pure GPU time)
+            # Record start event and execute inference
             self._voxel_encoder_start_event.record(stream)
             context.execute_async_v3(stream_handle=stream.handle)
             self._voxel_encoder_end_event.record(stream)
 
-            # Memory transfer: GPU -> CPU (not timed)
+            # Memory transfer: GPU -> CPU
             cuda.memcpy_dtoh_async(output_array, d_output, stream)
             manager.synchronize()
 
-        voxel_features = torch.from_numpy(output_array).to(self.device)
+        voxel_features = torch.from_numpy(output_array).to(self.torch_device)
         voxel_features = voxel_features.squeeze(1)
         return voxel_features
 
+    @override
     def run_backbone_head(self, spatial_features: torch.Tensor) -> List[torch.Tensor]:
         """Run backbone and head using TensorRT.
 
@@ -276,27 +275,28 @@ class CenterPointTensorRTPipeline(GPUResourceMixin, CenterPointDeploymentPipelin
             for output_name in output_names:
                 context.set_tensor_address(output_name, int(d_outputs[output_name]))
 
-            # Memory transfer: CPU -> GPU (not timed)
+            # Memory transfer: CPU -> GPU
             cuda.memcpy_htod_async(d_input, input_array, stream)
 
-            # Record start event and execute inference (pure GPU time)
+            # Record start event and execute inference
             self._backbone_start_event.record(stream)
             context.execute_async_v3(stream_handle=stream.handle)
             self._backbone_end_event.record(stream)
 
-            # Memory transfer: GPU -> CPU (not timed)
+            # Memory transfer: GPU -> CPU
             for output_name in output_names:
                 cuda.memcpy_dtoh_async(output_arrays[output_name], d_outputs[output_name], stream)
 
             manager.synchronize()
 
-        head_outputs = [torch.from_numpy(output_arrays[name]).to(self.device) for name in output_names]
+        head_outputs = [torch.from_numpy(output_arrays[name]).to(self.torch_device) for name in output_names]
 
         if len(head_outputs) != 6:
             raise ValueError(f"Expected 6 head outputs, got {len(head_outputs)}")
 
         return head_outputs
 
+    @override
     def run_model(
         self,
         preprocessed_input: Dict[str, torch.Tensor],

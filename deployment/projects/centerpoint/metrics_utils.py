@@ -14,7 +14,6 @@ from deployment.core.metrics.detection_3d_metrics import Detection3DMetricsConfi
 
 def extract_t4metric_v2_config(
     model_cfg: Config,
-    class_names: Optional[List[str]] = None,
     logger: Optional[logging.Logger] = None,
 ) -> Detection3DMetricsConfig:
     """Extract `Detection3DMetricsConfig` from an MMEngine model config.
@@ -23,8 +22,6 @@ def extract_t4metric_v2_config(
 
     Args:
         model_cfg: MMEngine model configuration.
-        class_names: Optional list of class names. If not provided,
-                    extracted from model_cfg.class_names.
         logger: Optional logger instance.
 
     Returns:
@@ -37,19 +34,8 @@ def extract_t4metric_v2_config(
     if logger is None:
         logger = logging.getLogger(__name__)
 
-    if class_names is None:
-        if hasattr(model_cfg, "class_names"):
-            class_names = model_cfg.class_names
-        else:
-            raise ValueError("class_names must be provided or defined in model_cfg.class_names")
-
-    evaluator_cfg = None
-    if hasattr(model_cfg, "val_evaluator"):
-        evaluator_cfg = model_cfg.val_evaluator
-    elif hasattr(model_cfg, "test_evaluator"):
-        evaluator_cfg = model_cfg.test_evaluator
-    else:
-        raise ValueError("No val_evaluator or test_evaluator found in model_cfg")
+    class_names = model_cfg.class_names
+    evaluator_cfg = model_cfg.val_evaluator or model_cfg.test_evaluator
 
     def read_cfg_value(cfg: Any, key: str, *, required: bool, default: Any = None) -> Any:
         if cfg is None:

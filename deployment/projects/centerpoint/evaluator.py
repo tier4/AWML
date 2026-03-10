@@ -3,11 +3,13 @@ CenterPoint Evaluator for deployment.
 """
 
 import logging
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Mapping, Optional
 
 import numpy as np
 from mmengine.config import Config
+from typing_extensions import override
 
+from deployment.configs import ComponentsConfig
 from deployment.core import (
     BaseEvaluator,
     Detection3DMetricsConfig,
@@ -17,7 +19,7 @@ from deployment.core import (
     ModelSpec,
     TaskProfile,
 )
-from deployment.core.config.base_config import ComponentsConfig
+from deployment.core.device import DeviceSpec
 from deployment.core.io.base_data_loader import BaseDataLoader
 from deployment.pipelines.factory import PipelineFactory
 
@@ -48,8 +50,6 @@ class CenterPointEvaluator(BaseEvaluator):
         else:
             raise ValueError("class_names must be provided via model_cfg.class_names.")
 
-        if components_cfg is None:
-            raise ValueError("components_cfg is required for CenterPoint evaluator.")
         self._components_cfg = components_cfg
 
         task_profile = TaskProfile(
@@ -70,11 +70,14 @@ class CenterPointEvaluator(BaseEvaluator):
     def set_onnx_config(self, model_cfg: Config) -> None:
         self.model_cfg = model_cfg
 
-    def _get_output_names(self) -> List[str]:
+    # VerificationMixin
+    @override
+    def _get_output_names(self) -> Optional[List[str]]:
         """Get head output names from components config."""
         return [out.name for out in self._components_cfg.get_component("pts_backbone_neck_head").io.outputs]
 
-    def _create_pipeline(self, model_spec: ModelSpec, device: str) -> Any:
+    @override
+    def _create_pipeline(self, model_spec: ModelSpec, device: DeviceSpec) -> Any:
         return PipelineFactory.create(
             project_name="centerpoint",
             model_spec=model_spec,
@@ -83,11 +86,12 @@ class CenterPointEvaluator(BaseEvaluator):
             components_cfg=self._components_cfg,
         )
 
+    @override
     def _prepare_input(
         self,
-        sample: Dict[str, Any],
+        sample: Mapping[str, Any],
         data_loader: BaseDataLoader,
-        device: str,
+        device: DeviceSpec,
     ) -> InferenceInput:
         if "points" not in sample:
             raise ValueError(f"Expected 'points' in sample. Got keys: {list(sample.keys())}")
@@ -97,29 +101,37 @@ class CenterPointEvaluator(BaseEvaluator):
         metadata = sample["metainfo"]
         return InferenceInput(data=points, metadata=metadata)
 
+    @override
     def _parse_predictions(self, pipeline_output: Any) -> List[Dict]:
         return pipeline_output if isinstance(pipeline_output, list) else []
 
-    def _parse_ground_truths(self, gt_data: Dict[str, Any]) -> List[Dict]:
+    @override
+    def _parse_ground_truths(self, gt_data: Mapping[str, Any]) -> List[Dict]:
         ground_truths = []
 
-        if "gt_bboxes_3d" in gt_data and "gt_labels_3d" in gt_data:
-            gt_bboxes_3d = gt_data["gt_bboxes_3d"]
-            gt_labels_3d = gt_data["gt_labels_3d"]
+        if "gt_bboxes_3d" not in gt_data:
+            raise KeyError("gt_bboxes_3d not found in ground truth data.")
+        if "gt_labels_3d" not in gt_data:
+            raise KeyError("gt_labels_3d not found in ground truth data.")
 
-            gt_bboxes_3d = np.asarray(gt_bboxes_3d, dtype=np.float32).reshape(
-                -1, np.asarray(gt_bboxes_3d).shape[-1] if np.asarray(gt_bboxes_3d).ndim > 1 else 7
-            )
-            gt_labels_3d = np.asarray(gt_labels_3d, dtype=np.int64).reshape(-1)
+        gt_bboxes_3d = gt_data["gt_bboxes_3d"]
+        gt_labels_3d = gt_data["gt_labels_3d"]
 
-            for i in range(len(gt_bboxes_3d)):
-                ground_truths.append({"bbox_3d": gt_bboxes_3d[i].tolist(), "label": int(gt_labels_3d[i])})
+        gt_bboxes_3d = np.asarray(gt_bboxes_3d, dtype=np.float32).reshape(
+            -1, np.asarray(gt_bboxes_3d).shape[-1] if np.asarray(gt_bboxes_3d).ndim > 1 else 7
+        )
+        gt_labels_3d = np.asarray(gt_labels_3d, dtype=np.int64).reshape(-1)
+
+        for i in range(len(gt_bboxes_3d)):
+            ground_truths.append({"bbox_3d": gt_bboxes_3d[i].tolist(), "label": int(gt_labels_3d[i])})
 
         return ground_truths
 
+    @override
     def _add_to_interface(self, predictions: List[Dict], ground_truths: List[Dict]) -> None:
         self.metrics_interface.add_frame(predictions, ground_truths)
 
+    @override
     def _build_results(
         self,
         latencies: List[float],
@@ -130,7 +142,7 @@ class CenterPointEvaluator(BaseEvaluator):
 
         map_results = self.metrics_interface.compute_metrics()
         summary = self.metrics_interface.summary
-        summary_dict = summary.to_dict() if hasattr(summary, "to_dict") else summary
+        summary_dict = summary.to_dict()
         required_summary_keys = ("mAP_by_mode", "mAPH_by_mode", "per_class_ap_by_mode")
         missing = [k for k in required_summary_keys if k not in summary_dict]
         if missing:
@@ -141,7 +153,7 @@ class CenterPointEvaluator(BaseEvaluator):
             "mAPH_by_mode": summary_dict["mAPH_by_mode"],
             "per_class_ap_by_mode": summary_dict["per_class_ap_by_mode"],
             "detailed_metrics": map_results,
-            "latency": latency_stats,  # Store LatencyStats directly
+            "latency": latency_stats,
             "num_samples": num_samples,
         }
 
@@ -150,6 +162,7 @@ class CenterPointEvaluator(BaseEvaluator):
 
         return result
 
+    @override
     def print_results(self, results: EvalResultDict) -> None:
         """Print evaluation results including metrics, latency, and breakdown."""
         # Print metrics report

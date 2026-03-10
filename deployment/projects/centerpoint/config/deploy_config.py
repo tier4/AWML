@@ -3,12 +3,6 @@ CenterPoint Deployment Configuration
 """
 
 # ============================================================================
-# Task type for pipeline building
-# Options: 'detection2d', 'detection3d', 'classification', 'segmentation'
-# ============================================================================
-task_type = "detection3d"
-
-# ============================================================================
 # Checkpoint Path - Single source of truth for PyTorch model
 # ============================================================================
 checkpoint_path = "work_dirs/centerpoint/best_checkpoint.pth"
