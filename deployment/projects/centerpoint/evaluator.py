@@ -3,7 +3,7 @@ CenterPoint Evaluator for deployment.
 """
 
 import logging
-from typing import Any, Dict, List, Mapping, Optional
+from typing import Dict, List, Mapping, Optional
 
 import numpy as np
 from mmengine.config import Config
@@ -21,6 +21,7 @@ from deployment.core import (
 )
 from deployment.core.device import DeviceSpec
 from deployment.core.io.base_data_loader import BaseDataLoader
+from deployment.pipelines.base_pipeline import BaseDeploymentPipeline
 from deployment.pipelines.factory import PipelineFactory
 
 logger = logging.getLogger(__name__)
@@ -77,7 +78,7 @@ class CenterPointEvaluator(BaseEvaluator):
         return [out.name for out in self._components_cfg.get_component("pts_backbone_neck_head").io.outputs]
 
     @override
-    def _create_pipeline(self, model_spec: ModelSpec, device: DeviceSpec) -> Any:
+    def _create_pipeline(self, model_spec: ModelSpec, device: DeviceSpec) -> BaseDeploymentPipeline:
         return PipelineFactory.create(
             project_name="centerpoint",
             model_spec=model_spec,
@@ -89,7 +90,7 @@ class CenterPointEvaluator(BaseEvaluator):
     @override
     def _prepare_input(
         self,
-        sample: Mapping[str, Any],
+        sample: Mapping[str, object],
         data_loader: BaseDataLoader,
         device: DeviceSpec,
     ) -> InferenceInput:
@@ -102,11 +103,11 @@ class CenterPointEvaluator(BaseEvaluator):
         return InferenceInput(data=points, metadata=metadata)
 
     @override
-    def _parse_predictions(self, pipeline_output: Any) -> List[Dict]:
+    def _parse_predictions(self, pipeline_output: object) -> List[Dict]:
         return pipeline_output if isinstance(pipeline_output, list) else []
 
     @override
-    def _parse_ground_truths(self, gt_data: Mapping[str, Any]) -> List[Dict]:
+    def _parse_ground_truths(self, gt_data: Mapping[str, object]) -> List[Dict]:
         ground_truths = []
 
         if "gt_bboxes_3d" not in gt_data:

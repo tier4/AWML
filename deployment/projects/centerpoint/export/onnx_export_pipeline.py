@@ -7,7 +7,7 @@ from __future__ import annotations
 import logging
 import os
 from pathlib import Path
-from typing import Any, Iterable, Optional, Tuple
+from typing import Iterable, Optional, Tuple
 
 import torch
 
@@ -16,6 +16,7 @@ from deployment.core.artifacts import Artifact
 from deployment.core.io.base_data_loader import BaseDataLoader
 from deployment.exporters.common.factory import ExporterFactory
 from deployment.exporters.common.model_wrappers import IdentityWrapper
+from deployment.exporters.common.onnx_exporter import ONNXExporter
 from deployment.exporters.export_pipelines.base import OnnxExportPipeline
 from deployment.exporters.export_pipelines.interfaces import ExportableComponent, ModelComponentExtractor
 
@@ -70,7 +71,7 @@ class CenterPointONNXExportPipeline(OnnxExportPipeline):
         model: torch.nn.Module,
         data_loader: BaseDataLoader,
         sample_idx: int,
-    ) -> Any:
+    ) -> Tuple[torch.Tensor, dict]:
         self.logger.info("Extracting features from sample data...")
         try:
             return self.component_extractor.extract_features(model, data_loader, sample_idx)
@@ -108,7 +109,7 @@ class CenterPointONNXExportPipeline(OnnxExportPipeline):
 
         return tuple(exported_paths)
 
-    def _build_onnx_exporter(self, config: BaseDeploymentConfig, component_name: str) -> Any:
+    def _build_onnx_exporter(self, config: BaseDeploymentConfig, component_name: str) -> ONNXExporter:
         return self.exporter_factory.create_onnx_exporter(
             config=config,
             wrapper_cls=IdentityWrapper,

@@ -5,11 +5,12 @@ Extracts exportable submodules from CenterPoint using typed component config.
 """
 
 import logging
-from typing import Any, List, Tuple
+from typing import List, Tuple
 
 import torch
 
 from deployment.configs import ComponentsConfig
+from deployment.core.io.base_data_loader import BaseDataLoader
 from deployment.exporters.export_pipelines.interfaces import ExportableComponent, ModelComponentExtractor
 from deployment.projects.centerpoint.onnx_models.centerpoint_onnx import CenterPointHeadONNX
 
@@ -32,7 +33,9 @@ class CenterPointComponentExtractor(ModelComponentExtractor):
         self._components_cfg = components_cfg
         self.logger = logger or logging.getLogger(__name__)
 
-    def extract_components(self, model: torch.nn.Module, sample_data: Any) -> List[ExportableComponent]:
+    def extract_components(
+        self, model: torch.nn.Module, sample_data: Tuple[torch.Tensor, dict]
+    ) -> List[ExportableComponent]:
         """Extract exportable submodules from the CenterPoint model for multi-file ONNX export."""
         input_features, voxel_dict = self._unpack_sample(sample_data)
         self.logger.info("Extracting CenterPoint components for export...")
@@ -43,7 +46,7 @@ class CenterPointComponentExtractor(ModelComponentExtractor):
         self.logger.info("Extracted 2 components: pts_voxel_encoder, pts_backbone_neck_head")
         return [voxel_component, backbone_component]
 
-    def _unpack_sample(self, sample_data: Any) -> Tuple[torch.Tensor, dict]:
+    def _unpack_sample(self, sample_data: Tuple[torch.Tensor, dict]) -> Tuple[torch.Tensor, dict]:
         """Unpack (input_features, voxel_dict) from sample_data. Validates structure once."""
         if not (isinstance(sample_data, (list, tuple)) and len(sample_data) == 2):
             raise TypeError(
@@ -97,7 +100,9 @@ class CenterPointComponentExtractor(ModelComponentExtractor):
     def _create_backbone_module(self, model: torch.nn.Module) -> torch.nn.Module:
         return CenterPointHeadONNX(model.pts_backbone, model.pts_neck, model.pts_bbox_head)
 
-    def extract_features(self, model: torch.nn.Module, data_loader: Any, sample_idx: int) -> Tuple[torch.Tensor, dict]:
+    def extract_features(
+        self, model: torch.nn.Module, data_loader: BaseDataLoader, sample_idx: int
+    ) -> Tuple[torch.Tensor, dict]:
         if hasattr(model, "_extract_features"):
             raw = model._extract_features(data_loader, sample_idx)
             return self._unpack_sample(raw)

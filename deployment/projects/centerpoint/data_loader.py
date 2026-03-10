@@ -6,7 +6,7 @@ Pipeline is run once per sample in load_sample(), avoiding redundant computation
 """
 
 import copy
-from typing import Any, Dict, List, Optional, Union
+from typing import Dict, List, Optional, Union
 
 import mmdet3d.datasets.transforms  # noqa: F401 - registers transforms
 import numpy as np
@@ -43,7 +43,7 @@ class CenterPointDataLoader(BaseDataLoader):
         self.info_file = info_file
         self.dataset = self._build_dataset(model_cfg, info_file)
 
-    def _build_dataset(self, model_cfg: Config, info_file: str) -> Any:
+    def _build_dataset(self, model_cfg: Config, info_file: str) -> torch.utils.data.Dataset:
         """Build MMDet3D Dataset from config, overriding ann_file."""
         # Set default scope to mmdet3d so transforms are found in the registry
         init_default_scope("mmdet3d")
@@ -60,7 +60,7 @@ class CenterPointDataLoader(BaseDataLoader):
         return dataset
 
     @override
-    def load_sample(self, index: int) -> Dict[str, Any]:
+    def load_sample(self, index: int) -> Dict[str, Union[torch.Tensor, Dict[str, object]]]:
         """Load sample by running the full pipeline once.
 
         Returns a dict containing all data needed for inference and evaluation:
@@ -109,7 +109,9 @@ class CenterPointDataLoader(BaseDataLoader):
         }
 
     @override
-    def preprocess(self, sample: Dict[str, Any]) -> Dict[str, Any]:
+    def preprocess(
+        self, sample: Dict[str, Union[torch.Tensor, Dict[str, object]]]
+    ) -> Dict[str, Union[torch.Tensor, Dict[str, object]]]:
         """Extract points and metainfo from loaded sample.
 
         This is a lightweight operation - pipeline already ran in load_sample().

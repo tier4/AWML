@@ -10,7 +10,7 @@ from __future__ import annotations
 import logging
 import time
 from abc import abstractmethod
-from typing import Any, Dict, List, Optional, Tuple, Union
+from typing import Dict, List, Optional, Tuple, Union
 
 import numpy as np
 import torch
@@ -112,7 +112,7 @@ class CenterPointDeploymentPipeline(BaseDeploymentPipeline):
     def preprocess(
         self,
         points: torch.Tensor,
-    ) -> Tuple[Dict[str, torch.Tensor], Dict[str, Any]]:
+    ) -> Tuple[Dict[str, torch.Tensor], Dict[str, object]]:
         """Preprocess point cloud data for inference.
 
         Performs voxelization and feature extraction using the data_preprocessor
@@ -212,8 +212,8 @@ class CenterPointDeploymentPipeline(BaseDeploymentPipeline):
     def postprocess(
         self,
         head_outputs: List[torch.Tensor],
-        sample_meta: Dict[str, Any],
-    ) -> List[Dict[str, Any]]:
+        sample_meta: Dict[str, object],
+    ) -> List[Dict[str, Union[List[float], float, int]]]:
         """Postprocess head outputs to detection results.
 
         Args:
@@ -260,7 +260,7 @@ class CenterPointDeploymentPipeline(BaseDeploymentPipeline):
                 preds_dicts=preds_dicts, batch_input_metas=batch_input_metas
             )
 
-        results: List[Dict[str, Any]] = []
+        results: List[Dict[str, Union[List[float], float, int]]] = []
         for pred_instances in predictions_list:
             bboxes_3d = pred_instances.bboxes_3d.tensor.cpu().numpy()
             scores_3d = pred_instances.scores_3d.cpu().numpy()

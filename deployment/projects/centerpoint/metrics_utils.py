@@ -5,7 +5,7 @@ This module extracts metrics configuration from MMEngine model configs.
 """
 
 import logging
-from typing import Any, List, Optional
+from typing import Dict, List, Optional, Union
 
 from mmengine.config import Config
 
@@ -37,7 +37,13 @@ def extract_t4metric_v2_config(
     class_names = model_cfg.class_names
     evaluator_cfg = model_cfg.val_evaluator or model_cfg.test_evaluator
 
-    def read_cfg_value(cfg: Any, key: str, *, required: bool, default: Any = None) -> Any:
+    def read_cfg_value(
+        cfg: Optional[Union[Dict[str, object], object]],
+        key: str,
+        *,
+        required: bool,
+        default: Optional[object] = None,
+    ) -> object:
         if cfg is None:
             if required:
                 raise KeyError(f"Missing required config object while reading '{key}'")

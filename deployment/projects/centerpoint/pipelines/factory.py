@@ -6,7 +6,7 @@ via `deployment.pipelines.factory.PipelineFactory`.
 """
 
 import logging
-from typing import Any, Mapping, Optional
+from typing import Mapping, Optional
 
 import torch
 from typing_extensions import override
