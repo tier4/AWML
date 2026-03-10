@@ -94,7 +94,12 @@ class CenterPointONNXExportPipeline(OnnxExportPipeline):
         return Artifact(path=str(output_dir_path))
 
     def _log_header(self, output_dir: Path, sample_idx: int) -> None:
-        """Log export header with output directory and sample index."""
+        """Log export header with output directory and sample index.
+
+        Args:
+            output_dir: Directory where exported ONNX files are written.
+            sample_idx: Index of sample used for tracing/export.
+        """
         self.logger.info("=" * 80)
         self.logger.info("Exporting CenterPoint to ONNX (multi-file)")
         self.logger.info("=" * 80)
@@ -171,7 +176,15 @@ class CenterPointONNXExportPipeline(OnnxExportPipeline):
         return exported_paths
 
     def _build_onnx_exporter(self, config: BaseDeploymentConfig, component_name: str) -> ONNXExporter:
-        """Create an ONNX exporter for the given component using the factory."""
+        """Create an ONNX exporter for the given component using the factory.
+
+        Args:
+            config: Deployment config used to construct the ONNX exporter.
+            component_name: Component name used to resolve component-level options.
+
+        Returns:
+            Configured ONNX exporter for the target component.
+        """
         return self.exporter_factory.create_onnx_exporter(
             config=config,
             wrapper_cls=IdentityWrapper,
@@ -180,7 +193,11 @@ class CenterPointONNXExportPipeline(OnnxExportPipeline):
         )
 
     def _log_summary(self, exported_paths: list[str]) -> None:
-        """Log success summary and list of exported ONNX file paths."""
+        """Log success summary and list of exported ONNX file paths.
+
+        Args:
+            exported_paths: Paths of successfully exported ONNX files.
+        """
         self.logger.info("\n" + "=" * 80)
         self.logger.info("CenterPoint ONNX export successful")
         self.logger.info("=" * 80)

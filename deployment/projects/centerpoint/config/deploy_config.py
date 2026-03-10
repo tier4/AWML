@@ -122,7 +122,7 @@ onnx_config = dict(
 # TensorRT Build Settings (shared across all components)
 # ============================================================================
 tensorrt_config = dict(
-    precision_policy="auto",
+    precision_policy="fp32_tf32",
     max_workspace_size=2 << 30,
 )
 
@@ -130,7 +130,7 @@ tensorrt_config = dict(
 # Evaluation Configuration
 # ============================================================================
 evaluation = dict(
-    enabled=True,
+    enabled=False,
     num_samples=1,
     verbose=True,
     backends=dict(
@@ -155,8 +155,8 @@ evaluation = dict(
 # Verification Configuration
 # ============================================================================
 verification = dict(
-    enabled=False,
-    tolerance=1,
+    enabled=True,
+    tolerance=0.5,
     num_verify_samples=1,
     devices=devices,
     scenarios=dict(

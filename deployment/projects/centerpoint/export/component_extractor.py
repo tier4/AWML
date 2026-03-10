@@ -29,6 +29,12 @@ class CenterPointComponentBuilder(ModelComponentBuilder):
         components_cfg: ComponentsConfig,
         logger: logging.Logger,
     ) -> None:
+        """Initialize CenterPoint component builder.
+
+        Args:
+            components_cfg: Component config used to resolve export names.
+            logger: Logger for export progress and diagnostics.
+        """
         self._components_cfg = components_cfg
         self.logger = logger
 
@@ -37,7 +43,15 @@ class CenterPointComponentBuilder(ModelComponentBuilder):
         model: torch.nn.Module,
         sample: CenterPointExportSample,
     ) -> list[ExportableComponent]:
-        """Build exportable CenterPoint components from a typed sample."""
+        """Build exportable CenterPoint components from a typed sample.
+
+        Args:
+            model: CenterPoint model that contains exportable submodules.
+            sample: Typed export sample used to prepare component inputs.
+
+        Returns:
+            Exportable components for voxel encoder and backbone/neck/head.
+        """
         self.logger.info("Extracting CenterPoint components for export...")
 
         voxel_component = self._create_voxel_encoder_component(model, sample)
@@ -51,7 +65,15 @@ class CenterPointComponentBuilder(ModelComponentBuilder):
         model: torch.nn.Module,
         sample: CenterPointExportSample,
     ) -> ExportableComponent:
-        """Create exportable component for the voxel encoder (pts_voxel_encoder)."""
+        """Create exportable component for the voxel encoder (pts_voxel_encoder).
+
+        Args:
+            model: CenterPoint model containing ``pts_voxel_encoder``.
+            sample: Typed export sample that provides voxel encoder input tensor.
+
+        Returns:
+            Exportable voxel encoder component.
+        """
         component_cfg = self._components_cfg.get_component("pts_voxel_encoder")
         return ExportableComponent(
             name=component_cfg.name,
@@ -64,7 +86,15 @@ class CenterPointComponentBuilder(ModelComponentBuilder):
         model: torch.nn.Module,
         sample: CenterPointExportSample,
     ) -> ExportableComponent:
-        """Create exportable component for backbone + neck + head (pts_backbone_neck_head)."""
+        """Create exportable component for backbone + neck + head (pts_backbone_neck_head).
+
+        Args:
+            model: CenterPoint model containing backbone, neck, and bbox head.
+            sample: Typed export sample used to derive backbone input features.
+
+        Returns:
+            Exportable backbone/neck/head component.
+        """
         backbone_input = self._prepare_backbone_input(model, sample)
         backbone_module = self._create_backbone_module(model)
 
@@ -80,7 +110,15 @@ class CenterPointComponentBuilder(ModelComponentBuilder):
         model: torch.nn.Module,
         sample: CenterPointExportSample,
     ) -> torch.Tensor:
-        """Compute spatial features for the backbone from typed sample tensors."""
+        """Compute spatial features for the backbone from typed sample tensors.
+
+        Args:
+            model: CenterPoint model used to run voxel and middle encoders.
+            sample: Typed export sample containing input features and coordinates.
+
+        Returns:
+            Spatial feature tensor consumed by backbone/neck/head.
+        """
         with torch.no_grad():
             voxel_features = model.pts_voxel_encoder(sample.input_features).squeeze(1)
             coors = sample.coors
@@ -89,5 +127,12 @@ class CenterPointComponentBuilder(ModelComponentBuilder):
         return spatial_features
 
     def _create_backbone_module(self, model: torch.nn.Module) -> torch.nn.Module:
-        """Wrap pts_backbone, pts_neck, and pts_bbox_head into a single ONNX module."""
+        """Wrap pts_backbone, pts_neck, and pts_bbox_head into one ONNX module.
+
+        Args:
+            model: CenterPoint model that exposes backbone, neck, and bbox head.
+
+        Returns:
+            Module that runs backbone, neck, and head as a single forward graph.
+        """
         return CenterPointHeadONNX(model.pts_backbone, model.pts_neck, model.pts_bbox_head)

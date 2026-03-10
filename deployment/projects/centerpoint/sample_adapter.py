@@ -14,6 +14,11 @@ class CenterPointSampleAdapter(ExportSampleAdapter):
     """Adapt legacy CenterPoint feature extraction output into typed sample payload."""
 
     def __init__(self, logger: logging.Logger | None = None) -> None:
+        """Initialize the sample adapter.
+
+        Args:
+            logger: Optional logger; defaults to module logger if not provided.
+        """
         self.logger = logger or logging.getLogger(__name__)
 
     def extract_sample(
@@ -22,6 +27,21 @@ class CenterPointSampleAdapter(ExportSampleAdapter):
         data_loader: BaseDataLoader,
         sample_idx: int,
     ) -> CenterPointExportSample:
+        """Extract a typed export sample from the model and data loader.
+
+        Args:
+            model: CenterPoint model with _extract_features (ONNX-compatible).
+            data_loader: Loader used to fetch sample data.
+            sample_idx: Index of the sample to extract.
+
+        Returns:
+            Typed CenterPointExportSample for export pipelines.
+
+        Raises:
+            AttributeError: If model does not have _extract_features.
+            TypeError: If raw sample format is invalid.
+            KeyError: If voxel_dict is missing required keys.
+        """
         if not hasattr(model, "_extract_features"):
             raise AttributeError(
                 "CenterPoint model must have _extract_features method for ONNX export. "
@@ -32,6 +52,18 @@ class CenterPointSampleAdapter(ExportSampleAdapter):
         return self._to_export_sample(raw)
 
     def _to_export_sample(self, raw: Any) -> CenterPointExportSample:
+        """Convert raw (input_features, voxel_dict) into CenterPointExportSample.
+
+        Args:
+            raw: Tuple of (input_features, voxel_dict) from model._extract_features.
+
+        Returns:
+            CenterPointExportSample with input_features and voxel_dict.
+
+        Raises:
+            TypeError: If raw is not a 2-tuple or elements have wrong types.
+            KeyError: If voxel_dict is missing 'voxels', 'num_points', or 'coors'.
+        """
         if not (isinstance(raw, (tuple, list)) and len(raw) == 2):
             raise TypeError(
                 "Invalid sample data for CenterPoint export. Expected "

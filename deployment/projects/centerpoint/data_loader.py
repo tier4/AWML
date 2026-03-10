@@ -50,7 +50,18 @@ class CenterPointDataLoader(BaseDataLoader):
         self.dataset = self._build_dataset(model_cfg, info_file)
 
     def _build_dataset(self, model_cfg: Config, info_file: str) -> torch.utils.data.Dataset:
-        """Build MMDet3D Dataset from config, overriding ann_file."""
+        """Build MMDet3D Dataset from config, overriding ann_file.
+
+        Args:
+            model_cfg: MMEngine model config with test_dataloader.dataset.
+            info_file: Path to dataset info file (e.g. pkl) used as ann_file.
+
+        Returns:
+            Built MMDet3D Dataset instance.
+
+        Raises:
+            ValueError: If model_cfg does not have test_dataloader.
+        """
         # Set default scope to mmdet3d so transforms are found in the registry
         init_default_scope("mmdet3d")
         if not hasattr(model_cfg, "test_dataloader"):
@@ -73,6 +84,18 @@ class CenterPointDataLoader(BaseDataLoader):
         - points: Points tensor (ready for inference)
         - metainfo: Sample metadata
         - ground_truth: Raw eval_ann_info from MMDet3D (kept unconverted)
+
+        Args:
+            index: Sample index in the dataset (0 to num_samples - 1).
+
+        Returns:
+            Dict with keys: points, metainfo, ground_truth.
+
+        Raises:
+            IndexError: If index is out of range.
+            KeyError: If dataset sample is missing required keys.
+            ValueError: If inputs or data_samples are invalid.
+            AttributeError: If metainfo or eval_ann_info is missing.
         """
         if index >= len(self.dataset):
             raise IndexError(f"Sample index {index} out of range (0-{len(self.dataset)-1})")
@@ -121,6 +144,12 @@ class CenterPointDataLoader(BaseDataLoader):
         """Extract points and metainfo from loaded sample.
 
         This is a lightweight operation - pipeline already ran in load_sample().
+
+        Args:
+            sample: Dict from load_sample() with keys points and metainfo.
+
+        Returns:
+            Dict with keys points and metainfo for inference.
         """
         return {
             "points": sample["points"],

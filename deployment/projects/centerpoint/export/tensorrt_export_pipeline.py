@@ -141,7 +141,14 @@ class CenterPointTensorRTExportPipeline(TensorRTExportPipeline):
         return Artifact(path=str(output_dir_path))
 
     def _discover_onnx_files(self, onnx_dir: Path) -> List[Path]:
-        """Return sorted list of .onnx file paths in the given directory."""
+        """Return sorted list of .onnx file paths in the given directory.
+
+        Args:
+            onnx_dir: Directory to scan for ONNX files.
+
+        Returns:
+            Sorted ONNX file paths in the directory.
+        """
         return sorted(
             (path for path in onnx_dir.iterdir() if path.is_file() and path.suffix.lower() == ".onnx"),
             key=lambda p: p.name,

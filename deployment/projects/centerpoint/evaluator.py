@@ -79,7 +79,11 @@ class CenterPointEvaluator(BaseEvaluator):
         )
 
     def set_onnx_config(self, model_cfg: Config) -> None:
-        """Set the evaluator's model config to the given ONNX-compatible config."""
+        """Set the evaluator's model config to the given ONNX-compatible config.
+
+        Args:
+            model_cfg: ONNX-compatible model configuration (e.g. from build_centerpoint_onnx_model).
+        """
         self.model_cfg = model_cfg
 
     # VerificationMixin
@@ -90,7 +94,15 @@ class CenterPointEvaluator(BaseEvaluator):
 
     @override
     def _create_pipeline(self, model_spec: ModelSpec, device: DeviceSpec) -> BaseDeploymentPipeline:
-        """Create a CenterPoint deployment pipeline for the given backend and device."""
+        """Create a CenterPoint deployment pipeline for the given backend and device.
+
+        Args:
+            model_spec: Model specification (backend, device, path).
+            device: Target device for the pipeline.
+
+        Returns:
+            CenterPoint pipeline instance (PyTorch, ONNX, or TensorRT).
+        """
         return PipelineFactory.create(
             project_name="centerpoint",
             model_spec=model_spec,
@@ -130,7 +142,14 @@ class CenterPointEvaluator(BaseEvaluator):
 
     @override
     def _parse_predictions(self, pipeline_output: object) -> List[Dict]:
-        """Return pipeline output as a list of prediction dicts (or empty list if not a list)."""
+        """Return pipeline output as a list of prediction dicts (or empty list if not a list).
+
+        Args:
+            pipeline_output: Raw output from the deployment pipeline.
+
+        Returns:
+            List of prediction dicts, or empty list if pipeline_output is not a list.
+        """
         return pipeline_output if isinstance(pipeline_output, list) else []
 
     @override
@@ -168,7 +187,12 @@ class CenterPointEvaluator(BaseEvaluator):
 
     @override
     def _add_to_interface(self, predictions: List[Dict], ground_truths: List[Dict]) -> None:
-        """Add one frame of predictions and ground truths to the metrics interface."""
+        """Add one frame of predictions and ground truths to the metrics interface.
+
+        Args:
+            predictions: List of prediction dicts (bbox_3d, score, label).
+            ground_truths: List of ground truth dicts (bbox_3d, label).
+        """
         self.metrics_interface.add_frame(predictions, ground_truths)
 
     @override
@@ -218,7 +242,14 @@ class CenterPointEvaluator(BaseEvaluator):
 
     @override
     def print_results(self, results: EvalResultDict) -> None:
-        """Print evaluation results including metrics, latency, and breakdown."""
+        """Print evaluation results including metrics, latency, and breakdown.
+
+        Args:
+            results: EvalResultDict from _build_results (mAP, latency, num_samples, etc.).
+
+        Raises:
+            ValueError: If metrics report or latency is missing from results.
+        """
         # Print metrics report
         metrics_report = self.metrics_interface.format_metrics_report()
         if not metrics_report:

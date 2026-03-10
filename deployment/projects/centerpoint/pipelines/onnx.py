@@ -58,10 +58,10 @@ class CenterPointONNXPipeline(CenterPointDeploymentPipeline):
         logger.info(f"ONNX pipeline initialized with models from: {onnx_dir}")
 
     def _load_onnx_models(self) -> None:
-        """Load ONNX models for each component.
+        """Load ONNX models for each component (voxel encoder and backbone+head).
 
-        Args:
-            Uses `self.device` (DeviceSpec) for execution provider selection.
+        Uses self.onnx_dir, self._components_cfg, and self.device to resolve paths
+        and select execution providers.
 
         Raises:
             FileNotFoundError: If ONNX model files are not found.
