@@ -64,10 +64,10 @@ Export pipelines orchestrate:
 - Input/output wiring between stages
 - Directory structure management
 
-CenterPoint uses a project-specific `ModelComponentExtractor` implementation that provides:
+CenterPoint uses project-specific composition with:
 
-- `extract_features(model, data_loader, sample_idx)`: project-specific feature extraction for tracing
-- `extract_components(model, sample_data)`: splitting into ONNX-exportable submodules and per-component config overrides
+- `ExportSampleAdapter.extract_sample(model, data_loader, sample_idx)`: extract and normalize model-specific sample payload for tracing
+- `ModelComponentBuilder.build_components(model, sample)`: split into ONNX-exportable submodules and per-component config overrides
 
 ## Verification-Oriented Exports
 

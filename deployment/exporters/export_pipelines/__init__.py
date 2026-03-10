@@ -3,14 +3,16 @@
 from deployment.exporters.export_pipelines.base import OnnxExportPipeline, TensorRTExportPipeline
 from deployment.exporters.export_pipelines.interfaces import (
     ExportableComponent,
-    ModelComponentExtractor,
+    ExportSampleAdapter,
+    ModelComponentBuilder,
 )
 
 __all__ = [
     # Base export pipelines
     "OnnxExportPipeline",
     "TensorRTExportPipeline",
-    # Component extraction interfaces
-    "ModelComponentExtractor",
+    # Export decomposition interfaces
+    "ExportSampleAdapter",
+    "ModelComponentBuilder",
     "ExportableComponent",
 ]

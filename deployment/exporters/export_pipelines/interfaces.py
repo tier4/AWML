@@ -7,7 +7,7 @@ model-specific knowledge to generic deployment export pipelines.
 
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
-from typing import Any, List
+from typing import Any
 
 import torch
 
@@ -28,35 +28,21 @@ class ExportableComponent:
     sample_input: Any
 
 
-class ModelComponentExtractor(ABC):
-    """Interface for extracting exportable model components.
+class ExportSampleAdapter(ABC):
+    """Interface for adapting model-specific sample extraction for export.
 
-    This interface allows project-specific code to provide model-specific
-    knowledge (model structure, component extraction, input preparation)
-    without the deployment framework needing to know about specific models.
+    Implementations convert model-specific feature extraction outputs
+    into a sample object that component builders can consume.
     """
 
     @abstractmethod
-    def extract_components(self, model: torch.nn.Module, sample_data: Any) -> List[ExportableComponent]:
-        """Extract all components that need to be exported to ONNX.
-
-        Args:
-            model: PyTorch model to extract components from
-            sample_data: Sample data for preparing inputs
-
-        Returns:
-            List of ExportableComponent instances ready for ONNX export
-        """
-        ...
-
-    @abstractmethod
-    def extract_features(
+    def extract_sample(
         self,
         model: torch.nn.Module,
         data_loader: Any,
         sample_idx: int,
     ) -> Any:
-        """Extract model-specific intermediate features required for multi-component export.
+        """Extract model-specific sample payload for export.
 
         Args:
             model: PyTorch model used for feature extraction
@@ -64,6 +50,27 @@ class ModelComponentExtractor(ABC):
             sample_idx: Sample index used for tracing/feature extraction
 
         Returns:
-            Model-specific payload that ``extract_components`` expects.
+            Model-specific typed sample payload.
+        """
+        ...
+
+
+class ModelComponentBuilder(ABC):
+    """Interface for building exportable ONNX components from model and sample."""
+
+    @abstractmethod
+    def build_components(
+        self,
+        model: torch.nn.Module,
+        sample: Any,
+    ) -> list[ExportableComponent]:
+        """Build all ONNX-exportable components.
+
+        Args:
+            model: PyTorch model to build components from
+            sample: Typed sample payload for preparing component inputs
+
+        Returns:
+            List of exportable model components ready for ONNX export.
         """
         ...
