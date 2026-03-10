@@ -88,11 +88,6 @@ class CenterPointTensorRTExportPipeline(TensorRTExportPipeline):
             FileNotFoundError: If no ONNX files are found in onnx_path.
             KeyError: If an ONNX file stem is not declared in components config.
         """
-        if device is None:
-            raise ValueError("CUDA device must be provided for TensorRT export")
-        if onnx_path is None:
-            raise ValueError("onnx_path must be provided for CenterPoint TensorRT export")
-
         onnx_dir_path = Path(onnx_path)
         if not onnx_dir_path.is_dir():
             raise ValueError(f"onnx_path must be a directory for multi-file export, got: {onnx_path}")
