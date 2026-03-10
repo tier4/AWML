@@ -2,7 +2,7 @@
 CenterPoint ONNX export pipeline using composition.
 
 Splits the CenterPoint model into exportable components (e.g. voxel encoder,
-backbone+neck+head) via a ModelComponentExtractor and exports each component
+backbone+neck+head) via composition and exports each component
 to a separate ONNX file in the given output directory.
 """
 
@@ -11,7 +11,7 @@ from __future__ import annotations
 import logging
 import os
 from pathlib import Path
-from typing import Iterable, Optional, Tuple
+from typing import Iterable
 
 import torch
 
@@ -22,31 +22,39 @@ from deployment.exporters.common.factory import ExporterFactory
 from deployment.exporters.common.model_wrappers import IdentityWrapper
 from deployment.exporters.common.onnx_exporter import ONNXExporter
 from deployment.exporters.export_pipelines.base import OnnxExportPipeline
-from deployment.exporters.export_pipelines.interfaces import ExportableComponent, ModelComponentExtractor
+from deployment.exporters.export_pipelines.interfaces import (
+    ExportableComponent,
+    ExportSampleAdapter,
+    ModelComponentBuilder,
+)
+from deployment.projects.centerpoint.export_types import CenterPointExportSample
 
 
 class CenterPointONNXExportPipeline(OnnxExportPipeline):
     """ONNX export pipeline for CenterPoint (multi-file export).
 
-    Uses a `ModelComponentExtractor` to split the model into exportable components
-    and exports each with the configured ONNX exporter.
+    Uses a sample adapter + component builder to split the model into exportable
+    components and exports each with the configured ONNX exporter.
     """
 
     def __init__(
         self,
         exporter_factory: type[ExporterFactory],
-        component_extractor: ModelComponentExtractor,
-        logger: Optional[logging.Logger] = None,
-    ):
-        """Initialize the pipeline with exporter factory and component extractor.
+        sample_adapter: ExportSampleAdapter,
+        component_builder: ModelComponentBuilder,
+        logger: logging.Logger | None = None,
+    ) -> None:
+        """Initialize the pipeline with exporter factory, adapter, and builder.
 
         Args:
             exporter_factory: Factory used to create ONNX exporters per component.
-            component_extractor: Extractor that splits the model into exportable components.
+            sample_adapter: Adapter that extracts typed sample payload.
+            component_builder: Builder that creates exportable components from sample.
             logger: Optional logger; defaults to module logger if not provided.
         """
         self.exporter_factory = exporter_factory
-        self.component_extractor = component_extractor
+        self.sample_adapter = sample_adapter
+        self.component_builder = component_builder
         self.logger = logger or logging.getLogger(__name__)
 
     def export(
@@ -77,8 +85,8 @@ class CenterPointONNXExportPipeline(OnnxExportPipeline):
         output_dir_path.mkdir(parents=True, exist_ok=True)
 
         self._log_header(output_dir_path, sample_idx)
-        sample_data = self._extract_sample_data(model, data_loader, sample_idx)
-        components = self.component_extractor.extract_components(model, sample_data)
+        sample = self._extract_sample_data(model, data_loader, sample_idx)
+        components = self.component_builder.build_components(model, sample)
 
         exported_paths = self._export_components(components, output_dir_path, config)
         self._log_summary(exported_paths)
@@ -98,8 +106,8 @@ class CenterPointONNXExportPipeline(OnnxExportPipeline):
         model: torch.nn.Module,
         data_loader: BaseDataLoader,
         sample_idx: int,
-    ) -> Tuple[torch.Tensor, dict]:
-        """Get (input_features, voxel_dict) for the given sample via component extractor.
+    ) -> CenterPointExportSample:
+        """Extract typed sample payload for component building.
 
         Args:
             model: CenterPoint model (must have _extract_features for ONNX export).
@@ -107,14 +115,14 @@ class CenterPointONNXExportPipeline(OnnxExportPipeline):
             sample_idx: Index of the sample.
 
         Returns:
-            Tuple of (input_features, voxel_dict) for component extraction.
+            Typed `CenterPointExportSample` payload.
 
         Raises:
             RuntimeError: If feature extraction fails.
         """
         self.logger.info("Extracting features from sample data...")
         try:
-            return self.component_extractor.extract_features(model, data_loader, sample_idx)
+            return self.sample_adapter.extract_sample(model, data_loader, sample_idx)
         except Exception as exc:
             self.logger.error("Failed to extract features", exc_info=exc)
             raise RuntimeError("Feature extraction failed") from exc
