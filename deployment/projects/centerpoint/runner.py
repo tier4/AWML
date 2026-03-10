@@ -18,7 +18,7 @@ from deployment.exporters.common.factory import ExporterFactory
 from deployment.exporters.common.model_wrappers import IdentityWrapper
 from deployment.exporters.export_pipelines.base import OnnxExportPipeline, TensorRTExportPipeline
 from deployment.projects.centerpoint.evaluator import CenterPointEvaluator
-from deployment.projects.centerpoint.export.component_extractor import CenterPointComponentBuilder
+from deployment.projects.centerpoint.export.component_builder import CenterPointComponentBuilder
 from deployment.projects.centerpoint.export.onnx_export_pipeline import CenterPointONNXExportPipeline
 from deployment.projects.centerpoint.export.tensorrt_export_pipeline import CenterPointTensorRTExportPipeline
 from deployment.projects.centerpoint.model_loader import build_centerpoint_onnx_model

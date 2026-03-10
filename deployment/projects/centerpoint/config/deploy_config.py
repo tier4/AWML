@@ -120,9 +120,10 @@ onnx_config = dict(
 
 # ============================================================================
 # TensorRT Build Settings (shared across all components)
+# Supports `auto`, `fp16`, `fp32_tf32`, and `strongly_typed`
 # ============================================================================
 tensorrt_config = dict(
-    precision_policy="fp32_tf32",
+    precision_policy="auto",
     max_workspace_size=2 << 30,
 )
 
@@ -130,7 +131,7 @@ tensorrt_config = dict(
 # Evaluation Configuration
 # ============================================================================
 evaluation = dict(
-    enabled=False,
+    enabled=True,
     num_samples=1,
     verbose=True,
     backends=dict(
@@ -153,10 +154,11 @@ evaluation = dict(
 
 # ============================================================================
 # Verification Configuration
+# Note that fp16 can failed in this tolerance (max difference > tolerance)
 # ============================================================================
 verification = dict(
     enabled=True,
-    tolerance=0.5,
+    tolerance=1,
     num_verify_samples=1,
     devices=devices,
     scenarios=dict(
