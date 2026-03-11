@@ -15,7 +15,11 @@ from mmengine.registry import MODELS, init_default_scope
 from mmengine.runner import load_checkpoint
 
 from deployment.core.device import DeviceSpec
-from deployment.projects.centerpoint import onnx_models  # noqa: F401
+from deployment.projects.centerpoint.onnx_models import (  # noqa: F401 - register MODELS
+    centerpoint_head_onnx,
+    centerpoint_onnx,
+    pillar_encoder_onnx,
+)
 
 
 def create_onnx_model_cfg(
