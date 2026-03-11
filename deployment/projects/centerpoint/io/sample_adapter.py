@@ -7,7 +7,7 @@ import torch
 
 from deployment.core.io.base_data_loader import BaseDataLoader
 from deployment.exporters.export_pipelines.interfaces import ExportSampleAdapter
-from deployment.projects.centerpoint.export.export_types import CenterPointExportSample, VoxelDict
+from deployment.projects.centerpoint.io.sample_types import CenterPointFeatureSample, VoxelDict
 
 
 class CenterPointSampleAdapter(ExportSampleAdapter):
@@ -26,7 +26,7 @@ class CenterPointSampleAdapter(ExportSampleAdapter):
         model: torch.nn.Module,
         data_loader: BaseDataLoader,
         sample_idx: int,
-    ) -> CenterPointExportSample:
+    ) -> CenterPointFeatureSample:
         """Extract a typed export sample from the model and data loader.
 
         Args:
@@ -35,7 +35,7 @@ class CenterPointSampleAdapter(ExportSampleAdapter):
             sample_idx: Index of the sample to extract.
 
         Returns:
-            Typed CenterPointExportSample for export pipelines.
+            Typed CenterPointFeatureSample for export pipelines.
 
         Raises:
             AttributeError: If model does not have _extract_features.
@@ -51,14 +51,14 @@ class CenterPointSampleAdapter(ExportSampleAdapter):
         raw = model._extract_features(data_loader, sample_idx)
         return self._to_export_sample(raw)
 
-    def _to_export_sample(self, raw: Any) -> CenterPointExportSample:
-        """Convert raw (input_features, voxel_dict) into CenterPointExportSample.
+    def _to_export_sample(self, raw: Any) -> CenterPointFeatureSample:
+        """Convert raw (input_features, voxel_dict) into CenterPointFeatureSample.
 
         Args:
             raw: Tuple of (input_features, voxel_dict) from model._extract_features.
 
         Returns:
-            CenterPointExportSample with input_features and voxel_dict.
+            CenterPointFeatureSample with input_features and voxel_dict.
 
         Raises:
             TypeError: If raw is not a 2-tuple or elements have wrong types.
@@ -82,7 +82,7 @@ class CenterPointSampleAdapter(ExportSampleAdapter):
             if not isinstance(voxel_dict[key], torch.Tensor):
                 raise TypeError(f"voxel_dict['{key}'] must be torch.Tensor, got: {type(voxel_dict[key])}")
 
-        return CenterPointExportSample(
+        return CenterPointFeatureSample(
             input_features=input_features,
             voxel_dict=cast(VoxelDict, voxel_dict),
         )

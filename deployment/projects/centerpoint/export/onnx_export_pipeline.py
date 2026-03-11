@@ -27,7 +27,7 @@ from deployment.exporters.export_pipelines.interfaces import (
     ExportSampleAdapter,
     ModelComponentBuilder,
 )
-from deployment.projects.centerpoint.export.export_types import CenterPointExportSample
+from deployment.projects.centerpoint.io.sample_types import CenterPointFeatureSample
 
 
 class CenterPointONNXExportPipeline(OnnxExportPipeline):
@@ -111,7 +111,7 @@ class CenterPointONNXExportPipeline(OnnxExportPipeline):
         model: torch.nn.Module,
         data_loader: BaseDataLoader,
         sample_idx: int,
-    ) -> CenterPointExportSample:
+    ) -> CenterPointFeatureSample:
         """Extract typed sample payload for component building.
 
         Args:
@@ -120,7 +120,7 @@ class CenterPointONNXExportPipeline(OnnxExportPipeline):
             sample_idx: Index of the sample.
 
         Returns:
-            Typed `CenterPointExportSample` payload.
+            Typed `CenterPointFeatureSample` payload.
 
         Raises:
             RuntimeError: If feature extraction fails.

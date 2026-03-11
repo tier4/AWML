@@ -12,7 +12,7 @@ import torch
 
 from deployment.configs import ComponentsConfig
 from deployment.exporters.export_pipelines.interfaces import ExportableComponent, ModelComponentBuilder
-from deployment.projects.centerpoint.export.export_types import CenterPointExportSample
+from deployment.projects.centerpoint.io.sample_types import CenterPointFeatureSample
 from deployment.projects.centerpoint.onnx_models.centerpoint_onnx import CenterPointHeadONNX
 
 
@@ -41,7 +41,7 @@ class CenterPointComponentBuilder(ModelComponentBuilder):
     def build_components(
         self,
         model: torch.nn.Module,
-        sample: CenterPointExportSample,
+        sample: CenterPointFeatureSample,
     ) -> list[ExportableComponent]:
         """Build exportable CenterPoint components from a typed sample.
 
@@ -63,7 +63,7 @@ class CenterPointComponentBuilder(ModelComponentBuilder):
     def _create_voxel_encoder_component(
         self,
         model: torch.nn.Module,
-        sample: CenterPointExportSample,
+        sample: CenterPointFeatureSample,
     ) -> ExportableComponent:
         """Create exportable component for the voxel encoder (pts_voxel_encoder).
 
@@ -84,7 +84,7 @@ class CenterPointComponentBuilder(ModelComponentBuilder):
     def _create_backbone_component(
         self,
         model: torch.nn.Module,
-        sample: CenterPointExportSample,
+        sample: CenterPointFeatureSample,
     ) -> ExportableComponent:
         """Create exportable component for backbone + neck + head (pts_backbone_neck_head).
 
@@ -108,7 +108,7 @@ class CenterPointComponentBuilder(ModelComponentBuilder):
     def _prepare_backbone_input(
         self,
         model: torch.nn.Module,
-        sample: CenterPointExportSample,
+        sample: CenterPointFeatureSample,
     ) -> torch.Tensor:
         """Compute spatial features for the backbone from typed sample tensors.
 

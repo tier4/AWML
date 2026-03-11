@@ -13,7 +13,7 @@ class VoxelDict(TypedDict):
 
 
 @dataclass(frozen=True)
-class CenterPointExportSample:
+class CenterPointFeatureSample:
     input_features: torch.Tensor
     voxel_dict: VoxelDict
 
