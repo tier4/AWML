@@ -7,7 +7,7 @@ import torch
 
 from deployment.core.io.base_data_loader import BaseDataLoader
 from deployment.exporters.export_pipelines.interfaces import ExportSampleAdapter
-from deployment.projects.centerpoint.export_types import CenterPointExportSample, VoxelDict
+from deployment.projects.centerpoint.export.export_types import CenterPointExportSample, VoxelDict
 
 
 class CenterPointSampleAdapter(ExportSampleAdapter):

@@ -10,9 +10,9 @@ from mmengine.config import Config
 from deployment.cli.args import setup_logging
 from deployment.configs import BaseDeploymentConfig
 from deployment.core.contexts import CenterPointExportContext
-from deployment.projects.centerpoint.data_loader import CenterPointDataLoader
-from deployment.projects.centerpoint.evaluator import CenterPointEvaluator
-from deployment.projects.centerpoint.metrics_utils import extract_t4metric_v2_config
+from deployment.projects.centerpoint.eval.evaluator import CenterPointEvaluator
+from deployment.projects.centerpoint.eval.metrics_utils import extract_t4metric_v2_config
+from deployment.projects.centerpoint.io.data_loader import CenterPointDataLoader
 from deployment.projects.centerpoint.runner import CenterPointDeploymentRunner
 
 _REQUIRED_COMPONENTS = ("pts_voxel_encoder", "pts_backbone_neck_head")

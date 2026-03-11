@@ -12,7 +12,7 @@ import torch
 
 from deployment.configs import ComponentsConfig
 from deployment.exporters.export_pipelines.interfaces import ExportableComponent, ModelComponentBuilder
-from deployment.projects.centerpoint.export_types import CenterPointExportSample
+from deployment.projects.centerpoint.export.export_types import CenterPointExportSample
 from deployment.projects.centerpoint.onnx_models.centerpoint_onnx import CenterPointHeadONNX
 
 

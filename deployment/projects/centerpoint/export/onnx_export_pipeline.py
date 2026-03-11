@@ -27,7 +27,7 @@ from deployment.exporters.export_pipelines.interfaces import (
     ExportSampleAdapter,
     ModelComponentBuilder,
 )
-from deployment.projects.centerpoint.export_types import CenterPointExportSample
+from deployment.projects.centerpoint.export.export_types import CenterPointExportSample
 
 
 class CenterPointONNXExportPipeline(OnnxExportPipeline):
