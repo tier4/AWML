@@ -74,6 +74,7 @@ RUN python3 -m pip --no-cache-dir install \
 # NOTE(amadeuszsz): patches for torch.load can be removed after mmlab's PyTorch 2.6+ support
 COPY .patches/mmdet3d.patch /tmp/mmdet3d.patch
 COPY .patches/mmengine.patch /tmp/mmengine.patch
+COPY .patches/spconv.patch /tmp/spconv.patch
 RUN cd $(python -c "import site; print(site.getsitepackages()[0])") \
   && git apply < /tmp/mmdet3d.patch \
   && git apply < /tmp/mmengine.patch \
