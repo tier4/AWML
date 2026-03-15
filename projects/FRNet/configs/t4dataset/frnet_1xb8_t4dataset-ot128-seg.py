@@ -9,6 +9,7 @@ custom_imports = dict(
         "projects.FRNet.frnet.datasets",
         "projects.FRNet.frnet.datasets.transforms",
         "projects.FRNet.frnet.models",
+        "autoware_ml.segmentation3d.evaluation.metrics",
     ],
     allow_failed_imports=False,
 )
@@ -290,8 +291,21 @@ val_dataloader = dict(
 )
 test_dataloader = val_dataloader
 
-val_evaluator = dict(type="SegMetric")
-test_evaluator = val_evaluator
+distance_ranges = [(0, 20), (20, 40), (40, 60), (60, 80), (80, 100.0), (100.0, 120.0)]
+val_evaluator = dict(
+    type="T4SegMetric",
+    num_classes=num_classes,
+    ignore_index=ignore_index,
+    distance_ranges=distance_ranges,
+    prefix="val",
+)
+test_evaluator = dict(
+    type="T4SegMetric",
+    num_classes=num_classes,
+    ignore_index=ignore_index,
+    distance_ranges=distance_ranges,
+    prefix="test",
+)
 
 vis_backends = [dict(type="LocalVisBackend"), dict(type="TensorboardVisBackend")]
 

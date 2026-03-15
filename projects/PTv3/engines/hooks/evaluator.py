@@ -7,11 +7,14 @@ Please cite our work if the code is helpful to you.
 
 import numpy as np
 import torch
-import torch.distributed as dist
 import utils.comm as comm
-from utils.misc import intersection_and_union_gpu
 
 from autoware_ml.segmentation3d.datasets.utils import class_mapping_to_names
+from autoware_ml.segmentation3d.evaluation import (
+    SegEvalResult,
+    plot_confusion_matrix,
+    t4_seg_eval,
+)
 
 from .builder import HOOKS
 from .default import HookBase
@@ -26,6 +29,16 @@ class SemSegEvaluator(HookBase):
     def eval(self):
         self.trainer.logger.info(">>>>>>>>>>>>>>>> Start Evaluation >>>>>>>>>>>>>>>>")
         self.trainer.model.eval()
+        cfg = self.trainer.cfg
+        num_classes = cfg.data.num_classes
+        ignore_index = cfg.data.ignore_index
+        metric_options = getattr(cfg, "metric_options", None) or {}
+        distance_ranges = metric_options.get("distance_ranges") or []
+
+        local_results = []
+        loss_sum = 0.0
+        loss_count = 0
+
         for i, input_dict in enumerate(self.trainer.val_loader):
             for key in input_dict.keys():
                 if isinstance(input_dict[key], torch.Tensor):
@@ -34,73 +47,99 @@ class SemSegEvaluator(HookBase):
                 output_dict = self.trainer.model(input_dict)
             output = output_dict["seg_logits"]
             loss = output_dict["loss"]
-            pred = output.max(1)[1]
-            segment = input_dict["segment"]
-            intersection, union, target = intersection_and_union_gpu(
-                pred,
-                segment,
-                self.trainer.cfg.data.num_classes,
-                self.trainer.cfg.data.ignore_index,
-            )
-            if comm.get_world_size() > 1:
-                dist.all_reduce(intersection), dist.all_reduce(union), dist.all_reduce(target)
-            intersection, union, target = (
-                intersection.cpu().numpy(),
-                union.cpu().numpy(),
-                target.cpu().numpy(),
-            )
-            # Here there is no need to sync since sync happened in dist.all_reduce
-            self.trainer.storage.put_scalar("val_intersection", intersection)
-            self.trainer.storage.put_scalar("val_union", union)
-            self.trainer.storage.put_scalar("val_target", target)
-            self.trainer.storage.put_scalar("val_loss", loss.item())
-            info = "Test: [{iter}/{max_iter}] ".format(iter=i + 1, max_iter=len(self.trainer.val_loader))
-            if "origin_coord" in input_dict.keys():
-                info = "Interp. " + info
-            self.trainer.logger.info(
-                info + "Loss {loss:.4f} ".format(iter=i + 1, max_iter=len(self.trainer.val_loader), loss=loss.item())
-            )
-        loss_avg = self.trainer.storage.history("val_loss").avg
-        intersection = self.trainer.storage.history("val_intersection").total
-        union = self.trainer.storage.history("val_union").total
-        target = self.trainer.storage.history("val_target").total
-        iou_class = intersection / (union + 1e-10)
-        acc_class = intersection / (target + 1e-10)
-        m_iou = np.mean(iou_class)
-        m_acc = np.mean(acc_class)
-        all_acc = sum(intersection) / (sum(target) + 1e-10)
-        self.trainer.logger.info("Val result: mIoU/mAcc/allAcc {:.4f}/{:.4f}/{:.4f}.".format(m_iou, m_acc, all_acc))
+            pred = output.max(1)[1].detach().cpu().numpy()
+            segment = input_dict["segment"].detach().cpu().numpy()
 
-        mapped_class_names = class_mapping_to_names(
-            self.trainer.cfg.class_mapping,
-            self.trainer.cfg.data.ignore_index,
+            # Extract BEV coordinate for range-based metrics.
+            coord_np = None
+            if "coord" in input_dict:
+                coord = input_dict["coord"]
+                if isinstance(coord, torch.Tensor):
+                    coord_np = coord.detach().cpu().numpy()
+                    if coord_np.ndim != 2 or coord_np.shape[1] < 2:
+                        coord_np = None
+
+            local_results.append(dict(pred=pred, gt=segment, coord=coord_np))
+            loss_sum += float(loss.item())
+            loss_count += 1
+
+            info = f"Test: [{i + 1}/{len(self.trainer.val_loader)}] "
+            if "origin_coord" in input_dict:
+                info = "Interp. " + info
+            self.trainer.logger.info(info + f"Loss {loss.item():.4f}")
+
+        comm.synchronize()
+        gathered = comm.gather(
+            dict(results=local_results, loss_sum=loss_sum, loss_count=loss_count),
+            dst=0,
         )
-        assert len(mapped_class_names) == self.trainer.cfg.data.num_classes, (
-            "class_mapping_to_names length must match num_classes: "
-            f"{len(mapped_class_names)} vs {self.trainer.cfg.data.num_classes}"
+        if not comm.is_main_process():
+            return
+
+        merged_results = []
+        total_loss_sum = 0.0
+        total_loss_count = 0
+        for item in gathered:
+            merged_results.extend(item["results"])
+            total_loss_sum += float(item["loss_sum"])
+            total_loss_count += int(item["loss_count"])
+        loss_avg = total_loss_sum / max(total_loss_count, 1)
+
+        mapped_class_names = class_mapping_to_names(cfg.class_mapping, ignore_index)
+        assert len(mapped_class_names) == num_classes, (
+            "class_mapping_to_names length must match num_classes: " f"{len(mapped_class_names)} vs {num_classes}"
         )
-        for i in range(self.trainer.cfg.data.num_classes):
-            self.trainer.logger.info(
-                "Class_{idx}-{name} Result: iou/accuracy {iou:.4f}/{accuracy:.4f}".format(
-                    idx=i,
-                    name=mapped_class_names[i],
-                    iou=iou_class[i],
-                    accuracy=acc_class[i],
-                )
-            )
-        current_epoch = self.trainer.epoch + 1
-        if self.trainer.writer is not None:
-            self.trainer.writer.add_scalar("val/loss", loss_avg, current_epoch)
-            self.trainer.writer.add_scalar("val/mIoU", m_iou, current_epoch)
-            self.trainer.writer.add_scalar("val/mAcc", m_acc, current_epoch)
-            self.trainer.writer.add_scalar("val/allAcc", all_acc, current_epoch)
-            for i in range(self.trainer.cfg.data.num_classes):
-                name = mapped_class_names[i]
-                self.trainer.writer.add_scalar(f"val_class_iou/{name}", iou_class[i], current_epoch)
-                self.trainer.writer.add_scalar(f"val_class_acc/{name}", acc_class[i], current_epoch)
+        label2cat = {i: mapped_class_names[i] for i in range(num_classes)}
+
+        eval_result: SegEvalResult = t4_seg_eval(
+            gt_labels=[r["gt"] for r in merged_results],
+            seg_preds=[r["pred"] for r in merged_results],
+            label2cat=label2cat,
+            ignore_index=ignore_index,
+            coords_list=[r.get("coord") for r in merged_results] if distance_ranges else None,
+            distance_ranges=distance_ranges if distance_ranges else None,
+            logger=self.trainer.logger,
+        )
+
+        epoch = self.trainer.epoch + 1
+        writer = self.trainer.writer
+        if writer is not None:
+            writer.add_scalar("val/loss", loss_avg, epoch)
+            m = eval_result.metrics
+            writer.add_scalar("val/miou", m.get("miou", 0.0), epoch)
+            writer.add_scalar("val/acc", m.get("acc", 0.0), epoch)
+            writer.add_scalar("val/acc_cls", m.get("acc_cls", 0.0), epoch)
+            writer.add_scalar("val/mprecision", m.get("mprecision", 0.0), epoch)
+            writer.add_scalar("val/mrecall", m.get("mrecall", 0.0), epoch)
+            writer.add_scalar("val/mf1", m.get("mf1", 0.0), epoch)
+            for name in mapped_class_names:
+                writer.add_scalar(f"val/class_iou/{name}", m.get(name, 0.0), epoch)
+                writer.add_scalar(f"val/class_precision/{name}", m.get(f"precision/{name}", 0.0), epoch)
+                writer.add_scalar(f"val/class_recall/{name}", m.get(f"recall/{name}", 0.0), epoch)
+                writer.add_scalar(f"val/class_f1/{name}", m.get(f"f1/{name}", 0.0), epoch)
+            for lo, hi in distance_ranges:
+                lbl = f"{lo:g}-{hi:g}m"
+                writer.add_scalar(f"val/range/{lbl}/miou", m.get(f"{lbl}/miou", 0.0), epoch)
+                writer.add_scalar(f"val/range/{lbl}/acc", m.get(f"{lbl}/acc", 0.0), epoch)
+                writer.add_scalar(f"val/range/{lbl}/mprecision", m.get(f"{lbl}/mprecision", 0.0), epoch)
+                writer.add_scalar(f"val/range/{lbl}/mrecall", m.get(f"{lbl}/mrecall", 0.0), epoch)
+                writer.add_scalar(f"val/range/{lbl}/mf1", m.get(f"{lbl}/mf1", 0.0), epoch)
+            import matplotlib.pyplot as plt
+
+            if eval_result.cm is not None and eval_result.cm.sum() > 0:
+                fig = plot_confusion_matrix(eval_result.cm, mapped_class_names)
+                writer.add_figure("val/confusion_matrix", fig, epoch)
+                plt.close(fig)
+            for lbl, rcm in eval_result.range_cms.items():
+                if rcm is not None and rcm.sum() > 0:
+                    fig = plot_confusion_matrix(rcm, mapped_class_names, label=lbl)
+                    tag = f"val/confusion_matrix_{lbl.replace('-', '_').replace(' ', '_')}"
+                    writer.add_figure(tag, fig, epoch)
+                    plt.close(fig)
+
         self.trainer.logger.info("<<<<<<<<<<<<<<<<< End Evaluation <<<<<<<<<<<<<<<<<")
-        self.trainer.comm_info["current_metric_value"] = m_iou  # save for saver
-        self.trainer.comm_info["current_metric_name"] = "mIoU"  # save for saver
+        self.trainer.comm_info["current_metric_value"] = eval_result.metrics.get("miou", 0.0)
+        self.trainer.comm_info["current_metric_name"] = "miou"
 
     def after_train(self):
-        self.trainer.logger.info("Best {}: {:.4f}".format("mIoU", self.trainer.best_metric_value))
+        self.trainer.logger.info("Best {}: {:.4f}".format("miou", self.trainer.best_metric_value))
