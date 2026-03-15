@@ -297,14 +297,12 @@ val_evaluator = dict(
     num_classes=num_classes,
     ignore_index=ignore_index,
     distance_ranges=distance_ranges,
-    prefix="val",
 )
 test_evaluator = dict(
     type="T4SegMetric",
     num_classes=num_classes,
     ignore_index=ignore_index,
     distance_ranges=distance_ranges,
-    prefix="test",
 )
 
 vis_backends = [dict(type="LocalVisBackend"), dict(type="TensorboardVisBackend")]
