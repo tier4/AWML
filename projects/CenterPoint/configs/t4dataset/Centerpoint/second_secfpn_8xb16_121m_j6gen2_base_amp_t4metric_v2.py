@@ -5,6 +5,65 @@ _base_ = [
 experiment_name = "second_secfpn_8xb16_121m_j6gen2_base_amp_t4metric_v2"
 work_dir = "work_dirs/" + _base_.experiment_group_name + "/" + experiment_name
 
+test_pipeline = [
+    dict(
+        type="LoadPointsFromFile",
+        coord_type="LIDAR",
+        load_dim=_base_.point_load_dim,
+        use_dim=_base_.point_load_dim,
+        backend_args=_base_.backend_args,
+    ),
+    dict(
+        type="LoadPointsFromMultiSweeps",
+        sweeps_num=_base_.sweeps_num,
+        load_dim=_base_.point_load_dim,
+        use_dim=_base_.lidar_sweep_dims,
+        pad_empty_sweeps=True,
+        remove_close=True,
+        backend_args=_base_.backend_args,
+        test_mode=True,
+    ),
+    dict(
+        type="PointOffset",
+        offset=[0.0, 0.0, 0.0],  # [dx, dy, dz] - adjust as needed
+        sensor_id=0,             # Target specific LiDAR ID
+        sensor_dim=4,
+    ),
+    dict(type="PointsRangeFilter", point_cloud_range=_base_.point_cloud_range),
+    dict(
+        type="Pack3DDetInputs",
+        keys=["points", "gt_bboxes_3d", "gt_labels_3d"],
+        meta_keys=(
+            "timestamp",
+            "lidar2img",
+            "depth2img",
+            "cam2img",
+            "box_type_3d",
+            "sample_idx",
+            "sample_token",
+            "lidar_path",
+            "ori_cam2img",
+            "cam2global",
+            "lidar2cam",
+            "ego2global",
+            "city",
+            "vehicle_type",
+        ),
+    ),
+]
+
+val_dataloader = dict(
+    dataset=dict(
+        pipeline=test_pipeline,
+    )
+)
+
+test_dataloader = dict(
+    dataset=dict(
+        pipeline=test_pipeline,
+    )
+)
+
 # Add evaluator configs
 perception_evaluator_configs = dict(
     dataset_paths=_base_.data_root,
@@ -41,7 +100,7 @@ val_evaluator = dict(
     perception_evaluator_configs=perception_evaluator_configs,
     critical_object_filter_config=None,
     frame_pass_fail_config=frame_pass_fail_config,
-    num_workers=64,
+    num_workers=8,
     scene_batch_size=-1,
     write_metric_summary=False,
     class_names={{_base_.class_names}},
@@ -63,7 +122,7 @@ test_evaluator = dict(
     perception_evaluator_configs=perception_evaluator_configs,
     critical_object_filter_config=None,
     frame_pass_fail_config=frame_pass_fail_config,
-    num_workers=64,
+    num_workers=8,
     scene_batch_size=-1,
     write_metric_summary=True,
     class_names={{_base_.class_names}},

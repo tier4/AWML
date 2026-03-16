@@ -138,6 +138,8 @@ def main():
             runner = RUNNERS.build(cfg)
 
         # start testing
+        print(cfg)
+        print(runner)
         runner.test()
 
 

@@ -82,6 +82,7 @@ RUN cd $(python -c "import site; print(site.getsitepackages()[0])") \
   && rm -rf /tmp/* \
   && cd /
 
+ARG CACHEBUST=1
 ENV WGPU_BACKEND=gl
 
 WORKDIR /workspace
