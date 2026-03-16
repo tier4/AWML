@@ -116,8 +116,16 @@ class SemSegEvaluator(HookBase):
                     writer.add_scalar(f"val/class_{sub}/{name}", m.get(f"{sub}/{name}", 0.0), epoch)
             for lo, hi in distance_ranges:
                 lbl = f"{lo:g}-{hi:g}m"
-                for key in ("miou", "acc", "mprecision", "mrecall", "mf1"):
+                for key in ("miou", "acc", "acc_cls", "mprecision", "mrecall", "mf1"):
                     writer.add_scalar(f"val/range/{lbl}/{key}", m.get(f"{lbl}/{key}", 0.0), epoch)
+                for name in mapped_class_names:
+                    writer.add_scalar(f"val/range/{lbl}/class_iou/{name}", m.get(f"{lbl}/{name}", 0.0), epoch)
+                    for sub in ("precision", "recall", "f1"):
+                        writer.add_scalar(
+                            f"val/range/{lbl}/class_{sub}/{name}",
+                            m.get(f"{lbl}/{sub}/{name}", 0.0),
+                            epoch,
+                        )
 
             if eval_result.cm is not None and eval_result.cm.sum() > 0:
                 fig = plot_confusion_matrix(eval_result.cm, mapped_class_names)

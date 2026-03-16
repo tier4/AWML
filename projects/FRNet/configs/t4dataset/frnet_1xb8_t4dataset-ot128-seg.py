@@ -335,4 +335,7 @@ auto_scale_lr = dict(enable=False, base_batch_size=16)
 
 log_processor = dict(type="LogProcessor", window_size=50, by_epoch=False)
 
-default_hooks = dict(checkpoint=dict(type="CheckpointHook", by_epoch=False, interval=-1, save_best="miou"))
+default_hooks = dict(
+    logger=dict(type="LoggerHook", log_metric_by_epoch=False),
+    checkpoint=dict(type="CheckpointHook", by_epoch=False, interval=-1, save_best="miou"),
+)

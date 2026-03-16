@@ -303,8 +303,16 @@ class SemSegTester(TesterBase):
                         self.writer.add_scalar(f"test/class_{sub}/{name}", m.get(f"{sub}/{name}", 0.0), 0)
                 for lo, hi in distance_ranges:
                     lbl = f"{lo:g}-{hi:g}m"
-                    for key in ("miou", "mprecision", "mrecall", "mf1"):
+                    for key in ("miou", "acc", "acc_cls", "mprecision", "mrecall", "mf1"):
                         self.writer.add_scalar(f"test/range/{lbl}/{key}", m.get(f"{lbl}/{key}", 0.0), 0)
+                    for name in mapped_class_names:
+                        self.writer.add_scalar(f"test/range/{lbl}/class_iou/{name}", m.get(f"{lbl}/{name}", 0.0), 0)
+                        for sub in ("precision", "recall", "f1"):
+                            self.writer.add_scalar(
+                                f"test/range/{lbl}/class_{sub}/{name}",
+                                m.get(f"{lbl}/{sub}/{name}", 0.0),
+                                0,
+                            )
                 if eval_result.cm is not None and eval_result.cm.sum() > 0:
                     fig = plot_confusion_matrix(eval_result.cm, mapped_class_names)
                     self.writer.add_figure("test/confusion_matrix", fig, 0)
