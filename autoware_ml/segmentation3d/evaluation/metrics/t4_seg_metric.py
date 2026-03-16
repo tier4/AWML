@@ -157,8 +157,7 @@ class T4SegMetric(BaseMetric):
         """Export predictions to TXT files for submission (ScanNet format)."""
         submission_prefix = self.submission_prefix
         if submission_prefix is None:
-            tmp_dir = tempfile.TemporaryDirectory()
-            submission_prefix = osp.join(tmp_dir.name, "results")
+            submission_prefix = osp.join(tempfile.mkdtemp(), "results")
         mmcv.mkdir_or_exist(submission_prefix)
 
         ignore_index_val = self._get_ignore_index()
@@ -308,6 +307,8 @@ class T4SegMetric(BaseMetric):
         except Exception:
             return
 
+        import matplotlib.pyplot as plt
+
         num_classes = int(eval_result.cm.shape[0]) if eval_result.cm is not None else len(label2cat)
         class_names = [label2cat.get(i, str(i)) for i in range(num_classes)]
         step = self._eval_step
@@ -321,8 +322,6 @@ class T4SegMetric(BaseMetric):
                 vis.add_image(f"{tag_prefix}confusion_matrix", img, step=step)
             except Exception:
                 pass
-            import matplotlib.pyplot as plt
-
             plt.close(fig)
 
         for lbl, rcm in eval_result.range_cms.items():
@@ -336,6 +335,4 @@ class T4SegMetric(BaseMetric):
                 vis.add_image(f"{tag_prefix}{tag}", img, step=step)
             except Exception:
                 pass
-            import matplotlib.pyplot as plt
-
             plt.close(fig)

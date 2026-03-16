@@ -298,23 +298,16 @@ class SemSegTester(TesterBase):
                 import matplotlib.pyplot as plt
 
                 m = eval_result.metrics
-                self.writer.add_scalar("test/miou", m.get("miou", 0.0), 0)
-                self.writer.add_scalar("test/acc", m.get("acc", 0.0), 0)
-                self.writer.add_scalar("test/acc_cls", m.get("acc_cls", 0.0), 0)
-                self.writer.add_scalar("test/mprecision", m.get("mprecision", 0.0), 0)
-                self.writer.add_scalar("test/mrecall", m.get("mrecall", 0.0), 0)
-                self.writer.add_scalar("test/mf1", m.get("mf1", 0.0), 0)
+                for key in ("miou", "acc", "acc_cls", "mprecision", "mrecall", "mf1"):
+                    self.writer.add_scalar(f"test/{key}", m.get(key, 0.0), 0)
                 for name in mapped_class_names:
                     self.writer.add_scalar(f"test/class_iou/{name}", m.get(name, 0.0), 0)
-                    self.writer.add_scalar(f"test/class_precision/{name}", m.get(f"precision/{name}", 0.0), 0)
-                    self.writer.add_scalar(f"test/class_recall/{name}", m.get(f"recall/{name}", 0.0), 0)
-                    self.writer.add_scalar(f"test/class_f1/{name}", m.get(f"f1/{name}", 0.0), 0)
+                    for sub in ("precision", "recall", "f1"):
+                        self.writer.add_scalar(f"test/class_{sub}/{name}", m.get(f"{sub}/{name}", 0.0), 0)
                 for lo, hi in distance_ranges:
                     lbl = f"{lo:g}-{hi:g}m"
-                    self.writer.add_scalar(f"test/range/{lbl}/miou", m.get(f"{lbl}/miou", 0.0), 0)
-                    self.writer.add_scalar(f"test/range/{lbl}/mprecision", m.get(f"{lbl}/mprecision", 0.0), 0)
-                    self.writer.add_scalar(f"test/range/{lbl}/mrecall", m.get(f"{lbl}/mrecall", 0.0), 0)
-                    self.writer.add_scalar(f"test/range/{lbl}/mf1", m.get(f"{lbl}/mf1", 0.0), 0)
+                    for key in ("miou", "mprecision", "mrecall", "mf1"):
+                        self.writer.add_scalar(f"test/range/{lbl}/{key}", m.get(f"{lbl}/{key}", 0.0), 0)
                 if eval_result.cm is not None and eval_result.cm.sum() > 0:
                     fig = plot_confusion_matrix(eval_result.cm, mapped_class_names)
                     self.writer.add_figure("test/confusion_matrix", fig, 0)

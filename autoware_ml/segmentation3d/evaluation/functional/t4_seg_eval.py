@@ -1,15 +1,11 @@
 # Copyright (c) TIER IV, Inc. All rights reserved.
-"""Pure-Python helpers for 3D semantic segmentation evaluation.
-
-This module is shared by FRNet and PTv3 and does not depend on mmdet3d
-runner internals.
-"""
+"""Helpers for 3D semantic segmentation evaluation."""
 
 from __future__ import annotations
 
 import io
 from dataclasses import dataclass, field
-from typing import Dict, List, Optional, Sequence, Tuple, Union
+from typing import Dict, List, Optional, Tuple
 
 import numpy as np
 from mmengine.logging import print_log
@@ -31,7 +27,7 @@ def fast_hist(preds: np.ndarray, labels: np.ndarray, num_classes: int) -> np.nda
     Returns:
         ``np.ndarray`` of shape ``(num_classes, num_classes)``.
     """
-    k = (labels >= 0) & (labels < num_classes)
+    k = (labels >= 0) & (labels < num_classes) & (preds >= 0) & (preds < num_classes)
     bin_count = np.bincount(
         num_classes * labels[k].astype(int) + preds[k],
         minlength=num_classes**2,
@@ -41,7 +37,9 @@ def fast_hist(preds: np.ndarray, labels: np.ndarray, num_classes: int) -> np.nda
 
 def per_class_iou(hist: np.ndarray) -> np.ndarray:
     """Per-class IoU from cumulative confusion matrix."""
-    return np.diag(hist) / (hist.sum(1) + hist.sum(0) - np.diag(hist) + _EPS)
+    tp = np.diag(hist)
+    denom = hist.sum(1) + hist.sum(0) - tp
+    return np.where(denom > _EPS, tp / (denom + _EPS), np.nan)
 
 
 def get_acc(hist: np.ndarray) -> float:
@@ -110,10 +108,11 @@ def plot_confusion_matrix(
         ``matplotlib.figure.Figure`` - caller is responsible for closing it.
     """
     import matplotlib
-
-    matplotlib.use("Agg")
     import matplotlib.pyplot as plt
     from matplotlib.colors import Normalize as MplNormalize
+
+    if matplotlib.get_backend().lower() != "agg":
+        matplotlib.use("Agg")
 
     nc = cm.shape[0]
     cm_plot = normalize_confusion_matrix(cm) if normalize else cm.astype(float)
@@ -247,10 +246,10 @@ def _compute_bucket_metrics(
         if idx == ignore_index:
             continue
         name = label2cat.get(idx, str(idx))
-        out[f"{prefix}{name}"] = float(iou[idx]) if not np.isnan(iou[idx]) else 0.0
-        out[f"{prefix}precision/{name}"] = float(prec[idx]) if not np.isnan(prec[idx]) else 0.0
-        out[f"{prefix}recall/{name}"] = float(rec[idx]) if not np.isnan(rec[idx]) else 0.0
-        out[f"{prefix}f1/{name}"] = float(f1[idx]) if not np.isnan(f1[idx]) else 0.0
+        out[f"{prefix}{name}"] = float(iou[idx])
+        out[f"{prefix}precision/{name}"] = float(prec[idx])
+        out[f"{prefix}recall/{name}"] = float(rec[idx])
+        out[f"{prefix}f1/{name}"] = float(f1[idx])
 
     return out
 
@@ -338,19 +337,14 @@ def t4_seg_eval(
     use_ranges = bool(distance_ranges and coords_list is not None)
 
     total_hist = np.zeros((num_classes, num_classes), dtype=np.float64)
-    total_cm = np.zeros((num_classes, num_classes), dtype=np.float64)  # same thing
 
     if use_ranges:
         range_hists: Dict[str, np.ndarray] = {
             range_label(lo, hi): np.zeros((num_classes, num_classes), dtype=np.float64)
             for lo, hi in distance_ranges  # type: ignore[union-attr]
         }
-        range_cms: Dict[str, np.ndarray] = {
-            lbl: np.zeros((num_classes, num_classes), dtype=np.float64) for lbl in range_hists
-        }
     else:
         range_hists = {}
-        range_cms = {}
 
     for i in range(len(gt_labels)):
         gt = gt_labels[i].astype(np.int64)
@@ -361,7 +355,6 @@ def t4_seg_eval(
 
         h = fast_hist(pred, gt, num_classes)
         total_hist += h
-        total_cm += h
 
         if use_ranges:
             assert coords_list is not None
@@ -379,7 +372,6 @@ def t4_seg_eval(
                     continue
                 h_r = fast_hist(pred[mask], gt[mask], num_classes)
                 range_hists[lbl] += h_r
-                range_cms[lbl] += h_r
 
     _print_bucket_table(total_hist, label2cat, ignore_index, title="Total", logger=logger)
     metrics = _compute_bucket_metrics(total_hist, label2cat, ignore_index, prefix="")
@@ -390,4 +382,4 @@ def t4_seg_eval(
         _print_bucket_table(hist_r, label2cat, ignore_index, title=lbl, logger=logger)
         metrics.update(_compute_bucket_metrics(hist_r, label2cat, ignore_index, prefix=f"{lbl}/"))
 
-    return SegEvalResult(metrics=metrics, cm=total_cm, range_cms=range_cms)
+    return SegEvalResult(metrics=metrics, cm=total_hist, range_cms=range_hists)
