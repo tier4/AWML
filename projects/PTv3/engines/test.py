@@ -5,10 +5,12 @@ Author: Xiaoyang Wu (xiaoyang.wu.cs@gmail.com)
 Please cite our work if the code is helpful to you.
 """
 
+import json
 import os
 import time
 from collections import OrderedDict
 
+import matplotlib.pyplot as plt
 import numpy as np
 import torch
 import torch.nn.functional as F
@@ -30,6 +32,10 @@ from autoware_ml.segmentation3d.evaluation import (
     SegEvalResult,
     plot_confusion_matrix,
     t4_seg_eval,
+)
+from autoware_ml.segmentation3d.evaluation.functional.t4_seg_eval import (
+    fast_hist,
+    per_class_iou,
 )
 
 from .defaults import create_ddp_model
@@ -150,8 +156,6 @@ class SemSegTester(TesterBase):
         save_path = os.path.join(self.cfg.save_path, "result")
         make_dirs(save_path)
         if self.cfg.data.test.type == "NuScenesDataset" and comm.is_main_process():
-            import json
-
             make_dirs(os.path.join(save_path, "submit", "lidarseg", "test"))
             make_dirs(os.path.join(save_path, "submit", "test"))
             submission = dict(
@@ -269,11 +273,6 @@ class SemSegTester(TesterBase):
             label2cat = {i: mapped_class_names[i] for i in range(num_classes)}
 
             if self.cfg.data.test.type == "S3DISDataset":
-                from autoware_ml.segmentation3d.evaluation.functional.t4_seg_eval import (
-                    fast_hist,
-                    per_class_iou,
-                )
-
                 total_hist = sum(fast_hist(r["pred"].ravel(), r["gt"].ravel(), num_classes) for r in merged_results)
                 iou = per_class_iou(total_hist)
                 intersection = np.diag(total_hist)
@@ -295,8 +294,6 @@ class SemSegTester(TesterBase):
             )
 
             if self.writer is not None:
-                import matplotlib.pyplot as plt
-
                 m = eval_result.metrics
                 for key in ("miou", "acc", "acc_cls", "mprecision", "mrecall", "mf1"):
                     self.writer.add_scalar(f"test/{key}", m.get(key, 0.0), 0)

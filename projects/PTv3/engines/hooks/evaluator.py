@@ -5,6 +5,7 @@ Author: Xiaoyang Wu (xiaoyang.wu.cs@gmail.com)
 Please cite our work if the code is helpful to you.
 """
 
+import matplotlib.pyplot as plt
 import numpy as np
 import torch
 import utils.comm as comm
@@ -105,8 +106,6 @@ class SemSegEvaluator(HookBase):
         epoch = self.trainer.epoch + 1
         writer = self.trainer.writer
         if writer is not None:
-            import matplotlib.pyplot as plt
-
             writer.add_scalar("val/loss", loss_avg, epoch)
             m = eval_result.metrics
             for key in ("miou", "acc", "acc_cls", "mprecision", "mrecall", "mf1"):

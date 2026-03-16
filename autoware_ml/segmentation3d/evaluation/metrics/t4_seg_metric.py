@@ -5,11 +5,13 @@ import os.path as osp
 import tempfile
 from typing import Dict, List, Optional, Sequence, Tuple
 
+import matplotlib.pyplot as plt
 import mmcv
 import numpy as np
 from mmdet3d.registry import METRICS
 from mmengine.evaluator import BaseMetric
 from mmengine.logging import MMLogger
+from mmengine.visualization import Visualizer
 
 from autoware_ml.segmentation3d.evaluation.functional.t4_seg_eval import (
     figure_to_numpy,
@@ -301,13 +303,9 @@ class T4SegMetric(BaseMetric):
     def _log_confusion_matrix_images(self, eval_result, label2cat: Dict[int, str]) -> None:
         """Log normalised confusion-matrix images to TensorBoard (rank-0 only)."""
         try:
-            from mmengine.visualization import Visualizer
-
             vis = Visualizer.get_current_instance()
         except Exception:
             return
-
-        import matplotlib.pyplot as plt
 
         num_classes = int(eval_result.cm.shape[0]) if eval_result.cm is not None else len(label2cat)
         class_names = [label2cat.get(i, str(i)) for i in range(num_classes)]

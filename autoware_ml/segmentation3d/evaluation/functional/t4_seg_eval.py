@@ -7,9 +7,15 @@ import io
 from dataclasses import dataclass, field
 from typing import Dict, List, Optional, Tuple
 
+import matplotlib
+import matplotlib.pyplot as plt
 import numpy as np
+from matplotlib.colors import Normalize as MplNormalize
 from mmengine.logging import print_log
+from PIL import Image
 from terminaltables import AsciiTable
+
+matplotlib.use("Agg")
 
 _EPS = 1e-10
 
@@ -107,13 +113,6 @@ def plot_confusion_matrix(
     Returns:
         ``matplotlib.figure.Figure`` - caller is responsible for closing it.
     """
-    import matplotlib
-    import matplotlib.pyplot as plt
-    from matplotlib.colors import Normalize as MplNormalize
-
-    if matplotlib.get_backend().lower() != "agg":
-        matplotlib.use("Agg")
-
     nc = cm.shape[0]
     cm_plot = normalize_confusion_matrix(cm) if normalize else cm.astype(float)
 
@@ -157,8 +156,6 @@ def figure_to_numpy(fig) -> np.ndarray:
     buf = io.BytesIO()
     fig.savefig(buf, format="png", bbox_inches="tight")
     buf.seek(0)
-    from PIL import Image  # lazy import; PIL is a lightweight dep
-
     img = Image.open(buf).convert("RGB")
     return np.array(img)
 
