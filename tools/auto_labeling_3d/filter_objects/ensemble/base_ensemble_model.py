@@ -85,22 +85,89 @@ class BaseEnsembleModel(ABC):
         # Align label spaces across multiple models
         aligned_results = align_label_spaces(results)
 
-        # Merge data_list from all models
-        all_data_list: List[List[Dict[str, Any]]] = [r["data_list"] for r in aligned_results]
         class_name_to_id: Dict[str, int] = {
             class_name: class_id for class_id, class_name in enumerate(aligned_results[0]["metainfo"]["classes"])
         }
         merged_data_list: List[Dict[str, Any]] = []
-        for frame_data in zip(*all_data_list):
-            merged_frame = self._ensemble_frame(
-                frame_data,
-                ensemble_function=self.ensemble_function,
-                ensemble_label_groups=self.settings["ensemble_label_groups"],
-                class_name_to_id=class_name_to_id,
-            )
-            merged_data_list.append(merged_frame)
+
+        if self._can_align_by_token(aligned_results):
+            # Merge data_list from all models by token so missing-model frames can
+            # be treated as empty instead of shifting later frames.
+            anchor_data_list: List[Dict[str, Any]] = max(
+                aligned_results,
+                key=lambda result: len(result["data_list"]),
+            )["data_list"]
+            anchor_tokens: List[str] = [self._get_frame_token(frame) for frame in anchor_data_list]
+            anchor_token_set = set(anchor_tokens)
+            frame_lookups: List[Dict[str, Dict[str, Any]]] = [
+                self._build_frame_lookup(r["data_list"]) for r in aligned_results
+            ]
+
+            for model_idx, frame_lookup in enumerate(frame_lookups[1:], start=1):
+                missing_tokens = [token for token in anchor_tokens if token not in frame_lookup]
+                if missing_tokens:
+                    self.logger.info(
+                        "Model %d is missing %d frames during ensemble; those frames will use empty predictions.",
+                        model_idx,
+                        len(missing_tokens),
+                    )
+
+                extra_tokens = set(frame_lookup) - anchor_token_set
+                if extra_tokens:
+                    self.logger.warning(
+                        "Model %d has %d extra frames not present in the anchor result; they will be ignored.",
+                        model_idx,
+                        len(extra_tokens),
+                    )
+
+            for anchor_frame in anchor_data_list:
+                token = self._get_frame_token(anchor_frame)
+                frame_data = tuple(
+                    frame_lookup[token] if token in frame_lookup else self._empty_frame(anchor_frame)
+                    for frame_lookup in frame_lookups
+                )
+                merged_frame = self._ensemble_frame(
+                    frame_data,
+                    ensemble_function=self.ensemble_function,
+                    ensemble_label_groups=self.settings["ensemble_label_groups"],
+                    class_name_to_id=class_name_to_id,
+                )
+                merged_data_list.append(merged_frame)
+        else:
+            all_data_list: List[List[Dict[str, Any]]] = [r["data_list"] for r in aligned_results]
+            for frame_data in zip(*all_data_list):
+                merged_frame = self._ensemble_frame(
+                    frame_data,
+                    ensemble_function=self.ensemble_function,
+                    ensemble_label_groups=self.settings["ensemble_label_groups"],
+                    class_name_to_id=class_name_to_id,
+                )
+                merged_data_list.append(merged_frame)
 
         return {"metainfo": aligned_results[0]["metainfo"], "data_list": merged_data_list}
+
+    def _can_align_by_token(self, results: List[Dict[str, Any]]) -> bool:
+        return all("token" in frame for result in results for frame in result["data_list"])
+
+    def _get_frame_token(self, frame: Dict[str, Any]) -> str:
+        token = frame.get("token")
+        if token is None:
+            raise ValueError("Each frame must contain a token for ensemble alignment")
+        return token
+
+    def _build_frame_lookup(self, data_list: List[Dict[str, Any]]) -> Dict[str, Dict[str, Any]]:
+        frame_lookup: Dict[str, Dict[str, Any]] = {}
+        for frame in data_list:
+            token = self._get_frame_token(frame)
+            if token in frame_lookup:
+                raise ValueError(f"Duplicate frame token found during ensemble alignment: {token}")
+            frame_lookup[token] = frame
+        return frame_lookup
+
+    def _empty_frame(self, reference_frame: Dict[str, Any]) -> Dict[str, Any]:
+        empty_frame = reference_frame.copy()
+        empty_frame["pred_instances_3d"] = []
+        return empty_frame
 
     def _ensemble_frame(
         self, frame_results, ensemble_function, ensemble_label_groups, class_name_to_id
