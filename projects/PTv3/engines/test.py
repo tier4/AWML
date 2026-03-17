@@ -34,7 +34,8 @@ from utils.visualization import get_segmentation_colors, visualize_point_cloud
 from autoware_ml.segmentation3d.datasets.utils import class_mapping_to_names
 from autoware_ml.segmentation3d.evaluation import (
     SegEvalResult,
-    plot_confusion_matrix,
+    build_t4_seg_tb_scalars,
+    iter_t4_seg_confusion_matrix_figures,
     t4_seg_eval_from_hists,
     update_seg_eval_histograms,
 )
@@ -317,35 +318,16 @@ class SemSegTester(TesterBase):
             )
 
             if self.writer is not None:
-                m = eval_result.metrics
-                for key in ("miou", "acc", "acc_cls", "mprecision", "mrecall", "mf1"):
-                    self.writer.add_scalar(f"test/{key}", m.get(key, 0.0), 0)
-                for name in mapped_class_names:
-                    self.writer.add_scalar(f"test/class_iou/{name}", m.get(name, 0.0), 0)
-                    for sub in ("precision", "recall", "f1"):
-                        self.writer.add_scalar(f"test/class_{sub}/{name}", m.get(f"{sub}/{name}", 0.0), 0)
-                for lo, hi in distance_ranges:
-                    lbl = f"{lo:g}-{hi:g}m"
-                    for key in ("miou", "acc", "acc_cls", "mprecision", "mrecall", "mf1"):
-                        self.writer.add_scalar(f"test/range/{lbl}/{key}", m.get(f"{lbl}/{key}", 0.0), 0)
-                    for name in mapped_class_names:
-                        self.writer.add_scalar(f"test/range/{lbl}/class_iou/{name}", m.get(f"{lbl}/{name}", 0.0), 0)
-                        for sub in ("precision", "recall", "f1"):
-                            self.writer.add_scalar(
-                                f"test/range/{lbl}/class_{sub}/{name}",
-                                m.get(f"{lbl}/{sub}/{name}", 0.0),
-                                0,
-                            )
-                if eval_result.cm is not None and eval_result.cm.sum() > 0:
-                    fig = plot_confusion_matrix(eval_result.cm, mapped_class_names)
-                    self.writer.add_figure("test/confusion_matrix", fig, 0)
+                for tag, value in build_t4_seg_tb_scalars(
+                    metrics=eval_result.metrics,
+                    class_names=mapped_class_names,
+                    stage="test",
+                    distance_ranges=distance_ranges,
+                ).items():
+                    self.writer.add_scalar(tag, value, 0)
+                for tag, fig in iter_t4_seg_confusion_matrix_figures(eval_result, mapped_class_names, "test"):
+                    self.writer.add_figure(tag, fig, 0)
                     plt.close(fig)
-                for lbl, rcm in eval_result.range_cms.items():
-                    if rcm is not None and rcm.sum() > 0:
-                        fig = plot_confusion_matrix(rcm, mapped_class_names, label=lbl)
-                        tag = f"test/confusion_matrix_{lbl.replace('-', '_').replace(' ', '_')}"
-                        self.writer.add_figure(tag, fig, 0)
-                        plt.close(fig)
                 self.writer.flush()
 
         if self.writer is not None:

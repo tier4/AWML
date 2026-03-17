@@ -6,6 +6,7 @@ from .pytorch_profiler_hook import (
     PytorchTrainingProfilerHook,
     PytorchValidationProfilerHook,
 )
+from .t4_seg_tensorboard_hook import T4SegTensorboardHook
 
 __all__ = [
     "MomentumInfoHook",
@@ -14,4 +15,5 @@ __all__ = [
     "PytorchValidationProfilerHook",
     "LossScaleInfoHook",
     "LoggerHook",
+    "T4SegTensorboardHook",
 ]

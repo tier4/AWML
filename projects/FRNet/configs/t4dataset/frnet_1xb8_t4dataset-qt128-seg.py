@@ -9,6 +9,7 @@ custom_imports = dict(
         "projects.FRNet.frnet.datasets",
         "projects.FRNet.frnet.datasets.transforms",
         "projects.FRNet.frnet.models",
+        "autoware_ml.hooks",
         "autoware_ml.segmentation3d.evaluation.metrics",
     ],
     allow_failed_imports=False,
@@ -336,6 +337,7 @@ auto_scale_lr = dict(enable=False, base_batch_size=16)
 log_processor = dict(type="LogProcessor", window_size=50, by_epoch=False)
 
 default_hooks = dict(
-    logger=dict(type="LoggerHook", log_metric_by_epoch=False),
+    logger=dict(type="LoggerHook", log_metric_by_epoch=False, log_metrics_to_tensorboard=False),
     checkpoint=dict(type="CheckpointHook", by_epoch=False, interval=-1, save_best="miou"),
 )
+custom_hooks = [dict(type="T4SegTensorboardHook")]

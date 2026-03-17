@@ -20,10 +20,12 @@ from .functional.t4_seg_eval import (
     update_seg_eval_histograms,
 )
 from .metrics.t4_seg_metric import T4SegMetric
+from .tensorboard import build_t4_seg_tb_scalars, iter_t4_seg_confusion_matrix_figures
 
 __all__ = [
     "SegEvalResult",
     "T4SegMetric",
+    "build_t4_seg_tb_scalars",
     "compute_bev_distance",
     "fast_hist",
     "figure_to_numpy",
@@ -38,5 +40,6 @@ __all__ = [
     "range_label",
     "t4_seg_eval",
     "t4_seg_eval_from_hists",
+    "iter_t4_seg_confusion_matrix_figures",
     "update_seg_eval_histograms",
 ]

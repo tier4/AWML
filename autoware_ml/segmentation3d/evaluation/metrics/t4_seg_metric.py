@@ -5,17 +5,13 @@ import os.path as osp
 import tempfile
 from typing import Dict, List, Optional, Sequence, Tuple
 
-import matplotlib.pyplot as plt
 import mmcv
 import numpy as np
 from mmdet3d.registry import METRICS
 from mmengine.evaluator import BaseMetric
 from mmengine.logging import MMLogger
-from mmengine.visualization import Visualizer
 
 from autoware_ml.segmentation3d.evaluation.functional.t4_seg_eval import (
-    figure_to_numpy,
-    plot_confusion_matrix,
     t4_seg_eval,
 )
 
@@ -60,8 +56,8 @@ class T4SegMetric(BaseMetric):
         self._ignore_index = ignore_index
         self.distance_ranges = distance_ranges or []
         self.submission_prefix = submission_prefix
-        # Counter used as the TensorBoard global-step for CM images.
-        self._eval_step: int = 0
+        self.last_eval_result = None
+        self.last_label2cat: Dict[int, str] = {}
 
     def process(self, data_batch: dict, data_samples: Sequence[dict]) -> None:
         """Collect one batch of model outputs for later aggregation."""
@@ -145,8 +141,8 @@ class T4SegMetric(BaseMetric):
                     "coordinate extraction is still misaligned."
                 )
 
-        self._log_confusion_matrix_images(eval_result, label2cat)
-        self._eval_step += 1
+        self.last_eval_result = eval_result
+        self.last_label2cat = dict(label2cat)
 
         return eval_result.metrics
 
@@ -302,38 +298,3 @@ class T4SegMetric(BaseMetric):
             return self._ignore_index
         meta = getattr(self, "dataset_meta", {}) or {}
         return int(meta.get("ignore_index", -1))
-
-    def _log_confusion_matrix_images(self, eval_result, label2cat: Dict[int, str]) -> None:
-        """Log normalised confusion-matrix images to TensorBoard (rank-0 only)."""
-        try:
-            vis = Visualizer.get_current_instance()
-        except Exception:
-            return
-
-        num_classes = int(eval_result.cm.shape[0]) if eval_result.cm is not None else len(label2cat)
-        class_names = [label2cat.get(i, str(i)) for i in range(num_classes)]
-        step = self._eval_step
-        tag_prefix = f"{self.prefix}/" if self.prefix else ""
-
-        if eval_result.cm is not None:
-            cm_label = "" if eval_result.cm.sum() > 0 else "empty"
-            fig = plot_confusion_matrix(eval_result.cm, class_names, label=cm_label)
-            img = figure_to_numpy(fig)
-            try:
-                vis.add_image(f"{tag_prefix}confusion_matrix", img, step=step)
-            except Exception:
-                pass
-            plt.close(fig)
-
-        for lbl, rcm in eval_result.range_cms.items():
-            if rcm is None:
-                continue
-            cm_label = lbl if rcm.sum() > 0 else f"{lbl} (empty)"
-            fig = plot_confusion_matrix(rcm, class_names, label=cm_label)
-            img = figure_to_numpy(fig)
-            tag = f"confusion_matrix_{lbl.replace('-', '_').replace(' ', '_')}"
-            try:
-                vis.add_image(f"{tag_prefix}{tag}", img, step=step)
-            except Exception:
-                pass
-            plt.close(fig)

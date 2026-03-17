@@ -17,7 +17,8 @@ import utils.comm as comm
 from autoware_ml.segmentation3d.datasets.utils import class_mapping_to_names
 from autoware_ml.segmentation3d.evaluation import (
     SegEvalResult,
-    plot_confusion_matrix,
+    build_t4_seg_tb_scalars,
+    iter_t4_seg_confusion_matrix_figures,
     t4_seg_eval_from_hists,
     update_seg_eval_histograms,
 )
@@ -132,36 +133,17 @@ class SemSegEvaluator(HookBase):
         writer = self.trainer.writer
         if writer is not None:
             writer.add_scalar("val/loss", loss_avg, epoch)
-            m = eval_result.metrics
-            for key in ("miou", "acc", "acc_cls", "mprecision", "mrecall", "mf1"):
-                writer.add_scalar(f"val/{key}", m.get(key, 0.0), epoch)
-            for name in mapped_class_names:
-                writer.add_scalar(f"val/class_iou/{name}", m.get(name, 0.0), epoch)
-                for sub in ("precision", "recall", "f1"):
-                    writer.add_scalar(f"val/class_{sub}/{name}", m.get(f"{sub}/{name}", 0.0), epoch)
-            for lo, hi in distance_ranges:
-                lbl = f"{lo:g}-{hi:g}m"
-                for key in ("miou", "acc", "acc_cls", "mprecision", "mrecall", "mf1"):
-                    writer.add_scalar(f"val/range/{lbl}/{key}", m.get(f"{lbl}/{key}", 0.0), epoch)
-                for name in mapped_class_names:
-                    writer.add_scalar(f"val/range/{lbl}/class_iou/{name}", m.get(f"{lbl}/{name}", 0.0), epoch)
-                    for sub in ("precision", "recall", "f1"):
-                        writer.add_scalar(
-                            f"val/range/{lbl}/class_{sub}/{name}",
-                            m.get(f"{lbl}/{sub}/{name}", 0.0),
-                            epoch,
-                        )
+            for tag, value in build_t4_seg_tb_scalars(
+                metrics=eval_result.metrics,
+                class_names=mapped_class_names,
+                stage="val",
+                distance_ranges=distance_ranges,
+            ).items():
+                writer.add_scalar(tag, value, epoch)
 
-            if eval_result.cm is not None and eval_result.cm.sum() > 0:
-                fig = plot_confusion_matrix(eval_result.cm, mapped_class_names)
-                writer.add_figure("val/confusion_matrix", fig, epoch)
+            for tag, fig in iter_t4_seg_confusion_matrix_figures(eval_result, mapped_class_names, "val"):
+                writer.add_figure(tag, fig, epoch)
                 plt.close(fig)
-            for lbl, rcm in eval_result.range_cms.items():
-                if rcm is not None and rcm.sum() > 0:
-                    fig = plot_confusion_matrix(rcm, mapped_class_names, label=lbl)
-                    tag = f"val/confusion_matrix_{lbl.replace('-', '_').replace(' ', '_')}"
-                    writer.add_figure(tag, fig, epoch)
-                    plt.close(fig)
 
         self.trainer.logger.info("<<<<<<<<<<<<<<<<< End Evaluation <<<<<<<<<<<<<<<<<")
         self.trainer.comm_info["current_metric_value"] = eval_result.metrics.get("miou", 0.0)

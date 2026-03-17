@@ -22,6 +22,7 @@ class LoggerHook(_LoggerHook):
         log_metric_by_epoch: bool = True,
         backend_args: Optional[dict] = None,
         logging_inference_to_tensorboard: bool = False,
+        log_metrics_to_tensorboard: bool = True,
     ) -> None:
         """
         Inherited from LoggerHook, please check the base class.
@@ -39,10 +40,30 @@ class LoggerHook(_LoggerHook):
             backend_args=backend_args,
         )
         self._logging_inference_to_tensorboard = logging_inference_to_tensorboard
+        self._log_metrics_to_tensorboard = log_metrics_to_tensorboard
         # There's no test iter in https://github.com/open-mmlab/mmengine/blob/main/mmengine/runner/loops.py#L477 where
         # runner.iter doesn't increase by 1 after an iteration during inference
         # Note that we assume that it's running in a single-gpu environment
         self._test_iter = 0
+
+    def after_val_epoch(self, runner, metrics=None) -> None:
+        """Optionally skip default TensorBoard metric logging for validation."""
+        tag, log_str = runner.log_processor.get_log_after_epoch(runner, len(runner.val_dataloader), "val")
+        runner.logger.info(log_str)
+        if not self._log_metrics_to_tensorboard:
+            return
+        if self.log_metric_by_epoch:
+            if isinstance(runner._train_loop, dict) or runner._train_loop is None:
+                epoch = 0
+            else:
+                epoch = runner.epoch
+            runner.visualizer.add_scalars(tag, step=epoch, file_path=self.json_log_path)
+        else:
+            if isinstance(runner._train_loop, dict) or runner._train_loop is None:
+                iter = 0
+            else:
+                iter = runner.iter
+            runner.visualizer.add_scalars(tag, step=iter, file_path=self.json_log_path)
 
     def after_test_iter(self, runner, batch_idx, data_batch=None, outputs=None):
         """Everything is the same to LoggerHook except it saves info to tensorboard as well."""
