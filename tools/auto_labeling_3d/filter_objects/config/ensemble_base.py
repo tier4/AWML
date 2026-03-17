@@ -50,13 +50,11 @@ filter_pipelines = dict(
     config=dict(
         type="NMSEnsembleModel",
         ensemble_setting=dict(
-            weights=[1.0, 1.0, 1.0],
-            iou_threshold=0.55,
+            weights=[0.9, 1.0, 1.0],
+            iou_threshold=0.20,
             # Ensemble label groups. Each group is processed as one ensemble unit.
             ensemble_label_groups=[
-                ["car"],
-                ["truck"],
-                ["bus"],
+                ["car", "truck", "bus"],
                 ["pedestrian"],
                 ["bicycle"],
             ],
