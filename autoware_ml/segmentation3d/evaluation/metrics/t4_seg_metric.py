@@ -16,7 +16,6 @@ from mmengine.visualization import Visualizer
 from autoware_ml.segmentation3d.evaluation.functional.t4_seg_eval import (
     figure_to_numpy,
     plot_confusion_matrix,
-    range_label,
     t4_seg_eval,
 )
 
@@ -39,8 +38,6 @@ class T4SegMetric(BaseMetric):
         Device used for collecting results across ranks. ``'cpu'`` or ``'gpu'``.
     prefix:
         Optional metric-name prefix.
-    pklfile_prefix:
-        If set, raw predictions are written to ``{pklfile_prefix}.pkl``.
     submission_prefix:
         If set, predictions are exported in ScanNet TXT format to this path
         instead of computing metrics.
@@ -55,7 +52,6 @@ class T4SegMetric(BaseMetric):
         distance_ranges: Optional[List[Tuple[float, float]]] = None,
         collect_device: str = "cpu",
         prefix: Optional[str] = None,
-        pklfile_prefix: Optional[str] = None,
         submission_prefix: Optional[str] = None,
         **kwargs,
     ):
@@ -63,7 +59,6 @@ class T4SegMetric(BaseMetric):
         self._num_classes = num_classes
         self._ignore_index = ignore_index
         self.distance_ranges = distance_ranges or []
-        self.pklfile_prefix = pklfile_prefix
         self.submission_prefix = submission_prefix
         # Counter used as the TensorBoard global-step for CM images.
         self._eval_step: int = 0
