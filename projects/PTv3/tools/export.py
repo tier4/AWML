@@ -1,4 +1,7 @@
 import numpy as np
+
+# NOTE: do not remove this import, it is needed for onnx export
+import SparseConvolution
 import spconv.pytorch as spconv
 import torch
 from engines.defaults import (
@@ -10,9 +13,6 @@ from engines.train import TRAINERS
 from models.scatter.functional import argsort
 from models.utils.structure import Point, bit_length_tensor
 from torch.nn import functional as F
-
-# NOTE: do not remove this import, it is needed for onnx export
-import SparseConvolution
 
 
 class WrappedModel(torch.nn.Module):
