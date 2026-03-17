@@ -184,7 +184,12 @@ class SemSegTester(TesterBase):
             if os.path.isfile(pred_save_path):
                 logger.info("{}/{}: {}, loaded pred and label.".format(idx + 1, len(self.test_loader), data_name))
                 pred = np.load(pred_save_path)
+                # Try to recover cached features from the corresponding NPZ file, if available.
                 feat_np = None
+                if os.path.isfile(result_save_path):
+                    cached_result = np.load(result_save_path)
+                    if "feat" in getattr(cached_result, "files", []):
+                        feat_np = cached_result["feat"]
                 if "origin_segment" in data_dict.keys():
                     segment = data_dict["origin_segment"]
             else:
