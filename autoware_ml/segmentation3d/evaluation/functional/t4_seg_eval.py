@@ -8,14 +8,14 @@ from dataclasses import dataclass, field
 from typing import Dict, List, Optional, Tuple
 
 import matplotlib
+
+matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 import numpy as np
 from matplotlib.colors import Normalize as MplNormalize
 from mmengine.logging import print_log
 from PIL import Image
 from terminaltables import AsciiTable
-
-matplotlib.use("Agg")
 
 _EPS = 1e-10
 
