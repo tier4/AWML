@@ -164,11 +164,19 @@ class T4SegMetric(BaseMetric):
 
         ignore_index_val = self._get_ignore_index()
         label2cat_map = self._get_label2cat()
-        num_labels = len(label2cat_map)
+        base_num_labels = len(label2cat_map)
+
+        # Ensure cat2label covers all possible prediction indices, including ignore_index.
+        num_labels = max(
+            base_num_labels,
+            getattr(self, "_num_classes", base_num_labels),
+        )
+        if isinstance(ignore_index_val, int) and ignore_index_val >= 0:
+            num_labels = max(num_labels, ignore_index_val + 1)
 
         cat2label = np.zeros(num_labels, dtype=np.int64)
         for out_idx, _ in label2cat_map.items():
-            if out_idx != ignore_index_val:
+            if out_idx != ignore_index_val and 0 <= out_idx < num_labels:
                 cat2label[out_idx] = out_idx
 
         meta = getattr(self, "dataset_meta", {}) or {}
