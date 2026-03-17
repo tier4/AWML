@@ -8,14 +8,12 @@ Please cite our work if the code is helpful to you.
 import matplotlib.pyplot as plt
 
 matplotlib.use("Agg")
-import numpy as np
 import torch
 import utils.comm as comm
 
 from autoware_ml.segmentation3d.datasets.utils import class_mapping_to_names
 from autoware_ml.segmentation3d.evaluation import (
     SegEvalResult,
-    figure_to_numpy,
     plot_confusion_matrix,
     t4_seg_eval,
 )
