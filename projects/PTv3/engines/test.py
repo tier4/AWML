@@ -16,6 +16,7 @@ matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 import numpy as np
 import torch
+import torch.distributed as dist
 import torch.nn.functional as F
 import torch.utils.data
 import utils.comm as comm
@@ -34,11 +35,8 @@ from autoware_ml.segmentation3d.datasets.utils import class_mapping_to_names
 from autoware_ml.segmentation3d.evaluation import (
     SegEvalResult,
     plot_confusion_matrix,
-    t4_seg_eval,
-)
-from autoware_ml.segmentation3d.evaluation.functional.t4_seg_eval import (
-    fast_hist,
-    per_class_iou,
+    t4_seg_eval_from_hists,
+    update_seg_eval_histograms,
 )
 
 from .defaults import create_ddp_model
@@ -153,7 +151,14 @@ class SemSegTester(TesterBase):
         ignore_index = self.cfg.data.ignore_index
         metric_options = getattr(self.cfg, "metric_options", None) or {}
         distance_ranges = metric_options.get("distance_ranges") or []
-        local_results = []
+        reduce_device = (
+            torch.device("cuda", torch.cuda.current_device()) if torch.cuda.is_available() else torch.device("cpu")
+        )
+        total_hist = torch.zeros((num_classes, num_classes), dtype=torch.float64, device=reduce_device)
+        range_hist_tensors = {
+            f"{lo:g}-{hi:g}m": torch.zeros((num_classes, num_classes), dtype=torch.float64, device=reduce_device)
+            for lo, hi in distance_ranges
+        }
         self.model.eval()
 
         save_path = os.path.join(self.cfg.save_path, "result")
@@ -249,7 +254,23 @@ class SemSegTester(TesterBase):
                 )
 
             coord_np = feat_np[:, :3] if feat_np is not None and feat_np.ndim == 2 and feat_np.shape[1] >= 3 else None
-            local_results.append(dict(pred=pred, gt=segment, coord=coord_np))
+            sample_total_hist = np.zeros((num_classes, num_classes), dtype=np.float64)
+            sample_range_hists = {
+                label: np.zeros((num_classes, num_classes), dtype=np.float64) for label in range_hist_tensors
+            }
+            update_seg_eval_histograms(
+                total_hist=sample_total_hist,
+                pred=pred,
+                gt=segment,
+                num_classes=num_classes,
+                ignore_index=ignore_index,
+                range_hists=sample_range_hists,
+                coord=coord_np,
+                distance_ranges=distance_ranges if distance_ranges else None,
+            )
+            total_hist += torch.from_numpy(sample_total_hist).to(device=total_hist.device)
+            for label, hist in sample_range_hists.items():
+                range_hist_tensors[label] += torch.from_numpy(hist).to(device=total_hist.device)
 
             batch_time.update(time.time() - end)
             logger.info(
@@ -265,15 +286,12 @@ class SemSegTester(TesterBase):
 
         logger.info("Syncing ...")
         comm.synchronize()
-        record_sync = comm.gather(local_results, dst=0)
+        if comm.get_world_size() > 1:
+            dist.reduce(total_hist, dst=0)
+            for hist in range_hist_tensors.values():
+                dist.reduce(hist, dst=0)
 
         if comm.is_main_process():
-            merged_results = []
-            for _ in range(len(record_sync)):
-                r = record_sync.pop()
-                merged_results.extend(r)
-                del r
-
             mapped_class_names = class_mapping_to_names(self.cfg.class_mapping, ignore_index)
             assert len(mapped_class_names) == num_classes, (
                 "class_mapping_to_names length must match num_classes: " f"{len(mapped_class_names)} vs {num_classes}"
@@ -281,23 +299,20 @@ class SemSegTester(TesterBase):
             label2cat = {i: mapped_class_names[i] for i in range(num_classes)}
 
             if self.cfg.data.test.type == "S3DISDataset":
-                total_hist = sum(fast_hist(r["pred"].ravel(), r["gt"].ravel(), num_classes) for r in merged_results)
-                iou = per_class_iou(total_hist)
-                intersection = np.diag(total_hist)
-                union = total_hist.sum(1) + total_hist.sum(0) - np.diag(total_hist)
-                target = total_hist.sum(1)
+                s3dis_hist = total_hist.cpu().numpy()
+                intersection = np.diag(s3dis_hist)
+                union = s3dis_hist.sum(1) + s3dis_hist.sum(0) - np.diag(s3dis_hist)
+                target = s3dis_hist.sum(1)
                 torch.save(
                     dict(intersection=intersection, union=union, target=target),
                     os.path.join(save_path, f"{self.test_loader.dataset.split}.pth"),
                 )
 
-            eval_result: SegEvalResult = t4_seg_eval(
-                gt_labels=[r["gt"] for r in merged_results],
-                seg_preds=[r["pred"] for r in merged_results],
+            eval_result: SegEvalResult = t4_seg_eval_from_hists(
+                total_hist=total_hist.cpu().numpy(),
                 label2cat=label2cat,
                 ignore_index=ignore_index,
-                coords_list=[r.get("coord") for r in merged_results] if distance_ranges else None,
-                distance_ranges=distance_ranges if distance_ranges else None,
+                range_hists={label: hist.cpu().numpy() for label, hist in range_hist_tensors.items()},
                 logger=logger,
             )
 

@@ -197,6 +197,41 @@ class SegEvalResult:
     range_cms: Dict[str, np.ndarray] = field(default_factory=dict)
 
 
+def update_seg_eval_histograms(
+    total_hist: np.ndarray,
+    pred: np.ndarray,
+    gt: np.ndarray,
+    num_classes: int,
+    ignore_index: int,
+    range_hists: Optional[Dict[str, np.ndarray]] = None,
+    coord: Optional[np.ndarray] = None,
+    distance_ranges: Optional[List[Tuple[float, float]]] = None,
+) -> None:
+    """Accumulate one sample into total and optional range confusion matrices."""
+    pred = np.asarray(pred, dtype=np.int64).copy()
+    gt = np.asarray(gt, dtype=np.int64).copy()
+
+    pred[gt == ignore_index] = ignore_index
+    gt[gt == ignore_index] = ignore_index
+
+    total_hist += fast_hist(pred, gt, num_classes)
+
+    if not range_hists or not distance_ranges or coord is None:
+        return
+
+    coord = np.asarray(coord)
+    if coord.ndim != 2 or coord.shape[1] < 2 or coord.shape[0] != gt.size:
+        return
+
+    dist = compute_bev_distance(coord)
+    for lo, hi in distance_ranges:
+        lbl = range_label(lo, hi)
+        mask = (dist >= lo) & (dist < hi)
+        if not np.any(mask):
+            continue
+        range_hists[lbl] += fast_hist(pred[mask], gt[mask], num_classes)
+
+
 def _compute_bucket_metrics(
     hist: np.ndarray,
     label2cat: Dict[int, str],
@@ -295,6 +330,30 @@ def _print_bucket_table(
     print_log("\n" + table.table, logger=logger)
 
 
+def t4_seg_eval_from_hists(
+    total_hist: np.ndarray,
+    label2cat: Dict[int, str],
+    ignore_index: int,
+    range_hists: Optional[Dict[str, np.ndarray]] = None,
+    logger=None,
+) -> SegEvalResult:
+    """Build scalar metrics and tables from pre-aggregated confusion matrices."""
+    total_hist = np.asarray(total_hist, dtype=np.float64)
+    range_hists = range_hists or {}
+
+    _print_bucket_table(total_hist, label2cat, ignore_index, title="Total", logger=logger)
+    metrics = _compute_bucket_metrics(total_hist, label2cat, ignore_index, prefix="")
+
+    for lbl, hist_r in range_hists.items():
+        hist_r = np.asarray(hist_r, dtype=np.float64)
+        if hist_r.sum() == 0:
+            continue
+        _print_bucket_table(hist_r, label2cat, ignore_index, title=lbl, logger=logger)
+        metrics.update(_compute_bucket_metrics(hist_r, label2cat, ignore_index, prefix=f"{lbl}/"))
+
+    return SegEvalResult(metrics=metrics, cm=total_hist, range_cms=range_hists)
+
+
 def t4_seg_eval(
     gt_labels: List[np.ndarray],
     seg_preds: List[np.ndarray],
@@ -344,39 +403,21 @@ def t4_seg_eval(
         range_hists = {}
 
     for i in range(len(gt_labels)):
-        gt = gt_labels[i].astype(np.int64)
-        pred = seg_preds[i].astype(np.int64)
+        update_seg_eval_histograms(
+            total_hist=total_hist,
+            pred=seg_preds[i],
+            gt=gt_labels[i],
+            num_classes=num_classes,
+            ignore_index=ignore_index,
+            range_hists=range_hists,
+            coord=coords_list[i] if use_ranges else None,
+            distance_ranges=distance_ranges if use_ranges else None,
+        )
 
-        pred[gt == ignore_index] = ignore_index
-        gt[gt == ignore_index] = ignore_index
-
-        h = fast_hist(pred, gt, num_classes)
-        total_hist += h
-
-        if use_ranges:
-            assert coords_list is not None
-            coord = coords_list[i]
-            if coord is None:
-                continue
-            coord = np.asarray(coord)
-            if coord.ndim != 2 or coord.shape[1] < 2 or coord.shape[0] != gt.size:
-                continue
-            dist = compute_bev_distance(coord)
-            for lo, hi in distance_ranges:  # type: ignore[union-attr]
-                lbl = range_label(lo, hi)
-                mask = (dist >= lo) & (dist < hi)
-                if not np.any(mask):
-                    continue
-                h_r = fast_hist(pred[mask], gt[mask], num_classes)
-                range_hists[lbl] += h_r
-
-    _print_bucket_table(total_hist, label2cat, ignore_index, title="Total", logger=logger)
-    metrics = _compute_bucket_metrics(total_hist, label2cat, ignore_index, prefix="")
-
-    for lbl, hist_r in range_hists.items():
-        if hist_r.sum() == 0:
-            continue
-        _print_bucket_table(hist_r, label2cat, ignore_index, title=lbl, logger=logger)
-        metrics.update(_compute_bucket_metrics(hist_r, label2cat, ignore_index, prefix=f"{lbl}/"))
-
-    return SegEvalResult(metrics=metrics, cm=total_hist, range_cms=range_hists)
+    return t4_seg_eval_from_hists(
+        total_hist=total_hist,
+        label2cat=label2cat,
+        ignore_index=ignore_index,
+        range_hists=range_hists,
+        logger=logger,
+    )

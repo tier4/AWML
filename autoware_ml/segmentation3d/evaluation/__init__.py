@@ -16,6 +16,8 @@ from .functional.t4_seg_eval import (
     plot_confusion_matrix,
     range_label,
     t4_seg_eval,
+    t4_seg_eval_from_hists,
+    update_seg_eval_histograms,
 )
 from .metrics.t4_seg_metric import T4SegMetric
 
@@ -35,4 +37,6 @@ __all__ = [
     "plot_confusion_matrix",
     "range_label",
     "t4_seg_eval",
+    "t4_seg_eval_from_hists",
+    "update_seg_eval_histograms",
 ]
