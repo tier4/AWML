@@ -627,7 +627,7 @@ def get_lidarseg_annotations(
     if not hasattr(t4, "lidarseg") or not t4.lidarseg:
         return dict()
 
-    if sd_record.info_filename is None: 
+    if sd_record.info_filename is None:
         print(f"sample {lidar_token} doesn't have lidar info_filename")
         return dict()
 

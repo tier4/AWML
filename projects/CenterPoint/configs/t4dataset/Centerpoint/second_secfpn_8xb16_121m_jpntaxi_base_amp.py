@@ -81,8 +81,8 @@ train_pipeline = [
     ),
     dict(
         type="GlobalRotScaleTrans",
-		scale_ratio_range=[0.95, 1.05],
-		# scale_ratio_range=[0.98, 1.02],
+        scale_ratio_range=[0.95, 1.05],
+        # scale_ratio_range=[0.98, 1.02],
         rot_range=[-0.78539816, 0.78539816],
         # rot_range=[-0.3926, 0.3926],
         translation_std=[0.5, 0.5, 0.2],
