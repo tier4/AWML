@@ -42,7 +42,7 @@ eval_class_range = {
 
 # user setting
 data_root = "data/t4dataset/"
-info_directory_path = "info/user_name/"
+info_directory_path = "info/kokseang_2_6_1/"
 train_gpu_size = 8
 train_batch_size = 16
 test_batch_size = 2
@@ -50,7 +50,7 @@ num_workers = 16
 val_interval = 1
 max_epochs = 30
 
-experiment_group_name = "centerpoint/jpntaxi_base/" + _base_.dataset_type
+experiment_group_name = "centerpoint_2.6.2/jpntaxi_base/" + _base_.dataset_type
 experiment_name = "second_secfpn_8xb16_121m_jpntaxi_base_amp"
 work_dir = "work_dirs/" + experiment_group_name + "/" + experiment_name
 
@@ -81,9 +81,12 @@ train_pipeline = [
     ),
     dict(
         type="GlobalRotScaleTrans",
-        rot_range=[-1.571, 1.571],
-        scale_ratio_range=[0.80, 1.20],
-        translation_std=[1.0, 1.0, 0.2],
+		scale_ratio_range=[0.95, 1.05],
+		# scale_ratio_range=[0.98, 1.02],
+        rot_range=[-0.78539816, 0.78539816],
+        # rot_range=[-0.3926, 0.3926],
+        translation_std=[0.5, 0.5, 0.2],
+        # translation_std=[0.2, 0.2, 0.1],
     ),
     dict(type="PointsRangeFilter", point_cloud_range=point_cloud_range),
     dict(type="ObjectRangeFilter", point_cloud_range=point_cloud_range),
@@ -356,7 +359,8 @@ model = dict(
 
 randomness = dict(seed=0, diff_rank_seed=False, deterministic=True)
 
-lr = 3e-4
+# 0.0003 * sqrt(2) = 0.0004242
+lr = 0.0003
 param_scheduler = [
     # learning rate scheduler
     # During the first (max_epochs * 0.3) epochs, learning rate increases from 0 to lr * 10
@@ -441,13 +445,13 @@ vis_backends = [
     dict(type="LocalVisBackend"),
     dict(type="TensorboardVisBackend"),
     # Update info accordingly
-    dict(
-        type="SafeMLflowVisBackend",
-        exp_name="(UserName) CenterPoint",
-        run_name="CenterPoint base",
-        tracking_uri="http://localhost:5000",
-        artifact_suffix=(),
-    ),
+    # dict(
+    #     type="SafeMLflowVisBackend",
+    #     exp_name="(UserName) CenterPoint",
+    #     run_name="CenterPoint base",
+    #     tracking_uri="http://localhost:5000",
+    #     artifact_suffix=(),
+    # ),
 ]
 visualizer = dict(type="Det3DLocalVisualizer", vis_backends=vis_backends, name="visualizer")
 
@@ -463,6 +467,7 @@ custom_hooks = [
 ]
 
 # Update the load_from path accordingly
-load_from = "<best_checkpoint>"
+# load_from = "<best_checkpoint>"
+load_from = "work_dirs/centerpoint_2.6.1/base/T4Dataset/second_secfpn_8xb16_121m_base_amp_rfs/epoch_49.pth"
 
 activation_checkpointing = ["pts_backbone"]

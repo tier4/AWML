@@ -3,7 +3,7 @@ _base_ = [
 ]
 
 # user setting
-experiment_name = "second_secfpn_8xb16_121m_jpntaxi_base_amp_rfs"
+experiment_name = "second_secfpn_8xb16_121m_jpntaxi_base_amp_rfs_less_rotation_1e-3_lr"
 work_dir = "work_dirs/" + _base_.experiment_group_name + "/" + experiment_name
 
 train_frame_object_sampler = dict(
