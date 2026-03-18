@@ -31,6 +31,7 @@ class AnalysisRunner:
     def __init__(
         self,
         data_root_path: str,
+        dataset_version_config_root: str,
         config_path: str,
         out_path: str,
         max_sweeps: int = 2,
@@ -41,6 +42,7 @@ class AnalysisRunner:
         :param out_path: Path where to save output.
         """
         self.data_root_path = data_root_path
+        self.dataset_version_config_root = dataset_version_config_root
         self.config_path = config_path
         self.out_path = Path(out_path)
         # Initialization
@@ -98,7 +100,7 @@ class AnalysisRunner:
         Get list of scenarios names for different splits in a dataset.
         :return: A dict of {split name: [scenario names in a split]}.
         """
-        dataset_yaml_file = Path(self.config.dataset_version_config_root) / (dataset_version + ".yaml")
+        dataset_yaml_file = Path(self.dataset_version_config_root) / (dataset_version + ".yaml")
         with open(dataset_yaml_file, "r") as f:
             dataset_list_dict: Dict[str, List[str]] = yaml.safe_load(f)
             return dataset_list_dict
@@ -163,7 +165,7 @@ class AnalysisRunner:
         """
         scenario_data = {}
         for scene_token_with_version in scene_tokens:
-            scene_token, version = scene_token_with_version.split("   ")
+            scene_token, version = scene_token_with_version.split("/")
             print_log(f"Creating scenario data for the scene: {scene_token}, version: {version}")
             scene_root_dir_path = get_scene_root_dir_path(
                 root_path=self.data_root_path,
