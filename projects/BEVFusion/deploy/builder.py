@@ -81,7 +81,12 @@ class ExportBuilder:
         )
 
         torch_model = task_processor.build_pytorch_model(self.setup_configs.checkpoint_path)
-        data, model_inputs = task_processor.create_input(data, data_preprocessor=data_preprocessor, model=torch_model)
+        data, model_inputs = task_processor.create_input(
+            data,
+            data_preprocessor=data_preprocessor,
+            model=torch_model,
+            extract_pts_inputs=self.setup_configs.extract_pts_inputs,
+        )
 
         if isinstance(model_inputs, list) and len(model_inputs) == 1:
             model_inputs = model_inputs[0]

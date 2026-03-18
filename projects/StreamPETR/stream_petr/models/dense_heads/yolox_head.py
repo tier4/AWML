@@ -310,7 +310,7 @@ class YOLOXHeadCustom(BaseDenseHead, BBoxTestMixin):
         gt_labels = [labels2d for i in gt_labels2d_list for labels2d in i]
         centers2d = [center2d for i in centers2d for center2d in i]
 
-        (pos_masks, cls_targets, obj_targets, bbox_targets, l1_targets, centers2d_target, num_fg_imgs) = multi_apply(
+        pos_masks, cls_targets, obj_targets, bbox_targets, l1_targets, centers2d_target, num_fg_imgs = multi_apply(
             self._get_target_single,
             flatten_cls_preds.detach(),
             flatten_objectness.detach(),
