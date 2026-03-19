@@ -1,10 +1,10 @@
 # learning rate
-lr = 0.0001
-t_max = 15
-max_epochs = 50
+lr = 2e-4
+t_max = 8
+max_epochs = 30
 val_interval = 5
 
-train_gpu_size = 4
+train_gpu_size = 8
 test_batch_size = 2
 train_batch_size = 8
 
