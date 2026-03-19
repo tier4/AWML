@@ -82,11 +82,8 @@ train_pipeline = [
     dict(
         type="GlobalRotScaleTrans",
 		scale_ratio_range=[0.95, 1.05],
-		# scale_ratio_range=[0.98, 1.02],
         rot_range=[-0.78539816, 0.78539816],
-        # rot_range=[-0.3926, 0.3926],
         translation_std=[0.5, 0.5, 0.2],
-        # translation_std=[0.2, 0.2, 0.1],
     ),
     dict(type="PointsRangeFilter", point_cloud_range=point_cloud_range),
     dict(type="ObjectRangeFilter", point_cloud_range=point_cloud_range),
@@ -360,7 +357,7 @@ model = dict(
 randomness = dict(seed=0, diff_rank_seed=False, deterministic=True)
 
 # 0.0003 * sqrt(2) = 0.0004242
-lr = 0.0003
+lr = 0.00042
 param_scheduler = [
     # learning rate scheduler
     # During the first (max_epochs * 0.3) epochs, learning rate increases from 0 to lr * 10
