@@ -75,4 +75,5 @@ def setup_configs(
         module=module,
         onnx_cfg=onnx_cfg,
         work_dir=work_dir,
+        extract_pts_inputs=extract_pts_inputs,
     )
