@@ -1,11 +1,8 @@
 # Copyright (c) TIER IV, Inc. All rights reserved.
 """MMEngine metric adapter for shared T4 segmentation evaluation."""
 
-import os.path as osp
-import tempfile
 from typing import Dict, List, Optional, Sequence, Tuple
 
-import mmcv
 import numpy as np
 from mmdet3d.registry import METRICS
 from mmengine.evaluator import BaseMetric
@@ -34,9 +31,6 @@ class T4SegMetric(BaseMetric):
         Device used for collecting results across ranks. ``'cpu'`` or ``'gpu'``.
     prefix:
         Optional metric-name prefix.
-    submission_prefix:
-        If set, predictions are exported in ScanNet TXT format to this path
-        instead of computing metrics.
     """
 
     default_prefix: Optional[str] = None
@@ -48,14 +42,12 @@ class T4SegMetric(BaseMetric):
         distance_ranges: Optional[List[Tuple[float, float]]] = None,
         collect_device: str = "cpu",
         prefix: Optional[str] = None,
-        submission_prefix: Optional[str] = None,
         **kwargs,
     ):
         super().__init__(prefix=prefix, collect_device=collect_device)
         self._num_classes = num_classes
         self._ignore_index = ignore_index
         self.distance_ranges = distance_ranges or []
-        self.submission_prefix = submission_prefix
         self.last_eval_result = None
         self.last_label2cat: Dict[int, str] = {}
 
@@ -85,18 +77,12 @@ class T4SegMetric(BaseMetric):
                     pred=pred,
                     gt=gt,
                     coord=coord_i,
-                    # Keep original annotation info for submission export.
-                    eval_ann_info=ann_field,
                 )
             )
 
     def compute_metrics(self, results: list) -> Dict[str, float]:
         """Aggregate per-batch results and return the full metrics dict."""
         logger: MMLogger = MMLogger.get_current_instance()
-
-        if self.submission_prefix:
-            self.format_results(results)
-            return {}
 
         if not results:
             logger.warning("T4SegMetric: no results to evaluate.")
@@ -148,44 +134,6 @@ class T4SegMetric(BaseMetric):
         self.last_label2cat = dict(label2cat)
 
         return eval_result.metrics
-
-    def format_results(self, results: list) -> None:
-        """Export predictions to TXT files for submission (ScanNet format)."""
-        submission_prefix = self.submission_prefix
-        if submission_prefix is None:
-            submission_prefix = osp.join(tempfile.mkdtemp(), "results")
-        mmcv.mkdir_or_exist(submission_prefix)
-
-        ignore_index_val = self._get_ignore_index()
-        label2cat_map = self._get_label2cat()
-        base_num_labels = len(label2cat_map)
-
-        # Ensure cat2label covers all possible prediction indices, including ignore_index.
-        num_labels = max(
-            base_num_labels,
-            getattr(self, "_num_classes", base_num_labels),
-        )
-        if isinstance(ignore_index_val, int) and ignore_index_val >= 0:
-            num_labels = max(num_labels, ignore_index_val + 1)
-
-        cat2label = np.zeros(num_labels, dtype=np.int64)
-        for out_idx, _ in label2cat_map.items():
-            if out_idx != ignore_index_val and 0 <= out_idx < num_labels:
-                cat2label[out_idx] = out_idx
-
-        meta = getattr(self, "dataset_meta", {}) or {}
-        if "label2cat" in meta:
-            for original_label, output_idx in meta["label2cat"].items():
-                if isinstance(output_idx, int) and output_idx != ignore_index_val:
-                    cat2label[output_idx] = original_label
-
-        for r in results:
-            ann = r.get("eval_ann_info", {})
-            sample_idx = (ann.get("point_cloud") or {}).get("lidar_idx", "unknown")
-            pred_sem = r["pred"].astype(np.int64)
-            pred_label = cat2label[pred_sem]
-            curr_file = f"{submission_prefix}/{sample_idx}.txt"
-            np.savetxt(curr_file, pred_label, fmt="%d")
 
     @staticmethod
     def _to_numpy(v) -> Optional[np.ndarray]:
