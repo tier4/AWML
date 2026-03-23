@@ -105,11 +105,14 @@ class T4SegMetric(BaseMetric):
         ignore_index = self._get_ignore_index()
         label2cat = self._get_label2cat()
 
+        # Do not include ignore_index in label2cat. When ignore_index sits outside [0, num_classes) fast_hist naturally
+        # drops those points via its ``labels < num_classes`` mask. Adding it would expand the confusion matrix
+        # and pollute acc / acc_cls.
+        label2cat.pop(ignore_index, None)
         target_num_classes = self._num_classes or len(label2cat)
-        target_num_classes = max(target_num_classes, ignore_index + 1)
         for idx in range(target_num_classes):
-            if idx not in label2cat:
-                label2cat[idx] = "ignore" if idx == ignore_index else str(idx)
+            if idx not in label2cat and idx != ignore_index:
+                label2cat[idx] = str(idx)
 
         gt_labels = [r["gt"] for r in results]
         seg_preds = [r["pred"] for r in results]
