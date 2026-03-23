@@ -44,7 +44,7 @@ class OnnxModel:
         self._session = ort.InferenceSession(onnx_path)
 
     def inference(self, batch_inputs_dict: dict) -> npt.NDArray[np.float32]:
-        """Run ONNX Runtime inference, returns logits (N, num_classes)."""
+        """Run ONNX Runtime inference, returns probabilities (N, num_classes)."""
         coors = batch_inputs_dict["coors"].cpu().numpy()
         points = batch_inputs_dict["points"].cpu().numpy()
         voxel_coors = batch_inputs_dict["voxel_coors"].cpu().numpy()
