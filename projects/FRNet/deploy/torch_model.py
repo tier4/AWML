@@ -23,6 +23,11 @@ class ExportModel(torch.nn.Module):
         self.model = model
 
     def forward(self, batch_inputs_dict: dict, data_samples: dict | None = None) -> torch.Tensor:
+        """Forward pass with softmax applied to logits.
+
+        Returns:
+            Tensor of shape (N, num_classes) with per-point class probabilities.
+        """
         predictions = self.model(batch_inputs_dict)
         return torch.softmax(predictions["seg_logit"], dim=-1)
 
