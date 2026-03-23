@@ -1,6 +1,6 @@
 """Postprocessing for FRNet deployment.
 
-Converts raw segmentation logits to class predictions with optional
+Converts per-class probabilities to class predictions with optional
 score thresholding (below threshold -> ignore_index).
 """
 
@@ -22,7 +22,7 @@ class Postprocessing:
         self.logger = MMLogger.get_current_instance()
 
     def postprocess(self, predictions: npt.NDArray[np.float32]) -> npt.NDArray[np.intp]:
-        """Convert logits (N, num_classes) to per-point class indices (N,)."""
+        """Convert probabilities (N, num_classes) to per-point class indices (N,)."""
         t_start = time()
         result = np.where(
             np.max(predictions, axis=1) >= self._score_threshold,

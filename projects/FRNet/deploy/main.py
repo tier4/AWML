@@ -97,7 +97,7 @@ def main() -> None:
     torch_model = TorchModel(model_cfg=model_cfg, checkpoint_path=args.checkpoint)
     onnx_model = OnnxModel(
         deploy_cfg=deploy_cfg,
-        model=torch_model.model,
+        model=torch_model.export_model,
         batch_inputs_dict=representative_input,
         onnx_path=onnx_path,
         deploy=args.deploy,
