@@ -202,8 +202,12 @@ class T4DatasetLoader(DatasetLoader):
         samples: List[Dict[str, Any]] = []
         for info in data_list:
             pcd_path = os.path.join(self._dataset_dir, info["lidar_points"]["lidar_path"])
-            mask_path = info.get("pts_semantic_mask_path")
-            mask_categories = info.get("pts_semantic_mask_categories")
+            mask_path = info.get("pts_semantic_mask_path", None)
+            mask_categories = info.get("pts_semantic_mask_categories", None)
+            if mask_path is None or mask_categories is None:
+                raise ValueError(
+                    f"Missing GT mask info for sample {pcd_path}. Check annotation file and dataset config."
+                )
             for channel in lidar_sources:
                 samples.append(
                     {
