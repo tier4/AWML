@@ -85,6 +85,7 @@ class NMSEnsembleModel(BaseEnsembleModel):
 
     @property
     def model_instances_type(self) -> Type[NMSModelInstances]:
+        """Return the per-model container used by the NMS ensemble."""
         return NMSModelInstances
 
     def ensemble_function(
@@ -178,6 +179,7 @@ def _nms_indices(boxes: np.ndarray, scores: np.ndarray, iou_threshold: float) ->
 
 def _calculate_iou(box: np.ndarray, boxes: np.ndarray) -> np.ndarray:
     """Calculate rotated IoU between a single box and an array of boxes in BEV.
+    TODO: GPU and/or C++ implementation to improve speed
 
     Args:
         box: Single bounding box [x, y, z, dx, dy, dz, yaw].
@@ -203,6 +205,7 @@ def _calculate_iou(box: np.ndarray, boxes: np.ndarray) -> np.ndarray:
 
 
 def _to_rotated_rect(box: np.ndarray) -> Tuple[Tuple[float, float], Tuple[float, float], float]:
+    """Convert a 3D box in `[x, y, z, dx, dy, dz, yaw]` format to an OpenCV BEV rectangle."""
     return (
         (float(box[0]), float(box[1])),
         (float(box[3]), float(box[4])),
@@ -214,6 +217,7 @@ def _rotated_intersection_area(
     rect1: Tuple[Tuple[float, float], Tuple[float, float], float],
     rect2: Tuple[Tuple[float, float], Tuple[float, float], float],
 ) -> float:
+    """Return the BEV intersection area between two OpenCV rotated rectangles."""
     _, intersection_points = cv2.rotatedRectangleIntersection(rect1, rect2)
     if intersection_points is None:
         return 0.0
