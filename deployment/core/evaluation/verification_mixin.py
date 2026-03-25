@@ -330,11 +330,9 @@ class VerificationMixin:
         Note:
             Device aliases/defaults are resolved upstream via config-level DeviceConfig.
             This method only enforces backend runtime constraints on a concrete DeviceSpec.
+            PyTorch reference/test may use ``cpu`` or ``cuda:N`` as configured in verification
+            scenarios.
         """
-        if backend is Backend.PYTORCH and device.is_cuda:
-            logger.warning("PyTorch verification is forced to CPU; overriding device to 'cpu'")
-            return DeviceSpec.from_value("cpu")
-
         if backend is Backend.TENSORRT:
             if not device.is_cuda:
                 raise ValueError(f"TensorRT verification requires CUDA, got '{device}'.")
@@ -428,6 +426,7 @@ class VerificationMixin:
     ) -> bool:
         """Verify a single sample."""
         inference_input = self._get_verification_input(sample_idx, data_loader, ref_device)
+        self._ensure_model_on_device(ref_device)
 
         ref_name = f"{ref_backend.value} ({ref_device})"
         logger.info(f"\nRunning {ref_name} reference...")
@@ -437,6 +436,8 @@ class VerificationMixin:
             return_raw_outputs=True,
         )
         logger.info(f"  {ref_name} latency: {ref_result.latency_ms:.2f} ms")
+
+        self._ensure_model_on_device(test_device)
 
         test_input = self._move_input_to_device(inference_input.data, test_device)
         test_name = f"{test_backend.value} ({test_device})"
