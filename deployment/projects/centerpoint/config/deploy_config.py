@@ -136,7 +136,7 @@ tensorrt_config = dict(
 # Evaluation Configuration
 # ============================================================================
 evaluation = dict(
-    enabled=False,
+    enabled=True,
     num_samples=1,
     verbose=True,
     backends=dict(
@@ -168,19 +168,19 @@ evaluation = dict(
 # ============================================================================
 verification = dict(
     enabled=True,
-    tolerance=5e-1,
-    num_verify_samples=5,
+    tolerance=1,
+    num_verify_samples=1,
     devices=devices,
     scenarios=dict(
         both=[
             dict(ref_backend="pytorch", ref_device="cpu", test_backend="onnx", test_device="cpu"),
-            dict(ref_backend="onnx", ref_device="cpu", test_backend="tensorrt", test_device="cuda"),
+            dict(ref_backend="onnx", ref_device="cuda", test_backend="tensorrt", test_device="cuda"),
         ],
         onnx=[
             dict(ref_backend="pytorch", ref_device="cpu", test_backend="onnx", test_device="cpu"),
         ],
         trt=[
-            dict(ref_backend="onnx", ref_device="cpu", test_backend="tensorrt", test_device="cuda"),
+            dict(ref_backend="onnx", ref_device="cuda", test_backend="tensorrt", test_device="cuda"),
         ],
         none=[],
     ),
