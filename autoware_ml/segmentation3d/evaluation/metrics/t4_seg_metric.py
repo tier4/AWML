@@ -1,6 +1,7 @@
 # Copyright (c) TIER IV, Inc. All rights reserved.
 """MMEngine metric adapter for shared T4 segmentation evaluation."""
 
+from dataclasses import dataclass
 from typing import Dict, List, Optional, Sequence, Tuple
 
 import numpy as np
@@ -11,6 +12,13 @@ from mmengine.logging import MMLogger
 from autoware_ml.segmentation3d.evaluation.functional.t4_seg_eval import (
     t4_seg_eval,
 )
+
+
+@dataclass
+class T4SegMetricSample:
+    pred: np.ndarray
+    gt: np.ndarray
+    coord: Optional[np.ndarray] = None
 
 
 @METRICS.register_module()
@@ -54,6 +62,7 @@ class T4SegMetric(BaseMetric):
     def process(self, data_batch: dict, data_samples: Sequence[dict]) -> None:
         """Collect one batch of model outputs for later aggregation."""
         batch_coords = self._extract_batch_coords(data_batch, data_samples)
+        logger: MMLogger = MMLogger.get_current_instance()
 
         for i, data_sample in enumerate(data_samples):
             pred_field = data_sample.get("pred_pts_seg", {})
@@ -62,7 +71,14 @@ class T4SegMetric(BaseMetric):
             pred = self._to_numpy(pred_field.get("pts_semantic_mask"))
             gt = self._to_numpy(ann_field.get("pts_semantic_mask"))
 
-            if pred is None or gt is None or pred.size != gt.size:
+            if pred is None or gt is None:
+                logger.warning("T4SegMetric: skipping sample with missing prediction or ground-truth labels.")
+                continue
+            if pred.size != gt.size:
+                logger.warning(
+                    "T4SegMetric: skipping sample because prediction and ground-truth lengths differ: "
+                    f"{pred.size} vs {gt.size}."
+                )
                 continue
 
             coord_i = batch_coords[i] if batch_coords else None
@@ -72,13 +88,7 @@ class T4SegMetric(BaseMetric):
                 elif coord_i.shape[0] < gt.size:
                     coord_i = None
 
-            self.results.append(
-                dict(
-                    pred=pred,
-                    gt=gt,
-                    coord=coord_i,
-                )
-            )
+            self.results.append(T4SegMetricSample(pred=pred, gt=gt, coord=coord_i))
 
     def compute_metrics(self, results: list) -> Dict[str, float]:
         """Aggregate per-batch results and return the full metrics dict."""
@@ -100,9 +110,9 @@ class T4SegMetric(BaseMetric):
             if idx not in label2cat and idx != ignore_index:
                 label2cat[idx] = str(idx)
 
-        gt_labels = [r["gt"] for r in results]
-        seg_preds = [r["pred"] for r in results]
-        coords_list = [r.get("coord") for r in results] if self.distance_ranges else None
+        gt_labels = [r.gt for r in results]
+        seg_preds = [r.pred for r in results]
+        coords_list = [r.coord for r in results] if self.distance_ranges else None
         if self.distance_ranges and (not coords_list or all(c is None for c in coords_list)):
             logger.warning(
                 "T4SegMetric: distance_ranges is configured but no coordinates "
