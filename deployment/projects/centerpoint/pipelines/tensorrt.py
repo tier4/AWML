@@ -345,27 +345,17 @@ class CenterPointTensorRTPipeline(GPUResourceMixin, CenterPointDeploymentPipelin
 
     def _release_gpu_resources(self) -> None:
         """Release TensorRT resources (engines and contexts) and CUDA events."""
-        # Destroy CUDA events
-        if hasattr(self, "_backbone_start_event"):
-            try:
-                del self._backbone_start_event
-            except Exception:
-                pass
-        if hasattr(self, "_backbone_end_event"):
-            try:
-                del self._backbone_end_event
-            except Exception:
-                pass
-        if hasattr(self, "_voxel_encoder_start_event"):
-            try:
-                del self._voxel_encoder_start_event
-            except Exception:
-                pass
-        if hasattr(self, "_voxel_encoder_end_event"):
-            try:
-                del self._voxel_encoder_end_event
-            except Exception:
-                pass
+        for attr in (
+            "_backbone_start_event",
+            "_backbone_end_event",
+            "_voxel_encoder_start_event",
+            "_voxel_encoder_end_event",
+        ):
+            if hasattr(self, attr):
+                try:
+                    delattr(self, attr)
+                except Exception:
+                    pass
 
         release_tensorrt_resources(
             engines=getattr(self, "_engines", None),
