@@ -15,19 +15,21 @@ devices = dict(
     cuda="cuda:0",
 )
 
+# Single literal for deployment output root (used before `export` exists).
+_DEPLOY_WORK_DIR = "work_dirs/centerpoint_deployment"
+_WORK_DIR = _DEPLOY_WORK_DIR.rstrip("/")
+_ONNX_DIR = f"{_WORK_DIR}/onnx"
+_TENSORRT_DIR = f"{_WORK_DIR}/tensorrt"
+
 # ============================================================================
 # Export Configuration
 # ============================================================================
 export = dict(
     mode="both",
-    work_dir="work_dirs/centerpoint_deployment",
-    onnx_path=None,
+    work_dir=_DEPLOY_WORK_DIR,
+    onnx_path=_ONNX_DIR,
 )
 
-# Derived artifact directories
-_WORK_DIR = str(export["work_dir"]).rstrip("/")
-_ONNX_DIR = f"{_WORK_DIR}/onnx"
-_TENSORRT_DIR = f"{_WORK_DIR}/tensorrt"
 
 # ============================================================================
 # Unified Component Configuration (Single Source of Truth)
@@ -164,13 +166,13 @@ verification = dict(
     scenarios=dict(
         both=[
             dict(ref_backend="pytorch", ref_device="cpu", test_backend="onnx", test_device="cpu"),
-            dict(ref_backend="onnx", ref_device="cuda", test_backend="tensorrt", test_device="cuda"),
+            dict(ref_backend="onnx", ref_device="cpu", test_backend="tensorrt", test_device="cuda"),
         ],
         onnx=[
             dict(ref_backend="pytorch", ref_device="cpu", test_backend="onnx", test_device="cpu"),
         ],
         trt=[
-            dict(ref_backend="onnx", ref_device="cuda", test_backend="tensorrt", test_device="cuda"),
+            dict(ref_backend="onnx", ref_device="cpu", test_backend="tensorrt", test_device="cuda"),
         ],
         none=[],
     ),
