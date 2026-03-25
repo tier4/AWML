@@ -23,6 +23,9 @@ _TENSORRT_DIR = f"{_WORK_DIR}/tensorrt"
 
 # ============================================================================
 # Export Configuration
+# mode: "onnx", "trt", "both", "none"
+# work_dir: path to the deployment output root
+# onnx_path: path to the ONNX output directory (if mode="trt" and ONNX already exists)
 # ============================================================================
 export = dict(
     mode="both",
@@ -156,7 +159,12 @@ evaluation = dict(
 
 # ============================================================================
 # Verification Configuration
-# Note that fp16 can failed in this tolerance (max difference > tolerance)
+#
+# Tolerance is backend- and machine-dependent:
+# - The same scenario can show very different max/mean diffs on different machines: GPU
+#   architecture, driver, ORT/CUDA/TRT versions, and ORT's CUDA graph partitioning (CPU
+#   fallback nodes for small ops) all change numerics. ONNX on CPU, ONNX on CUDA, and
+#   TensorRT on CUDA are not directly comparable to each other as "one true" references.
 # ============================================================================
 verification = dict(
     enabled=True,
@@ -166,13 +174,13 @@ verification = dict(
     scenarios=dict(
         both=[
             dict(ref_backend="pytorch", ref_device="cpu", test_backend="onnx", test_device="cpu"),
-            dict(ref_backend="onnx", ref_device="cpu", test_backend="tensorrt", test_device="cuda"),
+            dict(ref_backend="onnx", ref_device="cuda", test_backend="tensorrt", test_device="cuda"),
         ],
         onnx=[
             dict(ref_backend="pytorch", ref_device="cpu", test_backend="onnx", test_device="cpu"),
         ],
         trt=[
-            dict(ref_backend="onnx", ref_device="cpu", test_backend="tensorrt", test_device="cuda"),
+            dict(ref_backend="onnx", ref_device="cuda", test_backend="tensorrt", test_device="cuda"),
         ],
         none=[],
     ),
