@@ -48,11 +48,8 @@ class ExportOrchestrator:
     Orchestrates model export workflows (PyTorch loading, ONNX, TensorRT).
 
     This class centralizes all export-related logic:
-    - Determining when PyTorch model is needed
-    - Loading PyTorch model via injected loader
-    - ONNX export (via workflow or standard exporter)
-    - TensorRT export (via workflow or standard exporter)
-    - Artifact registration
+    - Loading PyTorch from checkpoint_path (required for this deployment stack)
+    - ONNX / TensorRT export (pipeline or per-component) and artifact registration
 
     By extracting this logic from the runner, the runner becomes a thin
     orchestrator that coordinates Export, Verification, and Evaluation.
@@ -103,11 +100,10 @@ class ExportOrchestrator:
         Execute the complete export workflow.
 
         This method:
-        1. Determines if PyTorch model is needed
-        2. Loads PyTorch model if needed
-        3. Exports to ONNX if configured
-        4. Exports to TensorRT if configured
-        5. Resolves external artifact paths
+        1. Loads PyTorch model from checkpoint_path
+        2. Exports to ONNX if configured
+        3. Exports to TensorRT if configured
+        4. Resolves external artifact paths
 
         Args:
             context: Typed export context with parameters. If None, a default
@@ -123,16 +119,12 @@ class ExportOrchestrator:
 
         should_export_onnx = self.config.export_config.should_export_onnx
         should_export_trt = self.config.export_config.should_export_tensorrt
-        checkpoint_path = self.config.checkpoint_path
         external_onnx_path = self.config.export_config.onnx_path
 
-        requires_pytorch = self._determine_pytorch_requirements()
-
-        pytorch_model = None
-        if requires_pytorch:
-            pytorch_model, success = self._ensure_pytorch_model_loaded(pytorch_model, checkpoint_path, context, result)
-            if not success:
-                return result
+        pytorch_model = self._load_and_register_pytorch_model(self.config.checkpoint_path, context)
+        if pytorch_model is None:
+            return result
+        result.pytorch_model = pytorch_model
 
         if should_export_onnx:
             result.onnx_path = self._run_onnx_export(pytorch_model, context)
@@ -148,34 +140,6 @@ class ExportOrchestrator:
         self._resolve_external_artifacts(result)
         return result
 
-    def _determine_pytorch_requirements(self) -> bool:
-        """
-        Determine if PyTorch model is required based on configuration.
-
-        Returns:
-            True if PyTorch model is needed, False otherwise
-        """
-        if self.config.export_config.should_export_onnx:
-            return True
-
-        eval_config = self.config.evaluation_config
-        if eval_config.enabled:
-            backends_cfg = eval_config.backends
-            pytorch_cfg = backends_cfg.get(Backend.PYTORCH.value, {})
-            if pytorch_cfg and pytorch_cfg.get("enabled", False):
-                return True
-
-        verification_cfg = self.config.verification_config
-        if verification_cfg.enabled:
-            export_mode = self.config.export_config.mode
-            scenarios = self.config.get_verification_scenarios(export_mode)
-            if scenarios and any(
-                policy.ref_backend is Backend.PYTORCH or policy.test_backend is Backend.PYTORCH for policy in scenarios
-            ):
-                return True
-
-        return False
-
     def _load_and_register_pytorch_model(self, checkpoint_path: str, context: ExportContext) -> Optional[Any]:
         """
         Load and register a PyTorch model from checkpoint.
@@ -186,12 +150,6 @@ class ExportOrchestrator:
         Returns:
             Loaded PyTorch model or None if loading failed
         """
-        if not checkpoint_path:
-            self.logger.error(
-                "Checkpoint required but not provided. Please set export.checkpoint_path in config or pass via CLI."
-            )
-            return None
-
         self.logger.info("\nLoading PyTorch model...")
         try:
             pytorch_model = self._model_loader(checkpoint_path, context)
@@ -205,39 +163,6 @@ class ExportOrchestrator:
         except Exception as e:
             self.logger.error(f"Failed to load PyTorch model: {e}")
             return None
-
-    def _ensure_pytorch_model_loaded(
-        self,
-        pytorch_model: Optional[Any],
-        checkpoint_path: str,
-        context: ExportContext,
-        result: ExportResult,
-    ) -> tuple[Optional[Any], bool]:
-        """
-        Ensure a PyTorch model is loaded and registered.
-
-        Args:
-            pytorch_model: Existing PyTorch model (if any)
-            checkpoint_path: Path to the PyTorch checkpoint
-            context: Export context with sample index
-            result: Export result object to store the model
-        Returns:
-            Tuple containing the loaded model and success flag
-        """
-        if pytorch_model is not None:
-            return pytorch_model, True
-
-        if not checkpoint_path:
-            self.logger.error("PyTorch model required but checkpoint_path not provided.")
-            return None, False
-
-        pytorch_model = self._load_and_register_pytorch_model(checkpoint_path, context)
-        if pytorch_model is None:
-            self.logger.error("Failed to load PyTorch model; aborting export.")
-            return None, False
-
-        result.pytorch_model = pytorch_model
-        return pytorch_model, True
 
     def _run_onnx_export(self, pytorch_model: Any, context: ExportContext) -> Optional[str]:
         """

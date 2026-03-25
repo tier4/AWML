@@ -6,6 +6,7 @@ Torch/CUDA validation lives here. Schema/enums are in configs.schema and configs
 
 from __future__ import annotations
 
+import os
 from types import MappingProxyType
 from typing import Any, Mapping, Optional, Tuple
 
@@ -55,7 +56,8 @@ class BaseDeploymentConfig:
         self.deploy_cfg = deploy_cfg
         self._ensure_required_sections()
 
-        self._checkpoint_path = deploy_cfg.get("checkpoint_path")
+        checkpoint_path = deploy_cfg.get("checkpoint_path")
+        self._checkpoint_path = self._validate_checkpoint_path(checkpoint_path)
         self._device_config = DeviceConfig.from_dict(deploy_cfg.get("devices", {}))
         self.components_cfg = ComponentsConfig.from_dict(deploy_cfg.get("components", {}))
         self._onnx_export_config = OnnxConfig.from_dict(deploy_cfg.get("onnx_config"))
@@ -83,6 +85,20 @@ class BaseDeploymentConfig:
         components_raw = self.deploy_cfg.get("components")
         if components_raw is not None and not isinstance(components_raw, Mapping):
             raise TypeError("deploy config 'components' must be a mapping.")
+
+    @staticmethod
+    def _validate_checkpoint_path(checkpoint_path: str) -> str:
+        """Require a non-empty checkpoint path that exists as a regular file."""
+        if not isinstance(checkpoint_path, str):
+            raise TypeError(f"checkpoint_path must be a string, got {type(checkpoint_path).__name__}.")
+        path = os.path.expanduser(checkpoint_path.strip())
+        if not path:
+            raise ValueError(
+                "deploy config `checkpoint_path` must be a non-empty string " "(path to PyTorch checkpoint)."
+            )
+        if not os.path.isfile(path):
+            raise FileNotFoundError(f"checkpoint_path is not an existing file: {path!r}")
+        return path
 
     def _validate_cuda_device(self) -> None:
         """Validate CUDA device availability once at config stage."""
@@ -131,17 +147,18 @@ class BaseDeploymentConfig:
         return False
 
     @property
-    def checkpoint_path(self) -> Optional[str]:
+    def checkpoint_path(self) -> str:
         """
         Get checkpoint path - single source of truth for PyTorch model.
 
+        Validated at config load time (non-empty, file must exist).
+
         This path is used by:
         - Export pipeline: to load the PyTorch model for ONNX conversion
-        - Evaluation: for PyTorch backend evaluation
-        - Verification: when PyTorch is used as reference or test backend
+        - Evaluation / verification: companion PyTorch modules for staged backends
 
         Returns:
-            Path to the PyTorch checkpoint file, or None if not configured
+            Path to the PyTorch checkpoint file
         """
         return self._checkpoint_path
 
