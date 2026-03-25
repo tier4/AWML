@@ -109,7 +109,7 @@ components = dict(
 runtime_io = dict(
     # This should be a path relative to `data_root` in the model config.
     info_file="info/t4dataset_j6gen2_base_infos_test.pkl",
-    sample_idx=1,
+    sample_idx=5,
 )
 
 # ============================================================================
@@ -136,7 +136,7 @@ tensorrt_config = dict(
 # Evaluation Configuration
 # ============================================================================
 evaluation = dict(
-    enabled=True,
+    enabled=False,
     num_samples=1,
     verbose=True,
     backends=dict(
@@ -168,19 +168,19 @@ evaluation = dict(
 # ============================================================================
 verification = dict(
     enabled=True,
-    tolerance=1,
-    num_verify_samples=1,
+    tolerance=5e-1,
+    num_verify_samples=5,
     devices=devices,
     scenarios=dict(
         both=[
             dict(ref_backend="pytorch", ref_device="cpu", test_backend="onnx", test_device="cpu"),
-            dict(ref_backend="onnx", ref_device="cuda", test_backend="tensorrt", test_device="cuda"),
+            dict(ref_backend="onnx", ref_device="cpu", test_backend="tensorrt", test_device="cuda"),
         ],
         onnx=[
             dict(ref_backend="pytorch", ref_device="cpu", test_backend="onnx", test_device="cpu"),
         ],
         trt=[
-            dict(ref_backend="onnx", ref_device="cuda", test_backend="tensorrt", test_device="cuda"),
+            dict(ref_backend="onnx", ref_device="cpu", test_backend="tensorrt", test_device="cuda"),
         ],
         none=[],
     ),
