@@ -5,7 +5,6 @@ CenterPoint ONNX Pipeline Implementation.
 from __future__ import annotations
 
 import logging
-import os.path as osp
 from typing import List
 
 import numpy as np
@@ -79,11 +78,6 @@ class CenterPointONNXPipeline(CenterPointDeploymentPipeline):
             component_name="pts_backbone_neck_head",
             file_key="onnx_file",
         )
-
-        if not osp.exists(voxel_encoder_path):
-            raise FileNotFoundError(f"Voxel encoder ONNX not found: {voxel_encoder_path}")
-        if not osp.exists(backbone_head_path):
-            raise FileNotFoundError(f"Backbone head ONNX not found: {backbone_head_path}")
 
         # Configure session options
         so = ort.SessionOptions()

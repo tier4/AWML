@@ -5,7 +5,6 @@ CenterPoint TensorRT Pipeline Implementation.
 from __future__ import annotations
 
 import logging
-import os.path as osp
 import time
 from typing import Dict, List, Tuple, Union
 
@@ -101,9 +100,6 @@ class CenterPointTensorRTPipeline(GPUResourceMixin, CenterPointDeploymentPipelin
         }
 
         for component_name, engine_path in engine_files.items():
-            if not osp.exists(engine_path):
-                raise FileNotFoundError(f"TensorRT engine not found: {engine_path}")
-
             with open(engine_path, "rb") as f:
                 engine = runtime.deserialize_cuda_engine(f.read())
             if engine is None:
