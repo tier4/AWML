@@ -94,7 +94,7 @@ def main(argv: List[str] | None = None) -> int:
     args = parser.parse_args(argv)
 
     adapter = project_registry.get(args._adapter_name)
-    return int(adapter.run(args) or 0)
+    return adapter.run(args)
 
 
 if __name__ == "__main__":
