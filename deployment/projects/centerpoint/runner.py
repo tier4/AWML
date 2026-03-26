@@ -33,7 +33,8 @@ class CenterPointDeploymentRunner(BaseDeploymentRunner):
     while reusing the project-agnostic orchestration in `BaseDeploymentRunner`.
 
     Attributes:
-        model_cfg: MMEngine model configuration.
+        model_cfg: Training MMEngine config (from checkpoint experiment file); not replaced after load.
+        export_model_cfg: Set in ``load_pytorch_model`` to the deployment export MMEngine config.
         evaluator: CenterPoint evaluator instance.
     """
 
@@ -92,6 +93,8 @@ class CenterPointDeploymentRunner(BaseDeploymentRunner):
                 logger=self.logger,
             )
 
+        self.export_model_cfg: Optional[Config] = None
+
     def load_pytorch_model(self, checkpoint_path: str, context: ExportContext) -> torch.nn.Module:
         """Load PyTorch model for export.
 
@@ -104,15 +107,15 @@ class CenterPointDeploymentRunner(BaseDeploymentRunner):
         """
         rot_y_axis_reference = self._extract_rot_y_axis_reference(context)
 
-        model, onnx_cfg = build_centerpoint_onnx_model(
+        model, export_model_cfg = build_centerpoint_onnx_model(
             base_model_cfg=self.model_cfg,
             checkpoint_path=checkpoint_path,
             device=DeviceSpec.from_value("cpu"),
             rot_y_axis_reference=rot_y_axis_reference,
         )
 
-        self.model_cfg = onnx_cfg
-        self._setup_evaluator(model, onnx_cfg)
+        self.export_model_cfg = export_model_cfg
+        self._setup_evaluator(model, export_model_cfg)
         return model
 
     def _extract_rot_y_axis_reference(self, context: ExportContext) -> bool:
@@ -133,26 +136,13 @@ class CenterPointDeploymentRunner(BaseDeploymentRunner):
             )
         return bool(context.extra["rot_y_axis_reference"])
 
-    def _setup_evaluator(self, model: torch.nn.Module, onnx_cfg: Config) -> None:
-        """Setup evaluator with loaded model and config.
-
-        This method updates the evaluator with the PyTorch model and
-        ONNX-compatible configuration needed for evaluation.
+    def _setup_evaluator(self, model: torch.nn.Module, export_model_cfg: Config) -> None:
+        """Wire evaluator to the loaded model and its export-time MMEngine config.
 
         Args:
             model: Loaded PyTorch model.
-            onnx_cfg: ONNX-compatible model configuration.
+            export_model_cfg: Config from ``build_centerpoint_onnx_model``; matches ``model.cfg``.
         """
-        try:
-            self.evaluator.set_onnx_config(onnx_cfg)
-            self.logger.info("Updated evaluator with ONNX-compatible config")
-        except Exception as e:
-            self.logger.error(f"Failed to update evaluator config: {e}")
-            raise
-
-        try:
-            self.evaluator.set_pytorch_model(model)
-            self.logger.info("Updated evaluator with PyTorch model")
-        except Exception as e:
-            self.logger.error(f"Failed to set PyTorch model on evaluator: {e}")
-            raise
+        self.evaluator.set_pytorch_model(model)
+        self.evaluator.set_export_model_cfg(export_model_cfg)
+        self.logger.info("Updated evaluator with export_model_cfg")

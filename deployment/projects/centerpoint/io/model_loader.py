@@ -38,10 +38,10 @@ def create_onnx_model_cfg(
         rot_y_axis_reference: Whether to use y-axis rotation reference.
 
     Returns:
-        Modified config with ONNX-compatible model types.
+        New config whose ``model`` subtree builds the deployment export graph (e.g. ONNX-friendly types).
     """
-    onnx_cfg = model_cfg.copy()
-    model_config = copy.deepcopy(onnx_cfg.model)
+    export_model_cfg = model_cfg.copy()
+    model_config = copy.deepcopy(export_model_cfg.model)
 
     model_config.type = "CenterPointONNX"
     model_config.point_channels = model_config.pts_voxel_encoder.in_channels
@@ -62,8 +62,8 @@ def create_onnx_model_cfg(
     ):
         model_config.pts_backbone.with_cp = False
 
-    onnx_cfg.model = model_config
-    return onnx_cfg
+    export_model_cfg.model = model_config
+    return export_model_cfg
 
 
 def build_model_from_cfg(
@@ -111,12 +111,12 @@ def build_centerpoint_onnx_model(
         rot_y_axis_reference: Whether to use y-axis rotation reference.
 
     Returns:
-        Tuple of (model, onnx_compatible_config).
+        Tuple of ``(model, export_model_cfg)``; the latter matches ``model.cfg``.
     """
-    onnx_cfg = create_onnx_model_cfg(
+    export_model_cfg = create_onnx_model_cfg(
         base_model_cfg,
         device=device,
         rot_y_axis_reference=rot_y_axis_reference,
     )
-    model = build_model_from_cfg(onnx_cfg, checkpoint_path, device=device)
-    return model, onnx_cfg
+    model = build_model_from_cfg(export_model_cfg, checkpoint_path, device=device)
+    return model, export_model_cfg

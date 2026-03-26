@@ -78,14 +78,6 @@ class CenterPointEvaluator(BaseEvaluator):
             model_cfg=model_cfg,
         )
 
-    def set_onnx_config(self, model_cfg: Config) -> None:
-        """Set the evaluator's model config to the given ONNX-compatible config.
-
-        Args:
-            model_cfg: ONNX-compatible model configuration (e.g. from build_centerpoint_onnx_model).
-        """
-        self.model_cfg = model_cfg
-
     # VerificationMixin
     @override
     def _get_output_names(self) -> Optional[List[str]]:
