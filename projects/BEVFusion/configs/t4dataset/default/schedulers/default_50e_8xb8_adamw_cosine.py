@@ -1,5 +1,5 @@
 # learning rate
-lr = 2e-4
+lr = 1.5e-4
 t_max = 15
 max_epochs = 50
 val_interval = 5
