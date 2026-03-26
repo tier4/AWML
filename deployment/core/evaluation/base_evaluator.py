@@ -109,6 +109,7 @@ class BaseEvaluator(VerificationMixin, ABC):
         self.task_profile = task_profile
         self.model_cfg = model_cfg
         self.pytorch_model: Any = None
+        self.export_model_cfg: Optional[Config] = None
 
     @property
     def class_names(self) -> Tuple[str, ...]:
@@ -118,6 +119,10 @@ class BaseEvaluator(VerificationMixin, ABC):
     def set_pytorch_model(self, pytorch_model: Any) -> None:
         """Set PyTorch model (called by deployment runner)."""
         self.pytorch_model = pytorch_model
+
+    def set_export_model_cfg(self, export_model_cfg: Config) -> None:
+        """Set MMEngine config for the loaded deployment/export model (matches ``model.cfg`` after load)."""
+        self.export_model_cfg = export_model_cfg
 
     def _ensure_model_on_device(self, device: DeviceSpec) -> Any:
         """Ensure PyTorch model is on the correct device."""
