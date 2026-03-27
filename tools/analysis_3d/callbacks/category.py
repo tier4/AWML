@@ -41,6 +41,7 @@ class CategoryAnalysisCallback(AnalysisCallbackInterface):
     def _visualize_total_category_counts(
         self,
         dataset_category_counts: Dict[str, Dict[str, int]],
+        dataset_frame_counts: Dict[str, int],
         split_name: str,
         log_scale: bool = True,
         figsize: tuple[int, int] = (15, 15),
@@ -52,6 +53,8 @@ class CategoryAnalysisCallback(AnalysisCallbackInterface):
         :param log_scale: Set True to make the frequency in log-scale (power of 10).
         :param figsize: Figure size.
         """
+        frames = sum(dataset_frame_counts.values())
+
         all_available_categories = [
             category_name
             for category_counts in dataset_category_counts.values()
@@ -82,7 +85,7 @@ class CategoryAnalysisCallback(AnalysisCallbackInterface):
 
         # Add some text for labels, title and custom x-axis tick labels, etc.
         ax.set_ylabel(self.y_axis_label)
-        ax.set_title(self.x_axis_label)
+        ax.set_title(f"{self.x_axis_label} (Total frames: {frames})")
         ax.set_yticks(y + height, all_available_categories)
         ax.legend(loc=self.legend_loc)
         ax.invert_yaxis()
@@ -101,6 +104,7 @@ class CategoryAnalysisCallback(AnalysisCallbackInterface):
         print_log(f"Running {self.__class__.__name__}")
         for split_option in SplitOptions:
             dataset_category_counts = {}
+            dataset_frame_counts = {}
             for dataset_split_name, analysis_data in dataset_split_analysis_data.items():
                 split_name = dataset_split_name.split_name
                 if split_name != split_option.value:
@@ -111,7 +115,11 @@ class CategoryAnalysisCallback(AnalysisCallbackInterface):
                     remapping_classes=self.remapping_classes
                 )
 
+                dataset_frame_counts[dataset_name] = analysis_data.frames
+
             self._visualize_total_category_counts(
-                dataset_category_counts=dataset_category_counts, split_name=split_option.value
+                dataset_category_counts=dataset_category_counts,
+                dataset_frame_counts=dataset_frame_counts,
+                split_name=split_option.value
             )
         print_log(f"Done running {self.__class__.__name__}")
