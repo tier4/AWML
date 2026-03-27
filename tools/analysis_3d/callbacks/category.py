@@ -120,6 +120,6 @@ class CategoryAnalysisCallback(AnalysisCallbackInterface):
             self._visualize_total_category_counts(
                 dataset_category_counts=dataset_category_counts,
                 dataset_frame_counts=dataset_frame_counts,
-                split_name=split_option.value
+                split_name=split_option.value,
             )
         print_log(f"Done running {self.__class__.__name__}")

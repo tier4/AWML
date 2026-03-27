@@ -178,7 +178,9 @@ class AnalysisRunner:
 
             t4 = Tier4(data_root=str(scene_root_dir_path), verbose=False)
             sample_data = self._extract_sample_data(t4=t4)
-            scenario_data[scene_token] = ScenarioData(scene_token=scene_token, frames=len(t4.sample), sample_data=sample_data)
+            scenario_data[scene_token] = ScenarioData(
+                scene_token=scene_token, frames=len(t4.sample), sample_data=sample_data
+            )
         return scenario_data
 
     def run(self) -> None:
