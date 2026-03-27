@@ -10,7 +10,7 @@ import logging
 
 import torch
 
-from deployment.configs import ComponentsConfig
+from deployment.configs.schema import ComponentsConfig
 from deployment.exporters.export_pipelines.interfaces import ExportableComponent, ModelComponentBuilder
 from deployment.projects.centerpoint.io.sample_types import CenterPointFeatureSample
 from deployment.projects.centerpoint.onnx_models.centerpoint_onnx import CenterPointHeadONNX

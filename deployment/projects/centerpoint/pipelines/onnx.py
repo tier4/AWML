@@ -12,16 +12,16 @@ import onnxruntime as ort
 import torch
 from typing_extensions import override
 
-from deployment.configs import ComponentsConfig
+from deployment.configs.schema import ComponentsConfig
 from deployment.core.artifacts import resolve_artifact_path
 from deployment.core.backend import Backend
 from deployment.core.device import DeviceSpec
-from deployment.projects.centerpoint.pipelines.centerpoint_pipeline import CenterPointDeploymentPipeline
+from deployment.projects.centerpoint.pipelines.centerpoint_pipeline import CenterPointInferencePipeline
 
 logger = logging.getLogger(__name__)
 
 
-class CenterPointONNXPipeline(CenterPointDeploymentPipeline):
+class CenterPointONNXPipeline(CenterPointInferencePipeline):
     """ONNXRuntime-based CenterPoint pipeline (componentized inference).
 
     Loads separate ONNX models for pts_voxel_encoder and pts_backbone_neck_head components

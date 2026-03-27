@@ -15,7 +15,7 @@ import tensorrt as trt
 import torch
 from typing_extensions import override
 
-from deployment.configs import ComponentsConfig
+from deployment.configs.schema import ComponentsConfig
 from deployment.core.artifacts import resolve_artifact_path
 from deployment.core.backend import Backend
 from deployment.core.device import DeviceSpec
@@ -24,12 +24,12 @@ from deployment.pipelines.gpu_resource_mixin import (
     TensorRTResourceManager,
     release_tensorrt_resources,
 )
-from deployment.projects.centerpoint.pipelines.centerpoint_pipeline import CenterPointDeploymentPipeline
+from deployment.projects.centerpoint.pipelines.centerpoint_pipeline import CenterPointInferencePipeline
 
 logger = logging.getLogger(__name__)
 
 
-class CenterPointTensorRTPipeline(GPUResourceMixin, CenterPointDeploymentPipeline):
+class CenterPointTensorRTPipeline(GPUResourceMixin, CenterPointInferencePipeline):
     """TensorRT-based CenterPoint pipeline (engine-per-component inference).
 
     Loads separate TensorRT engines for pts_voxel_encoder and pts_backbone_neck_head components

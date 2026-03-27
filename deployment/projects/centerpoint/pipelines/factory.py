@@ -16,7 +16,7 @@ from deployment.core.backend import Backend
 from deployment.core.device import DeviceSpec
 from deployment.core.evaluation.evaluator_types import ModelSpec
 from deployment.pipelines.base_factory import BasePipelineFactory
-from deployment.pipelines.base_pipeline import BaseDeploymentPipeline
+from deployment.pipelines.base_pipeline import BaseInferencePipeline
 from deployment.pipelines.registry import pipeline_registry
 from deployment.projects.centerpoint.pipelines.onnx import CenterPointONNXPipeline
 from deployment.projects.centerpoint.pipelines.pytorch import CenterPointPyTorchPipeline
@@ -47,7 +47,7 @@ class CenterPointPipelineFactory(BasePipelineFactory):
         pytorch_model: torch.nn.Module,
         device: DeviceSpec,
         components_cfg: ComponentsConfig,
-    ) -> BaseDeploymentPipeline:
+    ) -> BaseInferencePipeline:
         """Create a CenterPoint pipeline for the specified backend.
 
         Args:

@@ -9,19 +9,18 @@ import numpy as np
 from mmengine.config import Config
 from typing_extensions import override
 
-from deployment.configs import ComponentsConfig
-from deployment.core import (
+from deployment.configs.schema import ComponentsConfig
+from deployment.core.device import DeviceSpec
+from deployment.core.evaluation.base_evaluator import (
     BaseEvaluator,
-    Detection3DMetricsConfig,
-    Detection3DMetricsInterface,
     EvalResultDict,
     InferenceInput,
     ModelSpec,
     TaskProfile,
 )
-from deployment.core.device import DeviceSpec
 from deployment.core.io.base_data_loader import BaseDataLoader
-from deployment.pipelines.base_pipeline import BaseDeploymentPipeline
+from deployment.core.metrics import Detection3DMetricsConfig, Detection3DMetricsInterface
+from deployment.pipelines.base_pipeline import BaseInferencePipeline
 from deployment.pipelines.factory import PipelineFactory
 
 logger = logging.getLogger(__name__)
@@ -84,9 +83,10 @@ class CenterPointEvaluator(BaseEvaluator):
         """Get head output names from components config."""
         return [out.name for out in self._components_cfg.get_component("pts_backbone_neck_head").io.outputs]
 
+    # BaseEvaluator
     @override
-    def _create_pipeline(self, model_spec: ModelSpec, device: DeviceSpec) -> BaseDeploymentPipeline:
-        """Create a CenterPoint deployment pipeline for the given backend and device.
+    def _create_pipeline(self, model_spec: ModelSpec, device: DeviceSpec) -> BaseInferencePipeline:
+        """Create a CenterPoint inference pipeline for the given backend and device.
 
         Args:
             model_spec: Model specification (backend, device, path).
@@ -137,7 +137,7 @@ class CenterPointEvaluator(BaseEvaluator):
         """Return pipeline output as a list of prediction dicts (or empty list if not a list).
 
         Args:
-            pipeline_output: Raw output from the deployment pipeline.
+            pipeline_output: Raw output from the inference pipeline.
 
         Returns:
             List of prediction dicts, or empty list if pipeline_output is not a list.

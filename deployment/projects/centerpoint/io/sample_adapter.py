@@ -11,7 +11,7 @@ from deployment.projects.centerpoint.io.sample_types import CenterPointFeatureSa
 
 
 class CenterPointSampleAdapter(ExportSampleAdapter):
-    """Adapt legacy CenterPoint feature extraction output into typed sample payload."""
+    """Adapter for CenterPoint feature extraction output into typed sample payload."""
 
     _REQUIRED_VOXEL_KEYS: tuple[str, ...] = ("voxels", "num_points", "coors")
 

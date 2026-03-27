@@ -1,5 +1,5 @@
 """
-CenterPoint Deployment Pipeline Base Class.
+CenterPoint inference pipeline base class.
 
 Provides common preprocessing, postprocessing, and inference logic
 shared by PyTorch, ONNX, and TensorRT backend implementations.
@@ -19,12 +19,12 @@ from typing_extensions import override
 
 from deployment.core.backend import Backend
 from deployment.core.device import DeviceSpec
-from deployment.pipelines.base_pipeline import BaseDeploymentPipeline
+from deployment.pipelines.base_pipeline import BaseInferencePipeline
 
 logger = logging.getLogger(__name__)
 
 
-class CenterPointDeploymentPipeline(BaseDeploymentPipeline):
+class CenterPointInferencePipeline(BaseInferencePipeline):
     """Base pipeline for CenterPoint staged inference.
 
     This normalizes preprocessing/postprocessing for CenterPoint and provides
@@ -150,6 +150,8 @@ class CenterPointDeploymentPipeline(BaseDeploymentPipeline):
             "coors": coors,
         }
 
+        # Second tuple element: preprocess_metadata for BaseInferencePipeline.infer()
+        # (merged with caller metadata, then passed to postprocess). Empty here.
         return preprocessed_dict, {}
 
     def process_middle_encoder(

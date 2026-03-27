@@ -13,8 +13,10 @@ from pathlib import Path
 from typing import Dict, List, Optional
 
 import torch
+from typing_extensions import override
 
-from deployment.configs import BaseDeploymentConfig, ComponentsConfig
+from deployment.configs.base import BaseDeploymentConfig
+from deployment.configs.schema import ComponentsConfig
 from deployment.core.artifacts import Artifact
 from deployment.core.device import DeviceSpec
 from deployment.exporters.common.factory import ExporterFactory
@@ -61,6 +63,7 @@ class CenterPointTensorRTExportPipeline(TensorRTExportPipeline):
             raise ValueError(f"TensorRT export requires CUDA device, got: {device}")
         return device.index
 
+    @override
     def export(
         self,
         *,

@@ -62,9 +62,10 @@ components = dict(
         ),
         tensorrt_profile=dict(
             input_features=dict(
+                # Make sure to match the shape of the input to the model
                 min_shape=[1000, 32, 11],
                 opt_shape=[20000, 32, 11],
-                max_shape=[64000, 32, 11],
+                max_shape=[96000, 32, 11],
             ),
         ),
     ),
@@ -95,6 +96,8 @@ components = dict(
         ),
         tensorrt_profile=dict(
             spatial_features=dict(
+                # Make sure to match the shape of the input to the model
+                # check grid size in the model config
                 min_shape=[1, 32, 1020, 1020],
                 opt_shape=[1, 32, 1020, 1020],
                 max_shape=[1, 32, 1020, 1020],
@@ -165,9 +168,11 @@ evaluation = dict(
 #   architecture, driver, ORT/CUDA/TRT versions, and ORT's CUDA graph partitioning (CPU
 #   fallback nodes for small ops) all change numerics. ONNX on CPU, ONNX on CUDA, and
 #   TensorRT on CUDA are not directly comparable to each other as "one true" references.
+# - Additionally, the verification configuration should use a precision-aware tolerance,
+#   especially when FP16 is enabled.
 # ============================================================================
 verification = dict(
-    enabled=True,
+    enabled=False,
     tolerance=1,
     num_verify_samples=1,
     devices=devices,

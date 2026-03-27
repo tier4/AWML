@@ -12,12 +12,12 @@ from typing_extensions import override
 
 from deployment.core.backend import Backend
 from deployment.core.device import DeviceSpec
-from deployment.projects.centerpoint.pipelines.centerpoint_pipeline import CenterPointDeploymentPipeline
+from deployment.projects.centerpoint.pipelines.centerpoint_pipeline import CenterPointInferencePipeline
 
 logger = logging.getLogger(__name__)
 
 
-class CenterPointPyTorchPipeline(CenterPointDeploymentPipeline):
+class CenterPointPyTorchPipeline(CenterPointInferencePipeline):
     """PyTorch-based CenterPoint pipeline (staged to match ONNX/TensorRT outputs).
 
     This pipeline runs inference using the native PyTorch model, but structures

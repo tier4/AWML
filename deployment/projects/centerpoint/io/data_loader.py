@@ -6,16 +6,35 @@ Pipeline is run once per sample in load_sample(), avoiding redundant computation
 """
 
 import copy
-from typing import Dict, List, Optional, Union
+from typing import Any, List, Mapping
 
 import mmdet3d.datasets.transforms  # noqa: F401 - registers transforms
-import numpy as np
 import torch
 from mmengine.config import Config
 from mmengine.registry import DATASETS, init_default_scope
 from typing_extensions import override
 
-from deployment.core import BaseDataLoader
+from deployment.core.io.base_data_loader import BaseDataLoader
+from deployment.projects.centerpoint.io.sample_types import (
+    CenterPointModelInput,
+    CenterPointSample,
+)
+
+
+def _require_key(mapping: Mapping[str, Any], key: str, owner: str) -> Any:
+    try:
+        return mapping[key]
+    except KeyError as e:
+        raise KeyError(f"{owner} must contain '{key}'. Got keys: {list(mapping.keys())}") from e
+
+
+def _require_attr(obj: Any, attr: str, owner: str) -> Any:
+    if not hasattr(obj, attr):
+        raise AttributeError(f"{owner}.{attr} is required.")
+    value = getattr(obj, attr)
+    if value is None:
+        raise ValueError(f"{owner}.{attr} must not be None.")
+    return value
 
 
 class CenterPointDataLoader(BaseDataLoader):
@@ -77,7 +96,7 @@ class CenterPointDataLoader(BaseDataLoader):
         return dataset
 
     @override
-    def load_sample(self, index: int) -> Dict[str, Union[torch.Tensor, Dict[str, object]]]:
+    def load_sample(self, index: int) -> CenterPointSample:
         """Load sample by running the full pipeline once.
 
         Returns a dict containing all data needed for inference and evaluation:
@@ -89,13 +108,13 @@ class CenterPointDataLoader(BaseDataLoader):
             index: Sample index in the dataset (0 to num_samples - 1).
 
         Returns:
-            Dict with keys: points, metainfo, ground_truth.
+            :class:`CenterPointSample` with keys ``points``, ``metainfo``, ``ground_truth``.
 
         Raises:
             IndexError: If index is out of range.
             KeyError: If dataset sample is missing required keys.
-            ValueError: If inputs or data_samples are invalid.
-            AttributeError: If metainfo or eval_ann_info is missing.
+            ValueError: If ``data_samples`` is None, required attributes are None, or points shape is invalid.
+            AttributeError: If ``data_samples`` lacks required attributes.
         """
         if index >= len(self.dataset):
             raise IndexError(f"Sample index {index} out of range (0-{len(self.dataset)-1})")
@@ -103,58 +122,42 @@ class CenterPointDataLoader(BaseDataLoader):
         # Run pipeline once
         data = self.dataset[index]
 
-        # Extract inputs
-        if "inputs" not in data:
-            raise KeyError(f"Dataset sample must contain 'inputs'. Got keys: {list(data.keys())}")
-        pipeline_inputs = data["inputs"]
-        if "points" not in pipeline_inputs:
-            raise ValueError(f"Expected 'points' in inputs. Got keys: {list(pipeline_inputs.keys())}")
-
-        points_tensor = pipeline_inputs["points"].to("cpu")
+        pipeline_inputs = _require_key(data, "inputs", "Dataset sample")
+        points_tensor = _require_key(pipeline_inputs, "points", "inputs").to("cpu")
         if points_tensor.ndim != 2:
             raise ValueError(f"Expected points tensor with shape [N, features], got {points_tensor.shape}")
 
-        # Extract metainfo and eval_ann_info from data_samples
-        if "data_samples" not in data:
-            raise KeyError(f"Dataset sample must contain 'data_samples'. Got keys: {list(data.keys())}")
-        data_samples = data["data_samples"]
+        data_samples = _require_key(data, "data_samples", "Dataset sample")
         if data_samples is None:
             raise ValueError("Dataset sample contains None 'data_samples', cannot build evaluation ground truth.")
 
-        metainfo = getattr(data_samples, "metainfo", None)
-        if metainfo is None:
-            raise AttributeError("data_samples.metainfo is required for CenterPoint deployment.")
-
-        eval_ann_info = getattr(data_samples, "eval_ann_info", None)
-        if eval_ann_info is None:
-            raise AttributeError("data_samples.eval_ann_info is required for CenterPoint evaluation.")
+        metainfo = _require_attr(data_samples, "metainfo", "data_samples")
+        eval_ann_info = _require_attr(data_samples, "eval_ann_info", "data_samples")
         # Keep raw eval_ann_info here; evaluator will convert to the metrics format.
         ground_truth = dict(eval_ann_info)
 
-        return {
-            "points": points_tensor,
-            "metainfo": dict(metainfo),
-            "ground_truth": ground_truth,
-        }
+        return CenterPointSample(
+            points=points_tensor,
+            metainfo=dict(metainfo),
+            ground_truth=ground_truth,
+        )
 
     @override
-    def preprocess(
-        self, sample: Dict[str, Union[torch.Tensor, Dict[str, object]]]
-    ) -> Dict[str, Union[torch.Tensor, Dict[str, object]]]:
+    def preprocess(self, sample: CenterPointSample) -> CenterPointModelInput:
         """Extract points and metainfo from loaded sample.
 
         This is a lightweight operation - pipeline already ran in load_sample().
 
         Args:
-            sample: Dict from load_sample() with keys points and metainfo.
+            sample: Result of :meth:`load_sample` with keys ``points`` and ``metainfo``.
 
         Returns:
-            Dict with keys points and metainfo for inference.
+            Dict with keys ``points`` and ``metainfo`` for inference.
         """
-        return {
-            "points": sample["points"],
-            "metainfo": sample["metainfo"],
-        }
+        return CenterPointModelInput(
+            points=sample["points"],
+            metainfo=sample["metainfo"],
+        )
 
     @property
     @override

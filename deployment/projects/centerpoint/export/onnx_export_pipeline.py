@@ -14,8 +14,9 @@ from pathlib import Path
 from typing import Iterable
 
 import torch
+from typing_extensions import override
 
-from deployment.configs import BaseDeploymentConfig
+from deployment.configs.base import BaseDeploymentConfig
 from deployment.core.artifacts import Artifact
 from deployment.core.io.base_data_loader import BaseDataLoader
 from deployment.exporters.common.factory import ExporterFactory
@@ -57,6 +58,7 @@ class CenterPointONNXExportPipeline(OnnxExportPipeline):
         self.component_builder = component_builder
         self.logger = logger or logging.getLogger(__name__)
 
+    @override
     def export(
         self,
         *,

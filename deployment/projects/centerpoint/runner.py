@@ -10,7 +10,7 @@ from typing import Optional
 import torch
 from mmengine.config import Config
 
-from deployment.configs import BaseDeploymentConfig
+from deployment.configs.base import BaseDeploymentConfig
 from deployment.core.contexts import CenterPointExportContext, ExportContext
 from deployment.core.device import DeviceSpec
 from deployment.core.io.base_data_loader import BaseDataLoader
