@@ -68,6 +68,7 @@ class BaseDeploymentConfig:
         self.tensorrt_config = TensorRTConfig.from_dict(deploy_cfg.get("tensorrt_config", {}))
         self._evaluation_config = EvaluationConfig.from_dict(deploy_cfg.get("evaluation", {}))
         self._verification_config = VerificationConfig.from_dict(deploy_cfg.get("verification", {}))
+        self._deploy_log_path = self._parse_deploy_log_path(deploy_cfg.get("deploy_log_path", "deployment.log"))
 
         # Runtime/environment validation (torch/cuda)
         self._validate_cuda_device()
@@ -85,6 +86,16 @@ class BaseDeploymentConfig:
         components_raw = self.deploy_cfg.get("components")
         if components_raw is not None and not isinstance(components_raw, Mapping):
             raise TypeError("deploy config 'components' must be a mapping.")
+
+    @staticmethod
+    def _parse_deploy_log_path(raw: Optional[Any]) -> Optional[str]:
+        """Normalize deploy_log_path; None or blank disables file logging."""
+        if raw is None:
+            return None
+        if not isinstance(raw, str):
+            raise TypeError(f"deploy_log_path must be a string or None, got {type(raw).__name__}.")
+        stripped = raw.strip()
+        return stripped if stripped else None
 
     @staticmethod
     def _validate_checkpoint_path(checkpoint_path: str) -> str:
@@ -181,6 +192,22 @@ class BaseDeploymentConfig:
     def devices(self) -> DeviceConfig:
         """Get normalized device settings."""
         return self._device_config
+
+    @property
+    def deploy_log_path(self) -> Optional[str]:
+        """Raw deploy_log_path from config (relative names are resolved via `resolved_deploy_log_file`)."""
+        return self._deploy_log_path
+
+    @property
+    def resolved_deploy_log_file(self) -> Optional[str]:
+        """Absolute path for the deployment log file, or None if file logging is disabled."""
+        if self._deploy_log_path is None:
+            return None
+        p = os.path.expanduser(self._deploy_log_path)
+        if os.path.isabs(p):
+            return os.path.abspath(p)
+        work_dir = os.path.expanduser(self.export_config.work_dir)
+        return os.path.abspath(os.path.join(work_dir, p))
 
     @property
     def evaluation_backends(self) -> Mapping[Any, Mapping[str, Any]]:

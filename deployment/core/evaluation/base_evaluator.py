@@ -191,7 +191,7 @@ class BaseEvaluator(VerificationMixin, ABC):
 
     @abstractmethod
     def print_results(self, results: EvalResultDict) -> None:
-        """Pretty print evaluation results."""
+        """Display evaluation results (implementations should use the logging module)."""
         raise NotImplementedError
 
     # ================== VerificationMixin Implementation ==================
