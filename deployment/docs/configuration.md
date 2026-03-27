@@ -1,26 +1,51 @@
 # Configuration Reference
 
-Configurations remain dictionary-driven for flexibility, with typed dataclasses layered on top for validation and IDE support.
+Deploy configs are plain Python dicts (MMEngine `Config.fromfile`). `BaseDeploymentConfig` wraps them with typed dataclasses in `deployment.configs.schema` for validation and IDE-friendly access.
 
-## Structure
+## Top-Level Keys (reference)
 
-### Single-Model Export (Simple Models)
+| Key | Required | Purpose |
+| --- | --- | --- |
+| `checkpoint_path` | Yes | Path to the PyTorch checkpoint (must exist). Single source for load + PyTorch backend. |
+| `deploy_log_path` | No | File for deployment logs. Default `"deployment.log"`. Relative paths are resolved under `export.work_dir`. `None` or `""` disables file logging. |
+| `devices` | Yes | `cpu` / `cuda` device strings shared by export, verification, and evaluation. |
+| `export` | Yes | Export mode, `work_dir`, optional `onnx_path` (e.g. when `mode="trt"`). |
+| `components` | Yes | Multi-component I/O and artifact names (see below). Current runner expects this section. |
+| `runtime_io` | Yes | Paths/indices for runtime data (e.g. `info_file`, `sample_idx`). |
+| `onnx_config` | No | Shared ONNX export flags (`opset_version`, `simplify`, …). Per-component filenames live under `components.*.onnx_file`. |
+| `tensorrt_config` | No | Shared TensorRT build flags. Per-component profiles live under `components.*.tensorrt_profile`. |
+| `evaluation` | No | Backend toggles, sample counts, optional `model_dir` / `engine_dir` for ONNX and TensorRT. |
+| `verification` | No | Scenarios per export mode, tolerance, `devices` map for verification. |
 
-For simple models with a single ONNX/TensorRT output:
+## Logging (`deploy_log_path`)
+
+After `BaseDeploymentConfig` loads, the CenterPoint entrypoint attaches a root `FileHandler` via `deployment.cli.args.add_deployment_file_logging` when `resolved_deploy_log_file` is set. All standard `logging` output for the process (console + libraries that log to the root logger) is mirrored to that file.
 
 ```python
-# Checkpoint (single source of truth)
-checkpoint_path = "model.pth"
+# Relative → join(export.work_dir, "deployment.log")
+deploy_log_path = "deployment.log"
 
-devices = dict(
-    cpu="cpu",
-    cuda="cuda:0",
-)
+# Absolute path
+# deploy_log_path = "/var/log/centerpoint_deploy.log"
+
+# Disable file logging
+# deploy_log_path = None
+```
+
+## Single ONNX / engine (one component)
+
+The schema is still the unified `components` map: use **one** entry when the graph exports to a single ONNX and engine.
+
+```python
+checkpoint_path = "work_dirs/model/best.pth"
+deploy_log_path = "deployment.log"
+
+devices = dict(cpu="cpu", cuda="cuda:0")
 
 export = dict(
-    mode="both",          # "onnx", "trt", "both", "none"
-    work_dir="work_dirs/deployment",
-    onnx_path=None,       # Required when mode="trt" and ONNX already exists
+    mode="both",
+    work_dir="work_dirs/my_deployment",
+    onnx_path=None,
 )
 
 runtime_io = dict(
@@ -28,19 +53,31 @@ runtime_io = dict(
     sample_idx=0,
 )
 
-model_io = dict(
-    input_name="input",
-    input_shape=(3, 960, 960),
-    input_dtype="float32",
-    output_name="output",
-    batch_size=1,
-    dynamic_axes={...},
+components = dict(
+    model=dict(
+        onnx_file="model.onnx",
+        engine_file="model.engine",
+        io=dict(
+            inputs=[dict(name="input", dtype="float32")],
+            outputs=[dict(name="output", dtype="float32")],
+            dynamic_axes={"input": {0: "batch"}, "output": {0: "batch"}},
+        ),
+        tensorrt_profile=dict(
+            input=dict(
+                min_shape=[1, 3, 960, 960],
+                opt_shape=[1, 3, 960, 960],
+                max_shape=[4, 3, 960, 960],
+            ),
+        ),
+    ),
 )
 
 onnx_config = dict(
     opset_version=16,
     do_constant_folding=True,
-    save_file="model.onnx",
+    export_params=True,
+    keep_initializers_as_inputs=False,
+    simplify=False,
 )
 
 tensorrt_config = dict(
@@ -49,28 +86,29 @@ tensorrt_config = dict(
 )
 ```
 
-### Multi-File Export (Complex Models like CenterPoint)
+There is **no** top-level `model_io` in the current `BaseDeploymentConfig`; I/O and filenames belong to `components`.
 
-For models that export to multiple ONNX/TensorRT files, use the `components` config:
+## Multi-component export (CenterPoint-style)
+
+The **dict key** is the component id (e.g. `pts_voxel_encoder`, `pts_backbone_neck_head`). Typed parsing sets `ComponentCfg.name` from that key—do **not** add a separate `name` field inside each component dict.
+
+Align shapes and dynamic axes with your model config. Example structure (abbreviated; see `deployment/projects/centerpoint/config/deploy_config.py` for the full reference):
 
 ```python
 checkpoint_path = "work_dirs/centerpoint/best_checkpoint.pth"
+deploy_log_path = "deployment.log"
 
-devices = dict(
-    cpu="cpu",
-    cuda="cuda:0",
-)
+devices = dict(cpu="cpu", cuda="cuda:0")
 
+_WORK_DIR = "work_dirs/centerpoint_deployment"
 export = dict(
     mode="both",
-    work_dir="work_dirs/centerpoint_deployment",
+    work_dir=_WORK_DIR,
+    onnx_path=f"{_WORK_DIR}/onnx",
 )
 
-# Unified component configuration (single source of truth)
-# Each component defines: name, file paths, IO spec, and TensorRT profile
 components = dict(
-    voxel_encoder=dict(
-        name="pts_voxel_encoder",
+    pts_voxel_encoder=dict(
         onnx_file="pts_voxel_encoder.onnx",
         engine_file="pts_voxel_encoder.engine",
         io=dict(
@@ -85,12 +123,11 @@ components = dict(
             input_features=dict(
                 min_shape=[1000, 32, 11],
                 opt_shape=[20000, 32, 11],
-                max_shape=[64000, 32, 11],
+                max_shape=[96000, 32, 11],
             ),
         ),
     ),
-    backbone_head=dict(
-        name="pts_backbone_neck_head",
+    pts_backbone_neck_head=dict(
         onnx_file="pts_backbone_neck_head.onnx",
         engine_file="pts_backbone_neck_head.engine",
         io=dict(
@@ -98,123 +135,107 @@ components = dict(
             outputs=[
                 dict(name="heatmap", dtype="float32"),
                 dict(name="reg", dtype="float32"),
-                # ... more outputs
+                # ... remaining heads
             ],
-            dynamic_axes={...},
+            dynamic_axes={
+                "spatial_features": {0: "batch_size", 2: "height", 3: "width"},
+                # ... align per output
+            },
         ),
         tensorrt_profile=dict(
             spatial_features=dict(
-                min_shape=[1, 32, 760, 760],
-                opt_shape=[1, 32, 760, 760],
-                max_shape=[1, 32, 760, 760],
+                min_shape=[1, 32, 1020, 1020],
+                opt_shape=[1, 32, 1020, 1020],
+                max_shape=[1, 32, 1020, 1020],
             ),
         ),
     ),
 )
 
-# Shared ONNX settings (applied to all components)
 onnx_config = dict(
     opset_version=16,
     do_constant_folding=True,
+    export_params=True,
+    keep_initializers_as_inputs=False,
     simplify=False,
 )
 
-# Shared TensorRT settings (applied to all components)
 tensorrt_config = dict(
     precision_policy="auto",
     max_workspace_size=2 << 30,
 )
 ```
 
-### Verification and Evaluation
+## Evaluation
+
+`ArtifactManager` resolves ONNX/TensorRT paths in this order: registered export artifacts, then explicit evaluation paths, then fallbacks (`export.onnx_path`, etc.). For a typical post-export evaluation, set directories explicitly:
 
 ```python
-verification = dict(
-    enabled=True,
-    num_verify_samples=3,
-    tolerance=0.1,
-    devices=devices,
-    scenarios={
-        "both": [
-            {"ref_backend": "pytorch", "ref_device": "cpu",
-             "test_backend": "onnx", "test_device": "cuda"},
-        ]
-    }
-)
+_ONNX_DIR = f"{_WORK_DIR}/onnx"
+_TENSORRT_DIR = f"{_WORK_DIR}/tensorrt"
 
 evaluation = dict(
     enabled=True,
     num_samples=100,
     verbose=False,
-    backends={
-        "pytorch": {"enabled": True, "device": devices["cpu"]},
-        "onnx": {"enabled": True, "device": devices["cpu"]},
-        "tensorrt": {"enabled": True, "device": devices["cuda"]},
-    }
+    backends=dict(
+        pytorch=dict(enabled=True, device=devices["cuda"]),
+        onnx=dict(enabled=True, device=devices["cuda"], model_dir=_ONNX_DIR),
+        tensorrt=dict(enabled=True, device=devices["cuda"], engine_dir=_TENSORRT_DIR),
+    ),
 )
 ```
 
-### Device Aliases
+Optional `evaluation.models` / `evaluation.devices` exist in the typed schema for advanced overrides.
 
-Keep device definitions centralized by declaring a top-level `devices` dictionary and referencing aliases (for example, `devices["cuda"]`). Updating the mapping once automatically propagates to export, evaluation, and verification blocks without digging into nested dictionaries.
+## Verification
 
-## Backend Enum
+Scenarios are grouped by **export mode** (`both`, `onnx`, `trt`, `none`), matching `deployment.configs.enums.ExportMode`. Only scenarios for the active export mode run.
 
-Use `deployment.core.Backend` to avoid typos while keeping backward compatibility with plain strings.
+```python
+verification = dict(
+    enabled=True,
+    tolerance=0.1,
+    num_verify_samples=3,
+    devices=devices,
+    scenarios=dict(
+        both=[
+            dict(ref_backend="pytorch", ref_device="cpu", test_backend="onnx", test_device="cpu"),
+            dict(ref_backend="onnx", ref_device="cuda", test_backend="tensorrt", test_device="cuda"),
+        ],
+        onnx=[
+            dict(ref_backend="pytorch", ref_device="cpu", test_backend="onnx", test_device="cpu"),
+        ],
+        trt=[
+            dict(ref_backend="onnx", ref_device="cuda", test_backend="tensorrt", test_device="cuda"),
+        ],
+        none=[],
+    ),
+)
+```
+
+## Device aliases
+
+Keep a single top-level `devices` dict and reference it from `evaluation.backends` and `verification` so CUDA/CPU strings stay consistent.
+
+## Backend enum
 
 ```python
 from deployment.core import Backend
 
 evaluation = dict(
     backends={
-        Backend.PYTORCH: {"enabled": True, "device": devices["cpu"]},
-        Backend.ONNX: {"enabled": True, "device": devices["cpu"]},
-        Backend.TENSORRT: {"enabled": True, "device": devices["cuda"]},
+        Backend.PYTORCH.value: {"enabled": True, "device": devices["cpu"]},
+        Backend.ONNX.value: {"enabled": True, "device": devices["cpu"], "model_dir": _ONNX_DIR},
+        Backend.TENSORRT.value: {"enabled": True, "device": devices["cuda"], "engine_dir": _TENSORRT_DIR},
     }
 )
 ```
 
-## Typed Exporter Configs
+## Typed exporter configs
 
-Typed classes in `deployment.exporters.common.configs` provide schema validation and IDE hints.
+Low-level typed classes live in `deployment.exporters.common.configs`. `BaseDeploymentConfig.get_onnx_settings(component_name)` / `get_tensorrt_settings(component_name)` merge shared `onnx_config` / `tensorrt_config` with each `components` entry.
 
-```python
-from deployment.exporters.common.configs import (
-    ONNXExportConfig,
-    TensorRTExportConfig,
-    TensorRTModelInputConfig,
-    TensorRTProfileConfig,
-)
+## Example on disk
 
-onnx_config = ONNXExportConfig(
-    input_names=("input",),
-    output_names=("output",),
-    opset_version=16,
-    do_constant_folding=True,
-    simplify=True,
-    save_file="model.onnx",
-    batch_size=1,
-)
-
-trt_config = TensorRTExportConfig(
-    precision_policy="auto",
-    max_workspace_size=1 << 30,
-    model_inputs=(
-        TensorRTModelInputConfig(
-            input_shapes={
-                "input": TensorRTProfileConfig(
-                    min_shape=(1, 3, 960, 960),
-                    opt_shape=(1, 3, 960, 960),
-                    max_shape=(1, 3, 960, 960),
-                )
-            }
-        ),
-    ),
-)
-```
-
-Use `from_mapping()` / `from_dict()` helpers to instantiate typed configs from existing dictionaries.
-
-## Example Config Paths
-
-- `deployment/projects/centerpoint/config/deploy_config.py` - Multi-file export example
+- `deployment/projects/centerpoint/config/deploy_config.py` — full multi-component deploy config (with comments on tolerance and verification).

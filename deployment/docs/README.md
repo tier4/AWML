@@ -1,13 +1,18 @@
-# Deployment Docs Index
+# Deployment docs index
 
-Reference guides extracted from the monolithic deployment README:
+Guides for the `deployment/` package (CLI, configs, runtime, projects):
 
-- [`overview.md`](./overview.md) – high-level summary, design principles, and key features.
-- [`architecture.md`](./architecture.md) – workflow diagram, core components, pipelines, and layout.
-- [`usage.md`](./usage.md) – commands, runner setup, typed contexts, CLI args, export modes.
-- [`configuration.md`](./configuration.md) – configuration structure, typed config classes, backend enums.
-- [`projects.md`](./projects.md) – CenterPoint, YOLOX, and Calibration deployment specifics.
-- [`export_pipeline.md`](./export_pipeline.md) – ONNX/TensorRT export details plus export pipelines.
-- [`verification_evaluation.md`](./verification_evaluation.md) – verification mixin, evaluation metrics, core contract.
-- [`best_practices.md`](./best_practices.md) – best practices, troubleshooting, and roadmap items.
-- [`contributing.md`](./contributing.md) – steps for adding new deployment projects.
+| Doc | Contents |
+| --- | --- |
+| [`overview.md`](./overview.md) | Goals, design principles, features, precision policies. |
+| [`architecture.md`](./architecture.md) | Workflow, components, directory layout (CLI → projects → runtime). |
+| [`usage.md`](./usage.md) | Unified CLI, logging, contexts, export modes. |
+| [`configuration.md`](./configuration.md) | Deploy config keys, `components`, `deploy_log_path`, evaluation/verification. |
+| [`projects.md`](./projects.md) | CenterPoint layout; placeholders for other tasks. |
+| [`export_pipeline.md`](./export_pipeline.md) | ONNX/TRT steps, multi-component config, artifacts. |
+| [`verification_evaluation.md`](./verification_evaluation.md) | Verification scenarios, evaluation backends, logging of results. |
+| [`best_practices.md`](./best_practices.md) | Config, export, verification, evaluation, troubleshooting. |
+| [`contributing.md`](./contributing.md) | Adding a `deployment/projects/<name>/` bundle and registry wiring. |
+| [`core_contract.md`](./core_contract.md) | Responsibilities between runner, evaluator, pipelines, metrics. |
+
+The canonical multi-component example config is `deployment/projects/centerpoint/config/deploy_config.py`.

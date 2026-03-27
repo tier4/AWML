@@ -1,73 +1,65 @@
 # AWML Deployment Framework
 
-AWML ships a unified, task-agnostic deployment stack that turns trained PyTorch checkpoints into production-ready ONNX and TensorRT artifacts. The verification and evaluation toolchain runs across every backend, ensuring numerical parity and consistent metrics across different projects.
+AWML ships a unified, task-agnostic deployment stack that turns trained PyTorch checkpoints into production-ready ONNX and TensorRT artifacts. Verification and evaluation run across backends where configured, with shared orchestration and typed configs.
 
-At the center is a shared runner/pipeline/exporter architecture that teams can extend with lightweight wrappers or workflows. CenterPoint, YOLOX, CalibrationStatusClassification, and future models plug into the same export and verification flow while still layering in task-specific logic where needed.
+The reference implementation is **CenterPoint** under `deployment/projects/centerpoint/`. Additional tasks can follow the same bundle layout and register with `deployment.projects.registry`.
 
-
-## Quick Start
+## Quick start
 
 ```bash
-# Deployment entrypoint
-python -m deployment.cli.main <project> <deploy_cfg.py> <model_cfg.py> [project-specific args]
+python -m deployment.cli.main centerpoint <deploy_cfg.py> <model_cfg.py> [--log-level INFO]
 
-# Example: CenterPoint deployment
+# Optional CenterPoint flag
 python -m deployment.cli.main centerpoint <deploy_cfg.py> <model_cfg.py> --rot-y-axis-reference
 ```
 
-## Documentation Map
+Deploy configs support optional **`deploy_log_path`** (default `deployment.log`, resolved under `export.work_dir` when relative). When set, logs are mirrored to that file via a root `FileHandler` in addition to stderr.
+
+## Documentation map
 
 | Topic | Description |
 | --- | --- |
 | [`docs/overview.md`](docs/overview.md) | Design principles, key features, precision policies. |
-| [`docs/architecture.md`](docs/architecture.md) | Workflow diagram, core components, file layout. |
-| [`docs/usage.md`](docs/usage.md) | CLI usage, runner patterns, typed contexts, export modes. |
-| [`docs/configuration.md`](docs/configuration.md) | Config structure, typed schemas, backend enums. |
-| [`docs/projects.md`](docs/projects.md) | CenterPoint, YOLOX, and Calibration deployment specifics. |
-| [`docs/export_pipeline.md`](docs/export_pipeline.md) | ONNX/TRT export steps and pipeline patterns. |
-| [`docs/verification_evaluation.md`](docs/verification_evaluation.md) | Verification scenarios, evaluation metrics, core contract. |
-| [`docs/best_practices.md`](docs/best_practices.md) | Best practices, troubleshooting, roadmap. |
-| [`docs/contributing.md`](docs/contributing.md) | How to add new deployment projects end-to-end. |
+| [`docs/architecture.md`](docs/architecture.md) | CLI → project bundles → runtime runner and orchestrators. |
+| [`docs/usage.md`](docs/usage.md) | CLI, logging, typed contexts, export modes. |
+| [`docs/configuration.md`](docs/configuration.md) | Top-level keys, `components`, logging, evaluation/verification. |
+| [`docs/projects.md`](docs/projects.md) | CenterPoint file layout; status of other tasks. |
+| [`docs/export_pipeline.md`](docs/export_pipeline.md) | ONNX/TRT export and multi-component patterns. |
+| [`docs/verification_evaluation.md`](docs/verification_evaluation.md) | Scenarios, metrics, artifact resolution. |
+| [`docs/best_practices.md`](docs/best_practices.md) | Practices and troubleshooting. |
+| [`docs/contributing.md`](docs/contributing.md) | Adding a new project bundle. |
+| [`docs/core_contract.md`](docs/core_contract.md) | Layer boundaries for runners, evaluators, pipelines. |
 
-Refer to `deployment/docs/README.md` for the same index.
+The same index lives in [`deployment/docs/README.md`](docs/README.md).
 
-## Architecture Snapshot
+## Architecture snapshot
 
-- **Entry point** (`deployment/cli/main.py`) loads a project bundle from `deployment/projects/<project>/`.
-- **Runtime** (`deployment/runtime/*`) coordinates load → export → verify → evaluate via shared orchestrators.
-- **Exporters** live under `exporters/common/` with typed config classes; project wrappers/pipelines compose the base exporters as needed.
-- **Pipelines** are registered by each project bundle and resolved via `PipelineFactory`.
-- **Core package** (`core/`) supplies typed configs, runtime contexts, task definitions, and shared verification utilities.
+- **`deployment/cli/main.py`** — Discovers `deployment.projects.*`, registers subcommands per project.
+- **`deployment/runtime/runner.py`** — `BaseDeploymentRunner`: export → verify → evaluate.
+- **`deployment/runtime/*_orchestrator.py`** — Export, verification, evaluation orchestration; **`ArtifactManager`** resolves ONNX/engine paths.
+- **`deployment/exporters/common/`** — Base ONNX/TensorRT exporters and `ExporterFactory`.
+- **`deployment/pipelines/`** — `BaseInferencePipeline`, global `PipelineFactory` and `pipeline_registry`.
+- **`deployment/projects/<project>/`** — `entrypoint.py`, `runner.py`, `config/deploy_config.py`, task `io/` / `eval/` / `pipelines/` / `export/`.
 
-See [`docs/architecture.md`](docs/architecture.md) for diagrams and component details.
+See [`docs/architecture.md`](docs/architecture.md) for the full diagram and layout.
 
-## Export & Verification Flow
+## Export and verification flow
 
-1. Load the PyTorch checkpoint and run ONNX export (single or multi-file) using the injected wrappers/pipelines.
-2. Optionally build TensorRT engines with precision policies such as `auto`, `fp16`, `fp32_tf32`, or `strongly_typed`.
-3. Register artifacts via `ArtifactManager` for downstream verification and evaluation.
-4. Run verification scenarios defined in config—pipelines are resolved by backend and device, and outputs are recursively compared with typed tolerances.
-5. Execute evaluation across enabled backends and emit typed metrics.
+1. Load checkpoint; export ONNX (per `components` entries) and optionally TensorRT with the configured precision policy.
+2. Register artifacts for downstream steps.
+3. Run verification scenarios for the current **export mode** (`both` / `onnx` / `trt` / `none`).
+4. Run evaluation on enabled backends (`evaluation.backends`, optional `model_dir` / `engine_dir` for ONNX and TensorRT).
 
-Implementation details live in [`docs/export_pipeline.md`](docs/export_pipeline.md) and [`docs/verification_evaluation.md`](docs/verification_evaluation.md).
+Details: [`docs/export_pipeline.md`](docs/export_pipeline.md), [`docs/verification_evaluation.md`](docs/verification_evaluation.md).
 
-## Project Coverage
+## Project coverage
 
-- **CenterPoint** – multi-file export orchestrated by dedicated ONNX/TRT pipelines; see [`docs/projects.md`](docs/projects.md).
-- **YOLOX** – single-file export with output reshaping via `YOLOXOptElanONNXWrapper`.
-- **CalibrationStatusClassification** – binary classification deployment with identity wrappers and simplified pipelines.
+- **CenterPoint** — Multi-component export and 3D metrics; see [`docs/projects.md`](docs/projects.md) and `projects/centerpoint/config/deploy_config.py`.
+- **Other tasks** — Extend via new packages under `deployment/projects/` and `ProjectAdapter` registration (see contributing doc).
 
-Each project ships its own deployment bundle under `deployment/projects/<project>/`.
+## Core contract
 
-## Core Contract
-
-[`core_contract.md`](docs/core_contract.md) defines the boundaries between runners, orchestrators, evaluators, pipelines, and metrics interfaces. Follow the contract when introducing new logic to keep refactors safe and dependencies explicit.
-
-## Contributing & Best Practices
-
-- Start with [`docs/contributing.md`](docs/contributing.md) for the required files and patterns when adding a new deployment project.
-- Consult [`docs/best_practices.md`](docs/best_practices.md) for export patterns, troubleshooting tips, and roadmap items.
-- Keep documentation for project-specific quirks in the appropriate file under `deployment/docs/`.
+[`docs/core_contract.md`](docs/core_contract.md) defines how runners, evaluators, `PipelineFactory`, and metrics interact. Follow it when extending shared code.
 
 ## License
 

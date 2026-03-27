@@ -1,104 +1,72 @@
-# Export Pipelines
+# Export pipelines
 
-## ONNX Export
+## ONNX export (generic)
 
-1. **Model preparation** – load PyTorch model and apply the wrapper if output reshaping is required.
-2. **Input preparation** – grab a representative sample from the data loader.
-3. **Export** – call `torch.onnx.export()` with the configured settings.
-4. **Simplification** – optionally run ONNX simplification.
-5. **Save** – store artifacts under `work_dir/onnx/`.
+1. Load PyTorch checkpoint and optional wrapper for export-time subgraphs.
+2. Take a representative sample (often via project `SampleAdapter` / data loader).
+3. Run `torch.onnx.export` with merged settings from `onnx_config` and the target `components` entry.
+4. Optionally simplify ONNX.
+5. Write files under `export.work_dir` (typically `.../onnx/` for multi-component projects).
 
-## TensorRT Export
+ONNX filenames come from **`components.<id>.onnx_file`**, not from a global `save_file` in `onnx_config`.
 
-1. **Validate ONNX** – ensure the ONNX model exists and is compatible.
-2. **Network creation** – parse ONNX and build a TensorRT network.
-3. **Precision policy** – apply the configured precision mode (`auto`, `fp16`, `fp32_tf32`, `strongly_typed`).
-4. **Optimization profile** – configure dynamic-shape ranges.
-5. **Engine build** – compile and serialize the engine.
-6. **Save** – store artifacts under `work_dir/tensorrt/`.
+## TensorRT export (generic)
 
-## Multi-File Export (CenterPoint)
+1. Validate ONNX inputs exist.
+2. Parse ONNX and build the TensorRT network.
+3. Apply `tensorrt_config.precision_policy` (`auto`, `fp16`, `fp32_tf32`, `strongly_typed`, …).
+4. Apply per-input min/opt/max shapes from **`components.<id>.tensorrt_profile`**.
+5. Build and serialize the engine to **`components.<id>.engine_file`** under the TensorRT output directory.
 
-CenterPoint splits the model into multiple ONNX/TensorRT artifacts using a unified `components` configuration:
+## Multi-component export (CenterPoint)
 
-```python
-components = dict(
-    voxel_encoder=dict(
-        name="pts_voxel_encoder",
-        onnx_file="pts_voxel_encoder.onnx",     # ONNX output filename
-        engine_file="pts_voxel_encoder.engine", # TensorRT output filename
-        io=dict(
-            inputs=[dict(name="input_features", dtype="float32")],
-            outputs=[dict(name="pillar_features", dtype="float32")],
-            dynamic_axes={...},
-        ),
-        tensorrt_profile=dict(
-            input_features=dict(min_shape=[...], opt_shape=[...], max_shape=[...]),
-        ),
-    ),
-    backbone_head=dict(
-        name="pts_backbone_neck_head",
-        onnx_file="pts_backbone_neck_head.onnx",
-        engine_file="pts_backbone_neck_head.engine",
-        io=dict(...),
-        tensorrt_profile=dict(...),
-    ),
-)
-```
+`deploy_cfg["components"]` is a map from **component id** to spec. The id is the canonical name (`pts_voxel_encoder`, `pts_backbone_neck_head`, …). Typed loading sets `ComponentCfg.name` from that key—**do not** duplicate a `name` field inside the nested dict.
 
-### Configuration Structure
+Each value defines:
 
-Each component in `deploy_cfg.components` defines:
+- `onnx_file`, `engine_file`
+- `io`: `inputs` / `outputs` (name + dtype), `dynamic_axes`
+- `tensorrt_profile`: map from binding name to `min_shape` / `opt_shape` / `max_shape`
 
-- `name`: Component identifier used during export
-- `onnx_file`: Output ONNX filename
-- `engine_file`: Output TensorRT engine filename
-- `io`: Input/output specification (names, dtypes, dynamic_axes)
-- `tensorrt_profile`: TensorRT optimization profile (min/opt/max shapes)
+Export pipelines orchestrate sequential export per component and wire tensors between stages where needed. CenterPoint uses:
 
-### Export Pipeline Orchestration
+- `CenterPointSampleAdapter` — trace/sample payload for export
+- `CenterPointComponentBuilder` — split `nn.Module` into exportable pieces aligned with `components`
 
-Export pipelines orchestrate:
+## Artifacts and downstream stages
 
-- Sequential export of each component
-- Input/output wiring between stages
-- Directory structure management
+`ArtifactManager` registers paths after export so verification and evaluation resolve ONNX directories and engine directories consistently. Wrappers keep tensor layout aligned across backends.
 
-CenterPoint uses project-specific composition with:
+## Dependency injection (runner)
 
-- `ExportSampleAdapter.extract_sample(model, data_loader, sample_idx)`: extract and normalize model-specific sample payload for tracing
-- `ModelComponentBuilder.build_components(model, sample)`: split into ONNX-exportable submodules and per-component config overrides
-
-## Verification-Oriented Exports
-
-- Exporters register artifacts via `ArtifactManager`, making the exported files discoverable for verification and evaluation.
-- Wrappers ensure consistent tensor ordering and shape expectations across backends.
-
-## Dependency Injection Pattern
-
-Projects inject wrappers and export pipelines when instantiating the runner:
+Project runners pass optional pipelines into `BaseDeploymentRunner`:
 
 ```python
 runner = CenterPointDeploymentRunner(
-    ...,
-    onnx_pipeline=CenterPointONNXExportPipeline(...),
-    tensorrt_pipeline=CenterPointTensorRTExportPipeline(...),
+    data_loader=data_loader,
+    evaluator=evaluator,
+    config=config,
+    model_cfg=model_cfg,
+    logger=logger,
+    onnx_pipeline=custom_onnx_pipeline,  # optional
+    tensorrt_pipeline=custom_trt_pipeline,  # optional
 )
 ```
 
-Simple projects can skip export pipelines entirely and rely on the base exporters provided by `ExporterFactory`.
+If omitted, defaults are constructed inside the CenterPoint runner (see `deployment/projects/centerpoint/runner.py`).
 
-## Runtime Pipeline Usage
+## Runtime inference pipelines
 
-Runtime pipelines receive the `components_cfg` through constructor injection:
+Evaluators create pipelines with `PipelineFactory.create(...)` and pass the typed **`ComponentsConfig`** instance (`config.components_cfg`), not a raw dict:
 
 ```python
-pipeline = CenterPointONNXPipeline(
-    pytorch_model=model,
-    onnx_dir="/path/to/onnx",
-    device="cuda:0",
-    components_cfg=deploy_cfg["components"],  # Pass component config
+PipelineFactory.create(
+    project_name="centerpoint",
+    model_spec=model_spec,
+    pytorch_model=pytorch_model,
+    device=device,
+    components_cfg=self._components_cfg,
 )
 ```
 
-This allows pipelines to resolve artifact paths from the unified config.
+Pipelines use `components_cfg` to locate ONNX/engine filenames and I/O names for each backend.

@@ -12,6 +12,7 @@ The AWML Deployment Framework provides a standardized, task-agnostic approach to
 6. **Dependency injection** – exporters, wrappers, and export pipelines are explicitly wired for clarity and testability.
 7. **Type-safe building blocks** – typed configs, runtime contexts, and result objects reduce runtime surprises.
 8. **Extensible verification** – mixins compare nested outputs so that evaluators stay lightweight.
+9. **Observable runs** – optional `deploy_log_path` mirrors process logging to a file (see `configuration.md`).
 
 ## Key Features
 
@@ -23,19 +24,23 @@ Load Model → Export ONNX → Export TensorRT → Verify → Evaluate
 
 ### Scenario-Based Verification
 
-`VerificationMixin` normalizes devices, reuses pipelines from `PipelineFactory`, and recursively compares nested outputs with per-node logging. Scenarios define which backend pairs to compare.
+`VerificationMixin` normalizes devices, reuses pipelines from `PipelineFactory`, and recursively compares nested outputs with per-node logging. Scenarios are grouped by **export mode** (`both`, `onnx`, `trt`, `none`); only the list for the active mode runs.
 
 ```python
 verification = dict(
     enabled=True,
-    scenarios={
-        "both": [
-            {"ref_backend": "pytorch", "ref_device": "cpu",
-             "test_backend": "onnx", "test_device": "cpu"},
-            {"ref_backend": "onnx", "ref_device": "cpu",
-             "test_backend": "tensorrt", "test_device": "cuda:0"},
-        ]
-    }
+    tolerance=0.1,
+    num_verify_samples=3,
+    devices=devices,
+    scenarios=dict(
+        both=[
+            dict(ref_backend="pytorch", ref_device="cpu", test_backend="onnx", test_device="cpu"),
+            dict(ref_backend="onnx", ref_device="cuda", test_backend="tensorrt", test_device="cuda"),
+        ],
+        onnx=[dict(ref_backend="pytorch", ref_device="cpu", test_backend="onnx", test_device="cpu")],
+        trt=[dict(ref_backend="onnx", ref_device="cuda", test_backend="tensorrt", test_device="cuda")],
+        none=[],
+    ),
 )
 ```
 

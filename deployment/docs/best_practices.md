@@ -1,83 +1,50 @@
-# Best Practices & Troubleshooting
+# Best practices and troubleshooting
 
-## Configuration Management
+## Configuration
 
-- Keep deployment configs separate from training/model configs.
-- Use relative paths for datasets and artifacts when possible.
-- Document non-default configuration options in project READMEs.
+- Keep deploy config separate from training model config; deploy config is loaded as MMEngine `Config` into `BaseDeploymentConfig`.
+- Prefer relative paths anchored to a single `export.work_dir` for ONNX/TensorRT outputs.
+- Set `deploy_log_path` (e.g. `deployment.log`) if you need a persistent log next to artifacts; use `None` to disable file logging.
+- Document non-default verification tolerances—numerics vary by GPU, drivers, and ORT/TRT versions (see comments in `deploy_config.py`).
 
-## Model Export
+## Model export
 
-- Inject wrapper classes (and optional export pipelines) into project runners; let `ExporterFactory` build exporters lazily.
-- Store wrappers under `exporters/{model}/model_wrappers.py` and reuse `IdentityWrapper` when reshaping is unnecessary.
-- Add export-pipeline modules only when orchestration beyond single file export is required.
-- Always verify ONNX exports before TensorRT conversion.
-- Choose TensorRT precision policies (`auto`, `fp16`, `fp32_tf32`, `strongly_typed`) based on deployment targets.
+- Pass wrapper classes and optional export pipelines into the project runner; let `ExporterFactory` build exporters inside the runtime.
+- Shared wrappers for reuse live under `deployment/exporters/common/model_wrappers.py`; project-specific ONNX subgraphs may live under `deployment/projects/<project>/`.
+- Add export-pipeline modules only when you need multi-file or multi-stage orchestration.
+- Validate ONNX before TensorRT build; adjust opset or simplify flags if export fails.
+- Choose TensorRT `precision_policy` to match deployment targets (`auto`, `fp16`, `fp32_tf32`, `strongly_typed`).
 
-## Unified Architecture Pattern
+## Architecture
 
-```
-exporters/{model}/
-├── model_wrappers.py
-├── [optional] onnx_export_pipeline.py
-└── [optional] tensorrt_export_pipeline.py
-```
+- Simple projects: one `components` entry, base exporters, optional single pipeline factory registration.
+- Complex projects: compose export pipelines from generic exporters (CenterPoint pattern).
 
-- Simple models: use base exporters + wrappers, no subclassing.
-- Complex models: compose export pipelines that call the base exporters multiple times.
+## Verification
 
-## Dependency Injection Pattern
+- Start with strict tolerance and relax only when justified.
+- Use scenario sets per export mode (`both` / `onnx` / `trt`) so partial export runs do not execute irrelevant pairs.
+- Keep preprocessing identical across reference and test backends.
 
-```python
-runner = YOLOXOptElanDeploymentRunner(
-    ...,
-    onnx_wrapper_cls=YOLOXOptElanONNXWrapper,
-)
-```
+## Evaluation
 
-- Keeps dependencies explicit.
-- Enables lazy exporter construction.
-- Simplifies testing via mock wrappers/pipelines.
+- Align `num_samples` and devices across backends when comparing latency.
+- Set `model_dir` / `engine_dir` for ONNX and TensorRT if artifacts are not freshly registered in-process.
+- Rely on logging for metric summaries so `deploy_log_path` captures evaluation output.
 
-## Verification Tips
+## Pipeline development
 
-- Start with strict tolerances (0.01) and relax only when necessary.
-- Verify a representative sample set.
-- Ensure preprocessing/postprocessing is consistent across backends.
-
-## Evaluation Tips
-
-- Align evaluation settings across backends.
-- Report latency statistics alongside accuracy metrics.
-- Compare backend-specific outputs for regressions.
-
-## Pipeline Development
-
-- Inherit from the correct task-specific base pipeline.
-- Share preprocessing/postprocessing logic where possible.
-- Keep backend-specific implementations focused on inference glue code.
+- Inherit from `BaseInferencePipeline` and keep metric computation out of pipelines (evaluators own metrics).
+- Register new projects in `pipeline_registry` via a `BasePipelineFactory` subclass.
 
 ## Troubleshooting
 
-1. **ONNX export fails**
-   - Check for unsupported ops and validate input shapes.
-   - Try alternative opset versions.
-2. **TensorRT build fails**
-   - Validate the ONNX model.
-   - Confirm input shape/profile configuration.
-   - Adjust workspace size if memory errors occur.
-3. **Verification fails**
-   - Tweak tolerance settings.
-   - Confirm identical preprocessing across backends.
-   - Verify device assignments.
-4. **Evaluation errors**
-   - Double-check data loader paths.
-   - Ensure model outputs match evaluator expectations.
+1. **ONNX export fails** — Unsupported ops, wrong dynamic axes, or bad trace inputs; try opset change or inspect trace with `verbose` export flags where available.
+2. **TensorRT build fails** — Validate ONNX, profiles (min/opt/max), and workspace size.
+3. **Verification fails** — Tolerance, device pairing, or preprocessing mismatch; confirm scenario `ref_device` / `test_device` match available hardware.
+4. **Evaluation cannot find models** — Check `ArtifactManager` resolution: run export first, or set `evaluation.backends.onnx.model_dir` / `tensorrt.engine_dir`.
+5. **Empty log file** — Confirm `deploy_log_path` is non-empty, `export.work_dir` resolves as expected for relative paths, and code uses `logging` rather than `print` for summaries.
 
-## Future Enhancements
+## Future enhancements
 
-- Support more task types (segmentation, etc.).
-- Automatic precision tuning for TensorRT.
-- Distributed evaluation support.
-- MLOps pipeline integration.
-- Performance profiling tools.
+Ideas only; not a commitment: more task types, automated precision tuning, distributed evaluation, MLOps hooks, profiling tools.

@@ -1,77 +1,85 @@
 # Deployment Architecture
 
-## High-Level Workflow
+## High-level workflow
 
 ```
 ┌─────────────────────────────────────────────────────────┐
-│              Project Entry Points                       │
-│  (projects/*/deploy/main.py)                            │
-│  - CenterPoint, YOLOX-ELAN, Calibration                 │
-└──────────────────┬──────────────────────────────────────┘
-                   │
-┌──────────────────▼──────────────────────────────────────┐
-│ BaseDeploymentRunner + Project Runners                  │
-│  - Coordinates load → export → verify → evaluate        │
-│  - Delegates to helper orchestrators                    │
-│  - Projects extend the base runner for custom logic     │
-└──────────────────┬──────────────────────────────────────┘
-                   │
-        ┌──────────┴────────────┐
-        │                       │
-┌───────▼────────┐     ┌────────▼───────────────┐
-│   Exporters    │     │  Helper Orchestrators │
-│  - ONNX / TRT  │     │  - ArtifactManager     │
-│  - Wrappers    │     │  - VerificationOrch.   │
-│  - Export Ppl. │     │  - EvaluationOrch.     │
-└────────────────┘     └────────┬───────────────┘
-                                │
-┌───────────────────────────────▼─────────────────────────┐
-│                    Evaluators & Pipelines               │
-│  - BaseInferencePipeline + task-specific variants       │
-│  - Backend-specific implementations (PyTorch/ONNX/TRT)  │
-└────────────────────────────────────────────────────────┘
+│  CLI: deployment/cli/main.py                          │
+│  Discovers deployment.projects.<name>, subcommands      │
+└────────────────────────┬────────────────────────────────┘
+                         │
+┌────────────────────────▼────────────────────────────────┐
+│  Project bundle: deployment/projects/<project>/        │
+│  entrypoint.py → builds config, loader, evaluator,     │
+│  CenterPointDeploymentRunner (or future project runner) │
+└────────────────────────┬────────────────────────────────┘
+                         │
+┌────────────────────────▼────────────────────────────────┐
+│  BaseDeploymentRunner (deployment/runtime/runner.py)     │
+│  load → export → verify → evaluate                      │
+└────────────────────────┬────────────────────────────────┘
+                         │
+        ┌────────────────┴────────────────┐
+        │                                 │
+┌───────▼────────┐               ┌────────▼────────────────┐
+│ Export stack   │               │ Orchestrators            │
+│ exporters/*    │               │ ArtifactManager          │
+│ export_pipelines│              │ Export / Verification /  │
+│                │               │ Evaluation orchestrators │
+└────────────────┘               └────────┬────────────────┘
+                                          │
+┌─────────────────────────────────────────▼────────────────┐
+│  Evaluators & inference pipelines                          │
+│  BaseEvaluator + PipelineFactory → project pipelines       │
+└──────────────────────────────────────────────────────────┘
 ```
 
-## Core Components
+## Core components
 
-### BaseDeploymentRunner & Project Runners
+### CLI and project bundles
 
-`BaseDeploymentRunner` orchestrates the export/verification/evaluation loop. Project runners (CenterPoint, YOLOX, Calibration, …):
+- `deployment/cli/main.py` discovers packages under `deployment/projects/`, imports them so each package registers a `ProjectAdapter` in `deployment.projects.registry.project_registry`, then dispatches to `adapter.run(args)`.
+- Each project lives under `deployment/projects/<project>/` with `entrypoint.py`, `runner.py`, `config/deploy_config.py`, task-specific `io/`, `eval/`, optional `export/` and `pipelines/`.
 
-- Implement model loading.
-- Inject wrapper classes and optional export pipelines.
-- Reuse `ExporterFactory` to lazily create ONNX/TensorRT exporters.
-- Delegate artifact registration plus verification/evaluation to the shared orchestrators.
+### BaseDeploymentRunner
 
-### Core Package (`deployment/core/`)
+Defined in `deployment/runtime/runner.py`. Owns the shared sequence (export, verification, evaluation), constructs `ExporterFactory` outputs, and delegates to `ExportOrchestrator`, `VerificationOrchestrator`, and `EvaluationOrchestrator`. Project runners (e.g. `CenterPointDeploymentRunner`) subclass it to plug in model loading, sample adapters, and export pipelines.
 
-- `BaseDeploymentConfig` – typed deployment configuration container.
-- `Backend` – enum guaranteeing backend name consistency.
-- `Artifact` – dataclass describing exported artifacts.
-- `VerificationMixin` – recursive comparer for nested outputs.
-- `BaseEvaluator` – task-specific evaluation contract.
-- `BaseDataLoader` – data-loading abstraction.
-- Preprocessing is built per-project from model config (e.g. test pipeline).
-- Typed value objects (`constants.py`, `runtime_config.py`, `task_config.py`, `results.py`) keep configuration and metrics structured.
+### Core package (`deployment/core/`)
 
-### Exporters & Export Pipelines
+- `BaseDeploymentConfig` (`configs/base.py`) — validated view of deploy config; exposes `components_cfg`, `resolved_deploy_log_file`, etc.
+- `Backend`, `DeviceSpec`, `Artifact`
+- `VerificationMixin`, `BaseEvaluator`, `BaseDataLoader`
+- Metrics interfaces and `EvalResultDict` types
 
-- `exporters/common/` hosts the base exporters, typed config objects, and `ExporterFactory`.
-- Project wrappers live in `exporters/{project}/model_wrappers.py`.
-- Complex projects add export pipelines (e.g., `CenterPointONNXExportPipeline`) that orchestrate multi-file exports by composing the base exporters.
+### Exporters and export pipelines
 
-### Pipelines
+- `deployment/exporters/common/` — base ONNX/TensorRT exporters, `ExporterFactory`, shared wrappers.
+- `deployment/exporters/export_pipelines/` — base pipeline interfaces.
+- Complex projects add orchestration under `deployment/projects/<project>/export/` (e.g. CenterPoint multi-file export).
 
-`BaseInferencePipeline` defines `preprocess → run_model → postprocess`, while `PipelineFactory` builds backend-specific implementations for each task (`Detection2D`, `Detection3D`, `Classification`). Pipelines are encapsulated per backend (PyTorch/ONNX/TensorRT) under `deployment/pipelines/{task}/`.
+### Inference pipelines
 
-### File Structure Snapshot
+- Shared abstractions: `deployment/pipelines/base_pipeline.py`, `deployment/pipelines/base_factory.py`, `deployment/pipelines/registry.py`, `deployment/pipelines/factory.py`.
+- Each project registers a `BasePipelineFactory` subclass (e.g. `CenterPointPipelineFactory` in `deployment/projects/centerpoint/pipelines/factory.py`) with `@pipeline_registry.register`. Evaluators call `PipelineFactory.create(project_name, ...)` with `components_cfg` from deploy config.
+
+### Runtime helpers
+
+- `deployment/runtime/artifact_manager.py` — register and resolve ONNX/engine paths for evaluation and verification.
+- Orchestrators in `deployment/runtime/*_orchestrator.py` keep runner code thin.
+
+## Directory layout (snapshot)
 
 ```
 deployment/
-├── core/                 # Core dataclasses, configs, evaluators
-├── exporters/            # Base exporters + project wrappers/export pipelines
-├── pipelines/            # Task-specific pipelines per backend
-├── runners/              # Shared runner + project adapters
+├── cli/                 # Unified CLI (main.py, args / logging helpers)
+├── configs/             # BaseDeploymentConfig + schema dataclasses
+├── core/                # Backend, device, evaluators, metrics, contexts
+├── exporters/           # Shared exporters + export pipeline bases
+├── pipelines/           # Base pipeline + global PipelineFactory / registry
+├── runtime/             # BaseDeploymentRunner + orchestrators + ArtifactManager
+└── projects/
+    └── <project>/       # entrypoint, runner, config/, io/, eval/, pipelines/, export/
 ```
 
-Project entry points follow the same pattern under `projects/*/deploy/` with `main.py`, `data_loader.py`, `evaluator.py`, and `configs/deploy_config.py`.
+The older layout `projects/*/deploy/main.py` is **not** used; the supported pattern is `projects/<project>/entrypoint.py` plus CLI registration in `projects/<project>/__init__.py`.

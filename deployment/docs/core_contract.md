@@ -28,7 +28,7 @@ This document defines the responsibilities and boundaries between the primary de
   - `_parse_ground_truths(gt_data)` → extract ground truth
   - `_add_to_interface(predictions, ground_truths)` → feed metrics interface
   - `_build_results(latencies, breakdowns, num_samples)` → construct final results dict
-  - `print_results(results)` → format and display results
+  - `print_results(results)` → format and **log** results (use the `logging` module; avoid `print` so deploy file logging stays consistent)
 - Inherits `VerificationMixin` automatically; subclasses only need `_get_output_names()` if custom names are desired.
 - Provides common utilities: `_ensure_model_on_device()`, `_compute_latency_breakdown()`, `compute_latency_stats()`.
 
