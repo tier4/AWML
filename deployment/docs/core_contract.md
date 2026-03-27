@@ -32,8 +32,8 @@ This document defines the responsibilities and boundaries between the primary de
 - Inherits `VerificationMixin` automatically; subclasses only need `_get_output_names()` if custom names are desired.
 - Provides common utilities: `_ensure_model_on_device()`, `_compute_latency_breakdown()`, `compute_latency_stats()`.
 
-### BaseDeploymentPipeline & PipelineFactory
-- `BaseDeploymentPipeline` defines the inference template (`preprocess → run_model → postprocess`).
+### BaseInferencePipeline & PipelineFactory
+- `BaseInferencePipeline` defines the inference template (`preprocess → run_model → postprocess`).
 - Backend-specific subclasses handle only the inference mechanics for their backend.
 - `PipelineFactory` is the single entrypoint for creating pipelines per task/backend:
   - Hides backend instantiation details from evaluators.

@@ -13,7 +13,7 @@ from deployment.configs import ComponentsConfig
 from deployment.core.device import DeviceSpec
 from deployment.core.evaluation.evaluator_types import ModelSpec
 from deployment.pipelines.base_factory import BasePipelineFactory
-from deployment.pipelines.base_pipeline import BaseDeploymentPipeline
+from deployment.pipelines.base_pipeline import BaseInferencePipeline
 
 logger = logging.getLogger(__name__)
 
@@ -21,7 +21,7 @@ logger = logging.getLogger(__name__)
 class PipelineRegistry:
     """Registry for mapping project names to pipeline factories.
 
-    Factories are responsible for creating a `BaseDeploymentPipeline` instance
+    Factories are responsible for creating a `BaseInferencePipeline` instance
     given a `ModelSpec`, a loaded PyTorch model, and a `DeviceSpec`.
     """
 
@@ -78,7 +78,7 @@ class PipelineRegistry:
         pytorch_model: torch.nn.Module,
         device: DeviceSpec,
         components_cfg: ComponentsConfig,
-    ) -> BaseDeploymentPipeline:
+    ) -> BaseInferencePipeline:
         """Create a project-specific pipeline instance using the registered factory.
 
         This is the central instantiation path used by evaluators and by the

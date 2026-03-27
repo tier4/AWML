@@ -27,7 +27,7 @@ import torch
 import deployment.configs.schema as ComponentsConfig
 from deployment.core.device import DeviceSpec
 from deployment.core.evaluation.evaluator_types import ModelSpec
-from deployment.pipelines.base_pipeline import BaseDeploymentPipeline
+from deployment.pipelines.base_pipeline import BaseInferencePipeline
 from deployment.pipelines.registry import pipeline_registry
 
 logger = logging.getLogger(__name__)
@@ -56,7 +56,7 @@ class PipelineFactory:
         pytorch_model: torch.nn.Module,
         device: DeviceSpec,
         components_cfg: ComponentsConfig,
-    ) -> BaseDeploymentPipeline:
+    ) -> BaseInferencePipeline:
         """
         Create a pipeline for the specified project.
 

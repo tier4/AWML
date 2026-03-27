@@ -14,7 +14,7 @@ from deployment.configs import ComponentsConfig
 from deployment.core.backend import Backend
 from deployment.core.device import DeviceSpec
 from deployment.core.evaluation.evaluator_types import ModelSpec
-from deployment.pipelines.base_pipeline import BaseDeploymentPipeline
+from deployment.pipelines.base_pipeline import BaseInferencePipeline
 
 logger = logging.getLogger(__name__)
 
@@ -41,13 +41,13 @@ class BasePipelineFactory(ABC):
         pytorch_model: torch.nn.Module,
         device: DeviceSpec,
         components_cfg: ComponentsConfig,
-    ) -> BaseDeploymentPipeline:
+    ) -> BaseInferencePipeline:
         """Build and return a pipeline instance for the given model spec.
 
         Implementations typically:
         - Validate/dispatch based on `model_spec.backend`
         - Wrap `pytorch_model` or load an ONNX/TensorRT runtime
-        - Construct a `BaseDeploymentPipeline` subclass configured for the backend
+        - Construct a `BaseInferencePipeline` subclass configured for the backend
 
         Args:
             model_spec: Describes the model path/device/backend and any metadata.

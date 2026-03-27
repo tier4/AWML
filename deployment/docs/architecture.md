@@ -27,7 +27,7 @@
                                 │
 ┌───────────────────────────────▼─────────────────────────┐
 │                    Evaluators & Pipelines               │
-│  - BaseDeploymentPipeline + task-specific variants      │
+│  - BaseInferencePipeline + task-specific variants       │
 │  - Backend-specific implementations (PyTorch/ONNX/TRT)  │
 └────────────────────────────────────────────────────────┘
 ```
@@ -62,7 +62,7 @@
 
 ### Pipelines
 
-`BaseDeploymentPipeline` defines `preprocess → run_model → postprocess`, while `PipelineFactory` builds backend-specific implementations for each task (`Detection2D`, `Detection3D`, `Classification`). Pipelines are encapsulated per backend (PyTorch/ONNX/TensorRT) under `deployment/pipelines/{task}/`.
+`BaseInferencePipeline` defines `preprocess → run_model → postprocess`, while `PipelineFactory` builds backend-specific implementations for each task (`Detection2D`, `Detection3D`, `Classification`). Pipelines are encapsulated per backend (PyTorch/ONNX/TensorRT) under `deployment/pipelines/{task}/`.
 
 ### File Structure Snapshot
 

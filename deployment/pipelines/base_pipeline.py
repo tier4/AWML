@@ -1,5 +1,5 @@
 """
-Base Deployment Pipeline for Unified Model Deployment.
+Base inference pipeline for unified model deployment.
 
 Flattened from `deployment/pipelines/common/base_pipeline.py`.
 """
@@ -7,7 +7,7 @@ Flattened from `deployment/pipelines/common/base_pipeline.py`.
 import logging
 import time
 from abc import ABC, abstractmethod
-from typing import Any, Dict, Mapping, Optional, Tuple, Union
+from typing import Any, Dict, Mapping, Optional, Tuple
 
 import torch
 
@@ -18,8 +18,8 @@ from deployment.core.evaluation.evaluator_types import InferenceResult
 logger = logging.getLogger(__name__)
 
 
-class BaseDeploymentPipeline(ABC):
-    """Base contract for a deployment inference pipeline.
+class BaseInferencePipeline(ABC):
+    """Base contract for a deployment-time inference pipeline.
 
     A pipeline is responsible for the classic 3-stage inference flow:
     `preprocess -> run_model -> postprocess`.
@@ -53,27 +53,46 @@ class BaseDeploymentPipeline(ABC):
         return self.device.to_torch_device()
 
     @abstractmethod
-    def preprocess(self, input_data: Any) -> Any:
+    def preprocess(self, input_data: Any) -> Tuple[Any, Dict[str, Any]]:
         """Convert raw input into model-ready tensors/arrays.
 
-        Implementations may optionally return a tuple `(model_input, metadata_dict)`
-        where metadata is merged into `infer(..., metadata=...)` and forwarded to
-        `postprocess`.
+        Returns:
+            A 2-tuple ``(model_input, preprocess_metadata)``:
+            - ``model_input``: Tensors or structure consumed by :meth:`run_model`.
+            - ``preprocess_metadata``: Dict merged into the ``metadata`` argument of
+              :meth:`infer` (together with any ``metadata`` passed by the caller) and
+              then passed to :meth:`postprocess`. Use an empty dict when nothing extra
+              is needed.
         """
         raise NotImplementedError
 
     @abstractmethod
-    def run_model(self, preprocessed_input: Any) -> Union[Any, Tuple[Any, Dict[str, float]]]:
+    def run_model(self, preprocessed_input: Any) -> Tuple[Any, Dict[str, float]]:
         """Run the underlying model and return its raw outputs.
 
-        Implementations may optionally return `(model_output, stage_latency_dict)`.
-        Latencies are merged into the `InferenceResult.breakdown`.
+        Returns:
+            A 2-tuple ``(model_output, stage_latencies)``:
+            - ``model_output``: Raw tensors or structure for :meth:`postprocess` (or
+              returned as-is when ``infer(..., return_raw_outputs=True)``).
+            - ``stage_latencies``: Per-substage timings in milliseconds; merged into
+              :class:`~deployment.core.evaluation.evaluator_types.InferenceResult`
+              ``breakdown`` (e.g. ``voxel_encoder_ms``).
         """
         raise NotImplementedError
 
     @abstractmethod
-    def postprocess(self, model_output: Any, metadata: Optional[Mapping[str, Any]] = None) -> Any:
-        """Convert raw model outputs into final predictions/results."""
+    def postprocess(
+        self,
+        model_output: Any,
+        metadata: Optional[Mapping[str, Any]] = None,
+    ) -> Any:
+        """Convert raw model outputs into final predictions/results.
+
+        Args:
+            model_output: Value returned by :meth:`run_model` (first element of its tuple).
+            metadata: Merged dict from ``infer(..., metadata=...)`` plus
+                ``preprocess_metadata`` from :meth:`preprocess`. May be empty.
+        """
         raise NotImplementedError
 
     def infer(
