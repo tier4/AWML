@@ -234,7 +234,7 @@ class CenterPointEvaluator(BaseEvaluator):
 
     @override
     def print_results(self, results: EvalResultDict) -> None:
-        """Print evaluation results including metrics, latency, and breakdown.
+        """Log evaluation results including metrics, latency, and breakdown.
 
         Args:
             results: EvalResultDict from _build_results (mAP, latency, num_samples, etc.).
@@ -242,43 +242,54 @@ class CenterPointEvaluator(BaseEvaluator):
         Raises:
             ValueError: If metrics report or latency is missing from results.
         """
-        # Print metrics report
         metrics_report = self.metrics_interface.format_metrics_report()
         if not metrics_report:
             raise ValueError(
                 "Metrics report is empty. Ensure that frames have been added and metrics have been computed."
             )
-        print(metrics_report)
+        for line in metrics_report.rstrip().split("\n"):
+            logger.info(line)
 
-        # Print latency statistics
         if "latency" not in results:
             raise ValueError(
                 "Latency statistics not found in results. Ensure that evaluation has been run with latency tracking."
             )
         latency_stats = results["latency"]
         latency_dict = latency_stats.to_dict()
-        print("\nLatency Statistics:")
-        print(f"  Mean:   {latency_dict['mean_ms']:.2f} ms")
-        print(f"  Std:    {latency_dict['std_ms']:.2f} ms")
-        print(f"  Min:    {latency_dict['min_ms']:.2f} ms")
-        print(f"  Max:    {latency_dict['max_ms']:.2f} ms")
-        print(f"  Median: {latency_dict['median_ms']:.2f} ms")
+        logger.info("")
+        logger.info("Latency Statistics:")
+        logger.info("  Mean:   %.2f ms", latency_dict["mean_ms"])
+        logger.info("  Std:    %.2f ms", latency_dict["std_ms"])
+        logger.info("  Min:    %.2f ms", latency_dict["min_ms"])
+        logger.info("  Max:    %.2f ms", latency_dict["max_ms"])
+        logger.info("  Median: %.2f ms", latency_dict["median_ms"])
 
-        # Print stage-wise latency breakdown
         if "latency_breakdown" in results:
             breakdown = results["latency_breakdown"]
             breakdown_dict = breakdown.to_dict() if hasattr(breakdown, "to_dict") else breakdown
 
             if breakdown_dict:
-                print("\nStage-wise Latency Breakdown:")
+                logger.info("")
+                logger.info("Stage-wise Latency Breakdown:")
                 top_level_stages = {"preprocessing_ms", "model_ms", "postprocessing_ms"}
                 for stage, stats in breakdown_dict.items():
                     stats_dict = stats.to_dict() if hasattr(stats, "to_dict") else stats
                     stage_name = stage.replace("_ms", "").replace("_", " ").title()
 
                     if stage in top_level_stages:
-                        print(f"  {stage_name:18s}: {stats_dict['mean_ms']:.2f} ± {stats_dict['std_ms']:.2f} ms")
+                        logger.info(
+                            "  %-18s: %.2f ± %.2f ms",
+                            stage_name,
+                            stats_dict["mean_ms"],
+                            stats_dict["std_ms"],
+                        )
                     else:
-                        print(f"    {stage_name:16s}: {stats_dict['mean_ms']:.2f} ± {stats_dict['std_ms']:.2f} ms")
+                        logger.info(
+                            "    %-16s: %.2f ± %.2f ms",
+                            stage_name,
+                            stats_dict["mean_ms"],
+                            stats_dict["std_ms"],
+                        )
 
-        print(f"\nTotal Samples: {results['num_samples']}")
+        logger.info("")
+        logger.info("Total Samples: %s", results["num_samples"])

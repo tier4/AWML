@@ -7,6 +7,9 @@ CenterPoint Deployment Configuration
 # ============================================================================
 checkpoint_path = "work_dirs/centerpoint/best_checkpoint.pth"
 
+# Log file path (relative paths are under export.work_dir). Set to None to disable file logging.
+deploy_log_path = "deployment.log"
+
 # ============================================================================
 # Device settings (shared by export, evaluation, verification)
 # ============================================================================
