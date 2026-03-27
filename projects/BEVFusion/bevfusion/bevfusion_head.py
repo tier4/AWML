@@ -554,7 +554,7 @@ class BEVFusionHead(nn.Module):
             vel = None
 
         boxes_dict = self.bbox_coder.decode(
-            score, rot, dim, center, height, vel
+            score, rot, dim, center, height, vel, filter=False
         )  # decode the prediction to real world metric bbox
         bboxes_tensor = boxes_dict[0]["bboxes"]
         gt_bboxes_tensor = gt_bboxes_3d.tensor.to(score.device)
