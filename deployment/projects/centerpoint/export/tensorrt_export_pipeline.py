@@ -1,23 +1,23 @@
 """
 CenterPoint TensorRT export pipeline using composition.
 
-Consumes a directory of ONNX files (from the CenterPoint ONNX export) and
-converts each to a TensorRT engine, writing engines according to the
-components config (e.g. engine_file paths).
+Reads ONNX paths from ``deploy_config`` ``components`` (same rules as
+``resolve_artifact_path``) and builds one TensorRT engine per component into
+``output_dir``.
 """
 
 from __future__ import annotations
 
 import logging
 from pathlib import Path
-from typing import Dict, List, Optional
+from typing import Optional
 
 import torch
 from typing_extensions import override
 
 from deployment.configs.base import BaseDeploymentConfig
 from deployment.configs.schema import ComponentsConfig
-from deployment.core.artifacts import Artifact
+from deployment.core.artifacts import Artifact, resolve_artifact_path
 from deployment.core.device import DeviceSpec
 from deployment.exporters.common.factory import ExporterFactory
 from deployment.exporters.export_pipelines.base import TensorRTExportPipeline
@@ -26,8 +26,8 @@ from deployment.exporters.export_pipelines.base import TensorRTExportPipeline
 class CenterPointTensorRTExportPipeline(TensorRTExportPipeline):
     """TensorRT export pipeline for CenterPoint.
 
-    Consumes a directory of ONNX files (multi-file export) and builds a TensorRT
-    engine per component into ``output_dir``.
+    Iterates ``components`` in deploy config order and builds one engine per
+    component from the configured ``onnx_file`` under ``onnx_path``.
     """
 
     def __init__(
@@ -72,13 +72,13 @@ class CenterPointTensorRTExportPipeline(TensorRTExportPipeline):
         config: BaseDeploymentConfig,
         device: DeviceSpec,
     ) -> Artifact:
-        """Convert all ONNX files in onnx_path to TensorRT engines in output_dir.
+        """Convert each component's ONNX to a TensorRT engine under ``output_dir``.
 
-        Discovers *.onnx files in the given directory, maps each to a component
-        and engine path from config, and builds one TensorRT engine per file.
+        For every entry in ``components``, resolves ``onnx_file`` under ``onnx_path``
+        (must exist) and writes ``engine_file`` relative to ``output_dir``.
 
         Args:
-            onnx_path: Directory containing ONNX files (multi-file export).
+            onnx_path: Directory containing ONNX files (layout matches deploy config).
             output_dir: Directory where TensorRT engine files are written.
             config: Deployment config for TensorRT exporter options.
             device: CUDA device for building engines.
@@ -87,13 +87,17 @@ class CenterPointTensorRTExportPipeline(TensorRTExportPipeline):
             Artifact whose path is the output directory.
 
         Raises:
-            ValueError: If device or onnx_path is invalid or onnx_path is not a directory.
-            FileNotFoundError: If no ONNX files are found in onnx_path.
-            KeyError: If an ONNX file stem is not declared in components config.
+            ValueError: If ``onnx_path`` is not a directory, CUDA is invalid, or
+                ``components`` is empty.
+            FileNotFoundError: If a configured ONNX file is missing under ``onnx_path``.
         """
         onnx_dir_path = Path(onnx_path)
         if not onnx_dir_path.is_dir():
             raise ValueError(f"onnx_path must be a directory for multi-file export, got: {onnx_path}")
+
+        components = list(self._components_cfg.items())
+        if not components:
+            raise ValueError("components config is empty; nothing to export to TensorRT.")
 
         device_id = self._validate_cuda_device(device)
         torch.cuda.set_device(device_id)
@@ -102,25 +106,20 @@ class CenterPointTensorRTExportPipeline(TensorRTExportPipeline):
         output_dir_path = Path(output_dir)
         output_dir_path.mkdir(parents=True, exist_ok=True)
 
-        onnx_files = self._discover_onnx_files(onnx_dir_path)
-        if not onnx_files:
-            raise FileNotFoundError(f"No ONNX files found in {onnx_dir_path}")
-
-        engine_file_map = self._build_engine_file_map()
-        onnx_stem_to_component = self._build_onnx_stem_to_component_map()
-
-        num_files = len(onnx_files)
-        for i, onnx_file in enumerate(onnx_files, 1):
-            onnx_stem = onnx_file.stem
-            if onnx_stem not in engine_file_map:
-                raise KeyError(f"ONNX file '{onnx_file.name}' is not declared in deploy config components.*.onnx_file")
-            engine_file = engine_file_map[onnx_stem]
-            trt_path = output_dir_path / engine_file
+        onnx_dir_str = str(onnx_dir_path)
+        num = len(components)
+        for i, (component_name, comp) in enumerate(components, 1):
+            onnx_file = resolve_artifact_path(
+                base_dir=onnx_dir_str,
+                components_cfg=self._components_cfg,
+                component_name=component_name,
+                file_key="onnx_file",
+            )
+            trt_path = output_dir_path / comp.engine_file
             trt_path.parent.mkdir(parents=True, exist_ok=True)
 
-            self.logger.info(f"\n[{i}/{num_files}] Converting {onnx_file.name} → {trt_path.name}...")
+            self.logger.info(f"\n[{i}/{num}] Converting {Path(onnx_file).name} → {trt_path.name}...")
 
-            component_name = onnx_stem_to_component[onnx_stem]
             exporter = self.exporter_factory.create_tensorrt_exporter(
                 config=config,
                 logger=self.logger,
@@ -131,47 +130,9 @@ class CenterPointTensorRTExportPipeline(TensorRTExportPipeline):
                 model=None,
                 sample_input=None,
                 output_path=str(trt_path),
-                onnx_path=str(onnx_file),
+                onnx_path=onnx_file,
             )
             self.logger.info(f"TensorRT engine saved: {artifact.path}")
 
         self.logger.info(f"\nAll TensorRT engines exported successfully to {output_dir_path}")
         return Artifact(path=str(output_dir_path))
-
-    def _discover_onnx_files(self, onnx_dir: Path) -> List[Path]:
-        """Return sorted list of .onnx file paths in the given directory.
-
-        Args:
-            onnx_dir: Directory to scan for ONNX files.
-
-        Returns:
-            Sorted ONNX file paths in the directory.
-        """
-        return sorted(
-            (path for path in onnx_dir.iterdir() if path.is_file() and path.suffix.lower() == ".onnx"),
-            key=lambda p: p.name,
-        )
-
-    def _build_engine_file_map(self) -> Dict[str, str]:
-        """Build mapping from ONNX file stem to engine_file path from ComponentsConfig.
-
-        Returns:
-            Dict mapping each component's ONNX stem (e.g. 'pts_voxel_encoder') to
-            its configured engine_file name/path.
-        """
-        mapping: Dict[str, str] = {}
-        for name, comp in self._components_cfg.items():
-            mapping[Path(comp.onnx_file).stem] = comp.engine_file
-        return mapping
-
-    def _build_onnx_stem_to_component_map(self) -> Dict[str, str]:
-        """Build mapping from ONNX file stem to component name from ComponentsConfig.
-
-        Returns:
-            Dict mapping each ONNX stem (e.g. 'pts_voxel_encoder') to its
-            component name in the config.
-        """
-        return {
-            Path(component_cfg.onnx_file).stem: component_name
-            for component_name, component_cfg in self._components_cfg.items()
-        }
