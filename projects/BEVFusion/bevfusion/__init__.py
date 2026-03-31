@@ -26,5 +26,5 @@ __all__ = [
     "TransformerDecoderLayer",
     "BEVFusionRandomFlip3D",
     "BEVFusionGlobalRotScaleTrans",
-		"TransFusionBBoxCoder",
+    "TransFusionBBoxCoder",
 ]

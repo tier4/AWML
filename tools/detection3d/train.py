@@ -123,8 +123,8 @@ def main():
         # build customized runner from the registry
         # if 'runner_type' is set in the cfg
         runner = RUNNERS.build(cfg)
-   
-    # Output all model 
+
+    # Output all model
     print_log(f"Runner model: ", logger="current")
     print_log(f"{runner.model}", logger="current")
 
