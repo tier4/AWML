@@ -93,7 +93,6 @@ class TransFusionBBoxCoder(BaseBBoxCoder):
             predictions_dicts.append(predictions_dict)
 
         if filter is False:
-					  print("filter is False")
             return predictions_dicts
 
         # use score threshold
