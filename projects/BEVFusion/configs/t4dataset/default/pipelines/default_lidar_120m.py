@@ -1,6 +1,6 @@
 # Dataset parameters
 backend_args = None
-num_workers = 32
+num_workers = 16
 input_modality = dict(use_lidar=True, use_camera=False)
 
 # range setting
