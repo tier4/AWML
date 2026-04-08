@@ -151,13 +151,13 @@ class TrtModel:
             self.logger.info(f"Inference latency: {latency} ms")
 
     def inference(self, batch_inputs_dict: dict) -> npt.NDArray[np.float32]:
-        """Run TensorRT inference, returns logits (N, num_classes)."""
+        """Run TensorRT inference, returns probabilities (N, num_classes)."""
         shapes_dict = {
             "points": batch_inputs_dict["points"].shape,
             "coors": batch_inputs_dict["coors"].shape,
             "voxel_coors": batch_inputs_dict["voxel_coors"].shape,
             "inverse_map": batch_inputs_dict["inverse_map"].shape,
-            "seg_logit": (batch_inputs_dict["points"].shape[0], self._deploy_cfg.num_classes),
+            "pred_probs": (batch_inputs_dict["points"].shape[0], self._deploy_cfg.num_classes),
         }
         tensors = self._allocate_buffers(shapes_dict)
         self._transfer_input_to_device(batch_inputs_dict, tensors["input"])
