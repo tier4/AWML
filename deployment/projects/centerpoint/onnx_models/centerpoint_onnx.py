@@ -4,7 +4,7 @@ These modules provide ONNX-friendly model wrappers and detector variants used by
 the deployment/export pipeline (not training).
 """
 
-from typing import Dict, List, Tuple
+from typing import Any, Dict, List, Tuple
 
 import torch
 from mmdet3d.models.detectors.centerpoint import CenterPoint

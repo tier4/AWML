@@ -16,7 +16,6 @@ from deployment.core.evaluation.base_evaluator import (
     EvalResultDict,
     InferenceInput,
     ModelSpec,
-    TaskProfile,
 )
 from deployment.core.io.base_data_loader import BaseDataLoader
 from deployment.core.metrics import Detection3DMetricsConfig, Detection3DMetricsInterface
@@ -29,8 +28,7 @@ logger = logging.getLogger(__name__)
 class CenterPointEvaluator(BaseEvaluator):
     """Evaluator implementation for CenterPoint 3D detection.
 
-    This builds a task profile (class names, display name) and uses the configured
-    `Detection3DMetricsInterface` to compute metrics from pipeline outputs.
+    Uses the configured `Detection3DMetricsInterface` to compute metrics from pipeline outputs.
 
     Args:
         model_cfg: Model configuration with class_names
@@ -55,25 +53,14 @@ class CenterPointEvaluator(BaseEvaluator):
         Raises:
             ValueError: If model_cfg does not have class_names.
         """
-        if hasattr(model_cfg, "class_names"):
-            class_names = model_cfg.class_names
-        else:
+        if not hasattr(model_cfg, "class_names"):
             raise ValueError("class_names must be provided via model_cfg.class_names.")
 
         self._components_cfg = components_cfg
-
-        task_profile = TaskProfile(
-            task_name="centerpoint_3d_detection",
-            display_name="CenterPoint 3D Object Detection",
-            class_names=tuple(class_names),
-            num_classes=len(class_names),
-        )
-
         metrics_interface = Detection3DMetricsInterface(metrics_config)
 
         super().__init__(
             metrics_interface=metrics_interface,
-            task_profile=task_profile,
             model_cfg=model_cfg,
         )
 
