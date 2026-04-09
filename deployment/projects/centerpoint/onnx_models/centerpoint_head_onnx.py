@@ -33,7 +33,7 @@ from projects.CenterPoint.models.dense_heads.centerpoint_head import CenterHead
 class SeparateHeadONNX(SeparateHead):
     """onnx support impl of mmdet3d.models.dense_heads.centerpoint_head.SeparateHead"""
 
-    def __init__(self, **kwargs):
+    def __init__(self, **kwargs) -> None:
         """Initialize SeparateHeadONNX with fixed output order (heatmap, reg, height, dim, rot, vel)."""
         super().__init__(**kwargs)
         self._logger = MMLogger.get_current_instance()
@@ -56,7 +56,7 @@ class SeparateHeadONNX(SeparateHead):
 class CenterHeadONNX(CenterHead):
     """onnx support impl of mmdet3d.models.dense_heads.centerpoint_head.CenterHead"""
 
-    def __init__(self, rot_y_axis_reference: bool = False, **kwargs):
+    def __init__(self, rot_y_axis_reference: bool = False, **kwargs) -> None:
         """
         :param switch_width_length: Set True to switch the order of width and length.
         :param rot_y_axis_reference: Set True to output rotation of sin(y), cos(x) relative to the

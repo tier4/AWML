@@ -35,7 +35,7 @@ class CenterPointTensorRTExportPipeline(TensorRTExportPipeline):
         exporter_factory: type[ExporterFactory],
         components_cfg: ComponentsConfig,
         logger: Optional[logging.Logger] = None,
-    ):
+    ) -> None:
         """Initialize the pipeline with exporter factory and components config.
 
         Args:

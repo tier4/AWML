@@ -33,7 +33,7 @@ from projects.CenterPoint.models.voxel_encoders.pillar_encoder import BackwardPi
 class PillarFeatureNetONNX(PillarFeatureNet):
     """onnx support impl of mmdet3d.models.voxel_encoders.pillar_encoder.PillarFeatureNet"""
 
-    def __init__(self, **kwargs):
+    def __init__(self, **kwargs) -> None:
         """Initialize PillarFeatureNetONNX; arguments passed to PillarFeatureNet."""
         super().__init__(**kwargs)
         self._logger = MMLogger.get_current_instance()
@@ -149,7 +149,7 @@ class BackwardPillarFeatureNetONNX(BackwardPillarFeatureNet):
             the original behavior. Defaults to True.
     """
 
-    def __init__(self, **kwargs):
+    def __init__(self, **kwargs) -> None:
         """Initialize BackwardPillarFeatureNetONNX; arguments passed to BackwardPillarFeatureNet."""
         super(BackwardPillarFeatureNetONNX, self).__init__(**kwargs)
 

@@ -176,6 +176,7 @@ evaluation = dict(
 # ============================================================================
 verification = dict(
     enabled=False,
+    # TODO(vividf): double check the tolerance value
     tolerance=1,
     num_verify_samples=1,
     devices=devices,

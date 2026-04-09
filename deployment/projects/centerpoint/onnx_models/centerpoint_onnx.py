@@ -61,7 +61,7 @@ class CenterPointONNX(CenterPoint):
         point_channels: int = 5,
         device: DeviceSpec = DeviceSpec.from_value("cpu"),
         **kwargs,
-    ):
+    ) -> None:
         """Initialize CenterPoint ONNX detector.
 
         Args:
@@ -76,7 +76,7 @@ class CenterPointONNX(CenterPoint):
         self._logger = MMLogger.get_current_instance()
         self._logger.info("Running CenterPointONNX!")
 
-    def _get_inputs(self, data_loader, sample_idx=0):
+    def _get_inputs(self, data_loader, sample_idx=0) -> Dict[str, Any]:
         """
         Generate inputs from the provided data loader.
 
@@ -104,7 +104,7 @@ class CenterPointONNX(CenterPoint):
         points = [points]
         return {"points": points, "data_samples": None}
 
-    def _extract_features(self, data_loader, sample_idx=0):
+    def _extract_features(self, data_loader, sample_idx=0) -> Tuple[torch.Tensor, Dict[str, Any]]:
         """Extract (input_features, voxel_dict) using a sample from the data loader.
 
         Runs data preprocessor voxelization and voxel encoder get_input_features.

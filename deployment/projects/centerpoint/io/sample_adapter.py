@@ -15,7 +15,7 @@ class CenterPointSampleAdapter(ExportSampleAdapter):
 
     _REQUIRED_VOXEL_KEYS: tuple[str, ...] = ("voxels", "num_points", "coors")
 
-    def __init__(self, logger: logging.Logger | None = None) -> None:
+    def __init__(self, logger: logging.Logger) -> None:
         """Initialize the sample adapter.
 
         Args:

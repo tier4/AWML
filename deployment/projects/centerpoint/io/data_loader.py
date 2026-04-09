@@ -54,7 +54,7 @@ class CenterPointDataLoader(BaseDataLoader):
         self,
         info_file: str,
         model_cfg: Config,
-    ):
+    ) -> None:
         """Initialize CenterPoint data loader.
 
         Args:

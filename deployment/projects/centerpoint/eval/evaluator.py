@@ -44,7 +44,7 @@ class CenterPointEvaluator(BaseEvaluator):
         model_cfg: Config,
         metrics_config: Detection3DMetricsConfig,
         components_cfg: ComponentsConfig,
-    ):
+    ) -> None:
         """Initialize CenterPoint evaluator with model config, metrics config, and components config.
 
         Args:
