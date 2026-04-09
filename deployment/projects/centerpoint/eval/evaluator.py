@@ -263,20 +263,15 @@ class CenterPointEvaluator(BaseEvaluator):
                     stats_dict = stats.to_dict() if hasattr(stats, "to_dict") else stats
                     stage_name = stage.replace("_ms", "").replace("_", " ").title()
 
-                    if stage in top_level_stages:
-                        logger.info(
-                            "  %-18s: %.2f ± %.2f ms",
-                            stage_name,
-                            stats_dict["mean_ms"],
-                            stats_dict["std_ms"],
-                        )
-                    else:
-                        logger.info(
-                            "    %-16s: %.2f ± %.2f ms",
-                            stage_name,
-                            stats_dict["mean_ms"],
-                            stats_dict["std_ms"],
-                        )
+                    output_format = (
+                        "  %-18s: %.2f ± %.2f ms" if stage in top_level_stages else "    %-16s: %.2f ± %.2f ms"
+                    )
+                    logger.info(
+                        output_format,
+                        stage_name,
+                        stats_dict["mean_ms"],
+                        stats_dict["std_ms"],
+                    )
 
         logger.info("")
         logger.info("Total Samples: %s", results["num_samples"])
