@@ -28,7 +28,7 @@ class ONNXExporter(BaseExporter):
         config: ONNXExportConfig,
         model_wrapper: Optional[Any] = None,
         logger: logging.Logger = None,
-    ):
+    ) -> None:
         """
         Initialize ONNX exporter.
 

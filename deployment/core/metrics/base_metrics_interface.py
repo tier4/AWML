@@ -105,7 +105,7 @@ class BaseMetricsInterface(ABC):
         metrics = interface.compute_metrics()
     """
 
-    def __init__(self, config: BaseMetricsConfig):
+    def __init__(self, config: BaseMetricsConfig) -> None:
         """
         Initialize the metrics interface.
 

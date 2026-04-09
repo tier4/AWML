@@ -29,7 +29,7 @@ class ArtifactManager:
        - ONNX: export.onnx_path
     """
 
-    def __init__(self, config: BaseDeploymentConfig, logger: logging.Logger):
+    def __init__(self, config: BaseDeploymentConfig, logger: logging.Logger) -> None:
         """
         Initialize artifact manager.
 

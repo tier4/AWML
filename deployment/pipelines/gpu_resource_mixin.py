@@ -69,7 +69,7 @@ class TensorRTResourceManager:
     and free everything on context exit.
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
         """Create an empty manager (no allocations and no stream)."""
         self._allocations: List[Any] = []
         self._stream: Optional[Any] = None

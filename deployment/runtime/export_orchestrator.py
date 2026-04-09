@@ -70,7 +70,7 @@ class ExportOrchestrator:
         onnx_wrapper_cls: Optional[Type[BaseModelWrapper]] = None,
         onnx_pipeline: Optional[OnnxExportPipeline] = None,
         tensorrt_pipeline: Optional[TensorRTExportPipeline] = None,
-    ):
+    ) -> None:
         """
         Initialize export orchestrator.
 

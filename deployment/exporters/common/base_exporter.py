@@ -32,7 +32,7 @@ class BaseExporter(ABC):
         config: BaseExporterConfig,
         model_wrapper: Optional[BaseModelWrapper] = None,
         logger: Optional[logging.Logger] = None,
-    ):
+    ) -> None:
         """
         Initialize exporter.
 

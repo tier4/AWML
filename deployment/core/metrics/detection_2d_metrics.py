@@ -165,7 +165,7 @@ class Detection2DMetricsInterface(BaseMetricsInterface):
         config: Detection2DMetricsConfig,
         data_root: str = "data/t4dataset/",
         result_root_directory: str = "/tmp/perception_eval_2d/",
-    ):
+    ) -> None:
         """
         Initialize the 2D detection metrics interface.
 

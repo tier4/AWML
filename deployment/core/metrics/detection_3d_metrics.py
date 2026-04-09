@@ -147,7 +147,7 @@ class Detection3DMetricsInterface(BaseMetricsInterface):
         config: Detection3DMetricsConfig,
         data_root: str = "data/t4dataset/",
         result_root_directory: str = "/tmp/perception_eval/",
-    ):
+    ) -> None:
         """
         Initialize the 3D detection metrics interface.
 

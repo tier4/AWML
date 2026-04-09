@@ -34,7 +34,7 @@ class VerificationOrchestrator:
         evaluator: BaseEvaluator,
         data_loader: BaseDataLoader,
         logger: logging.Logger,
-    ):
+    ) -> None:
         """
         Initialize verification orchestrator.
 

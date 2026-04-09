@@ -96,7 +96,7 @@ class BaseEvaluator(VerificationMixin, ABC):
         metrics_interface: BaseMetricsInterface,
         task_profile: TaskProfile,
         model_cfg: Config,
-    ):
+    ) -> None:
         """
         Initialize evaluator.
 

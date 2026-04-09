@@ -136,7 +136,7 @@ class ClassificationMetricsInterface(BaseMetricsInterface):
         config: ClassificationMetricsConfig,
         data_root: str = "data/t4dataset/",
         result_root_directory: str = "/tmp/perception_eval_classification/",
-    ):
+    ) -> None:
         """Initialize the classification metrics interface.
 
         Args:

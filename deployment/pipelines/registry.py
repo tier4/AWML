@@ -25,7 +25,7 @@ class PipelineRegistry:
     given a `ModelSpec`, a loaded PyTorch model, and a `DeviceSpec`.
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
         """Initialize an empty registry.
 
         The registry is populated at import-time by project modules that register

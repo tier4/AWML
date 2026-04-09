@@ -10,6 +10,7 @@ from BaseModelWrapper.
 """
 
 from abc import ABC, abstractmethod
+from typing import Any
 
 import torch
 import torch.nn as nn
@@ -26,7 +27,7 @@ class BaseModelWrapper(nn.Module, ABC):
     base class if special output format conversion is needed.
     """
 
-    def __init__(self, model: nn.Module):
+    def __init__(self, model: nn.Module) -> None:
         """
         Initialize wrapper.
 
@@ -37,7 +38,7 @@ class BaseModelWrapper(nn.Module, ABC):
         self.model = model
 
     @abstractmethod
-    def forward(self, *args):
+    def forward(self, *args) -> Any:
         """
         Forward pass for ONNX export.
 
@@ -54,9 +55,9 @@ class IdentityWrapper(BaseModelWrapper):
     This is the default wrapper for most models.
     """
 
-    def __init__(self, model: nn.Module):
+    def __init__(self, model: nn.Module) -> None:
         super().__init__(model)
 
-    def forward(self, *args):
+    def forward(self, *args) -> Any:
         """Forward pass without modification."""
         return self.model(*args)

@@ -46,7 +46,7 @@ class BaseDeploymentConfig:
                         (for PyTorch backend). Defined at top-level of deploy config.
     """
 
-    def __init__(self, deploy_cfg: Config):
+    def __init__(self, deploy_cfg: Config) -> None:
         """
         Initialize deployment configuration.
 

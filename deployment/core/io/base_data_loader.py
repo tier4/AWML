@@ -37,7 +37,7 @@ class BaseDataLoader(ABC):
     it into a format suitable for model inference.
     """
 
-    def __init__(self, config: Optional[Mapping[str, Any]] = None):
+    def __init__(self, config: Optional[Mapping[str, Any]] = None) -> None:
         """
         Initialize data loader.
 

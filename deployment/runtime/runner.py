@@ -54,7 +54,7 @@ class BaseDeploymentRunner:
         onnx_wrapper_cls: Optional[Type[BaseModelWrapper]] = None,
         onnx_pipeline: Optional[OnnxExportPipeline] = None,
         tensorrt_pipeline: Optional[TensorRTExportPipeline] = None,
-    ):
+    ) -> None:
         self.data_loader = data_loader
         self.evaluator = evaluator
         self.config = config

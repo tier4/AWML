@@ -23,7 +23,7 @@ class TensorRTExporter(BaseExporter):
         config: TensorRTExportConfig,
         model_wrapper: Optional[Any] = None,
         logger: logging.Logger = None,
-    ):
+    ) -> None:
         """
         Initialize TensorRT exporter.
 

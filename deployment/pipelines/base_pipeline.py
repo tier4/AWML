@@ -33,7 +33,7 @@ class BaseInferencePipeline(ABC):
         model: torch.nn.Module,
         backend_type: Backend,
         device: DeviceSpec,
-    ):
+    ) -> None:
         """Create a pipeline bound to a model and a device.
 
         Args:
