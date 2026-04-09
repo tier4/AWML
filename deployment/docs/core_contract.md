@@ -15,7 +15,7 @@ This document defines the responsibilities and boundaries between the primary de
 ### BaseEvaluator (and task evaluators)
 - The single base class for all task evaluators, integrating `VerificationMixin`.
 - Provides the unified evaluation loop: iterate samples → infer → accumulate → compute metrics.
-- Requires a `TaskProfile` (task name, class names) and a `BaseMetricsInterface` at construction.
+- Requires a `BaseMetricsInterface` at construction (task-specific class names live in metrics config / model config as needed).
 - Responsible for:
   - Creating backend pipelines through `PipelineFactory`
   - Preparing verification inputs from the data loader

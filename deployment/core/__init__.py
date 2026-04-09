@@ -22,7 +22,6 @@ from deployment.core.evaluation.base_evaluator import (
     EvaluationDefaults,
     InferenceInput,
     ModelSpec,
-    TaskProfile,
     VerifyResultDict,
 )
 from deployment.core.evaluation.verification_mixin import VerificationMixin
@@ -54,7 +53,6 @@ __all__ = [
     "BaseDataLoader",
     # Evaluation
     "BaseEvaluator",
-    "TaskProfile",
     "InferenceInput",
     "EvalResultDict",
     "VerifyResultDict",

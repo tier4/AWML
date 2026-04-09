@@ -4,7 +4,6 @@ Base evaluator for model evaluation in deployment.
 This module provides:
 - Type definitions (EvalResultDict, VerifyResultDict, ModelSpec)
 - BaseEvaluator: the single base class for all task evaluators
-- TaskProfile: describes task-specific metadata
 
 All project evaluators should extend BaseEvaluator and implement
 the required hooks for their specific task.
@@ -15,7 +14,7 @@ from __future__ import annotations
 import logging
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
-from typing import Any, Dict, List, Mapping, Optional, Tuple, Union
+from typing import Any, Dict, List, Mapping, Optional, Union
 
 import numpy as np
 import torch
@@ -50,28 +49,6 @@ class EvaluationDefaults:
 EVALUATION_DEFAULTS = EvaluationDefaults()
 
 
-@dataclass(frozen=True)
-class TaskProfile:
-    """
-    Profile describing task-specific evaluation behavior.
-
-    Attributes:
-        task_name: Internal identifier for the task
-        class_names: Tuple of class names for the task
-        num_classes: Number of classes
-        display_name: Human-readable name for display (defaults to task_name)
-    """
-
-    task_name: str
-    class_names: Tuple[str, ...]
-    num_classes: int
-    display_name: str = ""
-
-    def __post_init__(self):
-        if not self.display_name:
-            object.__setattr__(self, "display_name", self.task_name)
-
-
 class BaseEvaluator(VerificationMixin, ABC):
     """
     Base class for all task-specific evaluators.
@@ -94,7 +71,6 @@ class BaseEvaluator(VerificationMixin, ABC):
     def __init__(
         self,
         metrics_interface: BaseMetricsInterface,
-        task_profile: TaskProfile,
         model_cfg: Config,
     ) -> None:
         """
@@ -102,19 +78,12 @@ class BaseEvaluator(VerificationMixin, ABC):
 
         Args:
             metrics_interface: Metrics interface for computing task-specific metrics
-            task_profile: Profile describing the task
             model_cfg: Model configuration (MMEngine Config or similar)
         """
         self.metrics_interface = metrics_interface
-        self.task_profile = task_profile
         self.model_cfg = model_cfg
         self.pytorch_model: Any = None
         self.export_model_cfg: Optional[Config] = None
-
-    @property
-    def class_names(self) -> Tuple[str, ...]:
-        """Get class names from task profile."""
-        return self.task_profile.class_names
 
     def set_pytorch_model(self, pytorch_model: Any) -> None:
         """Set PyTorch model (called by deployment runner)."""
