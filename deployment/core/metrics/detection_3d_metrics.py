@@ -548,18 +548,21 @@ class Detection3DMetricsInterface(BaseMetricsInterface):
             # Cache not available, compute now
             self.compute_metrics()
 
-        # Format reports for all evaluators using cached results
         reports = []
         for eval_name, metrics_score in self._last_metrics_by_eval_name.items():
             try:
                 # Extract distance range from evaluator name (e.g., "bev_center_0.0-50.0" -> "0.0-50.0")
                 distance_range = eval_name.replace("bev_center_", "")
-                report = f"\n{'='*80}\nDistance Range: {distance_range} m\n{'='*80}\n{str(metrics_score)}"
-                reports.append(report)
+                reports.append(
+                    f"\n{'=' * 80}\n" f"Distance Range: {distance_range} m\n" f"{'=' * 80}\n" f"{metrics_score}"
+                )
             except Exception as e:
                 logger.warning(f"Error formatting report for {eval_name}: {e}")
 
-        return "\n".join(reports) if reports else ""
+        if not reports:
+            raise RuntimeError("Failed to generate metrics report. Ensure that metrics have been computed.")
+
+        return "\n".join(reports)
 
     def _process_metrics_score(self, metrics_score: MetricsScore, prefix: Optional[str] = None) -> Dict[str, float]:
         """Process MetricsScore into a flat dictionary.
