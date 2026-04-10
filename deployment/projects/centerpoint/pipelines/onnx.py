@@ -86,10 +86,8 @@ class CenterPointONNXPipeline(CenterPointInferencePipeline):
 
         # Select execution providers based on device
         providers = self.device.to_ort_provider()
-        if self.device.is_cuda:
-            logger.info("Using CUDA execution provider for ONNX")
-        else:
-            logger.info("Using CPU execution provider for ONNX")
+        device_message = "CUDA" if self.device.is_cuda else "CPU"
+        logger.info(f"Using {device_message} execution provider for ONNX")
 
         try:
             self.voxel_encoder_session = ort.InferenceSession(voxel_encoder_path, sess_options=so, providers=providers)

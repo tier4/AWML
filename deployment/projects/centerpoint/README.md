@@ -35,7 +35,7 @@ Adjust at least:
 - `components` — per-subgraph ONNX/engine names, I/O dtypes, dynamic axes, and TensorRT profiles (must match your model grid and voxel limits).
 - `runtime_io` — sample `info_file` (relative to model config `data_root`) and `sample_idx`.
 
-Required component keys: `pts_voxel_encoder`, `pts_backbone_neck_head` (validated in `entrypoint.py`).
+Required component keys: `pts_voxel_encoder`, `pts_backbone_neck_head` (declared in project adapter metadata and validated by shared project validator).
 
 ## Layout
 

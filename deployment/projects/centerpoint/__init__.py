@@ -18,5 +18,6 @@ project_registry.register(
         name="centerpoint",
         add_args=add_args,
         run=run,
+        required_components=("pts_voxel_encoder", "pts_backbone_neck_head"),
     )
 )

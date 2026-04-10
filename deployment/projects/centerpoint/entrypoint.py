@@ -14,21 +14,7 @@ from deployment.projects.centerpoint.eval.evaluator import CenterPointEvaluator
 from deployment.projects.centerpoint.eval.metrics_utils import extract_t4metric_v2_config
 from deployment.projects.centerpoint.io.data_loader import CenterPointDataLoader
 from deployment.projects.centerpoint.runner import CenterPointDeploymentRunner
-
-_REQUIRED_COMPONENTS = ("pts_voxel_encoder", "pts_backbone_neck_head")
-
-
-def _validate_required_components(components_cfg) -> None:
-    """Validate that all CenterPoint required components exist in the config.
-
-    Args:
-        components_cfg: Components config with get_component(name).
-
-    Raises:
-        KeyError or similar: If any of _REQUIRED_COMPONENTS is missing.
-    """
-    for component_name in _REQUIRED_COMPONENTS:
-        components_cfg.get_component(component_name)
+from deployment.projects.registry import project_registry
 
 
 def run(args: argparse.Namespace) -> int:
@@ -51,7 +37,7 @@ def run(args: argparse.Namespace) -> int:
         add_deployment_file_logging(log_file)
         logger.info("Deployment log file: %s", log_file)
 
-    _validate_required_components(config.components_cfg)
+    project_registry.validate_required_components("centerpoint", config.components_cfg)
 
     logger.info("=" * 80)
     logger.info("CenterPoint Deployment Pipeline")
