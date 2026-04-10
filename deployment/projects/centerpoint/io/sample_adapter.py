@@ -41,7 +41,7 @@ class CenterPointSampleAdapter(ExportSampleAdapter):
 
         Raises:
             AttributeError: If model does not have _extract_features.
-            TypeError: If ``_extract_features`` return value has wrong types or shape.
+            AssertionError: If ``_extract_features`` return value has unexpected types.
             KeyError: If voxel_dict is missing required keys.
         """
         if not hasattr(model, "_extract_features"):
@@ -52,10 +52,10 @@ class CenterPointSampleAdapter(ExportSampleAdapter):
 
         input_features, voxel_dict = model._extract_features(data_loader, sample_idx)
 
-        if not isinstance(input_features, torch.Tensor):
-            raise TypeError(f"input_features must be torch.Tensor, got {type(input_features).__name__}")
-        if not isinstance(voxel_dict, Mapping):
-            raise TypeError(f"voxel_dict must be Mapping, got {type(voxel_dict).__name__}")
+        assert isinstance(
+            input_features, torch.Tensor
+        ), f"input_features must be torch.Tensor, got {type(input_features).__name__}"
+        assert isinstance(voxel_dict, Mapping), f"voxel_dict must be Mapping, got {type(voxel_dict).__name__}"
 
         missing = [key for key in self._REQUIRED_VOXEL_KEYS if key not in voxel_dict]
         if missing:
