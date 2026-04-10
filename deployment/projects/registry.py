@@ -12,7 +12,7 @@ This keeps `deployment/cli/main.py` project-agnostic.
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Callable, Dict, Optional
+from typing import Callable, Dict, Tuple
 
 
 @dataclass(frozen=True)
@@ -22,6 +22,7 @@ class ProjectAdapter:
     name: str
     add_args: Callable  # (argparse.ArgumentParser) -> None
     run: Callable  # (argparse.Namespace) -> int
+    required_components: Tuple[str, ...] = ()
 
 
 class ProjectRegistry:
@@ -50,6 +51,29 @@ class ProjectRegistry:
 
     def list_projects(self) -> list[str]:
         return sorted(self._adapters.keys())
+
+    def validate_required_components(self, project_name: str, components_cfg) -> None:
+        """Validate required component keys for a registered project."""
+        adapter = self.get(project_name)
+        if not adapter.required_components:
+            return
+
+        missing = []
+        for component_name in adapter.required_components:
+            try:
+                components_cfg.get_component(component_name)
+            except KeyError:
+                missing.append(component_name)
+
+        if not missing:
+            return
+
+        available = sorted(list(components_cfg.component_names()))
+        missing_str = ", ".join(missing)
+        available_str = ", ".join(available)
+        raise KeyError(
+            f"{adapter.name} requires components [{missing_str}], " f"but available components are [{available_str}]."
+        )
 
 
 project_registry = ProjectRegistry()
