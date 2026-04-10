@@ -144,8 +144,6 @@ class CenterPointEvaluator(BaseEvaluator):
         Raises:
             KeyError: If gt_bboxes_3d or gt_labels_3d is missing.
         """
-        ground_truths = []
-
         if "gt_bboxes_3d" not in gt_data:
             raise KeyError("gt_bboxes_3d not found in ground truth data.")
         if "gt_labels_3d" not in gt_data:
@@ -159,9 +157,9 @@ class CenterPointEvaluator(BaseEvaluator):
         )
         gt_labels_3d = np.asarray(gt_labels_3d, dtype=np.int64).reshape(-1)
 
-        for i in range(len(gt_bboxes_3d)):
-            ground_truths.append({"bbox_3d": gt_bboxes_3d[i].tolist(), "label": int(gt_labels_3d[i])})
-
+        ground_truths = [
+            {"bbox_3d": gt_bboxes_3d[i].tolist(), "label": int(gt_labels_3d[i])} for i in range(len(gt_bboxes_3d))
+        ]
         return ground_truths
 
     @override
