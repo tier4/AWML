@@ -55,11 +55,11 @@ class CenterPointInferencePipeline(BaseInferencePipeline):
         Raises:
             ValueError: If class_names not found in pytorch_model.cfg.
         """
-        cfg = getattr(pytorch_model, "cfg", None)
+        cfg = pytorch_model.cfg
 
-        class_names = getattr(cfg, "class_names", None)
-        point_cloud_range = getattr(cfg, "point_cloud_range", None)
-        voxel_size = getattr(cfg, "voxel_size", None)
+        class_names = cfg.class_names
+        point_cloud_range = cfg.point_cloud_range
+        voxel_size = cfg.voxel_size
 
         if class_names is None:
             raise ValueError("class_names not found in pytorch_model.cfg")
@@ -74,7 +74,7 @@ class CenterPointInferencePipeline(BaseInferencePipeline):
             device=device,
         )
 
-        self.num_classes: int = len(class_names)
+        self.num_classes = len(class_names)
         self.class_names: List[str] = class_names
         self.point_cloud_range: Optional[List[float]] = point_cloud_range
         self.voxel_size: Optional[List[float]] = voxel_size
