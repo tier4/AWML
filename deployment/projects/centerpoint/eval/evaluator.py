@@ -228,10 +228,6 @@ class CenterPointEvaluator(BaseEvaluator):
             ValueError: If metrics report or latency is missing from results.
         """
         metrics_report = self.metrics_interface.format_metrics_report()
-        if not metrics_report:
-            raise ValueError(
-                "Metrics report is empty. Ensure that frames have been added and metrics have been computed."
-            )
         for line in metrics_report.rstrip().split("\n"):
             logger.info(line)
 
