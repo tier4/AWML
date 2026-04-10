@@ -16,6 +16,9 @@ Usage:
 
     config = Detection3DMetricsConfig(
         class_names=["car", "truck", "bus", "bicycle", "pedestrian"],
+        evaluation_config_dict={...},
+        critical_object_filter_config={...},
+        frame_pass_fail_config={...},
     )
     interface = Detection3DMetricsInterface(config)
     interface.add_frame(predictions, ground_truths)

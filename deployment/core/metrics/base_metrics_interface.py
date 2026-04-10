@@ -27,7 +27,7 @@ class BaseMetricsConfig:
     """
 
     class_names: List[str]
-    frame_id: str = "base_link"
+    frame_id: str
 
 
 @dataclass(frozen=True)
