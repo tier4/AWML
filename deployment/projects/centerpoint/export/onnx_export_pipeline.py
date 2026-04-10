@@ -11,7 +11,6 @@ from __future__ import annotations
 import logging
 import os
 from pathlib import Path
-from typing import Iterable
 
 import torch
 from typing_extensions import override
@@ -130,13 +129,12 @@ class CenterPointONNXExportPipeline(OnnxExportPipeline):
         self.logger.info("Extracting features from sample data...")
         try:
             return self.sample_adapter.extract_sample(model, data_loader, sample_idx)
-        except Exception as exc:
-            self.logger.error("Failed to extract features", exc_info=exc)
-            raise RuntimeError("Feature extraction failed") from exc
+        except Exception:
+            raise RuntimeError("Feature extraction failed")
 
     def _export_components(
         self,
-        components: Iterable[ExportableComponent],
+        components: list[ExportableComponent],
         output_dir: Path,
         config: BaseDeploymentConfig,
     ) -> list[str]:
@@ -154,11 +152,8 @@ class CenterPointONNXExportPipeline(OnnxExportPipeline):
             RuntimeError: If any component export fails.
         """
         exported_paths: list[str] = []
-        component_list = list(components)
-        total = len(component_list)
-
-        for index, component in enumerate(component_list, start=1):
-            self.logger.info(f"\n[{index}/{total}] Exporting {component.name}...")
+        for index, component in enumerate(components, start=1):
+            self.logger.info(f"\n[{index}/{len(components)}] Exporting {component.name}...")
             output_path = output_dir / f"{component.name}.onnx"
             exporter = self._build_onnx_exporter(config, component_name=component.name)
 

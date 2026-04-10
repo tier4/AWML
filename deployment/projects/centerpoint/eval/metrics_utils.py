@@ -5,11 +5,13 @@ This module extracts metrics configuration from MMEngine model configs.
 """
 
 import logging
-from typing import Any, Mapping
+from typing import Any
 
-from mmengine.config import Config
+from mmengine.config import Config, ConfigDict
 
 from deployment.core.metrics.detection_3d_metrics import Detection3DMetricsConfig
+
+_T4METRIC_V2_EVALUATOR_TYPE = "T4MetricV2"
 
 
 def extract_t4metric_v2_config(
@@ -32,11 +34,11 @@ def extract_t4metric_v2_config(
                    or if evaluator config is missing or not T4MetricV2 type.
     """
 
-    def read_required_cfg_value(cfg: object, key: str) -> Any:
+    def read_required_cfg_value(cfg: Config | ConfigDict, key: str) -> Any:
         """Read a required key/attribute from config object.
 
         Args:
-            cfg: Config object or mapping to read from.
+            cfg: MMEngine Config or ConfigDict to read from.
             key: Required key/attribute name.
 
         Returns:
@@ -45,10 +47,9 @@ def extract_t4metric_v2_config(
         Raises:
             ValueError: If key/attribute does not exist in cfg.
         """
-        if isinstance(cfg, Mapping):
-            if key in cfg:
-                return cfg[key]
-        elif hasattr(cfg, key):
+        if key in cfg:
+            return cfg[key]
+        if hasattr(cfg, key):
             return getattr(cfg, key)
         raise ValueError(f"Missing required key/attribute '{key}'")
 
@@ -56,8 +57,8 @@ def extract_t4metric_v2_config(
     evaluator_cfg = read_required_cfg_value(model_cfg, "val_evaluator")
 
     evaluator_type = read_required_cfg_value(evaluator_cfg, "type")
-    if evaluator_type != "T4MetricV2":
-        raise ValueError(f"Evaluator type is '{evaluator_type}', not 'T4MetricV2'")
+    if evaluator_type != _T4METRIC_V2_EVALUATOR_TYPE:
+        raise ValueError(f"Evaluator type is '{evaluator_type}', not '{_T4METRIC_V2_EVALUATOR_TYPE}'")
 
     perception_configs = read_required_cfg_value(evaluator_cfg, "perception_evaluator_configs")
     evaluation_config_dict = read_required_cfg_value(perception_configs, "evaluation_config_dict")
@@ -65,13 +66,6 @@ def extract_t4metric_v2_config(
 
     critical_object_filter_config = read_required_cfg_value(evaluator_cfg, "critical_object_filter_config")
     frame_pass_fail_config = read_required_cfg_value(evaluator_cfg, "frame_pass_fail_config")
-
-    if evaluation_config_dict and hasattr(evaluation_config_dict, "to_dict"):
-        evaluation_config_dict = dict(evaluation_config_dict)
-    if critical_object_filter_config and hasattr(critical_object_filter_config, "to_dict"):
-        critical_object_filter_config = dict(critical_object_filter_config)
-    if frame_pass_fail_config and hasattr(frame_pass_fail_config, "to_dict"):
-        frame_pass_fail_config = dict(frame_pass_fail_config)
 
     return Detection3DMetricsConfig(
         class_names=class_names,

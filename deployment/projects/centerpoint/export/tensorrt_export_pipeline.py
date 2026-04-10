@@ -108,6 +108,7 @@ class CenterPointTensorRTExportPipeline(TensorRTExportPipeline):
 
         onnx_dir_str = str(onnx_dir_path)
         num = len(components)
+        # Start at 1 so progress logs are human-friendly: [1/N] ... [N/N].
         for i, (component_name, comp) in enumerate(components, 1):
             onnx_file = resolve_artifact_path(
                 base_dir=onnx_dir_str,

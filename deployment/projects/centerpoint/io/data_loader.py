@@ -6,7 +6,7 @@ Pipeline is run once per sample in load_sample(), avoiding redundant computation
 """
 
 import copy
-from typing import Any, List, Mapping
+from typing import List
 
 import mmdet3d.datasets.transforms  # noqa: F401 - registers transforms
 import torch
@@ -19,22 +19,6 @@ from deployment.projects.centerpoint.io.sample_types import (
     CenterPointModelInput,
     CenterPointSample,
 )
-
-
-def _require_key(mapping: Mapping[str, Any], key: str, owner: str) -> Any:
-    try:
-        return mapping[key]
-    except KeyError as e:
-        raise KeyError(f"{owner} must contain '{key}'. Got keys: {list(mapping.keys())}") from e
-
-
-def _require_attr(obj: Any, attr: str, owner: str) -> Any:
-    if not hasattr(obj, attr):
-        raise AttributeError(f"{owner}.{attr} is required.")
-    value = getattr(obj, attr)
-    if value is None:
-        raise ValueError(f"{owner}.{attr} must not be None.")
-    return value
 
 
 class CenterPointDataLoader(BaseDataLoader):
@@ -79,13 +63,10 @@ class CenterPointDataLoader(BaseDataLoader):
             Built MMDet3D Dataset instance.
 
         Raises:
-            ValueError: If model_cfg does not have test_dataloader.
+            AttributeError: If ``model_cfg.test_dataloader`` is missing.
         """
         # Set default scope to mmdet3d so transforms are found in the registry
         init_default_scope("mmdet3d")
-        if not hasattr(model_cfg, "test_dataloader"):
-            raise ValueError("model_cfg must have 'test_dataloader' with dataset config")
-
         dataset_cfg = copy.deepcopy(model_cfg.test_dataloader.dataset)
 
         dataset_cfg["ann_file"] = info_file
@@ -113,7 +94,7 @@ class CenterPointDataLoader(BaseDataLoader):
         Raises:
             IndexError: If index is out of range.
             KeyError: If dataset sample is missing required keys.
-            ValueError: If ``data_samples`` is None, required attributes are None, or points shape is invalid.
+            ValueError: If ``data_samples`` is None or points shape is invalid.
             AttributeError: If ``data_samples`` lacks required attributes.
         """
         if index >= len(self.dataset):
@@ -122,17 +103,17 @@ class CenterPointDataLoader(BaseDataLoader):
         # Run pipeline once
         data = self.dataset[index]
 
-        pipeline_inputs = _require_key(data, "inputs", "Dataset sample")
-        points_tensor = _require_key(pipeline_inputs, "points", "inputs").to("cpu")
+        pipeline_inputs = data["inputs"]
+        points_tensor = pipeline_inputs["points"].to("cpu")
         if points_tensor.ndim != 2:
             raise ValueError(f"Expected points tensor with shape [N, features], got {points_tensor.shape}")
 
-        data_samples = _require_key(data, "data_samples", "Dataset sample")
+        data_samples = data["data_samples"]
         if data_samples is None:
             raise ValueError("Dataset sample contains None 'data_samples', cannot build evaluation ground truth.")
 
-        metainfo = _require_attr(data_samples, "metainfo", "data_samples")
-        eval_ann_info = _require_attr(data_samples, "eval_ann_info", "data_samples")
+        metainfo = data_samples.metainfo
+        eval_ann_info = data_samples.eval_ann_info
         # Keep raw eval_ann_info here; evaluator will convert to the metrics format.
         ground_truth = dict(eval_ann_info)
 
@@ -173,13 +154,11 @@ class CenterPointDataLoader(BaseDataLoader):
             List of class name strings.
 
         Raises:
-            ValueError: If class_names not found in dataset.metainfo or model_cfg.
+            AttributeError: If required metainfo/config attributes are missing.
+            KeyError: If ``classes`` key is missing in dataset metainfo.
         """
         # Get from dataset's metainfo or model_cfg
-        if hasattr(self.dataset, "metainfo") and "classes" in self.dataset.metainfo:
+        if "classes" in self.dataset.metainfo:
             return list(self.dataset.metainfo["classes"])
 
-        if hasattr(self.model_cfg, "class_names"):
-            return list(self.model_cfg.class_names)
-
-        raise ValueError("class_names not found in dataset.metainfo or model_cfg")
+        return list(self.model_cfg.class_names)
