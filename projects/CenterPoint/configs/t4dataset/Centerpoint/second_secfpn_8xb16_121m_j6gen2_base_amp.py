@@ -41,12 +41,12 @@ eval_class_range = {
 }
 
 # user setting
-data_root = "/data/t4dataset/"
-info_directory_path = "info/kokseang_2_5_experiment/"
+data_root = "data/t4dataset/"
+info_directory_path = "info/user_name/"
 train_gpu_size = 8
 train_batch_size = 16
 test_batch_size = 2
-num_workers = 8
+num_workers = 16
 val_interval = 1
 max_epochs = 30
 
