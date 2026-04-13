@@ -1,3 +1,4 @@
+DOCKER_BUILDKIT=1 docker build -t awml-ros2 ./tools/setting_environment/ros2/  --build-arg CACHEBUST=$(date +%s)
 docker run --rm -it --gpus all \
   --mount type=bind,src=/mnt/qnapdata,dst=/data\
   --mount type=bind,src=/mnt/qnapdata,dst=/mnt/qnapdata \

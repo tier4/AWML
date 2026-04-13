@@ -29,3 +29,7 @@ RUN ln -sf /usr/lib/x86_64-linux-gnu/libstdc++.so.6 /opt/conda/lib/libstdc++.so.
 
 # Set up environment variables
 RUN echo "source /opt/ros/humble/setup.bash" >> /root/.bashrc
+
+
+ARG CACHEBUST=0
+RUN pip install --no-cache-dir -e .
