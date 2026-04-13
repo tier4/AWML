@@ -26,7 +26,7 @@ test_pipeline = [
     dict(
         type="PointOffset",
         offset=[0.0, 0.0, 0.0],  # [dx, dy, dz] - adjust as needed
-        sensor_id=0,             # Target specific LiDAR ID
+        sensor_id=0,  # Target specific LiDAR ID
         sensor_dim=4,
     ),
     dict(type="PointsRangeFilter", point_cloud_range=_base_.point_cloud_range),

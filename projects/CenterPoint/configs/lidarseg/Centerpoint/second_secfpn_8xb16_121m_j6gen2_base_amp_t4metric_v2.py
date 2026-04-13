@@ -62,7 +62,7 @@ test_pipeline = [
             "city",
             "vehicle_type",
             "lidar_sources_info",  # Required for range-based PointOffset
-            "lidar_sources",       # Required for name-based PointOffset
+            "lidar_sources",  # Required for name-based PointOffset
         ),
     ),
 ]
