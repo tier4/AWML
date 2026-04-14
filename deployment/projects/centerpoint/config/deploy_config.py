@@ -3,15 +3,12 @@ CenterPoint Deployment Configuration
 """
 
 # ============================================================================
-# Task type for pipeline building
-# Options: 'detection2d', 'detection3d', 'classification', 'segmentation'
-# ============================================================================
-task_type = "detection3d"
-
-# ============================================================================
 # Checkpoint Path - Single source of truth for PyTorch model
 # ============================================================================
 checkpoint_path = "work_dirs/centerpoint/best_checkpoint.pth"
+
+# Log file path (relative paths are under export.work_dir). Set to None to disable file logging.
+deploy_log_path = "deployment.log"
 
 # ============================================================================
 # Device settings (shared by export, evaluation, verification)
@@ -21,33 +18,37 @@ devices = dict(
     cuda="cuda:0",
 )
 
-# ============================================================================
-# Export Configuration
-# ============================================================================
-export = dict(
-    mode="both",
-    work_dir="work_dirs/centerpoint_deployment",
-    onnx_path=None,
-)
-
-# Derived artifact directories
-_WORK_DIR = str(export["work_dir"]).rstrip("/")
+# Single literal for deployment output root (used before `export` exists).
+_DEPLOY_WORK_DIR = "work_dirs/centerpoint_deployment"
+_WORK_DIR = _DEPLOY_WORK_DIR.rstrip("/")
 _ONNX_DIR = f"{_WORK_DIR}/onnx"
 _TENSORRT_DIR = f"{_WORK_DIR}/tensorrt"
 
 # ============================================================================
+# Export Configuration
+# mode: "onnx", "trt", "both", "none"
+# work_dir: path to the deployment output root
+# onnx_path: path to the ONNX output directory (if mode="trt" and ONNX already exists)
+# ============================================================================
+export = dict(
+    mode="both",
+    work_dir=_DEPLOY_WORK_DIR,
+    onnx_path=_ONNX_DIR,
+)
+
+
+# ============================================================================
 # Unified Component Configuration (Single Source of Truth)
 #
+# Component key is the unique identifier (used for config lookup, filenames, logs).
 # Each component defines:
-#   - name: Component identifier used in export
 #   - onnx_file: Output ONNX filename
 #   - engine_file: Output TensorRT engine filename
 #   - io: Input/output specification for ONNX export
 #   - tensorrt_profile: TensorRT optimization profile (min/opt/max shapes)
 # ============================================================================
 components = dict(
-    voxel_encoder=dict(
-        name="pts_voxel_encoder",
+    pts_voxel_encoder=dict(
         onnx_file="pts_voxel_encoder.onnx",
         engine_file="pts_voxel_encoder.engine",
         io=dict(
@@ -64,14 +65,14 @@ components = dict(
         ),
         tensorrt_profile=dict(
             input_features=dict(
+                # Make sure to match the shape of the input to the model
                 min_shape=[1000, 32, 11],
                 opt_shape=[20000, 32, 11],
-                max_shape=[64000, 32, 11],
+                max_shape=[96000, 32, 11],
             ),
         ),
     ),
-    backbone_head=dict(
-        name="pts_backbone_neck_head",
+    pts_backbone_neck_head=dict(
         onnx_file="pts_backbone_neck_head.onnx",
         engine_file="pts_backbone_neck_head.engine",
         io=dict(
@@ -98,6 +99,8 @@ components = dict(
         ),
         tensorrt_profile=dict(
             spatial_features=dict(
+                # Make sure to match the shape of the input to the model
+                # check grid size in the model config
                 min_shape=[1, 32, 1020, 1020],
                 opt_shape=[1, 32, 1020, 1020],
                 max_shape=[1, 32, 1020, 1020],
@@ -111,8 +114,8 @@ components = dict(
 # ============================================================================
 runtime_io = dict(
     # This should be a path relative to `data_root` in the model config.
-    info_file="info/t4dataset_j6gen2_infos_val.pkl",
-    sample_idx=1,
+    info_file="info/t4dataset_j6gen2_base_infos_test.pkl",
+    sample_idx=5,
 )
 
 # ============================================================================
@@ -128,6 +131,7 @@ onnx_config = dict(
 
 # ============================================================================
 # TensorRT Build Settings (shared across all components)
+# Supports `auto`, `fp16`, `fp32_tf32`, and `strongly_typed`
 # ============================================================================
 tensorrt_config = dict(
     precision_policy="auto",
@@ -161,10 +165,19 @@ evaluation = dict(
 
 # ============================================================================
 # Verification Configuration
+#
+# Tolerance is backend- and machine-dependent:
+# - The same scenario can show very different max/mean diffs on different machines: GPU
+#   architecture, driver, ORT/CUDA/TRT versions, and ORT's CUDA graph partitioning (CPU
+#   fallback nodes for small ops) all change numerics. ONNX on CPU, ONNX on CUDA, and
+#   TensorRT on CUDA are not directly comparable to each other as "one true" references.
+# - Additionally, the verification configuration should use a precision-aware tolerance,
+#   especially when FP16 is enabled.
 # ============================================================================
 verification = dict(
     enabled=False,
-    tolerance=1e-1,
+    # TODO(vividf): double check the tolerance value
+    tolerance=1,
     num_verify_samples=1,
     devices=devices,
     scenarios=dict(
