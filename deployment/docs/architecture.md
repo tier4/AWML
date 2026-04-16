@@ -1,99 +1,113 @@
 # Deployment architecture
 
-How the framework is **wired**: entrypoints, runtime orchestration, and execution stacks. For deploy **keys** and examples, use [configuration.md](./configuration.md). For extension **rules**, use [core_contract.md](./core_contract.md).
+How the framework is wired and what each part is allowed to own. Use this page when you need the mental model of `deployment/` or when you plan to extend it.
+
+For commands and run behavior, use [runbook.md](./runbook.md). For deploy config fields and examples, use [configuration.md](./configuration.md).
 
 ## Three layers
 
-1. **Entry layer** — `deployment/cli/main.py` discovers `deployment.projects.*`, registers subcommands per `ProjectAdapter`, parses shared args, and dispatches to `adapter.run`. Project `entrypoint.py` builds typed deploy config, loader, evaluator, and runner.
-2. **Runtime layer** — `BaseDeploymentRunner` owns load → export → verify → evaluate. `ExportOrchestrator`, `VerificationOrchestrator`, and `EvaluationOrchestrator` keep the runner thin; `ArtifactManager` registers and resolves ONNX/engine paths for later stages.
-3. **Execution layer** — `deployment/exporters/*` and optional project export pipelines perform export; `PipelineFactory` + project pipelines run inference; evaluators own metrics and call pipelines with `components_cfg` from deploy config.
+1. Entry layer: CLI plus project entrypoints.
+2. Runtime layer: runner plus orchestrators and artifact resolution.
+3. Execution layer: exporters, inference pipelines, evaluators, and metrics.
 
-## High-level workflow
+## High-level flow
 
-```
-┌─────────────────────────────────────────────────────────┐
-│  CLI: deployment/cli/main.py                          │
-│  Discovers deployment.projects.<name>, subcommands      │
-└────────────────────────┬────────────────────────────────┘
-                         │
-┌────────────────────────▼────────────────────────────────┐
-│  Project bundle: deployment/projects/<project>/        │
-│  entrypoint.py → builds config, loader, evaluator,     │
-│  CenterPointDeploymentRunner (or future project runner) │
-└────────────────────────┬────────────────────────────────┘
-                         │
-┌────────────────────────▼────────────────────────────────┐
-│  BaseDeploymentRunner (deployment/runtime/runner.py)     │
-│  load → export → verify → evaluate                      │
-└────────────────────────┬────────────────────────────────┘
-                         │
-        ┌────────────────┴────────────────┐
-        │                                 │
-┌───────▼────────┐               ┌────────▼────────────────┐
-│ Export stack   │               │ Orchestrators            │
-│ exporters/*    │               │ ArtifactManager          │
-│ export_pipelines│              │ Export / Verification /  │
-│                │               │ Evaluation orchestrators │
-└────────────────┘               └────────┬────────────────┘
-                                          │
-┌─────────────────────────────────────────▼────────────────┐
-│  Evaluators & inference pipelines                          │
-│  BaseEvaluator + PipelineFactory → project pipelines       │
-└──────────────────────────────────────────────────────────┘
+```mermaid
+flowchart TD
+    cli["deployment/cli/main.py"] --> projectBundle["deployment/projects/project/entrypoint.py"]
+    projectBundle --> runner["BaseDeploymentRunner"]
+    runner --> exportStack["ExportOrchestrator_and_exporters"]
+    runner --> verifyEval["Verification_and_Evaluation_orchestrators"]
+    verifyEval --> evaluator["BaseEvaluator"]
+    evaluator --> pipelineFactory["PipelineFactory"]
+    pipelineFactory --> projectPipelines["Project_pipelines"]
 ```
 
-## Core components
+## Layer responsibilities
 
-The following sections spell out the same stack as [Three layers](#three-layers), organized by package rather than by responsibility layer.
+### Entry layer
 
-### CLI and project bundles
+- `deployment/cli/main.py` discovers registered project bundles and dispatches to a `ProjectAdapter`.
+- Each project `entrypoint.py` loads configs, builds the data loader and evaluator, then creates the project runner.
+- Project-specific flags belong in the project bundle, not in the shared CLI.
 
-- `deployment/cli/main.py` discovers packages under `deployment/projects/`, imports them so each package registers a `ProjectAdapter` in `deployment.projects.registry.project_registry`, then dispatches to `adapter.run(args)`.
-- Each project lives under `deployment/projects/<project>/` with `entrypoint.py`, `runner.py`, `config/deploy_config.py`, task-specific `io/`, `eval/`, optional `export/` and `pipelines/`.
+### Runtime layer
 
-### BaseDeploymentRunner
+- `deployment/runtime/runner.py` owns the shared sequence: load, export, verify, evaluate.
+- `ExportOrchestrator`, `VerificationOrchestrator`, and `EvaluationOrchestrator` keep the runner thin.
+- `ArtifactManager` records ONNX and TensorRT artifacts so later stages resolve them consistently.
 
-Defined in `deployment/runtime/runner.py`. Owns the shared sequence (export, verification, evaluation), constructs `ExporterFactory` outputs, and delegates to `ExportOrchestrator`, `VerificationOrchestrator`, and `EvaluationOrchestrator`. Project runners (e.g. `CenterPointDeploymentRunner`) subclass it to plug in model loading, sample adapters, and export pipelines.
+### Execution layer
 
-### Core package (`deployment/core/`)
+- `deployment/exporters/` owns ONNX and TensorRT export mechanics.
+- `deployment/pipelines/` owns shared inference pipeline abstractions and factory registration.
+- Project `pipelines/` implement backend-specific inference.
+- Evaluators own metrics, result reporting, and verification behavior.
 
-- `BaseDeploymentConfig` (`configs/base.py`) — validated view of deploy config; exposes `components_cfg`, `resolved_deploy_log_file`, etc.
-- `Backend`, `DeviceSpec`, `Artifact`
-- `VerificationMixin`, `BaseEvaluator`, `BaseDataLoader`
-- Metrics interfaces and `EvalResultDict` types
+## Package map
 
-### Exporters and export pipelines
+| Path | Responsibility |
+| --- | --- |
+| `deployment/cli/` | Unified CLI and shared argument helpers |
+| `deployment/configs/` | Typed deployment config and schema |
+| `deployment/core/` | Shared contexts, evaluators, verification mixins, and metrics types |
+| `deployment/exporters/` | Shared ONNX and TensorRT exporters plus export pipeline bases |
+| `deployment/pipelines/` | Global pipeline registry and factory |
+| `deployment/runtime/` | Base runner, orchestrators, and artifact management |
+| `deployment/projects/<project>/` | Project-specific entrypoint, runner, config, IO, eval, pipelines, and optional export logic |
 
-- `deployment/exporters/common/` — base ONNX/TensorRT exporters, `ExporterFactory`, shared wrappers.
-- `deployment/exporters/export_pipelines/` — base pipeline interfaces.
-- Complex projects add orchestration under `deployment/projects/<project>/export/` (e.g. CenterPoint multi-file export).
+## Extension contract
 
-### Inference pipelines
+This section replaces the old standalone core contract page.
 
-- Shared abstractions: `deployment/pipelines/base_pipeline.py`, `deployment/pipelines/base_factory.py`, `deployment/pipelines/registry.py`, `deployment/pipelines/factory.py`.
-- Each project registers a `BasePipelineFactory` subclass (e.g. `CenterPointPipelineFactory` in `deployment/projects/centerpoint/pipelines/factory.py`) with `@pipeline_registry.register`. Evaluators call `PipelineFactory.create(project_name, ...)` with `components_cfg` from deploy config.
+### Runner responsibilities
 
-### Runtime helpers
+- `BaseDeploymentRunner` owns the end-to-end deployment flow.
+- Project runners inject project-specific loaders, evaluators, wrappers, and optional export pipelines.
+- Runners must not own task-specific preprocessing, postprocessing, or metrics logic.
 
-- `deployment/runtime/artifact_manager.py` — register and resolve ONNX/engine paths for evaluation and verification.
-- Orchestrators in `deployment/runtime/*_orchestrator.py` keep runner code thin.
+### Evaluator responsibilities
 
-## Directory layout (snapshot)
+- `BaseEvaluator` is the shared base for task evaluators.
+- Evaluators create backend pipelines through `PipelineFactory`.
+- Evaluators prepare inputs, normalize outputs, compute metrics, and report results.
+- Evaluators should log summaries through `logging`, not `print`.
 
+### Pipeline responsibilities
+
+- `BaseInferencePipeline` owns `preprocess -> run_model -> postprocess`.
+- Pipelines execute inference only.
+- Pipelines must not load artifacts on their own and must not compute metrics.
+
+### Metrics responsibilities
+
+- Metrics interfaces convert predictions and ground truths into task metrics.
+- Metrics code should not depend on runners, exporters, or pipeline factories directly.
+
+## Allowed dependencies
+
+| Dependency | Allowed |
+| --- | --- |
+| Runner -> Evaluator | Yes |
+| Evaluator -> PipelineFactory / Pipelines / Metrics | Yes |
+| PipelineFactory -> Pipelines | Yes |
+| Pipelines -> Metrics | No |
+| Metrics -> Runner / PipelineFactory | No |
+
+## Project shape
+
+Each project bundle should follow this layout:
+
+```text
+deployment/projects/<project>/
+├── __init__.py
+├── entrypoint.py
+├── runner.py
+├── config/
+├── io/
+├── eval/
+├── pipelines/
+└── export/   # optional
 ```
-deployment/
-├── cli/                 # Unified CLI (main.py, args / logging helpers)
-├── configs/             # BaseDeploymentConfig + schema dataclasses
-├── core/                # Backend, device, evaluators, metrics, contexts
-├── exporters/           # Shared exporters + export pipeline bases
-├── pipelines/           # Base pipeline + global PipelineFactory / registry
-├── runtime/             # BaseDeploymentRunner + orchestrators + ArtifactManager
-└── projects/
-    └── <project>/       # entrypoint, runner, config/, io/, eval/, pipelines/, export/
-```
 
-### Supported project layout
-
-The supported pattern is `deployment/projects/<project>/entrypoint.py` plus CLI registration in `deployment/projects/<project>/__init__.py`.
-
-The older layout `projects/*/deploy/main.py` is **not** used. If you maintain legacy trees, migrate new work to the bundle layout above (see [contributing.md](./contributing.md)).
+CenterPoint is the current reference implementation of this structure.

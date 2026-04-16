@@ -1,10 +1,21 @@
 # Configuration reference
 
-**Single source of truth** for deploy configuration: top-level keys, `components`, devices, `export`, `onnx_config`, `tensorrt_config`, `evaluation`, `verification`, and logging. Other guides ([usage.md](./usage.md), [export_pipeline.md](./export_pipeline.md), [verification_evaluation.md](./verification_evaluation.md)) describe **behavior** and link here for **fields and examples**.
+This is the single source of truth for deploy config fields: top-level keys, `components`, devices, `export`, `onnx_config`, `tensorrt_config`, `evaluation`, `verification`, and logging.
 
-Deploy configs are plain Python dicts (MMEngine `Config.fromfile`). `BaseDeploymentConfig` wraps them with typed dataclasses in `deployment.configs.schema` for validation and IDE-friendly access.
+Use [runbook.md](./runbook.md) for execution behavior and [architecture.md](./architecture.md) for framework structure. This page is intentionally reference-first.
 
-## Top-Level Keys (reference)
+Deploy configs are plain Python dicts loaded with MMEngine `Config.fromfile`. `BaseDeploymentConfig` wraps them with typed dataclasses in `deployment.configs.schema` for validation and IDE-friendly access.
+
+## How to read this config
+
+Read the deploy config in this order:
+
+1. `checkpoint_path`, `devices`, and `export` define the run boundary.
+2. `components` defines what artifacts are produced and how each subgraph is named.
+3. `onnx_config` and `tensorrt_config` tune exporter behavior.
+4. `evaluation` and `verification` define the post-export quality gates.
+
+## Top-level keys
 
 | Key | Required | Purpose |
 | --- | --- | --- |
