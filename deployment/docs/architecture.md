@@ -1,4 +1,12 @@
-# Deployment Architecture
+# Deployment architecture
+
+How the framework is **wired**: entrypoints, runtime orchestration, and execution stacks. For deploy **keys** and examples, use [configuration.md](./configuration.md). For extension **rules**, use [core_contract.md](./core_contract.md).
+
+## Three layers
+
+1. **Entry layer** — `deployment/cli/main.py` discovers `deployment.projects.*`, registers subcommands per `ProjectAdapter`, parses shared args, and dispatches to `adapter.run`. Project `entrypoint.py` builds typed deploy config, loader, evaluator, and runner.
+2. **Runtime layer** — `BaseDeploymentRunner` owns load → export → verify → evaluate. `ExportOrchestrator`, `VerificationOrchestrator`, and `EvaluationOrchestrator` keep the runner thin; `ArtifactManager` registers and resolves ONNX/engine paths for later stages.
+3. **Execution layer** — `deployment/exporters/*` and optional project export pipelines perform export; `PipelineFactory` + project pipelines run inference; evaluators own metrics and call pipelines with `components_cfg` from deploy config.
 
 ## High-level workflow
 
@@ -35,6 +43,8 @@
 ```
 
 ## Core components
+
+The following sections spell out the same stack as [Three layers](#three-layers), organized by package rather than by responsibility layer.
 
 ### CLI and project bundles
 
@@ -82,4 +92,8 @@ deployment/
     └── <project>/       # entrypoint, runner, config/, io/, eval/, pipelines/, export/
 ```
 
-The older layout `projects/*/deploy/main.py` is **not** used; the supported pattern is `projects/<project>/entrypoint.py` plus CLI registration in `projects/<project>/__init__.py`.
+### Supported project layout
+
+The supported pattern is `deployment/projects/<project>/entrypoint.py` plus CLI registration in `deployment/projects/<project>/__init__.py`.
+
+The older layout `projects/*/deploy/main.py` is **not** used. If you maintain legacy trees, migrate new work to the bundle layout above (see [contributing.md](./contributing.md)).

@@ -1,65 +1,65 @@
 # AWML Deployment Framework
 
-AWML ships a unified, task-agnostic deployment stack that turns trained PyTorch checkpoints into production-ready ONNX and TensorRT artifacts. Verification and evaluation run across backends where configured, with shared orchestration and typed configs.
+The AWML Deployment Framework is a **task-agnostic** path from trained PyTorch checkpoints to ONNX and TensorRT artifacts, with **verification** and **evaluation** wired into the same run. The core runtime, exporters, and orchestration are shared across projects; each task ships as a **project bundle** under `deployment/projects/`.
 
-The reference implementation is **CenterPoint** under `deployment/projects/centerpoint/`. Additional tasks can follow the same bundle layout and register with `deployment.projects.registry`.
+**Today:** CenterPoint is the **full reference implementation** (multi-component export, 3D metrics, pipelines). See [Project status](#project-status) for more infomation.
 
-## Quick start
+**Why it exists**
+
+- Unify export, verification, and evaluation across tasks and backends (PyTorch, ONNX, TensorRT).
+- Reduce duplicated deployment logic via shared runners, orchestrators, and typed config.
+- Make new task integration predictable: same entrypoint, registry pattern, and [core contract](docs/core_contract.md) for extensions.
+
+**Core workflow**
+
+Load checkpoint → Export → Verify → Evaluate
+
+**Quick start**
 
 ```bash
-python -m deployment.cli.main centerpoint <deploy_cfg.py> <model_cfg.py> [--log-level INFO]
+python -m deployment.cli.main <project_name> <deploy_cfg.py> <model_cfg.py> [--log-level INFO]
 
-# Optional CenterPoint flag
-python -m deployment.cli.main centerpoint <deploy_cfg.py> <model_cfg.py> --rot-y-axis-reference
+# Example (CenterPoint)
+python -m deployment.cli.main centerpoint <deploy_cfg.py> <model_cfg.py> [--rot-y-axis-reference]
 ```
 
-Deploy configs support optional **`deploy_log_path`** (default `deployment.log`, resolved under `export.work_dir` when relative). When set, logs are mirrored to that file via a root `FileHandler` in addition to stderr.
+**Project status**
 
-## Documentation map
-
-| Topic | Description |
+| Status | Projects |
 | --- | --- |
-| [`docs/overview.md`](docs/overview.md) | Design principles, key features, precision policies. |
-| [`docs/architecture.md`](docs/architecture.md) | CLI → project bundles → runtime runner and orchestrators. |
-| [`docs/usage.md`](docs/usage.md) | CLI, logging, typed contexts, export modes. |
-| [`docs/configuration.md`](docs/configuration.md) | Top-level keys, `components`, logging, evaluation/verification. |
-| [`docs/projects.md`](docs/projects.md) | CenterPoint file layout; status of other tasks. |
-| [`docs/export_pipeline.md`](docs/export_pipeline.md) | ONNX/TRT export and multi-component patterns. |
-| [`docs/verification_evaluation.md`](docs/verification_evaluation.md) | Scenarios, metrics, artifact resolution. |
-| [`docs/best_practices.md`](docs/best_practices.md) | Practices and troubleshooting. |
-| [`docs/contributing.md`](docs/contributing.md) | Adding a new project bundle. |
-| [`docs/core_contract.md`](docs/core_contract.md) | Layer boundaries for runners, evaluators, pipelines. |
+| **Full reference implementation** | [CenterPoint](docs/projects.md#centerpoint-3d-detection) |
+| **Planned / not yet first-class in this tree** | YOLOX (and similar) — follow the same bundle pattern when added |
+| **Legacy references** | Calibration status classification — historical scripts may live outside `deployment/projects/` |
 
-The same index lives in [`deployment/docs/README.md`](docs/README.md).
+**Documentation guide (by what you want to do)**
 
-## Architecture snapshot
+| Goal | Start here |
+| --- | --- |
+| New to the repo — what is this and how do I orient? | [docs/getting_started.md](docs/getting_started.md), then [docs/overview.md](docs/overview.md) |
+| Run an existing project (commands, modes, logging) | [docs/usage.md](docs/usage.md), project README under `deployment/projects/<name>/` |
+| Edit or author deploy config (authoritative keys and examples) | [docs/configuration.md](docs/configuration.md) |
+| Understand how the pieces connect (CLI → runner → exporters → evaluators) | [docs/architecture.md](docs/architecture.md) |
+| Export mental model and artifact flow | [docs/export_pipeline.md](docs/export_pipeline.md) |
+| Verification / evaluation behavior and reporting | [docs/verification_evaluation.md](docs/verification_evaluation.md) |
+| Add a new project bundle | [docs/contributing.md](docs/contributing.md) — read [docs/core_contract.md](docs/core_contract.md) first |
+| Operational tips and troubleshooting | [docs/best_practices.md](docs/best_practices.md) |
 
-- **`deployment/cli/main.py`** — Discovers `deployment.projects.*`, registers subcommands per project.
-- **`deployment/runtime/runner.py`** — `BaseDeploymentRunner`: export → verify → evaluate.
-- **`deployment/runtime/*_orchestrator.py`** — Export, verification, evaluation orchestration; **`ArtifactManager`** resolves ONNX/engine paths.
-- **`deployment/exporters/common/`** — Base ONNX/TensorRT exporters and `ExporterFactory`.
-- **`deployment/pipelines/`** — `BaseInferencePipeline`, global `PipelineFactory` and `pipeline_registry`.
-- **`deployment/projects/<project>/`** — `entrypoint.py`, `runner.py`, `config/deploy_config.py`, task `io/` / `eval/` / `pipelines/` / `export/`.
+Full doc map: [deployment/docs/README.md](docs/README.md).
 
-See [`docs/architecture.md`](docs/architecture.md) for the full diagram and layout.
+**Repository layout (high level)**
 
-## Export and verification flow
+```
+deployment/
+├── cli/           # Unified CLI
+├── configs/       # Typed deploy config schema
+├── core/          # Shared types, evaluators, verification mixins
+├── exporters/     # ONNX / TensorRT exporters and export pipeline bases
+├── pipelines/     # Inference pipelines and global factory
+├── runtime/       # BaseDeploymentRunner, orchestrators, ArtifactManager
+└── projects/      # Per-task bundles (entrypoint, runner, config, io, eval, …)
+```
 
-1. Load checkpoint; export ONNX (per `components` entries) and optionally TensorRT with the configured precision policy.
-2. Register artifacts for downstream steps.
-3. Run verification scenarios for the current **export mode** (`both` / `onnx` / `trt` / `none`).
-4. Run evaluation on enabled backends (`evaluation.backends`, optional `model_dir` / `engine_dir` for ONNX and TensorRT).
-
-Details: [`docs/export_pipeline.md`](docs/export_pipeline.md), [`docs/verification_evaluation.md`](docs/verification_evaluation.md).
-
-## Project coverage
-
-- **CenterPoint** — Multi-component export and 3D metrics; see [`docs/projects.md`](docs/projects.md) and `projects/centerpoint/config/deploy_config.py`.
-- **Other tasks** — Extend via new packages under `deployment/projects/` and `ProjectAdapter` registration (see contributing doc).
-
-## Core contract
-
-[`docs/core_contract.md`](docs/core_contract.md) defines how runners, evaluators, `PipelineFactory`, and metrics interact. Follow it when extending shared code.
+Export and verification **details** live in the docs linked above, not in this README.
 
 ## License
 

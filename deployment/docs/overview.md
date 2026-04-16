@@ -1,64 +1,52 @@
-# Deployment Overview
+# Deployment overview
 
-The AWML Deployment Framework provides a standardized, task-agnostic approach to exporting PyTorch models to ONNX and TensorRT with verification and evaluation baked in. It abstracts the common workflow steps while leaving space for project-specific customization so that CenterPoint, YOLOX, CalibrationStatusClassification, and future models can share the same deployment flow.
+Conceptual overview of the AWML Deployment Framework: **what it is for** and **what it guarantees**, without duplicating the deploy config schema (see [configuration.md](./configuration.md)) or CLI details (see [usage.md](./usage.md)).
 
-## Design Principles
+The framework standardizes a **task-agnostic** path from PyTorch checkpoints to ONNX and TensorRT, with **verification** and **evaluation** in the same run. Project bundles (for example CenterPoint) plug in loaders, evaluators, pipelines, and optional export pipelines while reusing the shared runner and orchestration.
 
-1. **Unified interface** – a shared `BaseDeploymentRunner` with thin project-specific subclasses.
-2. **Task-agnostic core** – base classes support detection, classification, and segmentation tasks.
-3. **Backend flexibility** – PyTorch, ONNX, and TensorRT backends are first-class citizens.
-4. **Pipeline architecture** – common pre/postprocessing with backend-specific inference stages.
-5. **Configuration-driven** – configs plus typed dataclasses provide predictable defaults and IDE support.
-6. **Dependency injection** – exporters, wrappers, and export pipelines are explicitly wired for clarity and testability.
-7. **Type-safe building blocks** – typed configs, runtime contexts, and result objects reduce runtime surprises.
-8. **Extensible verification** – mixins compare nested outputs so that evaluators stay lightweight.
-9. **Observable runs** – optional `deploy_log_path` mirrors process logging to a file (see `configuration.md`).
+## Design principles
 
-## Key Features
+1. **Unified interface** — shared `BaseDeploymentRunner` with thin project-specific subclasses.
+2. **Task-agnostic core** — no task logic in generic runners; task code lives under `deployment/projects/<name>/`.
+3. **Backend flexibility** — PyTorch, ONNX, and TensorRT treated consistently.
+4. **Pipeline architecture** — shared pre/postprocessing with backend-specific inference stages.
+5. **Configuration-driven** — typed deploy config (`BaseDeploymentConfig`) for predictable defaults.
+6. **Dependency injection** — exporters, wrappers, and export pipelines wired explicitly from project runners.
+7. **Type-safe building blocks** — typed configs, runtime contexts, and result objects.
+8. **Extensible verification** — scenario-based comparisons with nested output checks (see [verification_evaluation.md](./verification_evaluation.md)).
+9. **Observable runs** — optional file logging via `deploy_log_path` (see [configuration.md](./configuration.md#logging-deploy_log_path)).
 
-### Unified Deployment Workflow
+## Key features
+
+### Unified deployment workflow
 
 ```
 Load Model → Export ONNX → Export TensorRT → Verify → Evaluate
 ```
 
-### Scenario-Based Verification
+(Exact stages depend on `export.mode` and enabled backends; see [usage.md](./usage.md#most-common-workflows).)
 
-`VerificationMixin` normalizes devices, reuses pipelines from `PipelineFactory`, and recursively compares nested outputs with per-node logging. Scenarios are grouped by **export mode** (`both`, `onnx`, `trt`, `none`); only the list for the active mode runs.
+### Scenario-based verification
 
-```python
-verification = dict(
-    enabled=True,
-    tolerance=0.1,
-    num_verify_samples=3,
-    devices=devices,
-    scenarios=dict(
-        both=[
-            dict(ref_backend="pytorch", ref_device="cpu", test_backend="onnx", test_device="cpu"),
-            dict(ref_backend="onnx", ref_device="cuda", test_backend="tensorrt", test_device="cuda"),
-        ],
-        onnx=[dict(ref_backend="pytorch", ref_device="cpu", test_backend="onnx", test_device="cpu")],
-        trt=[dict(ref_backend="onnx", ref_device="cuda", test_backend="tensorrt", test_device="cuda")],
-        none=[],
-    ),
-)
-```
+Verification compares reference and test backends on shared samples, grouped by **export mode** (`both`, `onnx`, `trt`, `none`) so only relevant scenarios run. **Behavior and reporting:** [verification_evaluation.md](./verification_evaluation.md). **Config fields and examples:** [configuration.md](./configuration.md#verification).
 
-### Multi-Backend Evaluation
+### Multi-backend evaluation
 
-Evaluators return typed results via `EvalResultDict` (TypedDict) ensuring consistent structure across backends. Metrics interfaces (`Detection3DMetricsInterface`, `Detection2DMetricsInterface`, `ClassificationMetricsInterface`) compute task-specific metrics using `autoware_perception_evaluation`.
+Evaluators return structured results and use task metrics interfaces (3D / 2D / classification) so reports stay comparable across backends. **Details:** [verification_evaluation.md](./verification_evaluation.md).
 
-### Pipeline Architecture
+### Pipeline architecture
 
-Shared preprocessing/postprocessing steps plug into backend-specific inference. Project data loaders build preprocessing from model config (e.g. MMDet/MMDet3D test pipeline).
+Shared preprocessing and postprocessing plug into backend-specific inference. Project data loaders build preprocessing from the training/model stack (for example MMDet/MMDet3D test pipelines). **Internal wiring:** [architecture.md](./architecture.md).
 
-### Flexible Export Modes
+### Flexible export modes
 
-- `mode="onnx"` – PyTorch → ONNX only.
-- `mode="trt"` – Build TensorRT from an existing ONNX export.
-- `mode="both"` – Full export pipeline.
-- `mode="none"` – Skip export and only run evaluation.
+- `onnx` — PyTorch → ONNX only.
+- `trt` — TensorRT from an existing ONNX layout.
+- `both` — full export pipeline.
+- `none` — skip export; verify/evaluate against existing artifacts when configured.
 
-### TensorRT Precision Policies
+**Authoritative config snippets:** [configuration.md](./configuration.md).
 
-Supports `auto`, `fp16`, `fp32_tf32`, and `strongly_typed` modes with typed configuration to keep engine builds reproducible.
+### TensorRT precision policies
+
+Supports `auto`, `fp16`, `fp32_tf32`, and `strongly_typed` (and related) modes via typed configuration for reproducible engine builds.

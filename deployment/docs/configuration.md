@@ -1,4 +1,6 @@
-# Configuration Reference
+# Configuration reference
+
+**Single source of truth** for deploy configuration: top-level keys, `components`, devices, `export`, `onnx_config`, `tensorrt_config`, `evaluation`, `verification`, and logging. Other guides ([usage.md](./usage.md), [export_pipeline.md](./export_pipeline.md), [verification_evaluation.md](./verification_evaluation.md)) describe **behavior** and link here for **fields and examples**.
 
 Deploy configs are plain Python dicts (MMEngine `Config.fromfile`). `BaseDeploymentConfig` wraps them with typed dataclasses in `deployment.configs.schema` for validation and IDE-friendly access.
 

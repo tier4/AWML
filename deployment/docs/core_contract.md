@@ -1,6 +1,6 @@
 ## Deployment Core Contract
 
-This document defines the responsibilities and boundaries between the primary deployment components. Treat it as the “architecture contract” for contributors.
+This document defines the responsibilities and boundaries between the primary deployment components. Treat it as the “architecture contract” for contributors. For procedural steps when adding a project bundle, see [contributing.md](./contributing.md).
 
 ### BaseDeploymentRunner (and project runners)
 - Owns the end-to-end deployment flow: load PyTorch model → export ONNX/TensorRT → verify → evaluate.

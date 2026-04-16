@@ -57,6 +57,7 @@ Pipelines chain voxelization / encoder, middle processing, and backbone-head dec
 
 ## Related docs
 
+- `deployment/docs/getting_started.md` — first-time orientation for the deployment package.
 - `deployment/docs/projects.md` — index of all deployment projects.
 - `deployment/docs/usage.md` — unified CLI, logging, contexts.
 - `deployment/docs/configuration.md` — shared config concepts.

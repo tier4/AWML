@@ -1,5 +1,7 @@
 # Best practices and troubleshooting
 
+Supplementary **operational** notes: troubleshooting, tuning, and lessons from real deployment runs. For architecture rules, see [core_contract.md](./core_contract.md); for authoritative config keys, see [configuration.md](./configuration.md). This is not the primary onboarding path — start from [README.md](../README.md) or [getting_started.md](./getting_started.md).
+
 ## Configuration
 
 - Keep deploy config separate from training model config; deploy config is loaded as MMEngine `Config` into `BaseDeploymentConfig`.
