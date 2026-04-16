@@ -176,7 +176,7 @@ def get_component_files(
     Useful for multi-component models to enumerate all artifacts.
 
     Args:
-        components_cfg: The unified `components` dict from deploy_config
+        components_cfg: The `components` dict from deploy_config
         file_key: Key to look up ('onnx_file' or 'engine_file')
 
     Returns:

@@ -104,8 +104,8 @@ class CenterPointONNXExportPipeline(OnnxExportPipeline):
         self.logger.info("=" * 80)
         self.logger.info("Exporting CenterPoint to ONNX (multi-file)")
         self.logger.info("=" * 80)
-        self.logger.info(f"Output directory: {output_dir}")
-        self.logger.info(f"Using sample index: {sample_idx}")
+        self.logger.info("Output directory: %s", output_dir)
+        self.logger.info("Using sample index: %s", sample_idx)
 
     def _extract_sample_data(
         self,
@@ -153,7 +153,7 @@ class CenterPointONNXExportPipeline(OnnxExportPipeline):
         """
         exported_paths: list[str] = []
         for index, component in enumerate(components, start=1):
-            self.logger.info(f"\n[{index}/{len(components)}] Exporting {component.name}...")
+            self.logger.info("\n[%s/%s] Exporting %s...", index, len(components), component.name)
             output_path = output_dir / f"{component.name}.onnx"
             exporter = self._build_onnx_exporter(config, component_name=component.name)
 
@@ -164,11 +164,11 @@ class CenterPointONNXExportPipeline(OnnxExportPipeline):
                     output_path=str(output_path),
                 )
             except Exception as exc:
-                self.logger.error(f"Failed to export {component.name}", exc_info=exc)
+                self.logger.error("Failed to export %s", component.name, exc_info=True)
                 raise RuntimeError(f"{component.name} export failed") from exc
 
             exported_paths.append(str(output_path))
-            self.logger.info(f"Exported {component.name}: {output_path}")
+            self.logger.info("Exported %s: %s", component.name, output_path)
 
         return exported_paths
 
@@ -199,4 +199,4 @@ class CenterPointONNXExportPipeline(OnnxExportPipeline):
         self.logger.info("CenterPoint ONNX export successful")
         self.logger.info("=" * 80)
         for path in exported_paths:
-            self.logger.info(f"  • {os.path.basename(path)}")
+            self.logger.info("  • %s", os.path.basename(path))

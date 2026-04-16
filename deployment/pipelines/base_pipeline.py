@@ -45,7 +45,7 @@ class BaseInferencePipeline(ABC):
         self.device = device
         self.backend_type = backend_type
 
-        logger.info(f"Initialized {self.__class__.__name__} on device: {self.device}")
+        logger.info("Initialized %s on device: %s", self.__class__.__name__, self.device)
 
     @property
     def torch_device(self) -> torch.device:
@@ -169,5 +169,8 @@ class BaseInferencePipeline(ABC):
         return self
 
     def __exit__(self, exc_type, exc_val, exc_tb):
+        if exc_type:
+            logger.error("Pipeline failed with: %s", exc_val)
+
         self.cleanup()
         return False

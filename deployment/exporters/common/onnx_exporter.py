@@ -124,9 +124,10 @@ class ONNXExporter(BaseExporter):
         """
         self.logger.info("Exporting model to ONNX format...")
         if hasattr(sample_input, "shape"):
-            self.logger.info(f"  Input shape: {sample_input.shape}")
-        self.logger.info(f"  Output path: {output_path}")
-        self.logger.info(f"  Opset version: {export_cfg.opset_version}")
+            self.logger.info("  Input shape: %s", sample_input.shape)
+        self.logger.info("  Output path: %s", output_path)
+
+        self.logger.info("  Opset version: %s", export_cfg.opset_version)
 
         # Ensure output directory exists
         os.makedirs(os.path.dirname(output_path) if os.path.dirname(output_path) else ".", exist_ok=True)
@@ -147,14 +148,11 @@ class ONNXExporter(BaseExporter):
                     verbose=export_cfg.verbose,
                 )
 
-            self.logger.info(f"ONNX export completed: {output_path}")
+            self.logger.info("ONNX export completed: %s", output_path)
 
-        except Exception as e:
-            self.logger.error(f"ONNX export failed: {e}")
-            import traceback
-
-            self.logger.error(traceback.format_exc())
-            raise RuntimeError("ONNX export failed") from e
+        except Exception as exc:
+            self.logger.exception("ONNX export failed: %s", output_path)
+            raise RuntimeError(f"ONNX export failed: {output_path}") from exc
 
     def _simplify_model(self, onnx_path: str) -> None:
         """
@@ -172,4 +170,4 @@ class ONNXExporter(BaseExporter):
             else:
                 self.logger.warning("ONNX model simplification failed")
         except Exception as e:
-            self.logger.warning(f"ONNX simplification error: {e}")
+            self.logger.warning("ONNX simplification error: %s", e)

@@ -86,7 +86,7 @@ components = dict(
 )
 
 onnx_config = dict(
-    opset_version=16,
+    opset_version=17,
     do_constant_folding=True,
     export_params=True,
     keep_initializers_as_inputs=False,
@@ -166,7 +166,7 @@ components = dict(
 )
 
 onnx_config = dict(
-    opset_version=16,
+    opset_version=17,
     do_constant_folding=True,
     export_params=True,
     keep_initializers_as_inputs=False,

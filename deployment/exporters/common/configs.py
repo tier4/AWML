@@ -7,11 +7,6 @@ from types import MappingProxyType
 from typing import Any, Iterable, Mapping, Optional, Tuple
 
 
-def _empty_mapping() -> Mapping[Any, Any]:
-    """Return an immutable empty mapping."""
-    return MappingProxyType({})
-
-
 @dataclass(frozen=True)
 class TensorRTProfileConfig:
     """Optimization profile description for a TensorRT input tensor."""
@@ -42,9 +37,9 @@ class TensorRTProfileConfig:
 
 @dataclass(frozen=True)
 class TensorRTModelInputConfig:
-    """Typed container for TensorRT model input shape settings."""
+    """TensorRT model input shape settings."""
 
-    input_shapes: Mapping[str, TensorRTProfileConfig] = field(default_factory=_empty_mapping)
+    input_shapes: Mapping[str, TensorRTProfileConfig] = field(default_factory=dict)
 
     @classmethod
     def from_dict(cls, data: Mapping[str, Any]) -> TensorRTModelInputConfig:
@@ -99,7 +94,7 @@ class ONNXExportConfig(BaseExporterConfig):
     output_names: Tuple[str, ...] = ("output",)
     dynamic_axes: Optional[Mapping[str, Mapping[int, str]]] = None
     simplify: bool = True
-    opset_version: int = 16
+    opset_version: int = 17
     export_params: bool = True
     keep_initializers_as_inputs: bool = False
     verbose: bool = False

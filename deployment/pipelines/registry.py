@@ -52,12 +52,14 @@ class PipelineRegistry:
 
         if project_name in self._factories:
             logger.warning(
-                f"Overwriting existing factory for project '{project_name}': "
-                f"{self._factories[project_name].__name__} -> {factory_cls.__name__}"
+                "Overwriting existing factory for project '%s': %s -> %s",
+                project_name,
+                self._factories[project_name].__name__,
+                factory_cls.__name__,
             )
 
         self._factories[project_name] = factory_cls
-        logger.debug(f"Registered pipeline factory: {project_name} -> {factory_cls.__name__}")
+        logger.debug("Registered pipeline factory: %s -> %s", project_name, factory_cls.__name__)
         return factory_cls
 
     def get_factory(self, project_name: str) -> Type[BasePipelineFactory]:

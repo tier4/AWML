@@ -68,7 +68,10 @@ class VerificationOrchestrator:
         scenarios = self.config.get_verification_scenarios(export_mode)
 
         if not scenarios:
-            self.logger.info(f"No verification scenarios for export mode '{export_mode.value}', skipping...")
+            self.logger.info(
+                "No verification scenarios for export mode '%s', skipping...",
+                export_mode.value,
+            )
             return {}
 
         _, pytorch_valid = artifact_manager.resolve_artifact(Backend.PYTORCH)
@@ -82,7 +85,7 @@ class VerificationOrchestrator:
         num_verify_samples = verification_cfg.num_verify_samples
         tolerance = verification_cfg.tolerance
         self.logger.info("=" * 80)
-        self.logger.info(f"Running Verification (mode: {export_mode.value})")
+        self.logger.info("Running Verification (mode: %s)", export_mode.value)
         self.logger.info("=" * 80)
 
         all_results: Dict[str, Any] = {}
@@ -94,8 +97,13 @@ class VerificationOrchestrator:
             test_device = policy.test_device
 
             self.logger.info(
-                f"\nScenario {i+1}/{len(scenarios)}: "
-                f"{policy.ref_backend.value}({ref_device}) vs {policy.test_backend.value}({test_device})"
+                "\nScenario %s/%s: %s(%s) vs %s(%s)",
+                i + 1,
+                len(scenarios),
+                policy.ref_backend.value,
+                ref_device,
+                policy.test_backend.value,
+                test_device,
             )
 
             ref_artifact, ref_valid = artifact_manager.resolve_artifact(policy.ref_backend)
@@ -105,8 +113,11 @@ class VerificationOrchestrator:
                 ref_path = ref_artifact.path if ref_artifact else None
                 test_path = test_artifact.path if test_artifact else None
                 self.logger.warning(
-                    "  Skipping: missing or invalid artifacts "
-                    f"(ref={ref_path}, valid={ref_valid}, test={test_path}, valid={test_valid})"
+                    "  Skipping: missing or invalid artifacts (ref=%s, valid=%s, test=%s, valid=%s)",
+                    ref_path,
+                    ref_valid,
+                    test_path,
+                    test_valid,
                 )
                 continue
 
@@ -132,15 +143,24 @@ class VerificationOrchestrator:
                 total_passed += passed
                 total_failed += failed
                 if failed == 0:
-                    self.logger.info(f"Scenario {i+1} passed ({passed} comparisons)")
+                    self.logger.info("Scenario %s passed (%s comparisons)", i + 1, passed)
                 else:
-                    self.logger.warning(f"Scenario {i+1} failed ({failed}/{passed+failed} comparisons)")
+                    self.logger.warning(
+                        "Scenario %s failed (%s/%s comparisons)",
+                        i + 1,
+                        failed,
+                        passed + failed,
+                    )
 
         self.logger.info("\n" + "=" * 80)
         if total_failed == 0:
-            self.logger.info(f"All verifications passed! ({total_passed} total)")
+            self.logger.info("All verifications passed! (%s total)", total_passed)
         else:
-            self.logger.warning(f"{total_failed}/{total_passed + total_failed} verifications failed")
+            self.logger.warning(
+                "%s/%s verifications failed",
+                total_failed,
+                total_passed + total_failed,
+            )
         self.logger.info("=" * 80)
 
         all_results["summary"] = {

@@ -131,7 +131,7 @@ class RuntimeConfig:
 class OnnxConfig:
     """ONNX export settings (shared across all components)."""
 
-    opset_version: int = 16
+    opset_version: int = 17
     do_constant_folding: bool = True
     export_params: bool = True
     keep_initializers_as_inputs: bool = False
@@ -145,7 +145,7 @@ class OnnxConfig:
         if not isinstance(raw, Mapping):
             raise TypeError(f"onnx_config must be a mapping, got {type(raw).__name__}")
         return cls(
-            opset_version=int(raw.get("opset_version", 16)),
+            opset_version=int(raw.get("opset_version", 17)),
             do_constant_folding=bool(raw.get("do_constant_folding", True)),
             export_params=bool(raw.get("export_params", True)),
             keep_initializers_as_inputs=bool(raw.get("keep_initializers_as_inputs", False)),
@@ -238,7 +238,7 @@ class ComponentCfg:
 
 @dataclass(frozen=True)
 class ComponentsConfig:
-    """Unified component configuration: mapping of component id -> ComponentCfg.
+    """Component configuration: mapping of component id -> ComponentCfg.
 
     The dict key is the component identifier (e.g. "model", "pts_voxel_encoder", "pts_backbone_neck_head").
     """

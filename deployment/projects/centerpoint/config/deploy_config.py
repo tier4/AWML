@@ -122,7 +122,7 @@ runtime_io = dict(
 # ONNX Export Settings (shared across all components)
 # ============================================================================
 onnx_config = dict(
-    opset_version=16,
+    opset_version=17,
     do_constant_folding=True,
     export_params=True,
     keep_initializers_as_inputs=False,

@@ -51,7 +51,7 @@ class CenterPointPipelineFactory(BasePipelineFactory):
         """Create a CenterPoint pipeline for the specified backend.
 
         Args:
-            model_spec: Model specification (backend/device/path)
+            model_spec: Model specification (backend/device/artifact)
             pytorch_model: PyTorch model instance for preprocessing
             device: Override device (uses model_spec.device if None)
             components_cfg: Unified component configuration dict from deploy_config.
@@ -66,23 +66,31 @@ class CenterPointPipelineFactory(BasePipelineFactory):
         cls._validate_backend(backend)
 
         if backend is Backend.PYTORCH:
-            logger.info(f"Creating CenterPoint PyTorch pipeline on {device}")
+            logger.info("Creating CenterPoint PyTorch pipeline on %s", device)
             return CenterPointPyTorchPipeline(pytorch_model, device=device)
 
         if backend is Backend.ONNX:
-            logger.info(f"Creating CenterPoint ONNX pipeline from {model_spec.path} on {device}")
+            logger.info(
+                "Creating CenterPoint ONNX pipeline from %s on %s",
+                model_spec.artifact.path,
+                device,
+            )
             return CenterPointONNXPipeline(
                 pytorch_model,
-                onnx_dir=model_spec.path,
+                onnx_dir=model_spec.artifact.path,
                 device=device,
                 components_cfg=components_cfg,
             )
 
         if backend is Backend.TENSORRT:
-            logger.info(f"Creating CenterPoint TensorRT pipeline from {model_spec.path} on {device}")
+            logger.info(
+                "Creating CenterPoint TensorRT pipeline from %s on %s",
+                model_spec.artifact.path,
+                device,
+            )
             return CenterPointTensorRTPipeline(
                 pytorch_model,
-                tensorrt_dir=model_spec.path,
+                tensorrt_dir=model_spec.artifact.path,
                 device=device,
                 components_cfg=components_cfg,
             )

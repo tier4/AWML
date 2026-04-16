@@ -9,7 +9,7 @@ from __future__ import annotations
 
 import logging
 from abc import abstractmethod
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from typing import Any, Dict, List, Mapping, Optional, Tuple, Union
 
 import numpy as np
@@ -125,7 +125,7 @@ class VerificationMixin:
             return ComparisonResult(passed=True, max_diff=0.0, mean_diff=0.0)
 
         if reference is None or test is None:
-            logger.error(f"  {path}: One output is None while the other is not")
+            logger.error("  %s: One output is None while the other is not", path)
             return ComparisonResult(passed=False, max_diff=float("inf"), mean_diff=float("inf"))
 
         # Handle dictionaries
@@ -145,11 +145,16 @@ class VerificationMixin:
             diff = abs(float(reference) - float(test))
             passed = diff < tolerance
             if not passed:
-                logger.warning(f"  {path}: scalar diff={diff:.6f} > tolerance={tolerance:.6f}")
+                logger.warning("  %s: scalar diff=%.6f > tolerance=%.6f", path, diff, tolerance)
             return ComparisonResult(passed=passed, max_diff=diff, mean_diff=diff, num_elements=1)
 
         # Type mismatch
-        logger.error(f"  {path}: Type mismatch - {type(reference).__name__} vs {type(test).__name__}")
+        logger.error(
+            "  %s: Type mismatch - %s vs %s",
+            path,
+            type(reference).__name__,
+            type(test).__name__,
+        )
         return ComparisonResult(passed=False, max_diff=float("inf"), mean_diff=float("inf"))
 
     def _compare_dicts(
@@ -168,9 +173,9 @@ class VerificationMixin:
             missing = ref_keys - test_keys
             extra = test_keys - ref_keys
             if missing:
-                logger.error(f"  {path}: Missing keys in test: {missing}")
+                logger.error("  %s: Missing keys in test: %s", path, missing)
             if extra:
-                logger.warning(f"  {path}: Extra keys in test: {extra}")
+                logger.warning("  %s: Extra keys in test: %s", path, extra)
             return ComparisonResult(passed=False, max_diff=float("inf"), mean_diff=float("inf"))
 
         max_diff = 0.0
@@ -208,7 +213,7 @@ class VerificationMixin:
     ) -> ComparisonResult:
         """Compare list/tuple outputs."""
         if len(reference) != len(test):
-            logger.error(f"  {path}: Length mismatch - {len(reference)} vs {len(test)}")
+            logger.error("  %s: Length mismatch - %s vs %s", path, len(reference), len(test))
             return ComparisonResult(passed=False, max_diff=float("inf"), mean_diff=float("inf"))
 
         # Get optional output names from subclass
@@ -258,7 +263,7 @@ class VerificationMixin:
         test_np = self._to_numpy(test)
 
         if ref_np.shape != test_np.shape:
-            logger.error(f"  {path}: Shape mismatch - {ref_np.shape} vs {test_np.shape}")
+            logger.error("  %s: Shape mismatch - %s vs %s", path, ref_np.shape, test_np.shape)
             return ComparisonResult(passed=False, max_diff=float("inf"), mean_diff=float("inf"))
 
         diff = np.abs(ref_np - test_np)
@@ -267,7 +272,7 @@ class VerificationMixin:
         num_elements = int(diff.size)
 
         passed = max_diff < tolerance
-        logger.info(f"  {path}: shape={ref_np.shape}, max_diff={max_diff:.6f}, mean_diff={mean_diff:.6f}")
+        logger.info("  %s: shape=%s, max_diff=%.6f, mean_diff=%.6f", path, ref_np.shape, max_diff, mean_diff)
 
         return ComparisonResult(
             passed=passed,
@@ -306,15 +311,17 @@ class VerificationMixin:
         """
         result = self._compare_outputs(reference_output, test_output, tolerance, logger)
 
-        logger.info(f"\n  Overall Max difference: {result.max_diff:.6f}")
-        logger.info(f"  Overall Mean difference: {result.mean_diff:.6f}")
+        logger.info("\n  Overall Max difference: %.6f", result.max_diff)
+        logger.info("  Overall Mean difference: %.6f", result.mean_diff)
 
         if result.passed:
-            logger.info(f"  {backend_name} verification PASSED ✓")
+            logger.info("  %s verification PASSED ✓", backend_name)
         else:
             logger.warning(
-                f"  {backend_name} verification FAILED ✗ "
-                f"(max diff: {result.max_diff:.6f} > tolerance: {tolerance:.6f})"
+                "  %s verification FAILED ✗ (max diff: %.6f > tolerance: %.6f)",
+                backend_name,
+                result.max_diff,
+                tolerance,
             )
 
         return result.passed, {"max_diff": result.max_diff, "mean_diff": result.mean_diff}
@@ -365,17 +372,17 @@ class VerificationMixin:
 
         self._log_verification_header(reference, test, ref_device, test_device, num_samples, tolerance, logger)
 
-        logger.info(f"\nInitializing {reference.backend.value} reference pipeline...")
+        logger.info("\nInitializing %s reference pipeline...", reference.backend.value)
         ref_pipeline = self._create_pipeline_for_verification(reference, ref_device, logger)
 
-        logger.info(f"\nInitializing {test.backend.value} test pipeline...")
+        logger.info("\nInitializing %s test pipeline...", test.backend.value)
         test_pipeline = self._create_pipeline_for_verification(test, test_device, logger)
 
         actual_samples = min(num_samples, data_loader.num_samples)
         for i in range(actual_samples):
-            logger.info(f"\n{'='*60}")
-            logger.info(f"Verifying sample {i}")
-            logger.info(f"{'='*60}")
+            logger.info("\n%s", "=" * 60)
+            logger.info("Verifying sample %s", i)
+            logger.info("%s", "=" * 60)
 
             passed = self._verify_single_sample(
                 i,
@@ -400,7 +407,7 @@ class VerificationMixin:
                 try:
                     pipeline.cleanup()
                 except Exception as e:
-                    logger.warning(f"Error during pipeline cleanup in verification: {e}")
+                    logger.warning("Error during pipeline cleanup in verification: %s", e)
 
         sample_values = results["samples"].values()
         passed_count = sum(1 for v in sample_values if v is True)
@@ -429,25 +436,25 @@ class VerificationMixin:
         self._ensure_model_on_device(ref_device)
 
         ref_name = f"{ref_backend.value} ({ref_device})"
-        logger.info(f"\nRunning {ref_name} reference...")
+        logger.info("\nRunning %s reference...", ref_name)
         ref_result = ref_pipeline.infer(
             inference_input.data,
             metadata=inference_input.metadata,
             return_raw_outputs=True,
         )
-        logger.info(f"  {ref_name} latency: {ref_result.latency_ms:.2f} ms")
+        logger.info("  %s latency: %.2f ms", ref_name, ref_result.latency_ms)
 
         self._ensure_model_on_device(test_device)
 
         test_input = self._move_input_to_device(inference_input.data, test_device)
         test_name = f"{test_backend.value} ({test_device})"
-        logger.info(f"\nRunning {test_name} test...")
+        logger.info("\nRunning %s test...", test_name)
         test_result = test_pipeline.infer(
             test_input,
             metadata=inference_input.metadata,
             return_raw_outputs=True,
         )
-        logger.info(f"  {test_name} latency: {test_result.latency_ms:.2f} ms")
+        logger.info("  %s latency: %.2f ms", test_name, test_result.latency_ms)
 
         passed, _ = self._compare_backend_outputs(ref_result.output, test_result.output, tolerance, test_name, logger)
         return passed
@@ -478,10 +485,10 @@ class VerificationMixin:
         logger.info("\n" + "=" * 60)
         logger.info("Model Verification (Policy-Based)")
         logger.info("=" * 60)
-        logger.info(f"Reference: {reference.backend.value} on {ref_device} - {reference.path}")
-        logger.info(f"Test: {test.backend.value} on {test_device} - {test.path}")
-        logger.info(f"Number of samples: {num_samples}")
-        logger.info(f"Tolerance: {tolerance}")
+        logger.info("Reference: %s on %s - %s", reference.backend.value, ref_device, reference.artifact.path)
+        logger.info("Test: %s on %s - %s", test.backend.value, test_device, test.artifact.path)
+        logger.info("Number of samples: %s", num_samples)
+        logger.info("Tolerance: %s", tolerance)
         logger.info("=" * 60)
 
     def _log_verification_summary(self, results: VerifyResultDict, logger: logging.Logger) -> None:
@@ -492,11 +499,15 @@ class VerificationMixin:
 
         for key, value in results["samples"].items():
             status = "PASSED" if value else "FAILED"
-            logger.info(f"  {key}: {status}")
+            logger.info("  %s: %s", key, status)
 
         summary = results["summary"]
         logger.info("=" * 60)
         logger.info(
-            f"Total: {summary['passed']}/{summary['total']} passed, {summary['failed']}/{summary['total']} failed"
+            "Total: %s/%s passed, %s/%s failed",
+            summary["passed"],
+            summary["total"],
+            summary["failed"],
+            summary["total"],
         )
         logger.info("=" * 60)

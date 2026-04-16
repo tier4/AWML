@@ -143,8 +143,3 @@ class ModelSpec:
     backend: Backend
     device: DeviceSpec
     artifact: Artifact
-
-    @property
-    def path(self) -> str:
-        """Backward-compatible access to artifact path."""
-        return self.artifact.path

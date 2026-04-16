@@ -87,7 +87,7 @@ class EvaluationOrchestrator:
             backend_device = self._normalize_device_for_backend(backend, spec.device)
             normalized_spec = ModelSpec(backend=backend, device=backend_device, artifact=spec.artifact)
 
-            self.logger.info(f"\nEvaluating {backend.value} on {backend_device}...")
+            self.logger.info("\nEvaluating %s on %s...", backend.value, backend_device)
             try:
                 results = self.evaluator.evaluate(
                     model=normalized_spec,
@@ -96,10 +96,10 @@ class EvaluationOrchestrator:
                     verbose=verbose_mode,
                 )
                 all_results[backend.value] = results
-                self.logger.info(f"\n{backend.value.upper()} Results:")
+                self.logger.info("\n%s Results:", backend.value.upper())
                 self.evaluator.print_results(results)
             except Exception as e:
-                self.logger.error(f"Evaluation failed for {backend.value}: {e}", exc_info=True)
+                self.logger.error("Evaluation failed for %s: %s", backend.value, e, exc_info=True)
                 all_results[backend.value] = {"error": str(e)}
             finally:
                 from deployment.pipelines.gpu_resource_mixin import clear_cuda_memory
@@ -135,9 +135,13 @@ class EvaluationOrchestrator:
             if is_valid and artifact:
                 spec = ModelSpec(backend=backend_enum, device=device, artifact=artifact)
                 models_to_evaluate.append(spec)
-                self.logger.info(f"  - {backend_enum.value}: {artifact.path} (device: {device})")
+                self.logger.info("  - %s: %s (device: %s)", backend_enum.value, artifact.path, device)
             elif artifact is not None:
-                self.logger.warning(f"  - {backend_enum.value}: {artifact.path} (not found or invalid, skipping)")
+                self.logger.warning(
+                    "  - %s: %s (not found or invalid, skipping)",
+                    backend_enum.value,
+                    artifact.path,
+                )
 
         return models_to_evaluate
 
@@ -158,8 +162,9 @@ class EvaluationOrchestrator:
         elif backend is Backend.TENSORRT:
             if not normalized_device.is_cuda:
                 self.logger.warning(
-                    "TensorRT evaluation requires CUDA device. "
-                    f"Overriding device from '{normalized_device}' to '{self._get_default_device(backend)}'."
+                    "TensorRT evaluation requires CUDA device. Overriding device from '%s' to '%s'.",
+                    normalized_device,
+                    self._get_default_device(backend),
                 )
                 normalized_device = self._get_default_device(backend)
 
@@ -192,24 +197,24 @@ class EvaluationOrchestrator:
         self.logger.info("=" * 80)
 
         for backend_label, results in all_results.items():
-            self.logger.info(f"\n{backend_label.upper()}:")
+            self.logger.info("\n%s:", backend_label.upper())
             if results and "error" not in results:
                 if "accuracy" in results:
-                    self.logger.info(f"  Accuracy: {results.get('accuracy', 0):.4f}")
+                    self.logger.info("  Accuracy: %.4f", results.get("accuracy", 0))
                 if "mAP_by_mode" in results:
                     mAP_by_mode = results.get("mAP_by_mode", {})
                     if mAP_by_mode:
                         for mode, map_value in mAP_by_mode.items():
-                            self.logger.info(f"  mAP ({mode}): {map_value:.4f}")
+                            self.logger.info("  mAP (%s): %.4f", mode, map_value)
 
                 if "mAPH_by_mode" in results:
                     mAPH_by_mode = results.get("mAPH_by_mode", {})
                     if mAPH_by_mode:
                         for mode, maph_value in mAPH_by_mode.items():
-                            self.logger.info(f"  mAPH ({mode}): {maph_value:.4f}")
+                            self.logger.info("  mAPH (%s): %.4f", mode, maph_value)
 
                 if "latency" in results:
                     latency = results["latency"]
-                    self.logger.info(f"  Latency: {latency.mean_ms:.2f} ± {latency.std_ms:.2f} ms")
+                    self.logger.info("  Latency: %.2f ± %.2f ms", latency.mean_ms, latency.std_ms)
             else:
                 self.logger.info("  No results available")

@@ -44,9 +44,9 @@ class GPUResourceMixin(ABC):
             self._release_gpu_resources()
             clear_cuda_memory()
             self._cleanup_called = True
-            logger.debug(f"{self.__class__.__name__}: GPU resources released")
+            logger.debug("%s: GPU resources released", self.__class__.__name__)
         except Exception as e:
-            logger.warning(f"Error during GPU resource cleanup: {e}")
+            logger.warning("Error during GPU resource cleanup: %s", e)
 
     def __enter__(self):
         return self

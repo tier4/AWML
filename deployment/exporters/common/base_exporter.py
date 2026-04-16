@@ -1,7 +1,7 @@
 """
 Abstract base class for model exporters.
 
-Provides a unified interface for exporting models to different formats.
+Provides a interface for exporting models to different formats.
 """
 
 import logging

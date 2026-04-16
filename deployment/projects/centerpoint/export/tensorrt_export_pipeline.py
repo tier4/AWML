@@ -101,7 +101,7 @@ class CenterPointTensorRTExportPipeline(TensorRTExportPipeline):
 
         device_id = self._validate_cuda_device(device)
         torch.cuda.set_device(device_id)
-        self.logger.info(f"Using CUDA device: {device}")
+        self.logger.info("Using CUDA device: %s", device)
 
         output_dir_path = Path(output_dir)
         output_dir_path.mkdir(parents=True, exist_ok=True)
@@ -119,7 +119,13 @@ class CenterPointTensorRTExportPipeline(TensorRTExportPipeline):
             trt_path = output_dir_path / comp.engine_file
             trt_path.parent.mkdir(parents=True, exist_ok=True)
 
-            self.logger.info(f"\n[{i}/{num}] Converting {Path(onnx_file).name} → {trt_path.name}...")
+            self.logger.info(
+                "\n[%s/%s] Converting %s → %s...",
+                i,
+                num,
+                Path(onnx_file).name,
+                trt_path.name,
+            )
 
             exporter = self.exporter_factory.create_tensorrt_exporter(
                 config=config,
@@ -133,7 +139,7 @@ class CenterPointTensorRTExportPipeline(TensorRTExportPipeline):
                 output_path=str(trt_path),
                 onnx_path=onnx_file,
             )
-            self.logger.info(f"TensorRT engine saved: {artifact.path}")
+            self.logger.info("TensorRT engine saved: %s", artifact.path)
 
-        self.logger.info(f"\nAll TensorRT engines exported successfully to {output_dir_path}")
+        self.logger.info("\nAll TensorRT engines exported successfully to %s", output_dir_path)
         return Artifact(path=str(output_dir_path))

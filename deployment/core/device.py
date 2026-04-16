@@ -30,7 +30,7 @@ class DeviceSpec:
             raise ValueError("CUDA device index must be non-negative.")
 
     @classmethod
-    def from_value(cls, value: Union[str, torch.device, "DeviceSpec"]) -> "DeviceSpec":
+    def from_value(cls, value: Union[str, torch.device, DeviceSpec]) -> "DeviceSpec":
         """Normalize strings/torch.device/DeviceSpec into DeviceSpec."""
         if isinstance(value, cls):
             return value

@@ -389,7 +389,7 @@ class Detection2DMetricsInterface(BaseMetricsInterface):
             )
             self._frame_count += 1
         except Exception as e:
-            logger.warning(f"Failed to add frame {frame_name}: {e}")
+            logger.warning("Failed to add frame %s: %s", frame_name, e)
 
     def compute_metrics(self) -> Dict[str, float]:
         """Compute metrics from all added frames.
@@ -413,7 +413,7 @@ class Detection2DMetricsInterface(BaseMetricsInterface):
             return self._process_metrics_score(metrics_score)
 
         except Exception as e:
-            logger.error(f"Error computing metrics: {e}")
+            logger.error("Error computing metrics: %s", e)
             import traceback
 
             traceback.print_exc()

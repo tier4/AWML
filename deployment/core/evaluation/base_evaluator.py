@@ -105,7 +105,7 @@ class BaseEvaluator(VerificationMixin, ABC):
         target_device = device.to_torch_device()
 
         if current_device != target_device:
-            logger.info(f"Moving PyTorch model from {current_device} to {target_device}")
+            logger.info("Moving PyTorch model from %s to %s", current_device, target_device)
             self.pytorch_model = self.pytorch_model.to(target_device)
 
         return self.pytorch_model
@@ -198,7 +198,7 @@ class BaseEvaluator(VerificationMixin, ABC):
         Run evaluation on the specified model.
 
         Args:
-            model: Model specification (backend/device/path)
+            model: Model specification (backend/device/artifact)
             data_loader: Data loader for samples
             num_samples: Number of samples to evaluate
             verbose: Whether to print progress
@@ -206,8 +206,8 @@ class BaseEvaluator(VerificationMixin, ABC):
         Returns:
             Evaluation results dictionary
         """
-        logger.info(f"\nEvaluating {model.backend.value} model: {model.path}")
-        logger.info(f"Number of samples: {num_samples}")
+        logger.info("\nEvaluating %s model: %s", model.backend.value, model.artifact.path)
+        logger.info("Number of samples: %s", num_samples)
 
         self._ensure_model_on_device(model.device)
         pipeline = self._create_pipeline(model, model.device)
@@ -220,7 +220,7 @@ class BaseEvaluator(VerificationMixin, ABC):
 
         for idx in range(actual_samples):
             if verbose and idx % EVALUATION_DEFAULTS.LOG_INTERVAL == 0:
-                logger.info(f"Processing sample {idx + 1}/{actual_samples}")
+                logger.info("Processing sample %s/%s", idx + 1, actual_samples)
 
             sample = data_loader.load_sample(idx)
             inference_input = self._prepare_input(sample, data_loader, model.device)
@@ -246,7 +246,7 @@ class BaseEvaluator(VerificationMixin, ABC):
         try:
             pipeline.cleanup()
         except Exception as e:
-            logger.warning(f"Error during pipeline cleanup: {e}")
+            logger.warning("Error during pipeline cleanup: %s", e)
 
         return self._build_results(latencies, latency_breakdowns, actual_samples)
 

@@ -1,7 +1,7 @@
 """
-Autoware ML Unified Deployment Framework
+Autoware ML Deployment Framework
 
-This package provides a unified, task-agnostic deployment framework for
+This package provides a task-agnostic deployment framework for
 exporting, verifying, and evaluating machine learning models across different
 tasks (classification, detection, segmentation, etc.) and backends (ONNX,
 TensorRT).

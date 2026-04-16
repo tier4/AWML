@@ -69,7 +69,10 @@ class CenterHeadONNX(CenterHead):
         self.output_names: List[str] = list(self.task_heads[0].heads.keys())
         self._logger = MMLogger.get_current_instance()
         self._rot_y_axis_reference = rot_y_axis_reference
-        self._logger.info(f"Running CenterHeadONNX! Output rotations in y-axis: {self._rot_y_axis_reference}")
+        self._logger.info(
+            "Running CenterHeadONNX! Output rotations in y-axis: %s",
+            self._rot_y_axis_reference,
+        )
 
     def _export_forward_rot_y_axis_reference(self, head_tensors: Dict[str, torch.Tensor]) -> Tuple[torch.Tensor]:
         """

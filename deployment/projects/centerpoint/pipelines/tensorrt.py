@@ -72,7 +72,7 @@ class CenterPointTensorRTPipeline(GPUResourceMixin, CenterPointInferencePipeline
         self._voxel_encoder_end_event = cuda.Event()
 
         self._load_tensorrt_engines()
-        logger.info(f"TensorRT pipeline initialized with engines from: {tensorrt_dir}")
+        logger.info("TensorRT pipeline initialized with engines from: %s", tensorrt_dir)
 
     def _load_tensorrt_engines(self) -> None:
         """Load TensorRT engines for each component.
@@ -114,7 +114,7 @@ class CenterPointTensorRTPipeline(GPUResourceMixin, CenterPointInferencePipeline
 
             self._engines[component_name] = engine
             self._contexts[component_name] = context
-            logger.info(f"Loaded TensorRT engine: {component_name}")
+            logger.info("Loaded TensorRT engine: %s", component_name)
 
     def _get_io_names(
         self,

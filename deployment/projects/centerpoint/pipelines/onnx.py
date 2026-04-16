@@ -54,7 +54,7 @@ class CenterPointONNXPipeline(CenterPointInferencePipeline):
         self.onnx_dir = onnx_dir
         self._components_cfg = components_cfg
         self._load_onnx_models()
-        logger.info(f"ONNX pipeline initialized with models from: {onnx_dir}")
+        logger.info("ONNX pipeline initialized with models from: %s", onnx_dir)
 
     def _load_onnx_models(self) -> None:
         """Load ONNX models for each component (voxel encoder and backbone+head).
@@ -87,13 +87,13 @@ class CenterPointONNXPipeline(CenterPointInferencePipeline):
         # Select execution providers based on device
         providers = self.device.to_ort_provider()
         device_message = "CUDA" if self.device.is_cuda else "CPU"
-        logger.info(f"Using {device_message} execution provider for ONNX")
+        logger.info("Using %s execution provider for ONNX", device_message)
 
         try:
             self.voxel_encoder_session = ort.InferenceSession(voxel_encoder_path, sess_options=so, providers=providers)
-            logger.info(f"Loaded voxel encoder: {voxel_encoder_path}")
+            logger.info("Loaded voxel encoder: %s", voxel_encoder_path)
             self.backbone_head_session = ort.InferenceSession(backbone_head_path, sess_options=so, providers=providers)
-            logger.info(f"Loaded backbone+head: {backbone_head_path}")
+            logger.info("Loaded backbone+head: %s", backbone_head_path)
         except Exception as e:
             raise RuntimeError(f"Failed to load ONNX model: {e}") from e
 

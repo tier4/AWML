@@ -47,7 +47,7 @@ def run(args: argparse.Namespace) -> int:
         info_file=config.runtime_config.info_file,
         model_cfg=model_cfg,
     )
-    logger.info(f"Loaded {data_loader.num_samples} samples")
+    logger.info("Loaded %s samples", data_loader.num_samples)
 
     metrics_config = extract_t4metric_v2_config(model_cfg, logger=logger)
 

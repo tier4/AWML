@@ -38,7 +38,7 @@ def _import_and_register_project(project_name: str) -> None:
 
 
 def build_parser() -> argparse.ArgumentParser:
-    """Build the unified deployment CLI parser.
+    """Build the deployment CLI parser.
 
     This discovers `deployment.projects.<name>` bundles, imports them to trigger
     registration into `deployment.projects.project_registry`, then creates a

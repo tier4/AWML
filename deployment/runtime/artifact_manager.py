@@ -50,7 +50,7 @@ class ArtifactManager:
             artifact: Artifact to register
         """
         self.artifacts[backend.value] = artifact
-        self.logger.debug(f"Registered {backend.value} artifact: {artifact.path}")
+        self.logger.debug("Registered %s artifact: %s", backend.value, artifact.path)
 
     def get_artifact(self, backend: Backend) -> Optional[Artifact]:
         """

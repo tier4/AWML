@@ -481,7 +481,7 @@ class Detection3DMetricsInterface(BaseMetricsInterface):
                 )
             self._frame_count += 1
         except Exception as e:
-            logger.warning(f"Failed to add frame {frame_name}: {e}")
+            logger.warning("Failed to add frame %s: %s", frame_name, e)
 
     def compute_metrics(self) -> Dict[str, float]:
         """Compute metrics from all added frames.
@@ -517,7 +517,7 @@ class Detection3DMetricsInterface(BaseMetricsInterface):
                     metrics_score = evaluator.get_scene_result()
                     scene_results[eval_name] = metrics_score
                 except Exception as e:
-                    logger.warning(f"Error computing metrics for {eval_name}: {e}")
+                    logger.warning("Error computing metrics for %s: %s", eval_name, e)
 
             # Process cached metrics with evaluator name prefix
             all_metrics = {}
@@ -531,7 +531,7 @@ class Detection3DMetricsInterface(BaseMetricsInterface):
             return all_metrics
 
         except Exception as e:
-            logger.error(f"Error computing metrics: {e}")
+            logger.error("Error computing metrics: %s", e)
             import traceback
 
             traceback.print_exc()
@@ -557,7 +557,7 @@ class Detection3DMetricsInterface(BaseMetricsInterface):
                     f"\n{'=' * 80}\n" f"Distance Range: {distance_range} m\n" f"{'=' * 80}\n" f"{metrics_score}"
                 )
             except Exception as e:
-                logger.warning(f"Error formatting report for {eval_name}: {e}")
+                logger.warning("Error formatting report for %s: %s", eval_name, e)
 
         if not reports:
             raise RuntimeError("Failed to generate metrics report. Ensure that metrics have been computed.")
