@@ -4,7 +4,7 @@ _base_ = [
 
 # user setting
 data_root = "data/t4dataset/"
-info_directory_path = "info/kokseang_2_6_1/"
+info_directory_path = "info/user_name/"
 
 experiment_group_name = "bevfusion_lidar_2.6.0/base/" + _base_.dataset_type
 experiment_name = "lidar_voxel_second_secfpn_50e_8xb8_base_120m_t4metric_v2"
