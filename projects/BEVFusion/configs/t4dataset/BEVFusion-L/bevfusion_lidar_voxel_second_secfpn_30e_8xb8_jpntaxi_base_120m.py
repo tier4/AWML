@@ -13,10 +13,10 @@ custom_imports["imports"] += ["autoware_ml.detection3d.datasets.transforms"]
 
 # user setting
 data_root = "data/t4dataset/"
-info_directory_path = "info/kokseang_2_6_2/"
+info_directory_path = "info/user_name/"
 
 experiment_group_name = "bevfusion_lidar_intensity_2.6.1/jpntaxi_base/" + _base_.dataset_type
-experiment_name = "lidar_voxel_second_secfpn_30e_8xb8_jpntaxi_base_120m_no_bicycle_pooling"
+experiment_name = "lidar_voxel_second_secfpn_30e_8xb8_jpntaxi_base_120m"
 work_dir = "work_dirs/" + experiment_group_name + "/" + experiment_name
 
 # model parameter
@@ -48,7 +48,6 @@ model = dict(
             pc_range=_base_.point_cloud_range[0:2],
             voxel_size=_base_.voxel_size[0:2],
         ),
-        dense_heatmap_pooling_classes=["car", "truck", "bus"],  # Use class indices for pooling
     ),
 )
 
@@ -145,4 +144,4 @@ default_hooks = dict(
 )
 log_processor = dict(window_size=50)
 
-load_from = "work_dirs/bevfusion_lidar_2.6.0/base/T4Dataset/lidar_voxel_second_secfpn_50e_8xb8_base_120m/epoch_50.pth"
+load_from "<best_checkpoint>"
