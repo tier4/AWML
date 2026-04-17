@@ -1,29 +1,22 @@
 """
 PPSSegmentor: PTv3 backbone + PPS prototype-based head.
 
-Replaces DefaultSegmentorV2's linear seg_head with PartProtoHead, which adds:
-  - Cosine-similarity classification via learnable class prototypes
-  - EMA prototype updates during training (high-confidence points only)
-  - Proto contrast loss: supervised contrastive alignment of features to prototypes
-  - AF³ loss: adaptive focal foreground loss (rare classes get higher focal weight)
-  - Ortho loss: prototype orthogonality regularization (prevents collapse)
+Supported experimental features (controlled via head config):
+  - supervised_class_ids: partial supervision — only listed classes are supervised
+  - adaptive_ema: per-class EMA momentum inversely scaled by class frequency
+      → rare classes update prototypes faster (more responsive to few examples)
+  - rare_temperature / rare_class_ids: two-temperature system
+      → rare classes use a smaller temperature (sharper decision boundary)
 
 Two-phase fine-tuning from an existing DefaultSegmentorV2 checkpoint:
   Phase 1 (freeze_backbone=True, ~10 epochs): warm up the PPS head only.
   Phase 2 (freeze_backbone=False, ~40 epochs): full fine-tuning.
-
-Prototype warm-start: seg_head.weight [num_classes, feat_dim] from the loaded
-checkpoint initializes prototypes directly — no random restart.
 """
-
-import os
-import sys
 
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
-# PTv3 project must be on sys.path (handled by PTv3_PPS/train.py)
 from models.builder import MODELS, build_model
 from models.utils.structure import Point
 
@@ -34,21 +27,24 @@ from models.utils.structure import Point
 
 class PartProtoHead(nn.Module):
     """
-    Prototype-based segmentation head implementing PPS losses.
-
     Args:
         feat_dim: backbone output channels (64 for PTv3)
         num_classes: total number of semantic classes
         ignore_index: GT label value excluded from all losses
-        temperature: cosine similarity temperature; lower = sharper predictions
-        ema_momentum: prototype EMA decay (0.99 = slow update)
-        conf_threshold: min softmax confidence for a point to contribute to EMA
-        proto_loss_weight: weight for proto contrast loss
-        af3_loss_weight: weight for AF³ adaptive focal loss
-        ortho_loss_weight: weight for prototype orthogonality loss
-        supervised_class_ids: optional list of class IDs to supervise; all other
-            labeled points are remapped to ignore_index (partial supervision mode).
-            None = full supervision (default).
+        temperature: base cosine similarity temperature (lower = sharper)
+        ema_momentum: prototype EMA decay; higher = slower update (0.99 default)
+        conf_threshold: min softmax confidence to include a point in EMA update
+        proto_loss_weight: weight for supervised prototype contrastive loss
+        af3_loss_weight: weight for adaptive focal foreground loss
+        ortho_loss_weight: weight for prototype orthogonality regularization
+        supervised_class_ids: if set, remap all other GT labels to ignore_index
+            (partial supervision). None = full supervision.
+        adaptive_ema: if True, per-class EMA momentum scales with class frequency:
+            momentum_c = ema_momentum + (1 - ema_momentum) * (freq_c / max_freq)
+            Rare classes (low freq) → lower momentum → larger updates per step.
+        rare_class_ids: list of class IDs considered "rare" for two-temperature.
+        rare_temperature: temperature used for rare_class_ids columns in logits.
+            If None, all classes use the same `temperature`.
     """
 
     def __init__(
@@ -63,6 +59,9 @@ class PartProtoHead(nn.Module):
         af3_loss_weight: float = 1.0,
         ortho_loss_weight: float = 0.1,
         supervised_class_ids: list | None = None,
+        adaptive_ema: bool = False,
+        rare_class_ids: list | None = None,
+        rare_temperature: float | None = None,
     ):
         super().__init__()
         self.num_classes = num_classes
@@ -76,10 +75,22 @@ class PartProtoHead(nn.Module):
         self.supervised_class_ids = (
             set(supervised_class_ids) if supervised_class_ids is not None else None
         )
+        self.adaptive_ema = adaptive_ema
+        self.rare_class_ids = set(rare_class_ids) if rare_class_ids is not None else set()
+        self.rare_temperature = rare_temperature
 
-        # Learnable class prototypes [C, D] — warm-started from seg_head.weight
+        # Build per-class inverse-temperature vector [C] for two-temperature system
+        inv_temps = torch.full((num_classes,), 1.0 / temperature)
+        if rare_temperature is not None and rare_class_ids:
+            for cid in rare_class_ids:
+                inv_temps[cid] = 1.0 / rare_temperature
+        self.register_buffer("inv_temps", inv_temps)
+
+        # Running class frequency estimate for adaptive EMA (updated each forward)
+        self.register_buffer("class_freq", torch.ones(num_classes) / num_classes)
+
+        # Learnable class prototypes [C, D]
         self.prototypes = nn.Parameter(torch.randn(num_classes, feat_dim))
-        # Track which classes have been seen at least once (guards EMA init)
         self.register_buffer("initialized", torch.zeros(num_classes, dtype=torch.bool))
 
     # ------------------------------------------------------------------
@@ -87,13 +98,14 @@ class PartProtoHead(nn.Module):
     # ------------------------------------------------------------------
 
     def _cosine_logits(self, feat: torch.Tensor) -> torch.Tensor:
-        """[N, D] → [N, C] cosine similarity logits scaled by 1/temperature."""
-        feat_n = F.normalize(feat, dim=1)
-        proto_n = F.normalize(self.prototypes, dim=1)
-        return feat_n @ proto_n.T / self.temperature
+        """[N, D] → [N, C] cosine similarity logits (per-class temperature)."""
+        feat_n = F.normalize(feat, dim=1)           # [N, D]
+        proto_n = F.normalize(self.prototypes, dim=1)  # [C, D]
+        sim = feat_n @ proto_n.T                    # [N, C]
+        return sim * self.inv_temps.unsqueeze(0)    # broadcast [N, C] * [1, C]
 
     # ------------------------------------------------------------------
-    # Prototype EMA update (training only, no gradient)
+    # Prototype EMA update
     # ------------------------------------------------------------------
 
     @torch.no_grad()
@@ -103,22 +115,41 @@ class PartProtoHead(nn.Module):
         segment: torch.Tensor,
         logits: torch.Tensor,
     ) -> None:
-        """Update prototypes via EMA using high-confidence GT-labeled points."""
         probs = logits.softmax(dim=1)
-        conf, _ = probs.max(dim=1)  # [N]
+        conf, _ = probs.max(dim=1)
+
+        # Update running class frequency (EMA over batches)
+        counts = torch.bincount(
+            segment[segment != self.ignore_index].clamp(min=0),
+            minlength=self.num_classes,
+        ).float()
+        batch_freq = counts / counts.sum().clamp(min=1)
+        self.class_freq = 0.99 * self.class_freq + 0.01 * batch_freq
 
         for cls_id in range(self.num_classes):
             mask = (segment == cls_id) & (conf >= self.conf_threshold)
             if mask.sum() == 0:
                 continue
-            cls_mean = F.normalize(feat[mask], dim=1).mean(0)  # [D]
+            cls_mean = F.normalize(feat[mask], dim=1).mean(0)
+
+            # Per-class momentum: adaptive or fixed
+            if self.adaptive_ema:
+                max_freq = self.class_freq.max().clamp(min=1e-6)
+                # Rare class (low freq) → momentum closer to ema_momentum (fast update)
+                # Common class (high freq) → momentum closer to 1.0 (slow update)
+                momentum = self.ema_momentum + (1.0 - self.ema_momentum) * (
+                    self.class_freq[cls_id] / max_freq
+                )
+            else:
+                momentum = self.ema_momentum
+
             if not self.initialized[cls_id]:
                 self.prototypes.data[cls_id].copy_(cls_mean)
                 self.initialized[cls_id] = True
             else:
                 self.prototypes.data[cls_id] = (
-                    self.ema_momentum * self.prototypes.data[cls_id]
-                    + (1.0 - self.ema_momentum) * cls_mean
+                    momentum * self.prototypes.data[cls_id]
+                    + (1.0 - momentum) * cls_mean
                 )
 
     # ------------------------------------------------------------------
@@ -131,23 +162,17 @@ class PartProtoHead(nn.Module):
     def _proto_contrast_loss(
         self, feat: torch.Tensor, segment: torch.Tensor
     ) -> torch.Tensor:
-        """
-        Supervised contrastive loss: align each point's feature toward its
-        true-class prototype using cosine logits.
-        """
+        """Supervised contrastive: align each point's feature toward its true prototype."""
         feat_n = F.normalize(feat, dim=1)
         proto_n = F.normalize(self.prototypes, dim=1)
-        logits = feat_n @ proto_n.T / self.temperature  # [N, C]
+        # Use base temperature only for contrastive (not per-class)
+        logits = feat_n @ proto_n.T / self.temperature
         return F.cross_entropy(logits, segment, ignore_index=self.ignore_index)
 
     def _af3_loss(self, logits: torch.Tensor, segment: torch.Tensor) -> torch.Tensor:
         """
-        Adaptive Focal Foreground (AF³) loss.
-
-        Per-class frequency in the current batch determines gamma:
-            gamma_c = 3 * (1 - freq_c)
-        Rare classes (low freq) → high gamma → stronger focus on hard examples.
-        Common classes (high freq) → low gamma → near-standard CE.
+        Adaptive Focal Foreground loss.
+        gamma_c = 3 * (1 - freq_c): rare classes → gamma≈3, common → gamma≈0.
         """
         valid = segment != self.ignore_index
         if valid.sum() == 0:
@@ -156,34 +181,27 @@ class PartProtoHead(nn.Module):
         seg_v = segment[valid]
         logits_v = logits[valid]
 
-        # Per-class frequency in this batch
         counts = torch.bincount(seg_v, minlength=self.num_classes).float()
-        freq = counts / counts.sum().clamp(min=1)  # [C]
-        gamma = (3.0 * (1.0 - freq)).clamp(0.0, 3.0)  # [C]
+        freq = counts / counts.sum().clamp(min=1)
+        gamma = (3.0 * (1.0 - freq)).clamp(0.0, 3.0)
 
-        log_probs = F.log_softmax(logits_v, dim=1)  # [N_valid, C]
-        true_log_p = log_probs.gather(1, seg_v.unsqueeze(1)).squeeze(1)  # [N_valid]
-        true_p = true_log_p.exp()
-        focal_w = (1.0 - true_p) ** gamma[seg_v]  # [N_valid]
+        log_probs = F.log_softmax(logits_v, dim=1)
+        true_log_p = log_probs.gather(1, seg_v.unsqueeze(1)).squeeze(1)
+        focal_w = (1.0 - true_log_p.exp()) ** gamma[seg_v]
         return (focal_w * (-true_log_p)).mean()
 
     def _ortho_loss(self) -> torch.Tensor:
-        """
-        Orthogonality regularization: ||P @ P^T - I||_F^2 / C^2.
-        Encourages prototype diversity and prevents collapse of rare-class prototypes
-        into the feature space of common classes.
-        """
-        proto_n = F.normalize(self.prototypes, dim=1)  # [C, D]
-        gram = proto_n @ proto_n.T  # [C, C]
+        """||P @ P^T - I||_F^2 — prototype orthogonality regularization."""
+        proto_n = F.normalize(self.prototypes, dim=1)
+        gram = proto_n @ proto_n.T
         eye = torch.eye(self.num_classes, device=gram.device)
         return (gram - eye).pow(2).mean()
 
     # ------------------------------------------------------------------
-    # Partial supervision helper
+    # Partial supervision
     # ------------------------------------------------------------------
 
     def _apply_partial_supervision(self, segment: torch.Tensor) -> torch.Tensor:
-        """Remap non-supervised class labels to ignore_index."""
         if self.supervised_class_ids is None:
             return segment
         supervised = torch.zeros_like(segment, dtype=torch.bool)
@@ -202,10 +220,9 @@ class PartProtoHead(nn.Module):
         feat: torch.Tensor,
         segment: torch.Tensor | None = None,
     ) -> dict:
-        logits = self._cosine_logits(feat)  # [N, C]
+        logits = self._cosine_logits(feat)
 
         if segment is None:
-            # Test mode: no labels available
             return {"seg_logits": logits}
 
         seg = self._apply_partial_supervision(segment)
@@ -213,7 +230,6 @@ class PartProtoHead(nn.Module):
         if self.training:
             self._update_prototypes(feat.detach(), seg, logits.detach())
 
-        # Compute losses
         ce_loss = self._ce_loss(logits, seg)
         proto_loss = self._proto_contrast_loss(feat, seg) * self.proto_loss_weight
         af3_loss = self._af3_loss(logits, seg) * self.af3_loss_weight
@@ -238,8 +254,8 @@ class PPSSegmentor(nn.Module):
         num_classes: number of semantic classes
         backbone_out_channels: PTv3 decoder output channels (64)
         backbone: backbone config dict (same as DefaultSegmentorV2)
-        head: PartProtoHead config dict (all PartProtoHead __init__ kwargs)
-        freeze_backbone: if True, backbone parameters are frozen (Phase 1 training)
+        head: PartProtoHead config dict
+        freeze_backbone: if True, backbone parameters are frozen (Phase 1)
         weight_path: path to a DefaultSegmentorV2 checkpoint for warm-start
     """
 
@@ -266,17 +282,8 @@ class PPSSegmentor(nn.Module):
                 p.requires_grad_(False)
 
     def _load_pretrained(self, weight_path: str) -> None:
-        """
-        Load backbone weights and warm-start prototypes from a DefaultSegmentorV2
-        checkpoint (model_best.pth).
-
-        The checkpoint may be a raw state_dict or wrapped under 'state_dict'.
-        Backbone keys are expected as 'backbone.*'; prototype seed from 'seg_head.weight'.
-        """
         ckpt = torch.load(weight_path, map_location="cpu")
         state = ckpt.get("state_dict", ckpt)
-
-        # Strip 'module.' prefix from DDP checkpoints if present
         state = {k.removeprefix("module."): v for k, v in state.items()}
 
         backbone_state = {
@@ -290,7 +297,6 @@ class PPSSegmentor(nn.Module):
         if unexpected:
             print(f"[PPSSegmentor] backbone: {len(unexpected)} unexpected keys")
 
-        # Warm-start prototypes from the existing linear head weights [C, D]
         if "seg_head.weight" in state:
             with torch.no_grad():
                 self.head.prototypes.data.copy_(state["seg_head.weight"])
