@@ -16,7 +16,7 @@ data_root = "data/t4dataset/"
 info_directory_path = "info/kokseang_2_6_2/"
 
 experiment_group_name = "bevfusion_lidar_2.8.0/base/" + _base_.dataset_type
-experiment_name = "lidar_pts_encoder_sin_cos_voxel_second_secfpn_50e_8xb8_base_120m"
+experiment_name = "lidar_pts_encoder_sin_cos_voxel_second_secfpn_50e_8xb8_base_120m_10_channels"
 work_dir = "work_dirs/" + experiment_group_name + "/" + experiment_name
 
 # model parameter
