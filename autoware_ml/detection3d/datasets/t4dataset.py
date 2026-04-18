@@ -64,7 +64,7 @@ class T4Dataset(NuScenesDataset):
                     break
 
                 if entry["images"][camera_order]["img_path"] is None or not osp.exists(
-                    entry["images"][camera_order]["img_path"]
+                    self.data_root + entry["images"][camera_order]["img_path"]
                 ):
                     filtered = True
                     break
