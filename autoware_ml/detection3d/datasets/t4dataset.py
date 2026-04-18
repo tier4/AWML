@@ -5,6 +5,7 @@ import numpy as np
 from mmdet3d.datasets import NuScenesDataset
 from mmengine.logging import print_log
 from mmengine.registry import DATASETS
+import tqdm
 
 
 @DATASETS.register_module()
@@ -56,16 +57,14 @@ class T4Dataset(NuScenesDataset):
             return self.data_list
 
         filtered_data_list = []
-        for entry in self.data_list:
+        for entry in tqdm.tqdm(self.data_list, desc="Filtering data"):
             filtered = False
             for camera_order in filter_frames_with_camera_order:
                 if camera_order not in entry["images"]:
                     filtered = True
                     break
-
-                if entry["images"][camera_order]["img_path"] is None or not osp.exists(
-                    entry["images"][camera_order]["img_path"]
-                ):
+                
+                if entry["images"][camera_order]["img_path"] is None:
                     filtered = True
                     break
 
