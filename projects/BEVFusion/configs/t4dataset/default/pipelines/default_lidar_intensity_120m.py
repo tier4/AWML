@@ -137,4 +137,4 @@ test_pipeline = [
 #   e.g., dict(filter_frames_with_missing_image=True).
 # - This is a LiDAR-only config (`input_modality['use_camera'] = False`), so
 #   image-based filtering does not apply and `filter_cfg` is intentionally None.
-filter_cfg = None
+filter_cfg = dict()

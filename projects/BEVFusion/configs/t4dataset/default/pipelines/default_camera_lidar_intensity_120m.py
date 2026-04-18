@@ -107,6 +107,8 @@ train_pipeline = [
             "img_aug_matrix",
             "lidar_aug_matrix",
             "timestamp",
+            "vehicle_type",
+            "city",
         ],
     ),
 ]
@@ -164,6 +166,8 @@ test_pipeline = [
             "num_pts_feats",
             "num_views",
             "timestamp",
+            "vehicle_type",
+            "city",
         ],
     ),
 ]

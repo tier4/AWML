@@ -13,16 +13,16 @@ train_pipeline = [
         type="BEVLoadMultiViewImageFromFiles",
         to_float32=True,
         color_type="color",
-        backend_args=backend_args,
+        backend_args=_base_.backend_args,
         camera_order=camera_order,
     ),
     # We keep loading LiDAR points to make downstream BEV augmentation easier 
     dict(
         type="LoadPointsFromFile",
         coord_type="LIDAR",
-        load_dim=point_load_dim,
-        use_dim=point_load_dim,
-        backend_args=backend_args,
+        load_dim=_base_.point_load_dim,
+        use_dim=_base_.point_load_dim,
+        backend_args=_base_.backend_args,
     ),
     dict(type="LoadAnnotations3D", with_bbox_3d=True, with_label_3d=True, with_attr_label=False),
     dict(
@@ -41,7 +41,7 @@ train_pipeline = [
         translation_std=[0.5, 0.5, 0.2],
     ),
     dict(type="BEVFusionRandomFlip3D"),
-    dict(type="ObjectRangeFilter", point_cloud_range=point_cloud_range),
+    dict(type="ObjectRangeFilter", point_cloud_range=_base_.point_cloud_range),
     # Remove LiDAR points from the data
     dict(type="BEVFusionRemoveLiDARPoints"),
     dict(
@@ -92,7 +92,7 @@ test_pipeline = [
         type="BEVLoadMultiViewImageFromFiles",
         to_float32=True,
         color_type="color",
-        backend_args=backend_args,
+        backend_args=_base_.backend_args,
         camera_order=camera_order,
     ),
     dict(
