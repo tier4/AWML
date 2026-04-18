@@ -1,25 +1,8 @@
-# Dataset parameters
-backend_args = None
-num_workers = 32
-input_modality = dict(use_lidar=True, use_camera=True)
+## This config is for the camera_base only model, without lidar points
 
-# range setting
-point_cloud_range = [-122.4, -122.4, -3.0, 122.4, 122.4, 5.0]
-voxel_size = [0.17, 0.17, 0.2]
-grid_size = [1440, 1440, 41]
-eval_class_range = {
-    "car": 120,
-    "truck": 120,
-    "bus": 120,
-    "bicycle": 120,
-    "pedestrian": 120,
-}
-
-# LiDAR parameters
-point_load_dim = 5  # x, y, z, intensity, ring_id
-point_use_dim = 5
-lidar_sweep_dims = [0, 1, 2, 3, 4]  # x, y, z, intensity, time_lag
-sweeps_num = 1
+_base_ = [
+    "./default_lidar_120m.py",
+]
 
 # Image parameters
 image_size = [384, 768]  # Height, Width
@@ -33,22 +16,13 @@ train_pipeline = [
         backend_args=backend_args,
         camera_order=camera_order,
     ),
+    # We keep loading LiDAR points to make downstream BEV augmentation easier 
     dict(
         type="LoadPointsFromFile",
         coord_type="LIDAR",
         load_dim=point_load_dim,
         use_dim=point_load_dim,
         backend_args=backend_args,
-    ),
-    dict(
-        type="LoadPointsFromMultiSweeps",
-        sweeps_num=sweeps_num,
-        load_dim=point_load_dim,
-        use_dim=lidar_sweep_dims,
-        pad_empty_sweeps=True,
-        remove_close=True,
-        backend_args=backend_args,
-        test_mode=False,
     ),
     dict(type="LoadAnnotations3D", with_bbox_3d=True, with_label_3d=True, with_attr_label=False),
     dict(
@@ -67,8 +41,9 @@ train_pipeline = [
         translation_std=[0.5, 0.5, 0.2],
     ),
     dict(type="BEVFusionRandomFlip3D"),
-    dict(type="PointsRangeFilter", point_cloud_range=point_cloud_range),
     dict(type="ObjectRangeFilter", point_cloud_range=point_cloud_range),
+    # Remove LiDAR points from the data
+    dict(type="BEVFusionRemoveLiDARPoints"),
     dict(
         type="ObjectNameFilter",
         classes=[
@@ -84,7 +59,6 @@ train_pipeline = [
             "traffic_cone",
         ],
     ),
-    dict(type="PointShuffle"),
     dict(
         type="Pack3DDetInputs",
         keys=["points", "img", "gt_bboxes_3d", "gt_labels_3d", "gt_bboxes", "gt_labels"],
@@ -107,6 +81,8 @@ train_pipeline = [
             "img_aug_matrix",
             "lidar_aug_matrix",
             "timestamp",
+            "vehicle_type",
+            "city",
         ],
     ),
 ]
@@ -120,23 +96,6 @@ test_pipeline = [
         camera_order=camera_order,
     ),
     dict(
-        type="LoadPointsFromFile",
-        coord_type="LIDAR",
-        load_dim=point_load_dim,
-        use_dim=point_load_dim,
-        backend_args=backend_args,
-    ),
-    dict(
-        type="LoadPointsFromMultiSweeps",
-        sweeps_num=sweeps_num,
-        load_dim=point_load_dim,
-        use_dim=lidar_sweep_dims,
-        pad_empty_sweeps=True,
-        remove_close=True,
-        backend_args=backend_args,
-        test_mode=True,
-    ),
-    dict(
         type="ImageAug3D",
         final_dim=image_size,
         resize_lim=[0.34, 0.34],
@@ -145,7 +104,6 @@ test_pipeline = [
         rand_flip=False,
         is_train=False,
     ),
-    dict(type="PointsRangeFilter", point_cloud_range=point_cloud_range),
     dict(
         type="Pack3DDetInputs",
         keys=["img", "points", "gt_bboxes_3d", "gt_labels_3d"],
@@ -164,6 +122,8 @@ test_pipeline = [
             "num_pts_feats",
             "num_views",
             "timestamp",
+            "vehicle_type",
+            "city",
         ],
     ),
 ]
