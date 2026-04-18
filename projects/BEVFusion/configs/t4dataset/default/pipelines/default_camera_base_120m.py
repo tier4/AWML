@@ -3,6 +3,7 @@
 _base_ = [
     "./default_lidar_120m.py",
 ]
+input_modality = dict(use_lidar=True, use_camera=True)
 
 # Image parameters
 image_size = [384, 768]  # Height, Width

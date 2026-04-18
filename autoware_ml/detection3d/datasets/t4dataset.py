@@ -179,6 +179,7 @@ class T4Dataset(NuScenesDataset):
                             cam_prefix,
                             img_info["img_path"],
                         )
+                    # print_log(f"Camera path: {img_info['img_path']}", logger="current")
 
             if self.default_cam_key is not None:
                 info["img_path"] = info["images"][self.default_cam_key]["img_path"]
