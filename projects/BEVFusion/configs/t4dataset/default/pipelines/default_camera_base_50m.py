@@ -1,7 +1,7 @@
 ## This config is for the camera_base only model, without lidar points
 
 _base_ = [
-    "./default_lidar_120m.py",
+    "./default_lidar_50m.py",
 ]
 input_modality = dict(use_lidar=True, use_camera=True)
 
@@ -29,8 +29,7 @@ train_pipeline = [
     dict(
         type="ImageAug3D",
         final_dim=image_size,
-        # resize_lim=[0.28, 0.40],
-        resize_lim=0.02,
+        resize_lim=[0.28, 0.40],
         bot_pct_lim=[0.0, 0.0],
         rot_lim=[0.0, 0.0],
         rand_flip=True,
@@ -103,8 +102,7 @@ test_pipeline = [
     dict(
         type="ImageAug3D",
         final_dim=image_size,
-        # resize_lim=[0.34, 0.34],
-        resize_lim=0.02,
+        resize_lim=[0.34, 0.34],
         bot_pct_lim=[0.0, 0.0],
         rot_lim=[0.0, 0.0],
         rand_flip=False,
