@@ -199,12 +199,12 @@ class DeepenDataset(AnnotationToolDataset):
             file_id: str = f"{idx}.pcd"
 
             for box_global in boxes_in_frame_global:
-                unique_label_id: str = id_generator.assign_id(box_global.uuid, str(box_global.semantic_label))
+                unique_label_id: str = id_generator.assign_id(box_global.uuid, str(box_global.semantic_label.name))
 
                 annotation_fields = DeepenAnnotationFields(
                     dataset_id=tool_id,
                     file_id=file_id,
-                    label_category_id=str(box_global.semantic_label),
+                    label_category_id=str(box_global.semantic_label.name),
                     label_id=unique_label_id,
                     label_type="3d_bbox",
                     attributes={"pseudo-label": "auto-labeled"},

@@ -429,6 +429,64 @@ class TestNMSEnsembleModel(unittest.TestCase):
         instances = result["data_list"][0]["pred_instances_3d"]
         self.assertGreater(len(instances), 0)
 
+    def test_ensemble_skips_missing_model_frame_by_token(self):
+        """
+        Test case for token-based alignment when one model is missing a frame.
+
+        This verifies that a missing frame from one model is treated as an empty
+        contribution for that token instead of shifting later frames forward.
+        """
+        token_aligned_results = [
+            {
+                "metainfo": {"classes": self.sample_classes},
+                "data_list": [
+                    {
+                        "token": "frame_0",
+                        "pred_instances_3d": [
+                            {"bbox_label_3d": 0, "bbox_score_3d": 0.8, "bbox_3d": [1.0, 2.0, 0.0, 4.0, 2.0, 1.5, 0.1]}
+                        ],
+                    },
+                    {
+                        "token": "frame_1",
+                        "pred_instances_3d": [
+                            {
+                                "bbox_label_3d": 1,
+                                "bbox_score_3d": 0.7,
+                                "bbox_3d": [10.0, 11.0, 0.0, 0.6, 0.6, 1.8, 0.0],
+                            }
+                        ],
+                    },
+                ],
+            },
+            {
+                "metainfo": {"classes": self.sample_classes},
+                "data_list": [
+                    {
+                        "token": "frame_1",
+                        "pred_instances_3d": [
+                            {
+                                "bbox_label_3d": 2,
+                                "bbox_score_3d": 0.6,
+                                "bbox_3d": [20.0, 21.0, 0.0, 1.8, 0.8, 1.2, 0.2],
+                            }
+                        ],
+                    }
+                ],
+            },
+        ]
+        model = NMSEnsembleModel(ensemble_setting=self.ensemble_settings, logger=self.mock_logger)
+        result = model.ensemble(token_aligned_results)
+
+        self.assertEqual(len(result["data_list"]), 2)
+        self.assertEqual(result["data_list"][0]["token"], "frame_0")
+        self.assertEqual(result["data_list"][1]["token"], "frame_1")
+        self.assertEqual(len(result["data_list"][0]["pred_instances_3d"]), 1)
+        self.assertEqual(result["data_list"][0]["pred_instances_3d"][0]["bbox_label_3d"], 0)
+        self.assertEqual(
+            {instance["bbox_label_3d"] for instance in result["data_list"][1]["pred_instances_3d"]},
+            {1, 2},
+        )
+
     def test_weight_mismatch_assertion(self):
         """
         Test case for mismatched ensemble weights and model count. (2 models, 1 weight)
@@ -556,6 +614,47 @@ class TestNMSHelperFunctions(unittest.TestCase):
         self.assertEqual(len(iou), 1)
         self.assertAlmostEqual(iou[0], expected_iou, places=6)
 
+    def test_calculate_iou_uses_yaw_for_rotated_boxes(self):
+        """
+        Ensure `_calculate_iou` uses box yaw instead of axis-aligned overlap.
+
+        The pair below is adapted from a real output example where the
+        axis-aligned IoU is below 0.3, but the rotated IoU is above 0.3.
+        """
+
+        def axis_aligned_iou(box1: np.ndarray, box2: np.ndarray) -> float:
+            x1, y1, dx1, dy1 = box1[0], box1[1], box1[3], box1[4]
+            x2, y2, dx2, dy2 = box2[0], box2[1], box2[3], box2[4]
+            x_min = max(x1 - dx1 / 2, x2 - dx2 / 2)
+            y_min = max(y1 - dy1 / 2, y2 - dy2 / 2)
+            x_max = min(x1 + dx1 / 2, x2 + dx2 / 2)
+            y_max = min(y1 + dy1 / 2, y2 + dy2 / 2)
+            intersection = max(0, x_max - x_min) * max(0, y_max - y_min)
+            area1 = dx1 * dy1
+            area2 = dx2 * dy2
+            union = area1 + area2 - intersection
+            return intersection / union if union > 0 else 0.0
+
+        box1 = np.array([0.0, 0.0, 0.0, 4.25, 1.7265625, 1.5, np.deg2rad(72.135684475929)])
+        box2 = np.array(
+            [
+                [
+                    -0.44700223403,
+                    -1.72870231061,
+                    0.0,
+                    4.039058208465576,
+                    1.8613028526306152,
+                    1.5,
+                    np.deg2rad(73.58854567046951),
+                ]
+            ]
+        )
+
+        rotated_iou = _calculate_iou(box1, box2)
+        self.assertEqual(len(rotated_iou), 1)
+        self.assertLess(axis_aligned_iou(box1, box2[0]), 0.3)
+        self.assertGreater(rotated_iou[0], 0.3)
+
     def test_calculate_iou_multiple_boxes(self):
         """
         Ensure `_calculate_iou` evaluates IoU against a batch of boxes.
@@ -605,6 +704,29 @@ class TestNMSHelperFunctions(unittest.TestCase):
         self.assertIn(1, keep_indices)
         self.assertIn(2, keep_indices)
         self.assertNotIn(0, keep_indices)
+
+    def test_nms_indices_suppresses_rotated_overlap(self):
+        """
+        Ensure `_nms_indices` suppresses rotated overlaps that axis-aligned IoU
+        would miss.
+        """
+        boxes = np.array(
+            [
+                [0.0, 0.0, 0.0, 4.25, 1.7265625, 1.5, np.deg2rad(72.135684475929)],
+                [
+                    -0.44700223403,
+                    -1.72870231061,
+                    0.0,
+                    4.039058208465576,
+                    1.8613028526306152,
+                    1.5,
+                    np.deg2rad(73.58854567046951),
+                ],
+            ]
+        )
+        scores = np.array([0.9, 0.8])
+        keep_indices = _nms_indices(boxes, scores, iou_threshold=0.3)
+        self.assertEqual(keep_indices, [0])
 
     def test_nms_indices_no_overlap(self):
         """

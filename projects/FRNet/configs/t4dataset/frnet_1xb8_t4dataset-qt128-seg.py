@@ -9,6 +9,8 @@ custom_imports = dict(
         "projects.FRNet.frnet.datasets",
         "projects.FRNet.frnet.datasets.transforms",
         "projects.FRNet.frnet.models",
+        "autoware_ml.hooks",
+        "autoware_ml.segmentation3d.evaluation.metrics",
     ],
     allow_failed_imports=False,
 )
@@ -290,8 +292,19 @@ val_dataloader = dict(
 )
 test_dataloader = val_dataloader
 
-val_evaluator = dict(type="SegMetric")
-test_evaluator = val_evaluator
+distance_ranges = [(0, 20), (20, 40), (40, 60), (60, 80), (80, 100.0), (100.0, 120.0)]
+val_evaluator = dict(
+    type="T4SegMetric",
+    num_classes=num_classes,
+    ignore_index=ignore_index,
+    distance_ranges=distance_ranges,
+)
+test_evaluator = dict(
+    type="T4SegMetric",
+    num_classes=num_classes,
+    ignore_index=ignore_index,
+    distance_ranges=distance_ranges,
+)
 
 vis_backends = [dict(type="LocalVisBackend"), dict(type="TensorboardVisBackend")]
 
@@ -323,4 +336,8 @@ auto_scale_lr = dict(enable=False, base_batch_size=16)
 
 log_processor = dict(type="LogProcessor", window_size=50, by_epoch=False)
 
-default_hooks = dict(checkpoint=dict(type="CheckpointHook", by_epoch=False, interval=-1, save_best="miou"))
+default_hooks = dict(
+    logger=dict(type="T4SegLoggerHook", log_metric_by_epoch=False),
+    checkpoint=dict(type="CheckpointHook", by_epoch=False, interval=-1, save_best="miou"),
+)
+custom_hooks = [dict(type="T4SegTensorboardHook")]

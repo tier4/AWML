@@ -5,27 +5,40 @@ Author: Xiaoyang Wu (xiaoyang.wu.cs@gmail.com)
 Please cite our work if the code is helpful to you.
 """
 
+import json
 import os
 import time
 from collections import OrderedDict
 
+import matplotlib
+
+matplotlib.use("Agg")
+import matplotlib.pyplot as plt
 import numpy as np
 import torch
+import torch.distributed as dist
 import torch.nn.functional as F
 import torch.utils.data
 import utils.comm as comm
 from datasets import build_dataset, collate_fn
 from models import build_model
+from tensorboardX import SummaryWriter
 from utils.logger import get_root_logger
 from utils.misc import (
     AverageMeter,
-    intersection_and_union,
     make_dirs,
 )
 from utils.registry import Registry
 from utils.visualization import get_segmentation_colors, visualize_point_cloud
 
 from autoware_ml.segmentation3d.datasets.utils import class_mapping_to_names
+from autoware_ml.segmentation3d.evaluation import (
+    SegEvalResult,
+    build_t4_seg_tb_scalars,
+    iter_t4_seg_confusion_matrix_figures,
+    t4_seg_eval_from_hists,
+    update_seg_eval_histograms,
+)
 
 from .defaults import create_ddp_model
 
@@ -42,6 +55,7 @@ class TesterBase:
         self.logger.info("=> Loading config ...")
         self.cfg = cfg
         self.verbose = verbose
+        self.writer = self.build_writer()
         if self.verbose:
             self.logger.info(f"Save path: {cfg.save_path}")
             self.logger.info(f"Config:\n{cfg.pretty_text}")
@@ -100,6 +114,12 @@ class TesterBase:
         )
         return test_loader
 
+    def build_writer(self):
+        if not comm.is_main_process():
+            return None
+        self.logger.info(f"Tensorboard writer logging dir: {self.cfg.save_path}")
+        return SummaryWriter(self.cfg.save_path)
+
     def test(self):
         raise NotImplementedError
 
@@ -128,17 +148,23 @@ class SemSegTester(TesterBase):
         logger.info(">>>>>>>>>>>>>>>> Start Evaluation >>>>>>>>>>>>>>>>")
 
         batch_time = AverageMeter()
-        intersection_meter = AverageMeter()
-        union_meter = AverageMeter()
-        target_meter = AverageMeter()
+        num_classes = self.cfg.data.num_classes
+        ignore_index = self.cfg.data.ignore_index
+        metric_options = getattr(self.cfg, "metric_options", None) or {}
+        distance_ranges = metric_options.get("distance_ranges") or []
+        reduce_device = (
+            torch.device("cuda", torch.cuda.current_device()) if torch.cuda.is_available() else torch.device("cpu")
+        )
+        total_hist = torch.zeros((num_classes, num_classes), dtype=torch.float64, device=reduce_device)
+        range_hist_tensors = {
+            f"{lo:g}-{hi:g}m": torch.zeros((num_classes, num_classes), dtype=torch.float64, device=reduce_device)
+            for lo, hi in distance_ranges
+        }
         self.model.eval()
 
         save_path = os.path.join(self.cfg.save_path, "result")
         make_dirs(save_path)
-        # create submit folder only on main process
         if self.cfg.data.test.type == "NuScenesDataset" and comm.is_main_process():
-            import json
-
             make_dirs(os.path.join(save_path, "submit", "lidarseg", "test"))
             make_dirs(os.path.join(save_path, "submit", "test"))
             submission = dict(
@@ -153,8 +179,6 @@ class SemSegTester(TesterBase):
             with open(os.path.join(save_path, "submit", "test", "submission.json"), "w") as f:
                 json.dump(submission, f, indent=4)
         comm.synchronize()
-        record = {}
-        # fragment inference
         for idx, data_dict in enumerate(self.test_loader):
             end = time.time()
             data_dict = data_dict[0]  # current assume batch size is 1
@@ -162,15 +186,20 @@ class SemSegTester(TesterBase):
             segment = data_dict.pop("segment")
             data_name = data_dict.pop("name")
             pred_save_path = os.path.join(save_path, "{}_pred.npy".format(data_name))
-            feat_save_path = os.path.join(save_path, "{}_feat.npy".format(data_name))
             result_save_path = os.path.join(save_path, "{}_{}_pred.npz".format(idx, data_name))
             if os.path.isfile(pred_save_path):
                 logger.info("{}/{}: {}, loaded pred and label.".format(idx + 1, len(self.test_loader), data_name))
                 pred = np.load(pred_save_path)
+                # Try to recover cached features from the corresponding NPZ file, if available.
+                feat_np = None
+                if os.path.isfile(result_save_path):
+                    cached_result = np.load(result_save_path)
+                    if "feat" in getattr(cached_result, "files", []):
+                        feat_np = cached_result["feat"]
                 if "origin_segment" in data_dict.keys():
                     segment = data_dict["origin_segment"]
             else:
-                pred = torch.zeros((segment.size, self.cfg.data.num_classes)).cuda()
+                pred = torch.zeros((segment.size, num_classes)).cuda()
                 feat = torch.zeros((segment.size, 4)).cuda()
                 for i in range(len(fragment_list)):
                     fragment_batch_size = 1
@@ -201,17 +230,15 @@ class SemSegTester(TesterBase):
                         )
                     )
                 pred = pred.max(1)[1].data.cpu().numpy()
+                feat_np = feat.cpu().numpy()
 
                 if "origin_segment" in data_dict.keys():
                     assert "inverse" in data_dict.keys()
                     pred = pred[data_dict["inverse"]]
-                    feat = feat[data_dict["inverse"]]
+                    feat_np = feat_np[data_dict["inverse"]]
                     segment = data_dict["origin_segment"]
-                # np.save(pred_save_path, pred)
-                # np.save(feat_save_path, feat.cpu().numpy())
-                np.savez_compressed(result_save_path, pred=pred, feat=feat.cpu().numpy())
+                np.savez_compressed(result_save_path, pred=pred, feat=feat_np)
 
-                # Call visualization
                 if self.cfg.show:
                     outputs = {"pred": pred, "segment": segment, "result_path": result_save_path}
                     self.visualize_results(outputs, result_save_path)
@@ -227,85 +254,85 @@ class SemSegTester(TesterBase):
                     )
                 )
 
-            intersection, union, target = intersection_and_union(
-                pred, segment, self.cfg.data.num_classes, self.cfg.data.ignore_index
+            coord_np = feat_np[:, :3] if feat_np is not None and feat_np.ndim == 2 and feat_np.shape[1] >= 3 else None
+            sample_total_hist = np.zeros((num_classes, num_classes), dtype=np.float64)
+            sample_range_hists = {
+                label: np.zeros((num_classes, num_classes), dtype=np.float64) for label in range_hist_tensors
+            }
+            update_seg_eval_histograms(
+                total_hist=sample_total_hist,
+                pred=pred,
+                gt=segment,
+                num_classes=num_classes,
+                ignore_index=ignore_index,
+                range_hists=sample_range_hists,
+                coord=coord_np,
+                distance_ranges=distance_ranges if distance_ranges else None,
             )
-            intersection_meter.update(intersection)
-            union_meter.update(union)
-            target_meter.update(target)
-            record[data_name] = dict(intersection=intersection, union=union, target=target)
-
-            mask = union != 0
-            iou_class = intersection / (union + 1e-10)
-            iou = np.mean(iou_class[mask])
-            acc = sum(intersection) / (sum(target) + 1e-10)
-
-            m_iou = np.mean(intersection_meter.sum / (union_meter.sum + 1e-10))
-            m_acc = np.mean(intersection_meter.sum / (target_meter.sum + 1e-10))
+            total_hist += torch.from_numpy(sample_total_hist).to(device=total_hist.device)
+            for label, hist in sample_range_hists.items():
+                range_hist_tensors[label] += torch.from_numpy(hist).to(device=total_hist.device)
 
             batch_time.update(time.time() - end)
             logger.info(
                 "Test: {} [{}/{}]-{} "
-                "Batch {batch_time.val:.3f} ({batch_time.avg:.3f}) "
-                "Accuracy {acc:.4f} ({m_acc:.4f}) "
-                "mIoU {iou:.4f} ({m_iou:.4f})".format(
+                "Batch {batch_time.val:.3f} ({batch_time.avg:.3f})".format(
                     data_name,
                     idx + 1,
                     len(self.test_loader),
                     segment.size,
                     batch_time=batch_time,
-                    acc=acc,
-                    m_acc=m_acc,
-                    iou=iou,
-                    m_iou=m_iou,
                 )
             )
 
         logger.info("Syncing ...")
         comm.synchronize()
-        record_sync = comm.gather(record, dst=0)
+        if comm.get_world_size() > 1:
+            dist.reduce(total_hist, dst=0)
+            for hist in range_hist_tensors.values():
+                dist.reduce(hist, dst=0)
 
         if comm.is_main_process():
-            record = {}
-            for _ in range(len(record_sync)):
-                r = record_sync.pop()
-                record.update(r)
-                del r
-            intersection = np.sum([meters["intersection"] for _, meters in record.items()], axis=0)
-            union = np.sum([meters["union"] for _, meters in record.items()], axis=0)
-            target = np.sum([meters["target"] for _, meters in record.items()], axis=0)
+            mapped_class_names = class_mapping_to_names(self.cfg.class_mapping, ignore_index)
+            assert len(mapped_class_names) == num_classes, (
+                "class_mapping_to_names length must match num_classes: " f"{len(mapped_class_names)} vs {num_classes}"
+            )
+            label2cat = {i: mapped_class_names[i] for i in range(num_classes)}
 
             if self.cfg.data.test.type == "S3DISDataset":
+                s3dis_hist = total_hist.cpu().numpy()
+                intersection = np.diag(s3dis_hist)
+                union = s3dis_hist.sum(1) + s3dis_hist.sum(0) - np.diag(s3dis_hist)
+                target = s3dis_hist.sum(1)
                 torch.save(
                     dict(intersection=intersection, union=union, target=target),
                     os.path.join(save_path, f"{self.test_loader.dataset.split}.pth"),
                 )
 
-            iou_class = intersection / (union + 1e-10)
-            accuracy_class = intersection / (target + 1e-10)
-            mIoU = np.mean(iou_class)
-            mAcc = np.mean(accuracy_class)
-            allAcc = sum(intersection) / (sum(target) + 1e-10)
+            eval_result: SegEvalResult = t4_seg_eval_from_hists(
+                total_hist=total_hist.cpu().numpy(),
+                label2cat=label2cat,
+                ignore_index=ignore_index,
+                range_hists={label: hist.cpu().numpy() for label, hist in range_hist_tensors.items()},
+                logger=logger,
+            )
 
-            logger.info("Val result: mIoU/mAcc/allAcc {:.4f}/{:.4f}/{:.4f}".format(mIoU, mAcc, allAcc))
-            mapped_class_names = class_mapping_to_names(
-                self.cfg.class_mapping,
-                self.cfg.data.ignore_index,
-            )
-            assert len(mapped_class_names) == self.cfg.data.num_classes, (
-                "class_mapping_to_names length must match num_classes: "
-                f"{len(mapped_class_names)} vs {self.cfg.data.num_classes}"
-            )
-            for i in range(self.cfg.data.num_classes):
-                logger.info(
-                    "Class_{idx} - {name} Result: iou/accuracy {iou:.4f}/{accuracy:.4f}".format(
-                        idx=i,
-                        name=mapped_class_names[i],
-                        iou=iou_class[i],
-                        accuracy=accuracy_class[i],
-                    )
-                )
-            logger.info("<<<<<<<<<<<<<<<<< End Evaluation <<<<<<<<<<<<<<<<<")
+            if self.writer is not None:
+                for tag, value in build_t4_seg_tb_scalars(
+                    metrics=eval_result.metrics,
+                    class_names=mapped_class_names,
+                    stage="test",
+                    distance_ranges=distance_ranges,
+                ).items():
+                    self.writer.add_scalar(tag, value, 0)
+                for tag, fig in iter_t4_seg_confusion_matrix_figures(eval_result, mapped_class_names, "test"):
+                    self.writer.add_figure(tag, fig, 0)
+                    plt.close(fig)
+                self.writer.flush()
+
+        if self.writer is not None:
+            self.writer.close()
+        logger.info("<<<<<<<<<<<<<<<<< End Evaluation <<<<<<<<<<<<<<<<<")
 
     @staticmethod
     def collate_fn(batch):
