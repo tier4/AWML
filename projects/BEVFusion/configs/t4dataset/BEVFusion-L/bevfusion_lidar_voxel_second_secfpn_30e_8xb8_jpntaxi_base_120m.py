@@ -144,4 +144,4 @@ default_hooks = dict(
 )
 log_processor = dict(window_size=50)
 
-load_from "<best_checkpoint>"
+load_from = None
