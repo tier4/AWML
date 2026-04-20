@@ -4,7 +4,6 @@ Verification orchestration.
 This module contains `VerificationRunner`, which coordinates the
 per-sample verification loop for a reference/test `ModelSpec` pair.
 
-Division of responsibilities (intentionally minimal):
 
 - `VerificationHooks` is the narrow structural contract the runner
   depends on: pipeline creation, input preparation, and device handling.
