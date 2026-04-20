@@ -9,10 +9,10 @@ pipelines.
 Provided encoder variants include:
 
 - ``PillarFeatureNetONNX``: ONNX-support implementation of
-  :class:`mmdet3d.models.voxel_encoders.pillar_encoder.PillarFeatureNet`, keeping
+  `mmdet3d.models.voxel_encoders.pillar_encoder.PillarFeatureNet`, keeping
   the original behavior but with an ONNX-friendly interface.
 - ``BackwardPillarFeatureNetONNX``: backward-compatible pillar feature network based
-  on :class:`projects.CenterPoint.models.voxel_encoders.pillar_encoder.BackwardPillarFeatureNet`
+  on `projects.CenterPoint.models.voxel_encoders.pillar_encoder.BackwardPillarFeatureNet`
   that prepares pillar features and runs PFN layers without Z-distance features for
   use with exported CenterPoint models.
 """

@@ -60,7 +60,7 @@ class VoxelDict(TypedDict):
 class CenterPointFeatureSample:
     """Immutable bundle of backbone inputs and sparse tensor layout for export.
 
-    Built by :class:`deployment.projects.centerpoint.io.sample_adapter.CenterPointSampleAdapter`
+    Built by `deployment.projects.centerpoint.io.sample_adapter.CenterPointSampleAdapter`
     for ONNX/TensorRT pipelines that need validated tensors and a consistent voxel dict.
 
     Attributes:

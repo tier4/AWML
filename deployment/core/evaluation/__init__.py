@@ -6,12 +6,21 @@ from deployment.core.evaluation.evaluator_types import (
     ModelSpec,
     VerifyResultDict,
 )
-from deployment.core.evaluation.verification_mixin import VerificationMixin
+from deployment.core.evaluation.output_comparator import ComparisonResult, OutputComparator
+from deployment.core.evaluation.verification_runner import (
+    SampleVerificationResult,
+    VerificationHooks,
+    VerificationRunner,
+)
 
 __all__ = [
     "BaseEvaluator",
+    "ComparisonResult",
     "EvalResultDict",
     "ModelSpec",
+    "OutputComparator",
+    "SampleVerificationResult",
+    "VerificationHooks",
+    "VerificationRunner",
     "VerifyResultDict",
-    "VerificationMixin",
 ]

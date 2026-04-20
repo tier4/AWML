@@ -3,12 +3,12 @@
 This module provides ONNX-friendly implementations of the CenterPoint heads:
 
 - ``SeparateHeadONNX``: a variant of
-  :class:`mmdet3d.models.dense_heads.centerpoint_head.SeparateHead` that
+  `mmdet3d.models.dense_heads.centerpoint_head.SeparateHead` that
   redefines the ``heads`` ordering (e.g., ``heatmap``, ``reg``, ``height``,
   ``dim``, rotation-related heads, ``vel``) to produce a stable, deterministic
   output layout for export.
 - ``CenterHeadONNX``: a variant of
-  :class:`projects.CenterPoint.models.dense_heads.centerpoint_head.CenterHead`
+  `projects.CenterPoint.models.dense_heads.centerpoint_head.CenterHead`
   that wraps a single-task ``SeparateHeadONNX`` and exposes an ONNX-oriented
   ``forward`` interface, optionally changing the rotation representation to be
   relative to the y-axis.

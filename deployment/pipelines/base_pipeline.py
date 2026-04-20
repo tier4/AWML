@@ -75,7 +75,7 @@ class BaseInferencePipeline(ABC):
             - ``model_output``: Raw tensors or structure for :meth:`postprocess` (or
               returned as-is when ``infer(..., return_raw_outputs=True)``).
             - ``stage_latencies``: Per-substage timings in milliseconds; merged into
-              :class:`~deployment.core.evaluation.evaluator_types.InferenceResult`
+              `~deployment.core.evaluation.evaluator_types.InferenceResult`
               ``breakdown`` (e.g. ``voxel_encoder_ms``).
         """
         raise NotImplementedError

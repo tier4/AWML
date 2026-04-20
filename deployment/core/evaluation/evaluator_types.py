@@ -115,19 +115,6 @@ class InferenceResult:
     latency_ms: float
     breakdown: Optional[Dict[str, float]] = None
 
-    @classmethod
-    def empty(cls) -> InferenceResult:
-        """Return an empty inference result."""
-        return cls(output=None, latency_ms=0.0, breakdown={})
-
-    def to_dict(self) -> Dict[str, Any]:
-        """Convert to a plain dictionary for logging/serialization."""
-        return {
-            "output": self.output,
-            "latency_ms": self.latency_ms,
-            "breakdown": dict(self.breakdown or {}),
-        }
-
 
 @dataclass(frozen=True)
 class ModelSpec:

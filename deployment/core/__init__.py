@@ -16,15 +16,12 @@ from deployment.core.contexts import (
 )
 from deployment.core.device import DeviceSpec
 from deployment.core.evaluation.base_evaluator import (
-    EVALUATION_DEFAULTS,
     BaseEvaluator,
     EvalResultDict,
-    EvaluationDefaults,
     InferenceInput,
     ModelSpec,
     VerifyResultDict,
 )
-from deployment.core.evaluation.verification_mixin import VerificationMixin
 from deployment.core.io.base_data_loader import BaseDataLoader
 from deployment.core.metrics import (
     BaseMetricsConfig,
@@ -46,9 +43,6 @@ __all__ = [
     "YOLOXExportContext",
     "CenterPointExportContext",
     "CalibrationExportContext",
-    # Constants
-    "EVALUATION_DEFAULTS",
-    "EvaluationDefaults",
     # Data loading
     "BaseDataLoader",
     # Evaluation
@@ -56,7 +50,6 @@ __all__ = [
     "InferenceInput",
     "EvalResultDict",
     "VerifyResultDict",
-    "VerificationMixin",
     # Artifacts
     "Artifact",
     "resolve_artifact_path",

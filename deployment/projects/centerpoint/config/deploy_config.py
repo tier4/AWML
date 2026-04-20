@@ -31,7 +31,7 @@ _TENSORRT_DIR = f"{_WORK_DIR}/tensorrt"
 # onnx_path: path to the ONNX output directory (if mode="trt" and ONNX already exists)
 # ============================================================================
 export = dict(
-    mode="both",
+    mode="onnx",
     work_dir=_DEPLOY_WORK_DIR,
     onnx_path=_ONNX_DIR,
 )
@@ -142,7 +142,7 @@ tensorrt_config = dict(
 # Evaluation Configuration
 # ============================================================================
 evaluation = dict(
-    enabled=True,
+    enabled=False,
     num_samples=1,
     verbose=True,
     backends=dict(
@@ -175,7 +175,7 @@ evaluation = dict(
 #   especially when FP16 is enabled.
 # ============================================================================
 verification = dict(
-    enabled=False,
+    enabled=True,
     # TODO(vividf): double check the tolerance value
     tolerance=1,
     num_verify_samples=1,

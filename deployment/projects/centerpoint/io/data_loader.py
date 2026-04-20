@@ -89,7 +89,7 @@ class CenterPointDataLoader(BaseDataLoader):
             index: Sample index in the dataset (0 to num_samples - 1).
 
         Returns:
-            :class:`CenterPointSample` with keys ``points``, ``metainfo``, ``ground_truth``.
+            `CenterPointSample` with keys ``points``, ``metainfo``, ``ground_truth``.
 
         Raises:
             IndexError: If index is out of range.

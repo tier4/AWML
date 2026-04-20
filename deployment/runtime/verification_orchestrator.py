@@ -130,7 +130,6 @@ class VerificationOrchestrator:
                 data_loader=self.data_loader,
                 num_samples=num_verify_samples,
                 tolerance=tolerance,
-                verbose=False,
             )
 
             policy_key = f"{policy.ref_backend.value}_{ref_device}_vs_{policy.test_backend.value}_{test_device}"

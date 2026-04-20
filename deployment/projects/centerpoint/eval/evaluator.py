@@ -64,7 +64,6 @@ class CenterPointEvaluator(BaseEvaluator):
             model_cfg=model_cfg,
         )
 
-    # VerificationMixin
     @override
     def _get_output_names(self) -> Optional[List[str]]:
         """Get head output names from components config."""
