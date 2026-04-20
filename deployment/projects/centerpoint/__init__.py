@@ -1,7 +1,7 @@
 """CenterPoint deployment bundle.
 
-This package owns all CenterPoint deployment-specific code (runner/evaluator/loader/pipelines/export).
-It registers a ProjectAdapter into the global `project_registry` so the unified CLI can invoke it.
+Import concrete modules (``deployment.projects.centerpoint.runner``, …). This ``__init__`` only
+registers the project with ``deployment.projects.registry`` when the package is imported.
 """
 
 from __future__ import annotations

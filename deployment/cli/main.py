@@ -16,7 +16,7 @@ from typing import List
 
 import deployment.projects as projects_pkg
 from deployment.cli.args import parse_base_args
-from deployment.projects import project_registry
+from deployment.projects.registry import project_registry
 
 
 def _discover_project_packages() -> List[str]:
@@ -41,7 +41,7 @@ def build_parser() -> argparse.ArgumentParser:
     """Build the deployment CLI parser.
 
     This discovers `deployment.projects.<name>` bundles, imports them to trigger
-    registration into `deployment.projects.project_registry`, then creates a
+    registration into ``deployment.projects.registry.project_registry``, then creates a
     subcommand per registered project.
     """
     parser = argparse.ArgumentParser(

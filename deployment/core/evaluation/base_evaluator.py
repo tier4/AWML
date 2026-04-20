@@ -39,7 +39,8 @@ from deployment.core.evaluation.evaluator_types import (
 from deployment.core.evaluation.output_comparator import OutputComparator
 from deployment.core.evaluation.verification_runner import VerificationRunner
 from deployment.core.io.base_data_loader import BaseDataLoader
-from deployment.core.metrics import BaseMetricsInterface
+from deployment.core.metrics.base_metrics_interface import BaseMetricsInterface
+from deployment.pipelines.base_pipeline import BaseInferencePipeline
 
 logger = logging.getLogger(__name__)
 
@@ -118,7 +119,7 @@ class BaseEvaluator(ABC):
     # ================== Abstract Methods (Task-Specific) ==================
 
     @abstractmethod
-    def _create_pipeline(self, model_spec: ModelSpec, device: DeviceSpec) -> Any:
+    def _create_pipeline(self, model_spec: ModelSpec, device: DeviceSpec) -> BaseInferencePipeline:
         """Create an inference pipeline for ``model_spec.backend`` on ``device``.
 
         Args:
@@ -126,7 +127,7 @@ class BaseEvaluator(ABC):
             device: Concrete device for this run.
 
         Returns:
-            A pipeline instance exposing ``infer()`` and ``cleanup()`` (project-specific).
+            A ``BaseInferencePipeline`` subclass exposing ``infer()`` and ``cleanup()``.
         """
         raise NotImplementedError
 

@@ -234,7 +234,7 @@ Keep a single top-level `devices` dict and reference it from `evaluation.backend
 ## Backend enum
 
 ```python
-from deployment.core import Backend
+from deployment.core.backend import Backend
 
 evaluation = dict(
     backends={

@@ -142,7 +142,7 @@ tensorrt_config = dict(
 # Evaluation Configuration
 # ============================================================================
 evaluation = dict(
-    enabled=False,
+    enabled=True,
     num_samples=1,
     verbose=True,
     backends=dict(
@@ -175,7 +175,7 @@ evaluation = dict(
 #   especially when FP16 is enabled.
 # ============================================================================
 verification = dict(
-    enabled=True,
+    enabled=False,
     # TODO(vividf): double check the tolerance value
     tolerance=1,
     num_verify_samples=1,

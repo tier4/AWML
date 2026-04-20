@@ -38,6 +38,7 @@ from deployment.core.evaluation.output_comparator import (
     TensorDiffDetail,
 )
 from deployment.core.io.base_data_loader import BaseDataLoader
+from deployment.pipelines.base_pipeline import BaseInferencePipeline
 
 logger = logging.getLogger(__name__)
 
@@ -64,7 +65,7 @@ class VerificationHooks(Protocol):
         """Ensure the reference PyTorch model lives on ``device`` before use."""
         ...
 
-    def _create_pipeline(self, model_spec: ModelSpec, device: DeviceSpec) -> Any:
+    def _create_pipeline(self, model_spec: ModelSpec, device: DeviceSpec) -> BaseInferencePipeline:
         """Create an inference pipeline for ``model_spec.backend`` on ``device``."""
         ...
 
@@ -197,8 +198,8 @@ class VerificationRunner:
     def _run_single_sample(
         self,
         sample_idx: int,
-        ref_pipeline: Any,
-        test_pipeline: Any,
+        ref_pipeline: BaseInferencePipeline,
+        test_pipeline: BaseInferencePipeline,
         data_loader: BaseDataLoader,
         ref_device: DeviceSpec,
         test_device: DeviceSpec,

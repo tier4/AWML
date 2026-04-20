@@ -15,7 +15,7 @@ from typing import Any, Dict, Optional, Type
 
 from mmengine.config import Config
 
-from deployment.configs import BaseDeploymentConfig
+from deployment.configs.base import BaseDeploymentConfig
 from deployment.core.contexts import ExportContext
 from deployment.core.evaluation.base_evaluator import BaseEvaluator
 from deployment.core.io.base_data_loader import BaseDataLoader

@@ -18,7 +18,10 @@ from deployment.core.evaluation.base_evaluator import (
     ModelSpec,
 )
 from deployment.core.io.base_data_loader import BaseDataLoader
-from deployment.core.metrics import Detection3DMetricsConfig, Detection3DMetricsInterface
+from deployment.core.metrics.detection_3d_metrics import (
+    Detection3DMetricsConfig,
+    Detection3DMetricsInterface,
+)
 from deployment.pipelines.base_pipeline import BaseInferencePipeline
 from deployment.pipelines.factory import PipelineFactory
 

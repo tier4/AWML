@@ -10,7 +10,7 @@ import os.path as osp
 from collections.abc import Mapping
 from typing import Any, Dict, Optional, Tuple
 
-from deployment.configs import BaseDeploymentConfig
+from deployment.configs.base import BaseDeploymentConfig
 from deployment.core.artifacts import Artifact
 from deployment.core.backend import Backend
 
