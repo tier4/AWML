@@ -6,7 +6,11 @@ from deployment.core.evaluation.evaluator_types import (
     ModelSpec,
     VerifyResultDict,
 )
-from deployment.core.evaluation.output_comparator import ComparisonResult, OutputComparator
+from deployment.core.evaluation.output_comparator import (
+    OutputComparator,
+    OutputDiffSummary,
+    TensorDiffDetail,
+)
 from deployment.core.evaluation.verification_runner import (
     SampleVerificationResult,
     VerificationHooks,
@@ -15,7 +19,8 @@ from deployment.core.evaluation.verification_runner import (
 
 __all__ = [
     "BaseEvaluator",
-    "ComparisonResult",
+    "OutputDiffSummary",
+    "TensorDiffDetail",
     "EvalResultDict",
     "ModelSpec",
     "OutputComparator",

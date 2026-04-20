@@ -19,6 +19,7 @@ Division of responsibilities (intentionally minimal):
 from __future__ import annotations
 
 import logging
+import math
 from dataclasses import dataclass
 from typing import Any, List, Mapping, Optional, Protocol
 
@@ -31,10 +32,19 @@ from deployment.core.evaluation.evaluator_types import (
     ModelSpec,
     VerifyResultDict,
 )
-from deployment.core.evaluation.output_comparator import OutputComparator
+from deployment.core.evaluation.output_comparator import (
+    OutputComparator,
+    OutputDiffSummary,
+    TensorDiffDetail,
+)
 from deployment.core.io.base_data_loader import BaseDataLoader
 
 logger = logging.getLogger(__name__)
+
+
+def _fmt_finite_diff(value: float) -> str:
+    """Format a diff for logs; ``inf`` is spelled ``inf`` (not ``inf`` via ``%f`` quirks)."""
+    return "inf" if math.isinf(value) else f"{value:.6f}"
 
 
 class VerificationHooks(Protocol):
@@ -232,14 +242,37 @@ class VerificationRunner:
         )
         logger.info("  %s latency: %.2f ms", test_label, test_result.latency_ms)
 
-        cmp = self._comparator.compare(ref_result.output, test_result.output, tolerance)
+        summary, per_tensor = self._comparator.compare(ref_result.output, test_result.output, tolerance)
+        self._log_per_output_comparison(test_label, per_tensor, summary)
+
         return SampleVerificationResult(
             sample_idx=sample_idx,
-            passed=cmp.passed,
-            max_diff=cmp.max_diff,
-            mean_diff=cmp.mean_diff,
-            reason=cmp.reason,
+            passed=summary.passed,
+            max_diff=summary.max_diff,
+            mean_diff=summary.mean_diff,
+            reason=summary.reason,
         )
+
+    def _log_per_output_comparison(
+        self,
+        test_label: str,
+        per_tensor: List[TensorDiffDetail],
+        summary: OutputDiffSummary,
+    ) -> None:
+        """Emit one line per tensor, then overall max/mean, then a verification line."""
+        logger.info("")
+        for d in per_tensor:
+            logger.info(
+                "  %s: shape=%s, max_diff=%s, mean_diff=%s",
+                d.path,
+                d.shape,
+                _fmt_finite_diff(d.max_diff),
+                _fmt_finite_diff(d.mean_diff),
+            )
+        logger.info("  Overall Max difference: %s", _fmt_finite_diff(summary.max_diff))
+        logger.info("  Overall Mean difference: %s", _fmt_finite_diff(summary.mean_diff))
+        verdict = "PASSED ✓" if summary.passed else "FAILED ✗"
+        logger.info("  %s verification %s", test_label, verdict)
 
     def _log_header(
         self,

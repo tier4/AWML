@@ -31,7 +31,7 @@ _TENSORRT_DIR = f"{_WORK_DIR}/tensorrt"
 # onnx_path: path to the ONNX output directory (if mode="trt" and ONNX already exists)
 # ============================================================================
 export = dict(
-    mode="onnx",
+    mode="both",
     work_dir=_DEPLOY_WORK_DIR,
     onnx_path=_ONNX_DIR,
 )
