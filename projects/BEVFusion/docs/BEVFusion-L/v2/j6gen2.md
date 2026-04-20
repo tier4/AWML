@@ -95,61 +95,6 @@
 
   </details>
 
-### Insights
-
-**Performance by range (j6gen2_base/2.6.1):**
-
-| Range | mAP | mAPH |
-| :---- | ---: | ---: |
-| 0-50m | 0.8810 | 0.8380 |
-| 50-90m | 0.7032 | 0.6483 |
-| 90-121m | 0.4938 | 0.4494 |
-| **0-121m** | **0.7903** | **0.7413** |
-
-- Near-range is strong (0.8810); far-range drops to 0.4938 (-43.9% relative to near-range).
-- mAP-to-mAPH gap widens at mid/far range (0.0549 at 50-90m vs 0.0430 at 0-50m), indicating heading estimation degrades faster with distance.
-
-**Comparison with base/2.6.0 (on common datasets):**
-
-The j6gen2_base/2.6.1 model is finetuned from base/2.6.0 with intensity features on j6gen2+largebus data (30 epochs, 55,714 frames).
-
-| Dataset | Range | base/2.6.0 | j6gen2_base/2.6.1 | Delta |
-| :---- | :---- | ---: | ---: | ---: |
-| J6Gen2 | 0-50m | 0.8702 | 0.8788 | +0.0086 |
-| J6Gen2 | 50-90m | 0.6708 | 0.6864 | +0.0156 |
-| J6Gen2 | 90-121m | 0.4462 | 0.4766 | +0.0304 |
-| J6Gen2 | **0-121m** | **0.7712** | **0.7851** | **+0.0139** |
-| LargeBus | 0-50m | 0.8882 | 0.8985 | +0.0103 |
-| LargeBus | 50-90m | 0.7132 | 0.7475 | +0.0343 |
-| LargeBus | 90-121m | 0.5202 | 0.5636 | +0.0434 |
-| LargeBus | **0-121m** | **0.7995** | **0.8198** | **+0.0203** |
-
-- Finetuning consistently improves across all ranges and datasets. Gains are **largest at far range**: +0.0304 (J6Gen2) and +0.0434 (LargeBus) at 90-121m.
-- LargeBus benefits more overall (+0.0203 vs +0.0139), with the largest per-class gains on **pedestrian** (+0.0367) and **truck** (+0.0264).
-
-**Per-class comparison (0-121m, J6Gen2 dataset):**
-
-| Class | base/2.6.0 | j6gen2_base/2.6.1 | Delta |
-| :---- | ---: | ---: | ---: |
-| car | 0.8110 | 0.8166 | +0.0056 |
-| truck | 0.7129 | 0.7262 | +0.0133 |
-| bus | 0.8348 | 0.8481 | +0.0133 |
-| bicycle | 0.7458 | 0.7661 | +0.0203 |
-| pedestrian | 0.7515 | 0.7687 | +0.0172 |
-
-- All classes improve after finetuning. **Bicycle** sees the largest relative gain (+0.0203), while **car** is already saturated with the smallest delta (+0.0056).
-
-**Performance by dataset (0-121m):**
-
-| Dataset | Frames | mAP | mAPH | Best class | Worst class |
-| :---- | ---: | ---: | ---: | :---- | :---- |
-| LargeBus | 1,228 | 0.8198 | 0.7666 | bus (0.8756) | bicycle (0.7455) |
-| J6Gen2 | 3,951 | 0.7851 | 0.7375 | bus (0.8481) | truck (0.7262) |
-| **J6Gen2_base (all)** | **5,179** | **0.7903** | **0.7413** | | |
-
-- **LargeBus** outperforms J6Gen2 by +0.0347 mAP, consistent with simpler driving scenarios observed for the base model.
-- **Bus** detection is the strongest class on both datasets (0.8756 and 0.8481), a notable improvement over base/2.6.0 where bus was the weakest overall.
-
 ## Datasets
 
 <details>

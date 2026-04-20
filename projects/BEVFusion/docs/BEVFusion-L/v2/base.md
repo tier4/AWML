@@ -103,45 +103,6 @@
 
   </details>
 
-### Insights
-
-**Performance by range (base/2.6.0):**
-
-| Range | mAP | mAPH |
-| :---- | ---: | ---: |
-| 0-50m | 0.8774 | — |
-| 50-90m | 0.6824 | 0.6437 |
-| 90-121m | 0.5136 | 0.4788 |
-| **0-121m** | **0.7592** | **0.7227** |
-
-- Near-range (0-50m) detection is strong across all classes (mAP 0.8774). Performance degrades significantly with distance: -22.2% at mid-range and -41.4% at far-range relative to near-range.
-- Largest far-range drop: **bus** falls from 0.8824 (near) to 0.2849 (far), likely due to sparse LiDAR returns on large vehicles at distance.
-
-**Performance by class (0-121m):**
-
-| Class | mAP | Strongest range | Weakest range |
-| :---- | ---: | :---- | :---- |
-| car | 0.8398 | 0-50m (0.9049) | 90-121m (0.6552) |
-| truck | 0.6994 | 0-50m (0.8514) | 90-121m (0.5023) |
-| bus | 0.6621 | 0-50m (0.8824) | 90-121m (0.2849) |
-| bicycle | 0.7595 | 0-50m (0.8543) | 90-121m (0.4369) |
-| pedestrian | 0.8351 | 0-50m (0.8941) | 90-121m (0.6887) |
-
-- **Pedestrian** retains the best far-range detection (0.6887), benefiting from the large GT count (131,983 total).
-- **Bus** is weakest overall (0.6621) due to fewer training samples and poor far-range performance.
-
-**Performance by dataset (0-121m):**
-
-| Dataset | Frames | mAP | mAPH | Best class | Worst class |
-| :---- | ---: | ---: | ---: | :---- | :---- |
-| LargeBus | 1,228 | 0.7995 | 0.7514 | bus (0.8608) | bicycle (0.7272) |
-| J6Gen2 | 3,951 | 0.7712 | 0.7223 | bus (0.8348) | truck (0.7129) |
-| JPNTaxi Gen2 | 9,975 | 0.7471 | 0.7176 | pedestrian (0.8606) | bus (0.5446) |
-| **Base (all)** | **15,154** | **0.7592** | **0.7227** | | |
-
-- **LargeBus** achieves the highest mAP (0.7995) despite having the fewest frames, likely due to simpler driving scenarios.
-- **JPNTaxi Gen2** has the lowest mAP (0.7471), with bus detection (0.5446) lagging significantly behind other datasets, possibly due to different bus appearance characteristics in the jpntaxi environment.
-
 ## Datasets
 
 <details>
