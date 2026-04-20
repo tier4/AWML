@@ -207,7 +207,7 @@
 <summary> Changes  </summary>
 
 - Finetune from `BEVFusion-LiDAR base/2.6.0` with j6gen2 base dataset
-- Train with new datatasets:
+- Train with new datasets:
   - `db_j6gen2_v9`
   - `db_largebus_v3`
 </details>
