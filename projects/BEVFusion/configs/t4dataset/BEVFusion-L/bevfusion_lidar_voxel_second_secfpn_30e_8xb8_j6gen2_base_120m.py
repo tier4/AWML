@@ -148,4 +148,4 @@ default_hooks = dict(
 )
 log_processor = dict(window_size=50)
 
-load_from = "work_dirs/bevfusion_lidar_2.7.0/base/T4Dataset/lidar_voxel_second_secfpn_50e_8xb8_base_120m/epoch_48.pth"
+# load_from = "<best_checkpoint>"
