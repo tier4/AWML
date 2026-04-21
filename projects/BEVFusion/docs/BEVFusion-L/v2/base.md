@@ -277,7 +277,7 @@
 <details>
 <summary> Changes  </summary>
 
-- Train by min-max normalizing (x, y, z, intensity, time_lag) into [0, 1], and then mapping it to fourier features [[1]](https://arxiv.org/pdf/2006.10739).
+- Train by min-max normalization (x, y, z, intensity, time_lag) into [0, 1], and then mapping it to fourier features [[1]](https://arxiv.org/pdf/2006.10739).
 </details>
 
 <details>
