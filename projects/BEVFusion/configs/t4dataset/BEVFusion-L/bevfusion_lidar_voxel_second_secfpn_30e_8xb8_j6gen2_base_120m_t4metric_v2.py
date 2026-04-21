@@ -3,7 +3,7 @@ _base_ = [
 ]
 
 # user setting
-experiment_group_name = "bevfusion_lidar_intensity_2.7.1/j6gen2_base/" + _base_.dataset_type
+experiment_group_name = "bevfusion_lidar_intensity/j6gen2_base/" + _base_.dataset_type
 experiment_name = "lidar_voxel_second_secfpn_30e_8xb8_j6gen2_base_120m_t4metric_v2"
 work_dir = "work_dirs/" + experiment_group_name + "/" + experiment_name
 
