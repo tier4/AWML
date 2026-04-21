@@ -54,18 +54,11 @@ train_pipeline = [
         classes=[
             "car",
             "truck",
-            "construction_vehicle",
             "bus",
-            "trailer",
-            "barrier",
-            "motorcycle",
             "bicycle",
             "pedestrian",
-            "traffic_cone",
         ],
     ),
-    dict(type="ObjectRangeMinPointsFilter", range_radius=[0, 60], min_num_points=2),
-    dict(type="ObjectRangeMinPointsFilter", range_radius=[60, 130], min_num_points=1),
     dict(type="PointShuffle"),
     dict(
         type="Pack3DDetInputs",
@@ -89,6 +82,8 @@ train_pipeline = [
             "img_aug_matrix",
             "lidar_aug_matrix",
             "timestamp",
+            "vehicle_type",
+            "city",
         ],
     ),
 ]
@@ -130,6 +125,8 @@ test_pipeline = [
             "num_pts_feats",
             "num_views",
             "timestamp",
+            "vehicle_type",
+            "city",
         ],
     ),
 ]

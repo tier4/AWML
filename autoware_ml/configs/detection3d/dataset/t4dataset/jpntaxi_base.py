@@ -18,8 +18,7 @@ info_test_statistics_file_name = "t4dataset_jpntaxi_base_statistics_test.parquet
 
 # dataset scene setting
 dataset_test_groups = {
-    "jpntaxi_gen2": ("t4dataset_jpntaxi_gen2_infos_test.pkl", False),
-    "jpntaxi_base": ("t4dataset_jpntaxi_base_infos_test.pkl", True),
+    "jpntaxi_gen2": ("t4dataset_jpntaxi_gen2_infos_test.pkl", True),
 }
 
 dataset_version_list = [
