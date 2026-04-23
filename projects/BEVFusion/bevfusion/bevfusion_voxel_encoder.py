@@ -185,21 +185,21 @@ class BEVFusionVoxelSinCosEncoder(nn.Module):
     def __init__(self, 
                  min_norm_values: Tuple[float],
                  max_norm_values: Tuple[float],
+                 time_lag_channel_index: int = 3,
+                 time_exp_factor: Optional[float] = None,
+                 feat_channels: Optional[tuple] = (16, ),
                  in_channels: Optional[int] = 4,
                  with_distance: Optional[bool] = False,
                  with_cluster_center: Optional[bool] = True,
                  with_voxel_center: Optional[bool] = True,
                  voxel_size: Optional[Tuple[float]] = (0.2, 0.2, 4),
                  point_cloud_range: Optional[Tuple[float]] = (0, -40, -3, 70.4,
-                                                              40, 1),):
+                                                              40, 1),
+                 norm_cfg: Optional[dict] = dict(
+                     type='BN1d', eps=1e-3, momentum=0.01),
+                 mode: Optional[str] = 'max'):
         super(BEVFusionVoxelSinCosEncoder, self).__init__()
 
-        if with_cluster_center:
-            in_channels += 3
-        if with_voxel_center:
-            in_channels += 3
-        if with_distance:
-            in_channels += 1
         self._with_distance = with_distance
         self._with_cluster_center = with_cluster_center
         self._with_voxel_center = with_voxel_center
@@ -214,11 +214,42 @@ class BEVFusionVoxelSinCosEncoder(nn.Module):
         self.y_offset = self.vy / 2 + point_cloud_range[1]
         self.z_offset = self.vz / 2 + point_cloud_range[2]
         self.point_cloud_range = point_cloud_range
+        
+        self.xyz_channels = 3
+        feat_offset_channels = in_channels - self.xyz_channels
+        if with_cluster_center:
+            feat_offset_channels += 3
+        if with_voxel_center:
+            feat_offset_channels += 3
+        if with_distance:
+            feat_offset_channels += 1
 
+        feat_channels = [feat_offset_channels] + list(feat_channels)
+        assert len(feat_channels) > 0, "feat_channels must be greater than 0"
+        pfn_layers = []
+        for i in range(len(feat_channels) - 1):
+            in_filters = feat_channels[i]
+            out_filters = feat_channels[i + 1]
+            if i < len(feat_channels) - 2:
+                last_layer = False
+            else:
+                last_layer = True
+            pfn_layers.append(
+                PFNLayer(
+                    in_filters,
+                    out_filters,
+                    norm_cfg=norm_cfg,
+                    last_layer=last_layer,
+                    mode=mode))
+        self.pfn_layers = nn.ModuleList(pfn_layers)
+
+        self.time_lag_channel_index = time_lag_channel_index
+        self.time_exp_factor = time_exp_factor
+        
         self.register_buffer("min_norm_values", torch.tensor(min_norm_values))
         self.register_buffer("max_norm_values", torch.tensor(max_norm_values))
         self.register_buffer("voxel_size", torch.tensor([self.vx, self.vy, self.vz]))
-        self.register_buffer("exponents", (2 ** torch.arange(0, in_channels).float()))
+        self.register_buffer("exponents", (2 ** torch.arange(0, self.xyz_channels)).float())
 
     def forward(self, features: Tensor, num_points: Tensor, coors: Tensor,
                 *args, **kwargs) -> Tensor:
@@ -232,19 +263,53 @@ class BEVFusionVoxelSinCosEncoder(nn.Module):
 
         Returns:
             torch.Tensor: Features of pillars in shape (M, C).
-        """
-        features_norm = (features - self.min_norm_values) / (self.max_norm_values - self.min_norm_values)
-        features_ls = [features_norm]
+        """ 
+        num_voxels, max_points_per_voxel = features.shape[0], features.shape[1]
+        
+        # Mean in the voxel
+        # (N, M, 3) -> (N, 3)
+        voxel_features = (features[:, :, :self.xyz_channels].sum(dim=1, keepdim=False) / num_points.type_as(features).view(
+                    -1, 1)).contiguous()
+
+        # min-max normalization, (N, 3) -> (N, 3)
+        voxel_features_norm = (voxel_features - \
+         self.min_norm_values[:self.xyz_channels].view(1, -1)) / ((self.max_norm_values[:self.xyz_channels] - self.min_norm_values[:self.xyz_channels]).view(1, -1))
+        
+        # SinCos encoding
+        # (N, 3) -> (N*3, 1) * (1, ) * (1, 3) -> (N*3, 3)
+        y = voxel_features_norm.reshape(-1, 1) * np.pi * self.exponents.reshape(1, -1)
+        # (N*3, 3) -> (N, 3*3)
+        y = y.reshape(num_voxels, -1)
+        # (N, 3*3) -> (N, 3*3*2)
+        voxel_fourier_features = torch.cat([torch.cos(y), torch.sin(y)], dim=1)
+
+        # PFN 
+        # Other features, for example, intensity or time_lag 
+        other_features = features[:, :, self.xyz_channels:]
+        
+        # Normalization 
+        other_features_norm = (other_features - self.min_norm_values[self.xyz_channels:]) / (self.max_norm_values[self.xyz_channels:] - self.min_norm_values[self.xyz_channels:])    
+
+        time_lag_feature_index = self.time_lag_channel_index - self.xyz_channels
+        # exponentiate time_lag features, it's higher when the normlized time lag is lower 
+        # (1.0 when time_lag_features is 0.0)
+        if self.time_exp_factor is not None:
+            other_features_norm[:, :, time_lag_feature_index] = torch.exp(- other_features_norm[:, :, time_lag_feature_index] * self.time_exp_factor)
+        else:
+            # Inverse the time_lag feature 
+            other_features_norm[:, :, time_lag_feature_index] = 1.0 - other_features_norm[:, :, time_lag_feature_index]
+            
+        # Offsets
+        voxel_feature_offsets = [other_features_norm]
         # Find distance of x, y, and z from cluster center
         if self._with_cluster_center:
             points_mean = features[:, :, :3].sum(
                 dim=1, keepdim=True) / num_points.type_as(features).view(
                     -1, 1, 1)
             
-            # Map to [-1, 1]
-            f_cluster = (features[:, :, :3] - points_mean) / self.voxel_size
-            # f_cluster = features[:, :, :3] - points_mean
-            features_ls.append(f_cluster)
+            # f_cluster = (features[:, :, :3] - points_mean)
+            f_cluster = features[:, :, :3] - points_mean
+            voxel_feature_offsets.append(f_cluster)
 
         # Find distance of x, y, and z from pillar center
         dtype = features.dtype
@@ -261,35 +326,80 @@ class BEVFusionVoxelSinCosEncoder(nn.Module):
                 self.z_offset)
             
             # Map to [-1, 1]
-            f_center = f_center / (self.voxel_size * 0.5)
-            features_ls.append(f_center)
+            # f_center = f_center / (self.voxel_size * 0.5)
+            voxel_feature_offsets.append(f_center)
 
         if self._with_distance:
             points_dist = torch.norm(features[:, :, :3], 2, 2, keepdim=True)
-            features_ls.append(points_dist)
+            voxel_feature_offsets.append(points_dist)
         
-        # Combine together feature decorations
-        features = torch.cat(features_ls, dim=-1)
-        num_voxels, max_points_per_voxel = features.shape[0], features.shape[1]
-
-        # SinCos encoding
-        # (N, M, C) -> (N, M, C, 1) -> (N, M, C, 1) * (1, 1, 1, C) -> (N, M, C, C)
-        y = features.unsqueeze(-1) * np.pi * self.exponents.unsqueeze(0).unsqueeze(0).unsqueeze(0)
-        # (N, M, C, C) -> (N, M, C*C)
-        y = y.reshape(num_voxels, max_points_per_voxel, self.in_channels ** 2)
-        # (N, M, C*C) -> (N, M, C*C*2)
-        features = torch.cat([torch.cos(y), torch.sin(y)], dim=-1)
-
+        voxel_feature_offsets = torch.cat(voxel_feature_offsets, dim=-1)
         # The feature decorations were calculated without regard to whether
         # pillar was empty. Need to ensure that
         # empty pillars remain set to zeros.
         mask = get_paddings_indicator(num_points, max_points_per_voxel, axis=0)
-        mask = torch.unsqueeze(mask, -1).type_as(features)
-        features *= mask
-
-        # Reduction by mean
-        # (N, M, C*C*2) -> (N, C*C*2)
-        features = features.sum(dim=1, keepdim=False) / num_points.type_as(features).view(-1, 1)
-        features = features.contiguous()
+        mask = torch.unsqueeze(mask, -1).type_as(voxel_feature_offsets)
+        voxel_feature_offsets *= mask
         
+        # PFN
+        for pfn in self.pfn_layers:
+            voxel_feature_offsets = pfn(voxel_feature_offsets, num_points)
+        
+        # Concat 
+        features = torch.cat([voxel_fourier_features, voxel_feature_offsets.squeeze(1)], dim=-1)
         return features
+
+
+
+@MODELS.register_module()
+class BEVFusionVoxelMeanSinCosEncoder(nn.Module):
+    def __init__(self, 
+                 min_norm_values: Tuple[float],
+                 max_norm_values: Tuple[float],
+                 in_channels: Optional[int] = 4,
+                 voxel_size: Optional[Tuple[float]] = (0.2, 0.2, 4),
+                 point_cloud_range: Optional[Tuple[float]] = (0, -40, -3, 70.4,
+                                                              40, 1),
+                 mode: Optional[str] = 'max'):
+        super(BEVFusionVoxelSinCosEncoder, self).__init__()
+
+        # Create PillarFeatureNet layers
+        self.in_channels = in_channels
+
+        self.register_buffer("min_norm_values", torch.tensor(min_norm_values))
+        self.register_buffer("max_norm_values", torch.tensor(max_norm_values))
+        self.register_buffer("exponents", (2 ** torch.arange(0, self.in_channels)).float())
+
+    def forward(self, features: Tensor, num_points: Tensor, coors: Tensor,
+                *args, **kwargs) -> Tensor:
+        """Forward function.
+
+        Args:
+            features (torch.Tensor): Point features or raw points in shape
+                (N, M, C).
+            num_points (torch.Tensor): Number of points in each pillar in shape (M).
+            coors (torch.Tensor): Coordinates of each voxel in (M, [4]), which is (batch_idx, z_idx, y_idx, x_idx).
+
+        Returns:
+            torch.Tensor: Features of pillars in shape (M, C).
+        """ 
+        num_voxels, max_points_per_voxel = features.shape[0], features.shape[1]
+        
+        # Mean in the voxel
+        # (N, M, 3) -> (N, 3)
+        voxel_features = (features.sum(dim=1, keepdim=False) / num_points.type_as(features).view(
+                    -1, 1)).contiguous()
+
+        # min-max normalization, (N, 3) -> (N, 3)
+        voxel_features_norm = (voxel_features - \
+         self.min_norm_values.view(1, -1)) / ((self.max_norm_values - self.min_norm_values).view(1, -1))
+        
+        # SinCos encoding
+        # (N, 3) -> (N*3, 1) * (1, ) * (1, 3) -> (N*3, 3)
+        y = voxel_features_norm.reshape(-1, 1) * np.pi * self.exponents.reshape(1, -1)
+        # (N*3, 3) -> (N, 3*3)
+        y = y.reshape(num_voxels, -1)
+        # (N, 3*3) -> (N, 3*3*2)
+        voxel_fourier_features = torch.cat([torch.cos(y), torch.sin(y)], dim=1)
+        
+        return voxel_fourier_features

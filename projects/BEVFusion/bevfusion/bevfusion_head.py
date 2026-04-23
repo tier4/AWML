@@ -62,6 +62,7 @@ class BEVFusionHead(nn.Module):
         norm_cfg=dict(type="BN1d"),
         bias="auto",
         # loss
+				loss_iou=None,
         loss_cls=dict(type="mmdet.GaussianFocalLoss", reduction="mean"),
         loss_bbox=dict(type="mmdet.L1Loss", reduction="mean"),
         loss_heatmap=dict(type="mmdet.GaussianFocalLoss", reduction="mean"),
@@ -87,6 +88,7 @@ class BEVFusionHead(nn.Module):
         if not self.use_sigmoid_cls:
             self.num_classes += 1
         self.loss_cls = MODELS.build(loss_cls)
+        self.loss_iou = MODELS.build(loss_iou) if loss_iou is not None else None
         self.loss_bbox = MODELS.build(loss_bbox)
         self.loss_heatmap = MODELS.build(loss_heatmap)
 
@@ -369,8 +371,8 @@ class BEVFusionHead(nn.Module):
         for layer_id, preds_dict in enumerate(preds_dicts):
             batch_size = preds_dict[0]["heatmap"].shape[0]
             batch_score = preds_dict[0]["heatmap"][..., -self.num_proposals :].sigmoid()
-            # if self.loss_iou.loss_weight != 0:
-            #    batch_score = torch.sqrt(batch_score * preds_dict[0]['iou'][..., -self.num_proposals:].sigmoid()) # noqa: E501
+            if self.loss_iou is not None:
+               batch_score = torch.sqrt(batch_score * preds_dict[0]['iou'][..., -self.num_proposals:].sigmoid()) # noqa: E501
             one_hot = F.one_hot(self.query_labels, num_classes=self.num_classes).permute(0, 2, 1)
             batch_score = batch_score * preds_dict[0]["query_heatmap_score"] * one_hot
 
@@ -679,7 +681,7 @@ class BEVFusionHead(nn.Module):
             ious[None],
             int(pos_inds.shape[0]),
             float(mean_iou),
-            heatmap[None],
+            heatmap[None]
         )
 
     def loss(self, batch_feats, batch_data_samples):
@@ -711,7 +713,7 @@ class BEVFusionHead(nn.Module):
             ious,
             num_pos,
             matched_ious,
-            heatmap,
+            heatmap
         ) = self.get_targets(batch_gt_instances_3d, preds_dicts[0])
         if hasattr(self, "on_the_image_mask"):
             label_weights = label_weights * self.on_the_image_mask
@@ -798,7 +800,17 @@ class BEVFusionHead(nn.Module):
 
             loss_dict[f"{prefix}_loss_cls"] = layer_loss_cls
             loss_dict[f"{prefix}_loss_bbox"] = layer_loss_bbox
-            # loss_dict[f'{prefix}_loss_iou'] = layer_loss_iou
+
+						# Output iou for iou-aware loss
+						if self.loss_iou is not None:
+							layer_ious = preds_dict["iou"][
+								...
+								idx_layer * self.num_proposals : (idx_layer + 1) * self.num_proposals,
+							] # [BS, num_proposals]
+							
+							# [BS, num_proposals]
+							layer_iou_weights = layer_bbox_weights[:, :, 0] 
+							loss_dict[f'{prefix}_loss_iou'] = self.loss_iou(layer_ious, ious, layer_iou_weights, avg_factor=max(num_pos, 1))
 
         loss_dict["matched_ious"] = layer_loss_cls.new_tensor(matched_ious)
 

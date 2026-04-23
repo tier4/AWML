@@ -7,7 +7,7 @@ from .sparse_encoder import BEVFusionSparseEncoder
 from .transformer import TransformerDecoderLayer
 from .transforms_3d import BEVFusionGlobalRotScaleTrans, BEVFusionRandomFlip3D, GridMask, ImageAug3D
 from .utils import BBoxBEVL1Cost, HeuristicAssigner3D, HungarianAssigner3D, IoU3DCost, TransFusionBBoxCoder
-from .bevfusion_voxel_encoder import BEVFusionVoxelEncoder, BEVFusionVoxelSinCosEncoder
+from .bevfusion_voxel_encoder import BEVFusionVoxelEncoder, BEVFusionVoxelSinCosEncoder, BEVFusionVoxelMeanSinCosEncoder
 
 __all__ = [
     "BEVFusion",
@@ -30,4 +30,5 @@ __all__ = [
     "TransFusionBBoxCoder",
     "BEVFusionVoxelEncoder",
     "BEVFusionVoxelSinCosEncoder",
+    "BEVFusionVoxelMeanSinCosEncoder",
 ]

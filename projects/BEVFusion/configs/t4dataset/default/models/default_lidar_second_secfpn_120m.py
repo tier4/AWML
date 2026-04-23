@@ -94,6 +94,7 @@ model = dict(
             ],
         ),
         dense_heatmap_pooling_classes=["car", "truck", "bus", "bicycle"],  # Use class indices for pooling
+        # common_heads=dict(center=[2, 2], height=[1, 2], dim=[3, 2], rot=[2, 2], vel=[2, 2], iou=[1, 2]),
         common_heads=dict(center=[2, 2], height=[1, 2], dim=[3, 2], rot=[2, 2], vel=[2, 2]),
         bbox_coder=dict(
             type="TransFusionBBoxCoder",
@@ -110,6 +111,7 @@ model = dict(
             reduction="mean",
             loss_weight=1.0,
         ),
+				# loss_iou=dict(type="mmdet.L1Loss", reduction="mean", loss_weight=1.0),
         loss_heatmap=dict(type="mmdet.GaussianFocalLoss", reduction="mean", loss_weight=1.0),
         loss_bbox=dict(type="mmdet.L1Loss", reduction="mean", loss_weight=0.25),
     ),
