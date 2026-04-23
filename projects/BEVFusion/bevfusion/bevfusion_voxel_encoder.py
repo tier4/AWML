@@ -361,7 +361,7 @@ class BEVFusionVoxelMeanSinCosEncoder(nn.Module):
                  point_cloud_range: Optional[Tuple[float]] = (0, -40, -3, 70.4,
                                                               40, 1),
                  mode: Optional[str] = 'max'):
-        super(BEVFusionVoxelSinCosEncoder, self).__init__()
+        super(BEVFusionVoxelMeanSinCosEncoder, self).__init__()
 
         # Create PillarFeatureNet layers
         self.in_channels = in_channels

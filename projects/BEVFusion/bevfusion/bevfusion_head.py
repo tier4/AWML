@@ -62,7 +62,7 @@ class BEVFusionHead(nn.Module):
         norm_cfg=dict(type="BN1d"),
         bias="auto",
         # loss
-				loss_iou=None,
+        loss_iou=None,
         loss_cls=dict(type="mmdet.GaussianFocalLoss", reduction="mean"),
         loss_bbox=dict(type="mmdet.L1Loss", reduction="mean"),
         loss_heatmap=dict(type="mmdet.GaussianFocalLoss", reduction="mean"),
@@ -372,7 +372,7 @@ class BEVFusionHead(nn.Module):
             batch_size = preds_dict[0]["heatmap"].shape[0]
             batch_score = preds_dict[0]["heatmap"][..., -self.num_proposals :].sigmoid()
             if self.loss_iou is not None:
-               batch_score = torch.sqrt(batch_score * preds_dict[0]['iou'][..., -self.num_proposals:].sigmoid()) # noqa: E501
+               batch_score = torch.sqrt(batch_score * preds_dict[0]['iou'][..., -self.num_proposals:].clamp(min=0.0, max=1.0)) # noqa: E501
             one_hot = F.one_hot(self.query_labels, num_classes=self.num_classes).permute(0, 2, 1)
             batch_score = batch_score * preds_dict[0]["query_heatmap_score"] * one_hot
 
@@ -801,16 +801,17 @@ class BEVFusionHead(nn.Module):
             loss_dict[f"{prefix}_loss_cls"] = layer_loss_cls
             loss_dict[f"{prefix}_loss_bbox"] = layer_loss_bbox
 
-						# Output iou for iou-aware loss
-						if self.loss_iou is not None:
-							layer_ious = preds_dict["iou"][
-								...
-								idx_layer * self.num_proposals : (idx_layer + 1) * self.num_proposals,
-							] # [BS, num_proposals]
-							
-							# [BS, num_proposals]
-							layer_iou_weights = layer_bbox_weights[:, :, 0] 
-							loss_dict[f'{prefix}_loss_iou'] = self.loss_iou(layer_ious, ious, layer_iou_weights, avg_factor=max(num_pos, 1))
+            # Output iou for iou-aware loss
+            if self.loss_iou is not None:
+              layer_ious = preds_dict["iou"][
+                ...,
+                idx_layer * self.num_proposals : (idx_layer + 1) * self.num_proposals,
+              ].squeeze(1) # [BS, num_proposals]
+              
+              # [BS, num_proposals]
+              layer_iou_weights = layer_bbox_weights[:, :, 0]
+            #   print(layer_ious.shape, ious.shape, layer_iou_weights.shape, "layer_ious.shape, ious.shape, layer_iou_weights.shape")
+              loss_dict[f'{prefix}_loss_iou'] = self.loss_iou(layer_ious, ious, layer_iou_weights, avg_factor=max(num_pos, 1))
 
         loss_dict["matched_ious"] = layer_loss_cls.new_tensor(matched_ious)
 
