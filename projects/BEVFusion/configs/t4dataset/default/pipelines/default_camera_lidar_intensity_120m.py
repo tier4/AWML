@@ -1,6 +1,6 @@
 # Dataset parameters
 backend_args = None
-num_workers = 32
+num_workers = 8
 input_modality = dict(use_lidar=True, use_camera=True)
 
 # range setting
@@ -131,6 +131,7 @@ test_pipeline = [
         rand_flip=False,
         is_train=False,
     ),
+    dict(type="PointsRangeFilter", point_cloud_range=point_cloud_range),
     dict(
         type="Pack3DDetInputs",
         keys=["img", "points", "gt_bboxes_3d", "gt_labels_3d"],
