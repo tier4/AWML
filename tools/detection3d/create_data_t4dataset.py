@@ -102,9 +102,9 @@ def get_info(
     sample: Sample,
     i: int,
     max_sweeps: int,
+    traffic_cone_barrier_status: str,
     city: Optional[str] = None,
     vehicle_type: Optional[str] = None,
-    traffic_cone_barrier_status: Optional[str] = None,
 ) -> Dict[str, Any]:
     lidar_token = get_lidar_token(sample)
     if lidar_token is None:
@@ -130,8 +130,7 @@ def get_info(
     sd_record: SampleData = t4.get("sample_data", lidar_token)
 
     info = get_empty_standard_data_info(cfg.camera_types)
-    
-    if traffic_cone_barrier_status is not None and traffic_cone_barrier_status == "true":
+    if traffic_cone_barrier_status == "true":
         traffic_cone_barrier_status = True
     else:
         traffic_cone_barrier_status = False
@@ -333,7 +332,7 @@ def main():
                 infos = []
                 for i in range(0, len(t4.sample), sample_steps):
                     sample = t4.sample[i]
-                    info = get_info(cfg, t4, sample, i, args.max_sweeps, city, vehicle_type, traffic_cone_barrier_status)
+                    info = get_info(cfg, t4, sample, i, args.max_sweeps, traffic_cone_barrier_status, city, vehicle_type)
                     if info is None:
                         continue
                     # info["version"] = dataset_version             # used for visualizations during debugging.
