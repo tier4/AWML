@@ -97,7 +97,7 @@ name_mapping = {
     "pedestrian.stroller": "pedestrian",
     "pedestrian.wheelchair": "pedestrian",
     "static_object.bicycle rack": "bicycle rack",
-    "static_object.bollard": "barrier",
+    "static_object.bollard": "bollard",
     "vehicle.ambulance": "car",  # Define vehicle.ambulance as car since vehicle.emergency (ambulance & police) is defined as car
     "vehicle.bicycle": "bicycle",
     "vehicle.bus": "bus",
@@ -117,9 +117,9 @@ name_mapping = {
     "semi_trailer": "trailer",
     "tractor_unit": "truck",
     "construction_vehicle": "truck",
-		"traffic_cone": "traffic_cone",
-		"trafficcone": "traffic_cone",
-		"barrier": "barrier",
+	"traffic_cone": "traffic_cone",
+	"trafficcone": "traffic_cone",
+	"barrier": "barrier",
 }
 
 class_names = [
@@ -128,8 +128,8 @@ class_names = [
     "bus",
     "bicycle",
     "pedestrian",
-		"traffic_cone",
-		"barrier",
+    "traffic_cone",
+    "barrier",
 ]
 
 num_class = len(class_names)
