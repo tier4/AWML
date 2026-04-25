@@ -104,6 +104,7 @@ def get_info(
     max_sweeps: int,
     city: Optional[str] = None,
     vehicle_type: Optional[str] = None,
+    traffic_cone_barrier_status: Optional[str] = None,
 ) -> Dict[str, Any]:
     lidar_token = get_lidar_token(sample)
     if lidar_token is None:
@@ -129,6 +130,11 @@ def get_info(
     sd_record: SampleData = t4.get("sample_data", lidar_token)
 
     info = get_empty_standard_data_info(cfg.camera_types)
+    
+    if traffic_cone_barrier_status is not None and traffic_cone_barrier_status == "true":
+        traffic_cone_barrier_status = True
+    else:
+        traffic_cone_barrier_status = False
 
     basic_info = dict(
         sample_idx=i,
@@ -139,6 +145,7 @@ def get_info(
         scene_name=scene_record.name,
         city=city,
         vehicle_type=vehicle_type,
+        traffic_cone_barrier_status=traffic_cone_barrier_status,
     )
 
     for new_info in [
@@ -302,8 +309,8 @@ def main():
                     f"Creating data info for scene: {scene_id}, steps: {sample_steps}, sweeps: {args.max_sweeps}"
                 )
                 dataset_scene_info = scene_id.split("/")
-                if len(dataset_scene_info) == 4:
-                    t4_dataset_id, t4_dataset_version_id, city, vehicle_type = dataset_scene_info
+                if len(dataset_scene_info) == 5:
+                    t4_dataset_id, t4_dataset_version_id, city, vehicle_type, traffic_cone_barrier_status = dataset_scene_info
                 elif len(dataset_scene_info) == 2:
                     t4_dataset_id, t4_dataset_version_id = dataset_scene_info
                     city = vehicle_type = None
@@ -326,7 +333,7 @@ def main():
                 infos = []
                 for i in range(0, len(t4.sample), sample_steps):
                     sample = t4.sample[i]
-                    info = get_info(cfg, t4, sample, i, args.max_sweeps, city, vehicle_type)
+                    info = get_info(cfg, t4, sample, i, args.max_sweeps, city, vehicle_type, traffic_cone_barrier_status)
                     if info is None:
                         continue
                     # info["version"] = dataset_version             # used for visualizations during debugging.
