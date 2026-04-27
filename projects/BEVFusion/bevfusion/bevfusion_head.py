@@ -748,7 +748,7 @@ class BEVFusionHead(nn.Module):
         # compute heatmap loss
         preds_dense_heatmap = clip_sigmoid(preds_dict["dense_heatmap"].float())
         num_pos_dense_heatmap = max(heatmap.eq(1).float().sum().item(), 1)
-        if self.partial_ignore_labels is not None:
+        if self.partial_ignore_labels is None:
             loss_heatmap = self.loss_heatmap(
                 preds_dense_heatmap,
                 heatmap.float(),
@@ -798,7 +798,6 @@ class BEVFusionHead(nn.Module):
                 idx_layer * self.num_proposals : (idx_layer + 1) * self.num_proposals,
             ]
             layer_cls_score = layer_score.permute(0, 2, 1).reshape(-1, self.num_classes)
-            print_log(f"layer_label_weights: {layer_label_weights.shape}, layer_score: {layer_score.shape}, layer_labels: {layer_labels.shape}", logger="current")
             layer_loss_cls = self.loss_cls(
                 layer_cls_score.float(),
                 layer_labels,
