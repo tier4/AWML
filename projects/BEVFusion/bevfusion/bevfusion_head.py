@@ -15,6 +15,7 @@ from mmdet.models.task_modules import AssignResult, PseudoSampler, build_assigne
 from mmdet.models.utils import multi_apply
 from mmengine.structures import InstanceData
 from torch import nn
+from mmengine.logging import print_log
 
 
 def clip_sigmoid(x, eps=1e-4):
@@ -194,6 +195,8 @@ class BEVFusionHead(nn.Module):
         else:
             self.ignore_labels = None
         
+        print_log(f"BEVFusionHead Ignore labels: {self.ignore_labels}, dense heatmap pooling classes: \
+        {self.dense_heatmap_pooling_classes}, class_names: {self.class_names}", logger="current")
 
     def create_2D_grid(self, x_size, y_size):
         meshgrid = [[0, x_size - 1, x_size], [0, y_size - 1, y_size]]

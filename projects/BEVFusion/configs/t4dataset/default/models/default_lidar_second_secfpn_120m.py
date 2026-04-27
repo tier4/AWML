@@ -91,7 +91,7 @@ model = dict(
                 dict(class_names=["car", "truck", "bus"], nms_threshold=0.5),  # It's radius if using circle_nms
                 dict(class_names=["bicycle"], nms_threshold=0.5),
                 dict(class_names=["pedestrian"], nms_threshold=0.175),
-                dict(class_names=["barrier"], nms_threshold=0.25),
+                dict(class_names=["barrier"], nms_threshold=0.5),
                 dict(class_names=["traffic_cone"], nms_threshold=0.175),
             ],
         ),
