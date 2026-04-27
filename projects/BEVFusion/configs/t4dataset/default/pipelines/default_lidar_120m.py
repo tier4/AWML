@@ -13,6 +13,8 @@ eval_class_range = {
     "bus": 120,
     "bicycle": 120,
     "pedestrian": 120,
+    "traffic_cone": 120,
+    "barrier": 120,
 }
 
 # LiDAR parameters

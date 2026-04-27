@@ -70,7 +70,7 @@ class BEVFusionHead(nn.Module):
         train_cfg=None,
         test_cfg=None,
         bbox_coder=None,
-        partial_traffic_cone_barrier=False,
+        partial_ignore_labels=None
     ):
         super().__init__()
         self.class_names = class_names
@@ -84,8 +84,6 @@ class BEVFusionHead(nn.Module):
         self.nms_kernel_size = nms_kernel_size
         self.train_cfg = train_cfg
         self.test_cfg = test_cfg
-        # If true, only compute loss for traffic cone and barrier when it's available in the frame
-        self.partial_traffic_cone_barrier = partial_traffic_cone_barrier
         self.use_sigmoid_cls = loss_cls.get("use_sigmoid", False)
         if not self.use_sigmoid_cls:
             self.num_classes += 1
@@ -189,13 +187,14 @@ class BEVFusionHead(nn.Module):
                 [self.class_name_to_indices[class_name] for class_name in cluster["class_names"]]
             )
         
-        if self.partial_traffic_cone_barrier:
+        # If true, only compute loss for traffic cone and barrier when it's available in the frame
+        if partial_ignore_labels is not None:
             assert loss_heatmap['reduction'] == 'none', "Loss reduction must be 'none' for partial traffic cone and barrier"
-            self.ignore_labels = [self.class_name_to_indices["traffic_cone"], self.class_name_to_indices["barrier"]]
+            self.partial_ignore_labels = [self.class_name_to_indices[class_name] for class_name in partial_ignore_labels]
         else:
-            self.ignore_labels = None
+            self.partial_ignore_labels = None
         
-        print_log(f"BEVFusionHead Ignore labels: {self.ignore_labels}, dense heatmap pooling classes: \
+        print_log(f"BEVFusionHead Partial ignore labels: {self.partial_ignore_labels}, dense heatmap pooling classes: \
         {self.dense_heatmap_pooling_classes}, class_names: {self.class_names}", logger="current")
 
     def create_2D_grid(self, x_size, y_size):
@@ -535,7 +534,7 @@ class BEVFusionHead(nn.Module):
             heatmap_weights,
         )
 
-    def get_targets_single(self, gt_instances_3d, preds_dict, batch_idx, batch_metadata):
+    def get_targets_single(self, gt_instances_3d, preds_dict, batch_idx, metadata):
         """Generate training targets for a single sample.
         Args:
             gt_instances_3d (:obj:`InstanceData`): ground truth of instances.
@@ -596,7 +595,6 @@ class BEVFusionHead(nn.Module):
                     gt_labels_3d,
                     score_layer,
                     self.train_cfg,
-                    ignore_labels,
                 )
             elif self.train_cfg.assigner.type == "HeuristicAssigner":
                 assign_result = self.bbox_assigner.assign(
@@ -691,12 +689,10 @@ class BEVFusionHead(nn.Module):
         heatmap_weights = torch.ones_like(heatmap)
 
         # Ignore labels for traffic cone and barrier
-        traffic_cone_barrier_status = batch_metadata[batch_idx].get("traffic_cone_barrier_status", True)
-        if self.ignore_labels is not None and not traffic_cone_barrier_status:
-            pred_labels = pred_instances.scores.argmax(dim=1, keepdim=False)
-            ignore_preds_masks = pred_labels.isin(self.ignore_labels)
-            heatmap_weights[self.ignore_labels] = 0.0 # Set to 0 to ignore these proposals
-            label_weights[:, self.ignore_labels] = 0.0 # Set to 0 to ignore traffic_cone and barrier
+        traffic_cone_barrier_status = metadata.get("traffic_cone_barrier_status", True)
+        if self.partial_ignore_labels is not None and not traffic_cone_barrier_status:
+            heatmap_weights[self.partial_ignore_labels] = 0.0 # Set to 0 to ignore these proposals
+            label_weights[:, self.partial_ignore_labels] = 0.0 # Set to 0 to ignore traffic_cone and barrier
 
         return (
             labels[None],
@@ -752,7 +748,7 @@ class BEVFusionHead(nn.Module):
         # compute heatmap loss
         preds_dense_heatmap = clip_sigmoid(preds_dict["dense_heatmap"].float())
         num_pos_dense_heatmap = max(heatmap.eq(1).float().sum().item(), 1)
-        if self.ignore_labels is not None:
+        if self.partial_ignore_labels is not None:
             loss_heatmap = self.loss_heatmap(
                 preds_dense_heatmap,
                 heatmap.float(),
@@ -797,12 +793,12 @@ class BEVFusionHead(nn.Module):
             ]
             # (Batch*num_proposals, num_classes)
             layer_label_weights = layer_label_weights.reshape(-1, self.num_classes)
-            print_log(f"layer_label_weights: {layer_label_weights.shape}", logger="current")
             layer_score = preds_dict["heatmap"][
                 ...,
                 idx_layer * self.num_proposals : (idx_layer + 1) * self.num_proposals,
             ]
             layer_cls_score = layer_score.permute(0, 2, 1).reshape(-1, self.num_classes)
+            print_log(f"layer_label_weights: {layer_label_weights.shape}, layer_score: {layer_score.shape}, layer_labels: {layer_labels.shape}", logger="current")
             layer_loss_cls = self.loss_cls(
                 layer_cls_score.float(),
                 layer_labels,
