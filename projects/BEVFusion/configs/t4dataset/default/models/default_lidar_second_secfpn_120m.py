@@ -91,9 +91,11 @@ model = dict(
                 dict(class_names=["car", "truck", "bus"], nms_threshold=0.5),  # It's radius if using circle_nms
                 dict(class_names=["bicycle"], nms_threshold=0.5),
                 dict(class_names=["pedestrian"], nms_threshold=0.175),
+                dict(class_names=["barrier"], nms_threshold=0.25),
+                dict(class_names=["traffic_cone"], nms_threshold=0.175),
             ],
         ),
-        dense_heatmap_pooling_classes=["car", "truck", "bus", "bicycle"],  # Use class indices for pooling
+        dense_heatmap_pooling_classes=["car", "truck", "bus", "bicycle", "barrier"],  # Use class indices for pooling
         common_heads=dict(center=[2, 2], height=[1, 2], dim=[3, 2], rot=[2, 2], vel=[2, 2]),
         bbox_coder=dict(
             type="TransFusionBBoxCoder",
@@ -112,5 +114,6 @@ model = dict(
         ),
         loss_heatmap=dict(type="mmdet.GaussianFocalLoss", reduction="mean", loss_weight=1.0),
         loss_bbox=dict(type="mmdet.L1Loss", reduction="mean", loss_weight=0.25),
+        partial_traffic_cone_barrier=True
     ),
 )
