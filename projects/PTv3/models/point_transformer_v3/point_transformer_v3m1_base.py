@@ -19,7 +19,7 @@ except ImportError:
     flash_attn = None
 
 from models.builder import MODELS
-from models.modules import PointModule, PointSequential
+from models.modules import MLP, Embedding, PointModule, PointSequential
 from models.point_prompt_training import PDNorm
 from models.scatter.functional import argsort, segment_csr, unique
 from models.utils.misc import offset2bincount
@@ -143,94 +143,6 @@ class SerializedAttention(PointModule):
             point[rel_pos_key] = grid_coord.unsqueeze(2) - grid_coord.unsqueeze(1)
         return point[rel_pos_key]
 
-    @torch.no_grad()
-    def get_padding_and_inverse(self, point):
-        pad_key = "pad"
-        unpad_key = "unpad"
-        cu_seqlens_key = "cu_seqlens_key"
-        if pad_key not in point.keys() or unpad_key not in point.keys() or cu_seqlens_key not in point.keys():
-            offset = point.offset
-            bincount = offset2bincount(offset)
-            bincount_pad = (
-                torch.maximum(
-                    torch.div(
-                        bincount + self.patch_size - 1,
-                        self.patch_size,
-                        rounding_mode="trunc",
-                    ),
-                    torch.tensor(1, device=bincount.device),
-                )
-                * self.patch_size
-            )
-            # only pad point when num of points larger than patch_size
-            mask_pad = bincount > self.patch_size
-            bincount_pad = (1 - mask_pad.int()) * bincount + mask_pad.int() * bincount_pad
-
-            if not self.export_mode:
-                _offset = nn.functional.pad(offset, (1, 0))
-                _offset_pad = nn.functional.pad(torch.cumsum(bincount_pad, dim=0), (1, 0))
-
-                pad = torch.arange(_offset_pad[-1], device=offset.device)
-                unpad = torch.arange(_offset[-1], device=offset.device)
-                cu_seqlens = []
-                for i in range(len(offset)):
-                    unpad[_offset[i] : _offset[i + 1]] += _offset_pad[i] - _offset[i]
-                    if bincount[i] != bincount_pad[i]:
-                        pad[
-                            _offset_pad[i + 1] - self.patch_size + (bincount[i] % self.patch_size) : _offset_pad[i + 1]
-                        ] = pad[
-                            _offset_pad[i + 1]
-                            - 2 * self.patch_size
-                            + (bincount[i] % self.patch_size) : _offset_pad[i + 1]
-                            - self.patch_size
-                        ]
-                    pad[_offset_pad[i] : _offset_pad[i + 1]] -= _offset_pad[i] - _offset[i]
-                    cu_seqlens.append(
-                        torch.arange(
-                            _offset_pad[i],
-                            _offset_pad[i + 1],
-                            step=self.patch_size,
-                            dtype=torch.int32,
-                            device=offset.device,
-                        )
-                    )
-                point[pad_key] = pad
-                point[unpad_key] = unpad
-                point[cu_seqlens_key] = nn.functional.pad(torch.concat(cu_seqlens), (0, 1), value=_offset_pad[-1])
-            else:
-                # NOTE(knzo25): needed due to tensorrt reasons
-                assert len(offset) == 1
-
-                # pad_orig = pad
-                # unpad_orig = unpad
-
-                pad = torch.arange(bincount_pad[0], device=offset.device)
-                unpad = torch.arange(offset[0], device=offset.device)
-                cu_seqlens = []
-
-                pad[bincount_pad[0] - self.patch_size + (bincount[0] % self.patch_size) : bincount_pad[0]] = pad[
-                    bincount_pad[0]
-                    - 2 * self.patch_size
-                    + (bincount[0] % self.patch_size) : bincount_pad[0]
-                    - self.patch_size
-                ]
-
-                cu_seqlens.append(
-                    torch.arange(
-                        0,
-                        bincount_pad[0],
-                        step=self.patch_size,
-                        dtype=torch.int32,
-                        device=offset.device,
-                    )
-                )
-
-                point[pad_key] = pad
-                point[unpad_key] = unpad
-                point[cu_seqlens_key] = nn.functional.pad(torch.concat(cu_seqlens), (0, 1), value=bincount_pad[0])
-
-        return point[pad_key], point[unpad_key], point[cu_seqlens_key]
-
     def forward(self, point):
         if not self.enable_flash:
             assert offset2bincount(point.offset).min() >= self.patch_size_max  # NOTE(knzo25): assumed for deployment
@@ -240,7 +152,7 @@ class SerializedAttention(PointModule):
         K = self.patch_size
         C = self.channels
 
-        pad, unpad, cu_seqlens = self.get_padding_and_inverse(point)
+        pad, unpad, cu_seqlens = point.get_padding_and_inverse(self.patch_size)
 
         order = point.serialized_order[self.order_index][pad]
         inverse = unpad[point.serialized_inverse[self.order_index]]
@@ -279,32 +191,6 @@ class SerializedAttention(PointModule):
         feat = self.proj_drop(feat)
         point.feat = feat
         return point
-
-
-class MLP(nn.Module):
-    def __init__(
-        self,
-        in_channels,
-        hidden_channels=None,
-        out_channels=None,
-        act_layer=nn.GELU,
-        drop=0.0,
-    ):
-        super().__init__()
-        out_channels = out_channels or in_channels
-        hidden_channels = hidden_channels or in_channels
-        self.fc1 = nn.Linear(in_channels, hidden_channels)
-        self.act = act_layer()
-        self.fc2 = nn.Linear(hidden_channels, out_channels)
-        self.drop = nn.Dropout(drop)
-
-    def forward(self, x):
-        x = self.fc1(x)
-        x = self.act(x)
-        x = self.drop(x)
-        x = self.fc2(x)
-        x = self.drop(x)
-        return x
 
 
 class Block(PointModule):
@@ -564,44 +450,6 @@ class SerializedUnpooling(PointModule):
         if self.traceable:
             parent["unpooling_parent"] = point
         return parent
-
-
-class Embedding(PointModule):
-    def __init__(
-        self,
-        in_channels,
-        embed_channels,
-        norm_layer=None,
-        act_layer=None,
-        export_mode=False,
-    ):
-        super().__init__()
-        self.in_channels = in_channels
-        self.embed_channels = embed_channels
-
-        if export_mode:
-            from SparseConvolution.sparse_conv import SubMConv3d
-        else:
-            from spconv.pytorch import SubMConv3d
-
-        self.stem = PointSequential(
-            conv=SubMConv3d(
-                in_channels,
-                embed_channels,
-                kernel_size=5,
-                padding=1,
-                bias=False,
-                indice_key="stem",
-            )
-        )
-        if norm_layer is not None:
-            self.stem.add(norm_layer(embed_channels), name="norm")
-        if act_layer is not None:
-            self.stem.add(act_layer(), name="act")
-
-    def forward(self, point: Point):
-        point = self.stem(point)
-        return point
 
 
 @MODELS.register_module("PT-v3m1")
