@@ -263,12 +263,12 @@ class HungarianAssigner3D(BaseAssigner):
         # weighted sum of above three costs
         cost = cls_cost + reg_cost + iou_cost
         
-        if ignore_labels is not None:
-            preds_labels = pred_instances.scores.argmax(dim=1, keepdim=False)
-            print("shape of pred_instances.scores, preds_labels", pred_instances.scores.shape, preds_labels.shape)
-            ignore_preds_masks = preds_labels.isin(ignore_labels)
-            cost[ignore_preds_masks] = 10000
-            print("shape of ignore_preds_masks, cost", ignore_preds_masks.shape, cost.shape)
+        # if ignore_labels is not None:
+        #     preds_labels = pred_instances.scores.argmax(dim=1, keepdim=False)
+        #     print("shape of pred_instances.scores, preds_labels", pred_instances.scores.shape, preds_labels.shape)
+        #     ignore_preds_masks = preds_labels.isin(ignore_labels)
+        #     cost[ignore_preds_masks] = 10000
+        #     print("shape of ignore_preds_masks, cost", ignore_preds_masks.shape, cost.shape)
 
         # 3. do Hungarian matching on CPU using linear_sum_assignment
         cost = cost.detach().cpu()

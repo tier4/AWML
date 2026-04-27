@@ -579,12 +579,6 @@ class BEVFusionHead(nn.Module):
         else:
             num_layer = 1
         
-        traffic_cone_barrier_status = batch_metadata[batch_idx].get("traffic_cone_barrier_status", True)
-        if self.ignore_labels is not None and not traffic_cone_barrier_status:
-            ignore_labels = self.ignore_labels
-        else:
-            ignore_labels = None
-
         assign_result_list = []
         for idx_layer in range(num_layer):
             bboxes_tensor_layer = bboxes_tensor[
@@ -638,7 +632,8 @@ class BEVFusionHead(nn.Module):
         ious = assign_result_ensemble.max_overlaps
         ious = torch.clamp(ious, min=0.0, max=1.0)
         labels = bboxes_tensor.new_zeros(num_proposals, dtype=torch.long)
-        label_weights = bboxes_tensor.new_zeros(num_proposals, dtype=torch.long)
+        label_weights = bboxes_tensor.new_zeros([num_proposals, self.num_classes], dtype=torch.long)
+        # label_weights = bboxes_tensor.new_zeros(num_proposals, dtype=torch.long)
 
         if gt_labels_3d is not None:  # default label is -1
             labels += self.num_classes
@@ -696,11 +691,12 @@ class BEVFusionHead(nn.Module):
         heatmap_weights = torch.ones_like(heatmap)
 
         # Ignore labels for traffic cone and barrier
+        traffic_cone_barrier_status = batch_metadata[batch_idx].get("traffic_cone_barrier_status", True)
         if self.ignore_labels is not None and not traffic_cone_barrier_status:
             pred_labels = pred_instances.scores.argmax(dim=1, keepdim=False)
             ignore_preds_masks = pred_labels.isin(self.ignore_labels)
-            label_weights[ignore_preds_masks] = 0.0 # Set to 0 to ignore these proposals
             heatmap_weights[self.ignore_labels] = 0.0 # Set to 0 to ignore these proposals
+            label_weights[:, self.ignore_labels] = 0.0 # Set to 0 to ignore traffic_cone and barrier
 
         return (
             labels[None],
@@ -791,10 +787,17 @@ class BEVFusionHead(nn.Module):
                 ...,
                 idx_layer * self.num_proposals : (idx_layer + 1) * self.num_proposals,
             ].reshape(-1)
+            # layer_label_weights = label_weights[
+            #     ...,
+            #     idx_layer * self.num_proposals : (idx_layer + 1) * self.num_proposals,
+            # ].reshape(-1)
             layer_label_weights = label_weights[
                 ...,
                 idx_layer * self.num_proposals : (idx_layer + 1) * self.num_proposals,
-            ].reshape(-1)
+            ]
+            # (Batch*num_proposals, num_classes)
+            layer_label_weights = layer_label_weights.reshape(-1, self.num_classes)
+            print_log(f"layer_label_weights: {layer_label_weights.shape}", logger="current")
             layer_score = preds_dict["heatmap"][
                 ...,
                 idx_layer * self.num_proposals : (idx_layer + 1) * self.num_proposals,
