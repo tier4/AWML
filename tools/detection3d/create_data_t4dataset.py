@@ -273,7 +273,8 @@ def main():
 
     if cfg.filter_attributes is None:
         print_log("No attribute filtering is applied!")
-
+    
+    remove_non_traffic_cone_barrier = cfg.get("remove_non_traffic_cone_barrier", False)
     # Get every pair of min-max distance filtering thresholds
     bev_distance_ranges = []
     if hasattr(cfg, "evaluator_metric_configs"):
@@ -310,6 +311,9 @@ def main():
                 dataset_scene_info = scene_id.split("/")
                 if len(dataset_scene_info) == 5:
                     t4_dataset_id, t4_dataset_version_id, city, vehicle_type, traffic_cone_barrier_status = dataset_scene_info
+                    if remove_non_traffic_cone_barrier and traffic_cone_barrier_status == "false":
+                        print_log(f"Skipping scene: {scene_id} because it does not have traffic cone or barrier", logger="current")
+                        continue
                 elif len(dataset_scene_info) == 2:
                     t4_dataset_id, t4_dataset_version_id = dataset_scene_info
                     city = vehicle_type = None
