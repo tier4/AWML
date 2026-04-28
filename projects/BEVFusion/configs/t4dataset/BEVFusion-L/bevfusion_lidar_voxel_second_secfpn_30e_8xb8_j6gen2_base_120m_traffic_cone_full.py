@@ -65,7 +65,6 @@ model = dict(
             voxel_size=_base_.voxel_size[0:2],
         ),
     ),
-		partial_ignore_labels=None,
 )
 
 # Dataset parameters
