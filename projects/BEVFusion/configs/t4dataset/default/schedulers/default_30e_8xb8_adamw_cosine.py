@@ -3,7 +3,7 @@
 lr = 1.4141e-4
 t_max = 8
 max_epochs = 30
-val_interval = 5
+val_interval = 1
 
 train_gpu_size = 8
 test_batch_size = 2
