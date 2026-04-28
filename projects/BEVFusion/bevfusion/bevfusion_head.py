@@ -753,34 +753,53 @@ class BEVFusionHead(nn.Module):
         # compute heatmap loss
         preds_dense_heatmap = clip_sigmoid(preds_dict["dense_heatmap"].float())
         num_pos_dense_heatmap = max(heatmap.eq(1).float().sum().item(), 1)
-        if self.partial_ignore_labels is None:
-            loss_heatmap = self.loss_heatmap(
-                preds_dense_heatmap,
-                heatmap.float(),
-                avg_factor=num_pos_dense_heatmap,
-            )
-            loss_dict["loss_heatmap"] = loss_heatmap
-        else:
-            # When ignore labels is found, we compute the loss for each class
-            # heatmap focal loss
-            loss_heatmap_cls: torch.Tensor = self.loss_heatmap(
-                preds_dense_heatmap,
-                heatmap.float(),
-            )
-            loss_heatmap_cls_before_reduction = (loss_heatmap_cls.sum((0, 2, 3)) / num_pos_dense_heatmap).detach()
-            for cls_i, class_name in enumerate(self.class_names):
-                loss_dict[f"heatmap_{class_name}_before_reduction"] = loss_heatmap_cls_before_reduction[cls_i]
+        # if self.partial_ignore_labels is None:
+        #     loss_heatmap = self.loss_heatmap(
+        #         preds_dense_heatmap,
+        #         heatmap.float(),
+        #         avg_factor=num_pos_dense_heatmap,
+        #     )
+        #     loss_dict["loss_heatmap"] = loss_heatmap
+        # else:
+            # # When ignore labels is found, we compute the loss for each class
+            # # heatmap focal loss
+            # loss_heatmap_cls: torch.Tensor = self.loss_heatmap(
+            #     preds_dense_heatmap,
+            #     heatmap.float(),
+            # )
+            # # loss_heatmap_cls_before_reduction = (loss_heatmap_cls.sum((0, 2, 3)) / num_pos_dense_heatmap).detach()
+            # # for cls_i, class_name in enumerate(self.class_names):
+            # #     loss_dict[f"heatmap_{class_name}_before_reduction"] = loss_heatmap_cls_before_reduction[cls_i]
 
-            # (Batch, num_classes, height, width) * (Batch, num_classes, height, width)
-            loss_heatmap_cls = loss_heatmap_cls * heatmap_weights.float()
-            loss_heatmap_cls = loss_heatmap_cls.sum((0, 2, 3)) / num_pos_dense_heatmap
-            # (Batch, num_classes)
-            for cls_i, class_name in enumerate(self.class_names):
-                loss_dict[f"loss_heatmap_{class_name}"] = loss_heatmap_cls[cls_i]
+            # # (Batch, num_classes, height, width) * (Batch, num_classes, height, width)
+            # loss_heatmap_cls = loss_heatmap_cls * heatmap_weights.float()
+            # loss_heatmap_cls = loss_heatmap_cls.sum((0, 2, 3)) / num_pos_dense_heatmap
+            # # (Batch, num_classes)
+            # for cls_i, class_name in enumerate(self.class_names):
+            #     loss_dict[f"loss_heatmap_{class_name}"] = loss_heatmap_cls[cls_i]
             
-            # Prevent loss item to avoid computing gradients twice. This is for logging.
-            loss_dict["total_dense_heatmap"] = loss_heatmap_cls.sum()
+            # # Prevent loss item to avoid computing gradients twice. This is for logging.
+            # loss_dict["total_dense_heatmap"] = loss_heatmap_cls.sum()
+
+         # # When ignore labels is found, we compute the loss for each class
+            # # heatmap focal loss
+        loss_heatmap_cls: torch.Tensor = self.loss_heatmap(
+            preds_dense_heatmap,
+            heatmap.float(),
+        )
+        # loss_heatmap_cls_before_reduction = (loss_heatmap_cls.sum((0, 2, 3)) / num_pos_dense_heatmap).detach()
+        # for cls_i, class_name in enumerate(self.class_names):
+        #     loss_dict[f"heatmap_{class_name}_before_reduction"] = loss_heatmap_cls_before_reduction[cls_i]
+
+        # (Batch, num_classes, height, width) * (Batch, num_classes, height, width)
+        loss_heatmap_cls = loss_heatmap_cls * heatmap_weights.float()
+        loss_heatmap_cls = loss_heatmap_cls.sum((0, 2, 3)) / num_pos_dense_heatmap
+        # (Batch, num_classes)
+        for cls_i, class_name in enumerate(self.class_names):
+            loss_dict[f"loss_heatmap_{class_name}"] = loss_heatmap_cls[cls_i]
         
+        # Prevent loss item to avoid computing gradients twice. This is for logging.
+        loss_dict["total_dense_heatmap"] = loss_heatmap_cls.sum() 
         # compute loss for each layer
         for idx_layer in range(self.num_decoder_layers if self.auxiliary else 1):
             if idx_layer == self.num_decoder_layers - 1 or (idx_layer == 0 and self.auxiliary is False):
