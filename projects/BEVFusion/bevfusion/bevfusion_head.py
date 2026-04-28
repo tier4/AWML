@@ -692,7 +692,7 @@ class BEVFusionHead(nn.Module):
         traffic_cone_barrier_status = metadata.get("traffic_cone_barrier_status", True)
         if self.partial_ignore_labels is not None and not traffic_cone_barrier_status:
             heatmap_weights[self.partial_ignore_labels] = 0.0 # Set to 0 to ignore these proposals
-            label_weights[:, self.partial_ignore_labels] = 0.0 # Set to 0 to ignore traffic_cone and barrier
+            label_weights[neg_inds, self.partial_ignore_labels] = 0.0 # Set to 0 to ignore traffic_cone and barrier
 
         return (
             labels[None],
