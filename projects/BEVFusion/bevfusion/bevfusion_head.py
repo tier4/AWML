@@ -692,7 +692,12 @@ class BEVFusionHead(nn.Module):
         traffic_cone_barrier_status = metadata.get("traffic_cone_barrier_status", True)
         if self.partial_ignore_labels is not None and not traffic_cone_barrier_status:
             heatmap_weights[self.partial_ignore_labels] = 0.0 # Set to 0 to ignore these proposals
-            label_weights[neg_inds, self.partial_ignore_labels] = 0.0 # Set to 0 to ignore traffic_cone and barrier
+            if len(neg_inds) > 0:
+                # neg_inds [N] and column indices [K] must broadcast (not pair); see IndexError N vs K.
+                _cols = torch.as_tensor(
+                    self.partial_ignore_labels, device=label_weights.device, dtype=torch.long
+                )
+                label_weights[neg_inds.unsqueeze(1), _cols.unsqueeze(0)] = 0.0
 
         return (
             labels[None],
