@@ -18,7 +18,7 @@ info_test_statistics_file_name = "t4dataset_jpntaxi_base_traffic_cone_statistics
 
 # dataset scene setting
 dataset_test_groups = {
-    "jpntaxi_gen2": ("t4dataset_jpntaxi_gen2_traffic_cone_infos_test.pkl", True),
+    "jpntaxi_base_traffic_cone": ("t4dataset_jpntaxi_base_traffic_cone_infos_test.pkl", True),
 }
 
 dataset_version_list = [
