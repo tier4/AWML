@@ -762,6 +762,10 @@ class BEVFusionHead(nn.Module):
                 preds_dense_heatmap,
                 heatmap.float(),
             )
+            loss_heatmap_cls_before_reduction = (loss_heatmap_cls.sum((0, 2, 3)) / num_pos_dense_heatmap).clone().detach()
+            for cls_i, class_name in enumerate(self.class_names):
+                loss_dict[f"heatmap_{class_name}_before_reduction"] = loss_heatmap_cls_before_reduction[cls_i]
+
             # (Batch, num_classes, height, width) * (Batch, num_classes, height, width)
             loss_heatmap_cls = loss_heatmap_cls * heatmap_weights.float()
             loss_heatmap_cls = loss_heatmap_cls.sum((0, 2, 3)) / num_pos_dense_heatmap
