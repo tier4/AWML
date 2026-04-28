@@ -138,6 +138,8 @@ train_pipeline = [
             "bus",
             "bicycle",
             "pedestrian",
+            "traffic_cone",
+            "barrier",
         ],
     ),
     dict(type="PointShuffle"),
