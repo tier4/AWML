@@ -35,6 +35,24 @@ _UNKNOWN = "unknown"
 class T4Metric(NuScenesMetric):
     """T4 format evaluation metric."""
 
+    # Extend parent's DefaultAttribute to cover all T4 class names beyond the
+    # original 10 NuScenes classes. Attribute values follow the NuScenes convention
+    # used only for output formatting; they don't affect T4Metric eval scores.
+    DefaultAttribute = {
+        **NuScenesMetric.DefaultAttribute,
+        "tractor_unit": "vehicle.parked",
+        "semi_trailer": "vehicle.parked",
+        "train": "vehicle.parked",
+        "emergency_vehicle": "vehicle.parked",
+        "forklift": "vehicle.parked",
+        "kart": "vehicle.parked",
+        "other_vehicle": "vehicle.parked",
+        "personal_mobility": "pedestrian.moving",
+        "stroller": "pedestrian.moving",
+        "animal": "pedestrian.moving",
+        "pushable_pullable": "",
+    }
+
     def __init__(
         self,
         data_root: str,

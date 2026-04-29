@@ -163,13 +163,10 @@ class BEVFusionHead(nn.Module):
         self.class_name_to_indices = {class_name: i for i, class_name in enumerate(class_names)}
         # Map class names to indices for processing
         # TODO (KokSeang): This will increase latency if we don't pool for some classes
-        if dense_heatmap_pooling_classes is not None:
-            self.dense_heatmap_pooling_class_indices = [
+        if dense_heatmap_pooling_classes:  # None or [] → no pooling (global max for all classes)
+            self.dense_heatmap_pooling_class_indices = sorted([
                 self.class_name_to_indices[class_name] for class_name in self.dense_heatmap_pooling_classes
-            ]
-            # Sort it
-            self.dense_heatmap_pooling_class_indices = sorted(self.dense_heatmap_pooling_class_indices)
-
+            ])
             self.dense_heatmap_exclude_pooling_classes = sorted(
                 list(set(self.class_name_to_indices.values()) - set(self.dense_heatmap_pooling_class_indices))
             )
