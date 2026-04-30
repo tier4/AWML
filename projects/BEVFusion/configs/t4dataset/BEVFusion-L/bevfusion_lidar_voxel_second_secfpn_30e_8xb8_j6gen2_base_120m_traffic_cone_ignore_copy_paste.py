@@ -16,7 +16,7 @@ data_root = "data/t4dataset/"
 info_directory_path = "info/kokseang_2_8/"
 
 experiment_group_name = "bevfusion_lidar_intensity_traffic_cone/j6gen2_base/" + _base_.dataset_type
-experiment_name = "lidar_voxel_second_secfpn_30e_8xb8_j6gen2_base_120m_traffic_cone_full"
+experiment_name = "lidar_voxel_second_secfpn_30e_8xb8_j6gen2_base_120m_traffic_cone_ignore_copy_paste"
 work_dir = "work_dirs/" + experiment_group_name + "/" + experiment_name
 
 # model parameter
@@ -64,9 +64,162 @@ model = dict(
             pc_range=_base_.point_cloud_range[0:2],
             voxel_size=_base_.voxel_size[0:2],
         ),
-        partial_ignore_dense_heatmap=False
+        partial_ignore_labels=["traffic_cone", "barrier"],
+        partial_ignore_dense_heatmap=False,
+        loss_heatmap=dict(
+            reduction="none",
+        ),
     ),
 )
+
+db_sampler = dict(
+    data_root=data_root,
+    info_path=info_directory_path + _base_.info_train_file_name,
+    rate=1.0,
+    prepare=dict(
+        filter_by_difficulty=[-1],
+        filter_by_min_points=dict(
+            car=5,
+            truck=5,
+            bus=5,
+            trailer=5,
+            traffic_cone=5,
+            barrier=5,
+            bicycle=5,
+            pedestrian=5)),
+    classes=_base_.class_names,
+    sample_groups=dict(
+        car=0,
+        truck=0,
+        bus=0,
+        barrier=2,
+        traffic_cone=4),
+    points_loader=dict(
+        type='LoadPointsFromCurrentFileSweep',
+        coord_type='LIDAR',
+        load_dim=_base_.point_load_dim,
+        use_dim=_base_.point_use_dim,
+        backend_args=_base_.backend_args,
+        sweeps_num=_base_.sweeps_num,
+        pad_empty_sweeps=True,
+        remove_close=True,
+        test_mode=False,
+    ))
+        
+train_pipeline = [
+    dict(
+        type="LoadPointsFromFile",
+        coord_type="LIDAR",
+        load_dim=_base_.point_load_dim,
+        use_dim=_base_.point_use_dim,
+        backend_args=_base_.backend_args,
+    ),
+    dict(
+        type="LoadPointsFromMultiSweeps",
+        sweeps_num=_base_.sweeps_num,
+        load_dim=_base_.point_load_dim,
+        use_dim=_base_.lidar_sweep_dims,
+        pad_empty_sweeps=True,
+        remove_close=True,
+        backend_args=_base_.backend_args,
+        test_mode=False,
+    ),
+    dict(type="LoadAnnotations3D", with_bbox_3d=True, with_label_3d=True, with_attr_label=False),
+    dict(type="ObjectSample", db_sampler=db_sampler),
+    dict(
+        type="BEVFusionGlobalRotScaleTrans",
+        scale_ratio_range=[0.95, 1.05],
+        rot_range=[-0.78539816, 0.78539816],
+        translation_std=[0.5, 0.5, 0.2],
+    ),
+    dict(type="BEVFusionRandomFlip3D"),
+    dict(type="PointsRangeFilter", point_cloud_range=_base_.point_cloud_range),
+    dict(type="ObjectRangeFilter", point_cloud_range=_base_.point_cloud_range),
+    dict(
+        type="ObjectNameFilter",
+        classes=[
+            "car",
+            "truck",
+            "bus",
+            "bicycle",
+            "pedestrian",
+            "traffic_cone",
+            "barrier",
+        ],
+    ),
+    dict(type="PointShuffle"),
+    dict(
+        type="Pack3DDetInputs",
+        keys=["points", "img", "gt_bboxes_3d", "gt_labels_3d", "gt_bboxes", "gt_labels"],
+        meta_keys=[
+            "cam2img",
+            "ori_cam2img",
+            "lidar2cam",
+            "lidar2img",
+            "cam2lidar",
+            "ori_lidar2img",
+            "img_aug_matrix",
+            "box_type_3d",
+            "sample_idx",
+            "lidar_path",
+            "img_path",
+            "transformation_3d_flow",
+            "pcd_rotation",
+            "pcd_scale_factor",
+            "pcd_trans",
+            "img_aug_matrix",
+            "lidar_aug_matrix",
+            "timestamp",
+            "vehicle_type",
+            "city",
+            "traffic_cone_barrier_status",
+        ],
+    ),
+]
+
+test_pipeline = [
+    dict(
+        type="LoadPointsFromFile",
+        coord_type="LIDAR",
+        load_dim=_base_.point_load_dim,
+        use_dim=_base_.point_use_dim,
+        backend_args=_base_.backend_args,
+    ),
+    dict(
+        type="LoadPointsFromMultiSweeps",
+        sweeps_num=_base_.sweeps_num,
+        load_dim=_base_.point_load_dim,
+        use_dim=_base_.lidar_sweep_dims,
+        pad_empty_sweeps=True,
+        remove_close=True,
+        backend_args=_base_.backend_args,
+        test_mode=True,
+    ),
+    dict(type="PointsRangeFilter", point_cloud_range=_base_.point_cloud_range),
+    dict(
+        type="Pack3DDetInputs",
+        keys=["img", "points", "gt_bboxes_3d", "gt_labels_3d"],
+        meta_keys=[
+            "cam2img",
+            "ori_cam2img",
+            "lidar2cam",
+            "lidar2img",
+            "cam2lidar",
+            "ori_lidar2img",
+            "img_aug_matrix",
+            "box_type_3d",
+            "sample_idx",
+            "lidar_path",
+            "img_path",
+            "num_pts_feats",
+            "num_views",
+            "timestamp",
+            "vehicle_type",
+            "city",
+            "traffic_cone_barrier_status",  
+        ],
+    ),
+]
 
 # Dataset parameters
 train_dataloader = dict(
@@ -161,4 +314,4 @@ default_hooks = dict(
 )
 log_processor = dict(window_size=50)
 
-load_from = "work_dirs/bevfusion_lidar_2.7.0/base/T4Dataset/lidar_voxel_second_secfpn_50e_8xb8_base_120m/epoch_48.pth"
+load_from = "work_dirs/bevfusion_lidar_2.7.0/base/epoch_48.pth"

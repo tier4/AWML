@@ -65,6 +65,7 @@ model = dict(
             voxel_size=_base_.voxel_size[0:2],
         ),
         partial_ignore_labels=["traffic_cone", "barrier"],
+        partial_ignore_dense_heatmap=True,
         loss_heatmap=dict(
             reduction="none",
         ),

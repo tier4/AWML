@@ -70,7 +70,8 @@ class BEVFusionHead(nn.Module):
         train_cfg=None,
         test_cfg=None,
         bbox_coder=None,
-        partial_ignore_labels=None
+        partial_ignore_labels=None,
+        partial_ignore_dense_heatmap=False
     ):
         super().__init__()
         self.class_names = class_names
@@ -194,7 +195,8 @@ class BEVFusionHead(nn.Module):
         else:
             self.partial_ignore_labels = None
         
-        print_log(f"BEVFusionHead Partial ignore labels: {self.partial_ignore_labels}, dense heatmap pooling classes: \
+        self.partial_ignore_dense_heatmap = partial_ignore_dense_heatmap
+        print_log(f"BEVFusionHead Partial ignore labels: {self.partial_ignore_labels}, partial ignore dense heatmap: {self.partial_ignore_dense_heatmap}, dense heatmap pooling classes: \
         {self.dense_heatmap_pooling_classes}, class_names: {self.class_names}", logger="current")
 
     def create_2D_grid(self, x_size, y_size):
@@ -691,7 +693,8 @@ class BEVFusionHead(nn.Module):
         # Ignore labels for traffic cone and barrier
         traffic_cone_barrier_status = metadata.get("traffic_cone_barrier_status", True)
         if self.partial_ignore_labels is not None and not traffic_cone_barrier_status:
-            heatmap_weights[self.partial_ignore_labels] = 0.0 # Set to 0 to ignore these proposals
+            if self.partial_ignore_dense_heatmap:
+                heatmap_weights[self.partial_ignore_labels] = 0.0 # Set to 0 to ignore these proposals
             if len(neg_inds) > 0:
                 # neg_inds [N] and column indices [K] must broadcast (not pair); see IndexError N vs K.
                 _cols = torch.as_tensor(

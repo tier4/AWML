@@ -63,7 +63,8 @@ model = dict(
         bbox_coder=dict(
             pc_range=_base_.point_cloud_range[0:2],
             voxel_size=_base_.voxel_size[0:2],
-        )
+        ),
+        partial_ignore_dense_heatmap=False
     ),
 )
 
@@ -113,7 +114,7 @@ train_pipeline = [
         type="LoadPointsFromMultiSweeps",
         sweeps_num=_base_.sweeps_num,
         load_dim=_base_.point_load_dim,
-        use_dim=_base_.point_use_dim,
+        use_dim=_base_.lidar_sweep_dims,
         pad_empty_sweeps=True,
         remove_close=True,
         backend_args=_base_.backend_args,
@@ -176,21 +177,21 @@ test_pipeline = [
     dict(
         type="LoadPointsFromFile",
         coord_type="LIDAR",
-        load_dim=point_load_dim,
-        use_dim=point_load_dim,
-        backend_args=backend_args,
+        load_dim=_base_.point_load_dim,
+        use_dim=_base_.point_use_dim,
+        backend_args=_base_.backend_args,
     ),
     dict(
         type="LoadPointsFromMultiSweeps",
-        sweeps_num=sweeps_num,
-        load_dim=point_load_dim,
-        use_dim=lidar_sweep_dims,
+        sweeps_num=_base_.sweeps_num,
+        load_dim=_base_.point_load_dim,
+        use_dim=_base_.lidar_sweep_dims,
         pad_empty_sweeps=True,
         remove_close=True,
-        backend_args=backend_args,
+        backend_args=_base_.backend_args,
         test_mode=True,
     ),
-    dict(type="PointsRangeFilter", point_cloud_range=point_cloud_range),
+    dict(type="PointsRangeFilter", point_cloud_range=_base_.point_cloud_range),
     dict(
         type="Pack3DDetInputs",
         keys=["img", "points", "gt_bboxes_3d", "gt_labels_3d"],
