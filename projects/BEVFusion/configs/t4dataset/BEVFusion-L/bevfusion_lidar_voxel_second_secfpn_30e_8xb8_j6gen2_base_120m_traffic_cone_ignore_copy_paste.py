@@ -74,19 +74,20 @@ model = dict(
 
 db_sampler = dict(
     data_root=data_root,
-    info_path=info_directory_path + _base_.info_train_file_name,
+    info_path=data_root + info_directory_path + _base_.info_train_file_name,
     rate=1.0,
-    prepare=dict(
-        filter_by_difficulty=[-1],
-        filter_by_min_points=dict(
-            car=5,
-            truck=5,
-            bus=5,
-            trailer=5,
-            traffic_cone=5,
-            barrier=5,
-            bicycle=5,
-            pedestrian=5)),
+    prepare=dict(),
+    # prepare=dict(
+    #     filter_by_difficulty=[-1],
+    #     filter_by_min_points=dict(
+    #         car=5,
+    #         truck=5,
+    #         bus=5,
+    #         trailer=5,
+    #         traffic_cone=5,
+    #         barrier=5,
+    #         bicycle=5,
+    #         pedestrian=5)),
     classes=_base_.class_names,
     sample_groups=dict(
         car=0,
@@ -179,50 +180,6 @@ train_pipeline = [
     ),
 ]
 
-test_pipeline = [
-    dict(
-        type="LoadPointsFromFile",
-        coord_type="LIDAR",
-        load_dim=_base_.point_load_dim,
-        use_dim=_base_.point_use_dim,
-        backend_args=_base_.backend_args,
-    ),
-    dict(
-        type="LoadPointsFromMultiSweeps",
-        sweeps_num=_base_.sweeps_num,
-        load_dim=_base_.point_load_dim,
-        use_dim=_base_.lidar_sweep_dims,
-        pad_empty_sweeps=True,
-        remove_close=True,
-        backend_args=_base_.backend_args,
-        test_mode=True,
-    ),
-    dict(type="PointsRangeFilter", point_cloud_range=_base_.point_cloud_range),
-    dict(
-        type="Pack3DDetInputs",
-        keys=["img", "points", "gt_bboxes_3d", "gt_labels_3d"],
-        meta_keys=[
-            "cam2img",
-            "ori_cam2img",
-            "lidar2cam",
-            "lidar2img",
-            "cam2lidar",
-            "ori_lidar2img",
-            "img_aug_matrix",
-            "box_type_3d",
-            "sample_idx",
-            "lidar_path",
-            "img_path",
-            "num_pts_feats",
-            "num_views",
-            "timestamp",
-            "vehicle_type",
-            "city",
-            "traffic_cone_barrier_status",  
-        ],
-    ),
-]
-
 # Dataset parameters
 train_dataloader = dict(
     batch_size=_base_.train_batch_size,
@@ -231,7 +188,7 @@ train_dataloader = dict(
     sampler=dict(type="DefaultSampler", shuffle=True),
     dataset=dict(
         type=_base_.dataset_type,
-        pipeline=_base_.train_pipeline,
+        pipeline=train_pipeline,
         modality=_base_.input_modality,
         backend_args=_base_.backend_args,
         data_root=data_root,
@@ -317,3 +274,5 @@ default_hooks = dict(
 log_processor = dict(window_size=50)
 
 load_from = "work_dirs/bevfusion_lidar_2.7.0/base/epoch_48.pth"
+
+custom_hooks = []

@@ -701,6 +701,9 @@ class BEVFusionHead(nn.Module):
                     self.partial_ignore_labels, device=label_weights.device, dtype=torch.long
                 )
                 label_weights[neg_inds.unsqueeze(1), _cols.unsqueeze(0)] = 0.0
+            
+            print("heatmap with traffic cone: ", heatmap[5].sum())
+            print("heatmap with barrier: ", heatmap[6].sum())
 
         return (
             labels[None],
