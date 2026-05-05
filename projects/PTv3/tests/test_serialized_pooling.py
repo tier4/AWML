@@ -5,7 +5,6 @@ from pathlib import Path
 
 import torch
 
-
 if not hasattr(torch, "inference_mode"):
     torch.inference_mode = torch.no_grad
 
