@@ -21,7 +21,7 @@ except ImportError:
 from models.builder import MODELS
 from models.modules import PointModule, PointSequential
 from models.point_prompt_training import PDNorm
-from models.scatter.functional import argsort, segment_csr, unique
+from models.scatter.functional import argsort, segment_csr
 from models.utils.misc import offset2bincount
 from models.utils.structure import Point
 
@@ -436,6 +436,29 @@ class SerializedPooling(PointModule):
         if act_layer is not None:
             self.act = PointSequential(act_layer())
 
+    @staticmethod
+    def _build_export_cluster(
+        code: torch.Tensor,
+        serialized_order: torch.Tensor,
+    ):
+        sorted_indices = serialized_order[0]
+        sorted_code = code[0].index_select(0, sorted_indices)
+        cluster_starts_mask = torch.cat(
+            [
+                torch.ones_like(sorted_code[:1], dtype=torch.bool),
+                sorted_code[1:] != sorted_code[:-1],
+            ]
+        )
+        cluster_starts = torch.nonzero(cluster_starts_mask, as_tuple=False).flatten()
+        num_points = torch._shape_as_tensor(sorted_indices).to(sorted_indices.device)[:1]
+        idx_ptr = torch.cat([cluster_starts, num_points], dim=0)
+
+        cluster_sorted = torch.cumsum(cluster_starts_mask.to(dtype=sorted_indices.dtype), dim=0) - 1
+        cluster = torch.zeros_like(cluster_sorted)
+        cluster.scatter_(0, sorted_indices, cluster_sorted)
+
+        return cluster, sorted_indices, idx_ptr
+
     def forward(self, point: Point):
         pooling_depth = (math.ceil(self.stride) - 1).bit_length()
         if pooling_depth > point.serialized_depth:
@@ -453,22 +476,22 @@ class SerializedPooling(PointModule):
         code = point.serialized_code >> pooling_depth * 3
 
         if not self.export_mode:
-            code_, cluster, counts = torch.unique(
+            _, cluster, counts = torch.unique(
                 code[0],
+                dim=0,
                 sorted=True,
                 return_inverse=True,
                 return_counts=True,
             )
 
             _, indices = torch.sort(cluster)
+            idx_ptr = torch.cat([counts.new_zeros(1), torch.cumsum(counts, dim=0)])
         else:
-            code_, cluster, counts, num_unique = unique(code[0])
-            indices = argsort(cluster)
+            cluster, indices, idx_ptr = self._build_export_cluster(code, point.serialized_order)
 
         # indices of point sorted by cluster, for torch_scatter.segment_csr
 
         # index pointer for sorted point, for torch_scatter.segment_csr
-        idx_ptr = torch.cat([counts.new_zeros(1), torch.cumsum(counts, dim=0)])
         # head_indices of each cluster, for reduce attr e.g. code, batch
         head_indices = indices[idx_ptr[:-1]]
         # generate down code, order, inverse
