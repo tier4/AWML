@@ -70,9 +70,7 @@ class BEVFusionHead(nn.Module):
         train_cfg=None,
         test_cfg=None,
         bbox_coder=None,
-        partial_ignore_labels=None,
-        partial_ignore_dense_heatmap=False,
-    ):
+        partial_ignore_labels=None):
         super().__init__()
         self.class_names = class_names
         self.num_classes = len(self.class_names)
@@ -198,13 +196,9 @@ class BEVFusionHead(nn.Module):
             ]
         else:
             self.partial_ignore_labels = None
-
-        self.partial_ignore_dense_heatmap = partial_ignore_dense_heatmap
-        print_log(
-            f"BEVFusionHead Partial ignore labels: {self.partial_ignore_labels}, partial ignore dense heatmap: {self.partial_ignore_dense_heatmap}, dense heatmap pooling classes: \
-        {self.dense_heatmap_pooling_classes}, class_names: {self.class_names}",
-            logger="current",
-        )
+        
+        print_log(f"BEVFusionHead Partial ignore labels: {self.partial_ignore_labels}, dense heatmap pooling classes: \
+        {self.dense_heatmap_pooling_classes}, class_names: {self.class_names}", logger="current")
 
     def create_2D_grid(self, x_size, y_size):
         meshgrid = [[0, x_size - 1, x_size], [0, y_size - 1, y_size]]
