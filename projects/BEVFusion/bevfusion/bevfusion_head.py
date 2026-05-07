@@ -70,7 +70,8 @@ class BEVFusionHead(nn.Module):
         train_cfg=None,
         test_cfg=None,
         bbox_coder=None,
-        partial_ignore_labels=None):
+        partial_ignore_labels=None,
+    ):
         super().__init__()
         self.class_names = class_names
         self.num_classes = len(self.class_names)
@@ -196,7 +197,7 @@ class BEVFusionHead(nn.Module):
             ]
         else:
             self.partial_ignore_labels = None
-        
+
         print_log(f"BEVFusionHead Partial ignore labels: {self.partial_ignore_labels}, dense heatmap pooling classes: \
         {self.dense_heatmap_pooling_classes}, class_names: {self.class_names}", logger="current")
 
