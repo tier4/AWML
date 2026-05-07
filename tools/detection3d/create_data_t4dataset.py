@@ -273,7 +273,7 @@ def main():
 
     if cfg.filter_attributes is None:
         print_log("No attribute filtering is applied!")
-    
+
     remove_non_traffic_cone_barrier = cfg.get("remove_non_traffic_cone_barrier", False)
     # Get every pair of min-max distance filtering thresholds
     bev_distance_ranges = []
@@ -310,9 +310,14 @@ def main():
                 )
                 dataset_scene_info = scene_id.split("/")
                 if len(dataset_scene_info) == 5:
-                    t4_dataset_id, t4_dataset_version_id, city, vehicle_type, traffic_cone_barrier_status = dataset_scene_info
+                    t4_dataset_id, t4_dataset_version_id, city, vehicle_type, traffic_cone_barrier_status = (
+                        dataset_scene_info
+                    )
                     if remove_non_traffic_cone_barrier and traffic_cone_barrier_status == "false":
-                        print_log(f"Skipping scene: {scene_id} because it does not have traffic cone or barrier", logger="current")
+                        print_log(
+                            f"Skipping scene: {scene_id} because it does not have traffic cone or barrier",
+                            logger="current",
+                        )
                         continue
                 elif len(dataset_scene_info) == 2:
                     t4_dataset_id, t4_dataset_version_id = dataset_scene_info
@@ -336,7 +341,9 @@ def main():
                 infos = []
                 for i in range(0, len(t4.sample), sample_steps):
                     sample = t4.sample[i]
-                    info = get_info(cfg, t4, sample, i, args.max_sweeps, traffic_cone_barrier_status, city, vehicle_type)
+                    info = get_info(
+                        cfg, t4, sample, i, args.max_sweeps, traffic_cone_barrier_status, city, vehicle_type
+                    )
                     if info is None:
                         continue
                     # info["version"] = dataset_version             # used for visualizations during debugging.

@@ -114,6 +114,6 @@ model = dict(
         ),
         loss_heatmap=dict(type="mmdet.GaussianFocalLoss", reduction="mean", loss_weight=1.0),
         loss_bbox=dict(type="mmdet.L1Loss", reduction="mean", loss_weight=0.25),
-        partial_ignore_labels=None
+        partial_ignore_labels=None,
     ),
 )

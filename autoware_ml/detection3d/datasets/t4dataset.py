@@ -191,8 +191,8 @@ class T4Dataset(NuScenesDataset):
                     info["lidar2img"] = np.array(info["images"][self.default_cam_key]["lidar2img"])
                 else:
                     info["lidar2img"] = info["cam2img"] @ info["lidar2cam"]
-        
+
         # Default difficulty to 0 if not present
-        if 'difficulty' not in info:
-            info['difficulty'] = 0
+        if "difficulty" not in info:
+            info["difficulty"] = 0
         return info

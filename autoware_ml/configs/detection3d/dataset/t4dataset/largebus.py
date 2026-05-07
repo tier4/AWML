@@ -130,8 +130,8 @@ class_names = [
     "bus",
     "bicycle",
     "pedestrian",
-	"traffic_cone",
-	"barrier",
+    "traffic_cone",
+    "barrier",
 ]
 
 num_class = len(class_names)

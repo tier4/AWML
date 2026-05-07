@@ -259,10 +259,10 @@ class HungarianAssigner3D(BaseAssigner):
         reg_cost = self.reg_cost(bboxes, gt_bboxes, train_cfg)
         iou = self.iou_calculator(bboxes, gt_bboxes)
         iou_cost = self.iou_cost(iou)
-     
+
         # weighted sum of above three costs
         cost = cls_cost + reg_cost + iou_cost
-        
+
         # if ignore_labels is not None:
         #     preds_labels = pred_instances.scores.argmax(dim=1, keepdim=False)
         #     print("shape of pred_instances.scores, preds_labels", pred_instances.scores.shape, preds_labels.shape)

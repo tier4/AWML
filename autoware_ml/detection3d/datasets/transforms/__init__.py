@@ -1,4 +1,4 @@
-from .object_min_points_filter import ObjectMinPointsFilter
 from .loading import LoadPointsFromCurrentFileSweep
+from .object_min_points_filter import ObjectMinPointsFilter
 
 __all__ = ["ObjectMinPointsFilter", "LoadPointsFromCurrentFileSweep"]

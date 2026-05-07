@@ -117,9 +117,9 @@ name_mapping = {
     "semi_trailer": "trailer",
     "tractor_unit": "truck",
     "construction_vehicle": "truck",
-	"traffic_cone": "traffic_cone",
-	"trafficcone": "traffic_cone",
-	"barrier": "barrier",
+    "traffic_cone": "traffic_cone",
+    "trafficcone": "traffic_cone",
+    "barrier": "barrier",
 }
 
 class_names = [

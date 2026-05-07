@@ -143,20 +143,12 @@ name_mapping = {
     "semi_trailer": "trailer",
     "tractor_unit": "truck",
     "construction_vehicle": "truck",
-	"traffic_cone": "traffic_cone",
-	"trafficcone": "traffic_cone",
+    "traffic_cone": "traffic_cone",
+    "trafficcone": "traffic_cone",
     "barrier": "barrier",
 }
 
-class_names = [
-    "car",
-    "truck",
-    "bus",
-    "bicycle",
-    "pedestrian",
-	"traffic_cone",
-	"barrier"
-]
+class_names = ["car", "truck", "bus", "bicycle", "pedestrian", "traffic_cone", "barrier"]
 num_class = len(class_names)
 metainfo = dict(classes=class_names)
 
