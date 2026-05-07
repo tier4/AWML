@@ -61,13 +61,15 @@ RUN python3 -m pip --no-cache-dir install \
 RUN python3 -m pip install git+https://github.com/tier4/t4-devkit@v0.5.1
 
 # Install autoware-perception-evaluation
-RUN python3 -m pip install git+https://github.com/tier4/autoware_perception_evaluation@9d8c9773d35177bb0b7f2606f429f58a5fb708ca
+RUN python3 -m pip install git+https://github.com/tier4/autoware_perception_evaluation@3c9577dc23fd76a049559b42656ca46c1c32fa66
 
 # Need to dowgrade setuptools to 60.2.0 to fix setup
 RUN python3 -m pip --no-cache-dir install \
     setuptools==60.2.0 \
     transformers==4.51.3 \
-    polars==1.37.1
+    polars==1.37.1 \
+		onnx_graphsurgeon==0.5.8 \
+		spconv-cu126==2.3.8
 
 # NOTE(knzo25): this patch is needed to use numpy versions over 1.23.5 (version used in mmdet3d 1.4.0)
 # It can be safely deleted when mmdet3d updates the numpy version
