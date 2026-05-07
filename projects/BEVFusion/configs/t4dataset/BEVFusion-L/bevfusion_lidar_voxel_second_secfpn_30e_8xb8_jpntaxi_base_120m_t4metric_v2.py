@@ -18,7 +18,7 @@ perception_evaluator_configs = dict(
 frame_pass_fail_config = dict(
     target_labels=_base_.class_names,
     # Matching thresholds per class (must align with `plane_distance_thresholds` used in evaluation)
-	matching_threshold_list=[2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0],
+    matching_threshold_list=[2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0],
     confidence_threshold_list=None,
 )
 
