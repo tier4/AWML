@@ -633,7 +633,6 @@ class BEVFusionHead(nn.Module):
         ious = torch.clamp(ious, min=0.0, max=1.0)
         labels = bboxes_tensor.new_zeros(num_proposals, dtype=torch.long)
         label_weights = bboxes_tensor.new_zeros([num_proposals, self.num_classes], dtype=torch.long)
-        # label_weights = bboxes_tensor.new_zeros(num_proposals, dtype=torch.long)
 
         if gt_labels_3d is not None:  # default label is -1
             labels += self.num_classes
@@ -693,17 +692,13 @@ class BEVFusionHead(nn.Module):
         # Ignore labels for traffic cone and barrier
         traffic_cone_barrier_status = metadata.get("traffic_cone_barrier_status", True)
         if self.partial_ignore_labels is not None and not traffic_cone_barrier_status:
-            if self.partial_ignore_dense_heatmap:
-                heatmap_weights[self.partial_ignore_labels] = 0.0 # Set to 0 to ignore these proposals
+            heatmap_weights[self.partial_ignore_labels] = 0.0 # Set to 0 to ignore these grids 
             if len(neg_inds) > 0:
-                # neg_inds [N] and column indices [K] must broadcast (not pair); see IndexError N vs K.
+                # neg_inds [N] and column indices [K] must broadcast (not pair);
                 _cols = torch.as_tensor(
                     self.partial_ignore_labels, device=label_weights.device, dtype=torch.long
                 )
                 label_weights[neg_inds.unsqueeze(1), _cols.unsqueeze(0)] = 0.0
-            
-            print("heatmap with traffic cone: ", heatmap[5].sum())
-            print("heatmap with barrier: ", heatmap[6].sum())
 
         return (
             labels[None],
@@ -795,10 +790,6 @@ class BEVFusionHead(nn.Module):
                 ...,
                 idx_layer * self.num_proposals : (idx_layer + 1) * self.num_proposals,
             ].reshape(-1)
-            # layer_label_weights = label_weights[
-            #     ...,
-            #     idx_layer * self.num_proposals : (idx_layer + 1) * self.num_proposals,
-            # ].reshape(-1)
             layer_label_weights = label_weights[
                 ...,
                 idx_layer * self.num_proposals : (idx_layer + 1) * self.num_proposals,
