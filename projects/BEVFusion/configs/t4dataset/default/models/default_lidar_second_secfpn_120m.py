@@ -13,7 +13,7 @@ model = dict(
         pad_size_divisor=32,
     ),
     pts_voxel_encoder=dict(
-        type="BEVFusionVoxelMeanSinCosEncoder", 
+        type="HardSimpleVoxelSinCosEncoder", 
         in_channels=4,
     ),
     pts_middle_encoder=dict(

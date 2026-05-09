@@ -28,7 +28,7 @@ model = dict(
     ),
     pts_voxel_encoder=dict(
         type="BEVFusionVoxelFeatureNet", 
-        in_channels=4,
+        in_channels=len(_base_.lidar_sweep_dims),
         with_distance=False,
         with_cluster_center=True,
         with_voxel_center=True,

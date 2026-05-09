@@ -103,7 +103,7 @@ class BEVFusionVoxelFeatureNet(HardSimpleVoxelSinCosEncoder):
                  mode: Optional[str] = 'max',
                  legacy: Optional[bool] = True):
         
-        super(BEVFusionVoxelEncoder, self).__init__(
+        super(BEVFusionVoxelFeatureNet, self).__init__(
             min_norm_values=min_norm_values, 
             max_norm_values=max_norm_values, in_channels=in_channels
         )
