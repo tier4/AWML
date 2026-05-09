@@ -32,7 +32,7 @@ model = dict(
         with_distance=False,
         with_cluster_center=True,
         with_voxel_center=True,
-        feat_channels=[16, 16],
+        feat_channels=[16],
         point_cloud_range=_base_.point_cloud_range,
         voxel_size=_base_.voxel_size,
         norm_cfg=dict(type="BN1d", eps=1e-3, momentum=0.01),
