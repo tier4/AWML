@@ -107,7 +107,7 @@ class BEVFusionVoxelEncoder(nn.Module):
 
         Args:
             features (torch.Tensor): Point features or raw points in shape
-                (N, M, C).
+                (N, M, C) in (x, y, z, intensity, time_lag) if C is 5, (x, y, z, time_lag) if C is 4.
             num_points (torch.Tensor): Number of points in each pillar in shape (M).
             coors (torch.Tensor): Coordinates of each voxel in (M, [4]), which is (batch_idx, z_idx, y_idx, x_idx).
 

@@ -13,20 +13,18 @@ custom_imports["imports"] += ["autoware_ml.detection3d.datasets.transforms"]
 
 # user setting
 data_root = "data/t4dataset/"
-info_directory_path = "info/kokseang_2_6_2/"
+info_directory_path = "info/kokseang_2_8/"
 
-experiment_group_name = "bevfusion_lidar_2.8.0/base/" + _base_.dataset_type
-experiment_name = "lidar_pts_encoder_sin_cos_voxel_second_secfpn_50e_8xb8_base_120m_48_channels_32_points"
+experiment_group_name = "bevfusion_lidar_2_8_0/base/" + _base_.dataset_type
+experiment_name = "lidar_voxel_second_secfpn_50e_8xb16_base_120m_48_channels"
 work_dir = "work_dirs/" + experiment_group_name + "/" + experiment_name
 
 # model parameter
 model = dict(
     type="BEVFusion",
     voxelize_cfg=dict(
-        max_num_points=32,
         point_cloud_range=_base_.point_cloud_range,
         voxel_size=_base_.voxel_size,
-        voxelize_reduce=False,
     ),
     pts_voxel_encoder=dict(
         _delete_=True,
@@ -35,21 +33,18 @@ model = dict(
         with_distance=False,
         with_cluster_center=True,
         with_voxel_center=True,
-        feat_channels=[16],
+        feat_channels=[16, 16],
         point_cloud_range=_base_.point_cloud_range,
         voxel_size=_base_.voxel_size,
         norm_cfg=dict(type="BN1d", eps=1e-3, momentum=0.01),
         # min-max normalization for x, y, z, intensity, time_lag, where the max of time lag technically is two seeps (200 ms) here
         min_norm_values=[_base_.point_cloud_range[0], _base_.point_cloud_range[1], _base_.point_cloud_range[2], 0.0],
         max_norm_values=[_base_.point_cloud_range[3], _base_.point_cloud_range[4], _base_.point_cloud_range[5], 0.2],
+        legacy=False
     ),
     pts_middle_encoder=dict(
         in_channels=48,
         sparse_shape=_base_.grid_size,
-        # num_aug_features=4,
-        # min-max normalization for x, y, z, time_lag, where the max of time lag technically is two seeps (200 ms) here
-        # aug_features_min_values=[_base_.point_cloud_range[0], _base_.point_cloud_range[1], _base_.point_cloud_range[2], 0.0],
-        # aug_features_max_values=[_base_.point_cloud_range[3], _base_.point_cloud_range[4], _base_.point_cloud_range[5], 0.2],
     ),
     bbox_head=dict(
         class_names=_base_.class_names,  # Use class names to identify the correct class indices
