@@ -27,7 +27,6 @@ model = dict(
         voxel_size=_base_.voxel_size,
     ),
     pts_voxel_encoder=dict(
-        _delete_=True,
         type="BEVFusionVoxelEncoder", 
         in_channels=4,
         with_distance=False,

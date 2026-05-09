@@ -26,7 +26,7 @@ class HardSimpleVoxelSinCosEncoder(nn.Module):
             max_norm_values (Tuple[float]): Maximum values for the features.
             in_channels (int): Number of input channels.
         """
-        super(BEVFusionVoxelMeanSinCosEncoder, self).__init__()
+        super(HardSimpleVoxelSinCosEncoder, self).__init__()
       
         # Create PillarFeatureNet layers
         self.in_channels = in_channels
@@ -75,8 +75,8 @@ class HardSimpleVoxelSinCosEncoder(nn.Module):
 class BEVFusionVoxelEncoder(HardSimpleVoxelSinCosEncoder):
     """BEVFusion Voxel Encoder Feature Net.
     
-    The network is same as HardSimpleVoxelSinCosEncoder, but it performs PFNLayers and max-pooling on the 
-    offset features, for example, distances. After that, it concatenates the fourier features and the offset features 
+    The network is same as HardSimpleVoxelSinCosEncoder, but it performs PFNLayers on the 
+    offset features, for example, distances. After that, it concatenates the fourier features and the PFN features 
     along the channel dimension for each voxel.
 
     Args:
