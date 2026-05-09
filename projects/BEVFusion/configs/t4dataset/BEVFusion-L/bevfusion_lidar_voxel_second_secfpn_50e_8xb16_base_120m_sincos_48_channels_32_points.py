@@ -3,7 +3,7 @@ _base_ = [
     "../../../../../autoware_ml/configs/detection3d/dataset/t4dataset/base.py",
     "../default/pipelines/default_lidar_120m.py",
     "../default/models/default_lidar_second_secfpn_120m.py",
-    "../default/schedulers/default_50e_8xb8_adamw_cosine.py",
+    "../default/schedulers/default_50e_8xb16_adamw_cosine.py",
     "../default/default_misc.py",
 ]
 
