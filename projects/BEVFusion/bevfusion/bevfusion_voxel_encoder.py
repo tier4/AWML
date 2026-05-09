@@ -72,7 +72,7 @@ class HardSimpleVoxelSinCosEncoder(nn.Module):
 
 
 @MODELS.register_module()
-class BEVFusionVoxelEncoder(HardSimpleVoxelSinCosEncoder):
+class BEVFusionVoxelFeatureNet(HardSimpleVoxelSinCosEncoder):
     """BEVFusion Voxel Encoder Feature Net.
     
     The network is same as HardSimpleVoxelSinCosEncoder, but it performs PFNLayers on the 
