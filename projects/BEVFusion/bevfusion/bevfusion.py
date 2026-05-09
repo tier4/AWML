@@ -56,12 +56,10 @@ class BEVFusion(Base3DDetector):
         super().__init__(data_preprocessor=data_preprocessor, init_cfg=init_cfg)
 
         if voxelize_cfg is not None:
-            self.voxelize_reduce = voxelize_cfg.pop("voxelize_reduce")
             self.pts_voxel_layer = Voxelization(**voxelize_cfg)
             self.pts_voxel_encoder = MODELS.build(pts_voxel_encoder)
             self.pts_middle_encoder = MODELS.build(pts_middle_encoder)
         else:
-            self.voxelize_reduce = False
             self.pts_voxel_layer = None
             self.pts_voxel_encoder = None
             self.pts_middle_encoder = None
@@ -207,10 +205,6 @@ class BEVFusion(Base3DDetector):
                 points = [point.float() for point in points]
                 feats, coords, sizes = self.voxelize(points)
                 batch_size = coords[-1, 0] + 1
-                
-                if self.pts_voxel_encoder is not None:
-                    assert not self.voxelize_reduce
-                    feats = self.pts_voxel_encoder(feats, sizes, coords)
         else:
             # NOTE(knzo25): onnx inference. Voxelization happens outside the graph
             with torch.cuda.amp.autocast(enabled=False):
@@ -224,12 +218,7 @@ class BEVFusion(Base3DDetector):
                 # batch_size = coords[-1, 0] + 1
                 batch_size = 1
                 print("Run onnx point_eSpConvst")
-                if self.pts_voxel_encoder is not None:
-                    feats = self.pts_voxel_encoder(feats, sizes, coords)
-                else:
-                    assert self.voxelize_reduce
-                    if self.voxelize_reduce:
-                        feats = feats.sum(dim=1, keepdim=False) / sizes.type_as(feats).view(-1, 1)
+        feats = self.pts_voxel_encoder(feats, sizes, coords)
         x = self.pts_middle_encoder(feats, coords, batch_size)
         return x
 
@@ -255,9 +244,9 @@ class BEVFusion(Base3DDetector):
         assert len(sizes) > 0, "No points in the voxel"
         sizes = torch.cat(sizes, dim=0)
         
-        if self.voxelize_reduce:
-            feats = feats.sum(dim=1, keepdim=False) / sizes.type_as(feats).view(-1, 1)
-            feats = feats.contiguous()
+        # if self.voxelize_reduce:
+        #     feats = feats.sum(dim=1, keepdim=False) / sizes.type_as(feats).view(-1, 1)
+        #     feats = feats.contiguous()
         
         return feats, coords, sizes
 

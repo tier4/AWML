@@ -3,7 +3,7 @@ _base_ = [
     "../../../../../autoware_ml/configs/detection3d/dataset/t4dataset/jpntaxi_base.py",
     "../default/pipelines/default_lidar_intensity_120m.py",
     "../default/models/default_lidar_second_secfpn_120m.py",
-    "../default/schedulers/default_30e_8xb8_adamw_cosine.py",
+    "../default/schedulers/default_30e_8xb16_adamw_cosine.py",
     "../default/default_misc.py",
 ]
 
@@ -15,8 +15,8 @@ custom_imports["imports"] += ["autoware_ml.detection3d.datasets.transforms"]
 data_root = "data/t4dataset/"
 info_directory_path = "info/kokseang_2_8/"
 
-experiment_group_name = "bevfusion_lidar_intensity_traffic_cone/jpntaxi_base/" + _base_.dataset_type
-experiment_name = "lidar_voxel_second_secfpn_30e_8xb8_jpntaxi_base_120m_ignore"
+experiment_group_name = "bevfusion_lidar_intensity_2_8_1/jpntaxi_base/" + _base_.dataset_type
+experiment_name = "lidar_voxel_second_secfpn_30e_8xb16_jpntaxi_base_120m"
 work_dir = "work_dirs/" + experiment_group_name + "/" + experiment_name
 
 # model parameter
@@ -25,28 +25,16 @@ model = dict(
     voxelize_cfg=dict(
         point_cloud_range=_base_.point_cloud_range,
         voxel_size=_base_.voxel_size,
-        voxelize_reduce=True,
     ),
-    pts_voxel_encoder=dict(num_features=_base_.point_use_dim),
-    pts_middle_encoder=dict(
-        in_channels=_base_.point_use_dim,
-        sparse_shape=_base_.grid_size,
-        num_aug_features=5,
+    pts_voxel_encoder=dict(
+        in_channels=len(_base_.lidar_sweep_dims),
         # min-max normalization for x, y, z, intensity, time_lag, where the max of time lag technically is two seeps (200 ms) here
-        aug_features_min_values=[
-            _base_.point_cloud_range[0],
-            _base_.point_cloud_range[1],
-            _base_.point_cloud_range[2],
-            0.0,
-            0.0,
-        ],
-        aug_features_max_values=[
-            _base_.point_cloud_range[3],
-            _base_.point_cloud_range[4],
-            _base_.point_cloud_range[5],
-            255.0,
-            0.2,
-        ],
+        min_norm_values=[_base_.point_cloud_range[0], _base_.point_cloud_range[1], _base_.point_cloud_range[2], 0.0, 0.0],
+        max_norm_values=[_base_.point_cloud_range[3], _base_.point_cloud_range[4], _base_.point_cloud_range[5], 255.0, 0.2],
+    ),
+    pts_middle_encoder=dict(
+        in_channels=50,
+        sparse_shape=_base_.grid_size,
     ),
     bbox_head=dict(
         class_names=_base_.class_names,  # Use class names to identify the correct class indices

@@ -2,8 +2,8 @@ _base_ = [
     "../../../../../autoware_ml/configs/detection3d/default_runtime.py",
     "../../../../../autoware_ml/configs/detection3d/dataset/t4dataset/base.py",
     "../default/pipelines/default_lidar_120m.py",
-    "../default/models/default_lidar_second_secfpn_120m_iou_loss.py",
-    "../default/schedulers/default_50e_8xb8_adamw_cosine.py",
+    "../default/models/default_lidar_second_secfpn_120m.py",
+    "../default/schedulers/default_50e_8xb16_adamw_cosine.py",
     "../default/default_misc.py",
 ]
 
@@ -13,10 +13,10 @@ custom_imports["imports"] += ["autoware_ml.detection3d.datasets.transforms"]
 
 # user setting
 data_root = "data/t4dataset/"
-info_directory_path = "info/kokseang_2_6_2/"
+info_directory_path = "info/kokseang_2_8/"
 
-experiment_group_name = "bevfusion_lidar/base/" + _base_.dataset_type
-experiment_name = "lidar_voxel_second_secfpn_50e_8xb8_base_120m"
+experiment_group_name = "bevfusion_lidar_2_8_0/base/" + _base_.dataset_type
+experiment_name = "lidar_voxel_second_secfpn_50e_8xb16_base_120m"
 work_dir = "work_dirs/" + experiment_group_name + "/" + experiment_name
 
 # model parameter
@@ -25,23 +25,16 @@ model = dict(
     voxelize_cfg=dict(
         point_cloud_range=_base_.point_cloud_range,
         voxel_size=_base_.voxel_size,
-        voxelize_reduce=False,
     ),
     pts_voxel_encoder=dict(
-        _delete_=True,
-        type="BEVFusionVoxelMeanSinCosEncoder", 
-        in_channels=4,
-        # min-max normalization for x, y, z, intensity, time_lag, where the max of time lag technically is two seeps (200 ms) here
+        in_channels=len(_base_.lidar_sweep_dims),
+        # min-max normalization for x, y, z, time_lag, where the max of time lag technically is two seeps (200 ms) here
         min_norm_values=[_base_.point_cloud_range[0], _base_.point_cloud_range[1], _base_.point_cloud_range[2], 0.0],
         max_norm_values=[_base_.point_cloud_range[3], _base_.point_cloud_range[4], _base_.point_cloud_range[5], 0.2],
     ),
     pts_middle_encoder=dict(
         in_channels=32,
         sparse_shape=_base_.grid_size,
-        # num_aug_features=4,
-        # min-max normalization for x, y, z, time_lag, where the max of time lag technically is two seeps (200 ms) here
-        # aug_features_min_values=[_base_.point_cloud_range[0], _base_.point_cloud_range[1], _base_.point_cloud_range[2], 0.0],
-        # aug_features_max_values=[_base_.point_cloud_range[3], _base_.point_cloud_range[4], _base_.point_cloud_range[5], 0.2],
     ),
     bbox_head=dict(
         class_names=_base_.class_names,  # Use class names to identify the correct class indices
@@ -58,10 +51,6 @@ model = dict(
         bbox_coder=dict(
             pc_range=_base_.point_cloud_range[0:2],
             voxel_size=_base_.voxel_size[0:2],
-        ),
-        partial_ignore_labels=["traffic_cone", "barrier"],
-        loss_heatmap=dict(
-            reduction="none",
         ),
     ),
 )

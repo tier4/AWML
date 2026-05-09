@@ -1,13 +1,12 @@
 # learning rate
-# 1e-4 * sqrt(2) = 0.0001414
-lr = 1.4141e-4
-t_max = 15
-max_epochs = 50
+lr = 2.0e-4
+t_max = 3
+max_epochs = 30
 val_interval = 5
 
 train_gpu_size = 8
-test_batch_size = 2
-train_batch_size = 8
+test_batch_size = 4
+train_batch_size = 16
 
 param_scheduler = [
     # learning rate scheduler

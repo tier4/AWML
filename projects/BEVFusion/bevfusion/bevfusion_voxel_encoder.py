@@ -376,11 +376,7 @@ class BEVFusionVoxelMeanSinCosEncoder(nn.Module):
     def __init__(self, 
                  min_norm_values: Tuple[float],
                  max_norm_values: Tuple[float],
-                 in_channels: Optional[int] = 4,
-                 voxel_size: Optional[Tuple[float]] = (0.2, 0.2, 4),
-                 point_cloud_range: Optional[Tuple[float]] = (0, -40, -3, 70.4,
-                                                              40, 1),
-                 mode: Optional[str] = 'max'):
+                 in_channels: Optional[int] = 4):
         super(BEVFusionVoxelMeanSinCosEncoder, self).__init__()
 
         # Create PillarFeatureNet layers

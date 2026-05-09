@@ -1,5 +1,5 @@
 num_proposals = 500
-max_num_points = 10
+max_num_points = 32
 max_voxels = [120000, 160000]
 
 model = dict(
@@ -7,19 +7,18 @@ model = dict(
     voxelize_cfg=dict(
         max_num_points=max_num_points,
         max_voxels=max_voxels,
-        voxelize_reduce=True,
     ),
     data_preprocessor=dict(
         type="Det3DDataPreprocessor",
         pad_size_divisor=32,
     ),
-    pts_voxel_encoder=dict(type="HardSimpleVFE"),
+    pts_voxel_encoder=dict(
+        type="BEVFusionVoxelMeanSinCosEncoder", 
+        in_channels=4,
+    ),
     pts_middle_encoder=dict(
         type="BEVFusionSparseEncoder",
         in_channels=5,
-        aug_features_min_values=[],
-        aug_features_max_values=[],
-        num_aug_features=0,
         order=("conv", "norm", "act"),
         norm_cfg=dict(type="BN1d", eps=0.001, momentum=0.01),
         encoder_channels=((16, 16, 32), (32, 32, 64), (64, 64, 128), (128, 128)),
@@ -112,9 +111,7 @@ model = dict(
             reduction="mean",
             loss_weight=1.0,
         ),
-				# loss_iou=dict(type="mmdet.L1Loss", reduction="mean", loss_weight=1.0),
-        loss_heatmap=dict(type="mmdet.GaussianFocalLoss", reduction="mean", loss_weight=1.0),
+        loss_heatmap=dict(type="mmdet.GaussianFocalLoss", reduction="none", loss_weight=1.0),
         loss_bbox=dict(type="mmdet.L1Loss", reduction="mean", loss_weight=0.25),
-        partial_ignore_labels=None,
     ),
 )
