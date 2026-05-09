@@ -57,18 +57,19 @@ class BEVFusionVoxelEncoder(nn.Module):
         super(BEVFusionVoxelEncoder, self).__init__()
         assert len(feat_channels) > 0
         self.legacy = legacy
+        pfn_in_channels = 0
         if with_cluster_center:
-            in_channels += 3
+            pfn_in_channels += 3
         if with_voxel_center:
-            in_channels += 3
+            pfn_in_channels += 3
         if with_distance:
-            in_channels += 1
+            pfn_in_channels += 1
         self._with_distance = with_distance
         self._with_cluster_center = with_cluster_center
         self._with_voxel_center = with_voxel_center
         # Create PillarFeatureNet layers
         self.in_channels = in_channels
-        feat_channels = [in_channels] + list(feat_channels)
+        feat_channels = [pfn_in_channels] + list(feat_channels)
         pfn_layers = []
         for i in range(len(feat_channels) - 1):
             in_filters = feat_channels[i]
@@ -97,7 +98,8 @@ class BEVFusionVoxelEncoder(nn.Module):
 
         self.register_buffer("min_norm_values", torch.tensor(min_norm_values))
         self.register_buffer("max_norm_values", torch.tensor(max_norm_values))
-        self.register_buffer("voxel_size", torch.tensor([self.vx, self.vy, self.vz]))
+        self.register_buffer("exponents", (2 ** torch.arange(0, self.in_channels)).float())
+        # self.register_buffer("voxel_size", torch.tensor([self.vx, self.vy, self.vz]))
 
     def forward(self, features: Tensor, num_points: Tensor, coors: Tensor,
                 *args, **kwargs) -> Tensor:
@@ -112,12 +114,26 @@ class BEVFusionVoxelEncoder(nn.Module):
         Returns:
             torch.Tensor: Features of pillars in shape (M, C).
         """
-        if self.min_norm_values is not None and self.max_norm_values is not None:
-            features_norm = (features - self.min_norm_values) / (self.max_norm_values - self.min_norm_values)
-        else:
-            features_norm = features
+        num_voxels, max_points_per_voxel = features.shape[0], features.shape[1]
+        
+        # Mean in the voxel
+        # (N, M, 3) -> (N, 3)
+        voxel_features = (features.sum(dim=1, keepdim=False) / num_points.type_as(features).view(
+                    -1, 1)).contiguous()
 
-        features_ls = [features_norm]
+        # min-max normalization, (N, 3) -> (N, 3)
+        voxel_features_norm = (voxel_features - \
+         self.min_norm_values.view(1, -1)) / ((self.max_norm_values - self.min_norm_values).view(1, -1))
+        
+        # SinCos encoding
+        # (N, 3) -> (N*3, 1) * (1, ) * (1, 3) -> (N*3, 3)
+        y = voxel_features_norm.reshape(-1, 1) * np.pi * self.exponents.reshape(1, -1)
+        # (N*3, 3) -> (N, 3*3)
+        y = y.reshape(num_voxels, -1)
+        # (N, 3*3) -> (N, 3*3*2)
+        voxel_fourier_features = torch.cat([torch.cos(y), torch.sin(y)], dim=1)
+        
+        features_ls = []
         # Find distance of x, y, and z from cluster center, mapped to [-1,   1] if available
         if self._with_cluster_center:
             points_mean = features[:, :, :3].sum(
@@ -125,9 +141,9 @@ class BEVFusionVoxelEncoder(nn.Module):
                     -1, 1, 1)
             f_cluster = features[:, :, :3] - points_mean
             # Map to [0, 1] if available
-            if self.min_norm_values is not None and self.max_norm_values is not None:
-                voxel_size = features.new_tensor([self.vx, self.vy, self.vz])
-                f_cluster = f_cluster / voxel_size
+            # if self.min_norm_values is not None and self.max_norm_values is not None:
+            #     voxel_size = features.new_tensor([self.vx, self.vy, self.vz])
+            #     f_cluster = f_cluster / voxel_size
             features_ls.append(f_cluster)
 
         # Find distance of x, y, and z from pillar center
@@ -156,8 +172,8 @@ class BEVFusionVoxelEncoder(nn.Module):
                     coors[:, 1].type_as(features).unsqueeze(1) * self.vz +
                     self.z_offset)
             
-            if self.min_norm_values is not None and self.max_norm_values is not None:
-                f_center = f_center / (voxel_size * 0.5)
+            # if self.min_norm_values is not None and self.max_norm_values is not None:
+            #     f_center = f_center / (voxel_size * 0.5)
             features_ls.append(f_center)
 
         if self._with_distance:
@@ -165,19 +181,23 @@ class BEVFusionVoxelEncoder(nn.Module):
             features_ls.append(points_dist)
 
         # Combine together feature decorations
-        features = torch.cat(features_ls, dim=-1)
+        voxel_feature_offsets = torch.cat(features_ls, dim=-1)
+
         # The feature decorations were calculated without regard to whether
         # pillar was empty. Need to ensure that
         # empty pillars remain set to zeros.
-        voxel_count = features.shape[1]
-        mask = get_paddings_indicator(num_points, voxel_count, axis=0)
-        mask = torch.unsqueeze(mask, -1).type_as(features)
-        features *= mask
-
+        mask = get_paddings_indicator(num_points, max_points_per_voxel, axis=0)
+        mask = torch.unsqueeze(mask, -1).type_as(voxel_feature_offsets)
+        voxel_feature_offsets *= mask
+        
+        # PFN
         for pfn in self.pfn_layers:
-            features = pfn(features, num_points)
+            voxel_feature_offsets = pfn(voxel_feature_offsets, num_points)
+        
+        # Concat 
+        features = torch.cat([voxel_fourier_features, voxel_feature_offsets.squeeze(1)], dim=-1)
 
-        return features.squeeze(1)
+        return features
 
 
 @MODELS.register_module()
