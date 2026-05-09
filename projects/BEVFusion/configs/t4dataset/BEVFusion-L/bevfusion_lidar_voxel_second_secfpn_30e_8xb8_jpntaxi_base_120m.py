@@ -13,10 +13,10 @@ custom_imports["imports"] += ["autoware_ml.detection3d.datasets.transforms"]
 
 # user setting
 data_root = "data/t4dataset/"
-info_directory_path = "info/user_name/"
+info_directory_path = "info/kokseang_2_8/"
 
-experiment_group_name = "bevfusion_lidar_intensity_2.7.1/jpntaxi_base/" + _base_.dataset_type
-experiment_name = "lidar_voxel_second_secfpn_30e_8xb8_jpntaxi_base_120m"
+experiment_group_name = "bevfusion_lidar_intensity_traffic_cone/jpntaxi_base/" + _base_.dataset_type
+experiment_name = "lidar_voxel_second_secfpn_30e_8xb8_jpntaxi_base_120m_ignore"
 work_dir = "work_dirs/" + experiment_group_name + "/" + experiment_name
 
 # model parameter
@@ -33,8 +33,20 @@ model = dict(
         sparse_shape=_base_.grid_size,
         num_aug_features=5,
         # min-max normalization for x, y, z, intensity, time_lag, where the max of time lag technically is two seeps (200 ms) here
-        aug_features_min_values=[_base_.point_cloud_range[0], _base_.point_cloud_range[1], _base_.point_cloud_range[2], 0.0, 0.0],
-        aug_features_max_values=[_base_.point_cloud_range[3], _base_.point_cloud_range[4], _base_.point_cloud_range[5], 255.0, 0.2],
+        aug_features_min_values=[
+            _base_.point_cloud_range[0],
+            _base_.point_cloud_range[1],
+            _base_.point_cloud_range[2],
+            0.0,
+            0.0,
+        ],
+        aug_features_max_values=[
+            _base_.point_cloud_range[3],
+            _base_.point_cloud_range[4],
+            _base_.point_cloud_range[5],
+            255.0,
+            0.2,
+        ],
     ),
     bbox_head=dict(
         class_names=_base_.class_names,  # Use class names to identify the correct class indices
@@ -51,6 +63,10 @@ model = dict(
         bbox_coder=dict(
             pc_range=_base_.point_cloud_range[0:2],
             voxel_size=_base_.voxel_size[0:2],
+        ),
+        partial_ignore_labels=["traffic_cone", "barrier"],
+        loss_heatmap=dict(
+            reduction="none",
         ),
     ),
 )
@@ -148,8 +164,4 @@ default_hooks = dict(
 )
 log_processor = dict(window_size=50)
 
-<<<<<<< HEAD
-load_from = "work_dirs/bevfusion_lidar_2.7.0/base/T4Dataset/lidar_voxel_second_secfpn_50e_8xb8_base_120m/epoch_48.pth"
-=======
-load_from "<best_checkpoint>"
->>>>>>> feat/releave_bevfusion_2_6
+load_from = "work_dirs/bevfusion_lidar_traffic_cone/base/T4Dataset/lidar_voxel_second_secfpn_50e_8xb8_base_120m_ignore/epoch_48.pth"

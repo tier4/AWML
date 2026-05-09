@@ -1,6 +1,5 @@
 # learning rate
-# 1e-4 * sqrt(2) = 0.0001414
-lr = 1.4141e-4
+lr = 1e-4
 t_max = 6
 max_epochs = 20
 val_interval = 1

@@ -79,28 +79,148 @@ class BaseEnsembleModel(ABC):
         if len(results) == 1:
             return results[0]
 
-        # Check if the number of weights matches the number of results
-        assert len(self.settings["weights"]) == len(results), "Number of weights must match number of models"
-
-        # Align label spaces across multiple models
+        self._validate_weight_count(results)
         aligned_results = align_label_spaces(results)
-
-        # Merge data_list from all models
-        all_data_list: List[List[Dict[str, Any]]] = [r["data_list"] for r in aligned_results]
-        class_name_to_id: Dict[str, int] = {
-            class_name: class_id for class_id, class_name in enumerate(aligned_results[0]["metainfo"]["classes"])
-        }
-        merged_data_list: List[Dict[str, Any]] = []
-        for frame_data in zip(*all_data_list):
-            merged_frame = self._ensemble_frame(
-                frame_data,
-                ensemble_function=self.ensemble_function,
-                ensemble_label_groups=self.settings["ensemble_label_groups"],
-                class_name_to_id=class_name_to_id,
-            )
-            merged_data_list.append(merged_frame)
+        class_name_to_id = self._build_class_name_to_id(aligned_results[0]["metainfo"])
+        merged_data_list = self._ensemble_data_lists(aligned_results, class_name_to_id)
 
         return {"metainfo": aligned_results[0]["metainfo"], "data_list": merged_data_list}
+
+    def _validate_weight_count(self, results: List[Dict[str, Any]]) -> None:
+        """Validate that each model result has a matching ensemble weight."""
+        assert len(self.settings["weights"]) == len(results), "Number of weights must match number of models"
+
+    def _build_class_name_to_id(self, metainfo: Dict[str, Any]) -> Dict[str, int]:
+        """Build the unified class-name to class-id mapping for ensemble."""
+        return {class_name: class_id for class_id, class_name in enumerate(metainfo["classes"])}
+
+    def _ensemble_data_lists(
+        self,
+        aligned_results: List[Dict[str, Any]],
+        class_name_to_id: Dict[str, int],
+    ) -> List[Dict[str, Any]]:
+        """Ensemble per-frame predictions using token alignment when available."""
+        if self._can_align_by_token(aligned_results):
+            return self._ensemble_token_aligned_results(aligned_results, class_name_to_id)
+        return self._ensemble_positional_results(aligned_results, class_name_to_id)
+
+    def _ensemble_token_aligned_results(
+        self,
+        aligned_results: List[Dict[str, Any]],
+        class_name_to_id: Dict[str, int],
+    ) -> List[Dict[str, Any]]:
+        """Ensemble frames by token so missing model outputs do not shift later frames."""
+        anchor_index, anchor_data_list = self._get_anchor_result(aligned_results)
+        anchor_tokens = [self._get_frame_token(frame) for frame in anchor_data_list]
+        frame_lookups = [self._build_frame_lookup(result["data_list"]) for result in aligned_results]
+
+        self._log_token_alignment_mismatches(anchor_tokens, frame_lookups, anchor_index)
+
+        merged_data_list: List[Dict[str, Any]] = []
+        for anchor_frame in anchor_data_list:
+            frame_data = self._build_token_aligned_frame_data(anchor_frame, frame_lookups)
+            merged_data_list.append(self._merge_frame_data(frame_data, class_name_to_id))
+
+        return merged_data_list
+
+    def _ensemble_positional_results(
+        self,
+        aligned_results: List[Dict[str, Any]],
+        class_name_to_id: Dict[str, int],
+    ) -> List[Dict[str, Any]]:
+        """Fallback to positional frame alignment when frame tokens are unavailable."""
+        merged_data_list: List[Dict[str, Any]] = []
+        all_data_list: List[List[Dict[str, Any]]] = [result["data_list"] for result in aligned_results]
+        for frame_data in zip(*all_data_list):
+            merged_data_list.append(self._merge_frame_data(frame_data, class_name_to_id))
+        return merged_data_list
+
+    def _get_anchor_result(self, aligned_results: List[Dict[str, Any]]) -> tuple[int, List[Dict[str, Any]]]:
+        """Return the index and data list of the longest result stream anchor."""
+        anchor_index, anchor_result = max(
+            enumerate(aligned_results),
+            key=lambda item: len(item[1]["data_list"]),
+        )
+        return anchor_index, anchor_result["data_list"]
+
+    def _log_token_alignment_mismatches(
+        self,
+        anchor_tokens: List[str],
+        frame_lookups: List[Dict[str, Dict[str, Any]]],
+        anchor_index: int,
+    ) -> None:
+        """Log frames missing from or extra to the anchor sequence for non-anchor models."""
+        anchor_token_set = set(anchor_tokens)
+        for model_idx, frame_lookup in enumerate(frame_lookups):
+            if model_idx == anchor_index:
+                continue
+            missing_tokens = [token for token in anchor_tokens if token not in frame_lookup]
+            if missing_tokens:
+                self.logger.info(
+                    "Model %d is missing %d frames during ensemble; those frames will use empty predictions.",
+                    model_idx,
+                    len(missing_tokens),
+                )
+
+            extra_tokens = set(frame_lookup) - anchor_token_set
+            if extra_tokens:
+                self.logger.warning(
+                    "Model %d has %d extra frames not present in the anchor result; they will be ignored.",
+                    model_idx,
+                    len(extra_tokens),
+                )
+
+    def _build_token_aligned_frame_data(
+        self,
+        anchor_frame: Dict[str, Any],
+        frame_lookups: List[Dict[str, Dict[str, Any]]],
+    ) -> List[Dict[str, Any]]:
+        """Build one aligned multi-model frame tuple using the anchor frame token."""
+        token = self._get_frame_token(anchor_frame)
+        return [
+            frame_lookup[token] if token in frame_lookup else self._generate_empty_frame(anchor_frame)
+            for frame_lookup in frame_lookups
+        ]
+
+    def _merge_frame_data(
+        self,
+        frame_data,
+        class_name_to_id: Dict[str, int],
+    ) -> Dict[str, Any]:
+        """Merge one frame across all models using the configured ensemble function."""
+        return self._ensemble_frame(
+            frame_data,
+            ensemble_function=self.ensemble_function,
+            ensemble_label_groups=self.settings["ensemble_label_groups"],
+            class_name_to_id=class_name_to_id,
+        )
+
+    def _can_align_by_token(self, results: List[Dict[str, Any]]) -> bool:
+        """Return whether all frames carry tokens and can be aligned by token."""
+        return all("token" in frame for result in results for frame in result["data_list"])
+
+    def _get_frame_token(self, frame: Dict[str, Any]) -> str:
+        """Extract a frame token and raise if token-based alignment is impossible."""
+        token = frame.get("token", None)
+        if token is None:
+            raise ValueError("Each frame must contain a token for ensemble alignment")
+        return token
+
+    def _build_frame_lookup(self, data_list: List[Dict[str, Any]]) -> Dict[str, Dict[str, Any]]:
+        """Build a token-to-frame lookup for one model result stream."""
+        frame_lookup: Dict[str, Dict[str, Any]] = {}
+        for frame in data_list:
+            token = self._get_frame_token(frame)
+            if token in frame_lookup:
+                raise ValueError(f"Duplicate frame token found during ensemble alignment: {token}")
+            frame_lookup[token] = frame
+        return frame_lookup
+
+    def _generate_empty_frame(self, reference_frame: Dict[str, Any]) -> Dict[str, Any]:
+        """Generate a metadata-preserving empty frame for a missing model prediction."""
+        empty_frame = reference_frame.copy()
+        empty_frame["pred_instances_3d"] = []
+        return empty_frame
 
     def _ensemble_frame(
         self, frame_results, ensemble_function, ensemble_label_groups, class_name_to_id

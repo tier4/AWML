@@ -2,6 +2,7 @@ import logging
 from dataclasses import dataclass
 from typing import Any, Dict, List, Tuple, Type
 
+import cv2
 import numpy as np
 from mmengine.registry import TASK_UTILS
 
@@ -84,6 +85,7 @@ class NMSEnsembleModel(BaseEnsembleModel):
 
     @property
     def model_instances_type(self) -> Type[NMSModelInstances]:
+        """Return the per-model container used by the NMS ensemble."""
         return NMSModelInstances
 
     def ensemble_function(
@@ -176,7 +178,8 @@ def _nms_indices(boxes: np.ndarray, scores: np.ndarray, iou_threshold: float) ->
 
 
 def _calculate_iou(box: np.ndarray, boxes: np.ndarray) -> np.ndarray:
-    """Calculate IoU between a single box and an array of boxes in BEV (Bird's Eye View).
+    """Calculate rotated IoU between a single box and an array of boxes in BEV.
+    TODO: GPU and/or C++ implementation to improve speed
 
     Args:
         box: Single bounding box [x, y, z, dx, dy, dz, yaw].
@@ -185,23 +188,39 @@ def _calculate_iou(box: np.ndarray, boxes: np.ndarray) -> np.ndarray:
     Returns:
         Array of IoU values.
     """
-    x1, y1 = box[0], box[1]
-    dx1, dy1 = box[3], box[4]
+    if boxes.size == 0:
+        return np.array([])
 
-    x2 = boxes[:, 0]
-    y2 = boxes[:, 1]
-    dx2 = boxes[:, 3]
-    dy2 = boxes[:, 4]
+    reference_rect = _to_rotated_rect(box)
+    reference_area = float(box[3] * box[4])
+    ious = []
+    for candidate_box in boxes:
+        candidate_rect = _to_rotated_rect(candidate_box)
+        candidate_area = float(candidate_box[3] * candidate_box[4])
+        intersection = _rotated_intersection_area(reference_rect, candidate_rect)
+        union = reference_area + candidate_area - intersection
+        ious.append(intersection / union if union > 0 else 0.0)
 
-    # Calculate overlapping area in BEV
-    x_min = np.maximum(x1 - dx1 / 2, x2 - dx2 / 2)
-    y_min = np.maximum(y1 - dy1 / 2, y2 - dy2 / 2)
-    x_max = np.minimum(x1 + dx1 / 2, x2 + dx2 / 2)
-    y_max = np.minimum(y1 + dy1 / 2, y2 + dy2 / 2)
+    return np.array(ious)
 
-    intersection = np.maximum(0, x_max - x_min) * np.maximum(0, y_max - y_min)
-    area1 = dx1 * dy1
-    area2 = dx2 * dy2
-    union = area1 + area2 - intersection
 
-    return intersection / union
+def _to_rotated_rect(box: np.ndarray) -> Tuple[Tuple[float, float], Tuple[float, float], float]:
+    """Convert a 3D box in `[x, y, z, dx, dy, dz, yaw]` format to an OpenCV BEV rectangle."""
+    return (
+        (float(box[0]), float(box[1])),
+        (float(box[3]), float(box[4])),
+        float(np.degrees(box[6])),
+    )
+
+
+def _rotated_intersection_area(
+    rect1: Tuple[Tuple[float, float], Tuple[float, float], float],
+    rect2: Tuple[Tuple[float, float], Tuple[float, float], float],
+) -> float:
+    """Return the BEV intersection area between two OpenCV rotated rectangles."""
+    _, intersection_points = cv2.rotatedRectangleIntersection(rect1, rect2)
+    if intersection_points is None:
+        return 0.0
+
+    hull = cv2.convexHull(intersection_points, returnPoints=True)
+    return float(abs(cv2.contourArea(hull)))
