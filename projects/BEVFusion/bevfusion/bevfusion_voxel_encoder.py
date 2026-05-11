@@ -109,7 +109,7 @@ class BEVFusionVoxelFeatureNet(HardSimpleVoxelSinCosEncoder):
         )
         assert len(feat_channels) > 0
         self.legacy = legacy
-        pfn_in_channels = 0
+        pfn_in_channels = in_channels
         if with_cluster_center:
             pfn_in_channels += 3
         if with_voxel_center:
@@ -165,11 +165,14 @@ class BEVFusionVoxelFeatureNet(HardSimpleVoxelSinCosEncoder):
         """
         # (M, C*C*2)
         voxel_fourier_features = super().forward(features, num_points, coors)
+
+        # Normalize the features
+        norm_features = (features - self.min_norm_values.view(1, -1)) / ((self.max_norm_values - self.min_norm_values).view(1, -1))
         
         # Offset features
         max_points_per_voxel = features.shape[1] 
         
-        features_ls = []
+        features_ls = [norm_features]
         # Find distance of x, y, and z from cluster center, mapped to [-1,   1] if available
         if self._with_cluster_center:
             points_mean = features[:, :, :3].sum(
