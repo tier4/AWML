@@ -3,7 +3,7 @@ _base_ = [
     "../../../../../autoware_ml/configs/detection3d/dataset/t4dataset/j6gen2_base.py",
     "../default/pipelines/default_lidar_intensity_120m.py",
     "../default/models/default_lidar_second_secfpn_120m.py",
-    "../default/schedulers/default_30e_8xb8_adamw_cosine.py",
+    "../default/schedulers/default_30e_8xb16_adamw_cosine.py",
     "../default/default_misc.py",
 ]
 
@@ -16,7 +16,7 @@ data_root = "data/t4dataset/"
 info_directory_path = "info/kokseang_2_8/"
 
 experiment_group_name = "bevfusion_lidar_intensity_2_8_1/j6gen2_base/" + _base_.dataset_type
-experiment_name = "lidar_voxel_second_secfpn_30e_8xb8_j6gen2_base_120m"
+experiment_name = "lidar_voxel_second_secfpn_30e_8xb16_j6gen2_base_120m"
 work_dir = "work_dirs/" + experiment_group_name + "/" + experiment_name
 
 # model parameter
@@ -152,4 +152,4 @@ default_hooks = dict(
 )
 log_processor = dict(window_size=50)
 
-load_from = None
+load_from = "work_dirs/bevfusion_lidar_2_8_0/base/T4Dataset/lidar_voxel_second_secfpn_50e_8xb16_base_120m/best_epoch_47.pth"

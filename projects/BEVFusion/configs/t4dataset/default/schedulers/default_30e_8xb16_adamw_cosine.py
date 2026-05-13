@@ -23,7 +23,7 @@ param_scheduler = [
         convert_to_iter_based=True,
     ),
     dict(
-        type="CosineAnnealingLR
+        type="CosineAnnealingLR",
         T_max=(max_epochs - t_max),
         eta_min=lr * 1e-4,
         begin=t_max,
