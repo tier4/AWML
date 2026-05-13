@@ -1,9 +1,8 @@
 # learning rate
-# 1e-4 * sqrt(2) = 0.0001414
-lr = 1e-4
-t_max = 6
-max_epochs = 20
-val_interval = 1
+lr = 2e-4
+t_max = 5
+max_epochs = 50
+val_interval = 5
 
 train_gpu_size = 8
 test_batch_size = 2

@@ -1,9 +1,9 @@
 _base_ = [
     "../../../../../autoware_ml/configs/detection3d/default_runtime.py",
-    "../../../../../autoware_ml/configs/detection3d/dataset/t4dataset/base.py",
+    "../../../../../autoware_ml/configs/detection3d/dataset/t4dataset/j6gen2_base.py",
     "../default/pipelines/default_camera_lidar_intensity_120m.py",
     "../default/models/default_camera_swin_fpn_lss_120m.py",
-    "../default/schedulers/default_50e_8xb8_adamw_linear_cosine.py",
+    "../default/schedulers/default_30e_8xb8_adamw_linear_cosine.py",
     "../default/default_misc.py",
 ]
 
@@ -12,11 +12,11 @@ custom_imports["imports"] += _base_.custom_imports["imports"]
 custom_imports["imports"] += ["autoware_ml.detection3d.datasets.transforms"]
 
 # user setting
-data_root = "data/t4dataset/"
-info_directory_path = "info/kokseang_2_6_2/"
+data_root = "data/t4datasets/"
+info_directory_path = "info/kokseang_2_6_1/"
 
-experiment_group_name = "bevfusion_camera_2_6_0/base/" + _base_.dataset_type
-experiment_name = "bevfusion_camera_swin_fpn_lss_50e_8xb8_base_120m"
+experiment_group_name = "bevfusion_camera/j6gen2_base/" + _base_.dataset_type
+experiment_name = "bevfusion_camera_swin_fpn_lss_30e_8xb8_j6gen2_base_120m"
 work_dir = "work_dirs/" + experiment_group_name + "/" + experiment_name
 
 # model parameter
