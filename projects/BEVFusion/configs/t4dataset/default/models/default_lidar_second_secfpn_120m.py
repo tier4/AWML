@@ -1,5 +1,5 @@
 num_proposals = 500
-max_num_points = 10
+max_num_points = 32
 max_voxels = [120000, 160000]
 
 model = dict(
@@ -7,19 +7,18 @@ model = dict(
     voxelize_cfg=dict(
         max_num_points=max_num_points,
         max_voxels=max_voxels,
-        voxelize_reduce=True,
     ),
     data_preprocessor=dict(
         type="Det3DDataPreprocessor",
         pad_size_divisor=32,
     ),
-    pts_voxel_encoder=dict(type="HardSimpleVFE"),
+    pts_voxel_encoder=dict(
+        type="HardSimpleVoxelSinCosEncoder", 
+        in_channels=4,
+    ),
     pts_middle_encoder=dict(
         type="BEVFusionSparseEncoder",
         in_channels=5,
-        aug_features_min_values=[],
-        aug_features_max_values=[],
-        num_aug_features=0,
         order=("conv", "norm", "act"),
         norm_cfg=dict(type="BN1d", eps=0.001, momentum=0.01),
         encoder_channels=((16, 16, 32), (32, 32, 64), (64, 64, 128), (128, 128)),
@@ -91,9 +90,11 @@ model = dict(
                 dict(class_names=["car", "truck", "bus"], nms_threshold=0.5),  # It's radius if using circle_nms
                 dict(class_names=["bicycle"], nms_threshold=0.5),
                 dict(class_names=["pedestrian"], nms_threshold=0.175),
+                dict(class_names=["barrier"], nms_threshold=0.5),
+                dict(class_names=["traffic_cone"], nms_threshold=0.175),
             ],
         ),
-        dense_heatmap_pooling_classes=["car", "truck", "bus", "bicycle"],  # Use class indices for pooling
+        dense_heatmap_pooling_classes=["car", "truck", "bus", "bicycle", "barrier"],  # Use class indices for pooling
         common_heads=dict(center=[2, 2], height=[1, 2], dim=[3, 2], rot=[2, 2], vel=[2, 2]),
         bbox_coder=dict(
             type="TransFusionBBoxCoder",
@@ -110,7 +111,10 @@ model = dict(
             reduction="mean",
             loss_weight=1.0,
         ),
-        loss_heatmap=dict(type="mmdet.GaussianFocalLoss", reduction="mean", loss_weight=1.0),
+        loss_iou=None,
+        loss_heatmap=dict(type="mmdet.GaussianFocalLoss", reduction="none", loss_weight=1.0),
         loss_bbox=dict(type="mmdet.L1Loss", reduction="mean", loss_weight=0.25),
+        # partial_
+        partial_ignore_labels=["traffic_cone", "barrier"],
     ),
 )

@@ -13,6 +13,8 @@ eval_class_range = {
     "bus": 120,
     "bicycle": 120,
     "pedestrian": 120,
+    "traffic_cone": 120,
+    "barrier": 120,
 }
 
 # LiDAR parameters
@@ -40,16 +42,16 @@ train_pipeline = [
         use_dim=point_load_dim,
         backend_args=backend_args,
     ),
-    # dict(
-    #     type="LoadPointsFromMultiSweeps",
-    #     sweeps_num=sweeps_num,
-    #     load_dim=point_load_dim,
-    #     use_dim=lidar_sweep_dims,
-    #     pad_empty_sweeps=True,
-    #     remove_close=True,
-    #     backend_args=backend_args,
-    #     test_mode=False,
-    # ),
+    dict(
+        type="LoadPointsFromMultiSweeps",
+        sweeps_num=sweeps_num,
+        load_dim=point_load_dim,
+        use_dim=lidar_sweep_dims,
+        pad_empty_sweeps=True,
+        remove_close=True,
+        backend_args=backend_args,
+        test_mode=False,
+    ),
     dict(type="LoadAnnotations3D", with_bbox_3d=True, with_label_3d=True, with_attr_label=False),
     dict(
         type="ImageAug3D",
@@ -67,7 +69,7 @@ train_pipeline = [
         translation_std=[0.5, 0.5, 0.2],
     ),
     dict(type="BEVFusionRandomFlip3D"),
-    # dict(type="PointsRangeFilter", point_cloud_range=point_cloud_range),
+    dict(type="PointsRangeFilter", point_cloud_range=point_cloud_range),
     dict(type="ObjectRangeFilter", point_cloud_range=point_cloud_range),
     dict(type="BEVFusionRemoveLiDARPoints"),
     dict(
@@ -75,14 +77,11 @@ train_pipeline = [
         classes=[
             "car",
             "truck",
-            "construction_vehicle",
             "bus",
-            "trailer",
-            "barrier",
-            "motorcycle",
             "bicycle",
             "pedestrian",
             "traffic_cone",
+            "barrier",
         ],
     ),
     # dict(type="PointShuffle"),
@@ -110,6 +109,7 @@ train_pipeline = [
             "timestamp",
             "vehicle_type",
             "city",
+            "traffic_cone_barrier_status",
         ],
     ),
 ]
@@ -121,6 +121,23 @@ test_pipeline = [
         color_type="color",
         backend_args=backend_args,
         camera_order=camera_order,
+    ),
+		dict(
+        type="LoadPointsFromFile",
+        coord_type="LIDAR",
+        load_dim=point_load_dim,
+        use_dim=point_load_dim,
+        backend_args=backend_args,
+    ),
+    dict(
+        type="LoadPointsFromMultiSweeps",
+        sweeps_num=sweeps_num,
+        load_dim=point_load_dim,
+        use_dim=lidar_sweep_dims,
+        pad_empty_sweeps=True,
+        remove_close=True,
+        backend_args=backend_args,
+        test_mode=False,
     ),
     dict(
         type="ImageAug3D",
@@ -152,6 +169,7 @@ test_pipeline = [
             "timestamp",
             "vehicle_type",
             "city",
+            "traffic_cone_barrier_status",
         ],
     ),
 ]

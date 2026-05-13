@@ -1,13 +1,10 @@
 _base_ = [
-    "./bevfusion_lidar_voxel_second_secfpn_30e_8xb8_j6gen2_base_120m.py",
+    "./bevfusion_lidar_voxel_second_secfpn_50e_8xb8_base_120m.py",
 ]
 
 # user setting
-data_root = "data/t4dataset/"
-info_directory_path = "info/user_name/"
-
-experiment_group_name = "bevfusion_lidar_intensity_2.6.1/j6gen2_base/" + _base_.dataset_type
-experiment_name = "lidar_voxel_second_secfpn_30e_8xb8_j6gen2_base_120m_t4metric_v2"
+experiment_group_name = "bevfusion_lidar/base/" + _base_.dataset_type
+experiment_name = "lidar_voxel_second_secfpn_50e_8xb8_base_120m_t4metric_v2"
 work_dir = "work_dirs/" + experiment_group_name + "/" + experiment_name
 
 # Add evaluator configs
@@ -21,7 +18,7 @@ perception_evaluator_configs = dict(
 frame_pass_fail_config = dict(
     target_labels=_base_.class_names,
     # Matching thresholds per class (must align with `plane_distance_thresholds` used in evaluation)
-    matching_threshold_list=[2.0, 2.0, 2.0, 2.0, 2.0],
+    matching_threshold_list=[2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0],
     confidence_threshold_list=None,
 )
 

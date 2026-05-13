@@ -8,29 +8,21 @@ custom_imports = dict(
 
 # dataset type setting
 dataset_type = "T4Dataset"
-info_train_file_name = "t4dataset_j6gen2_infos_train.pkl"
-info_val_file_name = "t4dataset_j6gen2_infos_val.pkl"
-info_test_file_name = "t4dataset_j6gen2_infos_test.pkl"
+info_train_file_name = "t4dataset_j6gen2_v2_infos_train.pkl"
+info_val_file_name = "t4dataset_j6gen2_v2_infos_val.pkl"
+info_test_file_name = "t4dataset_j6gen2_v2_infos_test.pkl"
 
-info_train_statistics_file_name = "t4dataset_j6gen2_statistics_train.parquet"
-info_val_statistics_file_name = "t4dataset_j6gen2_statistics_val.parquet"
-info_test_statistics_file_name = "t4dataset_j6gen2_statistics_test.parquet"
+info_train_statistics_file_name = "t4dataset_j6gen2_v2_statistics_train.parquet"
+info_val_statistics_file_name = "t4dataset_j6gen2_v2_statistics_val.parquet"
+info_test_statistics_file_name = "t4dataset_j6gen2_v2_statistics_test.parquet"
 
 # dataset scene setting
 dataset_version_list = [
-    "db_j6gen2_v1",
     "db_j6gen2_v2",
-    "db_j6gen2_v3",
-    "db_j6gen2_v4",
-    "db_j6gen2_v5",
-    "db_j6gen2_v6",
-    "db_j6gen2_v7",
-    "db_j6gen2_v8",
-    "db_j6gen2_v9",
 ]
 
 dataset_test_groups = {
-    "j6gen2": ("t4dataset_j6gen2_infos_test.pkl", True),
+    "j6gen2_v2": ("t4dataset_j6gen2_v2_infos_test.pkl", True),
 }
 
 # dataset format setting

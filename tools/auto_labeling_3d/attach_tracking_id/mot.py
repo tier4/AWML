@@ -166,6 +166,7 @@ def _transform_pred_instance_to_global_t4box(
     # [vx, vy, vz]
     velocity: Tuple[float] = (*velocity, np.float64(0.0))
 
+    # T4Box3D validates unix_time as int; the tracker keeps the precise float timestamp separately.
     box = T4Box3D(
         unix_time=int(timestamp),
         frame_id="base_link",
@@ -231,7 +232,7 @@ class KalmanBoxTracker:
 
     count: int = 0
 
-    def __init__(self, t4box3d: T4Box3D, class_params=CLASS_PARAMS):
+    def __init__(self, t4box3d: T4Box3D, timestamp: float, class_params=CLASS_PARAMS):
         """
         Initialize Kalman filter with class-specific parameters.
 
@@ -246,8 +247,8 @@ class KalmanBoxTracker:
         """
         self.kf = KalmanFilter(dim_x=4, dim_z=4)
 
-        self.prev_timestamp: float = t4box3d.unix_time
-        self.latest_timestamp: float = t4box3d.unix_time
+        self.prev_timestamp: float = float(timestamp)
+        self.latest_timestamp: float = float(timestamp)
         self.id: str = t4box3d.uuid
 
         # Measurement matrix (identity matrix for direct state observation). States are x,y,vx,vy
@@ -298,7 +299,7 @@ class KalmanBoxTracker:
         tracked_box = TrackedBox2D(position_xy=self.kf.x[:2].reshape((2,)), class_name=self.class_name)
         return tracked_box
 
-    def update(self, t4box3d: T4Box3D):
+    def update(self, t4box3d: T4Box3D, timestamp: float):
         """
         Update state with new measurement.
 
@@ -313,7 +314,7 @@ class KalmanBoxTracker:
         # Update Kalman filter with new measurement
         self.kf.update(np.concatenate([t4box3d.position[:2], t4box3d.velocity[:2]]).reshape((4, 1)))
 
-        self.prev_timestamp = t4box3d.unix_time
+        self.prev_timestamp = float(timestamp)
 
     def end_of_life(self):
         """Check if tracker should be terminated.
@@ -483,7 +484,12 @@ class MOTModel:
 
         return instance_ids, bbox_list
 
-    def _add_new_tracker(self, bbox_list: List[T4Box3D], det_ids: Optional[Iterable[int]] = None):
+    def _add_new_tracker(
+        self,
+        bbox_list: List[T4Box3D],
+        timestamp: float,
+        det_ids: Optional[Iterable[int]] = None,
+    ):
         """
         Add new trackers for specified detections.
 
@@ -495,7 +501,7 @@ class MOTModel:
         if det_ids is None:
             det_ids = range(len(bbox_list))
         for i in det_ids:
-            self.trackers.append(KalmanBoxTracker(bbox_list[i]))
+            self.trackers.append(KalmanBoxTracker(bbox_list[i], timestamp=timestamp))
 
     def _remove_old_tracker(self):
         """Remove trackers that have exceeded their maximum age.
@@ -528,7 +534,7 @@ class MOTModel:
 
         # Initialize new trackers for all detections if no existing trackers
         if not len(self.trackers):
-            self._add_new_tracker(bbox_list)
+            self._add_new_tracker(bbox_list, timestamp=timestamp)
             return instance_ids
 
         # Get tracked_box_list from active trackers
@@ -538,13 +544,13 @@ class MOTModel:
         valid_matches, unmatched_dets = associate_detections_to_tracks(bbox_list, tracked_box_list)
 
         # For unmatched detections, add new trackes
-        self._add_new_tracker(bbox_list, unmatched_dets)
+        self._add_new_tracker(bbox_list, timestamp=timestamp, det_ids=unmatched_dets)
 
         # Update matched trackers and instance IDs
         for det_idx, trk_idx in valid_matches:
             # Update matched tracker
             trk = self.trackers[trk_idx]
-            trk.update(bbox_list[det_idx])
+            trk.update(bbox_list[det_idx], timestamp=timestamp)
 
             # Update instance id
             instance_ids[det_idx] = trk.id
