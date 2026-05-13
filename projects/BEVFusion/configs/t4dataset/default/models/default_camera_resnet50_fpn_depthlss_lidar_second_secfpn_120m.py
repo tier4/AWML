@@ -17,7 +17,7 @@ model = dict(
         type="ResNet",
         depth=50,
         num_stages=4,
-        out_indices=(1, 2, 3),
+        out_indices=(2, 3),
         frozen_stages=-1,
         norm_cfg=dict(type="BN2d", requires_grad=True),
         norm_eval=False,
@@ -30,7 +30,7 @@ model = dict(
     ),
     img_neck=dict(
         type="GeneralizedLSSFPN",
-        in_channels=[512, 1024, 2048],
+        in_channels=[1024, 2048],
         out_channels=256,
         start_level=0,
         num_outs=2,
