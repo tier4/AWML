@@ -84,14 +84,14 @@ model = dict(
         test_cfg=dict(
             dataset="t4datasets",
             out_size_factor=8,
-            nms_type=None,  # Set to "circle" for circle_nms
+            nms_type="circle",  # Set to "circle" for circle_nms
             # Set NMS for different clusters
             nms_clusters=[
-                dict(class_names=["car", "truck", "bus"], nms_threshold=0.5),  # It's radius if using circle_nms
-                dict(class_names=["bicycle"], nms_threshold=0.5),
-                dict(class_names=["pedestrian"], nms_threshold=0.175),
-                dict(class_names=["barrier"], nms_threshold=0.5),
-                dict(class_names=["traffic_cone"], nms_threshold=0.175),
+                dict(class_names=["car", "truck", "bus"], class_indices=[0, 1, 2], nms_threshold=0.5),  # It's radius if using circle_nms
+                dict(class_names=["bicycle"], class_indices=[3], nms_threshold=0.0),
+                dict(class_names=["pedestrian"], class_indices=[4], nms_threshold=0.0),
+                dict(class_names=["traffic_cone"], class_indices=[5], nms_threshold=0.0),
+                dict(class_names=["barrier"], class_indices=[6], nms_threshold=0.0),
             ],
         ),
         dense_heatmap_pooling_classes=["car", "truck", "bus", "bicycle", "barrier"],  # Use class indices for pooling
@@ -99,7 +99,9 @@ model = dict(
         bbox_coder=dict(
             type="TransFusionBBoxCoder",
             post_center_range=[-200.0, -200.0, -10.0, 200.0, 200.0, 10.0],
-            score_threshold=0.0,
+            # score_threshold=0.03,
+            # CAR, TRUCK, BUS, BICYCLE, PEDESTRIAN, TRAFFIC_CONE, BARRIER
+            score_threshold=[0.02, 0.015, 0.015, 0.01, 0.02, 0.02, 0.015],
             out_size_factor=8,
             code_size=10,
         ),
