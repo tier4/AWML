@@ -30,7 +30,14 @@ class ConvFuser(nn.Sequential):
         self.in_channels = in_channels
         self.out_channels = out_channels
         super().__init__(
-            nn.Conv2d(sum(in_channels), out_channels=out_channels, kernel_size=kernel_size, stride=stride, padding=padding, bias=False),
+            nn.Conv2d(
+                sum(in_channels),
+                out_channels=out_channels,
+                kernel_size=kernel_size,
+                stride=stride,
+                padding=padding,
+                bias=False,
+            ),
             nn.BatchNorm2d(out_channels),
             nn.ReLU(True),
         )
@@ -387,7 +394,9 @@ class BEVFusionHead(nn.Module):
             batch_size = preds_dict[0]["heatmap"].shape[0]
             batch_score = preds_dict[0]["heatmap"][..., -self.num_proposals :].sigmoid()
             if self.loss_iou is not None:
-               batch_score = torch.sqrt(batch_score * preds_dict[0]['iou'][..., -self.num_proposals:].sigmoid()) # noqa: E501
+                batch_score = torch.sqrt(
+                    batch_score * preds_dict[0]["iou"][..., -self.num_proposals :].sigmoid()
+                )  # noqa: E501
             one_hot = F.one_hot(self.query_labels, num_classes=self.num_classes).permute(0, 2, 1)
             batch_score = batch_score * preds_dict[0]["query_heatmap_score"] * one_hot
 
@@ -435,6 +444,7 @@ class BEVFusionHead(nn.Module):
                                     circle_nms(
                                         boxes_for_nms.detach().cpu().numpy(),
                                         nms_cluster["nms_threshold"],
+                                        post_max_size=nms_cluster["post_max_size"],
                                     )
                                 )
                             else:
@@ -861,15 +871,19 @@ class BEVFusionHead(nn.Module):
 
             # Output iou for iou-aware loss
             if self.loss_iou is not None:
-              layer_ious = preds_dict["iou"][
-                ...,
-                idx_layer * self.num_proposals : (idx_layer + 1) * self.num_proposals,
-              ].squeeze(1) # [BS, num_proposals]
-              
-              # [BS, num_proposals]
-              layer_iou_weights = layer_bbox_weights[:, :, 0]
-            #   print(layer_ious.shape, ious.shape, layer_iou_weights.shape, "layer_ious.shape, ious.shape, layer_iou_weights.shape")
-              loss_dict[f'{prefix}_loss_iou'] = self.loss_iou(layer_ious, ious, layer_iou_weights, avg_factor=max(num_pos, 1))
+                layer_ious = preds_dict["iou"][
+                    ...,
+                    idx_layer * self.num_proposals : (idx_layer + 1) * self.num_proposals,
+                ].squeeze(
+                    1
+                )  # [BS, num_proposals]
+
+                # [BS, num_proposals]
+                layer_iou_weights = layer_bbox_weights[:, :, 0]
+                #   print(layer_ious.shape, ious.shape, layer_iou_weights.shape, "layer_ious.shape, ious.shape, layer_iou_weights.shape")
+                loss_dict[f"{prefix}_loss_iou"] = self.loss_iou(
+                    layer_ious, ious, layer_iou_weights, avg_factor=max(num_pos, 1)
+                )
 
         loss_dict["matched_ious"] = layer_loss_cls.new_tensor(matched_ious)
 
