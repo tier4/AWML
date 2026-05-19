@@ -104,7 +104,7 @@ model = dict(
             post_center_range=[-200.0, -200.0, -10.0, 200.0, 200.0, 10.0],
             # score_threshold=0.03,
             # CAR, TRUCK, BUS, BICYCLE, PEDESTRIAN, TRAFFIC_CONE, BARRIER
-            score_threshold=[0.015, 0.010, 0.010, 0.010, 0.020, 0.020, 0.015],
+            score_threshold=[0.015, 0.015, 0.010, 0.020, 0.030, 0.030, 0.020],
             out_size_factor=8,
             code_size=10,
         ),
