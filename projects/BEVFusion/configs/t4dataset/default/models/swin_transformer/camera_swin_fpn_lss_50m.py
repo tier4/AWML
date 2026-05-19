@@ -19,5 +19,5 @@ model = dict(
         bbox_coder=dict(
             post_center_range=[-61.2, -61.2, -10.0, 61.2, 61.2, 10.0],
         ),
-    )
+    ),
 )

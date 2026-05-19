@@ -1,9 +1,8 @@
 _base_ = [
     "../../../../../autoware_ml/configs/detection3d/default_runtime.py",
     "../../../../../autoware_ml/configs/detection3d/dataset/t4dataset/base.py",
-    "../default/pipelines/default_camera_lidar_intensity_120m.py",
-    "../default/models/default_camera_swin_fpn_lss_120m.py",
-    "../default/schedulers/default_50e_8xb8_adamw_linear_cosine.py",
+    "../default/pipelines/cameras/default_camera_50m.py",
+    "../default/schedulers/default_50e_8xb16_adamw_linear_cosine.py",
     "../default/default_misc.py",
 ]
 
@@ -13,35 +12,7 @@ custom_imports["imports"] += ["autoware_ml.detection3d.datasets.transforms"]
 
 # user setting
 data_root = "data/t4dataset/"
-info_directory_path = "info/kokseang_2_6_2/"
-
-experiment_group_name = "bevfusion_camera_2_6_0/base/" + _base_.dataset_type
-experiment_name = "bevfusion_camera_swin_fpn_lss_50e_8xb8_base_120m"
-work_dir = "work_dirs/" + experiment_group_name + "/" + experiment_name
-
-# model parameter
-model = dict(
-    type="BEVFusion",
-    view_transform=dict(image_size=_base_.image_size),
-    bbox_head=dict(
-        class_names=_base_.class_names,
-        in_channels=80,
-        train_cfg=dict(
-            point_cloud_range=_base_.point_cloud_range,
-            grid_size=_base_.grid_size,
-            voxel_size=_base_.voxel_size,
-        ),
-        test_cfg=dict(
-            grid_size=_base_.grid_size,
-            voxel_size=_base_.voxel_size[0:2],
-            pc_range=_base_.point_cloud_range[0:2],
-        ),
-        bbox_coder=dict(
-            pc_range=_base_.point_cloud_range[0:2],
-            voxel_size=_base_.voxel_size[0:2],
-        ),
-    ),
-)
+info_directory_path = "info/kokseang_2_8_0/"
 
 # Dataset parameters
 train_dataloader = dict(

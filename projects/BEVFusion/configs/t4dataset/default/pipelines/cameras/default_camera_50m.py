@@ -1,7 +1,7 @@
 ## This config is for the camera_base only model, without lidar points
 
 _base_ = [
-    "./default_lidar_50m.py",
+    "../default_lidar_50m.py",
 ]
 input_modality = dict(use_lidar=True, use_camera=True)
 
@@ -17,7 +17,7 @@ train_pipeline = [
         backend_args=_base_.backend_args,
         camera_order=camera_order,
     ),
-    # We keep loading LiDAR points to make downstream BEV augmentation easier 
+    # We keep loading LiDAR points to make downstream BEV augmentation easier
     dict(
         type="LoadPointsFromFile",
         coord_type="LIDAR",
@@ -84,6 +84,7 @@ train_pipeline = [
             "timestamp",
             "vehicle_type",
             "city",
+            "traffic_cone_barrier_status",
         ],
     ),
 ]
@@ -125,6 +126,7 @@ test_pipeline = [
             "timestamp",
             "vehicle_type",
             "city",
+            "traffic_cone_barrier_status",
         ],
     ),
 ]

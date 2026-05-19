@@ -23,7 +23,7 @@ model = dict(
         norm_eval=False,
         with_cp=False,
         style="pytorch",
-				init_cfg=dict(
+        init_cfg=dict(
             type="Pretrained",
             checkpoint="work_dirs/resnet50/mmdet_resnet50-19c8e357.pth",  # noqa: E251
         ),

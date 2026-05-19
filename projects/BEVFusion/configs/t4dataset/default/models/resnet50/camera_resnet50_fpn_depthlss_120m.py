@@ -1,5 +1,5 @@
 _base_ = [
-    "./default_lidar_second_secfpn_120m.py",
+    "../default_lidar_second_secfpn_120m.py",
 ]
 
 # Image network
@@ -19,34 +19,27 @@ model = dict(
         rgb_to_bgr=False,
     ),
     img_backbone=dict(
-        type="mmdet.SwinTransformer",
-        pretrain_img_size=(256, 704),
-        embed_dims=96,
-        depths=[2, 2, 6, 2],
-        num_heads=[3, 6, 12, 24],
-        window_size=7,
-        mlp_ratio=4,
-        qkv_bias=True,
-        qk_scale=None,
-        drop_rate=0.0,
-        attn_drop_rate=0.0,
-        drop_path_rate=0.2,
-        patch_norm=True,
-        out_indices=[1, 2, 3],
+        pretrained="torchvision://resnet50",
+        type="ResNet",
+        depth=50,
+        num_stages=4,
+        out_indices=(2, 3),
+        frozen_stages=-1,
+        norm_cfg=dict(type="BN2d", requires_grad=True),
+        norm_eval=False,
         with_cp=False,
-        convert_weights=True,
+        style="pytorch",
         init_cfg=dict(
             type="Pretrained",
-            # https://download.openmmlab.com/mmdetection3d/v1.1.0_models/bevfusion/swint-nuimages-pretrained.pth
-            checkpoint="work_dirs/swin_transformer/swint_nuimages_pretrained.pth",  # noqa: E251
+            checkpoint="work_dirs/resnet50/mmdet_resnet50-19c8e357.pth",  # noqa: E251
         ),
     ),
     img_neck=dict(
         type="GeneralizedLSSFPN",
-        in_channels=[192, 384, 768],
+        in_channels=[1024, 2048],
         out_channels=256,
         start_level=0,
-        num_outs=3,
+        num_outs=2,
         norm_cfg=dict(type="BN2d", requires_grad=True),
         act_cfg=dict(type="ReLU", inplace=True),
         upsample_cfg=dict(mode="bilinear", align_corners=False),
@@ -55,7 +48,7 @@ model = dict(
         type="DepthLSSTransform",
         in_channels=256,
         out_channels=80,
-        feature_size=[48, 96],
+        feature_size=[24, 48],
         xbound=[-122.40, 122.40, 0.68],
         ybound=[-122.40, 122.40, 0.68],
         zbound=[-10.0, 10.0, 20.0],

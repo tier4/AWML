@@ -1,5 +1,5 @@
 _base_ = [
-    "./default_lidar_second_secfpn_120m.py",
+    "../default_lidar_second_secfpn_120m.py",
 ]
 
 # Image network

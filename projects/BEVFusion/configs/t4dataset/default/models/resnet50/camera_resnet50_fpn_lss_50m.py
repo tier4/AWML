@@ -6,9 +6,6 @@ _base_ = [
 model = dict(
     view_transform=dict(
         type="LSSTransform",
-        in_channels=256,
-        out_channels=80,
-        feature_size=[48, 96],
         xbound=[-54.0, 54.0, 0.3],
         ybound=[-54.0, 54.0, 0.3],
         zbound=[-10.0, 10.0, 20.0],
@@ -19,5 +16,5 @@ model = dict(
         bbox_coder=dict(
             post_center_range=[-61.2, -61.2, -10.0, 61.2, 61.2, 10.0],
         ),
-    )
+    ),
 )
