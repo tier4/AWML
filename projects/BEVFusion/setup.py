@@ -55,6 +55,14 @@ if __name__ == "__main__":
                 ],
             ),
             make_cuda_ext(
+                name="bev_pool_v2_ext",
+                module="projects.BEVFusion.bevfusion.ops.bev_pool_v2",
+                sources=[
+                    "src/bev_pool_v2.cpp",
+                    "src/bev_pool_v2_cuda.cu",
+                ],
+            ),
+            make_cuda_ext(
                 name="voxel_layer",
                 module="projects.BEVFusion.bevfusion.ops.voxel",
                 sources=[
