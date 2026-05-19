@@ -151,8 +151,9 @@ def bev_pool_v2(depth, feat, ranks_depth, ranks_feat, ranks_bev,
         # BEV Shape is (B, Z, Y, X, C)
         out_height, out_width = bev_feat_shape[2], bev_feat_shape[2]
         x = QuickCumsumV2Cuda.apply(depth, feat, ranks_depth, ranks_feat, ranks_bev,
-                              interval_starts, interval_lengths)
+                                    out_height, out_width, interval_starts, interval_lengths)
     
+    # Final shape: (B, C, Z, Y, X)
     x = x.permute(0, 4, 1, 2, 3).contiguous()
     return x
 
