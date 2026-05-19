@@ -567,7 +567,7 @@ class DepthLSSTransform(BaseDepthTransform):
             zbound=zbound,
             dbound=dbound,
         )
-        
+
         self.dtransform = LidarDepthImageNet(in_channels=1, out_channels=64, last_stride=lidar_depth_image_last_stride)
         self.depthnet = DepthLSSNet(
             in_channels=in_channels + self.dtransform.out_channels, out_channels=self.D + self.C
