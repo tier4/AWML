@@ -90,11 +90,11 @@ model = dict(
             nms_type="circle",  # Set to "circle" for circle_nms
             # Set NMS for different clusters
             nms_clusters=[
-                dict(class_names=["car", "truck", "bus"], class_indices=[0, 1, 2], nms_threshold=0.5),  # It's radius if using circle_nms
-                dict(class_names=["bicycle"], class_indices=[3], nms_threshold=0.0),
-                dict(class_names=["pedestrian"], class_indices=[4], nms_threshold=0.0),
-                dict(class_names=["traffic_cone"], class_indices=[5], nms_threshold=0.0),
-                dict(class_names=["barrier"], class_indices=[6], nms_threshold=0.0),
+                dict(class_names=["car", "truck", "bus"], class_indices=[0, 1, 2], nms_threshold=0.25, post_max_size=300),  # It's radius if using circle_nms
+                dict(class_names=["bicycle"], class_indices=[3], nms_threshold=0.0, post_max_size=50),
+                dict(class_names=["pedestrian"], class_indices=[4], nms_threshold=0.0, post_max_size=100),
+                dict(class_names=["traffic_cone"], class_indices=[5], nms_threshold=0.0, post_max_size=100),
+                dict(class_names=["barrier"], class_indices=[6], nms_threshold=0.0, post_max_size=50),
             ],
         ),
         dense_heatmap_pooling_classes=["car", "truck", "bus", "bicycle", "barrier"],  # Use class indices for pooling
@@ -104,7 +104,7 @@ model = dict(
             post_center_range=[-200.0, -200.0, -10.0, 200.0, 200.0, 10.0],
             # score_threshold=0.03,
             # CAR, TRUCK, BUS, BICYCLE, PEDESTRIAN, TRAFFIC_CONE, BARRIER
-            score_threshold=[0.02, 0.015, 0.015, 0.01, 0.02, 0.02, 0.015],
+            score_threshold=[0.015, 0.010, 0.010, 0.010, 0.015, 0.015, 0.010],
             out_size_factor=out_size_factor,
             code_size=10,
         ),

@@ -435,6 +435,7 @@ class BEVFusionHead(nn.Module):
                                     circle_nms(
                                         boxes_for_nms.detach().cpu().numpy(),
                                         nms_cluster["nms_threshold"],
+                                        post_max_size=nms_cluster["post_max_size"],
                                     )
                                 )
                             else:
