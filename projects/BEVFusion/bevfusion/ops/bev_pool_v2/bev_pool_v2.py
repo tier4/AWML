@@ -141,16 +141,17 @@ class QuickCumsumV2Cuda(torch.autograd.Function):
 
 
 def bev_pool_v2(depth, feat, ranks_depth, ranks_feat, ranks_bev,
-                bev_feat_shape, interval_starts, interval_lengths, is_training):
+                interval_starts, interval_lengths, bev_feat_shape, is_training):
     
     if is_training:
         x = QuickCumsumV2TrainingCuda.apply(depth, feat, ranks_depth, ranks_feat, ranks_bev,
                               bev_feat_shape, interval_starts,
                               interval_lengths)
     else:
+        # BEV Shape is (B, Z, Y, X, C)
+        out_height, out_width = bev_feat_shape[2], bev_feat_shape[2]
         x = QuickCumsumV2Cuda.apply(depth, feat, ranks_depth, ranks_feat, ranks_bev,
-                              bev_feat_shape, interval_starts,
-                              interval_lengths)
+                              interval_starts, interval_lengths)
     
     x = x.permute(0, 4, 1, 2, 3).contiguous()
     return x

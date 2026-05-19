@@ -3,6 +3,7 @@ from typing import Tuple
 import torch
 from mmdet3d.registry import MODELS
 from torch import nn
+from mmengine.logging import print_log
 
 from .depth_lss import BaseViewTransform, DepthLSSNet, DownSampleNet, LidarDepthImageNet
 from .ops import bev_pool_v2
@@ -20,6 +21,7 @@ class BaseViewTransformV2(BaseViewTransform):
         ybound: Tuple[float, float, float],
         zbound: Tuple[float, float, float],
         dbound: Tuple[float, float, float],
+        collapse_z: bool = True,
     ):
         super().__init__(
             in_channels=in_channels,
@@ -31,7 +33,8 @@ class BaseViewTransformV2(BaseViewTransform):
             zbound=zbound,
             dbound=dbound,
         )
-
+        self.collapse_z = collapse_z
+    
     def get_cam_feats(self, x) -> Tuple[torch.Tensor, torch.Tensor]:
         raise NotImplementedError
 
@@ -161,25 +164,40 @@ class BaseViewTransformV2(BaseViewTransform):
         B, N, D, H, W, _ = geom.shape
         num_points = B * N * D * H * W
 
-        # record the index of selected points for acceleration purpose
-        ranks_depth = torch.range(0, num_points - 1, dtype=torch.int, device=geom.device)
-        ranks_feat = torch.range(0, num_points // D - 1, dtype=torch.int, device=geom.device)
-        ranks_feat = ranks_feat.reshape(B, N, 1, H, W)
-        ranks_feat = ranks_feat.expand(B, N, D, H, W).flatten()
+        ranks_bev, ranks_depth, ranks_feat, interval_starts, interval_lengths = self.bev_pool_aux(geom)
 
-        B, N, C, fH, fW = view_feats.shape
-
+        if ranks_feat is None:
+            print_log('warning ---> no points within the predefined bev receptive field')
+            dummy = torch.zeros(size=[
+                view_feats.shape[0], view_feats.shape[2],
+                int(self.nx[2]),
+                int(self.nx[1]),
+                int(self.nx[0])
+            ]).to(view_feats)
+            dummy = torch.cat(dummy.unbind(dim=2), 1)
+            return dummy
+        
+        # permute view_feats from (B, N, C, fH, fW) to (B, N, fH, fW, C)
+        view_feats = view_feats.permute(0, 1, 3, 4, 2)
+        bev_feat_shape = (depth_softmax.shape[0], int(self.nx[2]),
+                        int(self.nx[1]), int(self.nx[0]),
+                        view_feats.shape[-1])  # (B, Z, Y, X, C)
+        
         bev_feat = bev_pool_v2(
-            depth_softmax,
-            x,
-            ranks_depth,
-            ranks_feat,
-            ranks_bev,
-            bev_feat_shape,
-            interval_starts,
-            interval_lengths,
-            is_training,
-        )
+            depth=depth_softmax, 
+            feat=view_feats, 
+            ranks_depth=ranks_depth, 
+            ranks_feat=ranks_feat, 
+            ranks_bev=ranks_bev,
+            interval_starts=interval_starts, 
+            interval_lengths=interval_lengths, 
+            bev_feat_shape=bev_feat_shape,
+            is_training=self.training)
+        
+        # collapse Z
+        if self.collapse_z:
+            bev_feat = torch.cat(bev_feat.unbind(dim=2), 1)
+
         return bev_feat
 
 
