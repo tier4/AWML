@@ -93,7 +93,7 @@ model = dict(
                 # Sqrt(0.25) = 0.5
                 dict(class_names=["car", "truck", "bus"], class_indices=[0, 1, 2], nms_threshold=0.25, post_max_size=300),  # It's radius if using circle_nms
                 # Sqrt(0.04) = 0.2
-                dict(class_names=["bicycle". "pedestrian"], class_indices=[3, 4], nms_threshold=0.04, post_max_size=200),
+                dict(class_names=["bicycle", "pedestrian"], class_indices=[3, 4], nms_threshold=0.04, post_max_size=200),
                 dict(class_names=["traffic_cone"], class_indices=[5], nms_threshold=0.0, post_max_size=100),
                 dict(class_names=["barrier"], class_indices=[6], nms_threshold=0.0, post_max_size=50),
             ],
@@ -105,7 +105,7 @@ model = dict(
             post_center_range=[-200.0, -200.0, -10.0, 200.0, 200.0, 10.0],
             # score_threshold=0.03,
             # CAR, TRUCK, BUS, BICYCLE, PEDESTRIAN, TRAFFIC_CONE, BARRIER
-            score_threshold=[0.015, 0.015, 0.010, 0.020, 0.030, 0.030, 0.020],
+            score_threshold=[0.015, 0.015, 0.010, 0.020, 0.030, 0.040, 0.025],
             out_size_factor=8,
             code_size=10,
         ),
