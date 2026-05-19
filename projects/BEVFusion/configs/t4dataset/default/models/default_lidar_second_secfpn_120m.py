@@ -1,6 +1,7 @@
 num_proposals = 500
 max_num_points = 32
 max_voxels = [120000, 160000]
+out_size_factor = 8
 
 model = dict(
     type="BEVFusion",
@@ -23,7 +24,9 @@ model = dict(
         norm_cfg=dict(type="BN1d", eps=0.001, momentum=0.01),
         encoder_channels=((16, 16, 32), (32, 32, 64), (64, 64, 128), (128, 128)),
         encoder_paddings=((0, 0, 1), (0, 0, 1), (0, 0, (1, 1, 0)), (0, 0)),
+        encoder_strides=(2, 2, 2, -1), # No stride for the last stage
         block_type="basicblock",
+        output_stride=2, # downsample stride
     ),
     pts_backbone=dict(
         type="SECOND",
@@ -68,7 +71,7 @@ model = dict(
         ),
         train_cfg=dict(
             dataset="t4datasets",
-            out_size_factor=8,
+            out_size_factor=out_size_factor,
             gaussian_overlap=0.1,
             min_radius=2,
             pos_weight=-1,
@@ -83,7 +86,7 @@ model = dict(
         ),
         test_cfg=dict(
             dataset="t4datasets",
-            out_size_factor=8,
+            out_size_factor=out_size_factor,
             nms_type="circle",  # Set to "circle" for circle_nms
             # Set NMS for different clusters
             nms_clusters=[
@@ -102,7 +105,7 @@ model = dict(
             # score_threshold=0.03,
             # CAR, TRUCK, BUS, BICYCLE, PEDESTRIAN, TRAFFIC_CONE, BARRIER
             score_threshold=[0.02, 0.015, 0.015, 0.01, 0.02, 0.02, 0.015],
-            out_size_factor=8,
+            out_size_factor=out_size_factor,
             code_size=10,
         ),
         loss_cls=dict(

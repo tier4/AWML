@@ -1,4 +1,10 @@
 # Copyright (c) OpenMMLab. All rights reserved.
+
+from typing import Dict, Optional
+
+import numpy as np
+import torch
+
 from mmdet3d.models.layers import make_sparse_convmodule
 from mmdet3d.models.layers.spconv import IS_SPCONV2_AVAILABLE
 from mmdet3d.models.middle_encoders import SparseEncoder
@@ -9,8 +15,6 @@ if IS_SPCONV2_AVAILABLE:
 else:
     from mmcv.ops import SparseConvTensor
 
-import numpy as np
-import torch
 
 
 @MODELS.register_module()
@@ -56,6 +60,8 @@ class BEVFusionSparseEncoder(SparseEncoder):
         encoder_paddings=((1,), (1, 1, 1), (1, 1, 1), ((0, 1, 1), 1, 1)),
         block_type="conv_module",
         return_middle_feats=False,
+        encoder_strides=(2, 2, 2, -1),
+        output_stride=2,
     ):
         super(SparseEncoder, self).__init__()
         assert block_type in ["conv_module", "basicblock"]
@@ -66,6 +72,7 @@ class BEVFusionSparseEncoder(SparseEncoder):
         self.output_channels = output_channels
         self.encoder_channels = encoder_channels
         self.encoder_paddings = encoder_paddings
+        self.encoder_strides = encoder_strides
         self.stage_num = len(self.encoder_channels)
         self.fp16_enabled = False
         self.return_middle_feats = return_middle_feats
@@ -110,7 +117,7 @@ class BEVFusionSparseEncoder(SparseEncoder):
             indice_key="spconv_down2",
             conv_type="SparseConv3d",
         )
-
+    
     def forward(self, voxel_features, coors, batch_size):
         """Forward of SparseEncoder.
 
@@ -138,7 +145,7 @@ class BEVFusionSparseEncoder(SparseEncoder):
         for encoder_layer in self.encoder_layers:
             x = encoder_layer(x)
             encode_features.append(x)
-
+        
         # for detection head
         # [200, 176, 5] -> [200, 176, 2]
         out = self.conv_out(encode_features[-1])
