@@ -90,9 +90,10 @@ model = dict(
             nms_type="circle",  # Set to "circle" for circle_nms
             # Set NMS for different clusters
             nms_clusters=[
+                # Sqrt(0.25) = 0.5
                 dict(class_names=["car", "truck", "bus"], class_indices=[0, 1, 2], nms_threshold=0.25, post_max_size=300),  # It's radius if using circle_nms
-                dict(class_names=["bicycle"], class_indices=[3], nms_threshold=0.0, post_max_size=50),
-                dict(class_names=["pedestrian"], class_indices=[4], nms_threshold=0.0, post_max_size=100),
+                # Sqrt(0.04) = 0.2
+                dict(class_names=["bicycle". "pedestrian"], class_indices=[3, 4], nms_threshold=0.04, post_max_size=200),
                 dict(class_names=["traffic_cone"], class_indices=[5], nms_threshold=0.0, post_max_size=100),
                 dict(class_names=["barrier"], class_indices=[6], nms_threshold=0.0, post_max_size=50),
             ],
