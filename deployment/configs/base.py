@@ -6,7 +6,7 @@ Torch/CUDA validation lives here. Schema/enums are in configs.schema and configs
 
 from __future__ import annotations
 
-import os
+from pathlib import Path
 from types import MappingProxyType
 from typing import Any, Mapping, Optional, Tuple
 
@@ -102,14 +102,12 @@ class BaseDeploymentConfig:
         """Require a non-empty checkpoint path that exists as a regular file."""
         if not isinstance(checkpoint_path, str):
             raise TypeError(f"checkpoint_path must be a string, got {type(checkpoint_path).__name__}.")
-        path = os.path.expanduser(checkpoint_path.strip())
-        if not path:
-            raise ValueError(
-                "deploy config `checkpoint_path` must be a non-empty string " "(path to PyTorch checkpoint)."
-            )
-        if not os.path.isfile(path):
-            raise FileNotFoundError(f"checkpoint_path is not an existing file: {path!r}")
-        return path
+        path = Path(checkpoint_path).expanduser()
+
+        if not path.is_file():
+            raise FileNotFoundError(f"Checkpoint file not found: {path}")
+
+        return str(path)
 
     def _validate_cuda_device(self) -> None:
         """Validate CUDA device availability once at config stage."""
@@ -203,11 +201,11 @@ class BaseDeploymentConfig:
         """Absolute path for the deployment log file, or None if file logging is disabled."""
         if self._deploy_log_path is None:
             return None
-        p = os.path.expanduser(self._deploy_log_path)
-        if os.path.isabs(p):
-            return os.path.abspath(p)
-        work_dir = os.path.expanduser(self.export_config.work_dir)
-        return os.path.abspath(os.path.join(work_dir, p))
+        log_path = Path(self._deploy_log_path).expanduser()
+        if log_path.is_absolute():
+            return str(log_path.resolve(strict=False))
+        work_dir = Path(self.export_config.work_dir).expanduser()
+        return str((work_dir / log_path).resolve(strict=False))
 
     @property
     def evaluation_backends(self) -> Mapping[Any, Mapping[str, Any]]:

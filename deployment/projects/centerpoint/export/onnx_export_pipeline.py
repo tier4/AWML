@@ -9,7 +9,6 @@ to a separate ONNX file in the given output directory.
 from __future__ import annotations
 
 import logging
-import os
 from pathlib import Path
 
 import torch
@@ -199,4 +198,4 @@ class CenterPointONNXExportPipeline(OnnxExportPipeline):
         self.logger.info("CenterPoint ONNX export successful")
         self.logger.info("=" * 80)
         for path in exported_paths:
-            self.logger.info("  • %s", os.path.basename(path))
+            self.logger.info("  • %s", Path(path).name)

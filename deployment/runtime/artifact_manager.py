@@ -6,7 +6,6 @@ ONNX models, TensorRT engines) across different backends.
 """
 
 import logging
-import os.path as osp
 from collections.abc import Mapping
 from typing import Any, Dict, Optional, Tuple
 

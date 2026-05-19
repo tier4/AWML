@@ -8,7 +8,7 @@ from __future__ import annotations
 
 import argparse
 import logging
-import os
+from pathlib import Path
 from typing import Optional
 
 _LOG_FORMAT = "%(levelname)s:%(name)s:%(message)s"
@@ -37,18 +37,21 @@ def add_deployment_file_logging(log_file_path: str) -> None:
     Args:
         log_file_path: Absolute or resolved path to the log file.
     """
-    path = os.path.abspath(os.path.expanduser(log_file_path))
-    parent = os.path.dirname(path)
-    if parent:
-        os.makedirs(parent, exist_ok=True)
+    path = Path(log_file_path).expanduser()
+    if not path.is_absolute():
+        path = (Path.cwd() / path).resolve(strict=False)
+    else:
+        path = path.resolve(strict=False)
+    path.parent.mkdir(parents=True, exist_ok=True)
 
     root = logging.getLogger()
     for h in root.handlers:
         if isinstance(h, logging.FileHandler):
-            if os.path.abspath(getattr(h, "baseFilename", "")) == path:
+            handler_path = getattr(h, "baseFilename", "")
+            if handler_path and Path(handler_path).resolve(strict=False) == path:
                 return
 
-    fh = logging.FileHandler(path, mode="a", encoding="utf-8")
+    fh = logging.FileHandler(str(path), mode="a", encoding="utf-8")
     fh.setFormatter(logging.Formatter(_LOG_FORMAT))
     fh.setLevel(root.level)
     root.addHandler(fh)

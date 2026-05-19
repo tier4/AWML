@@ -1,7 +1,7 @@
 """ONNX model exporter."""
 
 import logging
-import os
+from pathlib import Path
 from typing import Any, Optional
 
 import onnx
@@ -130,7 +130,7 @@ class ONNXExporter(BaseExporter):
         self.logger.info("  Opset version: %s", export_cfg.opset_version)
 
         # Ensure output directory exists
-        os.makedirs(os.path.dirname(output_path) if os.path.dirname(output_path) else ".", exist_ok=True)
+        Path(output_path).parent.mkdir(parents=True, exist_ok=True)
 
         try:
             with torch.no_grad():

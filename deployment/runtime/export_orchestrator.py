@@ -8,8 +8,8 @@ in a unified orchestrator, keeping the deployment runner thin.
 from __future__ import annotations
 
 import logging
-import os
 from dataclasses import dataclass
+from pathlib import Path
 from typing import Any, Callable, Mapping, Optional, Type
 
 import torch
@@ -208,7 +208,7 @@ class ExportOrchestrator:
         Args:
             onnx_path: Path to the ONNX artifact
         """
-        if not os.path.exists(onnx_path):
+        if not Path(onnx_path).exists():
             return
         self.artifact_manager.register_artifact(Backend.ONNX, Artifact(path=onnx_path))
 
@@ -245,8 +245,8 @@ class ExportOrchestrator:
             raise RuntimeError("ONNX export requested but no wrapper class or export pipeline provided.")
 
         sample_idx = context.sample_idx if context.sample_idx != 0 else self.config.runtime_config.sample_idx
-        onnx_dir = os.path.join(self.config.export_config.work_dir, self.ONNX_DIR_NAME)
-        os.makedirs(onnx_dir, exist_ok=True)
+        onnx_dir = Path(self.config.export_config.work_dir) / self.ONNX_DIR_NAME
+        onnx_dir.mkdir(parents=True, exist_ok=True)
 
         if self._onnx_pipeline is not None:
             self.logger.info("=" * 80)
@@ -255,7 +255,7 @@ class ExportOrchestrator:
             artifact = self._onnx_pipeline.export(
                 model=pytorch_model,
                 data_loader=self.data_loader,
-                output_dir=onnx_dir,
+                output_dir=str(onnx_dir),
                 config=self.config,
                 sample_idx=sample_idx,
             )
@@ -274,7 +274,7 @@ class ExportOrchestrator:
 
         for component_name in component_names:
             onnx_settings = self.config.get_onnx_settings(component_name)
-            output_path = os.path.join(onnx_dir, onnx_settings.save_file)
+            output_path = onnx_dir / onnx_settings.save_file
             exporter = self._build_onnx_exporter(component_name)
 
             batch_size = onnx_settings.batch_size
@@ -290,9 +290,9 @@ class ExportOrchestrator:
                     input_tensor = single_input.repeat(batch_size, *([1] * (len(single_input.shape) - 1)))
 
             self.logger.info("Exporting component '%s' → %s", component_name, output_path)
-            exporter.export(pytorch_model, input_tensor, output_path)
+            exporter.export(pytorch_model, input_tensor, str(output_path))
 
-        artifact = Artifact(path=onnx_dir)
+        artifact = Artifact(path=str(onnx_dir))
         self.artifact_manager.register_artifact(Backend.ONNX, artifact)
         self.logger.info("ONNX export successful: %s", artifact.path)
         return artifact
@@ -321,8 +321,8 @@ class ExportOrchestrator:
             self.logger.info("Exporting to TensorRT (per-component)")
         self.logger.info("=" * 80)
 
-        tensorrt_dir = os.path.join(self.config.export_config.work_dir, self.TENSORRT_DIR_NAME)
-        os.makedirs(tensorrt_dir, exist_ok=True)
+        tensorrt_dir = Path(self.config.export_config.work_dir) / self.TENSORRT_DIR_NAME
+        tensorrt_dir.mkdir(parents=True, exist_ok=True)
 
         cuda_device = self.config.devices.cuda
         if cuda_device is None:
@@ -337,7 +337,7 @@ class ExportOrchestrator:
         if self._tensorrt_pipeline is not None:
             artifact = self._tensorrt_pipeline.export(
                 onnx_path=onnx_path,
-                output_dir=tensorrt_dir,
+                output_dir=str(tensorrt_dir),
                 config=self.config,
                 device=cuda_device,
             )
@@ -347,7 +347,7 @@ class ExportOrchestrator:
 
         component_names = list(self.config.components_cfg.component_names())
         for component_name in component_names:
-            output_path = self._get_tensorrt_output_path(onnx_path, tensorrt_dir)
+            output_path = self._get_tensorrt_output_path(onnx_path, str(tensorrt_dir))
             exporter = self._build_tensorrt_exporter(component_name)
             self.logger.info("Exporting component '%s' → %s", component_name, output_path)
             exporter.export(
@@ -357,7 +357,7 @@ class ExportOrchestrator:
                 onnx_path=onnx_path,
             )
 
-        artifact = Artifact(path=tensorrt_dir)
+        artifact = Artifact(path=str(tensorrt_dir))
         self.artifact_manager.register_artifact(Backend.TENSORRT, artifact)
         self.logger.info("TensorRT export successful: %s", artifact.path)
         return artifact
@@ -391,11 +391,13 @@ class ExportOrchestrator:
         Returns:
             Path to the TensorRT engine file
         """
-        if os.path.isdir(onnx_path):
-            return os.path.join(tensorrt_dir, self.DEFAULT_ENGINE_FILENAME)
-        onnx_filename = os.path.basename(onnx_path)
+        onnx_path_obj = Path(onnx_path)
+        tensorrt_dir_obj = Path(tensorrt_dir)
+        if onnx_path_obj.is_dir():
+            return str(tensorrt_dir_obj / self.DEFAULT_ENGINE_FILENAME)
+        onnx_filename = onnx_path_obj.name
         engine_filename = onnx_filename.replace(".onnx", ".engine")
-        return os.path.join(tensorrt_dir, engine_filename)
+        return str(tensorrt_dir_obj / engine_filename)
 
     def _resolve_external_artifacts(self, result: ExportResult) -> None:
         """
@@ -422,7 +424,7 @@ class ExportOrchestrator:
         eval_models = self.config.evaluation_config.models
         artifact_path = self._get_backend_entry(eval_models, backend)
 
-        if artifact_path and os.path.exists(artifact_path):
+        if artifact_path and Path(artifact_path).exists():
             setattr(result, attr_name, artifact_path)
             self.artifact_manager.register_artifact(backend, Artifact(path=artifact_path))
         elif artifact_path:

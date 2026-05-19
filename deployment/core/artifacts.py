@@ -13,9 +13,8 @@ Supports:
 from __future__ import annotations
 
 import logging
-import os
-import os.path as osp
 from dataclasses import dataclass
+from pathlib import Path
 from typing import Any, Dict, Mapping, Optional
 
 logger = logging.getLogger(__name__)
@@ -40,7 +39,7 @@ class Artifact:
     @property
     def exists(self) -> bool:
         """Whether the artifact exists on disk."""
-        return os.path.exists(self.path)
+        return Path(self.path).exists()
 
     def __str__(self) -> str:
         return self.path
@@ -108,7 +107,8 @@ def resolve_artifact_path(
             file_key="engine_file",
         )
     """
-    if not os.path.isdir(base_dir):
+    base_path = Path(base_dir)
+    if not base_path.is_dir():
         raise ValueError(
             "Artifact resolution requires `base_dir` to be a directory. "
             f"Got: {base_dir}. "
@@ -124,27 +124,29 @@ def resolve_artifact_path(
             f"Expected components['{component_name}']['{file_key}'] to be set."
         )
 
-    if osp.isabs(filename):
+    if Path(filename).is_absolute():
         raise ValueError(
             "Absolute artifact paths are not allowed. "
             f"Set components['{component_name}']['{file_key}'] to a relative filename under base_dir instead. "
             f"(got: {filename})"
         )
 
-    base_abs = osp.abspath(base_dir)
-    path = osp.abspath(osp.join(base_abs, filename))
+    base_abs = base_path.resolve(strict=False)
+    path = (base_abs / filename).resolve(strict=False)
     # Prevent escaping base_dir via '../'
-    if osp.commonpath([base_abs, path]) != base_abs:
+    try:
+        path.relative_to(base_abs)
+    except ValueError:
         raise ValueError(
             "Artifact path must stay within base_dir. "
             f"Got components['{component_name}']['{file_key}']={filename} which resolves to {path} outside {base_abs}."
         )
-    if not os.path.isfile(path):
+    if not path.is_file():
         raise FileNotFoundError(
             f"Configured artifact file not found: {path}. "
             f"(base_dir={base_dir}, component_name={component_name}, file_key={file_key})"
         )
-    return path
+    return str(path)
 
 
 def _get_filename_from_config(
