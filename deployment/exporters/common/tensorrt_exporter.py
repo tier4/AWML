@@ -312,7 +312,7 @@ class TensorRTExporter(BaseExporter):
             if input_shapes is None:
                 input_shapes = {}
             if not isinstance(input_shapes, Mapping):
-                raise TypeError(f"input_shapes must be a mapping, got {type(input_shapes).__name__}")
+                raise TypeError(f"input_shapes must be a dict-like mapping, got {type(input_shapes).__name__}")
             return input_shapes
         raise TypeError(f"Unsupported TensorRT model input entry: {type(entry)}")
 

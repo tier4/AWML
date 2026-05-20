@@ -164,7 +164,7 @@ class Detection3DMetricsInterface(BaseMetricsInterface):
         if cfg_dict is None:
             cfg_dict = {}
         if not isinstance(cfg_dict, Mapping):
-            raise TypeError(f"evaluation_config_dict must be a mapping, got {type(cfg_dict).__name__}")
+            raise TypeError(f"evaluation_config_dict must be a dict-like mapping, got {type(cfg_dict).__name__}")
         self._evaluation_cfg_dict: Dict[str, Any] = dict(cfg_dict)
 
         # Create multiple evaluators for different distance ranges (like T4MetricV2)
@@ -210,7 +210,9 @@ class Detection3DMetricsInterface(BaseMetricsInterface):
             if eval_config_dict_raw is None:
                 eval_config_dict_raw = {}
             if not isinstance(eval_config_dict_raw, Mapping):
-                raise TypeError(f"evaluation_config_dict must be a mapping, got {type(eval_config_dict_raw).__name__}")
+                raise TypeError(
+                    f"evaluation_config_dict must be a dict-like mapping, got {type(eval_config_dict_raw).__name__}"
+                )
             eval_config_dict = dict(eval_config_dict_raw)
             eval_config_dict["min_distance"] = min_dist
             eval_config_dict["max_distance"] = max_dist

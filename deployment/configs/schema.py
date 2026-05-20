@@ -31,7 +31,7 @@ def _normalize_dynamic_axes(raw: Mapping[str, Any]) -> Dict[str, Dict[int, str]]
     result: Dict[str, Dict[int, str]] = {}
     for name, axes in (raw or {}).items():
         if not isinstance(axes, Mapping):
-            raise TypeError(f"dynamic_axes['{name}'] must be a mapping, got {type(axes).__name__}")
+            raise TypeError(f"dynamic_axes['{name}'] must be a dict-like mapping, got {type(axes).__name__}")
         result[name] = {int(k): str(v) for k, v in axes.items()}
     return result
 
@@ -143,7 +143,7 @@ class OnnxConfig:
         if not raw:
             return cls()
         if not isinstance(raw, Mapping):
-            raise TypeError(f"onnx_config must be a mapping, got {type(raw).__name__}")
+            raise TypeError(f"onnx_config must be a dict-like mapping, got {type(raw).__name__}")
         return cls(
             opset_version=int(raw.get("opset_version", 17)),
             do_constant_folding=bool(raw.get("do_constant_folding", True)),
@@ -270,7 +270,7 @@ class ComponentsConfig:
     def from_dict(cls, raw: Mapping[str, Any]) -> ComponentsConfig:
         """Build ComponentsConfig from deploy_cfg['components'] dict. Generic: any keys allowed."""
         if not isinstance(raw, Mapping):
-            raise TypeError(f"components must be a mapping, got {type(raw).__name__}")
+            raise TypeError(f"components must be a dict-like mapping, got {type(raw).__name__}")
         parsed = {}
         for component_name, comp_raw in raw.items():
             parsed[component_name] = cls._parse_component(comp_raw, component_name)
@@ -279,14 +279,18 @@ class ComponentsConfig:
     @classmethod
     def _parse_component(cls, comp_raw: Any, component_name: str) -> ComponentCfg:
         if not isinstance(comp_raw, Mapping):
-            raise TypeError(f"components['{component_name}'] must be a mapping, got {type(comp_raw).__name__}")
+            raise TypeError(
+                f"components['{component_name}'] must be a dict-like mapping, got {type(comp_raw).__name__}"
+            )
         for field_name in ("onnx_file", "engine_file", "io"):
             if field_name not in comp_raw:
                 raise KeyError(f"components['{component_name}'] must define '{field_name}'.")
         component_id = component_name
         io_raw = comp_raw["io"]
         if not isinstance(io_raw, Mapping):
-            raise TypeError(f"components['{component_name}'].io must be a mapping, got {type(io_raw).__name__}")
+            raise TypeError(
+                f"components['{component_name}'].io must be a dict-like mapping, got {type(io_raw).__name__}"
+            )
         if "outputs" not in io_raw or not io_raw["outputs"]:
             raise KeyError(f"components['{component_name}'].io.outputs must be a non-empty list.")
         if "inputs" not in io_raw or not io_raw["inputs"]:
@@ -315,12 +319,12 @@ class ComponentsConfig:
         )
         profile_raw = comp_raw.get("tensorrt_profile") or {}
         if not isinstance(profile_raw, Mapping):
-            raise TypeError(f"components['{component_name}'].tensorrt_profile must be a mapping.")
+            raise TypeError(f"components['{component_name}'].tensorrt_profile must be a dict-like mapping.")
         tensorrt_profile = {}
         for input_name, shape_cfg in profile_raw.items():
             if not isinstance(shape_cfg, Mapping):
                 raise TypeError(
-                    f"components['{component_name}'].tensorrt_profile['{input_name}'] must be a mapping, got {type(shape_cfg).__name__}."
+                    f"components['{component_name}'].tensorrt_profile['{input_name}'] must be a dict-like mapping, got {type(shape_cfg).__name__}."
                 )
             tensorrt_profile[input_name] = TensorRTProfileConfig.from_dict(shape_cfg)
         return ComponentCfg(
@@ -354,20 +358,20 @@ class EvaluationConfig:
         if backends_raw is None:
             backends_raw = {}
         if not isinstance(backends_raw, Mapping):
-            raise TypeError(f"evaluation.backends must be a mapping, got {type(backends_raw).__name__}")
+            raise TypeError(f"evaluation.backends must be a dict-like mapping, got {type(backends_raw).__name__}")
         backends_frozen = {key: MappingProxyType(dict(value)) for key, value in backends_raw.items()}
 
         models_raw = config_dict.get("models", None)
         if models_raw is None:
             models_raw = {}
         if not isinstance(models_raw, Mapping):
-            raise TypeError(f"evaluation.models must be a mapping, got {type(models_raw).__name__}")
+            raise TypeError(f"evaluation.models must be a dict-like mapping, got {type(models_raw).__name__}")
 
         devices_raw = config_dict.get("devices", None)
         if devices_raw is None:
             devices_raw = {}
         if not isinstance(devices_raw, Mapping):
-            raise TypeError(f"evaluation.devices must be a mapping, got {type(devices_raw).__name__}")
+            raise TypeError(f"evaluation.devices must be a dict-like mapping, got {type(devices_raw).__name__}")
 
         normalized_devices = {str(key): DeviceSpec.from_value(value) for key, value in devices_raw.items()}
 
@@ -420,7 +424,7 @@ class VerificationConfig:
         if scenarios_raw is None:
             scenarios_raw = {}
         if not isinstance(scenarios_raw, Mapping):
-            raise TypeError(f"verification.scenarios must be a mapping, got {type(scenarios_raw).__name__}")
+            raise TypeError(f"verification.scenarios must be a dict-like mapping, got {type(scenarios_raw).__name__}")
 
         scenario_map: Dict[ExportMode, Tuple[VerificationScenario, ...]] = {}
         for mode_key, scenario_list in scenarios_raw.items():
@@ -438,7 +442,7 @@ class VerificationConfig:
         if devices_raw is None:
             devices_raw = {}
         if not isinstance(devices_raw, Mapping):
-            raise TypeError(f"verification.devices must be a mapping, got {type(devices_raw).__name__}")
+            raise TypeError(f"verification.devices must be a dict-like mapping, got {type(devices_raw).__name__}")
 
         normalized_devices = {str(key): DeviceSpec.from_value(value) for key, value in devices_raw.items()}
 

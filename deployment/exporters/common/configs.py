@@ -47,14 +47,14 @@ class TensorRTModelInputConfig:
         if input_shapes_raw is None:
             input_shapes_raw = {}
         if not isinstance(input_shapes_raw, Mapping):
-            raise TypeError(f"input_shapes must be a mapping, got {type(input_shapes_raw).__name__}")
+            raise TypeError(f"input_shapes must be a dict-like mapping, got {type(input_shapes_raw).__name__}")
 
         profile_map = {}
         for name, shape_dict in input_shapes_raw.items():
             if shape_dict is None:
                 shape_dict = {}
             elif not isinstance(shape_dict, Mapping):
-                raise TypeError(f"input_shapes.{name} must be a mapping, got {type(shape_dict).__name__}")
+                raise TypeError(f"input_shapes.{name} must be a dict-like mapping, got {type(shape_dict).__name__}")
             profile_map[name] = TensorRTProfileConfig.from_dict(shape_dict)
 
         return cls(input_shapes=MappingProxyType(profile_map))

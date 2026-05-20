@@ -79,13 +79,13 @@ class BaseDeploymentConfig:
             raise ValueError("Missing 'export' section in deploy config.")
         export_raw = self.deploy_cfg.get("export")
         if export_raw is not None and not isinstance(export_raw, Mapping):
-            raise TypeError("deploy config 'export' must be a mapping.")
+            raise TypeError("deploy config 'export' must be a dict-like mapping.")
 
         if "components" not in self.deploy_cfg:
             raise ValueError("Missing 'components' section in deploy config.")
         components_raw = self.deploy_cfg.get("components")
         if components_raw is not None and not isinstance(components_raw, Mapping):
-            raise TypeError("deploy config 'components' must be a mapping.")
+            raise TypeError("deploy config 'components' must be a dict-like mapping.")
 
     @staticmethod
     def _parse_deploy_log_path(raw: Optional[Any]) -> Optional[str]:
