@@ -123,6 +123,8 @@ name_mapping = {
     "traffic_cone": "traffic_cone",
     "trafficcone": "traffic_cone",
     "barrier": "barrier",
+    "other_vehicle": "car",
+    "other_pedestrian": "pedestrian",
 }
 
 class_names = [
