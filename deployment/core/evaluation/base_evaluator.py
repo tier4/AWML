@@ -110,8 +110,8 @@ class BaseEvaluator(ABC):
 
         return self.pytorch_model
 
-    def _normalize_verification_device(self, backend: Backend, device: DeviceSpec) -> DeviceSpec:
-        """Enforce backend runtime constraints on a concrete DeviceSpec."""
+    def _validate_verification_device(self, backend: Backend, device: DeviceSpec) -> DeviceSpec:
+        """Validate backend runtime constraints on a concrete DeviceSpec."""
         if backend is Backend.TENSORRT and not device.is_cuda:
             raise ValueError(f"TensorRT verification requires CUDA, got '{device}'.")
         return device

@@ -88,14 +88,9 @@ class BaseDeploymentConfig:
             raise TypeError("deploy config 'components' must be a dict-like mapping.")
 
     @staticmethod
-    def _parse_deploy_log_path(raw: Optional[Any]) -> Optional[str]:
+    def _parse_deploy_log_path(raw: Optional[str]) -> Optional[str]:
         """Normalize deploy_log_path; None or blank disables file logging."""
-        if raw is None:
-            return None
-        if not isinstance(raw, str):
-            raise TypeError(f"deploy_log_path must be a string or None, got {type(raw).__name__}.")
-        stripped = raw.strip()
-        return stripped if stripped else None
+        return raw.strip() or None if raw is not None else None
 
     @staticmethod
     def _validate_checkpoint_path(checkpoint_path: str) -> str:
@@ -114,8 +109,8 @@ class BaseDeploymentConfig:
         if not self._needs_cuda_device():
             return
 
-        cuda_device = self.devices.cuda
-        device_idx = self.devices.cuda_device_index
+        cuda_device = self.device_config.cuda
+        device_idx = self.device_config.cuda_device_index
 
         if cuda_device is None or device_idx is None:
             raise RuntimeError(
@@ -140,18 +135,17 @@ class BaseDeploymentConfig:
         if self.export_config.should_export_tensorrt:
             return True
 
-        evaluation_cfg = self.evaluation_config
-        backends_cfg = evaluation_cfg.backends
-        tensorrt_backend = backends_cfg.get(Backend.TENSORRT.value, {})
-        if tensorrt_backend and tensorrt_backend.get("enabled", False):
-            return True
+        if self.evaluation_config.enabled:
+            backends_cfg = self.evaluation_config.backends
+            tensorrt_backend = backends_cfg.get(Backend.TENSORRT.value) or backends_cfg.get(Backend.TENSORRT)
+            if tensorrt_backend and tensorrt_backend.get("enabled", False):
+                return True
 
-        verification_cfg = self.verification_config
-
-        for scenario_list in verification_cfg.scenarios.values():
-            for scenario in scenario_list:
-                if Backend.TENSORRT in (scenario.ref_backend, scenario.test_backend):
-                    return True
+        if self.verification_config.enabled:
+            for scenario_list in self.verification_config.scenarios.values():
+                for scenario in scenario_list:
+                    if Backend.TENSORRT in (scenario.ref_backend, scenario.test_backend):
+                        return True
 
         return False
 
@@ -187,8 +181,8 @@ class BaseDeploymentConfig:
         return self._verification_config
 
     @property
-    def devices(self) -> DeviceConfig:
-        """Get normalized device settings."""
+    def device_config(self) -> DeviceConfig:
+        """Get validated device settings."""
         return self._device_config
 
     @property

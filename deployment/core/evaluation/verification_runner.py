@@ -56,8 +56,8 @@ class VerificationHooks(Protocol):
     surface to keep responsibilities cleanly separated.
     """
 
-    def _normalize_verification_device(self, backend: Backend, device: DeviceSpec) -> DeviceSpec:
-        """Enforce backend runtime constraints and return the resolved device."""
+    def _validate_verification_device(self, backend: Backend, device: DeviceSpec) -> DeviceSpec:
+        """Validate backend runtime constraints and return the resolved device."""
         ...
 
     def _ensure_model_on_device(self, device: DeviceSpec) -> Any:
@@ -138,8 +138,8 @@ class VerificationRunner:
         }
 
         try:
-            ref_device = self._hooks._normalize_verification_device(reference.backend, reference.device)
-            test_device = self._hooks._normalize_verification_device(test.backend, test.device)
+            ref_device = self._hooks._validate_verification_device(reference.backend, reference.device)
+            test_device = self._hooks._validate_verification_device(test.backend, test.device)
         except ValueError as exc:
             results["error"] = str(exc)
             return results

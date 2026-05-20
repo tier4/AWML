@@ -180,10 +180,10 @@ class EvaluationOrchestrator:
             Default device string
         """
         if backend is Backend.TENSORRT:
-            if self.config.devices.cuda is None:
+            if self.config.device_config.cuda is None:
                 raise RuntimeError("TensorRT backend requires a configured CUDA device.")
-            return self.config.devices.cuda
-        return self.config.devices.cpu
+            return self.config.device_config.cuda
+        return self.config.device_config.cpu
 
     def _print_cross_backend_comparison(self, all_results: Mapping[str, Any]) -> None:
         """

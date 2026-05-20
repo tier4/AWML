@@ -324,7 +324,7 @@ class ExportOrchestrator:
         tensorrt_dir = Path(self.config.export_config.work_dir) / self.TENSORRT_DIR_NAME
         tensorrt_dir.mkdir(parents=True, exist_ok=True)
 
-        cuda_device = self.config.devices.cuda
+        cuda_device = self.config.device_config.cuda
         if cuda_device is None:
             raise RuntimeError("TensorRT export requires a CUDA device. Set deploy_cfg.devices['cuda'].")
         device_id = cuda_device.index

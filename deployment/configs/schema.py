@@ -1,7 +1,5 @@
 """
-Typed schema for deployment config: frozen dataclasses, validation, normalize.
-
-No torch runtime checks.
+Typed schema for deployment config.
 """
 
 from __future__ import annotations
@@ -24,16 +22,6 @@ from deployment.exporters.common.configs import TensorRTProfileConfig
 def _empty_mapping() -> Mapping[Any, Any]:
     """Return an immutable empty mapping."""
     return MappingProxyType({})
-
-
-def _normalize_dynamic_axes(raw: Mapping[str, Any]) -> Dict[str, Dict[int, str]]:
-    """Normalize dynamic_axes inner dict keys to int."""
-    result: Dict[str, Dict[int, str]] = {}
-    for name, axes in (raw or {}).items():
-        if not isinstance(axes, Mapping):
-            raise TypeError(f"dynamic_axes['{name}'] must be a dict-like mapping, got {type(axes).__name__}")
-        result[name] = {int(k): str(v) for k, v in axes.items()}
-    return result
 
 
 # -----------------------------------------------------------------------------
@@ -71,14 +59,14 @@ class ExportConfig:
 
 @dataclass(frozen=True)
 class DeviceConfig:
-    """Normalized device settings shared across deployment stages."""
+    """Parsed device settings shared across deployment stages."""
 
     cpu: DeviceSpec = field(default_factory=lambda: DeviceSpec.from_value("cpu"))
     cuda: Optional[DeviceSpec] = field(default_factory=lambda: DeviceSpec.from_value("cuda:0"))
 
     def __post_init__(self) -> None:
-        object.__setattr__(self, "cpu", self._normalize_cpu(self.cpu))
-        object.__setattr__(self, "cuda", self._normalize_cuda(self.cuda))
+        object.__setattr__(self, "cpu", self._parse_cpu_device(self.cpu))
+        object.__setattr__(self, "cuda", self._parse_cuda_device(self.cuda))
 
     @classmethod
     def from_dict(cls, config_dict: Mapping[str, Any]) -> DeviceConfig:
@@ -86,22 +74,22 @@ class DeviceConfig:
         return cls(cpu=config_dict.get("cpu", "cpu"), cuda=config_dict.get("cuda", "cuda:0"))
 
     @staticmethod
-    def _normalize_cpu(device: Any) -> DeviceSpec:
-        """Normalize CPU device."""
-        normalized = DeviceSpec.from_value(device if device is not None else "cpu")
-        if normalized.is_cuda:
+    def _parse_cpu_device(device: Any) -> DeviceSpec:
+        """Parse CPU device input into DeviceSpec."""
+        device_spec = DeviceSpec.from_value(device if device is not None else "cpu")
+        if device_spec.is_cuda:
             raise ValueError("CPU device cannot be a CUDA device")
-        return normalized
+        return device_spec
 
     @staticmethod
-    def _normalize_cuda(device: Any) -> Optional[DeviceSpec]:
-        """Normalize CUDA device to DeviceSpec."""
+    def _parse_cuda_device(device: Any) -> Optional[DeviceSpec]:
+        """Parse CUDA device input into DeviceSpec."""
         if device is None:
             return None
-        normalized = DeviceSpec.from_value(device)
-        if not normalized.is_cuda:
+        device_spec = DeviceSpec.from_value(device)
+        if not device_spec.is_cuda:
             raise ValueError(f"Invalid CUDA device '{device}'.")
-        return normalized
+        return device_spec
 
     @property
     def cuda_device_index(self) -> Optional[int]:
@@ -266,6 +254,31 @@ class ComponentsConfig:
         """Iterate (name, ComponentCfg) pairs."""
         return self._components.items()
 
+    @staticmethod
+    def _validate_dynamic_axes(raw: Any) -> Dict[str, Dict[int, str]]:
+        """Validate dynamic_axes schema without coercing types."""
+
+        def _require_type(value: Any, expected: type, message: str) -> None:
+            if not isinstance(value, expected):
+                raise TypeError(f"{message}, got {type(value).__name__}")
+
+        if raw is None:
+            return {}
+        _require_type(raw, Mapping, "dynamic_axes must be a dict-like mapping")
+
+        result: Dict[str, Dict[int, str]] = {}
+        for name, axes in raw.items():
+            _require_type(name, str, "dynamic_axes key must be str")
+            _require_type(axes, Mapping, f"dynamic_axes['{name}'] must be a dict-like mapping")
+
+            typed_axes: Dict[int, str] = {}
+            for axis_idx, axis_name in axes.items():
+                _require_type(axis_idx, int, f"dynamic_axes['{name}'] axis index must be int")
+                _require_type(axis_name, str, f"dynamic_axes['{name}'][{axis_idx}] axis name must be str")
+                typed_axes[axis_idx] = axis_name
+            result[name] = typed_axes
+        return result
+
     @classmethod
     def from_dict(cls, raw: Mapping[str, Any]) -> ComponentsConfig:
         """Build ComponentsConfig from deploy_cfg['components'] dict. Generic: any keys allowed."""
@@ -311,7 +324,7 @@ class ComponentsConfig:
             if not n or not isinstance(n, str):
                 raise ValueError(f"components['{component_name}'].io.inputs[{i}].name must be a non-empty string.")
             inputs.append(InputSpec(name=n, dtype=inp.get("dtype", "float32")))
-        dynamic_axes = _normalize_dynamic_axes(io_raw.get("dynamic_axes") or {})
+        dynamic_axes = cls._validate_dynamic_axes(io_raw.get("dynamic_axes") or {})
         io = ComponentIO(
             inputs=inputs,
             outputs=outputs,
