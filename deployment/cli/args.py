@@ -9,7 +9,6 @@ from __future__ import annotations
 import argparse
 import logging
 from pathlib import Path
-from typing import Optional
 
 _LOG_FORMAT = "%(levelname)s:%(name)s:%(message)s"
 
@@ -57,24 +56,16 @@ def add_deployment_file_logging(log_file_path: str) -> None:
     root.addHandler(fh)
 
 
-def parse_base_args(
-    parser: Optional[argparse.ArgumentParser] = None,
-) -> argparse.ArgumentParser:
+def parse_base_args(parser: argparse.ArgumentParser) -> argparse.ArgumentParser:
     """
     Create argument parser with common deployment arguments.
 
     Args:
-        parser: Optional existing ArgumentParser to add arguments to
+        parser: Existing ArgumentParser to add arguments to
 
     Returns:
         ArgumentParser with deployment arguments
     """
-    if parser is None:
-        parser = argparse.ArgumentParser(
-            description="Deploy model to ONNX/TensorRT",
-            formatter_class=argparse.ArgumentDefaultsHelpFormatter,
-        )
-
     parser.add_argument("deploy_cfg", help="Deploy config path")
     parser.add_argument("model_cfg", help="Model config path")
     # Optional overrides

@@ -12,17 +12,17 @@ import importlib
 import pkgutil
 import sys
 import traceback
-from typing import List
+from typing import Sequence
 
 import deployment.projects as projects_pkg
 from deployment.cli.args import parse_base_args
 from deployment.projects.registry import project_registry
 
 
-def _discover_project_packages() -> List[str]:
+def _discover_project_packages() -> Sequence[str]:
     """Discover project package names under deployment.projects (without importing them)."""
 
-    names: List[str] = []
+    names: list[str] = []
     for mod in pkgutil.iter_modules(projects_pkg.__path__):
         if not mod.ispkg:
             continue
@@ -52,7 +52,7 @@ def build_parser() -> argparse.ArgumentParser:
     subparsers = parser.add_subparsers(dest="project", required=True)
 
     # Discover projects and import them so they can contribute args.
-    failed_projects: List[str] = []
+    failed_projects: list[str] = []
     for project_name in _discover_project_packages():
         try:
             _import_and_register_project(project_name)
@@ -80,16 +80,15 @@ def build_parser() -> argparse.ArgumentParser:
     return parser
 
 
-def main(argv: List[str] | None = None) -> int:
+def main(argv: Sequence[str]) -> int:
     """CLI entrypoint.
 
     Args:
-        argv: Optional argv list (without program name). If None, uses `sys.argv[1:]`.
+        argv: Argv list (without program name).
 
     Returns:
         Process exit code (0 for success).
     """
-    argv = sys.argv[1:] if argv is None else argv
     parser = build_parser()
     args = parser.parse_args(argv)
 
@@ -98,4 +97,4 @@ def main(argv: List[str] | None = None) -> int:
 
 
 if __name__ == "__main__":
-    raise SystemExit(main())
+    raise SystemExit(main(sys.argv[1:]))
