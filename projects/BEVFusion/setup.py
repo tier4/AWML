@@ -58,8 +58,8 @@ if __name__ == "__main__":
                 name="bev_pool_v2_ext",
                 module="projects.BEVFusion.bevfusion.ops.bev_pool_v2",
                 sources=[
-                    "src/bev_pool_v2.cpp",
-                    "src/bev_pool_v2_cuda.cu",
+                    "src/bev_pool.cpp",
+                    "src/bev_pool_cuda.cu",
                 ],
             ),
             make_cuda_ext(
