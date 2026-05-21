@@ -1,4 +1,4 @@
-from typing import Tuple
+from typing import Optional, Tuple
 
 import torch
 from mmdet3d.registry import MODELS
@@ -61,9 +61,9 @@ class BaseViewTransformV2(BaseViewTransform):
         geom_feats_precomputed,
     ):
         if geom_feats_precomputed is not None:
-            geom_feats, kept, ranks, indices = geom_feats_precomputed
+            ranks_bev, ranks_depth, ranks_feat = geom_feats_precomputed
             x, depth_softmax = self.get_cam_feats(img)
-            x = self.bev_pool_precomputed(x, depth_softmax, geom_feats, kept, ranks, indices)
+            x = self.bev_pool_precomputed(x, depth_softmax, ranks_bev, ranks_depth, ranks_feat)
 
         else:
             intrins = camera_intrinsics[..., :3, :3]
@@ -126,7 +126,7 @@ class BaseViewTransformV2(BaseViewTransform):
         )
 
         if len(kept) == 0:
-            return None, None, None, None
+            return None, None, None
 
         geom_feats, ranks_depth, ranks_feat = geom_feats[kept], ranks_depth[kept], ranks_feat[kept]
 
@@ -141,25 +141,21 @@ class BaseViewTransformV2(BaseViewTransform):
         indices = ranks_bev.argsort()
         ranks_bev, ranks_depth, ranks_feat = ranks_bev[indices], ranks_depth[indices], ranks_feat[indices]
 
-        intervals = self.compute_intervals(ranks_bev)
-        if intervals is None:
-            return None, None, None, None, None
-
-        interval_starts, interval_lengths = intervals
         return (
             ranks_bev.int().contiguous(),
             ranks_depth.int().contiguous(),
             ranks_feat.int().contiguous(),
-            interval_starts.int().contiguous(),
-            interval_lengths.int().contiguous(),
         )
 
-    def compute_intervals(self, ranks_bev: torch.Tensor) -> Tuple[torch.Tensor, torch.Tensor]:
+    def compute_intervals(self, ranks_bev: Optional[torch.Tensor]) -> Tuple[torch.Tensor, torch.Tensor]:
+        if ranks_bev is None:
+            return None, None
+
         kept = torch.ones(ranks_bev.shape[0], device=ranks_bev.device, dtype=torch.bool)
         kept[1:] = ranks_bev[1:] != ranks_bev[:-1]
         interval_starts = torch.where(kept)[0].int()
         if len(interval_starts) == 0:
-            return None
+            return None, None
 
         interval_lengths = torch.zeros_like(interval_starts)
         interval_lengths[:-1] = interval_starts[1:] - interval_starts[:-1]
@@ -168,18 +164,28 @@ class BaseViewTransformV2(BaseViewTransform):
 
     def bev_pool(self, view_feats, depth_softmax, geom) -> torch.Tensor:
         """ """
-        ranks_bev, ranks_depth, ranks_feat, interval_starts, interval_lengths = self.bev_pool_aux(geom)
-        if self.expand_batch_axis:
-            view_feats = view_feats.unsqueeze(0)
-            depth_softmax = depth_softmax.unsqueeze(0)
+        ranks_bev, ranks_depth, ranks_feat = self.bev_pool_aux(geom)
+        interval_starts, interval_lengths = self.compute_intervals(ranks_bev)
+        bev_feat = self.compute_bev_pool(
+            view_feats, depth_softmax, ranks_bev, ranks_depth, ranks_feat, interval_starts, interval_lengths
+        )
+        return bev_feat
 
-        if ranks_feat is None:
+    def compute_bev_pool(
+        self, view_feats, depth_softmax, ranks_bev, ranks_depth, ranks_feat, interval_starts, interval_lengths
+    ):
+        """Compute the BEV pool for the given view features, depth softmax, ranks, and intervals."""
+        if interval_starts is None:
             print_log("warning ---> no points within the predefined bev receptive field")
             dummy = torch.zeros(
                 size=[view_feats.shape[0], view_feats.shape[2], int(self.nx[2]), int(self.nx[1]), int(self.nx[0])]
             ).to(view_feats)
             dummy = torch.cat(dummy.unbind(dim=2), 1)
             return dummy
+
+        if self.expand_batch_axis:
+            view_feats = view_feats.unsqueeze(0)
+            depth_softmax = depth_softmax.unsqueeze(0)
 
         # permute view_feats from (B, N, C, fH, fW) to (B, N, fH, fW, C)
         view_feats = view_feats.permute(0, 1, 3, 4, 2)
@@ -207,6 +213,13 @@ class BaseViewTransformV2(BaseViewTransform):
         if self.collapse_z:
             bev_feat = torch.cat(bev_feat.unbind(dim=2), 1)
 
+        return bev_feat
+
+    def bev_pool_precomputed(self, view_feats, depth_softmax, ranks_bev, ranks_depth, ranks_feat):
+        interval_starts, interval_lengths = self.compute_intervals(ranks_bev)
+        bev_feat = self.compute_bev_pool(
+            view_feats, depth_softmax, ranks_bev, ranks_depth, ranks_feat, interval_starts, interval_lengths
+        )
         return bev_feat
 
 
