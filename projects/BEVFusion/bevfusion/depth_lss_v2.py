@@ -212,7 +212,6 @@ class BaseViewTransformV2(BaseViewTransform):
         # collapse Z
         if self.collapse_z:
             bev_feat = torch.cat(bev_feat.unbind(dim=2), 1)
-
         return bev_feat
 
     def bev_pool_precomputed(self, view_feats, depth_softmax, ranks_bev, ranks_depth, ranks_feat):
@@ -261,3 +260,8 @@ class LSSTransformV2(BaseViewTransformV2):
         view_feats = x[:, self.D : (self.D + self.C)]
         view_feats = view_feats.view(B, N, self.C, fH, fW)
         return view_feats, depth_softmax
+    
+    def forward(self, *args, **kwargs):
+        x = super().forward(*args, **kwargs)
+        x = self.downsample(x)
+        return x

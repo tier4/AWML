@@ -1,6 +1,7 @@
 _base_ = [
     "./camera_resnet50_fpn_depthlss_120m.py",
 ]
+num_proposals = 200 
 
 # Image network
 model = dict(
@@ -13,6 +14,8 @@ model = dict(
         downsample=2,
     ),
     bbox_head=dict(
+        in_channels=80,
+        num_proposals=num_proposals,
         bbox_coder=dict(
             post_center_range=[-61.2, -61.2, -10.0, 61.2, 61.2, 10.0],
         ),
