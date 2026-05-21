@@ -8,6 +8,10 @@
   - **Grid Size:** [1020, 1020, 1]
   - **With Intensity**
 
+### Evaluation Environment
+
+> Please note that CenterPoint J6Gen2_Base/2.6.1_quant was evaluated on TensorRT using a mid-range NVIDIA Ada-generation GPU, while CenterPoint J6Gen2_Base/2.6.1 and CenterPoint J6Gen2_Base/2.5.1 were evaluated in PyTorch.
+
 ### Testing Datasets
 
 - **Total Frames: 5,179**
