@@ -4,6 +4,10 @@ import logging
 import os
 import os.path as osp
 
+# Configs may set randomness.deterministic=True; matmul then needs a fixed cuBLAS
+# workspace for reproducibility (before torch is imported via mmdet3d / mmengine).
+os.environ.setdefault("CUBLAS_WORKSPACE_CONFIG", ":4096:8")
+
 from mmdet3d.utils import replace_ceph_backend
 from mmengine.config import Config, DictAction
 from mmengine.logging import print_log

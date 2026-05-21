@@ -4,6 +4,8 @@ import os
 import os.path as osp
 import time
 
+os.environ.setdefault("CUBLAS_WORKSPACE_CONFIG", ":4096:8")
+
 from mmdet3d.utils import replace_ceph_backend
 from mmengine.config import Config, ConfigDict, DictAction
 from mmengine.logging import print_log
