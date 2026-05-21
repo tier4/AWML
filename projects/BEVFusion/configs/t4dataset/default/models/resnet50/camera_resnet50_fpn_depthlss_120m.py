@@ -19,8 +19,7 @@ model = dict(
         rgb_to_bgr=False,
     ),
     img_backbone=dict(
-        pretrained="torchvision://resnet50",
-        type="ResNet",
+        type="mmdet.ResNet",
         depth=50,
         num_stages=4,
         out_indices=(2, 3),

@@ -1,5 +1,5 @@
 _base_ = [
-    "./default_camera_resnet50_fpn_depthlss_120m.py",
+    "./camera_resnet50_fpn_depthlss_120m.py",
 ]
 
 # Image network

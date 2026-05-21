@@ -223,6 +223,7 @@ class BaseViewTransformV2(BaseViewTransform):
         return bev_feat
 
 
+@MODELS.register_module()
 class LSSTransformV2(BaseViewTransformV2):
 
     def __init__(
@@ -248,7 +249,7 @@ class LSSTransformV2(BaseViewTransformV2):
             dbound=dbound,
         )
         self.depthnet = nn.Conv2d(self.in_channels, self.D + self.C, 1)
-        self.downsample = DownSampleNet(downsample, self.out_channels, self.out_channels)
+        self.downsample = DownSampleNet(downsample, out_channels, out_channels)
 
     def get_cam_feats(self, x):
         B, N, C, fH, fW = x.shape

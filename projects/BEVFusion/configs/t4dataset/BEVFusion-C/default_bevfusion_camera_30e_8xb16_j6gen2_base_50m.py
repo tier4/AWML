@@ -11,8 +11,8 @@ custom_imports["imports"] += _base_.custom_imports["imports"]
 custom_imports["imports"] += ["autoware_ml.detection3d.datasets.transforms"]
 
 # user setting
-data_root = "data/t4dataset/"
-info_directory_path = "info/kokseang_2_8_0/"
+data_root = "data/t4datasets/"
+info_directory_path = "info/kokseang_2_8/"
 
 experiment_group_name = "bevfusion_camera/base/" + _base_.dataset_type
 experiment_name = "bevfusion_camera_30e_8xb16_j6gen2_base_50m"
