@@ -9,6 +9,7 @@
 # ------------------------------------------------------------------------
 #  Modified by Shihao Wang
 # ------------------------------------------------------------------------
+import numpy as np
 import torch
 from mmdet3d.models.detectors.mvx_two_stage import MVXTwoStageDetector
 from mmdet3d.registry import MODELS
@@ -327,6 +328,49 @@ class Petr3D(MVXTwoStageDetector):
         bbox_results = [bbox3d2result(bboxes, scores, labels) for bboxes, scores, labels in bbox_list]
         return bbox_results
 
+    @staticmethod
+    def _first_meta_scalar(val):
+        if val is None:
+            return val
+        if isinstance(val, (list, tuple)) and len(val) == 1:
+            return val[0]
+        return val
+
+    def _extras_for_t4metric(self, img_meta: dict, data: dict) -> dict:
+        """Build metainfo keys required by T4Metric (timestamp, lidar_path, eval_ann_info)."""
+        out = {}
+        if "timestamp" in data and data["timestamp"] is not None:
+            t = data["timestamp"]
+            if t.dim() >= 2:
+                t = t[:, 0]
+            if t.numel() >= 1:
+                out["timestamp"] = float(t.reshape(-1)[0].item())
+        path = self._first_meta_scalar(img_meta.get("lidar_path")) or self._first_meta_scalar(img_meta.get("pts_filename"))
+        if path not in (None, ""):
+            out["lidar_path"] = str(path)
+        else:
+            out["lidar_path"] = ""
+        eval_ann = {}
+        g3d = data.get("gt_bboxes_3d")
+        g3l = data.get("gt_labels_3d")
+        if g3d is not None and len(g3d) > 0:
+            eval_ann["gt_bboxes_3d"] = g3d[0]
+        if g3l is not None and len(g3l) > 0:
+            labels = g3l[0]
+            # Val/test may carry CUDA tensors, Tensor subclasses, or list/tuple of tensors.
+            if torch.is_tensor(labels):
+                eval_ann["gt_labels_3d"] = labels.detach().cpu().numpy()
+            elif isinstance(labels, (list, tuple)) and len(labels) > 0 and torch.is_tensor(labels[0]):
+                eval_ann["gt_labels_3d"] = torch.stack(list(labels)).detach().cpu().numpy()
+            else:
+                try:
+                    eval_ann["gt_labels_3d"] = np.asarray(labels)
+                except (TypeError, RuntimeError):
+                    eval_ann["gt_labels_3d"] = torch.as_tensor(labels).detach().cpu().numpy()
+        if eval_ann:
+            out["eval_ann_info"] = eval_ann
+        return out
+
     def simple_test(self, img_metas, **data):
         """Test function without augmentaiton."""
         data["img_feats"] = self.extract_img_feat(data["img"], 1)
@@ -336,19 +380,32 @@ class Petr3D(MVXTwoStageDetector):
             data_t[key] = data[key][:, 0]
         results_3d = self.simple_test_pts(img_metas[0], **data_t)
 
+        t4_extra = self._extras_for_t4metric(img_metas[0], data)
+        metainfo = {}
+        if "timestamp" in t4_extra:
+            metainfo["timestamp"] = t4_extra["timestamp"]
+        if "lidar_path" in t4_extra:
+            metainfo["lidar_path"] = t4_extra["lidar_path"]
+        if "eval_ann_info" in t4_extra:
+            metainfo["eval_ann_info"] = t4_extra["eval_ann_info"]
+
         predictions = []
         for res_3d in results_3d:
             pred_instances_3d = InstanceData()
             pred_instances_3d.bboxes_3d = LiDARInstance3DBoxes(tensor=res_3d["bboxes_3d"], box_dim=9)
             pred_instances_3d.scores_3d = res_3d["scores_3d"]
             pred_instances_3d.labels_3d = res_3d["labels_3d"]
-            predictions.append(
-                Det3DDataSample(
-                    pred_instances_3d=pred_instances_3d,
-                    pred_instances=InstanceData(),
-                    sample_idx=img_metas[0]["sample_idx"][0],
-                )
+            sidx = img_metas[0].get("sample_idx", 0)
+            if isinstance(sidx, (list, tuple)):
+                sidx = sidx[0]
+            pred_kw = dict(
+                pred_instances_3d=pred_instances_3d,
+                pred_instances=InstanceData(),
+                sample_idx=sidx,
             )
+            if metainfo:
+                pred_kw["metainfo"] = metainfo
+            predictions.append(Det3DDataSample(**pred_kw))
 
         return predictions
 

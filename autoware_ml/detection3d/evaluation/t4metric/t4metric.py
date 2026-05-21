@@ -55,6 +55,7 @@ class T4Metric(NuScenesMetric):
         eval_class_range: Dict[str, int] = dict(),
         name_mapping: Optional[dict] = None,
         version: str = "",
+        evaluate_frame_prefix: bool = True,
     ) -> None:
         """
         Args:
@@ -105,6 +106,9 @@ class T4Metric(NuScenesMetric):
                 Defaults to None.
             version (str, optional):
                 The version of the dataset. Defaults to "".
+            evaluate_frame_prefix (bool):
+                Included for API compatibility with ``tools/detection3d/test.py`` when
+                using ``dataset_test_groups``; T4Metric (v1) does not use this flag.
         """
 
         super().__init__(
@@ -124,6 +128,7 @@ class T4Metric(NuScenesMetric):
         self.class_names = class_names
         self.version = version
         self.checkpoint_path = checkpoint_path
+        self.evaluate_frame_prefix = evaluate_frame_prefix
 
         if name_mapping is None:
             self.class_names = [self.name_mapping.get(name, name) for name in self.class_names]
@@ -246,11 +251,15 @@ class T4Metric(NuScenesMetric):
 
         # gt_bboxes_3d: LiDARInstance3DBoxes with tensor of shape (N, 9)
         # Format per box: [x, y, z, l, w, h, yaw, vx, vy]
-        gt_bboxes_3d: LiDARInstance3DBoxes = eval_info.get("gt_bboxes_3d", LiDARInstance3DBoxes([]))
+        gt_bboxes_3d: LiDARInstance3DBoxes = eval_info.get("gt_bboxes_3d") or LiDARInstance3DBoxes([])
+        # Collate / eval_ann may leave length-1 tuple/list wrappers; len(tuple)==1 but inner holds N boxes.
+        gt_bboxes_3d = self._unwrap_bboxes_3d(gt_bboxes_3d)
         # bboxes: np.ndarray = gt_bboxes_3d.tensor.cpu().numpy()
 
         # gt_labels_3d: (N,) array of class indices (e.g., [0, 1, 2, 3, ...])
         gt_labels_3d: np.ndarray = eval_info.get("gt_labels_3d", np.array([]))
+        if gt_labels_3d is None:
+            gt_labels_3d = np.array([])
 
         # num_lidar_pts: (N,) array of int, number of LiDAR points inside each GT box
         num_lidar_pts: np.ndarray = eval_info.get("num_lidar_pts", np.array([]))
@@ -582,6 +591,14 @@ class T4Metric(NuScenesMetric):
 
         return detail
 
+    @staticmethod
+    def _unwrap_bboxes_3d(boxes_3d: Any) -> Any:
+        """Peel length-1 tuple/list wrappers (collate / eval_ann sometimes leaves those)."""
+        b = boxes_3d
+        while isinstance(b, (tuple, list)) and len(b) == 1:
+            b = b[0]
+        return b
+
     def format_results(
         self,
         results: List[dict],
@@ -619,13 +636,16 @@ class T4Metric(NuScenesMetric):
         # pred_instances_3d
         print(f"\nFormating bboxes of {self.pred_instances_3d_key}")
         results_ = [out[self.pred_instances_3d_key] for out in results]
+        results_ = [{**d, "bboxes_3d": self._unwrap_bboxes_3d(d["bboxes_3d"])} for d in results_]
         tmp_file_ = osp.join(jsonfile_prefix, self.pred_instances_3d_key)
-        box_type_3d = type(results_[0]["bboxes_3d"])
-        if box_type_3d == LiDARInstance3DBoxes:
+        boxes_3d = results_[0]["bboxes_3d"]
+        # Use isinstance: MMDet3d often uses subclasses of LiDARInstance3DBoxes;
+        # strict `type(x) == LiDARInstance3DBoxes` skips them and breaks GT export.
+        if isinstance(boxes_3d, LiDARInstance3DBoxes):
             result_dict[self.pred_instances_3d_key] = self._format_lidar_bbox(
                 results_, sample_idx_list, classes, tmp_file_
             )
-        elif box_type_3d == CameraInstance3DBoxes:
+        elif isinstance(boxes_3d, CameraInstance3DBoxes):
             result_dict[self.pred_instances_3d_key] = self._format_camera_bbox(
                 results_, sample_idx_list, classes, tmp_file_
             )
@@ -633,14 +653,18 @@ class T4Metric(NuScenesMetric):
         # gt
         print(f"\nFormating gt bboxes of {self.gt_instances_3d_key}")
         results_ = [out[self.gt_instances_3d_key] for out in results]
+        results_ = [{**d, "bboxes_3d": self._unwrap_bboxes_3d(d["bboxes_3d"])} for d in results_]
         tmp_file_ = osp.join(jsonfile_prefix, self.gt_instances_3d_key)
-        box_type_3d = type(results_[0]["bboxes_3d"])
-        if box_type_3d == LiDARInstance3DBoxes:
+        boxes_3d = results_[0]["bboxes_3d"]
+        if isinstance(boxes_3d, LiDARInstance3DBoxes):
             result_dict[self.gt_instances_3d_key] = self._format_gt_lidar_bbox(
                 results_, sample_idx_list, classes, tmp_file_
             )
         else:
-            raise NotImplementedError
+            raise NotImplementedError(
+                f"Unsupported gt bboxes_3d type {type(boxes_3d)}; "
+                "expected LiDARInstance3DBoxes (including subclasses)."
+            )
 
         return result_dict, tmp_dir
 
@@ -877,10 +901,27 @@ def output_to_nusc_box(detection: dict) -> Tuple[List[NuScenesBox], Union[np.nda
     scores = detection["scores_3d"]
     if isinstance(scores, torch.Tensor):
         scores = scores.numpy()
+    scores = np.asarray(scores, dtype=np.float64).reshape(-1)
 
     labels = detection["labels_3d"]
     if isinstance(labels, torch.Tensor):
         labels = labels.numpy()
+    labels = np.asarray(labels).reshape(-1)
+
+    n_boxes = len(bbox3d)
+    if scores.size != n_boxes:
+        if scores.size == 1 and n_boxes > 1:
+            scores = np.full(n_boxes, float(scores[0]), dtype=np.float64)
+        elif scores.size == 0 and n_boxes > 0:
+            scores = np.ones(n_boxes, dtype=np.float64)
+        else:
+            raise ValueError(
+                f"scores_3d length {scores.size} does not match bboxes_3d length {n_boxes}."
+            )
+    if labels.size != n_boxes:
+        raise ValueError(
+            f"labels_3d length {labels.size} does not match bboxes_3d length {n_boxes}."
+        )
 
     attrs = None
     if "attr_labels" in detection:
@@ -898,16 +939,15 @@ def output_to_nusc_box(detection: dict) -> Tuple[List[NuScenesBox], Union[np.nda
         for i in range(len(bbox3d)):
             quat = pyquaternion.Quaternion(axis=[0, 0, 1], radians=box_yaw[i])
             velocity = (*bbox3d.tensor[i, 7:9], 0.0)
-            # velo_val = np.linalg.norm(box3d[i, 7:9])
-            # velo_ori = box3d[i, 6]
-            # velocity = (
-            # velo_val * np.cos(velo_ori), velo_val * np.sin(velo_ori), 0.0)
+            # NuScenesBox uses np.isnan(label); labels[i] must be a Python scalar.
+            lab_i = int(np.asarray(labels[i]).reshape(-1)[0])
+            scr_i = float(np.asarray(scores[i]).reshape(-1)[0])
             box = NuScenesBox(
                 box_gravity_center[i],
                 nus_box_dims[i],
                 quat,
-                label=labels[i],
-                score=scores[i],
+                label=lab_i,
+                score=scr_i,
                 velocity=velocity,
             )
             box_list.append(box)
@@ -921,12 +961,14 @@ def output_to_nusc_box(detection: dict) -> Tuple[List[NuScenesBox], Union[np.nda
             q2 = pyquaternion.Quaternion(axis=[1, 0, 0], radians=np.pi / 2)
             quat = q2 * q1
             velocity = (bbox3d.tensor[i, 7], 0.0, bbox3d.tensor[i, 8])
+            lab_i = int(np.asarray(labels[i]).reshape(-1)[0])
+            scr_i = float(np.asarray(scores[i]).reshape(-1)[0])
             box = NuScenesBox(
                 box_gravity_center[i],
                 nus_box_dims[i],
                 quat,
-                label=labels[i],
-                score=scores[i],
+                label=lab_i,
+                score=scr_i,
                 velocity=velocity,
             )
             box_list.append(box)

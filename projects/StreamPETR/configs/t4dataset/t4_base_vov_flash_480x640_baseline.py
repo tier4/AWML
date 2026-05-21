@@ -3,8 +3,10 @@ _base_ = [
     "../default/vov_flash_480x640_baseline.py",
 ]
 
-info_directory_path = "info/username/"
-data_root = "data/t4dataset/"
+# info_directory_path = "info/username/"
+# data_root = "data/t4dataset/"
+info_directory_path = "info/cameraonly/baseline/"
+data_root = "data/"
 
 batch_size = 8
 num_workers = 16
