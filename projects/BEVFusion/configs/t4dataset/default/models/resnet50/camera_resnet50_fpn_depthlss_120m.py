@@ -54,4 +54,7 @@ model = dict(
         dbound=[1.0, 130, 1.0],
         downsample=2,
     ),
+    bbox_head=dict(
+        in_channels=80,
+    )
 )

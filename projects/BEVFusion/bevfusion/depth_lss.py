@@ -164,6 +164,7 @@ class BaseViewTransform(nn.Module):
         ybound: Tuple[float, float, float],
         zbound: Tuple[float, float, float],
         dbound: Tuple[float, float, float],
+        visualize_bev_feat: bool = False,
     ) -> None:
         super().__init__()
         self.in_channels = in_channels
@@ -183,6 +184,7 @@ class BaseViewTransform(nn.Module):
         self.frustum = self.create_frustum()
         self.D = self.frustum.shape[0]
         self.fp16_enabled = False
+        self.visualize_bev_feat = visualize_bev_feat
 
     def create_frustum(self):
         iH, iW = self.image_size
@@ -319,7 +321,42 @@ class BaseViewTransform(nn.Module):
 
         # collapse Z
         final = torch.cat(x.unbind(dim=2), 1)
+        if self.visualize_bev_feat:
+            self.visualize_bev_feat(final)
+        
         return final
+
+    def visualize_bev_feat(self, bev_feat):
+        """Visualize the BEV feat for the given batch index."""
+        batch_idx = 0
+        # save first 10 raw channel maps for one batch sample (B, C, Y, X) 
+        num_channels = 10
+        feat = bev_feat[batch_idx].detach().float().cpu().numpy()
+        channel_indices = np.arange(min(num_channels, feat.shape[0]))
+        ncols = min(5, len(channel_indices))
+        nrows = math.ceil(len(channel_indices) / ncols)
+        fig, axes = plt.subplots(nrows, ncols, figsize=(3 * ncols, 3 * nrows), squeeze=False)
+        for ax, ch_idx in zip(axes.ravel(), channel_indices):
+            ch_map = feat[ch_idx]
+            im = ax.imshow(ch_map, cmap="viridis", origin="lower", aspect="equal")
+            ax.set_title(f"ch {ch_idx}", fontsize=9)
+            ax.set_xlabel("X")
+            ax.set_ylabel("Y")
+            fig.colorbar(im, ax=ax, fraction=0.046, pad=0.04)
+        for ax in axes.ravel()[len(channel_indices) :]:
+            ax.axis("off")
+        fig.suptitle(f"bev_feat channels 0-{len(channel_indices) - 1} (batch={batch_idx})")
+        fig.tight_layout()
+
+        save_dir = Path("work_dirs/bev_feat_vis")
+        save_dir.mkdir(parents=True, exist_ok=True)
+        if not hasattr(self, "_bev_feat_vis_count"):
+            self._bev_feat_vis_count = 0
+        self._bev_feat_vis_count += 1
+        save_path = save_dir / f"bev_feat_batch{batch_idx}_{self._bev_feat_vis_count:06d}.png"
+        fig.savefig(save_path, dpi=150, bbox_inches="tight")
+        plt.close(fig)
+        print_log(f"Saved BEV feat visualization to {save_path.resolve()}")
 
     def forward(
         self,

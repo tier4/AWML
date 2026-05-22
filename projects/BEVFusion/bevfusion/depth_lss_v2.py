@@ -1,5 +1,9 @@
+import math
+from pathlib import Path
 from typing import Optional, Tuple
 
+import matplotlib.pyplot as plt
+import numpy as np
 import torch
 from mmdet3d.registry import MODELS
 from mmengine.logging import print_log
@@ -23,6 +27,7 @@ class BaseViewTransformV2(BaseViewTransform):
         dbound: Tuple[float, float, float],
         collapse_z: bool = True,
         expand_batch_axis: bool = False,
+        visualize_bev_feat: bool = False,
     ):
         """
         Args:
@@ -38,6 +43,7 @@ class BaseViewTransformV2(BaseViewTransform):
             ybound=ybound,
             zbound=zbound,
             dbound=dbound,
+            visualize_bev_feat=visualize_bev_feat,
         )
         self.collapse_z = collapse_z
         self.expand_batch_axis = expand_batch_axis
@@ -130,13 +136,12 @@ class BaseViewTransformV2(BaseViewTransform):
 
         geom_feats, ranks_depth, ranks_feat = geom_feats[kept], ranks_depth[kept], ranks_feat[kept]
 
-        # nx is the total number of voxels/cells in the BEV grid
-        # nx[0] is x, nx[1] is y, nx[2] is z
+        # nx[0]=x, nx[1]=y, nx[2]=z; flat index for out shape (B, Z, Y, X, C)
         ranks_bev = (
-            geom_feats[:, 0] * (self.nx[1] * self.nx[2] * B)
-            + geom_feats[:, 1] * (self.nx[2] * B)
-            + geom_feats[:, 2] * B
-            + geom_feats[:, 3]
+            geom_feats[:, 3] * (self.nx[2] * self.nx[1] * self.nx[0])
+            + geom_feats[:, 2] * (self.nx[1] * self.nx[0])
+            + geom_feats[:, 1] * (self.nx[0])
+            + geom_feats[:, 0]
         )
         indices = ranks_bev.argsort()
         ranks_bev, ranks_depth, ranks_feat = ranks_bev[indices], ranks_depth[indices], ranks_feat[indices]
@@ -212,8 +217,12 @@ class BaseViewTransformV2(BaseViewTransform):
         # collapse Z
         if self.collapse_z:
             bev_feat = torch.cat(bev_feat.unbind(dim=2), 1)
-        return bev_feat
 
+        if self.visualize_bev_feat:
+            self.visualize_bev_feat(bev_feat)
+
+        return bev_feat
+     
     def bev_pool_precomputed(self, view_feats, depth_softmax, ranks_bev, ranks_depth, ranks_feat):
         interval_starts, interval_lengths = self.compute_intervals(ranks_bev)
         bev_feat = self.compute_bev_pool(

@@ -155,9 +155,17 @@ def bev_pool_v2(
         )
     else:
         # BEV Shape is (B, Z, Y, X, C)
-        out_height, out_width = bev_feat_shape[2], bev_feat_shape[2]
+        out_height, out_width = bev_feat_shape[2], bev_feat_shape[3]
         x = QuickCumsumV2Cuda.apply(
-            depth, feat, ranks_depth, ranks_feat, ranks_bev, out_height, out_width, interval_starts, interval_lengths
+            depth,
+            feat,
+            ranks_depth,
+            ranks_feat,
+            ranks_bev,
+            interval_starts,
+            interval_lengths,
+            out_height,
+            out_width,
         )
 
     # Final shape: (B, C, Z, Y, X)
