@@ -148,27 +148,13 @@ class QuickCumsumV2Cuda(torch.autograd.Function):
 def bev_pool_v2(
     depth, feat, ranks_depth, ranks_feat, ranks_bev, interval_starts, interval_lengths, bev_feat_shape, is_training
 ):
+    # Always use full (B, Z, H, W, C) buffer; QuickCumsumV2Cuda (Z=1) is ONNX-only.
+    del is_training
+    x = QuickCumsumV2TrainingCuda.apply(
+        depth, feat, ranks_depth, ranks_feat, ranks_bev, bev_feat_shape, interval_starts, interval_lengths
+    )
 
-    if is_training:
-        x = QuickCumsumV2TrainingCuda.apply(
-            depth, feat, ranks_depth, ranks_feat, ranks_bev, bev_feat_shape, interval_starts, interval_lengths
-        )
-    else:
-        # BEV Shape is (B, Z, Y, X, C)
-        out_height, out_width = bev_feat_shape[2], bev_feat_shape[3]
-        x = QuickCumsumV2Cuda.apply(
-            depth,
-            feat,
-            ranks_depth,
-            ranks_feat,
-            ranks_bev,
-            interval_starts,
-            interval_lengths,
-            out_height,
-            out_width,
-        )
-
-    # Final shape: (B, C, Z, Y, X)
+    # Final shape: (B, C, Z, H, W) — matches LSSTransform v1 after permute
     x = x.permute(0, 4, 1, 2, 3).contiguous()
     return x
 

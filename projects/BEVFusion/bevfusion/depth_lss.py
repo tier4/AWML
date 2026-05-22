@@ -1,8 +1,13 @@
 # modify from https://github.com/mit-han-lab/bevfusion
+import math
+from pathlib import Path
 from typing import Tuple
 
+import matplotlib.pyplot as plt
+import numpy as np
 import torch
 from mmdet3d.registry import MODELS
+from mmengine.logging import print_log
 from torch import nn
 
 from .ops import bev_pool
@@ -322,16 +327,28 @@ class BaseViewTransform(nn.Module):
         # collapse Z
         final = torch.cat(x.unbind(dim=2), 1)
         if self.visualize_bev_feat:
-            self.visualize_bev_feat(final)
+            self.plot_bev_feat(final)
         
         return final
 
-    def visualize_bev_feat(self, bev_feat):
+    def plot_bev_feat(self, bev_feat):
         """Visualize the BEV feat for the given batch index."""
+        try:
+            import torch.distributed as dist
+
+            if dist.is_available() and dist.is_initialized() and dist.get_rank() != 0:
+                return
+        except ImportError:
+            pass
+
         batch_idx = 0
-        # save first 10 raw channel maps for one batch sample (B, C, Y, X) 
+        if bev_feat.shape[0] <= batch_idx:
+            return
+
+        # save first 10 raw channel maps for one batch sample (B, C, Y, X)
         num_channels = 10
-        feat = bev_feat[batch_idx].detach().float().cpu().numpy()
+        with torch.no_grad():
+            feat = bev_feat[batch_idx].detach().float().cpu().numpy()
         channel_indices = np.arange(min(num_channels, feat.shape[0]))
         ncols = min(5, len(channel_indices))
         nrows = math.ceil(len(channel_indices) / ncols)
@@ -348,7 +365,7 @@ class BaseViewTransform(nn.Module):
         fig.suptitle(f"bev_feat channels 0-{len(channel_indices) - 1} (batch={batch_idx})")
         fig.tight_layout()
 
-        save_dir = Path("work_dirs/bev_feat_vis")
+        save_dir = Path("work_dirs/bev_feat_vis_2")
         save_dir.mkdir(parents=True, exist_ok=True)
         if not hasattr(self, "_bev_feat_vis_count"):
             self._bev_feat_vis_count = 0

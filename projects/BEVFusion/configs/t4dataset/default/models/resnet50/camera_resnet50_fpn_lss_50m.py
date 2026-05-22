@@ -6,7 +6,7 @@ num_proposals = 200
 # Image network
 model = dict(
     view_transform=dict(
-        type="LSSTransform",
+        type="LSSTransformV2",
         xbound=[-54.0, 54.0, 0.3],
         ybound=[-54.0, 54.0, 0.3],
         zbound=[-10.0, 10.0, 20.0],
