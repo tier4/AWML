@@ -27,7 +27,7 @@ class BaseViewTransformV2(BaseViewTransform):
         dbound: Tuple[float, float, float],
         collapse_z: bool = True,
         expand_batch_axis: bool = False,
-        visualize_bev_feat: bool = True,
+        visualize_bev_feat: bool = False,
     ):
         """
         Args:
@@ -104,13 +104,12 @@ class BaseViewTransformV2(BaseViewTransform):
 
     def bev_pool_aux(self, geom_feats):
         B, N, D, H, W, C = geom_feats.shape
-        print("geom_feats:", geom_feats.shape)
         Nprime = B * N * D * H * W
         assert C == 3
 
         # record the index of selected points for acceleration purpose
-        ranks_depth = torch.range(0, Nprime - 1, dtype=torch.int, device=geom_feats.device)
-        ranks_feat = torch.range(0, Nprime // D - 1, dtype=torch.int, device=geom_feats.device)
+        ranks_depth = torch.arange(0, Nprime, dtype=torch.int, device=geom_feats.device)
+        ranks_feat = torch.arange(0, Nprime // D, dtype=torch.int, device=geom_feats.device)
         ranks_feat = ranks_feat.reshape(B, N, 1, H, W)
         ranks_feat = ranks_feat.expand(B, N, D, H, W).flatten()
 
@@ -137,24 +136,20 @@ class BaseViewTransformV2(BaseViewTransform):
 
         geom_feats, ranks_depth, ranks_feat = geom_feats[kept], ranks_depth[kept], ranks_feat[kept]
 
-        # nx[0]=x, nx[1]=y, nx[2]=z; flat index for out shape (B, Z, Y, X, C)
-        print("ranks_depth, ranks_feat, geom_feats:", ranks_depth.shape, ranks_feat.shape, geom_feats.shape)
+        ranks_bev = (
+            geom_feats[:, 3] * (self.nx[2] * self.nx[1] * self.nx[0])
+            + geom_feats[:, 2] * (self.nx[1] * self.nx[0])
+            + geom_feats[:, 0] * self.nx[1]
+            + geom_feats[:, 1]
+        )
         # ranks_bev = (
         #     geom_feats[:, 3] * (self.nx[2] * self.nx[1] * self.nx[0])
         #     + geom_feats[:, 2] * (self.nx[1] * self.nx[0])
-        #     + geom_feats[:, 1] * (self.nx[0])
+        #     + geom_feats[:, 1] * self.nx[0]
         #     + geom_feats[:, 0]
         # )
-        ranks_bev = (
-            geom_feats[:, 0] * (self.nx[2] * self.nx[1] * B)
-            + geom_feats[:, 1] * (self.nx[2] * B)
-            + geom_feats[:, 2] * (B)
-            + geom_feats[:, 3]
-        )
         indices = ranks_bev.argsort()
-        print("indices:", indices[:10])
         ranks_bev, ranks_depth, ranks_feat = ranks_bev[indices], ranks_depth[indices], ranks_feat[indices]
-        print("ranks_bev, ranks_depth, ranks_feat:", ranks_bev.shape, ranks_depth.shape, ranks_feat.shape)
         return (
             ranks_bev.int().contiguous(),
             ranks_depth.int().contiguous(),
@@ -192,9 +187,12 @@ class BaseViewTransformV2(BaseViewTransform):
         if interval_starts is None:
             print_log("warning ---> no points within the predefined bev receptive field")
             dummy = torch.zeros(
-                size=[view_feats.shape[0], view_feats.shape[2], self.nx[0], self.nx[1], self.nx[2]]
-            ).to(view_feats)
-            dummy = torch.cat(dummy.unbind(dim=2), 1)
+                size=[view_feats.shape[0], view_feats.shape[2], self.nx[2], self.nx[1], self.nx[0]],
+                dtype=view_feats.dtype,
+                device=view_feats.device,
+            )
+            if self.collapse_z:
+                dummy = torch.cat(dummy.unbind(dim=2), 1)
             return dummy
 
         if self.expand_batch_axis:
@@ -206,12 +204,10 @@ class BaseViewTransformV2(BaseViewTransform):
         bev_feat_shape = (
             depth_softmax.shape[0],
             int(self.nx[2]),
-            int(self.nx[0]),
             int(self.nx[1]),
+            int(self.nx[0]),
             view_feats.shape[-1],
         )  # (B, Z, Y, X, C)
-        print("bev_feat_shape:", bev_feat_shape)
-        print("nx[0], nx[1], nx[2]:", self.nx[0], self.nx[1], self.nx[2])
         bev_feat = bev_pool_v2(
             depth=depth_softmax,
             feat=view_feats,
