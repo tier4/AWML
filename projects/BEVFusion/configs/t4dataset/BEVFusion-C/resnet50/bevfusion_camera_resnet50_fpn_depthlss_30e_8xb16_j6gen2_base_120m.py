@@ -3,7 +3,7 @@ _base_ = [
     "../../default/models/resnet50/camera_resnet50_fpn_depthlss_120m.py",
 ]
 
-experiment_group_name = "bevfusion_camera/base/" + _base_.dataset_type
+experiment_group_name = "bevfusion_camera/j6gen2_base/" + _base_.dataset_type
 experiment_name = "bevfusion_camera_resnet50_fpn_depthlss_30e_8xb16_j6gen2_base_120m"
 work_dir = "work_dirs/" + experiment_group_name + "/" + experiment_name
 
