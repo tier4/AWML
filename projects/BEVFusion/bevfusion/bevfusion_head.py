@@ -188,7 +188,7 @@ class BEVFusionHead(nn.Module):
             local_concat_class_remapping = [i for i in range(self.num_classes)]
         
         # Register the remapping as a buffer so it moves to the GPU automatically and gets saved in the state_dict.
-        self.register_buffer("local_concat_class_remapping", torch.tensor(local_concat_class_remapping))
+        self.register_buffer("local_concat_class_remapping", torch.tensor(local_concat_class_remapping), persistent=False)
         self.local_heatmap_padding = self.nms_kernel_size // 2
         
         # NMS clusters
@@ -334,7 +334,7 @@ class BEVFusionHead(nn.Module):
         # top num_proposals among all classes
         flattened_heatmap = heatmap.view(batch_size, -1)
         
-        # Use topk instead or argsort to avoid sorting the entire flattened heatmap.
+        # Use topk instead of argsort to avoid sorting the entire flattened heatmap.
         _, top_proposals = flattened_heatmap.topk(k=self.num_proposals, dim=-1, largest=True, sorted=True)
         
         # 2. Calculate class and spatial indices
