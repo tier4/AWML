@@ -13,9 +13,9 @@ custom_imports["imports"] += ["autoware_ml.detection3d.datasets.transforms"]
 
 # user setting
 data_root = "data/t4dataset/"
-info_directory_path = "info/kokseang_2_8/"
+info_directory_path = "info/kokseang_2_8_1/"
 
-experiment_group_name = "bevfusion_lidar_intensity_2_8_1/jpntaxi_base/" + _base_.dataset_type
+experiment_group_name = "bevfusion_lidar_intensity_2_8_2/jpntaxi_base/" + _base_.dataset_type
 experiment_name = "lidar_voxel_second_secfpn_30e_8xb16_jpntaxi_base_120m"
 work_dir = "work_dirs/" + experiment_group_name + "/" + experiment_name
 
