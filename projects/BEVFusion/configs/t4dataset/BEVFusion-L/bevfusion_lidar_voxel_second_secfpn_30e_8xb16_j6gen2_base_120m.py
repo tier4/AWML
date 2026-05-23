@@ -152,4 +152,4 @@ default_hooks = dict(
 )
 log_processor = dict(window_size=50)
 
-load_from = "work_dirs/bevfusion_lidar_2_8_0/base/T4Dataset/lidar_voxel_second_secfpn_50e_8xb16_base_120m/best_epoch_47.pth"
+load_from = "work_dirs/bevfusion_lidar_2_8_2/base/T4Dataset/lidar_voxel_second_secfpn_50e_8xb16_base_120m/epoch_50.pth"

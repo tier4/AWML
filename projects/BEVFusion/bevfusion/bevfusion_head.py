@@ -175,12 +175,22 @@ class BEVFusionHead(nn.Module):
 
             self.dense_heatmap_exclude_pooling_classes = sorted(
                 list(set(self.class_name_to_indices.values()) - set(self.dense_heatmap_pooling_class_indices))
-            )
+            ) 
+            # Pre-compute the correct order of the classes for the final local_max
+            heatmap_concat_order = self.dense_heatmap_pooling_class_indices + self.dense_heatmap_exclude_pooling_classes
+            local_concat_class_remapping = [
+                heatmap_concat_order.index(i)
+                for i in range(self.num_classes)
+            ]
         else:
             self.dense_heatmap_pooling_class_indices = None
             self.dense_heatmap_exclude_pooling_classes = None
-
+            local_concat_class_remapping = [i for i in range(self.num_classes)]
+        
+        # Register the remapping as a buffer so it moves to the GPU automatically and gets saved in the state_dict.
+        self.register_buffer("local_concat_class_remapping", torch.tensor(local_concat_class_remapping))
         self.local_heatmap_padding = self.nms_kernel_size // 2
+        
         # NMS clusters
         self.nms_clusters = self.test_cfg.get("nms_clusters", [])
         # Add class indices for nms
@@ -201,7 +211,8 @@ class BEVFusionHead(nn.Module):
             self.partial_ignore_labels = None
 
         print_log(f"BEVFusionHead Partial ignore labels: {self.partial_ignore_labels}, dense heatmap pooling classes: \
-        {self.dense_heatmap_pooling_classes}, class_names: {self.class_names}", logger="current")
+        {self.dense_heatmap_pooling_classes}, class_names: {self.class_names}, \
+        local_concat_class_remapping: {self.local_concat_class_remapping}", logger="current")
 
     def create_2D_grid(self, x_size, y_size):
         meshgrid = [[0, x_size - 1, x_size], [0, y_size - 1, y_size]]
@@ -261,14 +272,12 @@ class BEVFusionHead(nn.Module):
         #################################
         # query initialization
         #################################
-        with torch.cuda.amp.autocast(enabled=False):
+        with torch.amp.autocast("cuda", enabled=False):
             # with torch.autocast('cuda', enabled=False):
             dense_heatmap = self.heatmap_head(fusion_feat.float())
         heatmap = dense_heatmap.detach().sigmoid()
-        local_max = torch.zeros_like(heatmap)
-        # equals to nms radius = voxel_size * out_size_factor * kenel_size
         if self.dense_heatmap_pooling_class_indices is not None:
-            # Pooling
+            # Pooling 
             selected_heatmap = heatmap[:, self.dense_heatmap_pooling_class_indices, :, :]
             local_max_inner = F.max_pool2d(
                 selected_heatmap,
@@ -276,31 +285,74 @@ class BEVFusionHead(nn.Module):
                 stride=1,
                 padding=0,
             )
-            local_max[
-                :,
-                self.dense_heatmap_pooling_class_indices,
-                self.local_heatmap_padding : (-self.local_heatmap_padding),
-                self.local_heatmap_padding : (-self.local_heatmap_padding),
-            ] = local_max_inner
-            # Non-pooling classes
+
+            # 2. Restore spatial size using F.pad instead of slice mutation
+            local_max = F.pad(
+                local_max_inner, 
+                (self.local_heatmap_padding, self.local_heatmap_padding, self.local_heatmap_padding, 
+                self.local_heatmap_padding), 
+                mode="constant", 
+                value=0.0
+            )
+            
+            # 3. Any non-pooling classes
             if self.dense_heatmap_exclude_pooling_classes:
-                local_max[:, self.dense_heatmap_exclude_pooling_classes] = heatmap[
-                    :, self.dense_heatmap_exclude_pooling_classes
-                ]
+                excluded_local_max = heatmap[:, self.dense_heatmap_exclude_pooling_classes, :, :]
+                local_max = torch.cat([local_max, excluded_local_max], dim=1)
+                local_max = local_max[:, self.local_concat_class_remapping, :, :]
         else:
-            local_max = heatmap
+            local_max = heatmap 
+            
+        # local_max = torch.zeros_like(heatmap)
+        # # equals to nms radius = voxel_size * out_size_factor * kenel_size
+        # if self.dense_heatmap_pooling_class_indices is not None:
+        #     # Pooling
+        #     selected_heatmap = heatmap[:, self.dense_heatmap_pooling_class_indices, :, :]
+        #     local_max_inner = F.max_pool2d(
+        #         selected_heatmap,
+        #         kernel_size=self.nms_kernel_size,
+        #         stride=1,
+        #         padding=0,
+        #     )
+        #     local_max[
+        #         :,
+        #         self.dense_heatmap_pooling_class_indices,
+        #         self.local_heatmap_padding : (-self.local_heatmap_padding),
+        #         self.local_heatmap_padding : (-self.local_heatmap_padding),
+        #     ] = local_max_inner
+        #     # Non-pooling classes
+        #     if self.dense_heatmap_exclude_pooling_classes:
+        #         local_max[:, self.dense_heatmap_exclude_pooling_classes] = heatmap[
+        #             :, self.dense_heatmap_exclude_pooling_classes
+        #         ]
+        # else:
+        #     local_max = heatmap
 
         heatmap = heatmap * (heatmap == local_max)
         heatmap = heatmap.view(batch_size, heatmap.shape[1], -1)
 
         # top num_proposals among all classes
-        top_proposals = heatmap.view(batch_size, -1).argsort(dim=-1, descending=True)[..., : self.num_proposals]
-        top_proposals_class = top_proposals // heatmap.shape[-1]
-        top_proposals_index = top_proposals % heatmap.shape[-1]
+        flattened_heatmap = heatmap.view(batch_size, -1)
+        
+        # Use topk instead or argsort to avoid sorting the entire flattened heatmap.
+        _, top_proposals = flattened_heatmap.topk(k=self.num_proposals, dim=-1, largest=True, sorted=True)
+        
+        # 2. Calculate class and spatial indices
+        # Use shape[-1] dynamically to handle grid sizes safely.
+        spatial_dim = heatmap.shape[-1]
+        top_proposals_class = top_proposals // spatial_dim
+        top_proposals_index = top_proposals % spatial_dim
         query_feat = fusion_feat_flatten.gather(
             index=top_proposals_index[:, None, :].expand(-1, fusion_feat_flatten.shape[1], -1),
             dim=-1,
         )
+        # top_proposals = heatmap.view(batch_size, -1).argsort(dim=-1, descending=True)[..., : self.num_proposals]
+        # top_proposals_class = top_proposals // heatmap.shape[-1]
+        # top_proposals_index = top_proposals % heatmap.shape[-1]
+        # query_feat = fusion_feat_flatten.gather(
+        #     index=top_proposals_index[:, None, :].expand(-1, fusion_feat_flatten.shape[1], -1),
+        #     dim=-1,
+        # )
         self.query_labels = top_proposals_class
 
         # add category embedding
