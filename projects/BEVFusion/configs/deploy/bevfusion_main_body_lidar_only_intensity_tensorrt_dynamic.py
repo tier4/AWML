@@ -5,6 +5,7 @@ custom_imports = dict(
         "projects.BEVFusion.deploy",
         "projects.BEVFusion.bevfusion",
         "projects.SparseConvolution",
+        "projects.BEVFusion.deploy.rewriters",
     ],
     allow_failed_imports=False,
 )
