@@ -24,9 +24,7 @@ model = dict(
         norm_cfg=dict(type="BN1d", eps=0.001, momentum=0.01),
         encoder_channels=((16, 16, 32), (32, 32, 64), (64, 64, 128), (128, 128)),
         encoder_paddings=((0, 0, 1), (0, 0, 1), (0, 0, (1, 1, 0)), (0, 0)),
-        encoder_strides=(2, 2, 2, -1), # No stride for the last stage
         block_type="basicblock",
-        output_stride=2, # downsample stride
     ),
     pts_backbone=dict(
         type="SECOND",

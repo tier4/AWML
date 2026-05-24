@@ -11,7 +11,7 @@ from mmdet3d.models.middle_encoders import SparseEncoder
 from mmdet3d.registry import MODELS
 
 if IS_SPCONV2_AVAILABLE:
-    from spconv.pytorch import SparseConvTensor
+    from .custom_sparse_conv_tensor import CustomSparseConvTensor as SparseConvTensor
 else:
     from mmcv.ops import SparseConvTensor
 
@@ -28,6 +28,7 @@ class BEVFusionSparseEncoder(SparseEncoder):
     Args:
         in_channels (int): The number of input channels.
         sparse_shape (list[int]): The sparse shape of input tensor.
+        dense_output_shape (list[int]): The final shape of the dense output tensor.
         order (list[str], optional): Order of conv module.
             Defaults to ('conv', 'norm', 'act').
         norm_cfg (dict, optional): Config of normalization layer. Defaults to
@@ -52,6 +53,7 @@ class BEVFusionSparseEncoder(SparseEncoder):
         self,
         in_channels,
         sparse_shape,
+        dense_output_shapes,
         order=("conv", "norm", "act"),
         norm_cfg=dict(type="BN1d", eps=1e-3, momentum=0.01),
         base_channels=16,
@@ -60,19 +62,17 @@ class BEVFusionSparseEncoder(SparseEncoder):
         encoder_paddings=((1,), (1, 1, 1), (1, 1, 1), ((0, 1, 1), 1, 1)),
         block_type="conv_module",
         return_middle_feats=False,
-        encoder_strides=(2, 2, 2, -1),
-        output_stride=2,
     ):
         super(SparseEncoder, self).__init__()
         assert block_type in ["conv_module", "basicblock"]
         self.sparse_shape = sparse_shape
+        self.dense_output_shapes = dense_output_shapes
         self.in_channels = in_channels
         self.order = order
         self.base_channels = base_channels
         self.output_channels = output_channels
         self.encoder_channels = encoder_channels
         self.encoder_paddings = encoder_paddings
-        self.encoder_strides = encoder_strides
         self.stage_num = len(self.encoder_channels)
         self.fp16_enabled = False
         self.return_middle_feats = return_middle_feats
@@ -149,11 +149,20 @@ class BEVFusionSparseEncoder(SparseEncoder):
         # for detection head
         # [200, 176, 5] -> [200, 176, 2]
         out = self.conv_out(encode_features[-1])
-        spatial_features = out.dense()
+        # Return (N, H, W, D, C) instead of (N, C, H, W, D)
+        spatial_features = out.dense(channels_first=False)
 
-        N, C, H, W, D = spatial_features.shape
-        spatial_features = spatial_features.permute(0, 1, 4, 2, 3).contiguous()
-        spatial_features = spatial_features.view(N, C * D, H, W)
+        # Reshape to (N, C, D, H, W)        
+        spatial_features = spatial_features.permute(0, 4, 3, 1, 2).contiguous()
+        spatial_features = spatial_features.view(
+            batch_size, 
+            self.output_channels * self.dense_output_shapes[2], 
+            self.dense_output_shapes[0], 
+            self.dense_output_shapes[1], 
+        )
+        # N, C, H, W, D = spatial_features.shape
+        # spatial_features = spatial_features.permute(0, 1, 4, 2, 3).contiguous()
+        # spatial_features = spatial_features.view(N, C * D, H, W)
 
         if self.return_middle_feats:
             return spatial_features, encode_features

@@ -35,6 +35,7 @@ model = dict(
     pts_middle_encoder=dict(
         in_channels=50,
         sparse_shape=_base_.grid_size,
+        dense_output_shapes=_base_.sparse_dense_output_shapes,
     ),
     bbox_head=dict(
         class_names=_base_.class_names,  # Use class names to identify the correct class indices

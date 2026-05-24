@@ -265,13 +265,13 @@ class BEVFusionHead(nn.Module):
         Returns:
             list[dict]: Output results for tasks.
         """
-        batch_size = inputs.shape[0]
+        # batch_size = inputs.shape[0]
         fusion_feat = self.shared_conv(inputs)
 
         #################################
         # image to BEV
         #################################
-        fusion_feat_flatten = fusion_feat.view(batch_size, self.share_conv_out_channels, -1)  # [BS, C, H*W]
+        fusion_feat_flatten = fusion_feat.view(-1, self.share_conv_out_channels, self.spatial_dim)  # [BS, C, H*W]
 
         #################################
         # query initialization
@@ -309,10 +309,10 @@ class BEVFusionHead(nn.Module):
 
         heatmap = heatmap * (heatmap == local_max)
         # (BS, num_classes, H*W)
-        heatmap = heatmap.view(batch_size, self.num_classes, -1)
+        heatmap = heatmap.view(-1, self.num_classes, self.spatial_dim)
 
         # top num_proposals among all classes
-        flattened_heatmap = heatmap.view(batch_size, -1)
+        flattened_heatmap = heatmap.view(-1, self.num_classes*self.spatial_dim)
         
         # Use topk instead of argsort to avoid sorting the entire flattened heatmap.
         _, top_proposals = flattened_heatmap.topk(k=self.num_proposals, dim=-1, largest=True, sorted=True)
