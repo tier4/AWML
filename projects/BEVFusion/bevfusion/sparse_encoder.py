@@ -151,34 +151,9 @@ class BEVFusionSparseEncoder(SparseEncoder):
         # for detection head
         # [200, 176, 5] -> [200, 176, 2]
         out = self.conv_out(encode_features[-1])
-        # Return (N, H, W, D, C) instead of (N, C, H, W, D)
-        # spatial_features = out.dense(channels_first=False)
-        # spatial_features = sparse_to_dense(out, batch_size, self.dense_output_shapes, self.output_channels)
-        # Reshape to (N, C, D, H, W)        
-        # spatial_features = out.dense(channels_first=False)
-
-        # with torch.no_grad():
-        #     ref = spatial_features
-        #     cand = sparse_to_dense(
-        #         out, batch_size, self.dense_output_shapes, self.output_channels
-        #     )
-        #     assert ref.shape == cand.shape, (
-        #         f"shape mismatch: dense={tuple(ref.shape)} "
-        #         f"sparse_to_dense={tuple(cand.shape)}"
-        #     )
-        #     max_abs = (ref - cand).abs().max().item()
-        #     num_mismatch = (ref != cand).sum().item()
-        #     allclose = torch.allclose(ref, cand, rtol=1e-5, atol=1e-6)
-        #     print(
-        #         f"[BEVFusionSparseEncoder] dense vs sparse_to_dense: "
-        #         f"shape={tuple(ref.shape)} max_abs_diff={max_abs:.3e} "
-        #         f"num_mismatch={num_mismatch} allclose={allclose}"
-        #     )
-        #     assert allclose, (
-        #         "sparse_to_dense disagrees with out.dense(channels_first=False) "
-        #         "-- index/order mismatch in BEVFusionSparseEncoder."
-        #     )
+        
         spatial_features = sparse_to_dense(out, batch_size, self.dense_output_shapes, self.output_channels)
+        # spatial_features = out.dense(channels_first=False)
         spatial_features = spatial_features.permute(0, 4, 3, 1, 2).contiguous()
         spatial_features = spatial_features.view(
             batch_size,

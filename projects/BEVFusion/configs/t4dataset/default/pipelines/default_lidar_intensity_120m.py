@@ -5,10 +5,10 @@ input_modality = dict(use_lidar=True, use_camera=False)
 
 # range setting
 point_cloud_range = [-122.4, -122.4, -3.0, 122.4, 122.4, 5.0]
-voxel_size = [0.15, 0.15, 0.2]
-grid_size = [1632, 1632, 41]
+voxel_size = [0.17, 0.17, 0.2]
+grid_size = [1440, 1440, 41]
 # Sparse dense output shapes
-sparse_dense_output_shapes = [204, 204, 2]
+sparse_dense_output_shapes = [180, 180, 2]
 
 eval_class_range = {
     "car": 120,
