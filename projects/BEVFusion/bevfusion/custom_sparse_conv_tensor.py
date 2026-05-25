@@ -6,6 +6,7 @@ This customiztion is used to support cleaner ONNX export of sparse convolutions.
 from typing import Union, List, Optional
 
 import torch
+import numpy as np
 from spconv.pytorch import SparseConvTensor
 from spconv.core import ConvAlgo
 
@@ -58,6 +59,7 @@ class CustomSparseConvTensor(SparseConvTensor):
                 C,
             ]
         )
+        print("out.shape: ", out.shape)
         idx = self.indices.to(self.features.device).long()  # [N, 1+D]
         out.index_put_(idx.unbind(1), self.features)
         if not channels_first:

@@ -4,8 +4,7 @@ custom_imports = dict(
     imports=[
         "projects.BEVFusion.deploy",
         "projects.BEVFusion.bevfusion",
-        "projects.SparseConvolution",
-        "projects.BEVFusion.deploy.rewriters",
+        "projects.SparseConvolution"
     ],
     allow_failed_imports=False,
 )
@@ -30,7 +29,7 @@ onnx_config = dict(
     type="onnx",
     export_params=True,
     keep_initializers_as_inputs=False,
-    opset_version=17,
+    opset_version=18,
     save_file="bevfusion_lidar_intensity.onnx",
     input_names=["voxels", "coors", "num_points_per_voxel"],
     output_names=["bbox_pred", "score", "label_pred"],
@@ -46,5 +45,5 @@ onnx_config = dict(
         },
     },
     input_shape=None,
-    verbose=True,
+    verbose=False,
 )
