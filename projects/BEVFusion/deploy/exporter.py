@@ -90,7 +90,6 @@ class Torch2OnnxExporter:
           f"Purged {len(removed)} mmdeploy symbolic records: {list(removed.keys())}"
         )
         with RewriterContext(**context_info), torch.no_grad():
-            list_layer_norm_rewriters()
             image_feats = None
             if "img_backbone" in self.setup_configs.model_cfg.model:
                 image_feats = self._export_image_backbone(model_data, ir_configs, patched_model)

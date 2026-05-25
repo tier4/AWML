@@ -11,10 +11,11 @@ from mmdet3d.models.middle_encoders import SparseEncoder
 from mmdet3d.registry import MODELS
 
 if IS_SPCONV2_AVAILABLE:
-    from .custom_sparse_conv_tensor import CustomSparseConvTensor as SparseConvTensor
+    from spconv.pytorch import SparseConvTensor
 else:
     from mmcv.ops import SparseConvTensor
 
+from .custom_sparse_conv_tensor import sparse_to_dense
 
 
 @MODELS.register_module()
@@ -150,8 +151,8 @@ class BEVFusionSparseEncoder(SparseEncoder):
         # [200, 176, 5] -> [200, 176, 2]
         out = self.conv_out(encode_features[-1])
         # Return (N, H, W, D, C) instead of (N, C, H, W, D)
-        spatial_features = out.dense(channels_first=False)
-
+        # spatial_features = out.dense(channels_first=False)
+        spatial_features = sparse_to_dense(out, batch_size, self.dense_output_shapes, self.output_channels)
         # Reshape to (N, C, D, H, W)        
         spatial_features = spatial_features.permute(0, 4, 3, 1, 2).contiguous()
         spatial_features = spatial_features.view(

@@ -2,69 +2,39 @@
 Custom SparseConvTensor for BEVFusion.
 This customiztion is used to support cleaner ONNX export of sparse convolutions.
 """
-
-from typing import Union, List, Optional
-
 import torch
-import numpy as np
-from spconv.pytorch import SparseConvTensor
-from spconv.core import ConvAlgo
+
+from mmdet3d.models.layers.spconv import IS_SPCONV2_AVAILABLE
+
+if IS_SPCONV2_AVAILABLE:
+    from spconv.pytorch import SparseConvTensor
+else:
+    from mmcv.ops import SparseConvTensor
 
 
-class CustomSparseConvTensor(SparseConvTensor):
-    def __init__(self,
-                 features: torch.Tensor,
-                 indices: torch.Tensor,
-                 spatial_shape: Union[List[int], np.ndarray],
-                 batch_size: int,
-                 grid: Optional[torch.Tensor] = None,
-                 voxel_num: Optional[torch.Tensor] = None,
-                 indice_dict: Optional[dict] = None,
-                 benchmark: bool = False,
-                 permanent_thrust_allocator: bool = False,
-                 enable_timer: bool = False,
-                 force_algo: Optional[ConvAlgo] = None):
-      """
-      Check the superclass documentation for more details.
-      """
-      
-      super().__init__(
-        features=features, 
-        indices=indices, 
-        spatial_shape=spatial_shape, 
-        batch_size=batch_size, 
-        grid=grid, 
-        voxel_num=voxel_num, 
-        indice_dict=indice_dict, 
-        benchmark=benchmark, 
-        permanent_thrust_allocator=permanent_thrust_allocator, 
-        enable_timer=enable_timer, 
-        force_algo=force_algo)
-        
-      # Precomputation for dense output shape.
-      self.spatial_shape_list = list(self.spatial_shape)
-      self.spatial_ndim = len(self.spatial_shape_list)
-      self.trans_params = list(range(0, self.spatial_ndim + 1))
-      self.trans_params.insert(1, self.spatial_ndim + 1)
+def sparse_to_dense(sparse_tensor: SparseConvTensor, batch_size: int, spatial_shapes: list[int], out_channels: int):
+    """
+    Convert the sparse tensor to a dense tensor.
+    """
+    H, W, D = spatial_shapes
+    num_cells = batch_size * H * W * D
+    idx = sparse_tensor.indices.to(sparse_tensor.features.device).long()  # [N, 1+D]
+    b, h, w, d = idx.unbind(1)
+    # b * (H * W * D) + h*(W*D) + w*D + d
+    # Factor out the common terms D and W
+    # (b*H*W + h*W + w) * D + d -> (b*H + h) * W + w) * D + d
+    linear_idx = ((b * H + h) * W + w) * D + d                     # [N]
 
-    def dense(self, channels_first: bool = True):
-        """
-        Convert the sparse tensor to a dense tensor.
-        """
-        C = self.features.shape[1]
-        out = self.features.zeros(
-            [
-                self.batch_size,
-                *self.spatial_shape_list,
-                C,
-            ]
-        )
-        print("out.shape: ", out.shape)
-        idx = self.indices.to(self.features.device).long()  # [N, 1+D]
-        out.index_put_(idx.unbind(1), self.features)
-        if not channels_first:
-            return out 
-        
-        out = out.permute(*self.trans_params).contiguous()
-        return out
- 
+    out = torch.zeros(
+        [
+            num_cells,
+            out_channels
+        ], 
+        device=sparse_tensor.features.device,
+        dtype=sparse_tensor.features.dtype,
+    )
+    # out = out.index_copy(0, linear_idx, sparse_tensor.features)
+    # out = out.scatter(0, linear_idx, sparse_tensor.features)
+    scatter_idx = linear_idx.unsqueeze(1).expand(-1, out_channels)            # [N, C]
+    out = out.scatter(0, scatter_idx, sparse_tensor.features)
+    return out.view(batch_size, H, W, D, out_channels)
