@@ -317,7 +317,7 @@ class BEVFusionHead(nn.Module):
         flattened_heatmap = heatmap.view(-1, self.num_classes*self.spatial_dim)
         
         # Use topk instead of argsort to avoid sorting the entire flattened heatmap.
-        top_proposals_indices = topk(x=flattened_heatmap, k=self.num_proposals, dim=-1, sorted=False)
+        top_proposals = topk(x=flattened_heatmap, k=self.num_proposals, dim=-1, sorted=False)
         
         # 2. Calculate class and spatial indices
         # Use shape[-1] dynamically to handle grid sizes safely.
