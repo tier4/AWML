@@ -38,7 +38,7 @@ class TopK(Function):
 				dim: int,
 				sorted: bool = False,
     ):
-        indices = torch.topk(x, k=k, dim=dim, largest=True, sorted=sorted)
+        _, indices = torch.topk(x, k=k, dim=dim, largest=True, sorted=sorted)
         return indices
 
 def topk(x: torch.Tensor, k: int, dim: int, sorted: bool = False):
