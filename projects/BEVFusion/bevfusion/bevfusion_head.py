@@ -17,6 +17,8 @@ from mmengine.logging import print_log
 from mmengine.structures import InstanceData
 from torch import nn
 
+from .ops.topk.topk import topk
+
 
 def clip_sigmoid(x, eps=1e-4):
     y = torch.clamp(x.sigmoid_(), min=eps, max=1 - eps)
@@ -315,7 +317,7 @@ class BEVFusionHead(nn.Module):
         flattened_heatmap = heatmap.view(-1, self.num_classes*self.spatial_dim)
         
         # Use topk instead of argsort to avoid sorting the entire flattened heatmap.
-        _, top_proposals = flattened_heatmap.topk(k=self.num_proposals, dim=-1, largest=True, sorted=False)
+        top_proposals_indices = topk(x=flattened_heatmap, k=self.num_proposals, dim=-1, sorted=False)
         
         # 2. Calculate class and spatial indices
         # Use shape[-1] dynamically to handle grid sizes safely.

@@ -25,7 +25,6 @@ def sparse_to_dense(sparse_tensor: SparseConvTensor, batch_size: int, spatial_sh
     # (b*H*W + h*W + w) * D + d -> (b*H + h) * W + w) * D + d
     linear_idx = ((b * H + h) * W + w) * D + d                     # [N]
     
-		# out_channels = sparse_tensor.features.shape[1]
     out = torch.zeros(
         [
             num_cells,
