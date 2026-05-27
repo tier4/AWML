@@ -135,19 +135,14 @@ class BaseViewTransformV2(BaseViewTransform):
             return None, None, None
 
         geom_feats, ranks_depth, ranks_feat = geom_feats[kept], ranks_depth[kept], ranks_feat[kept]
-
+        
+        # Switch x and y to match the order of the BEV grid
         ranks_bev = (
             geom_feats[:, 3] * (self.nx[2] * self.nx[1] * self.nx[0])
             + geom_feats[:, 2] * (self.nx[1] * self.nx[0])
             + geom_feats[:, 0] * self.nx[1]
             + geom_feats[:, 1]
         )
-        # ranks_bev = (
-        #     geom_feats[:, 3] * (self.nx[2] * self.nx[1] * self.nx[0])
-        #     + geom_feats[:, 2] * (self.nx[1] * self.nx[0])
-        #     + geom_feats[:, 1] * self.nx[0]
-        #     + geom_feats[:, 0]
-        # )
         indices = ranks_bev.argsort()
         ranks_bev, ranks_depth, ranks_feat = ranks_bev[indices], ranks_depth[indices], ranks_feat[indices]
         return (
