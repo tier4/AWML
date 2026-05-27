@@ -3,7 +3,7 @@
 
 ### Main Parameters
 
-  - **Range:** 122.40m
+  - **Range (x,y):** [-122.40, 122.40] m
   - **Voxel Size:** [0.24, 0.24, 8.0]
   - **Grid Size:** [1020, 1020, 1]
   - **With Intensity**
@@ -211,6 +211,8 @@
 <summary> Changes  </summary>
 
 - Applied PTQ quantization to `J6Gen2_Base/2.6.1` to reduce inference latency while maintaining accuracy.
+  - Used 1024 randomly sampled frames from `t4dataset_j6gen2_base_infos_val.pkl` for INT8 calibration.
+  - Adopted the MSE (Mean Squared Error) calibration algorithm to determine optimal activation quantization ranges and minimize quantization-induced accuracy degradation.
 - Key performance gains:
   - Average end-to-end latency improved by `25.1%` (`48.9 ms -> 36.6 ms`).
   - Throughput increased from `20.5 FPS` to `27.3 FPS`.
