@@ -2,8 +2,6 @@ from typing import Optional, Tuple
 
 import torch
 import numpy as np
-from mmcv.cnn import build_norm_layer
-from mmcv.ops import DynamicScatter
 from torch import Tensor, nn
 
 from mmdet3d.registry import MODELS
@@ -26,14 +24,28 @@ class HardSimpleVoxelSinCosEncoder(nn.Module):
             max_norm_values (Tuple[float]): Maximum values for the features.
             in_channels (int): Number of input channels.
         """
-        super(HardSimpleVoxelSinCosEncoder, self).__init__()
+        super().__init__()
       
         # Create PillarFeatureNet layers
         self.in_channels = in_channels
-
-        self.register_buffer("min_norm_values", torch.tensor(min_norm_values))
-        self.register_buffer("max_norm_values", torch.tensor(max_norm_values))
-        self.register_buffer("exponents", (2 ** torch.arange(0, self.in_channels)).float())
+        
+        # Convert the ((x - min) / (max - min)) * pi * exponents to x * scale + bias for folding them into one OP 
+        min_norm_values = torch.tensor(min_norm_values)
+        max_norm_values = torch.tensor(max_norm_values)
+        # Let alpha = pi * exponents, beta = max - min
+        # y = ((x - min) / beta) * alpha 
+        # y = alpha / beta * (x - min)
+        # y = (alpha / beta) * x - (alpha / beta) * min 
+        # Therefore, scale = alpha / beta, bias = - (alpha * min) / beta 
+        # y = scale * x + bias
+        exponents = (2 ** torch.arange(0, self.in_channels)).float()
+        alpha = (torch.pi * exponents).unsqueeze(0) # (1, C)
+        beta = (max_norm_values - min_norm_values).unsqueeze(1) # (C, 1)
+        scale = alpha / beta
+        bias = - (alpha * min_norm_values.unsqueeze(1)) / beta # (C, C)
+        
+        self.register_buffer("exponent_scale", scale.unsqueeze(0), persistent=False) # (1, C, C)
+        self.register_buffer("exponent_bias", bias.unsqueeze(0), persistent=False) # (1, C, C)
 
     def forward(self, features: Tensor, num_points: Tensor, coors: Tensor,
                 *args, **kwargs) -> Tensor:
@@ -49,23 +61,17 @@ class HardSimpleVoxelSinCosEncoder(nn.Module):
             torch.Tensor: Features of pillars in shape (M, C*C*2).
 
         """
-        num_voxels, max_points_per_voxel = features.shape[0], features.shape[1]
-        
         # Mean in the voxel
-        # (N, M, 3) -> (N, 3)
-        voxel_features = (features.sum(dim=1, keepdim=False) / num_points.type_as(features).view(
-                    -1, 1)).contiguous()
+        # (N, M, C) -> (N, C)
+        voxel_mean_features = (features.sum(dim=1, keepdim=False) / num_points.type_as(features).view(-1, 1)).contiguous()
 
-        # min-max normalization, (N, 3) -> (N, 3)
-        voxel_features_norm = (voxel_features - \
-         self.min_norm_values.view(1, -1)) / ((self.max_norm_values - self.min_norm_values).view(1, -1))
-        
+        # x * scale + bias, (1, C, C) + (1, C, C) * (N, C, 1) -> (N, C, C)
+        # FMA (fused multiply-add): y = bias + scale * voxel_mean_features
+        y = torch.addcmul(self.exponent_bias, self.exponent_scale, voxel_mean_features.unsqueeze(-1))
         # SinCos encoding
-        # (N, 3) -> (N*3, 1) * (1, ) * (1, 3) -> (N*3, 3)
-        y = voxel_features_norm.reshape(-1, 1) * np.pi * self.exponents.reshape(1, -1)
-        # (N*3, 3) -> (N, 3*3)
-        y = y.reshape(num_voxels, -1)
-        # (N, 3*3) -> (N, 3*3*2)
+        # (N*C, C) -> (N, C*C)
+        y = y.reshape(-1, self.in_channels*self.in_channels)
+        # (N, C*C) -> (N, C*C*2)
         voxel_fourier_features = torch.cat([torch.cos(y), torch.sin(y)], dim=1)
         
         return voxel_fourier_features

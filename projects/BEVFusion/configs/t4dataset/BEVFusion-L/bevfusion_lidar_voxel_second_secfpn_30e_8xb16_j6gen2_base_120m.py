@@ -13,9 +13,9 @@ custom_imports["imports"] += ["autoware_ml.detection3d.datasets.transforms"]
 
 # user setting
 data_root = "data/t4dataset/"
-info_directory_path = "info/kokseang_2_8/"
+info_directory_path = "info/kokseang_2_8_1/"
 
-experiment_group_name = "bevfusion_lidar_intensity_2_8_1/j6gen2_base/" + _base_.dataset_type
+experiment_group_name = "bevfusion_lidar_intensity_2_8_3/j6gen2_base_normal_dense/" + _base_.dataset_type
 experiment_name = "lidar_voxel_second_secfpn_30e_8xb16_j6gen2_base_120m"
 work_dir = "work_dirs/" + experiment_group_name + "/" + experiment_name
 
@@ -35,6 +35,7 @@ model = dict(
     pts_middle_encoder=dict(
         in_channels=50,
         sparse_shape=_base_.grid_size,
+        dense_output_shapes=_base_.sparse_dense_output_shapes,
     ),
     bbox_head=dict(
         class_names=_base_.class_names,  # Use class names to identify the correct class indices
@@ -152,4 +153,4 @@ default_hooks = dict(
 )
 log_processor = dict(window_size=50)
 
-load_from = "work_dirs/bevfusion_lidar_2_8_0/base/T4Dataset/lidar_voxel_second_secfpn_50e_8xb16_base_120m/best_epoch_47.pth"
+load_from = "work_dirs/bevfusion_lidar_2_8_2/base/T4Dataset/lidar_voxel_second_secfpn_50e_8xb16_base_120m/epoch_50.pth"

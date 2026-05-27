@@ -63,6 +63,8 @@ train_pipeline = [
             "barrier",
         ],
     ),
+		dict(type="ObjectRangeMinPointsFilter", range_radius=[0, 60], min_num_points=2),
+    dict(type="ObjectRangeMinPointsFilter", range_radius=[60, 130], min_num_points=1),
     dict(type="PointShuffle"),
     dict(
         type="Pack3DDetInputs",

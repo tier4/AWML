@@ -15,7 +15,7 @@ custom_imports["imports"] += ["autoware_ml.detection3d.datasets.transforms"]
 data_root = "data/t4dataset/"
 info_directory_path = "info/kokseang_2_8_1/"
 
-experiment_group_name = "bevfusion_lidar_2_8_2/base/" + _base_.dataset_type
+experiment_group_name = "bevfusion_lidar_2_8_0/base/" + _base_.dataset_type
 experiment_name = "lidar_voxel_second_secfpn_50e_8xb16_base_120m"
 work_dir = "work_dirs/" + experiment_group_name + "/" + experiment_name
 
@@ -35,6 +35,7 @@ model = dict(
     pts_middle_encoder=dict(
         in_channels=32,
         sparse_shape=_base_.grid_size,
+        dense_output_shapes=_base_.sparse_dense_output_shapes,
     ),
     bbox_head=dict(
         class_names=_base_.class_names,  # Use class names to identify the correct class indices

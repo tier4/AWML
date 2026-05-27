@@ -24,9 +24,7 @@ model = dict(
         norm_cfg=dict(type="BN1d", eps=0.001, momentum=0.01),
         encoder_channels=((16, 16, 32), (32, 32, 64), (64, 64, 128), (128, 128)),
         encoder_paddings=((0, 0, 1), (0, 0, 1), (0, 0, (1, 1, 0)), (0, 0)),
-        encoder_strides=(2, 2, 2, -1), # No stride for the last stage
         block_type="basicblock",
-        output_stride=2, # downsample stride
     ),
     pts_backbone=dict(
         type="SECOND",
@@ -90,6 +88,7 @@ model = dict(
             nms_type="circle",  # Set to "circle" for circle_nms
             # Set NMS for different clusters
             nms_clusters=[
+                # Sqrt(0.25) = 0.50
                 dict(class_names=["car", "truck", "bus"], class_indices=[0, 1, 2], nms_threshold=0.25, post_max_size=300),  # It's radius if using circle_nms
                 dict(class_names=["bicycle"], class_indices=[3], nms_threshold=0.0, post_max_size=50),
                 dict(class_names=["pedestrian"], class_indices=[4], nms_threshold=0.0, post_max_size=100),
@@ -104,7 +103,7 @@ model = dict(
             post_center_range=[-200.0, -200.0, -10.0, 200.0, 200.0, 10.0],
             # score_threshold=0.03,
             # CAR, TRUCK, BUS, BICYCLE, PEDESTRIAN, TRAFFIC_CONE, BARRIER
-            score_threshold=[0.015, 0.010, 0.010, 0.010, 0.015, 0.015, 0.015],
+            score_threshold=[0.015, 0.010, 0.010, 0.020, 0.030, 0.040, 0.020],
             out_size_factor=8,
             code_size=10,
         ),

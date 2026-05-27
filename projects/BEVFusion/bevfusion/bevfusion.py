@@ -179,7 +179,7 @@ class BEVFusion(Base3DDetector):
         if not using_image_features:
             x = self.get_image_backbone_features(x)
 
-        with torch.cuda.amp.autocast(enabled=False):
+        with torch.amp.autocast("cuda",enabled=False):
             # with torch.autocast(device_type='cuda', dtype=torch.float32):
             x = self.view_transform(
                 x,
@@ -200,14 +200,14 @@ class BEVFusion(Base3DDetector):
     def extract_pts_feat(self, feats, coords, sizes, points=None) -> torch.Tensor:
         if points is not None:
             # NOTE(knzo25): training and normal inference
-            with torch.cuda.amp.autocast(enabled=False):
+            with torch.amp.autocast("cuda", enabled=False):
                 # with torch.autocast('cuda', enabled=False):
                 points = [point.float() for point in points]
                 feats, coords, sizes = self.voxelize(points)
                 batch_size = coords[-1, 0] + 1
         else:
-            # NOTE(knzo25): onnx inference. Voxelization happens outside the graph
-            with torch.cuda.amp.autocast(enabled=False):
+            # NOTE: (knzo25): onnx inference. Voxelization happens outside the graph
+            with torch.amp.autocast("cuda", enabled=False):
                 # with torch.autocast('cuda', enabled=False):
 
                 # NOTE(knzo25): onnx demmands this
