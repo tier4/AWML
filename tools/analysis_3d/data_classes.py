@@ -152,6 +152,7 @@ class ScenarioData:
     """Data class to save data for a scenario, for example, a list of SampleData."""
 
     scene_token: str
+    frames: int
     sample_data: Dict[str, SampleData] = field(default_factory=lambda: {})  # Sample token, SampleAnalysis
 
     def add_sample_data(self, sample_data: SampleData) -> None:
@@ -262,3 +263,11 @@ class AnalysisData:
                 for name, counts in category_counts.items():
                     total_category_counts[name] += counts
         return total_category_counts
+
+    @property
+    def frames(self) -> int:
+        """
+        Get total frames in this AnalysisData.
+        :return: Total frames in this AnalysisData.
+        """
+        return sum(scenario_data.frames for scenario_data in self.scenario_data.values())
