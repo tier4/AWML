@@ -1,9 +1,9 @@
 _base_ = [
     "../../../../../autoware_ml/configs/detection3d/default_runtime.py",
-    "../../../../../autoware_ml/configs/detection3d/dataset/t4dataset/base.py",
-    "../default/pipelines/default_lidar_120m.py",
+    "../../../../../autoware_ml/configs/detection3d/dataset/t4dataset/jpntaxi_base.py",
+    "../default/pipelines/default_lidar_intensity_120m.py",
     "../default/models/default_lidar_second_secfpn_120m.py",
-    "../default/schedulers/default_50e_4xb8_adamw_cosine.py",
+    "../default/schedulers/default_30e_8xb8_adamw_cosine.py",
     "../default/default_misc.py",
 ]
 
@@ -15,8 +15,8 @@ custom_imports["imports"] += ["autoware_ml.detection3d.datasets.transforms"]
 data_root = "data/t4dataset/"
 info_directory_path = "info/user_name/"
 
-experiment_group_name = "bevfusion_lidar/base/" + _base_.dataset_type
-experiment_name = "lidar_voxel_second_secfpn_50e_4xb8_base_120m"
+experiment_group_name = "bevfusion_lidar/jpntaxi_base/" + _base_.dataset_type
+experiment_name = "lidar_voxel_second_secfpn_30e_8xb8_jpntaxi_base_120m"
 work_dir = "work_dirs/" + experiment_group_name + "/" + experiment_name
 
 # model parameter
@@ -31,6 +31,22 @@ model = dict(
     pts_middle_encoder=dict(
         in_channels=_base_.point_use_dim,
         sparse_shape=_base_.grid_size,
+        num_aug_features=5,
+        # min-max normalization for x, y, z, intensity, time_lag, where the max of time lag technically is two seeps (200 ms) here
+        aug_features_min_values=[
+            _base_.point_cloud_range[0],
+            _base_.point_cloud_range[1],
+            _base_.point_cloud_range[2],
+            0.0,
+            0.0,
+        ],
+        aug_features_max_values=[
+            _base_.point_cloud_range[3],
+            _base_.point_cloud_range[4],
+            _base_.point_cloud_range[5],
+            255.0,
+            0.2,
+        ],
     ),
     bbox_head=dict(
         class_names=_base_.class_names,  # Use class names to identify the correct class indices
@@ -143,3 +159,5 @@ default_hooks = dict(
     checkpoint=dict(type="CheckpointHook", interval=1, max_keep_ckpts=3, save_best="NuScenes metric/T4Metric/mAP"),
 )
 log_processor = dict(window_size=50)
+
+load_from = None
