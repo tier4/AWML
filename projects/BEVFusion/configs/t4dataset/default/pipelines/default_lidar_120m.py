@@ -13,6 +13,8 @@ eval_class_range = {
     "bus": 120,
     "bicycle": 120,
     "pedestrian": 120,
+    "traffic_cone": 120,
+    "barrier": 120,
 }
 
 # LiDAR parameters
@@ -57,6 +59,8 @@ train_pipeline = [
             "bus",
             "bicycle",
             "pedestrian",
+            "traffic_cone",
+            "barrier",
         ],
     ),
     dict(type="PointShuffle"),
@@ -84,6 +88,7 @@ train_pipeline = [
             "timestamp",
             "vehicle_type",
             "city",
+            "traffic_cone_barrier_status",
         ],
     ),
 ]
@@ -127,6 +132,7 @@ test_pipeline = [
             "timestamp",
             "vehicle_type",
             "city",
+            "traffic_cone_barrier_status",
         ],
     ),
 ]

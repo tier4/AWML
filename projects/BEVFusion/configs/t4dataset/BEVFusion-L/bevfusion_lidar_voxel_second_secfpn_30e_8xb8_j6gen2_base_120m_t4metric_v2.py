@@ -3,7 +3,7 @@ _base_ = [
 ]
 
 # user setting
-experiment_group_name = "bevfusion_lidar_intensity/j6gen2_base/" + _base_.dataset_type
+experiment_group_name = "bevfusion_lidar_intensity_traffic_cone/j6gen2_base/" + _base_.dataset_type
 experiment_name = "lidar_voxel_second_secfpn_30e_8xb8_j6gen2_base_120m_t4metric_v2"
 work_dir = "work_dirs/" + experiment_group_name + "/" + experiment_name
 
@@ -18,7 +18,7 @@ perception_evaluator_configs = dict(
 frame_pass_fail_config = dict(
     target_labels=_base_.class_names,
     # Matching thresholds per class (must align with `plane_distance_thresholds` used in evaluation)
-    matching_threshold_list=[2.0, 2.0, 2.0, 2.0, 2.0],
+    matching_threshold_list=[2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0],
     confidence_threshold_list=None,
 )
 
