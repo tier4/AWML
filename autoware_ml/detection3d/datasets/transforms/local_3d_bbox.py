@@ -1,4 +1,4 @@
-from typing import List
+from typing import List, Optional
 
 import numpy as np 
 
@@ -20,21 +20,21 @@ class Local3DBBoxExpand(BaseTransform):
         """
 
     def __init__(
-			self, 
-			expand_widths: List[float], 
-			expand_lengths: Optional[List[float]] = None, 
-			length_dim: int = 3, 
-			width_dim: int = 4, 
-			label_ids: List[int] = None) -> None:
-			  
-				super().__init__()
+            self, 
+            expand_widths: List[float], 
+            expand_lengths: Optional[List[float]] = None, 
+            length_dim: int = 3, 
+            width_dim: int = 4, 
+            label_ids: List[int] = None) -> None:
+              
+        super().__init__()
         assert isinstance(expand_widths, list)
         assert len(expand_widths) == 2
         assert expand_widths[0] < expand_widths[1]
         if expand_lengths is not None:
             assert isinstance(expand_lengths, list)
-        assert len(expand_lengths) == 2
-        assert expand_lengths[0] < expand_lengths[1]
+            assert len(expand_lengths) == 2
+            assert expand_lengths[0] < expand_lengths[1]
         self.expand_lengths = expand_lengths
         self.length_dim = length_dim
         self.expand_widths = expand_widths
@@ -63,15 +63,15 @@ class Local3DBBoxExpand(BaseTransform):
               
             expand_width = np.random.uniform(self.expand_widths[0], self.expand_widths[1])
             input_dict["gt_bboxes_3d"].tensor[i, self.width_dim] += expand_width
-			      if self.expand_lengths is not None:
-				        expand_length = np.random.uniform(self.expand_lengths[0], self.expand_lengths[1])
-				        input_dict["gt_bboxes_3d"].tensor[i, self.length_dim] += expand_length
+            if self.expand_lengths is not None:
+                expand_length = np.random.uniform(self.expand_lengths[0], self.expand_lengths[1])
+                input_dict["gt_bboxes_3d"].tensor[i, self.length_dim] += expand_length
         
-				return input_dict
+            return input_dict
 
     def __repr__(self) -> str:
         """str: Return a string that describes the module."""
         repr_str = self.__class__.__name__
         repr_str += f"(expand_widths={self.expand_widths}, expand_lengths={self.expand_lengths}, \
-				length_dim={self.length_dim}, width_dim={self.width_dim}, label_ids={self.label_ids})"
+                length_dim={self.length_dim}, width_dim={self.width_dim}, label_ids={self.label_ids})"
         return repr_str
