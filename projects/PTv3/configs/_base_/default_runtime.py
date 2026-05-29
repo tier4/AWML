@@ -23,6 +23,10 @@ find_unused_parameters = False
 
 mix_prob = 0
 param_dicts = None  # example: param_dicts = [dict(keyword="block", lr_scale=0.1)]
+# Sparse pair-gen sort for ONNX export:
+# - True  (default): keep pair-mask argsort.
+# - False          : export GetIndicePairsImplicitGemm with do_sort=0.
+spconv_do_sort = True
 
 # hook
 hooks = [
