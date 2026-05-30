@@ -294,7 +294,7 @@ class PointsToMultiViewImageDepths(BaseTransform):
         # imgaug
         cur_coords = img_aug_matrix[:, :3, :3] @ cur_coords
         cur_coords += img_aug_matrix[:, :3, 3].reshape(-1, 3, 1)
-        cur_coords = cur_coords[:, :2, :].transpose(1, 2)
+        cur_coords = cur_coords[:, :2, :].transpose(0, 2, 1)
 
         # normalize coords for grid sample
         cur_coords = cur_coords[..., [1, 0]]
@@ -325,9 +325,10 @@ class PointsToMultiViewImageDepths(BaseTransform):
     def _save_depth_subplot(self, depth: np.ndarray, results: dict) -> None:
         """Save `gt_depths` as a subplot with one panel per camera.
 
-        Each panel shows the camera image (if available) with the projected
-        LiDAR depth points overlaid, color-coded by distance. A standalone
-        depth-only figure is also saved alongside it.
+        The figure contains three row blocks per camera:
+        - image underlay (if available) + projected LiDAR depth points
+        - image pixels only
+        - depth-only heatmap (no image pixel values)
 
         Args:
             depth (np.ndarray): (num_cameras, H, W) ground-truth depth map.
@@ -336,47 +337,85 @@ class PointsToMultiViewImageDepths(BaseTransform):
         """
         imgs = results.get("img", None)
 
-        # Layout: keep it a single row up to 6 cameras, otherwise wrap to a
-        # roughly-square grid.
+        # Layout:
+        # - Top block: image underlay + projected depth points.
+        # - Middle block: image pixels only.
+        # - Bottom block: depth-only heatmap (no image pixel values).
         if self.num_cameras <= 6:
-            rows, cols = 1, self.num_cameras
+            base_rows, cols = 1, self.num_cameras
         else:
             cols = int(np.ceil(np.sqrt(self.num_cameras)))
-            rows = int(np.ceil(self.num_cameras / cols))
+            base_rows = int(np.ceil(self.num_cameras / cols))
+        rows = base_rows * 3
 
         fig, axes = plt.subplots(
             rows, cols, figsize=(4 * cols, 4 * rows), squeeze=False
         )
 
         for c in range(self.num_cameras):
-            ax = axes[c // cols, c % cols]
             d = depth[c]
             ys, xs = np.nonzero(d)
             vals = d[ys, xs]
 
+            # Row block 1: image + depth scatter.
+            ax_overlay = axes[c // cols, c % cols]
             if imgs is not None and c < len(imgs):
-                ax.imshow(imgs[c].astype(np.uint8))
+                ax_overlay.imshow(imgs[c].astype(np.uint8))
                 if vals.size > 0:
-                    ax.scatter(
+                    ax_overlay.scatter(
                         xs, ys, c=vals, cmap="turbo",
                         vmin=0, vmax=self.max_depth, s=1,
                     )
             else:
-                ax.imshow(
+                ax_overlay.imshow(
                     d, cmap="turbo", vmin=0, vmax=self.max_depth,
                     interpolation="nearest",
                 )
+            ax_overlay.set_title(f"cam {c} overlay  ({vals.size} pts)")
+            ax_overlay.set_xticks([])
+            ax_overlay.set_yticks([])
 
-            ax.set_title(f"cam {c}  ({vals.size} pts)")
-            ax.set_xticks([])
-            ax.set_yticks([])
+            # Row block 2: image-only visualization.
+            ax_img = axes[base_rows + (c // cols), c % cols]
+            if imgs is not None and c < len(imgs):
+                ax_img.imshow(imgs[c].astype(np.uint8))
+            else:
+                ax_img.imshow(
+                    d, cmap="gray", vmin=0, vmax=self.max_depth,
+                    interpolation="nearest",
+                )
+            ax_img.set_title(f"cam {c} image-only")
+            ax_img.set_xticks([])
+            ax_img.set_yticks([])
+
+            # Row block 3: depth-only visualization.
+            ax_depth = axes[(base_rows * 2) + (c // cols), c % cols]
+            ax_depth.imshow(
+                d, cmap="turbo", vmin=0, vmax=self.max_depth,
+                interpolation="nearest",
+            )
+            ax_depth.set_title(f"cam {c} depth-only")
+            ax_depth.set_xticks([])
+            ax_depth.set_yticks([])
 
         # Hide any unused subplots when n doesn't fill the grid.
-        for c in range(self.num_cameras, rows * cols):
+        for c in range(self.num_cameras, base_rows * cols):
             axes[c // cols, c % cols].axis("off")
+            axes[base_rows + (c // cols), c % cols].axis("off")
+            axes[(base_rows * 2) + (c // cols), c % cols].axis("off")
+
+        # Shared depth colorbar with numeric values.
+        depth_mappable = plt.cm.ScalarMappable(
+            cmap="turbo", norm=plt.Normalize(vmin=0, vmax=self.max_depth)
+        )
+        depth_mappable.set_array([])
+        cbar = fig.colorbar(
+            depth_mappable, ax=axes, location="right", fraction=0.02, pad=0.02
+        )
+        cbar.set_label("Depth (m)")
 
         fig.suptitle(f"gt_depths — {self._depth_idx}")
-        fig.tight_layout()
+        fig.tight_layout(rect=[0, 0, 0.96, 0.97])
         
         self._depth_idx += 1
         out_path = self.visualize_dir / f"{self._depth_idx:06d}_gt_depths.png"

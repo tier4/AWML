@@ -39,7 +39,7 @@ train_pipeline = [
         type="PointsToMultiViewImageDepths", 
         img_shape=image_size, 
         num_cameras=len(camera_order), 
-        visualize_dir="work_dirs/visualize_depths",
+        # visualize_dir="work_dirs/visualize_depths",
     ),
     dict(
         type="BEVFusionGlobalRotScaleTrans",

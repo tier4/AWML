@@ -286,7 +286,7 @@ class BEVFusion(Base3DDetector):
                 contains a tensor with shape (num_instances, 7).
         """
         batch_input_metas = [item.metainfo for item in batch_data_samples]
-        feats = self.extract_feat(batch_inputs_dict, batch_input_metas, using_image_features)
+        feats, _ = self.extract_feat(batch_inputs_dict, batch_input_metas, using_image_features)
 
         if self.with_bbox_head:
             outputs = self.bbox_head.predict(feats, batch_input_metas)
@@ -307,6 +307,7 @@ class BEVFusion(Base3DDetector):
         features = []
 
         is_onnx_inference = False
+        pred_depths = None
         if imgs is not None and "lidar2img" not in batch_inputs_dict:
             # NOTE(knzo25): normal training and testing
             imgs = imgs.contiguous()
@@ -394,11 +395,16 @@ class BEVFusion(Base3DDetector):
         feats, pred_depths = self.extract_feat(batch_inputs_dict, batch_input_metas, using_image_features)
 
         losses = dict()
-        if self.loss_depth_weight > 0 and "gt_depths" in batch_inputs_dict:
+        if self.loss_depth_weight > 0 and pred_depths is not None:
             with torch.amp.autocast("cuda", enabled=False):
-                gt_depths = batch_inputs_dict["gt_depths"]
-                print("gt_depths shape: ", gt_depths.shape)
-                print("pred_depths shape: ", pred_depths.shape)
+                gt_depths = torch.stack(
+                    [
+                        meta["gt_depths"]
+                        if isinstance(meta["gt_depths"], torch.Tensor)
+                        else torch.as_tensor(meta["gt_depths"])
+                        for meta in batch_input_metas
+                    ]
+                ).to(device=pred_depths.device, dtype=torch.float32)
                 depth_loss = self.get_depth_loss(gt_depths, pred_depths)
                 losses["loss_depth"] = depth_loss
         
@@ -439,8 +445,8 @@ class BEVFusion(Base3DDetector):
 
     def get_depth_loss(self, depth_labels, depth_preds):
         depth_labels = self.get_downsampled_gt_depth(depth_labels)
-        depth_preds = depth_preds.permute(0, 2, 3,
-                                          1).contiguous().view(-1, self.D)
+        # (B, N, D, H, W) -> (B*N*H*W, D)
+        depth_preds = depth_preds.permute(0, 1, 3, 4, 2).contiguous().view(-1, self.view_transform.D)
         fg_mask = torch.max(depth_labels, dim=1).values > 0.0
         depth_labels = depth_labels[fg_mask]
         depth_preds = depth_preds[fg_mask]
