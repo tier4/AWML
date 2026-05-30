@@ -36,6 +36,10 @@ train_pipeline = [
         is_train=True,
     ),
     dict(
+        type="PointsRangeFilter", 
+        point_cloud_range=[-61.2, -61.2, -10.0, 61.2, 61.2, 10.0]
+    ),
+    dict(
         type="PointsToMultiViewImageDepths", 
         img_shape=image_size, 
         num_cameras=len(camera_order), 
