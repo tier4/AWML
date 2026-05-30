@@ -265,13 +265,16 @@ class PointsToMultiViewImageDepths(BaseTransform):
             Added keys:
                 - gt_depths (np.ndarray): Ground truth depths in (N, H, W) for (number of cameras, height, width).
         """ 
-        lidar2image = results["lidar2img"]
-        img_aug_matrix = results.get("img_aug_matrix", np.eye(4))
-        lidar_aug_matrix = results.get("lidar_aug_matrix", np.eye(4))
+        lidar2image = np.array(results["lidar2img"])
+        img_aug_matrix = np.array(results.get("img_aug_matrix", np.eye(4)))
+        lidar_aug_matrix = np.array(results.get("lidar_aug_matrix", np.eye(4)))
         
         lidar_aug_matrix_inverse = np.linalg.inv(lidar_aug_matrix)
-        depth = np.zeros((self.num_cameras, self.img_shape[0], self.img_shape[1]), dtype=np.float32)
-        
+        depth = np.full(
+            (self.num_cameras, self.img_shape[0], self.img_shape[1]),
+            np.inf,
+            dtype=np.float32,
+        )        
         cur_coords = results["points"][:,:3]
         # inverse aug
         cur_coords -= lidar_aug_matrix[:3, 3]
@@ -305,8 +308,13 @@ class PointsToMultiViewImageDepths(BaseTransform):
         for c in range(self.num_cameras):
             masked_coords = cur_coords[c, on_img[c]].astype(np.int64)
             masked_dist = dist[c, on_img[c]]
-            depth[c, masked_coords[:, 0], masked_coords[:, 1]] = masked_dist
+            np.fmin.at(
+                depth[c],
+                (masked_coords[:, 0], masked_coords[:, 1]),
+                masked_dist,
+            )
 
+        depth[np.isinf(depth)] = 0
         results["gt_depths"] = depth
 
         if self.visualize_dir is not None:
