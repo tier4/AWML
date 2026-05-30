@@ -426,14 +426,9 @@ class BEVFusion(Base3DDetector):
                                     gt_depths)
         gt_depths = torch.min(gt_depths_tmp, dim=-1).values
         gt_depths = gt_depths.view(B * N, H // self.depth_gt_downsample,
-                                   W // self.downsample)
+                                   W // self.depth_gt_downsample)
 
-        gt_depths = torch.log(gt_depths) - torch.log(
-            torch.tensor(dbounds[0]).float())
-        gt_depths = gt_depths * (D - 1) / torch.log(
-            torch.tensor(dbounds[1] - 1.).float() /
-            dbounds[0])
-        gt_depths = gt_depths + 1.
+        gt_depths = (gt_depths - (dbounds[0] - dbounds[2])) / dbounds[2]
         gt_depths = torch.where((gt_depths < D + 1) & (gt_depths >= 0.0),
                                 gt_depths, torch.zeros_like(gt_depths))
         gt_depths = F.one_hot(
