@@ -248,7 +248,6 @@ class LSSTransformV2(BaseViewTransformV2):
         ybound: Tuple[float, float, float],
         zbound: Tuple[float, float, float],
         dbound: Tuple[float, float, float],
-        loss_depth_weight: float = 3.0,
         downsample: int = 1,
     ):
         super().__init__(
@@ -263,7 +262,6 @@ class LSSTransformV2(BaseViewTransformV2):
         )
         self.depthnet = nn.Conv2d(self.in_channels, self.D + self.C, 1)
         self.downsample = DownSampleNet(downsample, out_channels, out_channels)
-        self.loss_depth_weight = loss_depth_weight
 
     def get_cam_feats(self, x):
         B, N, C, fH, fW = x.shape
@@ -279,5 +277,5 @@ class LSSTransformV2(BaseViewTransformV2):
     def forward(self, *args, **kwargs):
         x, depth_softmax = super().forward(*args, **kwargs)
         x = self.downsample(x)
-        return x
+        return x, depth_softmax
     

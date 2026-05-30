@@ -5,6 +5,8 @@ num_proposals = 200
 
 # Image network
 model = dict(
+    depth_gt_downsample=8, 
+    loss_depth_weight=3.0,
     view_transform=dict(
         type="LSSTransformV2",
         xbound=[-54.0, 54.0, 0.3],

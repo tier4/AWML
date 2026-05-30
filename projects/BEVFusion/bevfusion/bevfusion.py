@@ -397,6 +397,8 @@ class BEVFusion(Base3DDetector):
         if self.loss_depth_weight > 0 and "gt_depths" in batch_inputs_dict:
             with torch.amp.autocast("cuda", enabled=False):
                 gt_depths = batch_inputs_dict["gt_depths"]
+                print("gt_depths shape: ", gt_depths.shape)
+                print("pred_depths shape: ", pred_depths.shape)
                 depth_loss = self.get_depth_loss(gt_depths, pred_depths)
                 losses["loss_depth"] = depth_loss
         

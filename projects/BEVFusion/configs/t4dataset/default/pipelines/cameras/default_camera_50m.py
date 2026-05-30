@@ -29,11 +29,17 @@ train_pipeline = [
     dict(
         type="ImageAug3D",
         final_dim=image_size,
-				resize_lim=[0.29, 0.35],
+		resize_lim=[0.29, 0.35],
         bot_pct_lim=[0.0, 0.0],
         rot_lim=[0.0, 0.0],
         rand_flip=True,
         is_train=True,
+    ),
+    dict(
+        type="PointsToMultiViewImageDepths", 
+        img_shape=image_size, 
+        num_cameras=len(camera_order), 
+        visualize_dir="work_dirs/visualize_depths",
     ),
     dict(
         type="BEVFusionGlobalRotScaleTrans",
@@ -85,6 +91,7 @@ train_pipeline = [
             "vehicle_type",
             "city",
             "traffic_cone_barrier_status",
+            "gt_depths",
         ],
     ),
 ]

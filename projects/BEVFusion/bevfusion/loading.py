@@ -275,10 +275,10 @@ class PointsToMultiViewImageDepths(BaseTransform):
         cur_coords = results["points"][:,:3]
         # inverse aug
         cur_coords -= lidar_aug_matrix[:3, 3]
-        cur_coords = lidar_aug_matrix_inverse[:3, :3].matmul(cur_coords.transpose(1, 0))
+        cur_coords = lidar_aug_matrix_inverse[:3, :3] @ cur_coords.transpose(1, 0)
 
         # lidar2image
-        cur_coords = lidar2image[:, :3, :3].matmul(cur_coords)
+        cur_coords = lidar2image[:, :3, :3] @ cur_coords
         cur_coords += lidar2image[:, :3, 3].reshape(-1, 3, 1)
 
         # get 2d coords
@@ -289,7 +289,7 @@ class PointsToMultiViewImageDepths(BaseTransform):
         cur_coords[:, :2, :] /= cur_coords[:, 2:3, :]
 
         # imgaug
-        cur_coords = img_aug_matrix[:, :3, :3].matmul(cur_coords)
+        cur_coords = img_aug_matrix[:, :3, :3] @ cur_coords
         cur_coords += img_aug_matrix[:, :3, 3].reshape(-1, 3, 1)
         cur_coords = cur_coords[:, :2, :].transpose(1, 2)
 

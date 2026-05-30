@@ -4,7 +4,7 @@ from .bevfusion_necks import GeneralizedLSSFPN
 from .bevfusion_voxel_encoder import BEVFusionVoxelFeatureNet, HardSimpleVoxelSinCosEncoder
 from .depth_lss import DepthLSSTransform, LSSTransform
 from .depth_lss_v2 import LSSTransformV2
-from .loading import BEVLoadMultiViewImageFromFiles
+from .loading import BEVLoadMultiViewImageFromFiles, PointsToMultiViewImageDepths
 from .sparse_encoder import BEVFusionSparseEncoder
 from .transformer import TransformerDecoderLayer
 from .transforms_3d import (
@@ -39,4 +39,5 @@ __all__ = [
     "HardSimpleVoxelSinCosEncoder",
     "BEVFusionVoxelFeatureNet",
     "LSSTransformV2",
+    "PointsToMultiViewImageDepths"
 ]

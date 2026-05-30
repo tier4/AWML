@@ -89,6 +89,8 @@ train_pipeline = [
             "timestamp",
             "vehicle_type",
             "city",
+            "traffic_cone_barrier_status",
+            "gt_depths",
         ],
     ),
 ]
