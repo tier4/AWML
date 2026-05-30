@@ -1,7 +1,9 @@
 # Copyright (c) OpenMMLab. All rights reserved.
 import copy
-import os
+from pathlib import Path
 from typing import List, Optional
+
+import matplotlib.pyplot as plt
 
 import mmcv
 import numpy as np
@@ -9,6 +11,8 @@ from mmdet3d.datasets.transforms import LoadMultiViewImageFromFiles
 from mmdet3d.registry import TRANSFORMS
 from mmengine.fileio import get
 from mmengine.logging import print_log
+from mmcv.transforms import BaseTransform
+
 
 
 @TRANSFORMS.register_module()
@@ -217,3 +221,158 @@ class BEVLoadMultiViewImageFromFiles(LoadMultiViewImageFromFiles):
         results["num_views"] = self.num_views
         results["num_ref_frames"] = self.num_ref_frames
         return results
+
+
+@TRANSFORMS.register_module()
+class PointsToMultiViewImageDepths(BaseTransform):
+    """Convert points to multi-view image depths.
+
+    Args:
+        points (np.ndarray): Points in the world coordinate system.
+        img_shape (tuple): Shape of the image.
+        cam2img (np.ndarray): Camera to image transformation matrix.
+        lidar2cam (np.ndarray): LiDAR to camera transformation matrix.
+        visualize_dir (str, optional): If set, saves a per-sample subplot
+            of `gt_depths` (one panel per camera) to this directory.
+            Useful for debugging the projection. Defaults to None.
+        max_depth (float): Upper clip for the depth color scale (m).
+            Defaults to 80.
+    """
+    def __init__(
+        self,
+        img_shape,
+        num_cameras: int,
+        visualize_dir: Optional[str] = None,
+        max_depth: float = 80.0,
+    ):
+        self.img_shape = img_shape
+        self.num_cameras = num_cameras
+        self.visualize_dir = visualize_dir
+        self.max_depth = max_depth
+        self.visualize_dir = Path(visualize_dir) if visualize_dir is not None else None
+        if self.visualize_dir is not None:
+            self.visualize_dir.mkdir(parents=True, exist_ok=True)
+        self._depth_idx = 0
+    
+    def transform(self, results: dict) -> Optional[dict]:
+        """Call function to load multi-view image from files.
+
+        Args:
+            results (dict): Result dict containing multi-view image filenames.
+
+        Returns:
+            dict: The result dict containing the multi-view image data.
+            Added keys:
+                - gt_depths (np.ndarray): Ground truth depths in (N, H, W) for (number of cameras, height, width).
+        """ 
+        lidar2image = results["lidar2img"]
+        img_aug_matrix = results.get("img_aug_matrix", np.eye(4))
+        lidar_aug_matrix = results.get("lidar_aug_matrix", np.eye(4))
+        
+        lidar_aug_matrix_inverse = np.linalg.inv(lidar_aug_matrix)
+        depth = np.zeros((self.num_cameras, self.img_shape[0], self.img_shape[1]), dtype=np.float32)
+        
+        cur_coords = results["points"][:,:3]
+        # inverse aug
+        cur_coords -= lidar_aug_matrix[:3, 3]
+        cur_coords = lidar_aug_matrix_inverse[:3, :3].matmul(cur_coords.transpose(1, 0))
+
+        # lidar2image
+        cur_coords = lidar2image[:, :3, :3].matmul(cur_coords)
+        cur_coords += lidar2image[:, :3, 3].reshape(-1, 3, 1)
+
+        # get 2d coords
+        dist = cur_coords[:, 2, :]
+        valid_dist_mask = dist > 0
+
+        cur_coords[:, 2, :] = np.clip(cur_coords[:, 2, :], 1e-5, 1e5)
+        cur_coords[:, :2, :] /= cur_coords[:, 2:3, :]
+
+        # imgaug
+        cur_coords = img_aug_matrix[:, :3, :3].matmul(cur_coords)
+        cur_coords += img_aug_matrix[:, :3, 3].reshape(-1, 3, 1)
+        cur_coords = cur_coords[:, :2, :].transpose(1, 2)
+
+        # normalize coords for grid sample
+        cur_coords = cur_coords[..., [1, 0]]
+        on_img = (
+            (cur_coords[..., 0] < self.img_shape[0])
+            & (cur_coords[..., 0] >= 0)
+            & (cur_coords[..., 1] < self.img_shape[1])
+            & (cur_coords[..., 1] >= 0)
+            & valid_dist_mask
+        )
+        for c in range(self.num_cameras):
+            masked_coords = cur_coords[c, on_img[c]].astype(np.int64)
+            masked_dist = dist[c, on_img[c]]
+            depth[c, masked_coords[:, 0], masked_coords[:, 1]] = masked_dist
+
+        results["gt_depths"] = depth
+
+        if self.visualize_dir is not None:
+            self._save_depth_subplot(depth, results)
+
+        return results
+
+    def _save_depth_subplot(self, depth: np.ndarray, results: dict) -> None:
+        """Save `gt_depths` as a subplot with one panel per camera.
+
+        Each panel shows the camera image (if available) with the projected
+        LiDAR depth points overlaid, color-coded by distance. A standalone
+        depth-only figure is also saved alongside it.
+
+        Args:
+            depth (np.ndarray): (num_cameras, H, W) ground-truth depth map.
+            results (dict): The pipeline result dict; used for the underlay
+                image and to derive a unique filename.
+        """
+        imgs = results.get("img", None)
+
+        # Layout: keep it a single row up to 6 cameras, otherwise wrap to a
+        # roughly-square grid.
+        if self.num_cameras <= 6:
+            rows, cols = 1, self.num_cameras
+        else:
+            cols = int(np.ceil(np.sqrt(self.num_cameras)))
+            rows = int(np.ceil(self.num_cameras / cols))
+
+        fig, axes = plt.subplots(
+            rows, cols, figsize=(4 * cols, 4 * rows), squeeze=False
+        )
+
+        for c in range(self.num_cameras):
+            ax = axes[c // cols, c % cols]
+            d = depth[c]
+            ys, xs = np.nonzero(d)
+            vals = d[ys, xs]
+
+            if imgs is not None and c < len(imgs):
+                ax.imshow(imgs[c].astype(np.uint8))
+                if vals.size > 0:
+                    ax.scatter(
+                        xs, ys, c=vals, cmap="turbo",
+                        vmin=0, vmax=self.max_depth, s=1,
+                    )
+            else:
+                ax.imshow(
+                    d, cmap="turbo", vmin=0, vmax=self.max_depth,
+                    interpolation="nearest",
+                )
+
+            ax.set_title(f"cam {c}  ({vals.size} pts)")
+            ax.set_xticks([])
+            ax.set_yticks([])
+
+        # Hide any unused subplots when n doesn't fill the grid.
+        for c in range(self.num_cameras, rows * cols):
+            axes[c // cols, c % cols].axis("off")
+
+        fig.suptitle(f"gt_depths — {self._depth_idx}")
+        fig.tight_layout()
+        
+        self._depth_idx += 1
+        out_path = self.visualize_dir / f"{self._depth_idx:06d}_gt_depths.png"
+        fig.savefig(out_path, dpi=120, bbox_inches="tight")
+        plt.close(fig)
+        print(f"Saved gt_depths visualization to {out_path}")
+ 

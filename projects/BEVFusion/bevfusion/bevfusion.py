@@ -34,6 +34,8 @@ class BEVFusion(Base3DDetector):
         bbox_head: Optional[dict] = None,
         init_cfg: OptMultiConfig = None,
         seg_head: Optional[dict] = None,
+        loss_depth_weight: float = 3.0,
+        depth_gt_downsample: int = 1,
         **kwargs,
     ) -> None:
         """Initialize BEVFusion model.
@@ -76,6 +78,8 @@ class BEVFusion(Base3DDetector):
         self.bbox_head = MODELS.build(bbox_head)
 
         self.init_weights()
+        self.loss_depth_weight = loss_depth_weight
+        self.depth_gt_downsample = depth_gt_downsample
 
     def _forward(
         self, batch_inputs_dict: Tensor, batch_data_samples: OptSampleList = [], using_image_features=False, **kwargs
@@ -174,14 +178,14 @@ class BEVFusion(Base3DDetector):
         lidar_aug_matrix_inverse=None,
         geom_feats=None,
         using_image_features=False,
-    ) -> torch.Tensor:
+    ) -> Tuple[torch.Tensor, torch.Tensor]:
 
         if not using_image_features:
             x = self.get_image_backbone_features(x)
 
         with torch.amp.autocast("cuda",enabled=False):
             # with torch.autocast(device_type='cuda', dtype=torch.float32):
-            x = self.view_transform(
+            x, pred_depths = self.view_transform(
                 x,
                 points,
                 lidar2image,
@@ -195,7 +199,7 @@ class BEVFusion(Base3DDetector):
                 lidar_aug_matrix_inverse,
                 geom_feats,
             )
-        return x
+        return x, pred_depths
 
     def extract_pts_feat(self, feats, coords, sizes, points=None) -> torch.Tensor:
         if points is not None:
@@ -320,7 +324,7 @@ class BEVFusion(Base3DDetector):
             camera2lidar = imgs.new_tensor(np.asarray(camera2lidar))
             img_aug_matrix = imgs.new_tensor(np.asarray(img_aug_matrix))
             lidar_aug_matrix = imgs.new_tensor(np.asarray(lidar_aug_matrix))
-            img_feature = self.extract_img_feat(
+            img_feature, pred_depths = self.extract_img_feat(
                 imgs,
                 deepcopy(points),
                 lidar2image,
@@ -342,7 +346,7 @@ class BEVFusion(Base3DDetector):
             lidar_aug_matrix = batch_inputs_dict["lidar_aug_matrix"]
             geom_feats = batch_inputs_dict["geom_feats"]
 
-            img_feature = self.extract_img_feat(
+            img_feature, pred_depths = self.extract_img_feat(
                 imgs,
                 points,
                 lidar2image,
@@ -377,7 +381,7 @@ class BEVFusion(Base3DDetector):
         if self.pts_neck is not None:
             x = self.pts_neck(x)
 
-        return x
+        return x, pred_depths
 
     def loss(
         self,
@@ -387,12 +391,65 @@ class BEVFusion(Base3DDetector):
         **kwargs,
     ) -> List[Det3DDataSample]:
         batch_input_metas = [item.metainfo for item in batch_data_samples]
-        feats = self.extract_feat(batch_inputs_dict, batch_input_metas, using_image_features)
+        feats, pred_depths = self.extract_feat(batch_inputs_dict, batch_input_metas, using_image_features)
 
         losses = dict()
+        if self.loss_depth_weight > 0 and "gt_depths" in batch_inputs_dict:
+            with torch.amp.autocast("cuda", enabled=False):
+                gt_depths = batch_inputs_dict["gt_depths"]
+                depth_loss = self.get_depth_loss(gt_depths, pred_depths)
+                losses["loss_depth"] = depth_loss
+        
         if self.with_bbox_head:
             bbox_loss = self.bbox_head.loss(feats, batch_data_samples)
-
-        losses.update(bbox_loss)
+            losses.update(bbox_loss)
 
         return losses
+ 
+    def get_downsampled_gt_depth(self, gt_depths):
+        """
+        Input:
+            gt_depths: [B, N, H, W]
+        Output:
+            gt_depths: [B*N*h*w, d]
+        """
+        B, N, H, W = gt_depths.shape
+        D = self.view_transform.D
+        dbounds = self.view_transform.dbound
+        gt_depths = gt_depths.view(B * N, H // self.depth_gt_downsample,
+                                   self.depth_gt_downsample, W // self.depth_gt_downsample,
+                                   self.depth_gt_downsample, 1)
+        gt_depths = gt_depths.permute(0, 1, 3, 5, 2, 4).contiguous()
+        gt_depths = gt_depths.view(-1, self.depth_gt_downsample * self.depth_gt_downsample)
+        gt_depths_tmp = torch.where(gt_depths == 0.0,
+                                    1e5 * torch.ones_like(gt_depths),
+                                    gt_depths)
+        gt_depths = torch.min(gt_depths_tmp, dim=-1).values
+        gt_depths = gt_depths.view(B * N, H // self.depth_gt_downsample,
+                                   W // self.downsample)
+
+        gt_depths = torch.log(gt_depths) - torch.log(
+            torch.tensor(dbounds[0]).float())
+        gt_depths = gt_depths * (D - 1) / torch.log(
+            torch.tensor(dbounds[1] - 1.).float() /
+            dbounds[0])
+        gt_depths = gt_depths + 1.
+        gt_depths = torch.where((gt_depths < D + 1) & (gt_depths >= 0.0),
+                                gt_depths, torch.zeros_like(gt_depths))
+        gt_depths = F.one_hot(
+            gt_depths.long(), num_classes=D + 1).view(-1, D + 1)[:, 1:]
+        return gt_depths.float()
+
+    def get_depth_loss(self, depth_labels, depth_preds):
+        depth_labels = self.get_downsampled_gt_depth(depth_labels)
+        depth_preds = depth_preds.permute(0, 2, 3,
+                                          1).contiguous().view(-1, self.D)
+        fg_mask = torch.max(depth_labels, dim=1).values > 0.0
+        depth_labels = depth_labels[fg_mask]
+        depth_preds = depth_preds[fg_mask]
+        depth_loss = F.binary_cross_entropy(
+            depth_preds,
+            depth_labels,
+            reduction='none',
+        ).sum() / max(1.0, fg_mask.sum())
+        return self.loss_depth_weight * depth_loss

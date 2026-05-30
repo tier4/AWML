@@ -70,7 +70,10 @@ class BaseViewTransformV2(BaseViewTransform):
             ranks_bev, ranks_depth, ranks_feat = geom_feats_precomputed
             x, depth_softmax = self.get_cam_feats(img)
             x = self.bev_pool_precomputed(x, depth_softmax, ranks_bev, ranks_depth, ranks_feat)
-
+            
+            # No return depth predictions when precomputed geometry features are used
+            depth_softmax = None
+        
         else:
             intrins = camera_intrinsics[..., :3, :3]
             post_rots = img_aug_matrix[..., :3, :3]
@@ -99,8 +102,8 @@ class BaseViewTransformV2(BaseViewTransform):
                 depth_softmax,
             ) = self.get_cam_feats(img)
             x = self.bev_pool(view_feats, depth_softmax, geom)
-
-        return x
+         
+        return x, depth_softmax
 
     def bev_pool_aux(self, geom_feats):
         B, N, D, H, W, C = geom_feats.shape
@@ -229,7 +232,7 @@ class BaseViewTransformV2(BaseViewTransform):
         bev_feat = self.compute_bev_pool(
             view_feats, depth_softmax, ranks_bev, ranks_depth, ranks_feat, interval_starts, interval_lengths
         )
-        return bev_feat
+        return bev_feat 
 
 
 @MODELS.register_module()
@@ -245,6 +248,7 @@ class LSSTransformV2(BaseViewTransformV2):
         ybound: Tuple[float, float, float],
         zbound: Tuple[float, float, float],
         dbound: Tuple[float, float, float],
+        loss_depth_weight: float = 3.0,
         downsample: int = 1,
     ):
         super().__init__(
@@ -259,6 +263,7 @@ class LSSTransformV2(BaseViewTransformV2):
         )
         self.depthnet = nn.Conv2d(self.in_channels, self.D + self.C, 1)
         self.downsample = DownSampleNet(downsample, out_channels, out_channels)
+        self.loss_depth_weight = loss_depth_weight
 
     def get_cam_feats(self, x):
         B, N, C, fH, fW = x.shape
@@ -272,6 +277,7 @@ class LSSTransformV2(BaseViewTransformV2):
         return view_feats, depth_softmax
     
     def forward(self, *args, **kwargs):
-        x = super().forward(*args, **kwargs)
+        x, depth_softmax = super().forward(*args, **kwargs)
         x = self.downsample(x)
         return x
+    
