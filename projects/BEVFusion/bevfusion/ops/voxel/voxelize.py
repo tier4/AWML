@@ -102,16 +102,23 @@ def voxelize_fast_gpu(points, voxel_size, point_cloud_range, max_num_points, max
     grid = torch.round((rmax - rmin) / vs).long()
     gx, gy = int(grid[0]), int(grid[1])
 
-    in_range = ((points[:, :3] >= rmin) & (points[:, :3] < rmax)).all(dim=1)
-    pts = points[in_range]
     feat_dim = points.shape[1]
+    # Match the CUDA dynamic_voxelize_kernel EXACTLY: compute the voxel index for
+    # every point, then drop any whose index is outside the rounded grid
+    # (c_* < 0 or c_* >= grid_*). A raw `>= min & < max` range filter is NOT
+    # equivalent when range/voxel_size isn't an integer, or when a point at the
+    # upper bound floors up to c_* == grid_* — the C++ op discards those, so the
+    # fast path must too (else it emits out-of-grid voxels the encoder rejects).
+    coord = torch.floor((points[:, :3] - rmin) / vs).long()  # (N, 3)
+    valid = ((coord >= 0) & (coord < grid)).all(dim=1)
+    pts = points[valid]
+    coord = coord[valid]
     if pts.shape[0] == 0:
         return (
             points.new_zeros((0, max_num_points, feat_dim)),
             points.new_zeros((0, 3), dtype=torch.int32),
             points.new_zeros((0,), dtype=torch.int32),
         )
-    coord = torch.floor((pts[:, :3] - rmin) / vs).long()  # (Nv, 3), >= 0
     flat = coord[:, 2] * (gy * gx) + coord[:, 1] * gx + coord[:, 0]
 
     order = torch.argsort(flat, stable=True)  # stable -> in-voxel original order
