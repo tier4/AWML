@@ -35,15 +35,16 @@ train_pipeline = [
         rand_flip=True,
         is_train=True,
     ),
-    dict(
-        type="PointsRangeFilter", 
-        point_cloud_range=[-80.0, -80.0, -10.0, 80.0, 80.0, 10.0]
-    ),
+    # dict(
+    #     type="PointsRangeFilter", 
+    #     point_cloud_range=[-80.0, -80.0, -10.0, 80.0, 80.0, 10.0]
+    # ),
     dict(
         type="PointsToMultiViewImageDepths", 
         img_shape=image_size, 
         num_cameras=len(camera_order), 
-        # visualize_dir="work_dirs/visualize_depths",
+        depth_bounds=[1.0, 60.0],
+        # visualize_dir="work_dirs/visualize_depths_2",
     ),
     dict(
         type="BEVFusionGlobalRotScaleTrans",

@@ -1,6 +1,6 @@
 # Dataset parameters
 backend_args = None
-num_workers = 16
+num_workers = 8
 input_modality = dict(use_lidar=True, use_camera=False)
 
 # range setting
@@ -8,13 +8,13 @@ point_cloud_range = [-54.0, -54.0, -3.0, 54.0, 54.0, 5.0]
 voxel_size = [0.075, 0.075, 0.2]
 grid_size = [1440, 1440, 41]
 eval_class_range = {
-    "car": 54.0,
-    "truck": 54.0,
-    "bus": 54.0,
-    "bicycle": 54.0,
-    "pedestrian": 54.0,
-    "traffic_cone": 54.0,
-    "barrier": 54.0,
+    "car": 51.2,
+    "truck": 51.2,
+    "bus": 51.2,
+    "bicycle": 51.2,
+    "pedestrian": 51.2,
+    "traffic_cone": 51.2,
+    "barrier": 51.2,
 }
 
 # LiDAR parameters

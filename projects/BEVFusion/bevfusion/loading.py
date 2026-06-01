@@ -1,7 +1,7 @@
 # Copyright (c) OpenMMLab. All rights reserved.
 import copy
 from pathlib import Path
-from typing import List, Optional
+from typing import List, Optional, Tuple
 
 import matplotlib.pyplot as plt
 
@@ -242,6 +242,7 @@ class PointsToMultiViewImageDepths(BaseTransform):
         self,
         img_shape,
         num_cameras: int,
+        depth_bounds: Tuple[float, float],
         visualize_dir: Optional[str] = None,
         max_depth: float = 80.0,
     ):
@@ -249,6 +250,7 @@ class PointsToMultiViewImageDepths(BaseTransform):
         self.num_cameras = num_cameras
         self.visualize_dir = visualize_dir
         self.max_depth = max_depth
+        self.depth_bounds = depth_bounds
         self.visualize_dir = Path(visualize_dir) if visualize_dir is not None else None
         if self.visualize_dir is not None:
             self.visualize_dir.mkdir(parents=True, exist_ok=True)
@@ -286,7 +288,7 @@ class PointsToMultiViewImageDepths(BaseTransform):
 
         # get 2d coords
         dist = cur_coords[:, 2, :]
-        valid_dist_mask = dist > 0
+        valid_dist_mask = (dist >= self.depth_bounds[0]) & (dist < self.depth_bounds[1])
 
         cur_coords[:, 2, :] = np.clip(cur_coords[:, 2, :], 1e-5, 1e5)
         cur_coords[:, :2, :] /= cur_coords[:, 2:3, :]

@@ -76,8 +76,7 @@ class BEVFusion(Base3DDetector):
         self.pts_neck = MODELS.build(pts_neck) if pts_neck is not None else None
 
         self.bbox_head = MODELS.build(bbox_head)
-
-        self.init_weights()
+        self._weights_initialized = False
         self.loss_depth_weight = loss_depth_weight
         self.depth_gt_downsample = depth_gt_downsample
 
@@ -135,8 +134,11 @@ class BEVFusion(Base3DDetector):
         return loss, log_vars  # type: ignore
 
     def init_weights(self) -> None:
+        if self._weights_initialized:
+            return
         if self.img_backbone is not None:
             self.img_backbone.init_weights()
+        self._weights_initialized = True
 
     @property
     def with_bbox_head(self):
@@ -437,8 +439,10 @@ class BEVFusion(Base3DDetector):
                                    W // self.depth_gt_downsample)
 
         gt_depths = (gt_depths - (dbounds[0] - dbounds[2])) / dbounds[2]
-        gt_depths = torch.where(gt_depths >= 0.0, gt_depths, torch.zeros_like(gt_depths))
-        gt_depths = torch.clamp(gt_depths, max=float(D))
+        # gt_depths = torch.where(gt_depths >= 0.0, gt_depths, torch.zeros_like(gt_depths))
+        # gt_depths = torch.clamp(gt_depths, max=float(D))
+        gt_depths = torch.where((gt_depths >= 0.0) & (gt_depths < D + 1), gt_depths, torch.zeros_like(gt_depths))
+        # gt_depths = torch.clamp(gt_depths, max=float(D))
         gt_depths = F.one_hot(
             gt_depths.long(), num_classes=D + 1).view(-1, D + 1)[:, 1:]
         return gt_depths.float()
