@@ -60,14 +60,14 @@ class Local3DBBoxExpand(BaseTransform):
         for i in range(len(input_dict["gt_bboxes_3d"])):
             if not label_masks[i]:
                 continue 
-              
+            
             expand_width = np.random.uniform(self.expand_widths[0], self.expand_widths[1])
             input_dict["gt_bboxes_3d"].tensor[i, self.width_dim] += expand_width
             if self.expand_lengths is not None:
                 expand_length = np.random.uniform(self.expand_lengths[0], self.expand_lengths[1])
                 input_dict["gt_bboxes_3d"].tensor[i, self.length_dim] += expand_length
         
-            return input_dict
+        return input_dict
 
     def __repr__(self) -> str:
         """str: Return a string that describes the module."""
