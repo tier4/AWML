@@ -15,7 +15,6 @@ indexes voxels by coords.
 import time
 
 import torch
-
 from bevfusion.ops.voxel.voxelize import voxelization, voxelize_fast_gpu
 
 
@@ -54,9 +53,11 @@ def check(name, points, voxel_size, pcr, max_points, max_voxels):
     torch.cuda.synchronize()
     tf = (time.perf_counter() - t0) / 30 * 1000
 
-    print(f"{name:8s}: M={cc.shape[0]:>7d} coord_eq={coord_eq} num_eq={num_eq} "
-          f"vfe_maxdiff={vfe_max:.1e} | cpp={tc:.1f}ms fast={tf:.2f}ms ({tc / tf:.0f}x)  "
-          f"{'PASS' if ok else 'FAIL'}")
+    print(
+        f"{name:8s}: M={cc.shape[0]:>7d} coord_eq={coord_eq} num_eq={num_eq} "
+        f"vfe_maxdiff={vfe_max:.1e} | cpp={tc:.1f}ms fast={tf:.2f}ms ({tc / tf:.0f}x)  "
+        f"{'PASS' if ok else 'FAIL'}"
+    )
     return ok
 
 
@@ -70,10 +71,14 @@ def make_cloud(num_voxels, max_pts_per, vs, pcr, dev):
     gz = round((pcr[5] - pcr[2]) / vs[2])
     vst = torch.tensor(vs, device=dev)
     rmin = torch.tensor(pcr[:3], device=dev)
-    cells = torch.stack([
-        torch.randint(0, gx, (num_voxels,), device=dev),
-        torch.randint(0, gy, (num_voxels,), device=dev),
-        torch.randint(0, gz, (num_voxels,), device=dev)], dim=1)
+    cells = torch.stack(
+        [
+            torch.randint(0, gx, (num_voxels,), device=dev),
+            torch.randint(0, gy, (num_voxels,), device=dev),
+            torch.randint(0, gz, (num_voxels,), device=dev),
+        ],
+        dim=1,
+    )
     counts = torch.randint(1, max_pts_per + 1, (num_voxels,), device=dev)
     rep = cells.repeat_interleave(counts, 0).float()
     jitter = torch.rand(rep.shape[0], 3, device=dev) * 0.999  # stay inside the cell
