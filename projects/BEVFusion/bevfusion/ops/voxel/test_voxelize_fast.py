@@ -20,7 +20,6 @@ import time
 import unittest
 
 import torch
-
 from bevfusion.ops.voxel.voxelize import voxelization, voxelize_fast_gpu
 
 VS = [0.17, 0.17, 0.2]
