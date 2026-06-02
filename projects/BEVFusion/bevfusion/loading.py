@@ -272,11 +272,6 @@ class PointsToMultiViewImageDepths(BaseTransform):
         lidar_aug_matrix = np.array(results.get("lidar_aug_matrix", np.eye(4)))
         
         lidar_aug_matrix_inverse = np.linalg.inv(lidar_aug_matrix)
-        depth = np.full(
-            (self.num_cameras, self.img_shape[0], self.img_shape[1]),
-            np.inf,
-            dtype=np.float32,
-        )        
         cur_coords = results["points"][:,:3]
         # inverse aug
         cur_coords -= lidar_aug_matrix[:3, 3]
@@ -307,16 +302,19 @@ class PointsToMultiViewImageDepths(BaseTransform):
             & (cur_coords[..., 1] >= 0)
             & valid_dist_mask
         )
-        for c in range(self.num_cameras):
-            masked_coords = cur_coords[c, on_img[c]].astype(np.int64)
-            masked_dist = dist[c, on_img[c]]
-            np.fmin.at(
-                depth[c],
-                (masked_coords[:, 0], masked_coords[:, 1]),
-                masked_dist,
-            )
+        
+        # Avoid loops since it's slow 
+        indices = np.nonzero(on_img)
+        camera_indices = indices[0]
+        point_indices = indices[1]
+        masked_coords = cur_coords[camera_indices, point_indices].astype(np.int64)
+        masked_dist = dist[camera_indices, point_indices]
 
-        depth[np.isinf(depth)] = 0
+        # Possibly to have duplicates and the last one will be used, however, the chance is small	
+        flatten_indices = camera_indices * self.img_shape[0] * self.img_shape[1] + masked_coords[:, 0] * self.img_shape[1] + masked_coords[:, 1]
+        depth_flat = np.zeros(self.num_cameras * self.img_shape[0] * self.img_shape[1], dtype=np.float32)
+        depth_flat[flatten_indices] = masked_dist
+        depth = depth_flat.reshape(self.num_cameras, self.img_shape[0], self.img_shape[1])
         results["gt_depths"] = depth
 
         if self.visualize_dir is not None:

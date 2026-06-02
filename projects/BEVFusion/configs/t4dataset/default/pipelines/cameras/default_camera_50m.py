@@ -44,7 +44,7 @@ train_pipeline = [
         img_shape=image_size, 
         num_cameras=len(camera_order), 
         depth_bounds=[1.0, 60.0],
-        # visualize_dir="work_dirs/visualize_depths_2",
+        # visualize_dir="work_dirs/visualize_depths_3",
     ),
     dict(
         type="BEVFusionGlobalRotScaleTrans",
