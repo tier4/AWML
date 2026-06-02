@@ -1,4 +1,6 @@
 # Copyright (c) Facebook, Inc. and its affiliates. All Rights Reserved
+import math
+
 import torch
 from torch import nn
 from torch.autograd import Function
@@ -96,11 +98,16 @@ def voxelize_fast_gpu(points, voxel_size, point_cloud_range, max_num_points, max
     replicate in that (rare) case.
     """
     dev = points.device
+    # Grid dims from the python config on the HOST — never a CUDA tensor — so
+    # there is no per-forward device->host `.item()` sync (this path is hot).
+    # `floor(x + 0.5)` mirrors the C++ op's `round()` exactly
+    # (voxelization_cuda.cu: `grid_* = round((max - min) / voxel_*)`).
+    gx = int(math.floor((point_cloud_range[3] - point_cloud_range[0]) / voxel_size[0] + 0.5))
+    gy = int(math.floor((point_cloud_range[4] - point_cloud_range[1]) / voxel_size[1] + 0.5))
+    gz = int(math.floor((point_cloud_range[5] - point_cloud_range[2]) / voxel_size[2] + 0.5))
     vs = torch.tensor(voxel_size, device=dev, dtype=points.dtype)
     rmin = torch.tensor(point_cloud_range[:3], device=dev, dtype=points.dtype)
-    rmax = torch.tensor(point_cloud_range[3:], device=dev, dtype=points.dtype)
-    grid = torch.round((rmax - rmin) / vs).long()
-    gx, gy = int(grid[0]), int(grid[1])
+    grid = torch.tensor([gx, gy, gz], device=dev)  # small constant, no .item() sync
 
     feat_dim = points.shape[1]
     # Match the CUDA dynamic_voxelize_kernel EXACTLY: compute the voxel index for
@@ -119,14 +126,23 @@ def voxelize_fast_gpu(points, voxel_size, point_cloud_range, max_num_points, max
             points.new_zeros((0, 3), dtype=torch.int32),
             points.new_zeros((0,), dtype=torch.int32),
         )
+    # Internal grouping key only: linearize the (x, y, z) voxel index with z as
+    # the most-significant axis so a stable sort groups same-voxel points and
+    # preserves their original order. This z-major key does NOT change the
+    # output coord order (`coors` below is (x, y, z)).
     flat = coord[:, 2] * (gy * gx) + coord[:, 1] * gx + coord[:, 0]
 
     order = torch.argsort(flat, stable=True)  # stable -> in-voxel original order
     flat_s, pts_s, coord_s = flat[order], pts[order], coord[order]
     uniq, inv, counts = torch.unique_consecutive(flat_s, return_inverse=True, return_counts=True)
-    num_voxels = int(uniq.shape[0])
+    num_voxels = int(uniq.shape[0])  # tensor.shape is a host int — no device sync
     if num_voxels > max_voxels:
-        return None  # caller falls back to the C++ op
+        # Bail to the C++ op (don't just keep the first max_voxels here): the C++
+        # truncation when M > max_voxels drops voxels by FIRST-APPEARANCE order,
+        # which the sort-order fast path doesn't reproduce — keeping max_voxels
+        # here would retain a different voxel set and break bit-identity. This
+        # branch is rare in practice (M ~ 100k < max_voxels = 120k for a 120m sweep).
+        return None
 
     seg_start = torch.zeros(num_voxels, dtype=torch.long, device=dev)
     seg_start[1:] = torch.cumsum(counts, 0)[:-1]
@@ -136,7 +152,11 @@ def voxelize_fast_gpu(points, voxel_size, point_cloud_range, max_num_points, max
     voxels = torch.zeros(num_voxels, max_num_points, feat_dim, device=dev, dtype=pts.dtype)
     voxels[inv[keep], rank[keep]] = pts_s[keep]
     num_points_per_voxel = counts.clamp(max=max_num_points).to(torch.int32)
-    coors = coord_s[seg_start].to(torch.int32)  # (M, 3) = (x, y, z), matching the C++ op
+    # (x, y, z) order — matches this repo's compiled hard_voxelize, whose
+    # dynamic_voxelize_kernel writes coors_offset[0..2] = c_x, c_y, c_z
+    # (voxelization_cuda.cu). Any (z, y, x) flip for the sparse encoder happens
+    # downstream and applies equally to this and the C++ op's output.
+    coors = coord_s[seg_start].to(torch.int32)  # (M, 3) = (x, y, z)
     return voxels, coors, num_points_per_voxel
 
 
