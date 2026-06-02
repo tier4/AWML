@@ -1,6 +1,7 @@
 # Copyright (c) OpenMMLab. All rights reserved.
 import copy
 from pathlib import Path
+import time
 from typing import List, Optional, Tuple
 
 import matplotlib.pyplot as plt
@@ -266,17 +267,22 @@ class PointsToMultiViewImageDepths(BaseTransform):
             dict: The result dict containing the multi-view image data.
             Added keys:
                 - gt_depths (np.ndarray): Ground truth depths in (N, H, W) for (number of cameras, height, width).
-        """ 
-        lidar2image = np.array(results["lidar2img"])
-        img_aug_matrix = np.array(results.get("img_aug_matrix", np.eye(4)))
-        lidar_aug_matrix = np.array(results.get("lidar_aug_matrix", np.eye(4)))
+        """
+        start_time = time.perf_counter()
         
-        lidar_aug_matrix_inverse = np.linalg.inv(lidar_aug_matrix)
-        cur_coords = results["points"][:,:3]
-        # inverse aug
-        cur_coords -= lidar_aug_matrix[:3, 3]
-        cur_coords = lidar_aug_matrix_inverse[:3, :3] @ cur_coords.transpose(1, 0)
+        lidar2image = np.asarray(results["lidar2img"])
+        img_aug_matrix = np.asarray(results["img_aug_matrix"]) if "img_aug_matrix" in results else np.eye(4)
+        cur_coords = results["points"].numpy()[:,:3]
 
+        # inverse lidar aug
+        if "lidar_aug_matrix" in results:
+          lidar_aug_matrix = np.asarray(results["lidar_aug_matrix"])
+          lidar_aug_matrix_inverse = np.linalg.inv(lidar_aug_matrix)
+          cur_coords -= lidar_aug_matrix[:3, 3]
+          cur_coords = lidar_aug_matrix_inverse[:3, :3] @ cur_coords.transpose(1, 0)
+        else:
+          cur_coords = cur_coords.transpose(1, 0)
+          
         # lidar2image
         cur_coords = lidar2image[:, :3, :3] @ cur_coords
         cur_coords += lidar2image[:, :3, 3].reshape(-1, 3, 1)
@@ -302,7 +308,7 @@ class PointsToMultiViewImageDepths(BaseTransform):
             & (cur_coords[..., 1] >= 0)
             & valid_dist_mask
         )
-        
+
         # Avoid loops since it's slow 
         indices = np.nonzero(on_img)
         camera_indices = indices[0]
@@ -319,7 +325,8 @@ class PointsToMultiViewImageDepths(BaseTransform):
 
         if self.visualize_dir is not None:
             self._save_depth_subplot(depth, results)
-
+        end_time = time.perf_counter()
+        print(f"Time taken: {end_time - start_time} seconds")
         return results
 
     def _save_depth_subplot(self, depth: np.ndarray, results: dict) -> None:
