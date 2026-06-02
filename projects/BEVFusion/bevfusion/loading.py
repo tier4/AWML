@@ -1,7 +1,6 @@
 # Copyright (c) OpenMMLab. All rights reserved.
 import copy
 from pathlib import Path
-import time
 from typing import List, Optional, Tuple
 
 import matplotlib.pyplot as plt
@@ -268,8 +267,6 @@ class PointsToMultiViewImageDepths(BaseTransform):
             Added keys:
                 - gt_depths (np.ndarray): Ground truth depths in (N, H, W) for (number of cameras, height, width).
         """
-        start_time = time.perf_counter()
-        
         lidar2image = np.asarray(results["lidar2img"])
         img_aug_matrix = np.asarray(results["img_aug_matrix"]) if "img_aug_matrix" in results else np.eye(4)
         cur_coords = results["points"].numpy()[:,:3]
@@ -325,8 +322,6 @@ class PointsToMultiViewImageDepths(BaseTransform):
 
         if self.visualize_dir is not None:
             self._save_depth_subplot(depth, results)
-        end_time = time.perf_counter()
-        print(f"Time taken: {end_time - start_time} seconds")
         return results
 
     def _save_depth_subplot(self, depth: np.ndarray, results: dict) -> None:
