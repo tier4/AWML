@@ -1063,6 +1063,12 @@ class T4MetricV2(BaseMetric):
                     # Number of prediction matches (TPs) and matches at the optimal confidence threshold
                     metric_dict[f"T4MetricV2_label/{label_name}_num-match_{matching_mode}_{threshold}"] = ap.num_tp
                     metric_dict[
+                        f"T4MetricV2_label/{label_name}_min-recall-num-match_{matching_mode}_{threshold}"
+                    ] = ap.num_tp_at_min_recall_conf
+                    metric_dict[
+                        f"T4MetricV2_label/{label_name}_medium-recall-num-match_{matching_mode}_{threshold}"
+                    ] = ap.num_tp_at_medium_recall_conf
+                    metric_dict[
                         f"T4MetricV2_label/{label_name}_optimal-num-match_{matching_mode}_{threshold}"
                     ] = ap.num_tp_at_optimal_conf
 
