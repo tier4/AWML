@@ -994,16 +994,16 @@ class T4MetricV2(BaseMetric):
                         f"T4MetricV2_label_detection/{label_name}_interp-confs_{matching_mode}_{threshold}"
                     ] = ap.conf_interp.tolist()
 
-										# TP error metrics (e.g. ATE, AOE, ASE, AVE, AAE)
+					# TP error metrics (e.g. ATE, AOE, ASE, AVE, AAE)
                     if ap.tp_error_metrics is not None:
                         for tp_error_metric in ap.tp_error_metrics:
                             mode = tp_error_metric.mode
                             average_mode = tp_error_metric.average_mode
 
-                            metric_dict[
+                            iterable_metrics[
                                 f"T4MetricV2_label_detection/{label_name}_{mode}_values_{matching_mode}_{threshold}"
                             ] = tp_error_metric.values.tolist()
-                            metric_dict[
+                            iterable_metrics[
                                 f"T4MetricV2_label_detection/{label_name}_{mode}_interp-values_{matching_mode}_{threshold}"
                             ] = tp_error_metric.interpolated_values.tolist()
 
@@ -1073,17 +1073,20 @@ class T4MetricV2(BaseMetric):
                             average_mode = tp_error_metric.average_mode
 
                             metric_dict[
-                                f"T4MetricV2_label/{label_name}_{mode}_values_{matching_mode}_{threshold}"
-                            ] = tp_error_metric.values.tolist()
-                            metric_dict[
-                                f"T4MetricV2_label/{label_name}_{mode}_interpolated-values_{matching_mode}_{threshold}"
-                            ] = tp_error_metric.interpolated_values.tolist()
-                            metric_dict[
-                                f"T4MetricV2_label/{label_name}_{average_mode}_{matching_mode}_{threshold}"
+                                f"T4MetricV2_label/{label_name}_tp-error_{average_mode}_{matching_mode}_{threshold}"
                             ] = tp_error_metric.avg_metric
                             metric_dict[
-                                f"T4MetricV2_label/{label_name}_optimal-{average_mode}_{matching_mode}_{threshold}"
+                                f"T4MetricV2_label/{label_name}_tp-error-min-recall-conf_{average_mode}_{matching_mode}_{threshold}"
+                            ] = tp_error_metric.min_recall_conf
+                            metric_dict[
+                                f"T4MetricV2_label/{label_name}_tp-error-optimal-{average_mode}_{matching_mode}_{threshold}"
                             ] = tp_error_metric.optimal_avg_metric
+                            metric_dict[
+                                f"T4MetricV2_label/{label_name}_tp-error-medium-{average_mode}_{matching_mode}_{threshold}"
+                            ] = tp_error_metric.medium_avg_metric
+                            metric_dict[
+                                f"T4MetricV2_label/{label_name}_tp-error-medium-recall-conf-{average_mode}_{matching_mode}_{threshold}"
+                            ] = tp_error_metric.medium_recall_conf
 
                 # Label metadata key
                 metric_dict[f"metadata_label/test_{label_name}_num_predictions"] = label_num_preds
@@ -1098,17 +1101,33 @@ class T4MetricV2(BaseMetric):
             # Add mean TP errors (e.g. mATE, mAOE, mASE, mAVE, mAAE)
             if map_instance.mean_tp_errors is not None:
                 for mean_tp_error_name, mean_tp_error_value in map_instance.mean_tp_errors.items():
-                    metric_dict[f"T4MetricV2/{mean_tp_error_name}_{matching_mode}"] = mean_tp_error_value
-
+                    metric_dict[f"T4MetricV2/mean-tp-error_{mean_tp_error_name}_{matching_mode}"] = mean_tp_error_value
+                    
+                    optimal_mean_tp_errors = map_instance.optimal_mean_tp_errors.get(mean_tp_error_name, None)
+                    if optimal_mean_tp_errors is not None:
+                        metric_dict[f"T4MetricV2/mean-tp-error-optimal-{mean_tp_error_name}_{matching_mode}"] = optimal_mean_tp_errors
+                    
+                    medium_mean_tp_errors = map_instance.medium_mean_tp_errors.get(mean_tp_error_name, None)
+                    if medium_mean_tp_errors is not None:
+                        metric_dict[f"T4MetricV2/mean-tp-error-medium-{mean_tp_error_name}_{matching_mode}"] = medium_mean_tp_errors
+            
             # Add NuScenes Detection Score (NDS) based on mAP and mAPH
             if map_instance.map_based_nds is not None:
                 metric_dict[
                     f"T4MetricV2/{map_instance.map_based_nds.metric_prefix_name}_nds_{matching_mode}"
                 ] = map_instance.map_based_nds.nds
+            if map_instance.medium_map_based_nds is not None:
+                metric_dict[
+                    f"T4MetricV2/{map_instance.medium_map_based_nds.metric_prefix_name}_nds_{matching_mode}"
+                ] = map_instance.medium_map_based_nds.nds
             if map_instance.mapH_based_nds is not None:
                 metric_dict[
                     f"T4MetricV2/{map_instance.mapH_based_nds.metric_prefix_name}_nds_{matching_mode}"
                 ] = map_instance.mapH_based_nds.nds
+            if map_instance.medium_mapH_based_nds is not None:
+                metric_dict[
+                    f"T4MetricV2/{map_instance.medium_mapH_based_nds.metric_prefix_name}_nds_{matching_mode}"
+                ] = map_instance.medium_mapH_based_nds.nds
 
             total_num_preds = num_preds
 
@@ -1165,7 +1184,10 @@ class T4MetricV2(BaseMetric):
                             aggregated_metrics[evaluator_name]["metadata_label"][label_name] = {}
 
                         aggregated_metrics[evaluator_name]["metadata_label"][label_name][key] = value
-                    elif key.startswith("T4MetricV2/mAP_") or key.startswith("T4MetricV2/mAPH_"):
+                    elif key.startswith("T4MetricV2/tp-mean-error"):
+                        # These are TP error metrics, put them in the metrics section
+                        aggregated_metrics[evaluator_name]["tp_mean_errors"][key] = value
+                    elif key.startswith("T4MetricV2/mAP_") or key.startswith("T4MetricV2/mAPH_") or "nds" in key:
                         # These are overall metrics, put them in the metrics section
                         aggregated_metrics[evaluator_name]["metrics"][key] = value
                     else:
