@@ -149,6 +149,47 @@ class BEVFusion(Base3DDetector):
     def with_seg_head(self):
         """bool: Whether the detector has a segmentation head."""
         return hasattr(self, "seg_head") and self.seg_head is not None
+    
+    def prepare_camera_depth_aware_parameters(
+        self, 
+        camera_intrinsics: torch.Tensor, 
+        img_aug_matrix: torch.Tensor,
+        lidar_aug_matrix: torch.Tensor,
+        camera2lidar: torch.Tensor,
+    ) -> torch.Tensor:
+        """
+        Args:
+            camera_intrinsics: torch.Tensor, the camera intrinsics of shape (B, N, 3, 3).
+            img_aug_matrix: torch.Tensor, the image augmentation matrix of shape (B, N, 4, 4).
+            lidar_aug_matrix: torch.Tensor, the lidar augmentation matrix of shape (B, N, 4, 4).
+            camera2lidar: torch.Tensor, the camera to lidar matrix of shape (B, N, 4, 4).
+        Returns:
+            torch.Tensor, the camera depth aware parameters of shape (B*N, N_CAMERA_DEPTH_PARAMETERS).
+        """
+        # (B*N, 15)
+        mlp_input = torch.stack([
+            camera_intrinsics[:, :, 0, 0],   # fx
+            camera_intrinsics[:, :, 1, 1],   # fy
+            camera_intrinsics[:, :, 0, 2],   # cx
+            camera_intrinsics[:, :, 1, 2],   # cy
+            img_aug_matrix[:, :, 0, 0],   # r11
+            img_aug_matrix[:, :, 0, 1],   # r12
+            img_aug_matrix[:, :, 0, 3],   # t1
+            img_aug_matrix[:, :, 1, 0],   # r21
+            img_aug_matrix[:, :, 1, 1],   # r22
+            img_aug_matrix[:, :, 1, 3],   # t2
+            lidar_aug_matrix[:, :, 0, 0],   # r11
+            lidar_aug_matrix[:, :, 0, 1],   # r12
+            lidar_aug_matrix[:, :, 1, 0],   # r21
+            lidar_aug_matrix[:, :, 1, 1],   # r22
+            lidar_aug_matrix[:, :, 2, 2],   # r33
+        ], dim=-1)
+        # (B, N, 4, 4) -> (B, N, 3, 4) -> (B*N, 12)
+        camera2lidar_flatten = camera2lidar[:,:,:3,:].view(-1, 12)
+
+        # (B*N, 15+12)
+        mlp_input = torch.cat([mlp_input, camera2lidar_flatten], dim=-1)
+        return mlp_input
 
     def get_image_backbone_features(self, x: torch.Tensor) -> torch.Tensor:
         B, N, C, H, W = x.size()
@@ -327,6 +368,12 @@ class BEVFusion(Base3DDetector):
             camera2lidar = imgs.new_tensor(np.asarray(camera2lidar))
             img_aug_matrix = imgs.new_tensor(np.asarray(img_aug_matrix))
             lidar_aug_matrix = imgs.new_tensor(np.asarray(lidar_aug_matrix))
+            camera_depth_aware_parameters = self.prepare_camera_depth_aware_parameters(
+                camera_intrinsics=camera_intrinsics,
+                img_aug_matrix=img_aug_matrix,
+                lidar_aug_matrix=lidar_aug_matrix,
+                camera2lidar=camera2lidar,
+            )
             img_feature, pred_depths = self.extract_img_feat(
                 imgs,
                 deepcopy(points),
@@ -337,6 +384,7 @@ class BEVFusion(Base3DDetector):
                 lidar_aug_matrix,
                 batch_input_metas,
                 using_image_features=using_image_features,
+                camera_depth_aware_parameters=camera_depth_aware_parameters,
             )
             features.append(img_feature)
         elif imgs is not None:
@@ -348,6 +396,8 @@ class BEVFusion(Base3DDetector):
             img_aug_matrix = batch_inputs_dict["img_aug_matrix"]
             lidar_aug_matrix = batch_inputs_dict["lidar_aug_matrix"]
             geom_feats = batch_inputs_dict["geom_feats"]
+            # Retrieve the parameters from deployment code directly
+            camera_depth_aware_parameters = batch_inputs_dict["camera_depth_aware_parameters"]
 
             img_feature, pred_depths = self.extract_img_feat(
                 imgs,
@@ -360,6 +410,7 @@ class BEVFusion(Base3DDetector):
                 batch_input_metas,
                 geom_feats=geom_feats,
                 using_image_features=using_image_features,
+                camera_depth_aware_parameters=camera_depth_aware_parameters,
             )
             features.append(img_feature)
 

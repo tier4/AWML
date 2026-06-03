@@ -1,10 +1,10 @@
 _base_ = [
     "../default_bevfusion_camera_30e_8xb16_j6gen2_base_50m.py",
-    "../../default/models/resnet50/camera_resnet50_fpn_lss_50m.py",
+    "../../default/models/resnet50/camera_resnet50_fpn_camera_aware_lssv2_50m.py",
 ]
 
 experiment_group_name = "bevfusion_camera/j6gen2_depth_base_adjusted/" + _base_.dataset_type
-experiment_name = "bevfusion_camera_resnet50_fpn_lss_v2_30e_8xb16_j6gen2_base_50m"
+experiment_name = "bevfusion_camera_resnet50_fpn_camera_depth_aware_lssv2_30e_8xb16_j6gen2_base_50m"
 work_dir = "work_dirs/" + experiment_group_name + "/" + experiment_name
 
 # model parameter
