@@ -55,6 +55,8 @@ eval_class_range = {
     "bus": 51.2,
     "bicycle": 51.2,
     "pedestrian": 51.2,
+    "traffic_cone": 51.2,
+    "barrier": 51.2,
 }
 
 input_modality = dict(
