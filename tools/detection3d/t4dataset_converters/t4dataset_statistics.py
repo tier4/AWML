@@ -2,13 +2,11 @@ import json
 from collections import defaultdict
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Tuple
 
 import numpy as np
 import polars as pl
 from t4_devkit.schema import Sample, SampleData
-
-_UNKNOWN = "unknown"
 
 
 @dataclass(frozen=True)
@@ -16,15 +14,12 @@ class T4DatasetSceneMetadata:
     """Class to store metadata for a T4Dataset."""
 
     scene_id: str
-    location: Optional[str]
-    vehicle_type: Optional[str]
+    location: str
+    vehicle_type: str
 
     @property
     def frame_prefix(self) -> str:
-        # scene_id can be "{dataset}/{version}" only — city / vehicle_type may be missing
-        loc = self.location if self.location is not None else _UNKNOWN
-        vt = self.vehicle_type if self.vehicle_type is not None else _UNKNOWN
-        return loc + "/" + vt
+        return self.location + "/" + self.vehicle_type
 
 
 class T4DatasetStatistics:

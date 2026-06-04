@@ -1,7 +1,4 @@
 #!/usr/bin/env bash
-# When training with randomness.deterministic=True, PyTorch requires this for
-# deterministic cuBLAS matmul; see CUBLAS_WORKSPACE_CONFIG in PyTorch/CUDA docs.
-export CUBLAS_WORKSPACE_CONFIG="${CUBLAS_WORKSPACE_CONFIG:-:4096:8}"
 
 CONFIG=$1
 GPUS=$2
