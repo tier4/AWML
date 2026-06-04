@@ -64,7 +64,6 @@ class StreamPETRDataset(T4Dataset):
         reset_origin=False,
         anchor_camera="CAM_FRONT",
         shuffle_cameras=True,
-        check_img_paths=True,
         *args,
         **kwargs,
     ):
@@ -72,8 +71,6 @@ class StreamPETRDataset(T4Dataset):
         self.reset_origin = reset_origin
         self.camera_order = camera_order
         self.anchor_camera = anchor_camera
-        # If False, skip os.path.exists() per camera during filter_data() (huge NAS cost at init).
-        self.check_img_paths = check_img_paths
         super().__init__(metainfo=metainfo, filter_empty_gt=filter_empty_gt, *args, **kwargs)
         assert seq_mode, "Only supported seq_mode training at the moment"
         self.queue_length = queue_length
@@ -146,13 +143,11 @@ class StreamPETRDataset(T4Dataset):
                 [
                     x in info["images"]
                     and info["images"][x]["img_path"]
+                    and os.path.exists(info["images"][x]["img_path"])
                     for x in self.camera_order
                 ]
             ):
                 return False
-            if self.check_img_paths:
-                if not all(os.path.exists(info["images"][x]["img_path"]) for x in self.camera_order):
-                    return False
             return True
 
         for i in range(len(self.data_list)):
@@ -295,8 +290,6 @@ class StreamPETRDataset(T4Dataset):
                         sample_token=info["token"],
                         filenames=image_paths,
                         flag_index=self.flag[index],
-                        # T4Metric / evaluators need full lidar path on data samples
-                        lidar_path=info.get("lidar_path", ""),
                     ),
                 )
             )

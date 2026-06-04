@@ -57,6 +57,7 @@ class GroupStreamingSampler(Sampler):
             g = torch.Generator()
             g.manual_seed(self.seed + epoch)
             chosen_indices = torch.randperm(len(self.group_indices), generator=g).tolist()
+            print("DEBUG: First 10 entries of shuffled indices are: ", chosen_indices[:10])
         else:
             chosen_indices = torch.arange(len(self.group_indices)).tolist()
 

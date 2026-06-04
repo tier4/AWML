@@ -4,26 +4,15 @@
 #  Modified by Shihao Wang
 # ------------------------------------------------------------------------
 # flash-attention
-import warnings
+import math
 
 import torch
 import torch.nn as nn
-import torch.nn.functional as F
 from einops import rearrange
+from flash_attn.bert_padding import unpad_input
+from flash_attn.flash_attn_interface import flash_attn_varlen_kvpacked_func
 from torch.nn.functional import linear
 from torch.nn.init import constant_, xavier_normal_, xavier_uniform_
-
-try:
-    from flash_attn.bert_padding import unpad_input
-    from flash_attn.flash_attn_interface import flash_attn_varlen_kvpacked_func
-
-    _FLASH_ATTN_AVAILABLE = True
-except ImportError:
-    unpad_input = None  # type: ignore[assignment]
-    flash_attn_varlen_kvpacked_func = None  # type: ignore[assignment]
-    _FLASH_ATTN_AVAILABLE = False
-
-_FLASH_FALLBACK_WARNED = False
 
 
 def _in_projection_packed(q, k, v, w, b=None):
@@ -33,22 +22,6 @@ def _in_projection_packed(q, k, v, w, b=None):
     else:
         b_q, b_k, b_v = b.chunk(3)
     return linear(q, w_q, b_q), linear(k, w_k, b_k), linear(v, w_v, b_v)
-
-
-def _sdpa_kvpacked_no_mask(q, kv, causal, dropout_p, softmax_scale, training):
-    """Batched MHA when there is no key padding; q (B,T,H,D), kv (B,S,2,H,D)."""
-    k, v = kv.unbind(2)
-    q_t = q.transpose(1, 2)
-    k_t = k.transpose(1, 2)
-    v_t = v.transpose(1, 2)
-    return F.scaled_dot_product_attention(
-        q_t,
-        k_t,
-        v_t,
-        dropout_p=dropout_p if training else 0.0,
-        is_causal=causal,
-        scale=softmax_scale,
-    ).transpose(1, 2)
 
 
 class FlashAttention(nn.Module):
@@ -83,30 +56,6 @@ class FlashAttention(nn.Module):
         fp16 = q.dtype in [torch.float16, torch.bfloat16]
         batch_size = q.shape[0]
         seqlen_q, seqlen_k = q.shape[1], kv.shape[1]
-
-        global _FLASH_FALLBACK_WARNED
-        if key_padding_mask is None and not _FLASH_ATTN_AVAILABLE:
-            if not _FLASH_FALLBACK_WARNED:
-                warnings.warn(
-                    "flash_attn is not installed; using PyTorch scaled_dot_product_attention "
-                    "(slower). For full speed install flash-attn matching your CUDA/PyTorch.",
-                    UserWarning,
-                    stacklevel=2,
-                )
-                _FLASH_FALLBACK_WARNED = True
-            output = _sdpa_kvpacked_no_mask(
-                q, kv, causal, self.dropout_p, self.softmax_scale, self.training
-            )
-            if not fp16:
-                output = output.float()
-            return output, None
-
-        if key_padding_mask is not None and not _FLASH_ATTN_AVAILABLE:
-            raise RuntimeError(
-                "flash_attn is required when using key_padding_mask. "
-                "Install with: pip install flash-attn (needs a CUDA toolchain matching PyTorch)."
-            )
-
         if key_padding_mask is None:
             q, kv = rearrange(q, "b s ... -> (b s) ..."), rearrange(kv, "b s ... -> (b s) ...")
             max_sq, max_sk = seqlen_q, seqlen_k
@@ -152,7 +101,7 @@ class FlashAttention(nn.Module):
                 causal=causal,
             )
             if not fp16:
-                output_unpad = output_unpad.float()
+                output = output.float()
             output = rearrange(output_unpad, "(b s) ... -> b s ...", b=batch_size)
 
         return output, None

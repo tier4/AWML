@@ -59,11 +59,6 @@ def main():
 
     cfg = Config.fromfile(args.config)
 
-    # Runner.from_cfg requires work_dir; many StreamPETR configs omit it.
-    if cfg.get("work_dir", None) is None:
-        cfg.work_dir = os.path.join("./work_dirs", os.path.splitext(os.path.basename(args.config))[0])
-    os.makedirs(cfg.work_dir, exist_ok=True)
-
     # Replace flash attention with normal attention
     cfg.model.pts_bbox_head.transformer.decoder.transformerlayers.attn_cfgs[0]["type"] = "PETRMultiheadAttention"
     cfg.model.pts_bbox_head.transformer.decoder.transformerlayers.attn_cfgs[1]["type"] = "PETRMultiheadAttention"
