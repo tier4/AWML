@@ -7,9 +7,10 @@ import numpy as np
 import torch
 from mmdet3d.registry import MODELS
 from mmengine.logging import print_log
-from mmcv.runner import BaseModule
-from mmcv.cnn import build_conv_layer, build_norm_layer, build_plugin_layer
-from mmdet.models.backbones.resnet import BasicBlock
+from mmengine.model import BaseModule
+from mmcv.cnn import build_conv_layer, build_norm_layer 
+# from mmdet.models.backbones.resnet import BasicBlock
+from mmdet3d.utils import ConfigType, OptConfigType, OptMultiConfig
 
 from torch import nn
 from torch.utils.checkpoint import checkpoint
@@ -23,29 +24,32 @@ class CustomDepthBasicBlock(BaseModule):
       self, 
       in_channels: int, 
       out_channel: int, 
-      kernel_size: int = 3,
+      padding: int = 0,
+      kernel_size: int = 1,
       stride: int = 1, 
       dilation: int = 1,
-      with_cp: bool = False, 
+      with_cp: bool = False,
+      norm_cfg=dict(type='BN'), 
+      conv_cfg=None,
       downsample: Optional[nn.Module] = None, 
       init_cfg: OptMultiConfig = None):
         super().__init__(init_cfg)
 
-        self.norm1_name, norm1 = build_norm_layer(norm_cfg, out_channel, postfix=1)
-        self.norm2_name, norm2 = build_norm_layer(norm_cfg, out_channel, postfix=2)
+        self.norm1_name, self.norm1 = build_norm_layer(norm_cfg, out_channel, postfix=1)
+        self.norm2_name, self.norm2 = build_norm_layer(norm_cfg, out_channel, postfix=2)
         self.conv1 = build_conv_layer(
           conv_cfg, 
           in_channels, 
           out_channel, 
           kernel_size, 
           stride=stride, 
-          padding=dilation, 
+          padding=padding, 
           dilation=dilation, bias=False
         )
-        self.add_module(self.norm1_name, norm1)
+        self.add_module(self.norm1_name, self.norm1)
         self.conv2 = build_conv_layer(
-            conv_cfg, planes, planes, 3, padding=1, bias=False)
-        self.add_module(self.norm2_name, norm2)
+            conv_cfg, out_channel, out_channel, kernel_size, padding=padding, bias=False)
+        self.add_module(self.norm2_name, self.norm2)
 
         self.relu = nn.ReLU(inplace=True)
         self.downsample = downsample
@@ -199,7 +203,7 @@ class CameraDepthAwareNet(nn.Module):
         self.context_se = SELayer(channels=hidden_channels)
         self.context_conv = nn.Conv2d(
             hidden_channels, 
-            depth_channels + out_channels, 
+            out_channels, 
             kernel_size=1,
             stride=1, padding=0, bias=True)
 
@@ -211,12 +215,18 @@ class CameraDepthAwareNet(nn.Module):
             drop_out=self.mlp_drop_out
         )
         self.depth_se = SELayer(channels=hidden_channels)
+        # self.depth_conv = nn.Sequential(
+        #     BasicBlock(hidden_channels, hidden_channels, downsample=None),
+        #     BasicBlock(hidden_channels, hidden_channels),
+        #     BasicBlock(hidden_channels, hidden_channels),
+        #     nn.Conv2d(hidden_channels, depth_channels, kernel_size=1, stride=1, padding=0, bias=True)
+        # )
         self.depth_conv = nn.Sequential(
-            BasicBlock(hidden_channels, hidden_channels, downsample=None),
-            BasicBlock(hidden_channels, hidden_channels),
-            BasicBlock(hidden_channels, hidden_channels),
+            CustomDepthBasicBlock(hidden_channels, hidden_channels, downsample=None, kernel_size=1),
+            CustomDepthBasicBlock(hidden_channels, hidden_channels, kernel_size=1),
+            CustomDepthBasicBlock(hidden_channels, hidden_channels, kernel_size=1),
             nn.Conv2d(hidden_channels, depth_channels, kernel_size=1, stride=1, padding=0, bias=True)
-        ) 
+        )
         # self._init_weight()
 
     def _init_weight(self):
@@ -257,11 +267,11 @@ class CameraDepthAwareNet(nn.Module):
         Returns:
             torch.Tensor, the output tensor of shape (B*N, C, H, W).
         """
-        # depth_camera_depth_aware_features = self.depth_camera_depth_aware_mlp(camera_depth_aware_features)
+        depth_camera_depth_aware_features = self.depth_camera_depth_aware_mlp(camera_depth_aware_features)
         # # (B*N, mlp_out_channels) -> (B*N, mlp_out_channels, 1, 1)
-        # depth_camera_depth_aware_features = depth_camera_depth_aware_features.view(-1, self.hidden_channels, 1, 1)
+        depth_camera_depth_aware_features = depth_camera_depth_aware_features.view(-1, self.hidden_channels, 1, 1)
         # # (B*N, C, H, W)
-        # depth_features = self.depth_se(depth_features, depth_camera_depth_aware_features)
+        depth_features = self.depth_se(depth_features, depth_camera_depth_aware_features)
         if self.with_cp:
             depth_features = checkpoint(self.depth_conv, depth_features)
         else:
