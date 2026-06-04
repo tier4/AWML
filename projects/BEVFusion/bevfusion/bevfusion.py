@@ -1,7 +1,10 @@
+import math
 from collections import OrderedDict
 from copy import deepcopy
+from pathlib import Path
 from typing import Dict, List, Optional, Tuple
 
+import matplotlib.pyplot as plt
 import numpy as np
 import torch
 import torch.distributed as dist
@@ -9,6 +12,7 @@ from mmdet3d.models import Base3DDetector
 from mmdet3d.registry import MODELS
 from mmdet3d.structures import Det3DDataSample
 from mmdet3d.utils import OptConfigType, OptMultiConfig, OptSampleList
+from mmengine.logging import print_log
 from mmengine.utils import is_list_of
 from torch import Tensor
 from torch.nn import functional as F
@@ -36,6 +40,7 @@ class BEVFusion(Base3DDetector):
         seg_head: Optional[dict] = None,
         loss_depth_weight: float = 3.0,
         depth_gt_downsample: int = 1,
+        visualize_gt_depth_dir: Optional[str] = None,
         **kwargs,
     ) -> None:
         """Initialize BEVFusion model.
@@ -79,6 +84,11 @@ class BEVFusion(Base3DDetector):
         self._weights_initialized = False
         self.loss_depth_weight = loss_depth_weight
         self.depth_gt_downsample = depth_gt_downsample
+        self.visualize_gt_depth_dir = (
+            Path(visualize_gt_depth_dir) if visualize_gt_depth_dir is not None else None
+        )
+        if self.visualize_gt_depth_dir is not None:
+            self.visualize_gt_depth_dir.mkdir(parents=True, exist_ok=True)
 
     def _forward(
         self, batch_inputs_dict: Tensor, batch_data_samples: OptSampleList = [], using_image_features=False, **kwargs
@@ -471,7 +481,86 @@ class BEVFusion(Base3DDetector):
             losses.update(bbox_loss)
 
         return losses
- 
+
+    def _visualize_one_hot_gt_depth(
+        self,
+        gt_depths_one_hot: Tensor,
+        batch_size: int,
+        num_cameras: int,
+        height: int,
+        width: int,
+        batch_idx: int = 0,
+        num_channels: int = 6,
+    ) -> None:
+        """Save one-hot depth GT maps for the first batch and first few depth channels.
+
+        Args:
+            gt_depths_one_hot (Tensor): One-hot depth GT of shape [B*N*H*W, D].
+            batch_size (int): Batch size B from the original input.
+            num_cameras (int): Number of camera views N from the original input.
+            height (int): Original input height H before downsampling.
+            width (int): Original input width W before downsampling.
+            batch_idx (int): Batch index to visualize.
+            num_channels (int): Number of depth-bin channels to visualize.
+        """
+        if self.visualize_gt_depth_dir is None:
+            return
+
+        if dist.is_available() and dist.is_initialized() and dist.get_rank() != 0:
+            return
+
+        if batch_size <= batch_idx or num_cameras == 0:
+            return
+
+        downsample = self.depth_gt_downsample
+        height_down = height // downsample
+        width_down = width // downsample
+        num_depth_bins = gt_depths_one_hot.shape[1]
+
+        num_channels = min(num_channels, num_depth_bins)
+        if num_channels == 0 or height_down == 0 or width_down == 0:
+            return
+
+        with torch.no_grad():
+            one_hot = gt_depths_one_hot.view(
+                batch_size, num_cameras, height_down, width_down, num_depth_bins
+            )
+            depth_channels = one_hot[batch_idx, 0, :, :, :num_channels].detach().float().cpu().numpy()
+
+        ncols = min(3, num_channels)
+        nrows = math.ceil(num_channels / ncols)
+        fig, axes = plt.subplots(nrows, ncols, figsize=(4 * ncols, 4 * nrows), squeeze=False)
+
+        dbounds = self.view_transform.dbound
+        for ch_idx in range(num_channels):
+            ax = axes[ch_idx // ncols, ch_idx % ncols]
+            channel_map = depth_channels[:, :, ch_idx]
+            depth_m = dbounds[0] + (ch_idx + 0.5) * dbounds[2]
+            im = ax.imshow(channel_map, cmap="viridis", vmin=0, vmax=1, interpolation="nearest")
+            ax.set_title(f"batch {batch_idx}, depth bin {ch_idx} (~{depth_m:.1f}m)")
+            ax.set_xticks([])
+            ax.set_yticks([])
+            fig.colorbar(im, ax=ax, fraction=0.046, pad=0.04)
+
+        for ch_idx in range(num_channels, nrows * ncols):
+            axes[ch_idx // ncols, ch_idx % ncols].axis("off")
+
+        fig.suptitle(
+            f"one-hot gt_depth (batch={batch_idx}, cam=0, bins=0-{num_channels - 1})"
+        )
+        fig.tight_layout()
+
+        if not hasattr(self, "_gt_depth_one_hot_vis_count"):
+            self._gt_depth_one_hot_vis_count = 0
+        self._gt_depth_one_hot_vis_count += 1
+        save_path = (
+            self.visualize_gt_depth_dir
+            / f"gt_depth_one_hot_{self._gt_depth_one_hot_vis_count:06d}.png"
+        )
+        fig.savefig(save_path, dpi=150, bbox_inches="tight")
+        plt.close(fig)
+        print_log(f"Saved one-hot gt_depth visualization to {save_path.resolve()}")
+
     def get_downsampled_gt_depth(self, gt_depths):
         """
         Input:
@@ -501,6 +590,7 @@ class BEVFusion(Base3DDetector):
         # gt_depths = torch.clamp(gt_depths, max=float(D))
         gt_depths = F.one_hot(
             gt_depths.long(), num_classes=D + 1).view(-1, D + 1)[:, 1:]
+        self._visualize_one_hot_gt_depth(gt_depths, B, N, H, W)
         return gt_depths.float()
 
     def get_depth_loss(self, depth_labels, depth_preds):
