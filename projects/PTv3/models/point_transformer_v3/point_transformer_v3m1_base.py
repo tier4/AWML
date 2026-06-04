@@ -574,6 +574,7 @@ class Embedding(PointModule):
         norm_layer=None,
         act_layer=None,
         export_mode=False,
+        kernel_size=5,
     ):
         super().__init__()
         self.in_channels = in_channels
@@ -588,8 +589,7 @@ class Embedding(PointModule):
             conv=SubMConv3d(
                 in_channels,
                 embed_channels,
-                kernel_size=5,
-                padding=1,
+                kernel_size=kernel_size,
                 bias=False,
                 indice_key="stem",
             )
@@ -640,6 +640,7 @@ class PointTransformerV3(PointModule):
         pdnorm_affine=True,
         pdnorm_conditions=("ScanNet", "S3DIS", "Structured3D"),
         export_mode=False,
+        stem_kernel_size=5,
     ):
         super().__init__()
         self.num_stages = len(enc_depths)
@@ -688,6 +689,7 @@ class PointTransformerV3(PointModule):
             norm_layer=bn_layer,
             act_layer=act_layer,
             export_mode=export_mode,
+            kernel_size=stem_kernel_size,
         )
 
         # encoder
