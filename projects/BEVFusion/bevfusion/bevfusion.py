@@ -161,11 +161,14 @@ class BEVFusion(Base3DDetector):
         Args:
             camera_intrinsics: torch.Tensor, the camera intrinsics of shape (B, N, 3, 3).
             img_aug_matrix: torch.Tensor, the image augmentation matrix of shape (B, N, 4, 4).
-            lidar_aug_matrix: torch.Tensor, the lidar augmentation matrix of shape (B, N, 4, 4).
+            lidar_aug_matrix: torch.Tensor, the lidar augmentation matrix of shape (B, 4, 4).
             camera2lidar: torch.Tensor, the camera to lidar matrix of shape (B, N, 4, 4).
         Returns:
             torch.Tensor, the camera depth aware parameters of shape (B*N, N_CAMERA_DEPTH_PARAMETERS).
         """
+        B, N, _, _ = camera_intrinsics.shape
+        lidar_aug_matrix = lidar_aug_matrix.view(B, 1, 4, 4).repeat(1, N, 1, 1)
+        
         # (B*N, 15)
         mlp_input = torch.stack([
             camera_intrinsics[:, :, 0, 0],   # fx
@@ -185,9 +188,9 @@ class BEVFusion(Base3DDetector):
             lidar_aug_matrix[:, :, 2, 2],   # r33
         ], dim=-1)
         # (B, N, 4, 4) -> (B, N, 3, 4) -> (B*N, 12)
-        camera2lidar_flatten = camera2lidar[:,:,:3,:].view(-1, 12)
-
-        # (B*N, 15+12)
+        camera2lidar_flatten = camera2lidar[:,:,:3,:].view(B, N, -1)
+        
+        # (B, N, 15+12)
         mlp_input = torch.cat([mlp_input, camera2lidar_flatten], dim=-1)
         return mlp_input
 
@@ -221,6 +224,7 @@ class BEVFusion(Base3DDetector):
         lidar_aug_matrix_inverse=None,
         geom_feats=None,
         using_image_features=False,
+        camera_depth_aware_parameters=None
     ) -> Tuple[torch.Tensor, torch.Tensor]:
 
         if not using_image_features:
@@ -241,6 +245,7 @@ class BEVFusion(Base3DDetector):
                 img_aug_matrix_inverse,
                 lidar_aug_matrix_inverse,
                 geom_feats,
+                camera_depth_aware_parameters=camera_depth_aware_parameters
             )
         return x, pred_depths
 

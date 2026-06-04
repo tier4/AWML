@@ -1,6 +1,6 @@
 # learning rate
-lr = 2e-4
-t_max = 1
+lr = 1e-4
+t_max = 3
 max_epochs = 30
 val_interval = 1
 
@@ -58,8 +58,8 @@ test_cfg = dict()
 
 optim_wrapper = dict(
     type="OptimWrapper",
-    optimizer=dict(type="AdamW", lr=lr, weight_decay=1e-3),
-    clip_grad=dict(max_norm=5.0, norm_type=2),
+    optimizer=dict(type="AdamW", lr=lr, weight_decay=1e-2),
+    clip_grad=dict(max_norm=0.1, norm_type=2),
 )
 
 auto_scale_lr = dict(enable=False, base_batch_size=train_gpu_size * train_batch_size)

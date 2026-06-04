@@ -26,16 +26,14 @@ class SELayer(nn.Module):
         super().__init__()
         # Dont need global pooling because inputs are (B*N, C, 1, 1).
         self.sequeeze_net = nn.Sequential(
-            [
-                # Squeeze with 1x1 convolution
-                nn.Conv2d(channels, channels, 1, bias=True), 
-                # Activation
-                act_layer(),
-                # Expand with 1x1 convolution
-                nn.Conv2d(channels, channels, 1, bias=True),
-                # Gate with sigmoid activation
-                gate_layer(),
-            ]
+            # Squeeze with 1x1 convolution
+            nn.Conv2d(channels, channels, 1, bias=True), 
+            # Activation
+            act_layer(),
+            # Expand with 1x1 convolution
+            nn.Conv2d(channels, channels, 1, bias=True),
+            # Gate with sigmoid activation
+            gate_layer(),
         )
 
     def forward(self, x: torch.Tensor, depth_aware_features: torch.Tensor) -> torch.Tensor:
@@ -100,7 +98,6 @@ class CameraDepthAwareNet(nn.Module):
         hidden_channels: int,
         out_channels: int,
         mlp_drop_out: float, 
-        downsample: int,
         depth_channels: int,
         with_cp: bool = False,
         num_camera_depth_parameters: int = 27) -> None:
@@ -118,15 +115,14 @@ class CameraDepthAwareNet(nn.Module):
         self.out_channels = out_channels
         self.mlp_drop_out = mlp_drop_out
         self.num_camera_depth_parameters = num_camera_depth_parameters
-        self.downsample = downsample
         self.depth_channels = depth_channels
         self.with_cp = with_cp
 
         # Input convolution for context/image features
         # Camera depth aware parameters branch
-        self.camera_depth_aware_parameters_bn = nn.BatchNorm1d(
-            self.num_camera_depth_parameters
-        )
+        # self.camera_depth_aware_parameters_bn = nn.BatchNorm1d(
+        #     self.num_camera_depth_parameters
+        # )
         
         # Context/image feature branch
         self.context_input_conv = nn.Sequential(
@@ -135,30 +131,31 @@ class CameraDepthAwareNet(nn.Module):
             nn.BatchNorm2d(hidden_channels),
             nn.ReLU(inplace=True),
         )
-        self.context_camera_depth_aware_mlp = CameraDepthLinearProjectionMLP(
-            in_channels=self.num_camera_depth_parameters, 
-            hidden_channels=hidden_channels, 
-            out_channels=hidden_channels, 
-            drop_out=self.mlp_drop_out
-        )
-        self.context_se = SELayer(channels=hidden_channels)
+        # self.context_camera_depth_aware_mlp = CameraDepthLinearProjectionMLP(
+        #     in_channels=self.num_camera_depth_parameters, 
+        #     hidden_channels=hidden_channels, 
+        #     out_channels=hidden_channels, 
+        #     drop_out=self.mlp_drop_out
+        # )
+        # self.context_se = SELayer(channels=hidden_channels)
         self.context_conv = nn.Conv2d(
             hidden_channels, 
             out_channels, 
-            stride=1, padding=1)
+            kernel_size=1,
+            stride=1, padding=0)
 
         # Depth branch 
-        self.depth_camera_depth_aware_mlp = CameraDepthLinearProjectionMLP(
-            in_channels=self.num_camera_depth_parameters, 
-            hidden_channels=hidden_channels, 
-            out_channels=hidden_channels, 
-            drop_out=self.mlp_drop_out
-        )
-        self.depth_se = SELayer(channels=hidden_channels)
-        self.depth_conv = nn.Sequantial(
-            BasicBlock(hidden_channels, hidden_channels, downsample=downsample),
-            BasicBlock(hidden_channels, hidden_channels, downsample=downsample),
-            BasicBlock(hidden_channels, hidden_channels, downsample=downsample),
+        # self.depth_camera_depth_aware_mlp = CameraDepthLinearProjectionMLP(
+        #     in_channels=self.num_camera_depth_parameters, 
+        #     hidden_channels=hidden_channels, 
+        #     out_channels=hidden_channels, 
+        #     drop_out=self.mlp_drop_out
+        # )
+        # self.depth_se = SELayer(channels=hidden_channels)
+        self.depth_conv = nn.Sequential(
+            BasicBlock(hidden_channels, hidden_channels, downsample=None),
+            BasicBlock(hidden_channels, hidden_channels),
+            BasicBlock(hidden_channels, hidden_channels),
             nn.Conv2d(hidden_channels, depth_channels, kernel_size=1, stride=1, padding=0)
         ) 
     
@@ -170,10 +167,10 @@ class CameraDepthAwareNet(nn.Module):
         Returns:
             torch.Tensor, the output tensor of shape (B*N, C, H, W).
         """
-        context_camera_depth_aware_features = self.context_camera_depth_aware_mlp(camera_depth_aware_features)
-        # (B*N, mlp_out_channels) -> (B*N, mlp_out_channels, 1, 1)
-        context_camera_depth_aware_features = context_camera_depth_aware_features.view(-1, self.hidden_channels, 1, 1)
-        context_features = self.context_se(context_features, context_camera_depth_aware_features)
+        # context_camera_depth_aware_features = self.context_camera_depth_aware_mlp(camera_depth_aware_features)
+        # # (B*N, mlp_out_channels) -> (B*N, mlp_out_channels, 1, 1)
+        # context_camera_depth_aware_features = context_camera_depth_aware_features.view(-1, self.hidden_channels, 1, 1)
+        # context_features = self.context_se(context_features, context_camera_depth_aware_features)
         context_features = self.context_conv(context_features)
         return context_features
     
@@ -185,11 +182,11 @@ class CameraDepthAwareNet(nn.Module):
         Returns:
             torch.Tensor, the output tensor of shape (B*N, C, H, W).
         """
-        depth_camera_depth_aware_features = self.depth_camera_depth_aware_mlp(camera_depth_aware_features)
-        # (B*N, mlp_out_channels) -> (B*N, mlp_out_channels, 1, 1)
-        depth_camera_depth_aware_features = depth_camera_depth_aware_features.view(-1, self.hidden_channels, 1, 1)
-        # (B*N, C, H, W)
-        depth_features = self.depth_se(depth_features, depth_camera_depth_aware_features)
+        # depth_camera_depth_aware_features = self.depth_camera_depth_aware_mlp(camera_depth_aware_features)
+        # # (B*N, mlp_out_channels) -> (B*N, mlp_out_channels, 1, 1)
+        # depth_camera_depth_aware_features = depth_camera_depth_aware_features.view(-1, self.hidden_channels, 1, 1)
+        # # (B*N, C, H, W)
+        # depth_features = self.depth_se(depth_features, depth_camera_depth_aware_features)
         if self.with_cp:
             depth_features = checkpoint(self.depth_conv, depth_features)
         else:
@@ -208,11 +205,11 @@ class CameraDepthAwareNet(nn.Module):
         camera_depth_aware_parameters = camera_depth_aware_parameters.view(-1, self.num_camera_depth_parameters)
         
         # (B*N, N_CAMERA_DEPTH_PARAMETERS)
-        camera_depth_aware_features = self.camera_depth_aware_parameters_bn(camera_depth_aware_parameters)
-        context_features = self.input_conv(x) 
+        # camera_depth_aware_features = self.camera_depth_aware_parameters_bn(camera_depth_aware_parameters)
+        context_input_features = self.context_input_conv(x) 
 
-        context_features = self.context_forward(context_features, camera_depth_aware_features)
-        depth_features = self.depth_forward(context_features, camera_depth_aware_features)
+        context_features = self.context_forward(context_input_features, None)
+        depth_features = self.depth_forward(context_input_features, None)
         return torch.cat([depth_features, context_features], dim=1)
 
 
@@ -528,7 +525,6 @@ class LSSTransformV2DepthAware(BaseViewTransformV2):
             in_channels=in_channels,
             hidden_channels=in_channels,
             mlp_drop_out=camera_depth_aware_configs["mlp_drop_out"],
-            downsample=camera_depth_aware_configs["downsample"],
             depth_channels=self.D,
             out_channels=self.C,
         )
