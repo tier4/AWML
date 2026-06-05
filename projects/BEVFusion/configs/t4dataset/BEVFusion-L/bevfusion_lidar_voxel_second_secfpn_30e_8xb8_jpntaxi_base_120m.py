@@ -16,7 +16,7 @@ data_root = "data/t4dataset/"
 info_directory_path = "info/user_name/"
 
 experiment_group_name = "bevfusion_lidar_intensity/jpntaxi_base/" + _base_.dataset_type
-experiment_name = "lidar_voxel_second_secfpn_30e_8xb8_jpntaxi_base_120m_ignore"
+experiment_name = "lidar_voxel_second_secfpn_30e_8xb8_jpntaxi_base_120m"
 work_dir = "work_dirs/" + experiment_group_name + "/" + experiment_name
 
 # model parameter
@@ -164,4 +164,4 @@ default_hooks = dict(
 )
 log_processor = dict(window_size=50)
 
-load_from = "work_dirs/bevfusion_lidar_traffic_cone/base/T4Dataset/lidar_voxel_second_secfpn_50e_8xb8_base_120m_ignore/epoch_48.pth"
+load_from = "<best_checkpoint>"
