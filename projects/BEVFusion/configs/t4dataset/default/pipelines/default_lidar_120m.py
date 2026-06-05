@@ -43,24 +43,6 @@ train_pipeline = [
     ),
     dict(type="LoadAnnotations3D", with_bbox_3d=True, with_label_3d=True, with_attr_label=False),
     dict(
-        type="Local3DBBoxExpand",
-        expand_widths=[0.20, 0.40],  # 10cm - 20cm to each side
-        label_ids=[0],  # car
-        expand_lengths=None,  # no expand
-    ),
-    dict(
-        type="Local3DBBoxExpand",
-        expand_widths=[0.50, 0.80],  # 25cm - 40cm to each side
-        label_ids=[1],  # trucks
-        expand_lengths=[0.4, 0.60],  # 20cm - 30cm to each side
-    ),
-    dict(
-        type="Local3DBBoxExpand",
-        expand_widths=[0.5, 0.8],  # 25cm - 40cm to each side
-        label_ids=[2],  # buses
-        expand_lengths=[0.5, 0.9],  # 25cm - 45cm to each side
-    ),
-    dict(
         type="BEVFusionGlobalRotScaleTrans",
         scale_ratio_range=[0.95, 1.05],
         rot_range=[-0.78539816, 0.78539816],
