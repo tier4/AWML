@@ -994,7 +994,7 @@ class T4MetricV2(BaseMetric):
                         f"T4MetricV2_label_detection/{label_name}_interp-confs_{matching_mode}_{threshold}"
                     ] = ap.conf_interp.tolist()
 
-					# TP error metrics (e.g. ATE, AOE, ASE, AVE, AAE)
+                    # TP error metrics (e.g. ATE, AOE, ASE, AVE, AAE)
                     if ap.tp_error_metrics is not None:
                         for tp_error_metric in ap.tp_error_metrics:
                             mode = tp_error_metric.mode
@@ -1062,15 +1062,15 @@ class T4MetricV2(BaseMetric):
 
                     # Number of prediction matches (TPs) and matches at the optimal confidence threshold
                     metric_dict[f"T4MetricV2_label/{label_name}_num-match_{matching_mode}_{threshold}"] = ap.num_tp
-                    metric_dict[
-                        f"T4MetricV2_label/{label_name}_min-recall-num-match_{matching_mode}_{threshold}"
-                    ] = ap.num_tp_at_min_recall_conf
+                    metric_dict[f"T4MetricV2_label/{label_name}_min-recall-num-match_{matching_mode}_{threshold}"] = (
+                        ap.num_tp_at_min_recall_conf
+                    )
                     metric_dict[
                         f"T4MetricV2_label/{label_name}_medium-recall-num-match_{matching_mode}_{threshold}"
                     ] = ap.num_tp_at_medium_recall_conf
-                    metric_dict[
-                        f"T4MetricV2_label/{label_name}_optimal-num-match_{matching_mode}_{threshold}"
-                    ] = ap.num_tp_at_optimal_conf
+                    metric_dict[f"T4MetricV2_label/{label_name}_optimal-num-match_{matching_mode}_{threshold}"] = (
+                        ap.num_tp_at_optimal_conf
+                    )
 
                     # TP error metrics (e.g. ATE, AOE, ASE, AVE, AAE)
                     if ap.tp_error_metrics is not None:
@@ -1108,28 +1108,32 @@ class T4MetricV2(BaseMetric):
             if map_instance.mean_tp_errors is not None:
                 for mean_tp_error_name, mean_tp_error_value in map_instance.mean_tp_errors.items():
                     metric_dict[f"T4MetricV2/mean-tp-error_{mean_tp_error_name}_{matching_mode}"] = mean_tp_error_value
-                    
+
                     optimal_mean_tp_errors = map_instance.optimal_mean_tp_errors.get(mean_tp_error_name, None)
                     if optimal_mean_tp_errors is not None:
-                        metric_dict[f"T4MetricV2/mean-tp-error-optimal-{mean_tp_error_name}_{matching_mode}"] = optimal_mean_tp_errors
-                    
+                        metric_dict[f"T4MetricV2/mean-tp-error-optimal-{mean_tp_error_name}_{matching_mode}"] = (
+                            optimal_mean_tp_errors
+                        )
+
                     medium_mean_tp_errors = map_instance.medium_mean_tp_errors.get(mean_tp_error_name, None)
                     if medium_mean_tp_errors is not None:
-                        metric_dict[f"T4MetricV2/mean-tp-error-medium-{mean_tp_error_name}_{matching_mode}"] = medium_mean_tp_errors
-            
+                        metric_dict[f"T4MetricV2/mean-tp-error-medium-{mean_tp_error_name}_{matching_mode}"] = (
+                            medium_mean_tp_errors
+                        )
+
             # Add NuScenes Detection Score (NDS) based on mAP and mAPH
             if map_instance.map_based_nds is not None:
-                metric_dict[
-                    f"T4MetricV2/{map_instance.map_based_nds.metric_prefix_name}_nds_{matching_mode}"
-                ] = map_instance.map_based_nds.nds
+                metric_dict[f"T4MetricV2/{map_instance.map_based_nds.metric_prefix_name}_nds_{matching_mode}"] = (
+                    map_instance.map_based_nds.nds
+                )
             if map_instance.medium_map_based_nds is not None:
                 metric_dict[
                     f"T4MetricV2/{map_instance.medium_map_based_nds.metric_prefix_name}_nds_{matching_mode}"
                 ] = map_instance.medium_map_based_nds.nds
             if map_instance.mapH_based_nds is not None:
-                metric_dict[
-                    f"T4MetricV2/{map_instance.mapH_based_nds.metric_prefix_name}_nds_{matching_mode}"
-                ] = map_instance.mapH_based_nds.nds
+                metric_dict[f"T4MetricV2/{map_instance.mapH_based_nds.metric_prefix_name}_nds_{matching_mode}"] = (
+                    map_instance.mapH_based_nds.nds
+                )
             if map_instance.medium_mapH_based_nds is not None:
                 metric_dict[
                     f"T4MetricV2/{map_instance.medium_mapH_based_nds.metric_prefix_name}_nds_{matching_mode}"
