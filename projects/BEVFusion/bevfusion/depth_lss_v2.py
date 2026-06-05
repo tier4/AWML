@@ -2,76 +2,16 @@ import math
 from pathlib import Path
 from typing import Optional, Tuple
 
-import matplotlib.pyplot as plt
 import numpy as np
 import torch
-from mmcv.cnn import build_conv_layer, build_norm_layer
 from mmdet3d.registry import MODELS
 
-# from mmdet.models.backbones.resnet import BasicBlock
-from mmdet3d.utils import ConfigType, OptConfigType, OptMultiConfig
 from mmengine.logging import print_log
-from mmengine.model import BaseModule
 from torch import nn
 from torch.utils.checkpoint import checkpoint
 
 from .depth_lss import BaseViewTransform, DepthLSSNet, DownSampleNet, LidarDepthImageNet
 from .ops import bev_pool_v2
-
-
-class CustomDepthBasicBlock(BaseModule):
-    def __init__(
-        self,
-        in_channels: int,
-        out_channel: int,
-        padding: int = 0,
-        kernel_size: int = 1,
-        stride: int = 1,
-        dilation: int = 1,
-        with_cp: bool = False,
-        norm_cfg=dict(type="BN"),
-        conv_cfg=None,
-        downsample: Optional[nn.Module] = None,
-        init_cfg: OptMultiConfig = None,
-    ):
-        super().__init__(init_cfg)
-
-        self.norm1_name, self.norm1 = build_norm_layer(norm_cfg, out_channel, postfix=1)
-        self.norm2_name, self.norm2 = build_norm_layer(norm_cfg, out_channel, postfix=2)
-        self.conv1 = build_conv_layer(
-            conv_cfg,
-            in_channels,
-            out_channel,
-            kernel_size,
-            stride=stride,
-            padding=padding,
-            dilation=dilation,
-            bias=False,
-        )
-        self.add_module(self.norm1_name, self.norm1)
-        self.conv2 = build_conv_layer(conv_cfg, out_channel, out_channel, kernel_size, padding=padding, bias=False)
-        self.add_module(self.norm2_name, self.norm2)
-
-        self.relu = nn.ReLU(inplace=True)
-        self.downsample = downsample
-        self.stride = stride
-        self.dilation = dilation
-        self.with_cp = with_cp
-
-    def forward(self, x: torch.Tensor) -> torch.Tensor:
-        identity = x
-        out = self.conv1(x)
-        out = self.norm1(out)
-        out = self.relu(out)
-
-        out = self.conv2(out)
-        out = self.norm2(out)
-
-        if self.downsample is not None:
-            identity = self.downsample(x)
-
-        out += identity
-        return out
 
 
 class SELayer(nn.Module):
@@ -183,12 +123,6 @@ class CameraDepthAwareNet(nn.Module):
         self.camera_depth_aware_parameters_bn = nn.BatchNorm1d(self.num_camera_depth_parameters)
 
         # Context/image feature branch
-        # self.context_input_conv = nn.Sequential(
-        # nn.Conv2d(
-        # in_channels, hidden_channels, kernel_size=3, stride=1, padding=1, bias=False),
-        #     nn.BatchNorm2d(hidden_channels),
-        #     nn.ReLU(inplace=True),
-        # )
         self.context_input_conv = nn.Sequential(
             nn.Conv2d(in_channels, hidden_channels, kernel_size=1, stride=1, bias=False),
             nn.BatchNorm2d(hidden_channels),
@@ -211,19 +145,9 @@ class CameraDepthAwareNet(nn.Module):
             drop_out=self.mlp_drop_out,
         )
         self.depth_se = SELayer(channels=hidden_channels)
-        # self.depth_conv = nn.Sequential(
-        #     BasicBlock(hidden_channels, hidden_channels, downsample=None),
-        #     BasicBlock(hidden_channels, hidden_channels),
-        #     BasicBlock(hidden_channels, hidden_channels),
-        #     nn.Conv2d(hidden_channels, depth_channels, kernel_size=1, stride=1, padding=0, bias=True)
-        # )
         self.depth_conv = nn.Sequential(
-            # CustomDepthBasicBlock(hidden_channels, hidden_channels, downsample=None, kernel_size=1, padding=0),
-            # CustomDepthBasicBlock(hidden_channels, hidden_channels, kernel_size=1),
-            # CustomDepthBasicBlock(hidden_channels, hidden_channels, kernel_size=1),
             nn.Conv2d(hidden_channels, depth_channels, kernel_size=1, stride=1, padding=0, bias=True)
         )
-        # self._init_weight()
 
     def context_forward(
         self, context_features: torch.Tensor, camera_depth_aware_features: torch.Tensor
