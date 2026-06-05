@@ -5,7 +5,6 @@ from typing import Optional, Tuple
 import numpy as np
 import torch
 from mmdet3d.registry import MODELS
-
 from mmengine.logging import print_log
 from torch import nn
 from torch.utils.checkpoint import checkpoint
