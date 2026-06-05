@@ -222,27 +222,12 @@ class CameraDepthAwareNet(nn.Module):
         #     nn.Conv2d(hidden_channels, depth_channels, kernel_size=1, stride=1, padding=0, bias=True)
         # )
         self.depth_conv = nn.Sequential(
-            CustomDepthBasicBlock(hidden_channels, hidden_channels, downsample=None, kernel_size=1),
-            CustomDepthBasicBlock(hidden_channels, hidden_channels, kernel_size=1),
-            CustomDepthBasicBlock(hidden_channels, hidden_channels, kernel_size=1),
+            # CustomDepthBasicBlock(hidden_channels, hidden_channels, downsample=None, kernel_size=1, padding=0),
+            # CustomDepthBasicBlock(hidden_channels, hidden_channels, kernel_size=1),
+            # CustomDepthBasicBlock(hidden_channels, hidden_channels, kernel_size=1),
             nn.Conv2d(hidden_channels, depth_channels, kernel_size=1, stride=1, padding=0, bias=True)
         )
         # self._init_weight()
-
-    def _init_weight(self):
-        print_log("Initializing depth weights...", logger="current")
-        for m in self.modules():
-            if isinstance(m, nn.Conv2d):
-                torch.nn.init.kaiming_normal_(m.weight)
-                if m.bias is not None:
-                    m.bias.data.zero_()
-            elif isinstance(m, nn.BatchNorm2d):
-                m.weight.data.fill_(1)
-                m.bias.data.zero_()
-            elif isinstance(m, nn.BatchNorm1d):
-                m.weight.data.fill_(1)
-                m.bias.data.zero_()
-            
 
     def context_forward(self, context_features: torch.Tensor, camera_depth_aware_features: torch.Tensor) -> torch.Tensor:
         """
@@ -293,8 +278,6 @@ class CameraDepthAwareNet(nn.Module):
         camera_depth_aware_features = self.camera_depth_aware_parameters_bn(camera_depth_aware_parameters)
         context_input_features = self.context_input_conv(x) 
         context_features = self.context_forward(context_input_features, camera_depth_aware_features)
-        # return context_features
-        # context_features = self.context_forward(context_input_features, None)
         depth_features = self.depth_forward(context_input_features, camera_depth_aware_features)
         return torch.cat([depth_features, context_features], dim=1)
 
