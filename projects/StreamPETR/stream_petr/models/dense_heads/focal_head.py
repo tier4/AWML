@@ -81,6 +81,8 @@ class FocalHead(AnchorFreeHead):
         bbox_coder=dict(type="DistancePointBBoxCoder"),
         test_cfg=dict(max_per_img=100),
         init_cfg=None,
+        class_names=None,
+        partial_ignore_classes=None,
         **kwargs,
     ):
         # NOTE here use `AnchorFreeHead` instead of `TransformerHead`,
@@ -99,6 +101,12 @@ class FocalHead(AnchorFreeHead):
             self.sampler = build_sampler(sampler_cfg, context=self)
 
         self.num_classes = num_classes
+        if partial_ignore_classes:
+            assert class_names is not None, "`class_names` is required when `partial_ignore_classes` is set."
+            class_name_to_indices = {class_name: i for i, class_name in enumerate(class_names)}
+            self.partial_ignore_labels = [class_name_to_indices[class_name] for class_name in partial_ignore_classes]
+        else:
+            self.partial_ignore_labels = None
         self.in_channels = in_channels
         self.embed_dims = embed_dims
 
@@ -133,6 +141,34 @@ class FocalHead(AnchorFreeHead):
         return super().loss_by_feat(
             cls_scores, bbox_preds, batch_gt_instances, batch_img_metas, batch_gt_instances_ignore
         )
+
+    def _flatten_traffic_cone_barrier_status(self, value):
+        if torch.is_tensor(value):
+            return [bool(v) for v in value.detach().cpu().flatten().tolist()]
+        if isinstance(value, (list, tuple)):
+            flattened = []
+            for item in value:
+                flattened.extend(self._flatten_traffic_cone_barrier_status(item))
+            return flattened
+        return [bool(value)]
+
+    def _get_partial_ignore_status(self, img_metas, batch_size):
+        if self.partial_ignore_labels is None:
+            return None
+        if img_metas is None:
+            return [True] * batch_size
+        if isinstance(img_metas, dict):
+            status = img_metas.get("traffic_cone_barrier_status", True)
+            statuses = self._flatten_traffic_cone_barrier_status(status)
+        elif isinstance(img_metas, (list, tuple)):
+            statuses = [
+                meta.get("traffic_cone_barrier_status", True) if isinstance(meta, dict) else True for meta in img_metas
+            ]
+        else:
+            statuses = [True] * batch_size
+        if len(statuses) < batch_size:
+            statuses.extend([True] * (batch_size - len(statuses)))
+        return statuses[:batch_size]
 
     def _init_layers(self):
         self.cls = nn.Conv2d(self.embed_dims, self.num_classes, kernel_size=1)
@@ -257,7 +293,13 @@ class FocalHead(AnchorFreeHead):
         all_gt_labels2d_list = [gt_labels2d_list[i][j] for j in range(bs) for i in range(img_counts)]
         all_centers2d_list = [centers2d[i][j] for j in range(bs) for i in range(img_counts)]
         all_depths_list = [depths[i][j] for j in range(bs) for i in range(img_counts)]
-
+        sample_partial_ignore_status = self._get_partial_ignore_status(img_metas, bs)
+        if sample_partial_ignore_status is not None:
+            partial_ignore_status_list = [
+                sample_partial_ignore_status[j] for j in range(bs) for _ in range(img_counts)
+            ]
+        else:
+            partial_ignore_status_list = None
         enc_loss_cls, enc_losses_bbox, enc_losses_iou, centers2d_losses, centerness_losses = self.loss_single(
             enc_cls_scores,
             enc_bbox_preds,
@@ -269,6 +311,7 @@ class FocalHead(AnchorFreeHead):
             all_depths_list,
             img_metas,
             gt_bboxes_ignore,
+            partial_ignore_status_list,
         )
         loss_dict["enc_loss_cls"] = enc_loss_cls
         loss_dict["enc_loss_bbox"] = enc_losses_bbox
@@ -290,6 +333,7 @@ class FocalHead(AnchorFreeHead):
         all_depths_list,
         img_metas,
         gt_bboxes_ignore_list=None,
+        partial_ignore_status_list=None,
     ):
         """ "Loss function for outputs from a single decoder layer of a single
         feature level.
@@ -343,6 +387,13 @@ class FocalHead(AnchorFreeHead):
         bbox_targets = torch.cat(bbox_targets_list, 0)
         bbox_weights = torch.cat(bbox_weights_list, 0)
         centers2d_targets = torch.cat(centers2d_targets_list, 0)
+
+        if partial_ignore_status_list is not None and not all(partial_ignore_status_list):
+            cls_scores = cls_scores.clone()
+            ignore_labels = torch.as_tensor(self.partial_ignore_labels, device=cls_scores.device, dtype=torch.long)
+            for img_idx, status in enumerate(partial_ignore_status_list):
+                if not status:
+                    cls_scores[img_idx, :, ignore_labels] = -100.0
 
         # DETR regress the relative position of boxes (cxcywh) in the image,
         # thus the learning target is normalized by the image size. So here

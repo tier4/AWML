@@ -24,6 +24,9 @@ img_norm_cfg = dict(mean=[103.530, 116.280, 123.675], std=[57.375, 57.120, 58.39
 camera_order = ["CAM_FRONT", "CAM_FRONT_LEFT", "CAM_BACK_LEFT", "CAM_FRONT_RIGHT", "CAM_BACK_RIGHT"]
 
 class_names = _base_.class_names
+partial_ignore_classes = [
+    class_name for class_name in ["traffic_cone", "barrier"] if class_name in class_names
+]
 
 metainfo = dict(classes=class_names)
 
@@ -88,6 +91,8 @@ model = dict(
     img_roi_head=dict(
         type="mmdet.FocalHead",
         num_classes=len(class_names),
+        class_names=class_names,
+        partial_ignore_classes=partial_ignore_classes,
         in_channels=256,
         bbox_coder=dict(type="mmdet.DistancePointBBoxCoder"),
         loss_cls2d=dict(type="mmdet.QualityFocalLoss", use_sigmoid=True, beta=2.0, loss_weight=2.0),
@@ -108,6 +113,8 @@ model = dict(
     pts_bbox_head=dict(
         type="StreamPETRHead",
         num_classes=len(class_names),
+        class_names=class_names,
+        partial_ignore_classes=partial_ignore_classes,
         score_thres=0.0,
         in_channels=256,
         num_query=644,

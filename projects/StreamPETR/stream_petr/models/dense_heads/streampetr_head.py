@@ -120,6 +120,8 @@ class StreamPETRHead(AnchorFreeHead):
         init_cfg=None,
         normedlinear=False,
         use_bottom_center=False,
+        class_names=None,
+        partial_ignore_classes=None,
         **kwargs,
     ):
         # NOTE here use `AnchorFreeHead` instead of `TransformerHead`,
@@ -168,6 +170,12 @@ class StreamPETRHead(AnchorFreeHead):
 
         self.num_query = num_query
         self.num_classes = num_classes
+        if partial_ignore_classes:
+            assert class_names is not None, "`class_names` is required when `partial_ignore_classes` is set."
+            class_name_to_indices = {class_name: i for i, class_name in enumerate(class_names)}
+            self.partial_ignore_labels = [class_name_to_indices[class_name] for class_name in partial_ignore_classes]
+        else:
+            self.partial_ignore_labels = None
         self.in_channels = in_channels
         self.memory_len = memory_len
         self.topk_proposals = topk_proposals
@@ -237,6 +245,34 @@ class StreamPETRHead(AnchorFreeHead):
         self._init_layers()
         self.reset_memory()
         self.use_bottom_center = use_bottom_center
+
+    def _flatten_traffic_cone_barrier_status(self, value):
+        if torch.is_tensor(value):
+            return [bool(v) for v in value.detach().cpu().flatten().tolist()]
+        if isinstance(value, (list, tuple)):
+            flattened = []
+            for item in value:
+                flattened.extend(self._flatten_traffic_cone_barrier_status(item))
+            return flattened
+        return [bool(value)]
+
+    def _get_partial_ignore_status(self, img_metas, batch_size):
+        if self.partial_ignore_labels is None:
+            return None
+        if img_metas is None:
+            return [True] * batch_size
+        if isinstance(img_metas, dict):
+            status = img_metas.get("traffic_cone_barrier_status", True)
+            statuses = self._flatten_traffic_cone_barrier_status(status)
+        elif isinstance(img_metas, (list, tuple)):
+            statuses = [
+                meta.get("traffic_cone_barrier_status", True) if isinstance(meta, dict) else True for meta in img_metas
+            ]
+        else:
+            statuses = [True] * batch_size
+        if len(statuses) < batch_size:
+            statuses.extend([True] * (batch_size - len(statuses)))
+        return statuses[:batch_size]
 
     def _init_layers(self):
         """Initialize layers of the transformer head."""
@@ -729,9 +765,18 @@ class StreamPETRHead(AnchorFreeHead):
             output_known_class = output_known_class.permute(1, 2, 0, 3)[(bid, map_known_indice)].permute(1, 0, 2)
             output_known_coord = output_known_coord.permute(1, 2, 0, 3)[(bid, map_known_indice)].permute(1, 0, 2)
         num_tgt = known_indice.numel()
-        return known_labels, known_bboxs, output_known_class, output_known_coord, num_tgt
+        return known_labels, known_bboxs, output_known_class, output_known_coord, num_tgt, bid
 
-    def _get_target_single(self, cls_score, bbox_pred, gt_labels, gt_bboxes, gt_bboxes_ignore=None):
+    def _get_target_single(
+        self,
+        cls_score,
+        bbox_pred,
+        gt_labels,
+        gt_bboxes,
+        gt_bboxes_ignore=None,
+        traffic_cone_barrier_status=True,
+        use_classwise_label_weights=False,
+    ):
         """ "Compute regression and classification targets for one image.
         Outputs from a single decoder layer of a single feature level are used.
         Args:
@@ -777,7 +822,13 @@ class StreamPETRHead(AnchorFreeHead):
         )
         # label targets
         labels = gt_bboxes.new_full((num_bboxes,), self.num_classes, dtype=torch.long)
-        label_weights = gt_bboxes.new_ones(num_bboxes)
+        if use_classwise_label_weights:
+            label_weights = gt_bboxes.new_ones((num_bboxes, self.num_classes))
+            if not traffic_cone_barrier_status and neg_inds.numel() > 0:
+                ignore_labels = torch.as_tensor(self.partial_ignore_labels, device=gt_bboxes.device, dtype=torch.long)
+                label_weights[neg_inds[:, None], ignore_labels] = 0.0
+        else:
+            label_weights = gt_bboxes.new_ones(num_bboxes)
 
         # bbox targets
         code_size = gt_bboxes.size(1)
@@ -792,7 +843,13 @@ class StreamPETRHead(AnchorFreeHead):
         return (labels, label_weights, bbox_targets, bbox_weights, pos_inds, neg_inds)
 
     def get_targets(
-        self, cls_scores_list, bbox_preds_list, gt_bboxes_list, gt_labels_list, gt_bboxes_ignore_list=None
+        self,
+        cls_scores_list,
+        bbox_preds_list,
+        gt_bboxes_list,
+        gt_labels_list,
+        gt_bboxes_ignore_list=None,
+        img_metas=None,
     ):
         """"Compute regression and classification targets for a batch image.
         Outputs from a single decoder layer of a single feature level are used.
@@ -826,6 +883,11 @@ class StreamPETRHead(AnchorFreeHead):
         assert gt_bboxes_ignore_list is None, "Only supports for gt_bboxes_ignore setting to None."
         num_imgs = len(cls_scores_list)
         gt_bboxes_ignore_list = [gt_bboxes_ignore_list for _ in range(num_imgs)]
+        partial_ignore_status_list = self._get_partial_ignore_status(img_metas, num_imgs)
+        use_classwise_label_weights = partial_ignore_status_list is not None and not all(partial_ignore_status_list)
+        if partial_ignore_status_list is None:
+            partial_ignore_status_list = [True] * num_imgs
+        use_classwise_label_weights_list = [use_classwise_label_weights] * num_imgs
 
         labels_list, label_weights_list, bbox_targets_list, bbox_weights_list, pos_inds_list, neg_inds_list = (
             multi_apply(
@@ -835,13 +897,17 @@ class StreamPETRHead(AnchorFreeHead):
                 gt_labels_list,
                 gt_bboxes_list,
                 gt_bboxes_ignore_list,
+                partial_ignore_status_list,
+                use_classwise_label_weights_list,
             )
         )
         num_total_pos = sum((inds.numel() for inds in pos_inds_list))
         num_total_neg = sum((inds.numel() for inds in neg_inds_list))
         return (labels_list, label_weights_list, bbox_targets_list, bbox_weights_list, num_total_pos, num_total_neg)
 
-    def loss_single(self, cls_scores, bbox_preds, gt_bboxes_list, gt_labels_list, gt_bboxes_ignore_list=None):
+    def loss_single(
+        self, cls_scores, bbox_preds, gt_bboxes_list, gt_labels_list, gt_bboxes_ignore_list=None, img_metas=None
+    ):
         """ "Loss function for outputs from a single decoder layer of a single
         feature level.
         Args:
@@ -864,7 +930,7 @@ class StreamPETRHead(AnchorFreeHead):
         cls_scores_list = [cls_scores[i] for i in range(num_imgs)]
         bbox_preds_list = [bbox_preds[i] for i in range(num_imgs)]
         cls_reg_targets = self.get_targets(
-            cls_scores_list, bbox_preds_list, gt_bboxes_list, gt_labels_list, gt_bboxes_ignore_list
+            cls_scores_list, bbox_preds_list, gt_bboxes_list, gt_labels_list, gt_bboxes_ignore_list, img_metas
         )
         labels_list, label_weights_list, bbox_targets_list, bbox_weights_list, num_total_pos, num_total_neg = (
             cls_reg_targets
@@ -907,7 +973,9 @@ class StreamPETRHead(AnchorFreeHead):
 
         return loss_cls, loss_bbox
 
-    def dn_loss_single(self, cls_scores, bbox_preds, known_bboxs, known_labels, num_total_pos=None):
+    def dn_loss_single(
+        self, cls_scores, bbox_preds, known_bboxs, known_labels, num_total_pos=None, known_bids=None, img_metas=None
+    ):
         """ "Loss function for outputs from a single decoder layer of a single
         feature level.
         Args:
@@ -934,6 +1002,23 @@ class StreamPETRHead(AnchorFreeHead):
             cls_avg_factor = reduce_mean(cls_scores.new_tensor([cls_avg_factor]))
         bbox_weights = torch.ones_like(bbox_preds)
         label_weights = torch.ones_like(known_labels)
+        if self.partial_ignore_labels is not None and known_bids is not None and known_bids.numel() > 0:
+            batch_size = int(known_bids.max().item()) + 1
+            partial_ignore_status_list = self._get_partial_ignore_status(img_metas, batch_size)
+            if partial_ignore_status_list is not None and not all(partial_ignore_status_list):
+                background_mask = known_labels == self.num_classes
+                status_tensor = torch.as_tensor(
+                    partial_ignore_status_list, device=known_labels.device, dtype=torch.bool
+                )
+                sample_ignore_mask = ~status_tensor[known_bids.long()]
+                ignore_rows_bool = background_mask & sample_ignore_mask
+                if ignore_rows_bool.any():
+                    label_weights = torch.ones_like(cls_scores)
+                    ignore_labels = torch.as_tensor(
+                        self.partial_ignore_labels, device=known_labels.device, dtype=torch.long
+                    )
+                    ignore_row_inds = torch.where(ignore_rows_bool)[0]
+                    label_weights[ignore_row_inds[:, None], ignore_labels] = 0.0
         cls_avg_factor = max(cls_avg_factor, 1)
         loss_cls = self.loss_cls(cls_scores, known_labels.long(), label_weights, avg_factor=cls_avg_factor)
 
@@ -961,7 +1046,7 @@ class StreamPETRHead(AnchorFreeHead):
 
         return self.dn_weight * loss_cls, self.dn_weight * loss_bbox
 
-    def loss(self, gt_bboxes_list, gt_labels_list, preds_dicts, gt_bboxes_ignore=None):
+    def loss(self, gt_bboxes_list, gt_labels_list, preds_dicts, gt_bboxes_ignore=None, img_metas=None):
         """ "Loss function.
         Args:
             gt_bboxes_list (list[Tensor]): Ground truth bboxes for each image
@@ -1005,6 +1090,7 @@ class StreamPETRHead(AnchorFreeHead):
         all_gt_bboxes_list = [gt_bboxes_list for _ in range(num_dec_layers)]
         all_gt_labels_list = [gt_labels_list for _ in range(num_dec_layers)]
         all_gt_bboxes_ignore_list = [gt_bboxes_ignore for _ in range(num_dec_layers)]
+        all_img_metas_list = [img_metas for _ in range(num_dec_layers)]
 
         losses_cls, losses_bbox = multi_apply(
             self.loss_single,
@@ -1013,6 +1099,7 @@ class StreamPETRHead(AnchorFreeHead):
             all_gt_bboxes_list,
             all_gt_labels_list,
             all_gt_bboxes_ignore_list,
+            all_img_metas_list,
         )
 
         loss_dict = dict()
@@ -1030,12 +1117,13 @@ class StreamPETRHead(AnchorFreeHead):
             num_dec_layer += 1
 
         if preds_dicts["dn_mask_dict"] is not None:
-            known_labels, known_bboxs, output_known_class, output_known_coord, num_tgt = self.prepare_for_loss(
+            known_labels, known_bboxs, output_known_class, output_known_coord, num_tgt, known_bids = self.prepare_for_loss(
                 preds_dicts["dn_mask_dict"]
             )
             all_known_bboxs_list = [known_bboxs for _ in range(num_dec_layers)]
             all_known_labels_list = [known_labels for _ in range(num_dec_layers)]
             all_num_tgts_list = [num_tgt for _ in range(num_dec_layers)]
+            all_known_bids_list = [known_bids for _ in range(num_dec_layers)]
 
             dn_losses_cls, dn_losses_bbox = multi_apply(
                 self.dn_loss_single,
@@ -1044,6 +1132,8 @@ class StreamPETRHead(AnchorFreeHead):
                 all_known_bboxs_list,
                 all_known_labels_list,
                 all_num_tgts_list,
+                all_known_bids_list,
+                all_img_metas_list,
             )
             loss_dict["dn_loss_cls"] = dn_losses_cls[-1]
             loss_dict["dn_loss_bbox"] = dn_losses_bbox[-1]
@@ -1061,6 +1151,7 @@ class StreamPETRHead(AnchorFreeHead):
                 all_gt_bboxes_list,
                 all_gt_labels_list,
                 all_gt_bboxes_ignore_list,
+                all_img_metas_list,
             )
             loss_dict["dn_loss_cls"] = dn_losses_cls[-1].detach()
             loss_dict["dn_loss_bbox"] = dn_losses_bbox[-1].detach()

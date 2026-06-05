@@ -215,7 +215,7 @@ class Petr3D(MVXTwoStageDetector):
 
         if return_losses:
             loss_inputs = [gt_bboxes_3d, gt_labels_3d, outs]
-            losses = self.pts_bbox_head.loss(*loss_inputs)
+            losses = self.pts_bbox_head.loss(*loss_inputs, img_metas=img_metas)
             if self.with_img_roi_head:
                 loss2d_inputs = [gt_bboxes, gt_bboxes_labels, centers_2d, depths, outs_roi, img_metas]
                 losses2d = self.img_roi_head.loss(*loss2d_inputs)

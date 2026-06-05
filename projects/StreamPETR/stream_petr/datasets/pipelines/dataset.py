@@ -244,6 +244,7 @@ class StreamPETRDataset(T4Dataset):
             sweeps=info.get("lidar_sweeps", []),
             ego_pose=ego_pose,
             ego_pose_inv=ego_pose_inv,
+            traffic_cone_barrier_status=info.get("traffic_cone_barrier_status", True),
             prev_idx=info.get("prev", None),
             next_idx=info.get("next", None),
             scene_token=info["scene_token"],
@@ -290,6 +291,7 @@ class StreamPETRDataset(T4Dataset):
                         sample_token=info["token"],
                         filenames=image_paths,
                         flag_index=self.flag[index],
+                        traffic_cone_barrier_status=info.get("traffic_cone_barrier_status", True),
                     ),
                 )
             )
