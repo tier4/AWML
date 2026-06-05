@@ -1,5 +1,6 @@
 from .builder import build_model
 from .default import *
+from .litept import *
 
 # Pretraining
 from .point_prompt_training import *
