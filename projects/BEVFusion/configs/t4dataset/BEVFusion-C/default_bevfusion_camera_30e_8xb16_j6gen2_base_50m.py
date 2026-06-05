@@ -12,7 +12,7 @@ custom_imports["imports"] += ["autoware_ml.detection3d.datasets.transforms"]
 
 # user setting
 data_root = "data/t4dataset/"
-info_directory_path = "info/kokseang_2_8/"
+info_directory_path = "info/kokseang_2_8_1/"
 
 # Dataset parameters
 train_dataloader = dict(

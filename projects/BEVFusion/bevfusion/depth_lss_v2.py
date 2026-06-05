@@ -511,7 +511,10 @@ class LSSTransformV2DepthAware(BaseViewTransformV2):
             zbound=zbound,
             dbound=dbound,
         )
-        self.downsample = DownSampleNet(downsample, out_channels, out_channels)
+        if downsample > 1:
+            self.downsample = DownSampleNet(downsample, out_channels, out_channels)
+        else:
+            self.downsample = nn.Identity()
         self.camera_depth_aware_net = CameraDepthAwareNet(
             in_channels=in_channels,
             hidden_channels=in_channels,
