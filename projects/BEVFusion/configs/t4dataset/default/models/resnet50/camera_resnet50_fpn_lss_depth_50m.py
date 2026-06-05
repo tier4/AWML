@@ -23,14 +23,8 @@ model = dict(
         bbox_coder=dict(
             post_center_range=[-61.2, -61.2, -10.0, 61.2, 61.2, 10.0],
         ),
-        train_cfg=dict(
-            out_size_factor=4
-        ),
-        test_cfg=dict(
-            out_size_factor=4
-        ),
-        bbox_coder=dict(
-            out_size_factor=4
-        ),
+        train_cfg=dict(out_size_factor=4),
+        test_cfg=dict(out_size_factor=4),
+        bbox_coder=dict(out_size_factor=4),
     ),
 )
