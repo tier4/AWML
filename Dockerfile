@@ -68,8 +68,8 @@ RUN python3 -m pip --no-cache-dir install \
     setuptools==60.2.0 \
     transformers==4.51.3 \
     polars==1.37.1 \
-		onnx_graphsurgeon==0.5.8 \
-		spconv-cu126==2.3.8
+    onnx_graphsurgeon==0.5.8 \
+    spconv-cu126==2.3.8
 
 # NOTE(knzo25): this patch is needed to use numpy versions over 1.23.5 (version used in mmdet3d 1.4.0)
 # It can be safely deleted when mmdet3d updates the numpy version
