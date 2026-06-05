@@ -24,11 +24,7 @@ model = dict(
             post_center_range=[-61.2, -61.2, -10.0, 61.2, 61.2, 10.0],
             out_size_factor=out_size_factor,
         ),
-        train_cfg=dict(
-            out_size_factor=out_size_factor
-        ),
-        test_cfg=dict(
-            out_size_factor=out_size_factor
-        ),
+        train_cfg=dict(out_size_factor=out_size_factor),
+        test_cfg=dict(out_size_factor=out_size_factor),
     ),
 )
