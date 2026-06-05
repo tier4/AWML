@@ -1,7 +1,7 @@
 _base_ = [
     "./camera_resnet50_fpn_depthlss_120m.py",
 ]
-num_proposals = 300
+num_proposals = 200
 out_size_factor = 4
 
 # Image network
