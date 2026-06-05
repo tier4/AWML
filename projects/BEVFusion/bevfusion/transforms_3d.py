@@ -191,6 +191,7 @@ class BEVFusionGlobalRotScaleTrans(GlobalRotScaleTrans):
 @TRANSFORMS.register_module()
 class BEVFusionRemoveLiDARPoints(BaseTransform):
     """Remove LiDAR points from the data."""
+
     def __init__(self):
         super().__init__()
 

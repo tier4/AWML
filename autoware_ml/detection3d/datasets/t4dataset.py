@@ -2,10 +2,10 @@ from os import path as osp
 from typing import List
 
 import numpy as np
+import tqdm
 from mmdet3d.datasets import NuScenesDataset
 from mmengine.logging import print_log
 from mmengine.registry import DATASETS
-import tqdm
 
 
 @DATASETS.register_module()
@@ -63,7 +63,7 @@ class T4Dataset(NuScenesDataset):
                 if camera_order not in entry["images"]:
                     filtered = True
                     break
-                
+
                 if entry["images"][camera_order]["img_path"] is None:
                     filtered = True
                     break

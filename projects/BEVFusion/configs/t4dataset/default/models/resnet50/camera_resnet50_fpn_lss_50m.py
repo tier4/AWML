@@ -1,11 +1,11 @@
 _base_ = [
     "./camera_resnet50_fpn_depthlss_120m.py",
 ]
-num_proposals = 200 
+num_proposals = 200
 
 # Image network
 model = dict(
-    depth_gt_downsample=8, 
+    depth_gt_downsample=8,
     loss_depth_weight=2.0,
     view_transform=dict(
         type="LSSTransformV2",

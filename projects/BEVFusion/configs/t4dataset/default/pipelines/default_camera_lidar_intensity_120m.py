@@ -84,7 +84,7 @@ train_pipeline = [
             "barrier",
         ],
     ),
-		dict(type="ObjectRangeMinPointsFilter", range_radius=[0, 60], min_num_points=2),
+    dict(type="ObjectRangeMinPointsFilter", range_radius=[0, 60], min_num_points=2),
     dict(type="ObjectRangeMinPointsFilter", range_radius=[60, 130], min_num_points=1),
     dict(type="PointShuffle"),
     dict(
@@ -124,7 +124,7 @@ test_pipeline = [
         backend_args=backend_args,
         camera_order=camera_order,
     ),
-		dict(
+    dict(
         type="LoadPointsFromFile",
         coord_type="LIDAR",
         load_dim=point_load_dim,

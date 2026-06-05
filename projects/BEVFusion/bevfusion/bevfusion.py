@@ -84,9 +84,7 @@ class BEVFusion(Base3DDetector):
         self._weights_initialized = False
         self.loss_depth_weight = loss_depth_weight
         self.depth_gt_downsample = depth_gt_downsample
-        self.visualize_gt_depth_dir = (
-            Path(visualize_gt_depth_dir) if visualize_gt_depth_dir is not None else None
-        )
+        self.visualize_gt_depth_dir = Path(visualize_gt_depth_dir) if visualize_gt_depth_dir is not None else None
         if self.visualize_gt_depth_dir is not None:
             self.visualize_gt_depth_dir.mkdir(parents=True, exist_ok=True)
 
@@ -159,10 +157,10 @@ class BEVFusion(Base3DDetector):
     def with_seg_head(self):
         """bool: Whether the detector has a segmentation head."""
         return hasattr(self, "seg_head") and self.seg_head is not None
-    
+
     def prepare_camera_depth_aware_parameters(
-        self, 
-        camera_intrinsics: torch.Tensor, 
+        self,
+        camera_intrinsics: torch.Tensor,
         img_aug_matrix: torch.Tensor,
         lidar_aug_matrix: torch.Tensor,
         camera2lidar: torch.Tensor,
@@ -178,28 +176,31 @@ class BEVFusion(Base3DDetector):
         """
         B, N, _, _ = camera_intrinsics.shape
         lidar_aug_matrix = lidar_aug_matrix.view(B, 1, 4, 4).repeat(1, N, 1, 1)
-        
+
         # (B*N, 15)
-        mlp_input = torch.stack([
-            camera_intrinsics[:, :, 0, 0],   # fx
-            camera_intrinsics[:, :, 1, 1],   # fy
-            camera_intrinsics[:, :, 0, 2],   # cx
-            camera_intrinsics[:, :, 1, 2],   # cy
-            img_aug_matrix[:, :, 0, 0],   # r11
-            img_aug_matrix[:, :, 0, 1],   # r12
-            img_aug_matrix[:, :, 0, 3],   # t1
-            img_aug_matrix[:, :, 1, 0],   # r21
-            img_aug_matrix[:, :, 1, 1],   # r22
-            img_aug_matrix[:, :, 1, 3],   # t2
-            lidar_aug_matrix[:, :, 0, 0],   # r11
-            lidar_aug_matrix[:, :, 0, 1],   # r12
-            lidar_aug_matrix[:, :, 1, 0],   # r21
-            lidar_aug_matrix[:, :, 1, 1],   # r22
-            lidar_aug_matrix[:, :, 2, 2],   # r33
-        ], dim=-1)
+        mlp_input = torch.stack(
+            [
+                camera_intrinsics[:, :, 0, 0],  # fx
+                camera_intrinsics[:, :, 1, 1],  # fy
+                camera_intrinsics[:, :, 0, 2],  # cx
+                camera_intrinsics[:, :, 1, 2],  # cy
+                img_aug_matrix[:, :, 0, 0],  # r11
+                img_aug_matrix[:, :, 0, 1],  # r12
+                img_aug_matrix[:, :, 0, 3],  # t1
+                img_aug_matrix[:, :, 1, 0],  # r21
+                img_aug_matrix[:, :, 1, 1],  # r22
+                img_aug_matrix[:, :, 1, 3],  # t2
+                lidar_aug_matrix[:, :, 0, 0],  # r11
+                lidar_aug_matrix[:, :, 0, 1],  # r12
+                lidar_aug_matrix[:, :, 1, 0],  # r21
+                lidar_aug_matrix[:, :, 1, 1],  # r22
+                lidar_aug_matrix[:, :, 2, 2],  # r33
+            ],
+            dim=-1,
+        )
         # (B, N, 4, 4) -> (B, N, 3, 4) -> (B*N, 12)
-        camera2lidar_flatten = camera2lidar[:,:,:3,:].view(B, N, -1)
-        
+        camera2lidar_flatten = camera2lidar[:, :, :3, :].view(B, N, -1)
+
         # (B, N, 15+12)
         mlp_input = torch.cat([mlp_input, camera2lidar_flatten], dim=-1)
         return mlp_input
@@ -234,13 +235,13 @@ class BEVFusion(Base3DDetector):
         lidar_aug_matrix_inverse=None,
         geom_feats=None,
         using_image_features=False,
-        camera_depth_aware_parameters=None
+        camera_depth_aware_parameters=None,
     ) -> Tuple[torch.Tensor, torch.Tensor]:
 
         if not using_image_features:
             x = self.get_image_backbone_features(x)
 
-        with torch.amp.autocast("cuda",enabled=False):
+        with torch.amp.autocast("cuda", enabled=False):
             # with torch.autocast(device_type='cuda', dtype=torch.float32):
             x, pred_depths = self.view_transform(
                 x,
@@ -255,7 +256,7 @@ class BEVFusion(Base3DDetector):
                 img_aug_matrix_inverse,
                 lidar_aug_matrix_inverse,
                 geom_feats,
-                camera_depth_aware_parameters=camera_depth_aware_parameters
+                camera_depth_aware_parameters=camera_depth_aware_parameters,
             )
         return x, pred_depths
 
@@ -305,11 +306,11 @@ class BEVFusion(Base3DDetector):
         coords = torch.cat(coords, dim=0)
         assert len(sizes) > 0, "No points in the voxel"
         sizes = torch.cat(sizes, dim=0)
-        
+
         # if self.voxelize_reduce:
         #     feats = feats.sum(dim=1, keepdim=False) / sizes.type_as(feats).view(-1, 1)
         #     feats = feats.contiguous()
-        
+
         return feats, coords, sizes
 
     def predict(
@@ -467,15 +468,17 @@ class BEVFusion(Base3DDetector):
             with torch.amp.autocast("cuda", enabled=False):
                 gt_depths = torch.stack(
                     [
-                        meta["gt_depths"]
-                        if isinstance(meta["gt_depths"], torch.Tensor)
-                        else torch.as_tensor(meta["gt_depths"])
+                        (
+                            meta["gt_depths"]
+                            if isinstance(meta["gt_depths"], torch.Tensor)
+                            else torch.as_tensor(meta["gt_depths"])
+                        )
                         for meta in batch_input_metas
                     ]
                 ).to(device=pred_depths.device, dtype=torch.float32)
                 depth_loss = self.get_depth_loss(gt_depths, pred_depths)
                 losses["loss_depth"] = depth_loss
-        
+
         if self.with_bbox_head:
             bbox_loss = self.bbox_head.loss(feats, batch_data_samples)
             losses.update(bbox_loss)
@@ -522,9 +525,7 @@ class BEVFusion(Base3DDetector):
             return
 
         with torch.no_grad():
-            one_hot = gt_depths_one_hot.view(
-                batch_size, num_cameras, height_down, width_down, num_depth_bins
-            )
+            one_hot = gt_depths_one_hot.view(batch_size, num_cameras, height_down, width_down, num_depth_bins)
             depth_channels = one_hot[batch_idx, 0, :, :, :num_channels].detach().float().cpu().numpy()
 
         ncols = min(3, num_channels)
@@ -545,18 +546,13 @@ class BEVFusion(Base3DDetector):
         for ch_idx in range(num_channels, nrows * ncols):
             axes[ch_idx // ncols, ch_idx % ncols].axis("off")
 
-        fig.suptitle(
-            f"one-hot gt_depth (batch={batch_idx}, cam=0, bins=0-{num_channels - 1})"
-        )
+        fig.suptitle(f"one-hot gt_depth (batch={batch_idx}, cam=0, bins=0-{num_channels - 1})")
         fig.tight_layout()
 
         if not hasattr(self, "_gt_depth_one_hot_vis_count"):
             self._gt_depth_one_hot_vis_count = 0
         self._gt_depth_one_hot_vis_count += 1
-        save_path = (
-            self.visualize_gt_depth_dir
-            / f"gt_depth_one_hot_{self._gt_depth_one_hot_vis_count:06d}.png"
-        )
+        save_path = self.visualize_gt_depth_dir / f"gt_depth_one_hot_{self._gt_depth_one_hot_vis_count:06d}.png"
         fig.savefig(save_path, dpi=150, bbox_inches="tight")
         plt.close(fig)
         print_log(f"Saved one-hot gt_depth visualization to {save_path.resolve()}")
@@ -571,25 +567,26 @@ class BEVFusion(Base3DDetector):
         B, N, H, W = gt_depths.shape
         D = self.view_transform.D
         dbounds = self.view_transform.dbound
-        gt_depths = gt_depths.view(B * N, H // self.depth_gt_downsample,
-                                   self.depth_gt_downsample, W // self.depth_gt_downsample,
-                                   self.depth_gt_downsample, 1)
+        gt_depths = gt_depths.view(
+            B * N,
+            H // self.depth_gt_downsample,
+            self.depth_gt_downsample,
+            W // self.depth_gt_downsample,
+            self.depth_gt_downsample,
+            1,
+        )
         gt_depths = gt_depths.permute(0, 1, 3, 5, 2, 4).contiguous()
         gt_depths = gt_depths.view(-1, self.depth_gt_downsample * self.depth_gt_downsample)
-        gt_depths_tmp = torch.where(gt_depths == 0.0,
-                                    1e5 * torch.ones_like(gt_depths),
-                                    gt_depths)
+        gt_depths_tmp = torch.where(gt_depths == 0.0, 1e5 * torch.ones_like(gt_depths), gt_depths)
         gt_depths = torch.min(gt_depths_tmp, dim=-1).values
-        gt_depths = gt_depths.view(B * N, H // self.depth_gt_downsample,
-                                   W // self.depth_gt_downsample)
+        gt_depths = gt_depths.view(B * N, H // self.depth_gt_downsample, W // self.depth_gt_downsample)
 
         gt_depths = (gt_depths - (dbounds[0] - dbounds[2])) / dbounds[2]
         # gt_depths = torch.where(gt_depths >= 0.0, gt_depths, torch.zeros_like(gt_depths))
         # gt_depths = torch.clamp(gt_depths, max=float(D))
         gt_depths = torch.where((gt_depths >= 0.0) & (gt_depths < D + 1), gt_depths, torch.zeros_like(gt_depths))
         # gt_depths = torch.clamp(gt_depths, max=float(D))
-        gt_depths = F.one_hot(
-            gt_depths.long(), num_classes=D + 1).view(-1, D + 1)[:, 1:]
+        gt_depths = F.one_hot(gt_depths.long(), num_classes=D + 1).view(-1, D + 1)[:, 1:]
         self._visualize_one_hot_gt_depth(gt_depths, B, N, H, W)
         return gt_depths.float()
 
@@ -603,6 +600,6 @@ class BEVFusion(Base3DDetector):
         depth_loss = F.binary_cross_entropy(
             depth_preds,
             depth_labels,
-            reduction='none',
+            reduction="none",
         ).sum() / max(1.0, fg_mask.sum())
         return self.loss_depth_weight * depth_loss

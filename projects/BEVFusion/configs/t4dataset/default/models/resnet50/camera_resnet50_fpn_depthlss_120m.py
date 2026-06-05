@@ -56,5 +56,5 @@ model = dict(
     ),
     bbox_head=dict(
         in_channels=80,
-    )
+    ),
 )

@@ -169,9 +169,9 @@ class BEVFusionHead(nn.Module):
         y_size = self.test_cfg["grid_size"][1] // self.test_cfg["out_size_factor"]
         self.spatial_dim = x_size * y_size
         bev_pos = self.create_2D_grid(x_size, y_size)
-        
+
         # Register the bev_pos as a buffer so it moves to the GPU automatically.
-        self.register_buffer("bev_pos", bev_pos, persistent=False) # (1, H * W, 2)
+        self.register_buffer("bev_pos", bev_pos, persistent=False)  # (1, H * W, 2)
 
         self.img_feat_pos = None
         self.img_feat_collapsed_pos = None
@@ -189,22 +189,23 @@ class BEVFusionHead(nn.Module):
 
             self.dense_heatmap_exclude_pooling_classes = sorted(
                 list(set(self.class_name_to_indices.values()) - set(self.dense_heatmap_pooling_class_indices))
-            ) 
+            )
             # Pre-compute the correct order of the classes for the final local_max
-            heatmap_concat_order = self.dense_heatmap_pooling_class_indices + self.dense_heatmap_exclude_pooling_classes
-            local_concat_class_remapping = [
-                heatmap_concat_order.index(i)
-                for i in range(self.num_classes)
-            ]
+            heatmap_concat_order = (
+                self.dense_heatmap_pooling_class_indices + self.dense_heatmap_exclude_pooling_classes
+            )
+            local_concat_class_remapping = [heatmap_concat_order.index(i) for i in range(self.num_classes)]
         else:
             self.dense_heatmap_pooling_class_indices = None
             self.dense_heatmap_exclude_pooling_classes = None
             local_concat_class_remapping = [i for i in range(self.num_classes)]
-        
+
         # Register the remapping as a buffer so it moves to the GPU automatically and gets saved in the state_dict.
-        self.register_buffer("local_concat_class_remapping", torch.tensor(local_concat_class_remapping), persistent=False)
+        self.register_buffer(
+            "local_concat_class_remapping", torch.tensor(local_concat_class_remapping), persistent=False
+        )
         self.local_heatmap_padding = self.nms_kernel_size // 2
-        
+
         # NMS clusters
         self.nms_clusters = self.test_cfg.get("nms_clusters", [])
         # Add class indices for nms
@@ -290,7 +291,7 @@ class BEVFusionHead(nn.Module):
             dense_heatmap = self.heatmap_head(fusion_feat.float())
         heatmap = dense_heatmap.detach().sigmoid()
         if self.dense_heatmap_pooling_class_indices is not None:
-            # Pooling 
+            # Pooling
             selected_heatmap = heatmap[:, self.dense_heatmap_pooling_class_indices, :, :]
             local_max_inner = F.max_pool2d(
                 selected_heatmap,
@@ -301,31 +302,35 @@ class BEVFusionHead(nn.Module):
 
             # 2. Restore spatial size using F.pad instead of slice mutation
             local_max = F.pad(
-                local_max_inner, 
-                (self.local_heatmap_padding, self.local_heatmap_padding, self.local_heatmap_padding, 
-                self.local_heatmap_padding), 
-                mode="constant", 
-                value=0.0
+                local_max_inner,
+                (
+                    self.local_heatmap_padding,
+                    self.local_heatmap_padding,
+                    self.local_heatmap_padding,
+                    self.local_heatmap_padding,
+                ),
+                mode="constant",
+                value=0.0,
             )
-            
+
             # 3. Any non-pooling classes
             if self.dense_heatmap_exclude_pooling_classes:
                 excluded_local_max = heatmap[:, self.dense_heatmap_exclude_pooling_classes, :, :]
                 local_max = torch.cat([local_max, excluded_local_max], dim=1)
                 local_max = local_max[:, self.local_concat_class_remapping, :, :]
         else:
-            local_max = heatmap 
+            local_max = heatmap
 
         heatmap = heatmap * (heatmap == local_max)
         # (BS, num_classes, H*W)
         heatmap = heatmap.view(-1, self.num_classes, self.spatial_dim)
 
         # top num_proposals among all classes
-        flattened_heatmap = heatmap.view(-1, self.num_classes*self.spatial_dim)
-        
+        flattened_heatmap = heatmap.view(-1, self.num_classes * self.spatial_dim)
+
         # Use topk instead of argsort to avoid sorting the entire flattened heatmap.
         top_proposals = topk(x=flattened_heatmap, k=self.num_proposals, dim=-1, sorted=False)
-        
+
         # 2. Calculate class and spatial indices
         # Use shape[-1] dynamically to handle grid sizes safely.
         top_proposals_class = top_proposals // self.spatial_dim
@@ -340,7 +345,7 @@ class BEVFusionHead(nn.Module):
         one_hot = F.one_hot(top_proposals_class, num_classes=self.num_classes).permute(0, 2, 1)
         query_cat_encoding = self.class_encoding(one_hot.float())
         query_feat += query_cat_encoding
-        
+
         # (B, N, 2)
         query_pos = self.bev_pos.squeeze(0)[top_proposals_index]
         #################################
@@ -350,7 +355,9 @@ class BEVFusionHead(nn.Module):
         for i in range(self.num_decoder_layers):
             # Transformer Decoder Layer
             # :param query: B C Pq    :param query_pos: B Pq 3/6
-            query_feat = self.decoder[i](query_feat, key=fusion_feat_flatten, query_pos=query_pos, key_pos=self.bev_pos)
+            query_feat = self.decoder[i](
+                query_feat, key=fusion_feat_flatten, query_pos=query_pos, key_pos=self.bev_pos
+            )
 
             # Prediction
             res_layer = self.prediction_heads[i](query_feat)

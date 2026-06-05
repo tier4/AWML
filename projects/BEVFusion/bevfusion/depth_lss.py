@@ -328,7 +328,7 @@ class BaseViewTransform(nn.Module):
         final = torch.cat(x.unbind(dim=2), 1)
         if self.visualize_bev_feat:
             self.plot_bev_feat(final)
-        
+
         return final
 
     def plot_bev_feat(self, bev_feat):

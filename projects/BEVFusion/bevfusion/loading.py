@@ -4,15 +4,13 @@ from pathlib import Path
 from typing import List, Optional, Tuple
 
 import matplotlib.pyplot as plt
-
 import mmcv
 import numpy as np
+from mmcv.transforms import BaseTransform
 from mmdet3d.datasets.transforms import LoadMultiViewImageFromFiles
 from mmdet3d.registry import TRANSFORMS
 from mmengine.fileio import get
 from mmengine.logging import print_log
-from mmcv.transforms import BaseTransform
-
 
 
 @TRANSFORMS.register_module()
@@ -238,6 +236,7 @@ class PointsToMultiViewImageDepths(BaseTransform):
         max_depth (float): Upper clip for the depth color scale (m).
             Defaults to 80.
     """
+
     def __init__(
         self,
         img_shape,
@@ -255,7 +254,7 @@ class PointsToMultiViewImageDepths(BaseTransform):
         if self.visualize_dir is not None:
             self.visualize_dir.mkdir(parents=True, exist_ok=True)
         self._depth_idx = 0
-    
+
     def transform(self, results: dict) -> Optional[dict]:
         """Call function to load multi-view image from files.
 
@@ -269,17 +268,17 @@ class PointsToMultiViewImageDepths(BaseTransform):
         """
         lidar2image = np.asarray(results["lidar2img"])
         img_aug_matrix = np.asarray(results["img_aug_matrix"]) if "img_aug_matrix" in results else np.eye(4)
-        cur_coords = results["points"].numpy()[:,:3]
+        cur_coords = results["points"].numpy()[:, :3]
 
         # inverse lidar aug
         if "lidar_aug_matrix" in results:
-          lidar_aug_matrix = np.asarray(results["lidar_aug_matrix"])
-          lidar_aug_matrix_inverse = np.linalg.inv(lidar_aug_matrix)
-          cur_coords -= lidar_aug_matrix[:3, 3]
-          cur_coords = lidar_aug_matrix_inverse[:3, :3] @ cur_coords.transpose(1, 0)
+            lidar_aug_matrix = np.asarray(results["lidar_aug_matrix"])
+            lidar_aug_matrix_inverse = np.linalg.inv(lidar_aug_matrix)
+            cur_coords -= lidar_aug_matrix[:3, 3]
+            cur_coords = lidar_aug_matrix_inverse[:3, :3] @ cur_coords.transpose(1, 0)
         else:
-          cur_coords = cur_coords.transpose(1, 0)
-          
+            cur_coords = cur_coords.transpose(1, 0)
+
         # lidar2image
         cur_coords = lidar2image[:, :3, :3] @ cur_coords
         cur_coords += lidar2image[:, :3, 3].reshape(-1, 3, 1)
@@ -306,15 +305,19 @@ class PointsToMultiViewImageDepths(BaseTransform):
             & valid_dist_mask
         )
 
-        # Avoid loops since it's slow 
+        # Avoid loops since it's slow
         indices = np.nonzero(on_img)
         camera_indices = indices[0]
         point_indices = indices[1]
         masked_coords = cur_coords[camera_indices, point_indices].astype(np.int64)
         masked_dist = dist[camera_indices, point_indices]
 
-        # Possibly to have duplicates and the last one will be used, however, the chance is small	
-        flatten_indices = camera_indices * self.img_shape[0] * self.img_shape[1] + masked_coords[:, 0] * self.img_shape[1] + masked_coords[:, 1]
+        # Possibly to have duplicates and the last one will be used, however, the chance is small
+        flatten_indices = (
+            camera_indices * self.img_shape[0] * self.img_shape[1]
+            + masked_coords[:, 0] * self.img_shape[1]
+            + masked_coords[:, 1]
+        )
         depth_flat = np.zeros(self.num_cameras * self.img_shape[0] * self.img_shape[1], dtype=np.float32)
         depth_flat[flatten_indices] = masked_dist
         depth = depth_flat.reshape(self.num_cameras, self.img_shape[0], self.img_shape[1])
@@ -350,9 +353,7 @@ class PointsToMultiViewImageDepths(BaseTransform):
             base_rows = int(np.ceil(self.num_cameras / cols))
         rows = base_rows * 3
 
-        fig, axes = plt.subplots(
-            rows, cols, figsize=(4 * cols, 4 * rows), squeeze=False
-        )
+        fig, axes = plt.subplots(rows, cols, figsize=(4 * cols, 4 * rows), squeeze=False)
 
         for c in range(self.num_cameras):
             d = depth[c]
@@ -365,12 +366,20 @@ class PointsToMultiViewImageDepths(BaseTransform):
                 ax_overlay.imshow(imgs[c].astype(np.uint8))
                 if vals.size > 0:
                     ax_overlay.scatter(
-                        xs, ys, c=vals, cmap="turbo",
-                        vmin=0, vmax=self.max_depth, s=1,
+                        xs,
+                        ys,
+                        c=vals,
+                        cmap="turbo",
+                        vmin=0,
+                        vmax=self.max_depth,
+                        s=1,
                     )
             else:
                 ax_overlay.imshow(
-                    d, cmap="turbo", vmin=0, vmax=self.max_depth,
+                    d,
+                    cmap="turbo",
+                    vmin=0,
+                    vmax=self.max_depth,
                     interpolation="nearest",
                 )
             ax_overlay.set_title(f"cam {c} overlay  ({vals.size} pts)")
@@ -383,7 +392,10 @@ class PointsToMultiViewImageDepths(BaseTransform):
                 ax_img.imshow(imgs[c].astype(np.uint8))
             else:
                 ax_img.imshow(
-                    d, cmap="gray", vmin=0, vmax=self.max_depth,
+                    d,
+                    cmap="gray",
+                    vmin=0,
+                    vmax=self.max_depth,
                     interpolation="nearest",
                 )
             ax_img.set_title(f"cam {c} image-only")
@@ -393,7 +405,10 @@ class PointsToMultiViewImageDepths(BaseTransform):
             # Row block 3: depth-only visualization.
             ax_depth = axes[(base_rows * 2) + (c // cols), c % cols]
             ax_depth.imshow(
-                d, cmap="turbo", vmin=0, vmax=self.max_depth,
+                d,
+                cmap="turbo",
+                vmin=0,
+                vmax=self.max_depth,
                 interpolation="nearest",
             )
             ax_depth.set_title(f"cam {c} depth-only")
@@ -407,21 +422,16 @@ class PointsToMultiViewImageDepths(BaseTransform):
             axes[(base_rows * 2) + (c // cols), c % cols].axis("off")
 
         # Shared depth colorbar with numeric values.
-        depth_mappable = plt.cm.ScalarMappable(
-            cmap="turbo", norm=plt.Normalize(vmin=0, vmax=self.max_depth)
-        )
+        depth_mappable = plt.cm.ScalarMappable(cmap="turbo", norm=plt.Normalize(vmin=0, vmax=self.max_depth))
         depth_mappable.set_array([])
-        cbar = fig.colorbar(
-            depth_mappable, ax=axes, location="right", fraction=0.02, pad=0.02
-        )
+        cbar = fig.colorbar(depth_mappable, ax=axes, location="right", fraction=0.02, pad=0.02)
         cbar.set_label("Depth (m)")
 
         fig.suptitle(f"gt_depths — {self._depth_idx}")
         fig.tight_layout(rect=[0, 0, 0.96, 0.97])
-        
+
         self._depth_idx += 1
         out_path = self.visualize_dir / f"{self._depth_idx:06d}_gt_depths.png"
         fig.savefig(out_path, dpi=120, bbox_inches="tight")
         plt.close(fig)
         print(f"Saved gt_depths visualization to {out_path}")
- 

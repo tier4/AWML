@@ -29,20 +29,17 @@ train_pipeline = [
     dict(
         type="ImageAug3D",
         final_dim=image_size,
-		resize_lim=[0.29, 0.35],
+        resize_lim=[0.29, 0.35],
         bot_pct_lim=[0.0, 0.0],
         rot_lim=[0.0, 0.0],
         rand_flip=True,
         is_train=True,
     ),
+    dict(type="PointsRangeFilter", point_cloud_range=[-80.0, -80.0, -10.0, 80.0, 80.0, 10.0]),
     dict(
-        type="PointsRangeFilter", 
-        point_cloud_range=[-80.0, -80.0, -10.0, 80.0, 80.0, 10.0]
-    ),
-    dict(
-        type="PointsToMultiViewImageDepths", 
-        img_shape=image_size, 
-        num_cameras=len(camera_order), 
+        type="PointsToMultiViewImageDepths",
+        img_shape=image_size,
+        num_cameras=len(camera_order),
         depth_bounds=[1.0, 60.0],
         # visualize_dir="work_dirs/visualize_depths_6",
     ),
@@ -54,7 +51,7 @@ train_pipeline = [
     ),
     dict(type="BEVFusionRandomFlip3D"),
     dict(type="ObjectRangeFilter", point_cloud_range=_base_.point_cloud_range),
-	dict(type="ObjectRangeMinPointsFilter", range_radius=[0, 60], min_num_points=5),
+    dict(type="ObjectRangeMinPointsFilter", range_radius=[0, 60], min_num_points=5),
     # Remove LiDAR points from the data
     dict(type="BEVFusionRemoveLiDARPoints"),
     dict(
