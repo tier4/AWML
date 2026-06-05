@@ -15,7 +15,9 @@ custom_imports["imports"] += ["autoware_ml.detection3d.datasets.transforms"]
 data_root = "data/t4dataset/"
 info_directory_path = "info/kokseang_2_7/"
 
-experiment_group_name = "bevfusion_lidar_intensity_2_7_1/j6gen2_base_with_bbox_expand_adjusted_test/" + _base_.dataset_type
+experiment_group_name = (
+    "bevfusion_lidar_intensity_2_7_1/j6gen2_base_with_bbox_expand_adjusted_test/" + _base_.dataset_type
+)
 experiment_name = "lidar_voxel_second_secfpn_30e_8xb8_j6gen2_base_120m"
 work_dir = "work_dirs/" + experiment_group_name + "/" + experiment_name
 
@@ -63,6 +65,10 @@ model = dict(
         bbox_coder=dict(
             pc_range=_base_.point_cloud_range[0:2],
             voxel_size=_base_.voxel_size[0:2],
+        ),
+        partial_ignore_labels=["traffic_cone", "barrier"],
+        loss_heatmap=dict(
+            reduction="none",
         ),
     ),
 )

@@ -13,6 +13,7 @@ from mmdet3d.registry import MODELS
 from mmdet3d.structures import xywhr2xyxyr
 from mmdet.models.task_modules import AssignResult, PseudoSampler, build_assigner, build_bbox_coder, build_sampler
 from mmdet.models.utils import multi_apply
+from mmengine.logging import print_log
 from mmengine.structures import InstanceData
 from torch import nn
 
@@ -69,6 +70,7 @@ class BEVFusionHead(nn.Module):
         train_cfg=None,
         test_cfg=None,
         bbox_coder=None,
+        partial_ignore_labels=None,
     ):
         super().__init__()
         self.class_names = class_names
@@ -82,7 +84,6 @@ class BEVFusionHead(nn.Module):
         self.nms_kernel_size = nms_kernel_size
         self.train_cfg = train_cfg
         self.test_cfg = test_cfg
-
         self.use_sigmoid_cls = loss_cls.get("use_sigmoid", False)
         if not self.use_sigmoid_cls:
             self.num_classes += 1
@@ -185,6 +186,20 @@ class BEVFusionHead(nn.Module):
             cluster["class_indices"] = sorted(
                 [self.class_name_to_indices[class_name] for class_name in cluster["class_names"]]
             )
+
+        # If true, only compute loss for traffic cone and barrier when it's available in the frame
+        if partial_ignore_labels is not None:
+            assert (
+                loss_heatmap["reduction"] == "none"
+            ), "Loss reduction must be 'none' for partial traffic cone and barrier"
+            self.partial_ignore_labels = [
+                self.class_name_to_indices[class_name] for class_name in partial_ignore_labels
+            ]
+        else:
+            self.partial_ignore_labels = None
+
+        print_log(f"BEVFusionHead Partial ignore labels: {self.partial_ignore_labels}, dense heatmap pooling classes: \
+        {self.dense_heatmap_pooling_classes}, class_names: {self.class_names}", logger="current")
 
     def create_2D_grid(self, x_size, y_size):
         meshgrid = [[0, x_size - 1, x_size], [0, y_size - 1, y_size]]
@@ -456,7 +471,9 @@ class BEVFusionHead(nn.Module):
 
         return rets[0]
 
-    def get_targets(self, batch_gt_instances_3d: List[InstanceData], preds_dict: List[dict]):
+    def get_targets(
+        self, batch_gt_instances_3d: List[InstanceData], preds_dict: List[dict], batch_metadata: List[dict]
+    ):
         """Generate training targets.
         Args:
             batch_gt_instances_3d (List[InstanceData]):
@@ -500,6 +517,7 @@ class BEVFusionHead(nn.Module):
             batch_gt_instances_3d,
             list_of_pred_dict,
             np.arange(len(batch_gt_instances_3d)),
+            batch_metadata,
         )
         labels = torch.cat(res_tuple[0], dim=0)
         label_weights = torch.cat(res_tuple[1], dim=0)
@@ -509,6 +527,7 @@ class BEVFusionHead(nn.Module):
         num_pos = np.sum(res_tuple[5])
         matched_ious = np.mean(res_tuple[6])
         heatmap = torch.cat(res_tuple[7], dim=0)
+        heatmap_weights = torch.cat(res_tuple[8], dim=0)
         return (
             labels,
             label_weights,
@@ -518,9 +537,10 @@ class BEVFusionHead(nn.Module):
             num_pos,
             matched_ious,
             heatmap,
+            heatmap_weights,
         )
 
-    def get_targets_single(self, gt_instances_3d, preds_dict, batch_idx):
+    def get_targets_single(self, gt_instances_3d, preds_dict, batch_idx, metadata):
         """Generate training targets for a single sample.
         Args:
             gt_instances_3d (:obj:`InstanceData`): ground truth of instances.
@@ -616,7 +636,7 @@ class BEVFusionHead(nn.Module):
         ious = assign_result_ensemble.max_overlaps
         ious = torch.clamp(ious, min=0.0, max=1.0)
         labels = bboxes_tensor.new_zeros(num_proposals, dtype=torch.long)
-        label_weights = bboxes_tensor.new_zeros(num_proposals, dtype=torch.long)
+        label_weights = bboxes_tensor.new_zeros([num_proposals, self.num_classes], dtype=torch.long)
 
         if gt_labels_3d is not None:  # default label is -1
             labels += self.num_classes
@@ -671,6 +691,17 @@ class BEVFusionHead(nn.Module):
                 draw_heatmap_gaussian(heatmap[gt_labels_3d[idx]], center_int[[1, 0]], radius)
 
         mean_iou = ious[pos_inds].sum() / max(len(pos_inds), 1)
+        heatmap_weights = torch.ones_like(heatmap)
+
+        # Ignore labels for traffic cone and barrier
+        traffic_cone_barrier_status = metadata.get("traffic_cone_barrier_status", True)
+        if self.partial_ignore_labels is not None and not traffic_cone_barrier_status:
+            heatmap_weights[self.partial_ignore_labels] = 0.0  # Set to 0 to ignore these grids
+            if len(neg_inds) > 0:
+                # neg_inds [N] and column indices [K] must broadcast (not pair);
+                _cols = torch.as_tensor(self.partial_ignore_labels, device=label_weights.device, dtype=torch.long)
+                label_weights[neg_inds.unsqueeze(1), _cols.unsqueeze(0)] = 0.0
+
         return (
             labels[None],
             label_weights[None],
@@ -680,6 +711,7 @@ class BEVFusionHead(nn.Module):
             int(pos_inds.shape[0]),
             float(mean_iou),
             heatmap[None],
+            heatmap_weights[None],
         )
 
     def loss(self, batch_feats, batch_data_samples):
@@ -698,11 +730,13 @@ class BEVFusionHead(nn.Module):
             batch_input_metas.append(data_sample.metainfo)
             batch_gt_instances_3d.append(data_sample.gt_instances_3d)
         preds_dicts = self(batch_feats, batch_input_metas)
-        loss = self.loss_by_feat(preds_dicts, batch_gt_instances_3d)
+        loss = self.loss_by_feat(preds_dicts, batch_gt_instances_3d, batch_input_metas)
 
         return loss
 
-    def loss_by_feat(self, preds_dicts: Tuple[List[dict]], batch_gt_instances_3d: List[InstanceData], *args, **kwargs):
+    def loss_by_feat(
+        self, preds_dicts: Tuple[List[dict]], batch_gt_instances_3d: List[InstanceData], batch_input_metas
+    ):
         (
             labels,
             label_weights,
@@ -712,7 +746,8 @@ class BEVFusionHead(nn.Module):
             num_pos,
             matched_ious,
             heatmap,
-        ) = self.get_targets(batch_gt_instances_3d, preds_dicts[0])
+            heatmap_weights,
+        ) = self.get_targets(batch_gt_instances_3d, preds_dicts[0], batch_input_metas)
         if hasattr(self, "on_the_image_mask"):
             label_weights = label_weights * self.on_the_image_mask
             bbox_weights = bbox_weights * self.on_the_image_mask[:, :, None]
@@ -721,12 +756,32 @@ class BEVFusionHead(nn.Module):
         loss_dict = dict()
 
         # compute heatmap loss
-        loss_heatmap = self.loss_heatmap(
-            clip_sigmoid(preds_dict["dense_heatmap"]).float(),
-            heatmap.float(),
-            avg_factor=max(heatmap.eq(1).float().sum().item(), 1),
-        )
-        loss_dict["loss_heatmap"] = loss_heatmap
+        preds_dense_heatmap = clip_sigmoid(preds_dict["dense_heatmap"].float())
+        num_pos_dense_heatmap = max(heatmap.eq(1).float().sum().item(), 1)
+        if self.partial_ignore_labels is None:
+            loss_heatmap = self.loss_heatmap(
+                preds_dense_heatmap,
+                heatmap.float(),
+                avg_factor=num_pos_dense_heatmap,
+            )
+            loss_dict["loss_heatmap"] = loss_heatmap
+        else:
+            # When ignore labels is found, we compute the loss for each class
+            # heatmap focal loss
+            loss_heatmap_cls: torch.Tensor = self.loss_heatmap(
+                preds_dense_heatmap,
+                heatmap.float(),
+            )
+
+            # (Batch, num_classes, height, width) * (Batch, num_classes, height, width)
+            loss_heatmap_cls = loss_heatmap_cls * heatmap_weights.float()
+            loss_heatmap_cls = loss_heatmap_cls.sum((0, 2, 3)) / num_pos_dense_heatmap
+            # (Batch, num_classes)
+            for cls_i, class_name in enumerate(self.class_names):
+                loss_dict[f"loss_heatmap_{class_name}"] = loss_heatmap_cls[cls_i]
+
+            # Prevent loss item to avoid computing gradients twice. This is for logging.
+            loss_dict["total_dense_heatmap"] = loss_heatmap_cls.sum()
 
         # compute loss for each layer
         for idx_layer in range(self.num_decoder_layers if self.auxiliary else 1):
@@ -742,7 +797,9 @@ class BEVFusionHead(nn.Module):
             layer_label_weights = label_weights[
                 ...,
                 idx_layer * self.num_proposals : (idx_layer + 1) * self.num_proposals,
-            ].reshape(-1)
+            ]
+            # (Batch*num_proposals, num_classes)
+            layer_label_weights = layer_label_weights.reshape(-1, self.num_classes)
             layer_score = preds_dict["heatmap"][
                 ...,
                 idx_layer * self.num_proposals : (idx_layer + 1) * self.num_proposals,

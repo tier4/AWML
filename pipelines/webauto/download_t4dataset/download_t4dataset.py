@@ -68,8 +68,8 @@ def get_t4dataset_ids(config_path: str) -> list[str]:
     for key in required_keys:
         for t4dataset_ids in data_splits[key]:
             t4dataset_ids = t4dataset_ids.split("/")
-            if len(t4dataset_ids) == 4:
-                t4dataset_id, t4dataset_version_id, city, vehicle_type = t4dataset_ids
+            if len(t4dataset_ids) == 5:
+                t4dataset_id, t4dataset_version_id, city, vehicle_type, traffic_cone_barrier_status = t4dataset_ids
             elif len(t4dataset_ids) == 2:
                 t4dataset_id, t4dataset_version_id = t4dataset_ids
             elif len(t4dataset_ids) == 1:

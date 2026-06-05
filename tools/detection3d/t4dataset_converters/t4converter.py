@@ -627,11 +627,15 @@ def get_lidarseg_annotations(
     if not hasattr(t4, "lidarseg") or not t4.lidarseg:
         return dict()
 
+    if sd_record.info_filename is None:
+        print(f"sample {lidar_token} doesn't have lidar info_filename")
+        return dict()
+
     assert i < len(t4.lidarseg), "Index exceeds number of lidarseg records!"
     if sd_record.info_filename is None:
         print(f"sample {lidar_token} doesn't have lidar info_filename")
         return dict()
-        
+
     assert t4.lidarseg[i].sample_data_token == lidar_token, "Sample data token mismatch!"
     return dict(
         pts_semantic_mask_path=parse_lidar_path(osp.join(t4.data_root, t4.lidarseg[i].filename)),
