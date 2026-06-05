@@ -51,15 +51,6 @@ class TrtBevFusionMainContainer(torch.nn.Module):
             "voxels": {"voxels": voxels, "coors": coors, "num_points_per_voxel": num_points_per_voxel},
         }
 
-        voxels.cpu().numpy().astype(np.float32).tofile("work_dirs/dummy_inputs/voxels.bin")
-        coors[:, :3].cpu().numpy().astype(np.int32).tofile("work_dirs/dummy_inputs/coors.bin")
-        num_points_per_voxel.cpu().numpy().astype(np.int32).tofile("work_dirs/dummy_inputs/num_points_per_voxel.bin")
-        print(
-            "voxels.shape, coors.shape, num_points_per_voxel.shape:",
-            voxels.shape,
-            coors.shape,
-            num_points_per_voxel.shape,
-        )
         if points is not None:
             batch_inputs_dict["points"] = [points]
 
