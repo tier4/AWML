@@ -1,7 +1,7 @@
 _base_ = [
     "./camera_resnet50_fpn_depthlss_120m.py",
 ]
-num_proposals = 200
+num_proposals = 300
 out_size_factor = 4
 
 # Image network
@@ -22,9 +22,13 @@ model = dict(
         num_proposals=num_proposals,
         bbox_coder=dict(
             post_center_range=[-61.2, -61.2, -10.0, 61.2, 61.2, 10.0],
+            out_size_factor=out_size_factor,
         ),
-        train_cfg=dict(out_size_factor=4),
-        test_cfg=dict(out_size_factor=4),
-        bbox_coder=dict(out_size_factor=4),
+        train_cfg=dict(
+            out_size_factor=out_size_factor
+        ),
+        test_cfg=dict(
+            out_size_factor=out_size_factor
+        ),
     ),
 )
