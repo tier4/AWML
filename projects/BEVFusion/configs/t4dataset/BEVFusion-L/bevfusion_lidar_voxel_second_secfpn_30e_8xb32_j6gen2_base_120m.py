@@ -3,7 +3,7 @@ _base_ = [
     "../../../../../autoware_ml/configs/detection3d/dataset/t4dataset/j6gen2_base.py",
     "../default/pipelines/default_lidar_intensity_120m.py",
     "../default/models/default_lidar_second_secfpn_120m.py",
-    "../default/schedulers/default_30e_8xb16_adamw_cosine.py",
+    "../default/schedulers/default_30e_8xb32_adamw_cosine.py",
     "../default/default_misc.py",
 ]
 
@@ -15,8 +15,8 @@ custom_imports["imports"] += ["autoware_ml.detection3d.datasets.transforms"]
 data_root = "data/t4dataset/"
 info_directory_path = "info/kokseang_2_8_1/"
 
-experiment_group_name = "bevfusion_lidar_intensity_2_8_3/j6gen2_base_normal_dense/" + _base_.dataset_type
-experiment_name = "lidar_voxel_second_secfpn_30e_8xb16_j6gen2_base_120m"
+experiment_group_name = "bevfusion_lidar_intensity/j6gen2_base/" + _base_.dataset_type
+experiment_name = "lidar_voxel_second_secfpn_30e_8xb32_j6gen2_base_120m"
 work_dir = "work_dirs/" + experiment_group_name + "/" + experiment_name
 
 # model parameter

@@ -96,7 +96,7 @@ model = dict(
                 dict(class_names=["barrier"], class_indices=[6], nms_threshold=0.0, post_max_size=50),
             ],
         ),
-        dense_heatmap_pooling_classes=["car", "truck", "bus", "bicycle", "barrier"],  # Use class indices for pooling
+        dense_heatmap_pooling_classes=["car", "truck", "bus", "barrier"],  # Use class indices for pooling
         common_heads=dict(center=[2, 2], height=[1, 2], dim=[3, 2], rot=[2, 2], vel=[2, 2]),
         bbox_coder=dict(
             type="TransFusionBBoxCoder",
