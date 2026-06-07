@@ -148,5 +148,3 @@ default_hooks = dict(
     checkpoint=dict(type="CheckpointHook", interval=1, max_keep_ckpts=3, save_best="NuScenes metric/T4Metric/mAP"),
 )
 log_processor = dict(window_size=50)
-
-resume = True
