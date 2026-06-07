@@ -42,7 +42,7 @@ class PredictionRunner(BaseRunner):
         work_dir: Path,
         data_root: str,
         ann_file_path: str,
-        batch_size: int = 0,
+        batch_size: int = 512,
         max_workers: int = 8,
         frame_range: Optional[Tuple[int, int]] = None,
         bboxes_score_threshold: float = 0.10,
