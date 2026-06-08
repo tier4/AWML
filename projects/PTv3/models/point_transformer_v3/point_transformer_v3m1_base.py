@@ -574,26 +574,33 @@ class Embedding(PointModule):
         norm_layer=None,
         act_layer=None,
         export_mode=False,
+        kernel_size=5,
+        stem_type="conv",
     ):
         super().__init__()
         self.in_channels = in_channels
         self.embed_channels = embed_channels
 
-        if export_mode:
-            from SparseConvolution.sparse_conv import SubMConv3d
-        else:
-            from spconv.pytorch import SubMConv3d
+        if stem_type == "linear":
+            # Utonia-style stem: drop the submanifold conv for a per-point Linear.
+            self.stem = PointSequential(linear=nn.Linear(in_channels, embed_channels))
+        elif stem_type == "conv":
+            if export_mode:
+                from SparseConvolution.sparse_conv import SubMConv3d
+            else:
+                from spconv.pytorch import SubMConv3d
 
-        self.stem = PointSequential(
-            conv=SubMConv3d(
-                in_channels,
-                embed_channels,
-                kernel_size=5,
-                padding=1,
-                bias=False,
-                indice_key="stem",
+            self.stem = PointSequential(
+                conv=SubMConv3d(
+                    in_channels,
+                    embed_channels,
+                    kernel_size=kernel_size,
+                    bias=False,
+                    indice_key="stem",
+                )
             )
-        )
+        else:
+            raise ValueError(f"Unknown stem_type: {stem_type!r} (expected 'conv' or 'linear')")
         if norm_layer is not None:
             self.stem.add(norm_layer(embed_channels), name="norm")
         if act_layer is not None:
@@ -640,6 +647,8 @@ class PointTransformerV3(PointModule):
         pdnorm_affine=True,
         pdnorm_conditions=("ScanNet", "S3DIS", "Structured3D"),
         export_mode=False,
+        stem_kernel_size=5,
+        stem_type="conv",
     ):
         super().__init__()
         self.num_stages = len(enc_depths)
@@ -688,6 +697,8 @@ class PointTransformerV3(PointModule):
             norm_layer=bn_layer,
             act_layer=act_layer,
             export_mode=export_mode,
+            kernel_size=stem_kernel_size,
+            stem_type=stem_type,
         )
 
         # encoder

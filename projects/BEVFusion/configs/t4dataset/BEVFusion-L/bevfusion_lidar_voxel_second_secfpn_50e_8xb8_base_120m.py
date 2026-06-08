@@ -62,6 +62,10 @@ model = dict(
             pc_range=_base_.point_cloud_range[0:2],
             voxel_size=_base_.voxel_size[0:2],
         ),
+        partial_ignore_labels=["traffic_cone", "barrier"],
+        loss_heatmap=dict(
+            reduction="none",
+        ),
     ),
 )
 
