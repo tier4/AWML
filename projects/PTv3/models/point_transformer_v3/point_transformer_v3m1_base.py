@@ -6,6 +6,7 @@ Please cite our work if the code is helpful to you.
 """
 
 import math
+from dataclasses import dataclass
 from functools import partial
 
 import torch
@@ -403,6 +404,25 @@ class Block(PointModule):
         return point
 
 
+@dataclass
+class SerializedPoolingMeta:
+    """Per-stage serialized-pooling metadata supplied as ONNX graph inputs during export.
+
+    Stored as a dataclass (not a dict) so it can travel inside the addict-based ``Point``:
+    addict only auto-converts plain ``dict`` values into ``Point`` objects, which would recurse
+    infinitely here because the metadata has no ``coord`` key. A dataclass instance is left
+    untouched by addict's ``_hook``, so it survives ``Point`` construction and reconstruction.
+    """
+
+    indices: torch.Tensor
+    indptr: torch.Tensor
+    cluster: torch.Tensor
+    head_indices: torch.Tensor
+    grid_coord: torch.Tensor
+    serialized_order: torch.Tensor
+    serialized_inverse: torch.Tensor
+
+
 class SerializedPooling(PointModule):
 
     def __init__(
@@ -416,11 +436,13 @@ class SerializedPooling(PointModule):
         shuffle_orders=True,
         traceable=True,  # record parent and cluster
         export_mode=False,
+        export_stage_index=None,
     ):
         super().__init__()
         self.in_channels = in_channels
         self.out_channels = out_channels
         self.export_mode = export_mode
+        self.export_stage_index = export_stage_index
 
         assert stride == 2 ** (math.ceil(stride) - 1).bit_length()  # 2, 4, 8
         # TODO: add support to grid pool (any stride)
@@ -436,29 +458,6 @@ class SerializedPooling(PointModule):
         if act_layer is not None:
             self.act = PointSequential(act_layer())
 
-    @staticmethod
-    def _build_export_cluster(
-        code: torch.Tensor,
-        serialized_order: torch.Tensor,
-    ):
-        sorted_indices = serialized_order[0]
-        sorted_code = code[0].index_select(0, sorted_indices)
-        cluster_starts_mask = torch.cat(
-            [
-                torch.ones_like(sorted_code[:1], dtype=torch.bool),
-                sorted_code[1:] != sorted_code[:-1],
-            ]
-        )
-        cluster_starts = torch.nonzero(cluster_starts_mask, as_tuple=False).flatten()
-        num_points = torch._shape_as_tensor(sorted_indices).to(sorted_indices.device)[:1]
-        idx_ptr = torch.cat([cluster_starts, num_points], dim=0)
-
-        cluster_sorted = torch.cumsum(cluster_starts_mask.to(dtype=sorted_indices.dtype), dim=0) - 1
-        cluster = torch.zeros_like(cluster_sorted)
-        cluster.scatter_(0, sorted_indices, cluster_sorted)
-
-        return cluster, sorted_indices, idx_ptr
-
     def forward(self, point: Point):
         pooling_depth = (math.ceil(self.stride) - 1).bit_length()
         if pooling_depth > point.serialized_depth:
@@ -473,9 +472,8 @@ class SerializedPooling(PointModule):
 
         sparse_shape = point.sparse_shape
 
-        code = point.serialized_code >> pooling_depth * 3
-
         if not self.export_mode:
+            code = point.serialized_code >> pooling_depth * 3
             _, cluster, counts = torch.unique(
                 code[0],
                 dim=0,
@@ -487,25 +485,33 @@ class SerializedPooling(PointModule):
             _, indices = torch.sort(cluster)
             idx_ptr = torch.cat([counts.new_zeros(1), torch.cumsum(counts, dim=0)])
         else:
-            cluster, indices, idx_ptr = self._build_export_cluster(code, point.serialized_order)
+            assert self.export_stage_index is not None
+            metadata = point.serialized_pooling[self.export_stage_index]
+            indices = metadata.indices
+            idx_ptr = metadata.indptr
+            cluster = metadata.cluster
 
         # indices of point sorted by cluster, for torch_scatter.segment_csr
 
         # index pointer for sorted point, for torch_scatter.segment_csr
         # head_indices of each cluster, for reduce attr e.g. code, batch
-        head_indices = indices[idx_ptr[:-1]]
-        # generate down code, order, inverse
-        code = code[:, head_indices]
-
-        if not self.export_mode:
-            order = torch.argsort(code)
+        if self.export_mode:
+            head_indices = metadata.head_indices
+            order = metadata.serialized_order
+            inverse = metadata.serialized_inverse
+            grid_coord = metadata.grid_coord
+            code = torch.zeros_like(order)
         else:
-            order = torch.stack([argsort(code[i]) for i in range(len(code))], dim=0)
-        inverse = torch.zeros_like(order).scatter_(
-            dim=1,
-            index=order,
-            src=torch.arange(0, code.shape[1], device=order.device).repeat(code.shape[0], 1),
-        )
+            head_indices = indices[idx_ptr[:-1]]
+            # generate down code, order, inverse
+            code = code[:, head_indices]
+            order = torch.argsort(code)
+            inverse = torch.zeros_like(order).scatter_(
+                dim=1,
+                index=order,
+                src=torch.arange(0, code.shape[1], device=order.device).repeat(code.shape[0], 1),
+            )
+            grid_coord = point.grid_coord[head_indices] >> pooling_depth
 
         if self.shuffle_orders:
             perm = torch.randperm(code.shape[0])
@@ -520,12 +526,14 @@ class SerializedPooling(PointModule):
             scatter_coord = torch_scatter.segment_csr(point.coord[indices], idx_ptr, reduce="mean")
         else:
             scatter_feat = segment_csr(self.proj(point.feat)[indices], idx_ptr, self.reduce)
-            scatter_coord = segment_csr(point.coord[indices], idx_ptr, "mean")
+            # `coord` is not consumed by the deployed graph after pooling; keep a representative
+            # value without adding another SegmentCSR op to the ONNX contract.
+            scatter_coord = grid_coord.to(dtype=point.coord.dtype)
 
         point_dict = Dict(
             feat=scatter_feat,
             coord=scatter_coord,
-            grid_coord=point.grid_coord[head_indices] >> pooling_depth,
+            grid_coord=grid_coord,
             serialized_code=code,
             serialized_order=order,
             serialized_inverse=inverse,
@@ -542,6 +550,11 @@ class SerializedPooling(PointModule):
         if self.traceable:
             point_dict["pooling_inverse"] = cluster
             point_dict["pooling_parent"] = point
+        if self.export_mode:
+            # Carry the per-stage pooling metadata to the next encoder stage. It is a list of
+            # SerializedPoolingMeta dataclasses, which addict stores verbatim instead of
+            # recursively converting into a (coord-less) Point.
+            point_dict["serialized_pooling"] = point.serialized_pooling
         point = Point(point_dict)
         if self.norm is not None:
             point = self.norm(point)
@@ -729,6 +742,7 @@ class PointTransformerV3(PointModule):
                         act_layer=act_layer,
                         shuffle_orders=shuffle_orders,
                         export_mode=self.export_mode,
+                        export_stage_index=s - 1 if self.export_mode else None,
                     ),
                     name="down",
                 )

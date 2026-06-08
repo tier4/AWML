@@ -37,8 +37,57 @@ PROJECT_ROOT = Path(__file__).resolve().parents[1]
 if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 
-from models.point_transformer_v3.point_transformer_v3m1_base import SerializedPooling
+from models.point_transformer_v3.point_transformer_v3m1_base import SerializedPooling, SerializedPoolingMeta
+from models.scatter.functional import argsort
 from models.utils.structure import Point
+
+
+def _pooling_depth(stride):
+    depth = 0
+    value = int(stride)
+    while value > 1:
+        depth += 1
+        value >>= 1
+    return depth
+
+
+def _make_serialized_pooling_metadata(point, stride):
+    depth = _pooling_depth(stride)
+    pooled_code = point.serialized_code >> (depth * 3)
+    indices = point.serialized_order[0]
+    sorted_code = pooled_code[0].index_select(0, indices)
+    run_start = torch.cat(
+        [
+            torch.ones_like(sorted_code[:1], dtype=torch.bool),
+            sorted_code[1:] != sorted_code[:-1],
+        ],
+        dim=0,
+    )
+    starts = torch.nonzero(run_start, as_tuple=False).flatten()
+    indptr = torch.cat([starts, torch.tensor([indices.numel()], dtype=starts.dtype, device=starts.device)], dim=0)
+    cluster_sorted = torch.cumsum(run_start.to(dtype=indices.dtype), dim=0) - 1
+    cluster = torch.zeros_like(cluster_sorted)
+    cluster.scatter_(0, indices, cluster_sorted)
+    head_indices = indices.index_select(0, indptr[:-1])
+    grid_coord = point.grid_coord.index_select(0, head_indices) >> depth
+    serialized_code = pooled_code.index_select(1, head_indices)
+    serialized_order = torch.stack([argsort(code) for code in serialized_code], dim=0)
+    serialized_inverse = torch.zeros_like(serialized_order).scatter_(
+        dim=1,
+        index=serialized_order,
+        src=torch.arange(0, serialized_code.shape[1], device=serialized_order.device).repeat(
+            serialized_code.shape[0], 1
+        ),
+    )
+    return SerializedPoolingMeta(
+        indices=indices,
+        indptr=indptr,
+        cluster=cluster,
+        head_indices=head_indices,
+        grid_coord=grid_coord,
+        serialized_order=serialized_order,
+        serialized_inverse=serialized_inverse,
+    )
 
 
 class TestSerializedPooling(unittest.TestCase):
@@ -94,6 +143,7 @@ class TestSerializedPooling(unittest.TestCase):
             shuffle_orders=False,
             traceable=True,
             export_mode=True,
+            export_stage_index=0,
         )
         train_module.norm = None
         train_module.act = None
@@ -102,13 +152,13 @@ class TestSerializedPooling(unittest.TestCase):
         export_module.load_state_dict(train_module.state_dict())
 
         train_out = train_module(self._make_point())
-        export_out = export_module(self._make_point())
+        export_point = self._make_point()
+        export_point["serialized_pooling"] = [_make_serialized_pooling_metadata(export_point, stride=2)]
+        export_out = export_module(export_point)
 
         tensor_keys = [
             "feat",
-            "coord",
             "grid_coord",
-            "serialized_code",
             "serialized_order",
             "serialized_inverse",
             "batch",
