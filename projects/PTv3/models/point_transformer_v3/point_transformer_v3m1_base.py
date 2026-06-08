@@ -406,13 +406,7 @@ class Block(PointModule):
 
 @dataclass
 class SerializedPoolingMeta:
-    """Per-stage serialized-pooling metadata supplied as ONNX graph inputs during export.
-
-    Stored as a dataclass (not a dict) so it can travel inside the addict-based ``Point``:
-    addict only auto-converts plain ``dict`` values into ``Point`` objects, which would recurse
-    infinitely here because the metadata has no ``coord`` key. A dataclass instance is left
-    untouched by addict's ``_hook``, so it survives ``Point`` construction and reconstruction.
-    """
+    """Pooling metadata for one encoder stage, fed to the exported graph as inputs."""
 
     indices: torch.Tensor
     indptr: torch.Tensor
@@ -421,6 +415,44 @@ class SerializedPoolingMeta:
     grid_coord: torch.Tensor
     serialized_order: torch.Tensor
     serialized_inverse: torch.Tensor
+
+
+def build_serialized_pooling_meta(grid_coord, serialized_code, serialized_order, stride):
+    """Reference for one ``SerializedPooling`` stage's metadata, as preprocessing must produce it.
+
+    Groups voxels into stride-``stride`` parents (by dropping the lowest interleaved coordinate
+    bits of the serialized code), then derives the CSR/gather tensors and the pooled serialization.
+    Returns the stage metadata and the pooled serialized code that seeds the next stage.
+    """
+    depth = (int(stride) - 1).bit_length()
+    parent_code = serialized_code >> (3 * depth)
+
+    # Order voxels by parent key, then mark the first voxel of each parent run.
+    order = serialized_order[0]
+    sorted_parent = parent_code[0].index_select(0, order)
+    is_run_start = torch.ones_like(sorted_parent, dtype=torch.bool)
+    is_run_start[1:] = sorted_parent[1:] != sorted_parent[:-1]
+
+    # CSR segmentation of the sorted voxels, plus the parent id of every (unsorted) voxel.
+    run_starts = torch.nonzero(is_run_start, as_tuple=False).flatten()
+    indptr = torch.cat([run_starts, order.new_tensor([order.numel()])])
+    cluster = torch.empty_like(order)
+    cluster[order] = is_run_start.cumsum(0) - 1
+
+    # One representative voxel per parent seeds the pooled grid and serialization.
+    head_indices = order.index_select(0, indptr[:-1])
+    pooled_code = parent_code.index_select(1, head_indices)
+    pooled_order = torch.stack([argsort(code) for code in pooled_code])
+    meta = SerializedPoolingMeta(
+        indices=order,
+        indptr=indptr,
+        cluster=cluster,
+        head_indices=head_indices,
+        grid_coord=grid_coord.index_select(0, head_indices) >> depth,
+        serialized_order=pooled_order,
+        serialized_inverse=torch.argsort(pooled_order, dim=1),
+    )
+    return meta, pooled_code
 
 
 class SerializedPooling(PointModule):

@@ -9,7 +9,10 @@ from engines.defaults import (
     default_setup,
 )
 from engines.train import TRAINERS
-from models.point_transformer_v3.point_transformer_v3m1_base import SerializedPoolingMeta
+from models.point_transformer_v3.point_transformer_v3m1_base import (
+    SerializedPoolingMeta,
+    build_serialized_pooling_meta,
+)
 from models.scatter.functional import argsort
 from models.utils.structure import Point, bit_length_tensor
 from torch.nn import functional as F
@@ -17,104 +20,41 @@ from torch.nn import functional as F
 # NOTE: keep this import last; it overrides sparse conv registration for export.
 import SparseConvolution  # isort: skip
 
-# Per-stage ONNX input field order, kept in sync with the model-side dataclass.
 SERIALIZED_POOLING_FIELDS = tuple(f.name for f in fields(SerializedPoolingMeta))
 
 
-def pooling_depth(stride):
-    depth = 0
-    value = int(stride)
-    while value > 1:
-        depth += 1
-        value >>= 1
-    return depth
-
-
-def build_serialized_pooling_metadata(grid_coord, serialized_code, serialized_order, stride):
-    depth = pooling_depth(stride)
-    pooled_code = serialized_code >> (depth * 3)
-
-    indices = serialized_order[0]
-    sorted_code = pooled_code[0].index_select(0, indices)
-    run_start = torch.cat(
-        [
-            torch.ones_like(sorted_code[:1], dtype=torch.bool),
-            sorted_code[1:] != sorted_code[:-1],
-        ],
-        dim=0,
-    )
-    run_start_indices = torch.nonzero(run_start, as_tuple=False).flatten()
-    input_count = torch._shape_as_tensor(indices).to(indices.device)[:1]
-    indptr = torch.cat([run_start_indices, input_count], dim=0)
-
-    cluster_sorted = torch.cumsum(run_start.to(dtype=indices.dtype), dim=0) - 1
-    cluster = torch.zeros_like(cluster_sorted)
-    cluster.scatter_(0, indices, cluster_sorted)
-
-    head_indices = indices.index_select(0, indptr[:-1])
-    next_grid_coord = grid_coord.index_select(0, head_indices) >> depth
-    next_serialized_code = pooled_code.index_select(1, head_indices)
-    next_serialized_order = torch.stack([argsort(code) for code in next_serialized_code], dim=0)
-    next_serialized_inverse = torch.zeros_like(next_serialized_order).scatter_(
-        dim=1,
-        index=next_serialized_order,
-        src=torch.arange(
-            0,
-            next_serialized_code.shape[1],
-            device=next_serialized_order.device,
-        ).repeat(next_serialized_code.shape[0], 1),
-    )
-
-    return {
-        "indices": indices,
-        "indptr": indptr,
-        "cluster": cluster,
-        "head_indices": head_indices,
-        "grid_coord": next_grid_coord,
-        "serialized_code": next_serialized_code,
-        "serialized_order": next_serialized_order,
-        "serialized_inverse": next_serialized_inverse,
-    }
-
-
-def build_serialized_pooling_inputs(grid_coord, serialized_code, serialized_order, strides):
-    """Build sample tensors for the ONNX/inference serialized-pooling contract.
-
-    These tensors are not constants in the exported graph. They are sample inputs used by
-    torch.onnx.export to define the interface that Autoware preprocessing fills at runtime.
-    """
-
-    metadata_by_stage = []
-    current_grid_coord = grid_coord
-    current_code = serialized_code
-    current_order = serialized_order
+def build_serialized_pooling_metadata(grid_coord, serialized_code, serialized_order, strides):
+    """Build the pooling metadata for every encoder stage by chaining the stages together."""
+    metadata = []
     for stride in strides:
-        metadata = build_serialized_pooling_metadata(current_grid_coord, current_code, current_order, stride)
-        metadata_by_stage.append(metadata)
-        current_grid_coord = metadata["grid_coord"]
-        current_code = metadata["serialized_code"]
-        current_order = metadata["serialized_order"]
-
-    return metadata_by_stage
+        meta, serialized_code = build_serialized_pooling_meta(grid_coord, serialized_code, serialized_order, stride)
+        metadata.append(meta)
+        grid_coord, serialized_order = meta.grid_coord, meta.serialized_order
+    return metadata
 
 
-def flatten_serialized_pooling_inputs(metadata_by_stage):
-    flat_inputs = []
-    input_names = []
-    dynamic_axes = {}
-    for stage_index, metadata in enumerate(metadata_by_stage):
-        prefix = f"serialized_pooling_{stage_index}_"
+def _serialized_pooling_dynamic_axis(stage_index, field):
+    """Return the single dynamic ONNX axis for one metadata field of one pooling stage."""
+    in_voxels = f"serialized_pooling_{stage_index}_in_voxels"
+    out_voxels = f"serialized_pooling_{stage_index}_out_voxels"
+    if field in ("indices", "cluster"):
+        return {0: in_voxels}
+    if field in ("indptr", "head_indices", "grid_coord"):
+        return {0: out_voxels}
+    if field in ("serialized_order", "serialized_inverse"):
+        return {1: out_voxels}
+    raise AssertionError(f"unexpected serialized-pooling field: {field!r}")
+
+
+def flatten_serialized_pooling_inputs(metadata):
+    """Flatten per-stage metadata into ordered ONNX inputs, input names, and dynamic axes."""
+    flat_inputs, input_names, dynamic_axes = [], [], {}
+    for stage_index, meta in enumerate(metadata):
         for field in SERIALIZED_POOLING_FIELDS:
-            name = prefix + field
-            flat_inputs.append(metadata[field])
+            name = f"serialized_pooling_{stage_index}_{field}"
+            flat_inputs.append(getattr(meta, field))
             input_names.append(name)
-            if field in {"grid_coord", "serialized_order", "serialized_inverse"}:
-                axis = 0 if field == "grid_coord" else 1
-                dynamic_axes[name] = {axis: f"serialized_pooling_{stage_index}_out_voxels"}
-            elif field in {"head_indices", "indptr"}:
-                dynamic_axes[name] = {0: f"serialized_pooling_{stage_index}_out_voxels"}
-            else:
-                dynamic_axes[name] = {0: f"serialized_pooling_{stage_index}_in_voxels"}
+            dynamic_axes[name] = _serialized_pooling_dynamic_axis(stage_index, field)
     return flat_inputs, input_names, dynamic_axes
 
 
@@ -141,8 +81,8 @@ class WrappedModel(torch.nn.Module):
         serialized_code,
         *serialized_pooling_inputs,
     ):
-        num_pooling_fields = len(SERIALIZED_POOLING_FIELDS)
-        assert len(serialized_pooling_inputs) % num_pooling_fields == 0
+        num_fields = len(SERIALIZED_POOLING_FIELDS)
+        assert len(serialized_pooling_inputs) % num_fields == 0
 
         shape = torch._shape_as_tensor(grid_coord).to(grid_coord.device)
 
@@ -155,12 +95,10 @@ class WrappedModel(torch.nn.Module):
             ),
         )
 
-        serialized_pooling = []
-        for stage_index in range(len(serialized_pooling_inputs) // num_pooling_fields):
-            stage_values = serialized_pooling_inputs[
-                stage_index * num_pooling_fields : (stage_index + 1) * num_pooling_fields
-            ]
-            serialized_pooling.append(SerializedPoolingMeta(**dict(zip(SERIALIZED_POOLING_FIELDS, stage_values))))
+        serialized_pooling = [
+            SerializedPoolingMeta(*serialized_pooling_inputs[i : i + num_fields])
+            for i in range(0, len(serialized_pooling_inputs), num_fields)
+        ]
 
         input_dict = {
             "coord": feat[:, :3],
@@ -171,8 +109,6 @@ class WrappedModel(torch.nn.Module):
             "serialized_code": serialized_code,
             "serialized_order": serialized_order,
             "serialized_inverse": serialized_inverse,
-            # List of SerializedPoolingMeta dataclasses; addict stores these verbatim (only plain
-            # dicts get auto-converted to Point, which would recurse on the missing "coord").
             "serialized_pooling": serialized_pooling,
             "sparse_shape": self.sparse_shape,
         }
@@ -223,7 +159,7 @@ def main():
         point.serialization(
             order=model.model.backbone.order, shuffle_orders=model.model.backbone.shuffle_orders, depth=depth
         )
-        serialized_pooling = build_serialized_pooling_inputs(
+        serialized_pooling = build_serialized_pooling_metadata(
             point["grid_coord"],
             point["serialized_code"],
             point["serialized_order"],
