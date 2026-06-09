@@ -20,7 +20,8 @@ def parse_args():
     parser.add_argument("checkpoint", help="Path to checkpoint file")
     parser.add_argument("--threshold", type=float, default=0.3, help="Score threshold for predictions")
     parser.add_argument("--step", type=int, default=120, help="Number of steps to visualize")
-    parser.add_argument("--cam_order", type=list, default=[2, 0, 4, 3, 1, 5], help="Camera order")
+    # parser.add_argument("--cam_order", type=list, default=[2, 0, 4, 3, 1, 5], help="Camera order")
+    parser.add_argument("--cam_order", type=int, nargs='+', default=[2, 0, 4, 3, 1, 5], help="Camera order")
     return parser.parse_args()
 
 
@@ -147,8 +148,10 @@ def main():
             results = runner.model.test_step(data)
 
         result = results[0]
-        pred_mask = result["pred_instances_3d"]["scores_3d"] > args.threshold
-        pred_bboxes = result["pred_instances_3d"]["bboxes_3d"].tensor[pred_mask]
+        # pred_mask = result["pred_instances_3d"]["scores_3d"] > args.threshold
+        pred_mask = result.pred_instances_3d.scores_3d > args.threshold
+        # pred_bboxes = result["pred_instances_3d"]["bboxes_3d"].tensor[pred_mask]
+        pred_bboxes = result.pred_instances_3d.bboxes_3d.tensor[pred_mask]
 
         fig, axs = plt.subplots(2, 3, figsize=(15, 10))
         axs = axs.flatten()

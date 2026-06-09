@@ -25,6 +25,7 @@
 
 import argparse
 import os
+import os.path as osp
 
 import numpy as np
 import onnx
@@ -50,6 +51,7 @@ def parse_args():
     parser.add_argument("config", help="test config file path")
     parser.add_argument("--section", help="section can be either extract_img_feat or pts_head_memory")
     parser.add_argument("--checkpoint", help="checkpoint file")
+    parser.add_argument("--work-dir", help="directory to save exported onnx files")
     args = parser.parse_args()
     return args
 
@@ -66,6 +68,14 @@ def main():
     # set cudnn_benchmark
     if cfg.get("cudnn_benchmark", False):
         torch.backends.cudnn.benchmark = True
+
+    # work_dir is determined in this priority: CLI > segment in file > filename
+    if args.work_dir is not None:
+        cfg.work_dir = args.work_dir
+    elif cfg.get("work_dir", None) is None:
+        cfg.work_dir = osp.join("./work_dirs", osp.splitext(osp.basename(args.config))[0])
+
+    os.makedirs(cfg.work_dir, exist_ok=True)
 
     runner = RUNNERS.build(cfg)
 
