@@ -408,13 +408,13 @@ class Block(PointModule):
 class SerializedPoolingMeta:
     """Pooling metadata for one encoder stage, fed to the exported graph as inputs."""
 
-    indices: torch.Tensor
-    indptr: torch.Tensor
-    cluster: torch.Tensor
-    head_indices: torch.Tensor
-    grid_coord: torch.Tensor
-    serialized_order: torch.Tensor
-    serialized_inverse: torch.Tensor
+    indices: torch.Tensor  # [N] gather order grouping the N input voxels into contiguous per-parent runs
+    indptr: torch.Tensor  # [M+1] CSR run boundaries over `indices`; its length sets the M pooled voxels
+    cluster: torch.Tensor  # [N] input voxel -> pooled voxel id, used by unpooling to scatter features back
+    head_indices: torch.Tensor  # [M] one representative input voxel per pooled voxel
+    grid_coord: torch.Tensor  # [M, 3] integer voxel coordinates of the pooled voxels
+    serialized_order: torch.Tensor  # [O, M] space-filling-curve order of the pooled voxels, per curve
+    serialized_inverse: torch.Tensor  # [O, M] inverse of `serialized_order` (pooled voxel -> its position)
 
 
 def build_serialized_pooling_meta(grid_coord, serialized_code, serialized_order, stride):
