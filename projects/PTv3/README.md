@@ -88,9 +88,9 @@ For every encoder pooling stage `i`, with input voxel count `N_i` and pooled out
 | `serialized_pooling_i_serialized_order` | `[O, M_i]` | Serialization order for pooled voxels. |
 | `serialized_pooling_i_serialized_inverse` | `[O, M_i]` | Inverse serialization order for pooled voxels. |
 
-The old data-dependent `Unique`/pooling-shape discovery is not exported into the ONNX graph; the
-graph uses native `Gather` plus the existing `autoware::SegmentCSR` plugin for pooled feature
-reduction.
+Because preprocessing resolves every pooling shape ahead of time, the exported graph contains no
+data-dependent shapes. Pooled feature reduction is implemented with native ONNX `Gather` and the
+`autoware::SegmentCSR` plugin.
 
 ## Reference
 
