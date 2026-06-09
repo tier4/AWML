@@ -37,13 +37,17 @@ def _serialized_pooling_dynamic_axis(stage_index, field):
     """Return the single dynamic ONNX axis for one metadata field of one pooling stage."""
     in_voxels = f"serialized_pooling_{stage_index}_in_voxels"
     out_voxels = f"serialized_pooling_{stage_index}_out_voxels"
-    if field in ("indices", "cluster"):
-        return {0: in_voxels}
-    if field in ("indptr", "head_indices", "grid_coord"):
-        return {0: out_voxels}
-    if field in ("serialized_order", "serialized_inverse"):
-        return {1: out_voxels}
-    raise AssertionError(f"unexpected serialized-pooling field: {field!r}")
+    match field:
+        case "indices" | "cluster":
+            return {0: in_voxels}
+        case "indptr":  # holds M + 1 entries, so it gets its own symbolic dim
+            return {0: f"{out_voxels}_plus_one"}
+        case "head_indices" | "grid_coord":
+            return {0: out_voxels}
+        case "serialized_order" | "serialized_inverse":
+            return {1: out_voxels}
+        case _:
+            raise AssertionError(f"unexpected serialized-pooling field: {field!r}")
 
 
 def flatten_serialized_pooling_inputs(metadata):

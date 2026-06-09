@@ -83,6 +83,10 @@ number of serialization orders. The old data-dependent `Unique`/pooling-shape di
 exported into the ONNX graph; the graph uses native `Gather` plus the existing
 `autoware::SegmentCSR` plugin for pooled feature reduction.
 
+Alongside this per-stage metadata, the graph keeps the original inputs `grid_coord` `[N_0, 3]`,
+`feat` `[N_0, 4]`, and `serialized_code` `[O, N_0]`, where `N_0` is the initial voxel count.
+`serialized_depth` is resolved at export time and is therefore not a runtime input.
+
 ## Reference
 
 - [Pointcept's PTv3](https://github.com/Pointcept/Pointcept)

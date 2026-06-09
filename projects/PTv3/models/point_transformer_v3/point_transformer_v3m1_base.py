@@ -518,6 +518,8 @@ class SerializedPooling(PointModule):
             idx_ptr = torch.cat([counts.new_zeros(1), torch.cumsum(counts, dim=0)])
         else:
             assert self.export_stage_index is not None
+            assert "serialized_pooling" in point.keys(), "export_mode requires serialized_pooling metadata"
+            assert self.export_stage_index < len(point.serialized_pooling), "no serialized_pooling for this stage"
             metadata = point.serialized_pooling[self.export_stage_index]
             indices = metadata.indices
             idx_ptr = metadata.indptr
