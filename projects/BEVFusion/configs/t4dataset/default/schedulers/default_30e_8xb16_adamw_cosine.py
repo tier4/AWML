@@ -1,6 +1,6 @@
 # learning rate
-lr = 2.0e-4
-t_max = 2
+lr = 1.0e-4
+t_max = 3
 max_epochs = 30
 val_interval = 5
 
