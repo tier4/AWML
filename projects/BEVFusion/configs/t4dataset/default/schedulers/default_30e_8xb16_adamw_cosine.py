@@ -1,5 +1,5 @@
 # learning rate
-lr = 1.0e-4
+lr = 2.0e-4
 t_max = 3
 max_epochs = 30
 val_interval = 5
@@ -10,7 +10,7 @@ train_batch_size = 16
 
 param_scheduler = [
     # learning rate scheduler
-    # During the first (max_epochs * 0.10) epochs, learning rate increases from 0 to lr * 10
+    # During the first (max_epochs * 0.10) epochs, learning rate increases from 0 to lr * 5
     # during the next epochs, learning rate decreases from lr * 10 to
     # lr * 1e-4
     dict(
