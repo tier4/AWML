@@ -56,7 +56,7 @@ class DefaultDataset(Dataset):
         self.test_cfg = test_cfg if test_mode else None
 
         if test_mode:
-            self.test_voxelize = TRANSFORMS.build(self.test_cfg.voxelize)
+            self.test_voxelize = TRANSFORMS.build(self.test_cfg.voxelize) if self.test_cfg.voxelize else None
             self.test_crop = TRANSFORMS.build(self.test_cfg.crop) if self.test_cfg.crop else None
             self.post_transform = Compose(self.test_cfg.post_transform)
             self.aug_transform = [Compose(aug) for aug in self.test_cfg.aug_transform]
@@ -137,6 +137,7 @@ class DefaultDataset(Dataset):
             data_dict_list.append(aug(deepcopy(data_dict)))
 
         fragment_list = []
+        frag_inverses = []  # per-fragment point->voxel inverse (single_partition mode), else None
         for data in data_dict_list:
             if self.test_voxelize is not None:
                 data_part_list = self.test_voxelize(data)
@@ -144,15 +145,19 @@ class DefaultDataset(Dataset):
                 data["index"] = np.arange(data["coord"].shape[0])
                 data_part_list = [data]
             for data_part in data_part_list:
+                seg_inv = data_part.pop("_seg_inverse", None)  # drop before Collect
                 if self.test_crop is not None:
                     data_part = self.test_crop(data_part)
                 else:
                     data_part = [data_part]
                 fragment_list += data_part
+                frag_inverses += [seg_inv] * len(data_part)
 
         for i in range(len(fragment_list)):
             fragment_list[i] = self.post_transform(fragment_list[i])
         result_dict["fragment_list"] = fragment_list
+        if any(inv is not None for inv in frag_inverses):
+            result_dict["frag_inverses"] = frag_inverses
         return result_dict
 
     def __getitem__(self, idx):

@@ -629,11 +629,16 @@ def get_lidarseg_annotations(
 
     assert i < len(t4.lidarseg), "Index exceeds number of lidarseg records!"
     assert t4.lidarseg[i].sample_data_token == lidar_token, "Sample data token mismatch!"
-    return dict(
+    out = dict(
         pts_semantic_mask_path=parse_lidar_path(osp.join(t4.data_root, t4.lidarseg[i].filename)),
         pts_semantic_mask_categories={c.name: c.index for c in t4.category},
-        lidar_sources_info=load_json(osp.join(t4.data_root, sd_record.info_filename)),
     )
+    # Older datasets (e.g. db_j6gen2_v10) have no per-frame LIDAR_CONCAT_INFO, so
+    # sd_record.info_filename is None — only attach lidar_sources_info when present.
+    info_filename = getattr(sd_record, "info_filename", None)
+    if info_filename:
+        out["lidar_sources_info"] = load_json(osp.join(t4.data_root, info_filename))
+    return out
 
 
 def get_lidar_sources_info(

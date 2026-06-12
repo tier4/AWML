@@ -241,12 +241,17 @@ class GridSample(object):
         return_min_coord=False,
         return_displacement=False,
         project_displacement=False,
+        single_partition=False,
     ):
         self.grid_size = grid_size
         self.hash = self.fnv_hash_vec if hash_type == "fnv" else self.ravel_hash_vec
         assert mode in ["train", "test"]
         self.mode = mode
         self.keys = keys
+        # single_partition (test mode, inference): emit ONLY partition 0 (one representative
+        # per voxel) and attach a `_seg_inverse` (point -> voxel) so the engine can scatter the
+        # rep prediction to every point. Cuts the fragment count from count.max() to 1 per aug.
+        self.single_partition = single_partition
         self.return_inverse = return_inverse
         self.return_grid_coord = return_grid_coord
         self.return_min_coord = return_min_coord
@@ -294,10 +299,19 @@ class GridSample(object):
 
         elif self.mode == "test":  # test mode
             data_part_list = []
-            for i in range(count.max()):
+            n_part = 1 if self.single_partition else count.max()
+            # point -> voxel index (in the same voxel order as partition 0's rows), used by the
+            # engine to scatter a single rep prediction back to every point.
+            seg_inverse = None
+            if self.single_partition:
+                seg_inverse = np.zeros_like(inverse)
+                seg_inverse[idx_sort] = inverse
+            for i in range(n_part):
                 idx_select = np.cumsum(np.insert(count, 0, 0)[0:-1]) + i % count
                 idx_part = idx_sort[idx_select]
                 data_part = dict(index=idx_part)
+                if seg_inverse is not None:
+                    data_part["_seg_inverse"] = seg_inverse
                 if self.return_inverse:
                     data_dict["inverse"] = np.zeros_like(inverse)
                     data_dict["inverse"][idx_sort] = inverse

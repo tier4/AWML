@@ -7,7 +7,10 @@ Please cite our work if the code is helpful to you.
 
 import os
 
-import SharedArray
+try:
+    import SharedArray
+except ModuleNotFoundError:  # optional dep; only needed for the on-disk shared-memory cache
+    SharedArray = None
 
 try:
     from multiprocessing.shared_memory import ShareableList

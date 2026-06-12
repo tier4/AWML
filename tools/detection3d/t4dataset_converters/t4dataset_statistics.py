@@ -19,7 +19,9 @@ class T4DatasetSceneMetadata:
 
     @property
     def frame_prefix(self) -> str:
-        return self.location + "/" + self.vehicle_type
+        # location/vehicle_type are empty/None for datasets whose log.json omits them
+        # (e.g. db_j6gen2_v10); fall back to "unknown" rather than crashing on None.
+        return (self.location or "unknown") + "/" + (self.vehicle_type or "unknown")
 
 
 class T4DatasetStatistics:

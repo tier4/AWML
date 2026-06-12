@@ -148,6 +148,7 @@ class SemSegTester(TesterBase):
         logger.info(">>>>>>>>>>>>>>>> Start Evaluation >>>>>>>>>>>>>>>>")
 
         batch_time = AverageMeter()
+        inference_only = bool(getattr(self.cfg, "inference_only", False))
         num_classes = self.cfg.data.num_classes
         ignore_index = self.cfg.data.ignore_index
         metric_options = getattr(self.cfg, "metric_options", None) or {}
@@ -201,24 +202,43 @@ class SemSegTester(TesterBase):
             else:
                 pred = torch.zeros((segment.size, num_classes)).cuda()
                 feat = torch.zeros((segment.size, 4)).cuda()
-                for i in range(len(fragment_list)):
+                # Batch multiple TTA/grid fragments per forward to saturate the GPU; with flash
+                # attention each fragment is light, so single-fragment forwards underutilize an
+                # A100. fragment_batch_size + enable_amp are read from cfg (set by local_infer).
+                fragment_batch_size = max(1, int(getattr(self.cfg, "fragment_batch_size", 1) or 1))
+                amp_enabled = bool(getattr(self.cfg, "enable_amp", False))
+                # spconv's sparse-conv kernels are fp16-native (custom_fwd casts to fp16), so
+                # fp16 autocast composes cleanly where bf16 trips its algo tuner. Default fp16.
+                amp_dtype = torch.float16 if str(getattr(self.cfg, "amp_dtype", "fp16")) == "fp16" else torch.bfloat16
+                # single_partition (1 fragment per aug): each fragment predicts on one rep per
+                # voxel; its `frag_inverses[i]` scatters that prediction to every point. Forces
+                # bs=1 so each fragment maps to exactly one aug's inverse.
+                frag_inverses = data_dict.get("frag_inverses", None)
+                if frag_inverses is not None:
                     fragment_batch_size = 1
-                    s_i, e_i = i * fragment_batch_size, min((i + 1) * fragment_batch_size, len(fragment_list))
+                for i in range(0, len(fragment_list), fragment_batch_size):
+                    s_i, e_i = i, min(i + fragment_batch_size, len(fragment_list))
                     input_dict = collate_fn(fragment_list[s_i:e_i])
                     for key in input_dict.keys():
                         if isinstance(input_dict[key], torch.Tensor):
                             input_dict[key] = input_dict[key].cuda(non_blocking=True)
                     idx_part = input_dict["index"]
-                    with torch.no_grad():
+                    with torch.no_grad(), torch.autocast("cuda", dtype=amp_dtype, enabled=amp_enabled):
                         pred_part = self.model(input_dict)["seg_logits"]  # (n, k)
-                        pred_part = F.softmax(pred_part, -1)
+                        pred_part = F.softmax(pred_part.float(), -1)
                         if self.cfg.empty_cache:
                             torch.cuda.empty_cache()
-                        bs = 0
-                        for be in input_dict["offset"]:
-                            pred[idx_part[bs:be], :] += pred_part[bs:be]
-                            feat[idx_part[bs:be], :] = input_dict["feat"][bs:be]
-                            bs = be
+                        if frag_inverses is not None:
+                            # scatter rep predictions to all points via point->voxel inverse
+                            inv = torch.as_tensor(frag_inverses[i], device=pred.device, dtype=torch.long)
+                            pred += pred_part[inv]
+                            feat[idx_part, :] = input_dict["feat"]
+                        else:
+                            bs = 0
+                            for be in input_dict["offset"]:
+                                pred[idx_part[bs:be], :] += pred_part[bs:be]
+                                feat[idx_part[bs:be], :] = input_dict["feat"][bs:be]
+                                bs = be
 
                     logger.info(
                         "Test: {}/{}-{data_name}, Batch: {batch_idx}/{batch_num}".format(
@@ -229,15 +249,28 @@ class SemSegTester(TesterBase):
                             batch_num=len(fragment_list),
                         )
                     )
-                pred = pred.max(1)[1].data.cpu().numpy()
+                pred_prob = pred.data.cpu().numpy()
+                pred = np.argmax(pred_prob, axis=1)
+                pred_score = pred_prob[np.arange(pred_prob.shape[0]), pred].astype(np.float16)
                 feat_np = feat.cpu().numpy()
 
                 if "origin_segment" in data_dict.keys():
                     assert "inverse" in data_dict.keys()
                     pred = pred[data_dict["inverse"]]
+                    pred_score = pred_score[data_dict["inverse"]]
                     feat_np = feat_np[data_dict["inverse"]]
                     segment = data_dict["origin_segment"]
-                np.savez_compressed(result_save_path, pred=pred, feat=feat_np)
+                if inference_only:
+                    # Inference-only: store hard labels (uint8) + per-point confidence.
+                    # build_pseudo.py reads only `pred`; feat/full-dist are intentionally
+                    # dropped to keep per-frame npz small at 65K-frame scale.
+                    np.savez_compressed(
+                        result_save_path,
+                        pred=pred.astype(np.uint8),
+                        pred_score=pred_score,
+                    )
+                else:
+                    np.savez_compressed(result_save_path, pred=pred, feat=feat_np)
 
                 if self.cfg.show:
                     outputs = {"pred": pred, "segment": segment, "result_path": result_save_path}
@@ -253,6 +286,20 @@ class SemSegTester(TesterBase):
                         "{}_lidarseg.bin".format(data_name),
                     )
                 )
+
+            if inference_only:
+                batch_time.update(time.time() - end)
+                logger.info(
+                    "Inference: {} [{}/{}]-{} "
+                    "Batch {batch_time.val:.3f} ({batch_time.avg:.3f})".format(
+                        data_name,
+                        idx + 1,
+                        len(self.test_loader),
+                        segment.size,
+                        batch_time=batch_time,
+                    )
+                )
+                continue
 
             coord_np = feat_np[:, :3] if feat_np is not None and feat_np.ndim == 2 and feat_np.shape[1] >= 3 else None
             sample_total_hist = np.zeros((num_classes, num_classes), dtype=np.float64)
@@ -287,6 +334,11 @@ class SemSegTester(TesterBase):
 
         logger.info("Syncing ...")
         comm.synchronize()
+        if inference_only:
+            if self.writer is not None:
+                self.writer.close()
+            logger.info("<<<<<<<<<<<<<<<<< End Inference <<<<<<<<<<<<<<<<<")
+            return
         if comm.get_world_size() > 1:
             dist.reduce(total_hist, dst=0)
             for hist in range_hist_tensors.values():
