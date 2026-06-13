@@ -243,6 +243,7 @@ class T4MetricV2(BaseMetric):
         experiment_name: str,
         experiment_group_name: str,
         write_metric_summary: bool,
+        min_num_points: int = 0,
         evaluate_frame_prefix: bool = True,
         checkpoint_path: Optional[Union[Path, str]] = None,
         scene_batch_size: int = 128,
@@ -268,6 +269,7 @@ class T4MetricV2(BaseMetric):
         self.experiment_name = experiment_name
         self.experiment_group_name = experiment_group_name
         self.name_mapping = name_mapping
+        self.min_num_points = min_num_points
         if name_mapping is not None:
             self.class_names = [self.name_mapping.get(name, name) for name in self.class_names]
 
@@ -1324,6 +1326,18 @@ class T4MetricV2(BaseMetric):
 
         # num_lidar_pts: (N,) array of int, number of LiDAR points inside each GT box
         num_lidar_pts: np.ndarray = eval_info.get("num_lidar_pts", np.array([]))
+        
+        if self.min_num_points > 0 and len(bboxes):
+            points = data_sample["points"]
+            indices = box_np_ops.points_in_rbbox(
+                points.tensor.numpy()[:, :3],
+                bboxes[:, :7]
+            )
+            num_points_in_gt = indices.sum(0)
+            bboxes_mask = num_points_in_gt >= self.min_num_points
+            bboxes = bboxes[bboxes_mask]
+            gt_labels_3d = gt_labels_3d[bboxes_mask]
+            num_lidar_pts = num_lidar_pts[bboxes_mask]
 
         dynamic_objects = [
             DynamicObject(
