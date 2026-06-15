@@ -93,7 +93,7 @@ class TransFusionBBoxCoder(BaseBBoxCoder):
                 predictions_dict = {"bboxes": boxes3d, "scores": scores, "labels": labels}
                 predictions_dicts.append(predictions_dict)
             return predictions_dicts
-        
+
         # use score threshold
         if self.score_threshold is not None:
             if isinstance(self.score_threshold, float):

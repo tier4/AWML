@@ -1,11 +1,7 @@
 codebase_config = dict(type="mmdet3d", task="VoxelDetection", model_type="end2end")
 
 custom_imports = dict(
-    imports=[
-        "projects.BEVFusion.deploy",
-        "projects.BEVFusion.bevfusion",
-        "projects.SparseConvolution"
-    ],
+    imports=["projects.BEVFusion.deploy", "projects.BEVFusion.bevfusion", "projects.SparseConvolution"],
     allow_failed_imports=False,
 )
 

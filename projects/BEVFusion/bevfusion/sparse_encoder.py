@@ -5,7 +5,6 @@ from typing import Dict, Optional
 
 import numpy as np
 import torch
-
 from mmdet3d.models.layers import make_sparse_convmodule
 from mmdet3d.models.layers.spconv import IS_SPCONV2_AVAILABLE
 from mmdet3d.models.middle_encoders import SparseEncoder
@@ -119,7 +118,7 @@ class BEVFusionSparseEncoder(SparseEncoder):
             indice_key="spconv_down2",
             conv_type="SparseConv3d",
         )
-    
+
     def forward(self, voxel_features, coors, batch_size):
         """Forward of SparseEncoder.
 
@@ -147,11 +146,11 @@ class BEVFusionSparseEncoder(SparseEncoder):
         for encoder_layer in self.encoder_layers:
             x = encoder_layer(x)
             encode_features.append(x)
-        
+
         # for detection head
         # [200, 176, 5] -> [200, 176, 2]
         out = self.conv_out(encode_features[-1])
-        
+
         spatial_features = sparse_to_dense(out, batch_size, self.dense_output_shapes, self.output_channels)
         # spatial_features = out.dense(channels_first=False)
         spatial_features = spatial_features.permute(0, 4, 3, 1, 2).contiguous()

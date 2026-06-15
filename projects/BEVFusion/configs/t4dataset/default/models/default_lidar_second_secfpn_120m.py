@@ -14,7 +14,7 @@ model = dict(
         pad_size_divisor=32,
     ),
     pts_voxel_encoder=dict(
-        type="HardSimpleVoxelSinCosEncoder", 
+        type="HardSimpleVoxelSinCosEncoder",
         in_channels=4,
     ),
     pts_middle_encoder=dict(
@@ -89,7 +89,9 @@ model = dict(
             # Set NMS for different clusters
             nms_clusters=[
                 # Sqrt(0.25) = 0.50
-                dict(class_names=["car", "truck", "bus"], class_indices=[0, 1, 2], nms_threshold=0.25, post_max_size=300),  # It's radius if using circle_nms
+                dict(
+                    class_names=["car", "truck", "bus"], class_indices=[0, 1, 2], nms_threshold=0.25, post_max_size=300
+                ),  # It's radius if using circle_nms
                 dict(class_names=["bicycle"], class_indices=[3], nms_threshold=0.0, post_max_size=50),
                 dict(class_names=["pedestrian"], class_indices=[4], nms_threshold=0.0, post_max_size=100),
                 dict(class_names=["traffic_cone"], class_indices=[5], nms_threshold=0.0, post_max_size=100),

@@ -2,7 +2,7 @@
 
 import logging
 import os.path as osp
-from typing import Optional, Any
+from typing import Any, Optional
 
 import numpy as np
 import onnx
@@ -11,7 +11,7 @@ import torch
 from builder import ExportBuilder
 from containers import TrtBevFusionCameraOnlyContainer, TrtBevFusionImageBackboneContainer, TrtBevFusionMainContainer
 from data_classes import ModelData, SetupConfigs
-from mmdeploy.core import RewriterContext, SYMBOLIC_REWRITER
+from mmdeploy.core import SYMBOLIC_REWRITER, RewriterContext
 from mmdeploy.utils import (
     get_root_logger,
 )
@@ -32,8 +32,7 @@ def purge_mmdeploy_symbolics(op_names: list[str]) -> dict:
             continue
         # Bookkeeping key: full Python path of an implementer function.
         # Match by "...symbolics.<op_name>." or "...symbolics.<op_name>__"
-        if any(f".symbolics.{op}." in key or f".symbolics.{op}__" in key
-               for op in op_names):
+        if any(f".symbolics.{op}." in key or f".symbolics.{op}__" in key for op in op_names):
             removed[key] = records.pop(key)
     return removed
 
@@ -83,12 +82,10 @@ class Torch2OnnxExporter:
           patched_model (torch.nn.Module): Patched Pytorch model.
           ir_configs (dict): Configs for intermediate representations in ONNX.
         """
-        # Purge the mmdeploy symbolic records for the layer_norm op, remove this if LayerNorm OP is not supported 
+        # Purge the mmdeploy symbolic records for the layer_norm op, remove this if LayerNorm OP is not supported
         # in the tensorrt version
         removed = purge_mmdeploy_symbolics(["layer_norm"])
-        self.logger.info(
-          f"Purged {len(removed)} mmdeploy symbolic records: {list(removed.keys())}"
-        )
+        self.logger.info(f"Purged {len(removed)} mmdeploy symbolic records: {list(removed.keys())}")
         with RewriterContext(**context_info), torch.no_grad():
             image_feats = None
             if "img_backbone" in self.setup_configs.model_cfg.model:

@@ -50,7 +50,7 @@ val_evaluator = dict(
     name_mapping={{_base_.name_mapping}},
     experiment_name=experiment_name,
     experiment_group_name=_base_.experiment_group_name,
-    min_num_points=1
+    min_num_points=1,
 )
 
 test_evaluator = dict(
@@ -73,5 +73,5 @@ test_evaluator = dict(
     name_mapping={{_base_.name_mapping}},
     experiment_name=experiment_name,
     experiment_group_name=_base_.experiment_group_name,
-    min_num_points=1
+    min_num_points=1,
 )

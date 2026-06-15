@@ -179,7 +179,7 @@ class BEVFusion(Base3DDetector):
         if not using_image_features:
             x = self.get_image_backbone_features(x)
 
-        with torch.amp.autocast("cuda",enabled=False):
+        with torch.amp.autocast("cuda", enabled=False):
             # with torch.autocast(device_type='cuda', dtype=torch.float32):
             x = self.view_transform(
                 x,
@@ -243,11 +243,11 @@ class BEVFusion(Base3DDetector):
         coords = torch.cat(coords, dim=0)
         assert len(sizes) > 0, "No points in the voxel"
         sizes = torch.cat(sizes, dim=0)
-        
+
         # if self.voxelize_reduce:
         #     feats = feats.sum(dim=1, keepdim=False) / sizes.type_as(feats).view(-1, 1)
         #     feats = feats.contiguous()
-        
+
         return feats, coords, sizes
 
     def predict(

@@ -11,6 +11,7 @@ import numpy as np
 import torch
 from mmdet3d.registry import METRICS
 from mmdet3d.structures import LiDARInstance3DBoxes
+from mmdet3d.structures.ops import box_np_ops
 from mmengine.dist import get_world_size
 from mmengine.evaluator import BaseMetric
 from mmengine.logging import MessageHub, MMLogger
@@ -30,7 +31,6 @@ from perception_eval.evaluation.result.perception_frame_config import (
 from perception_eval.evaluation.result.perception_frame_result import PerceptionFrameResult
 from perception_eval.manager import PerceptionEvaluationManager
 from pyquaternion import Quaternion
-from mmdet3d.structures.ops import box_np_ops
 
 from autoware_ml.detection3d.evaluation.t4metric.t4metric_v2_dataframe import T4MetricV2DataFrame
 
@@ -437,8 +437,8 @@ class T4MetricV2(BaseMetric):
         if self.results_pickle_exists:
             # Skip processing if result pickle already exists
             return
-        
-        batch_points = data_batch['inputs']['points']
+
+        batch_points = data_batch["inputs"]["points"]
         for data_sample, points in zip(data_samples, batch_points):
             current_time = data_sample["timestamp"]
             scene_id = self._parse_scene_id(data_sample["lidar_path"])
@@ -1413,13 +1413,10 @@ class T4MetricV2(BaseMetric):
 
         # num_lidar_pts: (N,) array of int, number of LiDAR points inside each GT box
         num_lidar_pts: np.ndarray = eval_info.get("num_lidar_pts", np.array([]))
-        
+
         if self.min_num_points > 0 and len(bboxes):
             points_cpu = points.cpu().numpy()
-            indices = box_np_ops.points_in_rbbox(
-                points_cpu[:, :3],
-                bboxes[:, :7]
-            )
+            indices = box_np_ops.points_in_rbbox(points_cpu[:, :3], bboxes[:, :7])
             num_points_in_gt = indices.sum(0)
             bboxes_mask = num_points_in_gt >= self.min_num_points
             bboxes = bboxes[bboxes_mask]

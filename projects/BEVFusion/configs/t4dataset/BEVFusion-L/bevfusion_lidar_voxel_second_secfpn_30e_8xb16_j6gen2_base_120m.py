@@ -29,8 +29,20 @@ model = dict(
     pts_voxel_encoder=dict(
         in_channels=len(_base_.lidar_sweep_dims),
         # min-max normalization for x, y, z, intensity, time_lag, where the max of time lag technically is two seeps (200 ms) here
-        min_norm_values=[_base_.point_cloud_range[0], _base_.point_cloud_range[1], _base_.point_cloud_range[2], 0.0, 0.0],
-        max_norm_values=[_base_.point_cloud_range[3], _base_.point_cloud_range[4], _base_.point_cloud_range[5], 255.0, 0.2],
+        min_norm_values=[
+            _base_.point_cloud_range[0],
+            _base_.point_cloud_range[1],
+            _base_.point_cloud_range[2],
+            0.0,
+            0.0,
+        ],
+        max_norm_values=[
+            _base_.point_cloud_range[3],
+            _base_.point_cloud_range[4],
+            _base_.point_cloud_range[5],
+            255.0,
+            0.2,
+        ],
     ),
     pts_middle_encoder=dict(
         in_channels=50,
@@ -153,4 +165,6 @@ default_hooks = dict(
 )
 log_processor = dict(window_size=50)
 
-load_from = "work_dirs/bevfusion_lidar_2_8_0/base/T4Dataset/lidar_voxel_second_secfpn_50e_8xb16_base_120m/best_epoch_47.pth"
+load_from = (
+    "work_dirs/bevfusion_lidar_2_8_0/base/T4Dataset/lidar_voxel_second_secfpn_50e_8xb16_base_120m/best_epoch_47.pth"
+)

@@ -1,13 +1,13 @@
 from .bevfusion import BEVFusion
 from .bevfusion_head import BEVFusionHead, ConvFuser
 from .bevfusion_necks import GeneralizedLSSFPN
+from .bevfusion_voxel_encoder import BEVFusionVoxelFeatureNet, HardSimpleVoxelSinCosEncoder
 from .depth_lss import DepthLSSTransform, LSSTransform
 from .loading import BEVLoadMultiViewImageFromFiles
 from .sparse_encoder import BEVFusionSparseEncoder
 from .transformer import TransformerDecoderLayer
 from .transforms_3d import BEVFusionGlobalRotScaleTrans, BEVFusionRandomFlip3D, GridMask, ImageAug3D
 from .utils import BBoxBEVL1Cost, HeuristicAssigner3D, HungarianAssigner3D, IoU3DCost, TransFusionBBoxCoder
-from .bevfusion_voxel_encoder import HardSimpleVoxelSinCosEncoder, BEVFusionVoxelFeatureNet
 
 __all__ = [
     "BEVFusion",
