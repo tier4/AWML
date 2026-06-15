@@ -30,8 +30,6 @@ def sparse_to_dense(sparse_tensor: SparseConvTensor, batch_size: int, spatial_sh
         device=sparse_tensor.features.device,
         dtype=sparse_tensor.features.dtype,
     )
-    # out = out.index_copy(0, linear_idx, sparse_tensor.features)
-    # out = out.scatter(0, linear_idx, sparse_tensor.features)
     scatter_idx = linear_idx.unsqueeze(1).expand(-1, out_channels)  # [N, C]
     out = out.scatter(0, scatter_idx, sparse_tensor.features)
     return out.view(batch_size, H, W, D, out_channels)
