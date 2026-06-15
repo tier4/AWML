@@ -228,7 +228,7 @@
 <summary> Artifacts </summary>
 
 - Deployed onnx and ROS parameter files (for internal)
-  - [WebAuto](https://evaluation.ci.tier4.jp/evaluation/mlpackages/7156b453-2861-4ae9-b135-e24e48cc9029/releases/383801f4-d9e6-48bb-afaf-f4da29a879ac?project_id=zWhWRzei)
+  - [WebAuto](https://evaluation.ci.tier4.jp/evaluation/mlpackages/7156b453-2861-4ae9-b135-e24e48cc9029/releases/943f0d36-d272-4d10-a2a7-207bdb0fb1a2?project_id=zWhWRzei)
   - [model-zoo](https://download.autoware-ml-model-zoo.tier4.jp/autoware-ml/models/centerpoint/centerpoint/j6gen2/v2.6.1_quant/deployment.zip)
   - [Google drive](https://drive.google.com/file/d/1QsqP6lwVxKWawGPvi8lseAWdgpB2Wziw/view?usp=drive_link)
 - Logs (for internal)
