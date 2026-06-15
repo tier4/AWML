@@ -50,7 +50,7 @@ class TrtBevFusionMainContainer(torch.nn.Module):
         batch_inputs_dict = {
             "voxels": {"voxels": voxels, "coors": coors, "num_points_per_voxel": num_points_per_voxel},
         }
-        
+
         if points is not None:
             batch_inputs_dict["points"] = [points]
 
