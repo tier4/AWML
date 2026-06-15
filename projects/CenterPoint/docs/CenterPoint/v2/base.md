@@ -3,9 +3,9 @@
 
 ### Main Parameters
 
-  - **Range:** 122.40m
+  - **Range (x,y):** [-122.40, 122.40] m
   - **Voxel Size:** [0.24, 0.24, 8.0]
-  - **Grid Size:** [510, 510, 1]
+  - **Grid Size:** [1020, 1020, 1]
 
 ### Testing Datasets
 
