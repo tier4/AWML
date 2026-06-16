@@ -110,11 +110,8 @@ class DeepenUniqueId:
         return unique_label_id
 
     def assign_label_category_id(self, uuid: str, label: str) -> str:
-        """Return the stable label category associated with the UUID's unique ID.
-
-        Tracking can keep one UUID across compatible per-frame class changes (for example,
-        car/truck). Deepen expects the category to match the class prefix of label_id, so
-        derive the category from the assigned run-level ID instead of the frame label.
+        """Return the stable label category associated with the UUID's unique ID
+        E.g. Car:1 -> Car, Truck:12 -> Truck
         """
         unique_label_id = self.assign_id(uuid, label)
         return unique_label_id.rsplit(":", maxsplit=1)[0]
