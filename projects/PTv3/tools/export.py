@@ -11,6 +11,8 @@ from models.scatter.functional import argsort
 from models.utils.structure import Point, bit_length_tensor
 from torch.nn import functional as F
 
+from projects.SparseConvolution.sparse_functional import set_do_sort
+
 # NOTE: keep this import last; it overrides sparse conv registration for export.
 import SparseConvolution  # isort: skip
 
@@ -70,11 +72,19 @@ class WrappedModel(torch.nn.Module):
         return pred_label, pred_probs
 
 
+def _apply_spconv_do_sort(cfg) -> None:
+    value = bool(cfg.get("spconv_do_sort", True))
+
+    set_do_sort(value)
+    print("[PTv3][export] spconv_do_sort=" f"{value} (baked into GetIndicePairsImplicitGemm.do_sort_i at ONNX export)")
+
+
 def main():
     args = default_argument_parser().parse_args()
     cfg = default_config_parser(args.config_file, args.options)
 
     cfg = default_setup(cfg)
+    _apply_spconv_do_sort(cfg)
     cfg.num_worker = 1
     cfg.num_worker_per_gpu = 1
 

@@ -58,10 +58,15 @@ Export the model:
 python projects/PTv3/tools/export.py --config-file projects/PTv3/configs/semseg-pt-v3m1-0-t4dataset.py --num-gpus 1 \
   --options \
   save_path=work_dirs/experiment \
-  weight=work_dirs/ptv3/model/model_best.pth
+  weight=work_dirs/ptv3/model/model_best.pth \
+  spconv_do_sort=False
 ```
 
 which will generate a file called `ptv3.onnx`
+
+- `spconv_do_sort` controls the ONNX attribute on `GetIndicePairsImplicitGemm`:
+  - `True` (default): export with sorting enabled (`do_sort=1`)
+  - `False`: export with sorting disabled (`do_sort=0`)
 
 ## Reference
 
