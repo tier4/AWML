@@ -279,7 +279,7 @@ class BEVFusionHead(nn.Module):
         #################################
         with torch.amp.autocast("cuda", enabled=False):
             dense_heatmap = self.heatmap_head(fusion_feat.float())
-        
+
         heatmap = dense_heatmap.detach().sigmoid()
         if self.dense_heatmap_pooling_class_indices is not None:
             # Pooling
