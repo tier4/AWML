@@ -237,10 +237,6 @@ class BEVFusion(Base3DDetector):
         assert len(sizes) > 0, "No points in the voxel"
         sizes = torch.cat(sizes, dim=0)
 
-        # if self.voxelize_reduce:
-        #     feats = feats.sum(dim=1, keepdim=False) / sizes.type_as(feats).view(-1, 1)
-        #     feats = feats.contiguous()
-
         return feats, coords, sizes
 
     def predict(
