@@ -28,5 +28,5 @@ __all__ = [
     "BEVFusionRandomFlip3D",
     "BEVFusionGlobalRotScaleTrans",
     "TransFusionBBoxCoder",
-    "HardSimpleVoxelSinCosEncoder"
+    "HardSimpleVoxelSinCosEncoder",
 ]
