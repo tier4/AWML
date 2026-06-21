@@ -152,7 +152,6 @@ class BEVFusionSparseEncoder(SparseEncoder):
         out = self.conv_out(encode_features[-1])
 
         spatial_features = sparse_to_dense(out, batch_size, self.dense_output_shapes, self.output_channels)
-        # spatial_features = out.dense(channels_first=False)
         spatial_features = spatial_features.permute(0, 4, 3, 1, 2).contiguous()
         spatial_features = spatial_features.view(
             batch_size,
