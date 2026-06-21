@@ -266,7 +266,6 @@ class BEVFusionHead(nn.Module):
         Returns:
             list[dict]: Output results for tasks.
         """
-        # batch_size = inputs.shape[0]
         fusion_feat = self.shared_conv(inputs)
 
         #################################
@@ -902,7 +901,6 @@ class BEVFusionHead(nn.Module):
 
                 # [BS, num_proposals]
                 layer_iou_weights = layer_bbox_weights[:, :, 0]
-                #   print(layer_ious.shape, ious.shape, layer_iou_weights.shape, "layer_ious.shape, ious.shape, layer_iou_weights.shape")
                 loss_dict[f"{prefix}_loss_iou"] = self.loss_iou(
                     layer_ious, ious, layer_iou_weights, avg_factor=max(num_pos, 1)
                 )
