@@ -1,7 +1,7 @@
 from .bevfusion import BEVFusion
 from .bevfusion_head import BEVFusionHead, ConvFuser
 from .bevfusion_necks import GeneralizedLSSFPN
-from .bevfusion_voxel_encoder import BEVFusionVoxelFeatureNet, HardSimpleVoxelSinCosEncoder
+from .bevfusion_voxel_encoder import HardSimpleVoxelSinCosEncoder
 from .depth_lss import DepthLSSTransform, LSSTransform
 from .loading import BEVLoadMultiViewImageFromFiles
 from .sparse_encoder import BEVFusionSparseEncoder
@@ -28,6 +28,5 @@ __all__ = [
     "BEVFusionRandomFlip3D",
     "BEVFusionGlobalRotScaleTrans",
     "TransFusionBBoxCoder",
-    "HardSimpleVoxelSinCosEncoder",
-    "BEVFusionVoxelFeatureNet",
+    "HardSimpleVoxelSinCosEncoder"
 ]
