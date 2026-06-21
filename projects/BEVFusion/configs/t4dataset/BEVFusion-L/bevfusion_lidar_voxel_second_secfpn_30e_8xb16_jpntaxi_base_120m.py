@@ -165,4 +165,4 @@ default_hooks = dict(
 )
 log_processor = dict(window_size=50)
 
-load_from = None 
+load_from = None
