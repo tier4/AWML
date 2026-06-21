@@ -17,8 +17,6 @@ from mmengine.logging import print_log
 from mmengine.structures import InstanceData
 from torch import nn
 
-from .ops.topk.topk import topk
-
 
 def clip_sigmoid(x, eps=1e-4):
     y = torch.clamp(x.sigmoid_(), min=eps, max=1 - eps)
