@@ -25,7 +25,7 @@
 
   <details>
   <summary> Eval Range: 0.0 - 50.0m </summary>
-  
+
   | Model version | mAP | mAPH | map_based_nds (recall @ 0.10) | map_based_nds (recall @ 0.40) | maph_based_nds (recall @ 0.10) | maph_based_nds (recall 0.40) | car<br>(50,954) | truck<br>(18,624) | bus<br>(3,853) | bicycle<br>(3,768) | pedestrian<br>(70,699) | traffic_cone<br>(12,525) | barrier<br>(2,009) |
   | :---- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
   | BEVFusion-LiDAR jpntaxi_base/2.8.1 | 0.6765 | 0.6414 | 0.6054 | 0.6011 | 0.5878 | 0.5835 | 0.9267 | 0.8595 | 0.8713 | 0.7844 | 0.9097 | 0.3843 | 0.0000 |
@@ -34,7 +34,7 @@
 
   <details>
   <summary> Eval Range: 50.0 - 90.0m </summary>
-  
+
   | Model version | mAP | mAPH | map_based_nds (recall @ 0.10) | map_based_nds (recall @ 0.40) | maph_based_nds (recall @ 0.10) | maph_based_nds (recall 0.40) | car<br>(41,196) | truck<br>(22,942) | bus<br>(3,033) | bicycle<br>(2,310) | pedestrian<br>(36,881) | traffic_cone<br>(7,183) | barrier<br>(1,847) |
   | :---- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
   | BEVFusion-LiDAR jpntaxi_base/2.8.1 | 0.5673 | 0.5339 | 0.5415 | 0.5344 | 0.5248 | 0.5177 | 0.8485 | 0.7006 | 0.5352 | 0.6574 | 0.8105 | 0.4191 | 0.0000 |
@@ -43,7 +43,7 @@
 
   <details>
   <summary> Eval Range: 90.0 - 121.0m </summary>
-  
+
   | Model version | mAP | mAPH | map_based_nds (recall @ 0.10) | map_based_nds (recall @ 0.40) | maph_based_nds (recall @ 0.10) | maph_based_nds (recall 0.40) | car<br>(17,510) | truck<br>(14,707) | bus<br>(2,997) | bicycle<br>(566) | pedestrian<br>(16,580) | traffic_cone<br>(769) | barrier<br>(566) |
   | :---- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
   | BEVFusion-LiDAR jpntaxi_base/2.8.1 | 0.4071 | 0.3837 | 0.4400 | 0.4130 | 0.4284 | 0.4014 | 0.7505 | 0.5566 | 0.4693 | 0.3213 | 0.7219 | 0.0302 | 0.0000 |
@@ -52,7 +52,7 @@
 
   <details open>
   <summary> Eval Range: 0.0 - 121.0m </summary>
-  
+
   | Model version | mAP | mAPH | map_based_nds (recall @ 0.10) | map_based_nds (recall @ 0.40) | maph_based_nds (recall @ 0.10) | maph_based_nds (recall 0.40) | car<br>(109,660) | truck<br>(56,273) | bus<br>(9,883) | bicycle<br>(6,644) | pedestrian<br>(124,160) | traffic_cone<br>(20,477) | barrier<br>(4,422) |
   | :---- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
   | BEVFusion-LiDAR jpntaxi_base/2.8.1 | 0.6019 | 0.5676 | 0.5626 | 0.5563 | 0.5455 | 0.5392 | 0.8804 | 0.7288 | 0.6567 | 0.7104 | 0.8656 | 0.3711 | 0.0000 |
@@ -152,7 +152,7 @@
 
   <details open>
     <summary> Eval Range: 0.0 - 121.0m </summary>
-    
+
     | Model version | mATE (recall @ 0.10) | mAOE (recall @ 0.10) | mASE (recall @ 0.10) | mAVE (recall @ 0.10) | mAAE (recall @ 0.10) | mATE (recall @ 0.40) | mAOE (recall @ 0.40) | mASE (recall @ 0.40) | mAVE (recall @ 0.40) | mAAE (recall @ 0.40) | mATE (optimal) | mAOE (optimal) | mASE (optimal) | mAVE (optimal) | mAAE (optimal) |
     | :---- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
     | BEVFusion-LiDAR jpntaxi_base/2.8.1 | 0.3015 | 0.2921 | 0.3048 | 0.4845 | 1.0000 | 0.3235 | 0.3009 | 0.3096 | 0.5122 | 1.0000 | 0.2333 | 0.1943 | 0.2011 | 0.4683 | 1.0000 |
