@@ -67,7 +67,7 @@
 
   <details>
   <summary> Eval Range: 0.0 - 50.0m </summary>
-  
+
   | Model version | mAP | mAPH | map_based_nds (recall @ 0.10) | map_based_nds (recall @ 0.40) | maph_based_nds (recall @ 0.10) | maph_based_nds (recall 0.40) | car<br>(75,589) | truck<br>(8,273) | bus<br>(2,706) | bicycle<br>(2,097) | pedestrian<br>(23,254) | traffic_cone<br>(8,310) | barrier<br>(1,350) |
   | :---- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
   | BEVFusion-LiDAR j6gen2_base/2.8.1 | 0.7289 | 0.6808 | 0.6820 | 0.6757 | 0.6579 | 0.6516 | 0.9000 | 0.8398 | 0.9130 | 0.8907 | 0.8535 | 0.4465 | 0.2590 |
@@ -76,7 +76,7 @@
 
   <details>
   <summary> Eval Range: 50.0 - 90.0m </summary>
-  
+
   | Model version | mAP | mAPH | map_based_nds (recall @ 0.10) | map_based_nds (recall @ 0.40) | maph_based_nds (recall @ 0.10) | maph_based_nds (recall 0.40) | car<br>(64,960) | truck<br>(5,922) | bus<br>(2,257) | bicycle<br>(1,298) | pedestrian<br>(12,052) | traffic_cone<br>(2,636) | barrier<br>(622) |
   | :---- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
   | BEVFusion-LiDAR j6gen2_base/2.8.1 | 0.5802 | 0.5217 | 0.5876 | 0.5690 | 0.5584 | 0.5398 | 0.8127 | 0.6518 | 0.7926 | 0.6527 | 0.6690 | 0.2760 | 0.2064 |
@@ -94,7 +94,7 @@
 
   <details open>
   <summary> Eval Range: 0.0 - 121.0m </summary>
-  
+
   | Model version | mAP | mAPH | map_based_nds (recall @ 0.10) | map_based_nds (recall @ 0.40) | maph_based_nds (recall @ 0.10) | maph_based_nds (recall 0.40) | car<br>(162,690) | truck<br>(17,701) | bus<br>(5,507) | bicycle<br>(3,771) | pedestrian<br>(38,962) | traffic_cone<br>(11,408) | barrier<br>(2,117) |
   | :---- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
   | BEVFusion-LiDAR j6gen2_base/2.8.1 | 0.6590 | 0.6053 | 0.6391 | 0.6214 | 0.6122 | 0.5946 | 0.8547 | 0.7285 | 0.8389 | 0.7843 | 0.7789 | 0.3955 | 0.2321 |
@@ -107,7 +107,7 @@
 
   <details>
   <summary> Eval Range: 0.0 - 50.0m </summary>
-  
+
   | Model version | mATE (recall @ 0.10) | mAOE (recall @ 0.10) | mASE (recall @ 0.10) | mAVE (recall @ 0.10) | mAAE (recall @ 0.10) | mATE (recall @ 0.40) | mAOE (recall @ 0.40) | mASE (recall @ 0.40) | mAVE (recall @ 0.40) | mAAE (recall @ 0.40) | mATE (optimal) | mAOE (optimal) | mASE (optimal) | mAVE (optimal) | mAAE (optimal) |
   | :---- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
   | BEVFusion-LiDAR j6gen2_base/2.8.1 | 0.1699 | 0.1847 | 0.2714 | 0.1985 | 1.0000 | 0.1878 | 0.2040 | 0.2866 | 0.2091 | 1.0000 | 0.2039 | 0.2176 | 0.2883 | 0.2138 | 1.0000 |
@@ -133,7 +133,7 @@
   | BEVFusion-LiDAR j6gen2_base/2.8.1 | 65,297 / 67,749 / 68,945 / 69,400 | 6,298 / 7,033 / 7,266 / 7,405 | 2,282 / 2,494 / 2,565 / 2,589 | 1,789 / 1,815 / 1,822 / 1,825 | 18,701 / 19,099 / 19,305 / 19,357 | 4,529 / 4,841 / 5,046 / 5,561 | 453 / 529 / 550 / 562 |
 
   </details>
-  
+
   <details>
   <summary> Eval Range: 50.0 - 90.0m </summary>
 
@@ -165,7 +165,7 @@
 
   <details>
   <summary> Eval Range: 90.0 - 121.0m </summary>
-  
+
   | Model version | mATE (recall @ 0.10) | mAOE (recall @ 0.10) | mASE (recall @ 0.10) | mAVE (recall @ 0.10) | mAAE (recall @ 0.10) | mATE (recall @ 0.40) | mAOE (recall @ 0.40) | mASE (recall @ 0.40) | mAVE (recall @ 0.40) | mAAE (recall @ 0.40) | mATE (optimal) | mAOE (optimal) | mASE (optimal) | mAVE (optimal) | mAAE (optimal) |
   | :---- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
   | BEVFusion-LiDAR j6gen2_base/2.8.1 | 0.3252 | 0.2112 | 0.3207 | 0.3389 | 1.0000 | 0.4093 | 0.3020 | 0.3601 | 0.4304 | 1.0000 | 0.3625 | 0.2467 | 0.3279 | 0.3624 | 1.0000 |
@@ -191,10 +191,10 @@
   | BEVFusion-LiDAR j6gen2_base/2.8.1 | 13,838 / 16,236 / 17,440 / 17,774 | 1,483 / 1,981 / 2,484 / 2,599 | 192 / 312 / 394 / 405 | 187 / 218 / 223 / 223 | 2,141 / 2,167 / 2,181 / 2,199 | 132 / 147 / 178 / 186 | 33 / 52 / 72 / 73 |
 
   </details>
-  
+
   <details open>
   <summary> Eval Range: 0.0 - 121.0m </summary>
-  
+
   | Model version | mATE (recall @ 0.10) | mAOE (recall @ 0.10) | mASE (recall @ 0.10) | mAVE (recall @ 0.10) | mAAE (recall @ 0.10) | mATE (recall @ 0.40) | mAOE (recall @ 0.40) | mASE (recall @ 0.40) | mAVE (recall @ 0.40) | mAAE (recall @ 0.40) | mATE (optimal) | mAOE (optimal) | mASE (optimal) | mAVE (optimal) | mAAE (optimal) |
   | :---- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
   | BEVFusion-LiDAR j6gen2_base/2.8.1 | 0.1972 | 0.2036 | 0.2826 | 0.2208 | 1.0000 | 0.2503 | 0.2473 | 0.3146 | 0.2684 | 1.0000 | 0.2405 | 0.2402 | 0.2976 | 0.2433 | 1.0000 |
@@ -237,7 +237,7 @@
 
   <details>
   <summary> Eval Range: 0.0 - 50.0m </summary>
-  
+
   | Model version | mAP | mAPH | map_based_nds (recall @ 0.10) | map_based_nds (recall @ 0.40) | maph_based_nds (recall @ 0.10) | maph_based_nds (recall 0.40) | car<br>(14,872) | truck<br>(1,192) | bus<br>(336) | bicycle<br>(740) | pedestrian<br>(5,055) | traffic_cone<br>(60) | barrier<br>(0) |
   | :---- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
   | BEVFusion-LiDAR j6gen2_base/2.8.1 | 0.6313 | 0.6015 | 0.5746 | 0.5493 | 0.5597 | 0.5344 | 0.9156 | 0.8702 | 0.9160 | 0.8586 | 0.8588 | 0.0000 | 0.0000 |
@@ -246,7 +246,7 @@
 
   <details>
   <summary> Eval Range: 50.0 - 90.0m </summary>
-  
+
   | Model version | mAP | mAPH | map_based_nds (recall @ 0.10) | map_based_nds (recall @ 0.40) | maph_based_nds (recall @ 0.10) | maph_based_nds (recall 0.40) | car<br>(10,929) | truck<br>(1,009) | bus<br>(141) | bicycle<br>(460) | pedestrian<br>(3,721) | traffic_cone<br>(4) | barrier<br>(0) |
   | :---- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
   | BEVFusion-LiDAR j6gen2_base/2.8.1 | 0.5281 | 0.4877 | 0.4942 | 0.4916 | 0.4740 | 0.4714 | 0.8442 | 0.7108 | 0.8522 | 0.5764 | 0.7129 | 0.0000 | 0.0000 |
@@ -255,7 +255,7 @@
 
   <details>
   <summary> Eval Range: 90.0 - 121.0m </summary>
-  
+
   | Model version | mAP | mAPH | map_based_nds (recall @ 0.10) | map_based_nds (recall @ 0.40) | maph_based_nds (recall @ 0.10) | maph_based_nds (recall 0.40) | car<br>(2,883) | truck<br>(600) | bus<br>(60) | bicycle<br>(85) | pedestrian<br>(1,092) | traffic_cone<br>(0) | barrier<br>(0) |
   | :---- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
   | BEVFusion-LiDAR j6gen2_base/2.8.1 | 0.4172 | 0.3831 | 0.4189 | 0.4104 | 0.4018 | 0.3934 | 0.7548 | 0.6586 | 0.5716 | 0.3759 | 0.5594 | 0.0000 | 0.0000 |
@@ -264,7 +264,7 @@
 
   <details>
   <summary> Eval Range: 0.0 - 121.0m </summary>
-  
+
   | Model version | mAP | mAPH | map_based_nds (recall @ 0.10) | map_based_nds (recall @ 0.40) | maph_based_nds (recall @ 0.10) | maph_based_nds (recall 0.40) | car<br>(28,684) | truck<br>(2,801) | bus<br>(537) | bicycle<br>(1,285) | pedestrian<br>(9,868) | traffic_cone<br>(64) | barrier<br>(0) |
   | :---- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
   | BEVFusion-LiDAR j6gen2_base/2.8.1 | 0.5779 | 0.5432 | 0.5404 | 0.5154 | 0.5230 | 0.4980 | 0.8813 | 0.7754 | 0.8642 | 0.7410 | 0.7836 | 0.0000 | 0.0000 |
@@ -301,10 +301,10 @@
   | BEVFusion-LiDAR j6gen2_base/2.8.1 | 13,178 / 13,676 / 13,748 / 13,798 | 925 / 1,041 / 1,064 / 1,073 | 254 / 330 / 333 / 333 | 612 / 628 / 640 / 643 | 4,247 / 4,294 / 4,313 / 4,330 | 19 / 20 / 20 / 21 | 0 / 0 / 0 / 0 |
 
   </details>
-  
+
   <details>
   <summary> Eval Range: 50.0 - 90.0m </summary>
-  
+
   | Model version | mATE (recall @ 0.10) | mAOE (recall @ 0.10) | mASE (recall @ 0.10) | mAVE (recall @ 0.10) | mAAE (recall @ 0.10) | mATE (recall @ 0.40) | mAOE (recall @ 0.40) | mASE (recall @ 0.40) | mAVE (recall @ 0.40) | mAAE (recall @ 0.40) | mATE (optimal) | mAOE (optimal) | mASE (optimal) | mAVE (optimal) | mAAE (optimal) |
   | :---- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
   | BEVFusion-LiDAR j6gen2_base/2.8.1 | 0.3091 | 0.6981 | 0.3081 | 0.3833 | 1.0000 | 0.3181 | 0.6966 | 0.3115 | 0.3980 | 1.0000 | 0.2197 | 0.6583 | 0.2015 | 0.3121 | 1.0000 |
@@ -330,7 +330,7 @@
   | BEVFusion-LiDAR j6gen2_base/2.8.1 | 8,463 / 9,288 / 9,554 / 9,621 | 617 / 739 / 799 / 804 | 103 / 124 / 124 / 124 | 263 / 289 / 292 / 292 | 2,604 / 2,652 / 2,667 / 2,682 | 2 / 2 / 2 / 2 | 0 / 0 / 0 / 0 |
 
   </details>
-  
+
   <details>
   <summary> Eval Range: 90.0 - 121.0m </summary>
 
@@ -359,10 +359,10 @@
   | BEVFusion-LiDAR j6gen2_base/2.8.1 | 1,929 / 2,144 / 2,236 / 2,337 | 301 / 408 / 466 / 475 | 26 / 32 / 41 / 41 | 39 / 42 / 46 / 46 | 691 / 697 / 700 / 730 | 0 / 0 / 0 / 0 | 0 / 0 / 0 / 0 |
 
   </details>
- 
+
   <details>
   <summary> Eval Range: 0.0 - 121.0m </summary>
-  
+
   | Model version | mATE (recall @ 0.10) | mAOE (recall @ 0.10) | mASE (recall @ 0.10) | mAVE (recall @ 0.10) | mAAE (recall @ 0.10) | mATE (recall @ 0.40) | mAOE (recall @ 0.40) | mASE (recall @ 0.40) | mAVE (recall @ 0.40) | mAAE (recall @ 0.40) | mATE (optimal) | mAOE (optimal) | mASE (optimal) | mAVE (optimal) | mAAE (optimal) |
   | :---- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
   | BEVFusion-LiDAR j6gen2_base/2.8.1 | 0.2907 | 0.5134 | 0.3242 | 0.3572 | 1.0000 | 0.4150 | 0.4172 | 0.4068 | 0.4972 | 1.0000 | 0.2100 | 0.4414 | 0.2253 | 0.2736 | 1.0000 |
@@ -430,7 +430,7 @@
 
   <details>
   <summary> Eval Range: 90.0 - 121.0m </summary>
-  
+
   | Model version | mAP | mAPH | map_based_nds (recall @ 0.10) | map_based_nds (recall @ 0.40) | maph_based_nds (recall @ 0.10) | maph_based_nds (recall 0.40) | car<br>(19,301) | truck<br>(2,906) | bus<br>(484) | bicycle<br>(291) | pedestrian<br>(2,564) | traffic_cone<br>(462) | barrier<br>(145) |
   | :---- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
   | BEVFusion-LiDAR j6gen2_base/2.8.1 | 0.4384 | 0.3949 | 0.4973 | 0.4673 | 0.4756 | 0.4456 | 0.7075 | 0.5046 | 0.5412 | 0.5343 | 0.4732 | 0.1509 | 0.1571 |
@@ -439,18 +439,18 @@
 
   <details>
   <summary> Eval Range: 0.0 - 121.0m </summary>
-  
+
   | Model version | mAP | mAPH | map_based_nds (recall @ 0.10) | map_based_nds (recall @ 0.40) | maph_based_nds (recall @ 0.10) | maph_based_nds (recall 0.40) | car<br>(134,456) | truck<br>(14,900) | bus<br>(4,970) | bicycle<br>(2,486) | pedestrian<br>(29,102) | traffic_cone<br>(11,344) | barrier<br>(2,117) |
   | :---- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
   | BEVFusion-LiDAR j6gen2_base/2.8.1 | 0.6650 | 0.6111 | 0.6420 | 0.6241 | 0.6150 | 0.5972 | 0.8448 | 0.7186 | 0.8363 | 0.8063 | 0.7779 | 0.4361 | 0.2350 |
 
   </details>
-  
+
 - **Mean TPError - J6Gen2**
 
   <details>
   <summary> Eval Range: 0.0 - 50.0m </summary>
-  
+
   | Model version | mATE (recall @ 0.10) | mAOE (recall @ 0.10) | mASE (recall @ 0.10) | mAVE (recall @ 0.10) | mAAE (recall @ 0.10) | mATE (recall @ 0.40) | mAOE (recall @ 0.40) | mASE (recall @ 0.40) | mAVE (recall @ 0.40) | mAAE (recall @ 0.40) | mATE (optimal) | mAOE (optimal) | mASE (optimal) | mAVE (optimal) | mAAE (optimal) |
   | :---- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
   | BEVFusion-LiDAR j6gen2_base/2.8.1 | 0.1692 | 0.1845 | 0.2711 | 0.1983 | 1.0000 | 0.1868 | 0.2021 | 0.2864 | 0.2108 | 1.0000 | 0.2026 | 0.2155 | 0.2887 | 0.2184 | 1.0000 |
@@ -506,10 +506,10 @@
   | BEVFusion-LiDAR j6gen2_base/2.8.1 | 39,059 / 43,688 / 45,797 / 46,308 | 2,628 / 3,307 / 3,561 / 3,660 | 1,261 / 1,700 / 1,825 / 1,855 | 584 / 579 / 581 / 611 | 5,589 / 5,531 / 5,588 / 5,745 | 1,142 / 1,223 / 1,314 / 1,394 | 156 / 231 / 237 / 268 |
 
   </details>
-  
+
   <details>
   <summary> Eval Range: 90.0 - 121.0m </summary>
-  
+
   | Model version | mATE (recall @ 0.10) | mAOE (recall @ 0.10) | mASE (recall @ 0.10) | mAVE (recall @ 0.10) | mAAE (recall @ 0.10) | mATE (recall @ 0.40) | mAOE (recall @ 0.40) | mASE (recall @ 0.40) | mAVE (recall @ 0.40) | mAAE (recall @ 0.40) | mATE (optimal) | mAOE (optimal) | mASE (optimal) | mAVE (optimal) | mAAE (optimal) |
   | :---- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
   | BEVFusion-LiDAR j6gen2_base/2.8.1 | 0.3293 | 0.2166 | 0.3253 | 0.3476 | 1.0000 | 0.4132 | 0.3083 | 0.3639 | 0.4336 | 1.0000 | 0.3657 | 0.2567 | 0.3324 | 0.3634 | 1.0000 |
@@ -538,7 +538,7 @@
 
   <details open>
   <summary> Eval Range: 0.0 - 121.0m </summary>
-  
+
   | Model version | mATE (recall @ 0.10) | mAOE (recall @ 0.10) | mASE (recall @ 0.10) | mAVE (recall @ 0.10) | mAAE (recall @ 0.10) | mATE (recall @ 0.40) | mAOE (recall @ 0.40) | mASE (recall @ 0.40) | mAVE (recall @ 0.40) | mAAE (recall @ 0.40) | mATE (optimal) | mAOE (optimal) | mASE (optimal) | mAVE (optimal) | mAAE (optimal) |
   | BEVFusion-LiDAR j6gen2_base/2.8.1 | 0.1971 | 0.2029 | 0.2829 | 0.2224 | 1.0000 | 0.2506 | 0.2464 | 0.3150 | 0.2717 | 1.0000 | 0.2419 | 0.2401 | 0.2986 | 0.2465 | 1.0000 |
 
