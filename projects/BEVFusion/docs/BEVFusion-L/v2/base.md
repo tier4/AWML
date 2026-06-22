@@ -246,7 +246,7 @@
   | Model version | mAP | mAPH | map_based_nds (recall @ 0.10) | map_based_nds (recall @ 0.40) | maph_based_nds (recall @ 0.10) | maph_based_nds (recall 0.40) | car<br>(54,217) | truck<br>(4,913) | bus<br>(2,116) | bicycle<br>(838) | pedestrian<br>(8,336) | traffic_cone<br>(2,632) | barrier<br>(622) |
   | :---- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
   | BEVFusion-LiDAR base/2.8.0 | 0.5590 | 0.5053 | 0.5849 | 0.5656 | 0.5581 | 0.5387 | 0.7864 | 0.6212 | 0.7611 | 0.6674 | 0.6253 | 0.2711 | 0.1807 |
-  
+   
   </details>
 
   <details>
@@ -260,7 +260,7 @@
 
   <details open>
   <summary> Eval Range: 0.0 - 121.0m </summary>
-  
+
   | Model version | mAP | mAPH | map_based_nds (recall @ 0.10) | map_based_nds (recall @ 0.40) | maph_based_nds (recall @ 0.10) | maph_based_nds (recall 0.40) | car<br>(134,456) | truck<br>(14,900) | bus<br>(4,970) | bicycle<br>(2,486) | pedestrian<br>(29,102) | traffic_cone<br>(11,344) | barrier<br>(2,117) |
   | :---- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
   | BEVFusion-LiDAR base/2.8.0 | 0.6463 | 0.5953 | 0.6403 | 0.6221 | 0.6148 | 0.5966 | 0.8310 | 0.7078 | 0.8174 | 0.7884 | 0.7558 | 0.3971 | 0.2263 |
@@ -398,42 +398,162 @@
 
   <details>
   <summary> Eval Range: 0.0 - 50.0m </summary>
-
-  | Model version | mAP | mAPH | car<br>(14,883) | truck<br>(1,193) | bus<br>(336) | bicycle<br>(740) | pedestrian<br>(5,059) |
-  | :---- | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
-	| BEVFusion-LiDAR base/2.7.0 | 0.8876 | 0.8447 | 0.9176 | 0.8727 | 0.9443 | 0.8396 | 0.8639 |
-	| BEVFusion-LiDAR base/2.6.0 | 0.8882 | 0.8475 | 0.9045 | 0.8793 | 0.9482 | 0.8489 | 0.8598 |
+  
+  | Model version | mAP | mAPH | map_based_nds (recall @ 0.10) | map_based_nds (recall @ 0.40) | maph_based_nds (recall @ 0.10) | maph_based_nds (recall 0.40) | car<br>(14,872) | truck<br>(1,192) | bus<br>(336) | bicycle<br>(740) | pedestrian<br>(5,055) | traffic_cone<br>(60) | barrier<br>(0) |
+  | :---- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
+  | BEVFusion-LiDAR base/2.8.0 | 0.6292 | 0.5987 | 0.5796 | 0.5491 | 0.5644 | 0.5339 | 0.9088 | 0.8625 | 0.9253 | 0.8660 | 0.8414 | 0.0000 | 0.0000 |
 
   </details>
 
   <details>
   <summary> Eval Range: 50.0 - 90.0m </summary>
-
-  | Model version | mAP | mAPH | car<br>(10,994) | truck<br>(1,011) | bus<br>(143) | bicycle<br>(463) | pedestrian<br>(3,754) |
-  | :---- | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
-  | BEVFusion-LiDAR base/2.7.0 | 0.7392 | 0.6842 | 0.8425 | 0.7288 | 0.8580 | 0.5826 | 0.6839 |
-	| BEVFusion-LiDAR base/2.6.0 | 0.7132 | 0.6586 | 0.8237 | 0.7245 | 0.7811 | 0.5497 | 0.6871 |
+  | Model version | mAP | mAPH | map_based_nds (recall @ 0.10) | map_based_nds (recall @ 0.40) | maph_based_nds (recall @ 0.10) | maph_based_nds (recall 0.40) | car<br>(10,929) | truck<br>(1,009) | bus<br>(141) | bicycle<br>(460) | pedestrian<br>(3,721) | traffic_cone<br>(4) | barrier<br>(0) |
+  | :---- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
+  | BEVFusion-LiDAR base/2.8.0 | 0.5080 | 0.4699 | 0.4842 | 0.4820 | 0.4652 | 0.4630 | 0.8284 | 0.6953 | 0.8101 | 0.5551 | 0.6672 | 0.0000 | 0.0000 |
+  | BEVFusion-LiDAR j6gen2_base/2.8.1 | 0.5281 | 0.4877 | 0.4942 | 0.4916 | 0.4740 | 0.4714 | 0.8442 | 0.7108 | 0.8522 | 0.5764 | 0.7129 | 0.0000 | 0.0000 |
 
   </details>
 
   <details>
   <summary> Eval Range: 90.0 - 121.0m </summary>
-
-  | Model version | mAP | mAPH | car<br>(3,018) | truck<br>(602) | bus<br>(60) | bicycle<br>(85) | pedestrian<br>(1,121) |
-  | :---- | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
-  | BEVFusion-LiDAR base/2.7.0 | 0.5572 | 0.5118 | 0.7091 | 0.6393 | 0.6121 | 0.3386 | 0.4870 |
-	| BEVFusion-LiDAR base/2.6.0 | 0.5202 | 0.4736 | 0.6989 | 0.6297 | 0.4058 | 0.3609 | 0.5056 |
+  
+  | Model version | mAP | mAPH | map_based_nds (recall @ 0.10) | map_based_nds (recall @ 0.40) | maph_based_nds (recall @ 0.10) | maph_based_nds (recall 0.40) | car<br>(2,883) | truck<br>(600) | bus<br>(60) | bicycle<br>(85) | pedestrian<br>(1,092) | traffic_cone<br>(0) | barrier<br>(0) |
+  | :---- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
+  | BEVFusion-LiDAR base/2.8.0 | 0.3869 | 0.3535 | 0.4036 | 0.3922 | 0.3870 | 0.3755 | 0.7338 | 0.6045 | 0.5314 | 0.3490 | 0.4896 | 0.0000 | 0.0000 |
 
   </details>
 
   <details open>
   <summary> Eval Range: 0.0 - 121.0m </summary>
+     
+  | Model version | mAP | mAPH | map_based_nds (recall @ 0.10) | map_based_nds (recall @ 0.40) | maph_based_nds (recall @ 0.10) | maph_based_nds (recall 0.40) | car<br>(28,684) | truck<br>(2,801) | bus<br>(537) | bicycle<br>(1,285) | pedestrian<br>(9,868) | traffic_cone<br>(64) | barrier<br>(0) |
+  | :---- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
+  | BEVFusion-LiDAR base/2.8.0 | 0.5663 | 0.5318 | 0.5398 | 0.5103 | 0.5226 | 0.4931 | 0.8718 | 0.7543 | 0.8572 | 0.7306 | 0.7502 | 0.0000 | 0.0000 |
 
-  | Model version | mAP | mAPH | car<br>(28,895) | truck<br>(2,806) | bus<br>(539) | bicycle<br>(1,288) | pedestrian<br>(9,934) |
-  | :---- | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
-  | BEVFusion-LiDAR base/2.7.0 | 0.8086 | 0.7594 | 0.8789 | 0.7783 | 0.8898 | 0.7288 | 0.7670 |
-  | BEVFusion-LiDAR base/2.6.0 | 0.7995 | 0.7514 | 0.8640 | 0.7788 | 0.8608 | 0.7272 | 0.7669 |
+  </details>
+  
+- **Mean TPError**
+  
+  <details>
+  <summary> Eval Range: 0.0 - 50.0m </summary>
+    | Model version | mATE (recall @ 0.10) | mAOE (recall @ 0.10) | mASE (recall @ 0.10) | mAVE (recall @ 0.10) | mAAE (recall @ 0.10) | mATE (recall @ 0.40) | mAOE (recall @ 0.40) | mASE (recall @ 0.40) | mAVE (recall @ 0.40) | mAAE (recall @ 0.40) | mATE (optimal) | mAOE (optimal) | mASE (optimal) | mAVE (optimal) | mAAE (optimal) |
+    | :---- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
+    | BEVFusion-LiDAR base/2.8.0 | 0.2738 | 0.4304 | 0.3040 | 0.3416 | 1.0000 | 0.3927 | 0.3902 | 0.3987 | 0.4730 | 1.0000 | 0.1903 | 0.3709 | 0.2019 | 0.2298 | 1.0000 |
 
+  <summary><strong>Num match summary</strong></summary>
+
+  **recall 0.10**
+
+  | Model version | car<br>0.5/1.0/2.0/4.0<br>(GTs: 14,872) | truck<br>0.5/1.0/2.0/4.0<br>(GTs: 1,192) | bus<br>0.5/1.0/2.0/4.0<br>(GTs: 336) | bicycle<br>0.5/1.0/2.0/4.0<br>(GTs: 740) | pedestrian<br>0.5/1.0/2.0/4.0<br>(GTs: 5,055) | traffic_cone<br>0.5/1.0/2.0/4.0<br>(GTs: 60) | barrier<br>0.5/1.0/2.0/4.0<br>(GTs: 0) |
+  | :---- | :---- | :---- | :---- | :---- | :---- | :---- | :---- |
+  | BEVFusion-LiDAR base/2.8.0 | 1,635 / 1,635 / 1,635 / 1,635 | 131 / 131 / 131 / 131 | 36 / 36 / 36 / 36 | 81 / 81 / 81 / 81 | 556 / 556 / 556 / 556 | 6 / 6 / 6 / 6 | 0 / 0 / 0 / 0 |
+
+  **recall 0.40**
+
+  | Model version | car<br>0.5/1.0/2.0/4.0<br>(GTs: 14,872) | truck<br>0.5/1.0/2.0/4.0<br>(GTs: 1,192) | bus<br>0.5/1.0/2.0/4.0<br>(GTs: 336) | bicycle<br>0.5/1.0/2.0/4.0<br>(GTs: 740) | pedestrian<br>0.5/1.0/2.0/4.0<br>(GTs: 5,055) | traffic_cone<br>0.5/1.0/2.0/4.0<br>(GTs: 60) | barrier<br>0.5/1.0/2.0/4.0<br>(GTs: 0) |
+  | :---- | :---- | :---- | :---- | :---- | :---- | :---- | :---- |
+  | BEVFusion-LiDAR base/2.8.0 | 6,097 / 6,097 / 6,097 / 6,097 | 488 / 488 / 488 / 488 | 137 / 137 / 137 / 137 | 303 / 303 / 303 / 303 | 2,072 / 2,072 / 2,072 / 2,072 | 0 / 0 / 0 / 0 | 0 / 0 / 0 / 0 |
+  | BEVFusion-LiDAR j6gen2_base/2.8.1 | 6,097 / 6,097 / 6,097 / 6,097 | 488 / 488 / 488 / 488 | 137 / 137 / 137 / 137 | 303 / 303 / 303 / 303 | 2,072 / 2,072 / 2,072 / 2,072 | 0 / 0 / 0 / 0 | 0 / 0 / 0 / 0 |
+
+  **optimal**
+
+  | Model version | car<br>0.5/1.0/2.0/4.0<br>(GTs: 14,872) | truck<br>0.5/1.0/2.0/4.0<br>(GTs: 1,192) | bus<br>0.5/1.0/2.0/4.0<br>(GTs: 336) | bicycle<br>0.5/1.0/2.0/4.0<br>(GTs: 740) | pedestrian<br>0.5/1.0/2.0/4.0<br>(GTs: 5,055) | traffic_cone<br>0.5/1.0/2.0/4.0<br>(GTs: 60) | barrier<br>0.5/1.0/2.0/4.0<br>(GTs: 0) |
+  | :---- | :---- | :---- | :---- | :---- | :---- | :---- | :---- |
+  | BEVFusion-LiDAR base/2.8.0 | 13,062 / 13,479 / 13,554 / 13,743 | 932 / 1,043 / 1,066 / 1,074 | 275 / 321 / 324 / 324 | 602 / 607 / 608 / 613 | 4,140 / 4,178 / 4,198 / 4,214 | 23 / 13 / 13 / 13 | 0 / 0 / 0 / 0 |
+  | BEVFusion-LiDAR j6gen2_base/2.8.1 | 13,178 / 13,676 / 13,748 / 13,798 | 925 / 1,041 / 1,064 / 1,073 | 254 / 330 / 333 / 333 | 612 / 628 / 640 / 643 | 4,247 / 4,294 / 4,313 / 4,330 | 19 / 20 / 20 / 21 | 0 / 0 / 0 / 0 |
+
+  </details>
+  
+  <details>
+  <summary> Eval Range: 50.0 - 90.0m </summary>
+
+  | Model version | mATE (recall @ 0.10) | mAOE (recall @ 0.10) | mASE (recall @ 0.10) | mAVE (recall @ 0.10) | mAAE (recall @ 0.10) | mATE (recall @ 0.40) | mAOE (recall @ 0.40) | mASE (recall @ 0.40) | mAVE (recall @ 0.40) | mAAE (recall @ 0.40) | mATE (optimal) | mAOE (optimal) | mASE (optimal) | mAVE (optimal) | mAAE (optimal) |
+  | :---- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
+  | BEVFusion-LiDAR base/2.8.0 | 0.3215 | 0.6553 | 0.3435 | 0.3779 | 1.0000 | 0.3296 | 0.6554 | 0.3494 | 0.3854 | 1.0000 | 0.2287 | 0.6009 | 0.2438 | 0.2891 | 1.0000 |
+  | BEVFusion-LiDAR j6gen2_base/2.8.1 | 0.3091 | 0.6981 | 0.3081 | 0.3833 | 1.0000 | 0.3181 | 0.6966 | 0.3115 | 0.3980 | 1.0000 | 0.2197 | 0.6583 | 0.2015 | 0.3121 | 1.0000 |
+
+  <summary><strong>Num match summary</strong></summary>
+
+  **recall 0.10**
+
+  | Model version | car<br>0.5/1.0/2.0/4.0<br>(GTs: 10,929) | truck<br>0.5/1.0/2.0/4.0<br>(GTs: 1,009) | bus<br>0.5/1.0/2.0/4.0<br>(GTs: 141) | bicycle<br>0.5/1.0/2.0/4.0<br>(GTs: 460) | pedestrian<br>0.5/1.0/2.0/4.0<br>(GTs: 3,721) | traffic_cone<br>0.5/1.0/2.0/4.0<br>(GTs: 4) | barrier<br>0.5/1.0/2.0/4.0<br>(GTs: 0) |
+  | :---- | :---- | :---- | :---- | :---- | :---- | :---- | :---- |
+  | BEVFusion-LiDAR base/2.8.0 | 1,202 / 1,202 / 1,202 / 1,202 | 110 / 110 / 110 / 110 | 15 / 15 / 15 / 15 | 50 / 50 / 50 / 50 | 409 / 409 / 409 / 409 | 0 / 0 / 0 / 0 | 0 / 0 / 0 / 0 |
+  | BEVFusion-LiDAR j6gen2_base/2.8.1 | 1,202 / 1,202 / 1,202 / 1,202 | 110 / 110 / 110 / 110 | 15 / 15 / 15 / 15 | 50 / 50 / 50 / 50 | 409 / 409 / 409 / 409 | 0 / 0 / 0 / 0 | 0 / 0 / 0 / 0 |
+
+  **recall 0.40**
+
+  | Model version | car<br>0.5/1.0/2.0/4.0<br>(GTs: 10,929) | truck<br>0.5/1.0/2.0/4.0<br>(GTs: 1,009) | bus<br>0.5/1.0/2.0/4.0<br>(GTs: 141) | bicycle<br>0.5/1.0/2.0/4.0<br>(GTs: 460) | pedestrian<br>0.5/1.0/2.0/4.0<br>(GTs: 3,721) | traffic_cone<br>0.5/1.0/2.0/4.0<br>(GTs: 4) | barrier<br>0.5/1.0/2.0/4.0<br>(GTs: 0) |
+  | :---- | :---- | :---- | :---- | :---- | :---- | :---- | :---- |
+  | BEVFusion-LiDAR base/2.8.0 | 4,480 / 4,480 / 4,480 / 4,480 | 413 / 413 / 413 / 413 | 57 / 57 / 57 / 57 | 188 / 188 / 188 / 188 | 1,525 / 1,525 / 1,525 / 1,525 | 1 / 1 / 1 / 1 | 0 / 0 / 0 / 0 |
+  | BEVFusion-LiDAR j6gen2_base/2.8.1 | 4,480 / 4,480 / 4,480 / 4,480 | 413 / 413 / 413 / 413 | 57 / 57 / 57 / 57 | 188 / 188 / 188 / 188 | 1,525 / 1,525 / 1,525 / 1,525 | 1 / 1 / 1 / 1 | 0 / 0 / 0 / 0 |
+
+  **optimal**
+
+  | Model version | car<br>0.5/1.0/2.0/4.0<br>(GTs: 10,929) | truck<br>0.5/1.0/2.0/4.0<br>(GTs: 1,009) | bus<br>0.5/1.0/2.0/4.0<br>(GTs: 141) | bicycle<br>0.5/1.0/2.0/4.0<br>(GTs: 460) | pedestrian<br>0.5/1.0/2.0/4.0<br>(GTs: 3,721) | traffic_cone<br>0.5/1.0/2.0/4.0<br>(GTs: 4) | barrier<br>0.5/1.0/2.0/4.0<br>(GTs: 0) |
+  | :---- | :---- | :---- | :---- | :---- | :---- | :---- | :---- |
+  | BEVFusion-LiDAR base/2.8.0 | 8,159 / 8,918 / 9,145 / 9,193 | 584 / 735 / 782 / 787 | 97 / 115 / 115 / 115 | 243 / 263 / 265 / 265 | 2,464 / 2,492 / 2,508 / 2,524 | 2 / 2 / 2 / 2 | 0 / 0 / 0 / 0 |
+  | BEVFusion-LiDAR j6gen2_base/2.8.1 | 8,463 / 9,288 / 9,554 / 9,621 | 617 / 739 / 799 / 804 | 103 / 124 / 124 / 124 | 263 / 289 / 292 / 292 | 2,604 / 2,652 / 2,667 / 2,682 | 2 / 2 / 2 / 2 | 0 / 0 / 0 / 0 |
+
+  </details>
+  
+  <details>
+  <summary> Eval Range: 90.0 - 121.0m </summary>
+
+  | Model version | mATE (recall @ 0.10) | mAOE (recall @ 0.10) | mASE (recall @ 0.10) | mAVE (recall @ 0.10) | mAAE (recall @ 0.10) | mATE (recall @ 0.40) | mAOE (recall @ 0.40) | mASE (recall @ 0.40) | mAVE (recall @ 0.40) | mAAE (recall @ 0.40) | mATE (optimal) | mAOE (optimal) | mASE (optimal) | mAVE (optimal) | mAAE (optimal) |
+  | :---- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
+  | BEVFusion-LiDAR base/2.8.0 | 0.4740 | 0.4126 | 0.4223 | 0.5892 | 1.0000 | 0.4917 | 0.4497 | 0.4298 | 0.6415 | 1.0000 | 0.2930 | 0.2332 | 0.2012 | 0.4842 | 1.0000 |
+
+  <summary><strong>Num match summary</strong></summary>
+
+  **recall 0.10**
+
+  | Model version | car<br>0.5/1.0/2.0/4.0<br>(GTs: 2,883) | truck<br>0.5/1.0/2.0/4.0<br>(GTs: 600) | bus<br>0.5/1.0/2.0/4.0<br>(GTs: 60) | bicycle<br>0.5/1.0/2.0/4.0<br>(GTs: 85) | pedestrian<br>0.5/1.0/2.0/4.0<br>(GTs: 1,092) | traffic_cone<br>0.5/1.0/2.0/4.0<br>(GTs: 0) | barrier<br>0.5/1.0/2.0/4.0<br>(GTs: 0) |
+  | :---- | :---- | :---- | :---- | :---- | :---- | :---- | :---- |
+  | BEVFusion-LiDAR base/2.8.0 | 317 / 317 / 317 / 317 | 66 / 66 / 66 / 66 | 6 / 6 / 6 / 6 | 9 / 9 / 9 / 9 | 120 / 120 / 120 / 120 | 0 / 0 / 0 / 0 | 0 / 0 / 0 / 0 |
+
+  **recall 0.40**
+
+  | Model version | car<br>0.5/1.0/2.0/4.0<br>(GTs: 2,883) | truck<br>0.5/1.0/2.0/4.0<br>(GTs: 600) | bus<br>0.5/1.0/2.0/4.0<br>(GTs: 60) | bicycle<br>0.5/1.0/2.0/4.0<br>(GTs: 85) | pedestrian<br>0.5/1.0/2.0/4.0<br>(GTs: 1,092) | traffic_cone<br>0.5/1.0/2.0/4.0<br>(GTs: 0) | barrier<br>0.5/1.0/2.0/4.0<br>(GTs: 0) |
+  | :---- | :---- | :---- | :---- | :---- | :---- | :---- | :---- |
+  | BEVFusion-LiDAR base/2.8.0 | 1,182 / 1,182 / 1,182 / 1,182 | 246 / 246 / 246 / 246 | 24 / 24 / 24 / 24 | 34 / 34 / 34 / 34 | 447 / 447 / 447 / 447 | 0 / 0 / 0 / 0 | 0 / 0 / 0 / 0 |
+
+  **optimal**
+
+  | Model version | car<br>0.5/1.0/2.0/4.0<br>(GTs: 2,883) | truck<br>0.5/1.0/2.0/4.0<br>(GTs: 600) | bus<br>0.5/1.0/2.0/4.0<br>(GTs: 60) | bicycle<br>0.5/1.0/2.0/4.0<br>(GTs: 85) | pedestrian<br>0.5/1.0/2.0/4.0<br>(GTs: 1,092) | traffic_cone<br>0.5/1.0/2.0/4.0<br>(GTs: 0) | barrier<br>0.5/1.0/2.0/4.0<br>(GTs: 0) |
+  | :---- | :---- | :---- | :---- | :---- | :---- | :---- | :---- |
+  | BEVFusion-LiDAR base/2.8.0 | 1,763 / 2,103 / 2,227 / 2,243 | 254 / 358 / 448 / 456 | 24 / 38 / 31 / 31 | 38 / 44 / 46 / 46 | 613 / 619 / 623 / 626 | 0 / 0 / 0 / 0 | 0 / 0 / 0 / 0 |
+  </details>
+
+  <details open>
+  <summary> Eval Range: 0.0 - 121.0m </summary>
+
+  | Model version | mATE (recall @ 0.10) | mAOE (recall @ 0.10) | mASE (recall @ 0.10) | mAVE (recall @ 0.10) | mAAE (recall @ 0.10) | mATE (recall @ 0.40) | mAOE (recall @ 0.40) | mASE (recall @ 0.40) | mAVE (recall @ 0.40) | mAAE (recall @ 0.40) | mATE (optimal) | mAOE (optimal) | mASE (optimal) | mAVE (optimal) | mAAE (optimal) |
+  | :---- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
+  | BEVFusion-LiDAR base/2.8.0 | 0.2926 | 0.4708 | 0.3148 | 0.3550 | 1.0000 | 0.4159 | 0.4150 | 0.4074 | 0.4899 | 1.0000 | 0.2138 | 0.4027 | 0.2131 | 0.2586 | 1.0000 |
+
+  <summary><strong>Num match summary</strong></summary>
+
+  **recall 0.10**
+
+  | Model version | car<br>0.5/1.0/2.0/4.0<br>(GTs: 28,684) | truck<br>0.5/1.0/2.0/4.0<br>(GTs: 2,801) | bus<br>0.5/1.0/2.0/4.0<br>(GTs: 537) | bicycle<br>0.5/1.0/2.0/4.0<br>(GTs: 1,285) | pedestrian<br>0.5/1.0/2.0/4.0<br>(GTs: 9,868) | traffic_cone<br>0.5/1.0/2.0/4.0<br>(GTs: 64) | barrier<br>0.5/1.0/2.0/4.0<br>(GTs: 0) |
+  | :---- | :---- | :---- | :---- | :---- | :---- | :---- | :---- |
+  | BEVFusion-LiDAR base/2.8.0 | 3,155 / 3,155 / 3,155 / 3,155 | 308 / 308 / 308 / 308 | 59 / 59 / 59 / 59 | 141 / 141 / 141 / 141 | 1,085 / 1,085 / 1,085 / 1,085 | 7 / 7 / 7 / 7 | 0 / 0 / 0 / 0 |
+  | BEVFusion-LiDAR j6gen2_base/2.8.1 | 3,155 / 3,155 / 3,155 / 3,155 | 308 / 308 / 308 / 308 | 59 / 59 / 59 / 59 | 141 / 141 / 141 / 141 | 1,085 / 1,085 / 1,085 / 1,085 | 7 / 7 / 7 / 7 | 0 / 0 / 0 / 0 |
+
+  **recall 0.40**
+
+  | Model version | car<br>0.5/1.0/2.0/4.0<br>(GTs: 28,684) | truck<br>0.5/1.0/2.0/4.0<br>(GTs: 2,801) | bus<br>0.5/1.0/2.0/4.0<br>(GTs: 537) | bicycle<br>0.5/1.0/2.0/4.0<br>(GTs: 1,285) | pedestrian<br>0.5/1.0/2.0/4.0<br>(GTs: 9,868) | traffic_cone<br>0.5/1.0/2.0/4.0<br>(GTs: 64) | barrier<br>0.5/1.0/2.0/4.0<br>(GTs: 0) |
+  | :---- | :---- | :---- | :---- | :---- | :---- | :---- | :---- |
+  | BEVFusion-LiDAR base/2.8.0 | 11,760 / 11,760 / 11,760 / 11,760 | 1,148 / 1,148 / 1,148 / 1,148 | 220 / 220 / 220 / 220 | 526 / 526 / 526 / 526 | 4,045 / 4,045 / 4,045 / 4,045 | 0 / 0 / 0 / 0 | 0 / 0 / 0 / 0 |
+  | BEVFusion-LiDAR j6gen2_base/2.8.1 | 11,760 / 11,760 / 11,760 / 11,760 | 1,148 / 1,148 / 1,148 / 1,148 | 220 / 220 / 220 / 220 | 526 / 526 / 526 / 526 | 4,045 / 4,045 / 4,045 / 4,045 | 0 / 0 / 0 / 0 | 0 / 0 / 0 / 0 |
+
+  **optimal**
+
+  | Model version | car<br>0.5/1.0/2.0/4.0<br>(GTs: 28,684) | truck<br>0.5/1.0/2.0/4.0<br>(GTs: 2,801) | bus<br>0.5/1.0/2.0/4.0<br>(GTs: 537) | bicycle<br>0.5/1.0/2.0/4.0<br>(GTs: 1,285) | pedestrian<br>0.5/1.0/2.0/4.0<br>(GTs: 9,868) | traffic_cone<br>0.5/1.0/2.0/4.0<br>(GTs: 64) | barrier<br>0.5/1.0/2.0/4.0<br>(GTs: 0) |
+  | :---- | :---- | :---- | :---- | :---- | :---- | :---- | :---- |
+  | BEVFusion-LiDAR base/2.8.0 | 23,001 / 24,465 / 24,972 / 25,071 | 1,757 / 2,148 / 2,295 / 2,313 | 391 / 442 / 445 / 445 | 839 / 875 / 938 / 944 | 7,078 / 7,166 / 7,204 / 7,247 | 13 / 15 / 15 / 15 | 0 / 0 / 0 / 0 |
+  | BEVFusion-LiDAR j6gen2_base/2.8.1 | 23,528 / 24,950 / 25,596 / 25,735 | 1,866 / 2,196 / 2,328 / 2,367 | 379 / 486 / 490 / 490 | 874 / 918 / 941 / 944 | 7,461 / 7,553 / 7,587 / 7,622 | 19 / 22 / 22 / 23 | 0 / 0 / 0 / 0 |
   </details>
 
 </details>
@@ -449,41 +569,157 @@
 
   <details>
   <summary> Eval Range: 0.0 - 50.0m </summary>
-
-  | Model version | mAP | mAPH | car<br>(42,789) | truck<br>(17,259) | bus<br>(3,437) | bicycle<br>(2,681) | pedestrian<br>(57,948) |
-  | :---- | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
-  | BEVFusion-LiDAR base/2.7.0 | 0.8837 | 0.8562 | 0.9393 | 0.8587 | 0.8802 | 0.8268 | 0.9135 |
-	| BEVFusion-LiDAR base/2.6.0 | 0.8784 | 0.8487 | 0.9436 | 0.8531 | 0.8284 | 0.8546 | 0.9123 |
+  
+  | Model version | mAP | mAPH | map_based_nds (recall @ 0.10) | map_based_nds (recall @ 0.40) | maph_based_nds (recall @ 0.10) | maph_based_nds (recall 0.40) | car<br>(50,954) | truck<br>(18,624) | bus<br>(3,853) | bicycle<br>(3,768) | pedestrian<br>(70,699) | traffic_cone<br>(12,525) | barrier<br>(2,009) |
+  | :---- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
+  | BEVFusion-LiDAR base/2.8.0 | 0.6595 | 0.6258 | 0.5925 | 0.5885 | 0.5757 | 0.5717 | 0.9193 | 0.8663 | 0.8424 | 0.7784 | 0.9038 | 0.3064 | 0.0000 |
 
   </details>
 
   <details>
   <summary> Eval Range: 50.0 - 90.0m </summary>
-
-  | Model version | mAP | mAPH | car<br>(35,518) | truck<br>(22,550) | bus<br>(2,683) | bicycle<br>(1,607) | pedestrian<br>(27,240) |
-  | :---- | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
-  | BEVFusion-LiDAR base/2.7.0 | 0.6901 | 0.6630 | 0.8382 | 0.6676 | 0.5007 | 0.6794 | 0.7645 |
-	| BEVFusion-LiDAR base/2.6.0 | 0.6692 | 0.6414 | 0.8323 | 0.6571 | 0.4033 | 0.6721 | 0.7812 |
+  
+  | Model version | mAP | mAPH | map_based_nds (recall @ 0.10) | map_based_nds (recall @ 0.40) | maph_based_nds (recall @ 0.10) | maph_based_nds (recall 0.40) | car<br>(41,196) | truck<br>(22,942) | bus<br>(3,033) | bicycle<br>(2,310) | pedestrian<br>(36,881) | traffic_cone<br>(7,183) | barrier<br>(1,847) |
+  | :---- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
+  | BEVFusion-LiDAR base/2.8.0 | 0.5440 | 0.5111 | 0.5263 | 0.5188 | 0.5099 | 0.5024 | 0.8350 | 0.6741 | 0.5382 | 0.6234 | 0.7829 | 0.3548 | 0.0000 |
 
   </details>
 
   <details>
   <summary> Eval Range: 90.0 - 121.0m </summary>
-
-  | Model version | mAP | mAPH | car<br>(16,524) | truck<br>(14,587) | bus<br>(2,476) | bicycle<br>(364) | pedestrian<br>(14,297) |
-  | :---- | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
-  | BEVFusion-LiDAR base/2.7.0 | 0.5750 | 0.5466 | 0.6601 | 0.5131 | 0.5145 | 0.4541 | 0.7331 |
-	| BEVFusion-LiDAR base/2.6.0 | 0.5300 | 0.5010 | 0.6692 | 0.5020 | 0.2822 | 0.4586 | 0.7380 |
+  
+  | Model version | mAP | mAPH | map_based_nds (recall @ 0.10) | map_based_nds (recall @ 0.40) | maph_based_nds (recall @ 0.10) | maph_based_nds (recall 0.40) | car<br>(17,510) | truck<br>(14,707) | bus<br>(2,997) | bicycle<br>(566) | pedestrian<br>(16,580) | traffic_cone<br>(769) | barrier<br>(566) |
+  | :---- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
+  | BEVFusion-LiDAR base/2.8.0 | 0.3700 | 0.3469 | 0.4109 | 0.3757 | 0.3994 | 0.3641 | 0.7043 | 0.5157 | 0.3679 | 0.2959 | 0.7000 | 0.0063 | 0.0000 |
 
   </details>
 
   <details open>
   <summary> Eval Range: 0.0 - 121.0m </summary>
+  
+  | Model version | mAP | mAPH | map_based_nds (recall @ 0.10) | map_based_nds (recall @ 0.40) | maph_based_nds (recall @ 0.10) | maph_based_nds (recall 0.40) | car<br>(109,660) | truck<br>(56,273) | bus<br>(9,883) | bicycle<br>(6,644) | pedestrian<br>(124,160) | traffic_cone<br>(20,477) | barrier<br>(4,422) |
+  | :---- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
+  | BEVFusion-LiDAR base/2.8.0 | 0.5785 | 0.5444 | 0.5467 | 0.5405 | 0.5296 | 0.5234 | 0.8675 | 0.7091 | 0.6251 | 0.6924 | 0.8516 | 0.3040 | 0.0000 |
 
-  | Model version | mAP | mAPH | car<br>(94,831) | truck<br>(54,396) | bus<br>(8,596) | bicycle<br>(4,652) | pedestrian<br>(99,485) |
-  | :---- | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
-  | BEVFusion-LiDAR base/2.7.0 | 0.7715 | 0.7432 | 0.8661 | 0.7010 | 0.6721 | 0.7611 | 0.8573 |
-  | BEVFusion-LiDAR base/2.6.0 | 0.7471 | 0.7176 | 0.8667 | 0.6928 | 0.5446 | 0.7710 | 0.8606 |
+  </details>
+  
+  - **Mean TPError**
+  
+  <details>
+  <summary> Eval Range: 0.0 - 50.0m </summary>
+    
+  | Model version | mATE (recall @ 0.10) | mAOE (recall @ 0.10) | mASE (recall @ 0.10) | mAVE (recall @ 0.10) | mAAE (recall @ 0.10) | mATE (recall @ 0.40) | mAOE (recall @ 0.40) | mASE (recall @ 0.40) | mAVE (recall @ 0.40) | mAAE (recall @ 0.40) | mATE (optimal) | mAOE (optimal) | mASE (optimal) | mAVE (optimal) | mAAE (optimal) |
+  | :---- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
+  | BEVFusion-LiDAR base/2.8.0 | 0.2759 | 0.3051 | 0.2927 | 0.4984 | 1.0000 | 0.2896 | 0.3123 | 0.2968 | 0.5135 | 1.0000 | 0.1903 | 0.2037 | 0.1876 | 0.4654 | 1.0000 |
+
+  <summary><strong>Num match summary</strong></summary>
+
+  **recall 0.10**
+
+  | Model version | car<br>0.5/1.0/2.0/4.0<br>(GTs: 50,954) | truck<br>0.5/1.0/2.0/4.0<br>(GTs: 18,624) | bus<br>0.5/1.0/2.0/4.0<br>(GTs: 3,853) | bicycle<br>0.5/1.0/2.0/4.0<br>(GTs: 3,768) | pedestrian<br>0.5/1.0/2.0/4.0<br>(GTs: 70,699) | traffic_cone<br>0.5/1.0/2.0/4.0<br>(GTs: 12,525) | barrier<br>0.5/1.0/2.0/4.0<br>(GTs: 2,009) |
+  | :---- | :---- | :---- | :---- | :---- | :---- | :---- | :---- |
+  | BEVFusion-LiDAR base/2.8.0 | 5,604 / 5,604 / 5,604 / 5,604 | 2,048 / 2,048 / 2,048 / 2,048 | 423 / 423 / 423 / 423 | 414 / 414 / 414 / 414 | 7,776 / 7,776 / 7,776 / 7,776 | 1,377 / 1,377 / 1,377 / 1,377 | 0 / 0 / 0 / 0 |
+
+  **recall 0.40**
+
+  | Model version | car<br>0.5/1.0/2.0/4.0<br>(GTs: 50,954) | truck<br>0.5/1.0/2.0/4.0<br>(GTs: 18,624) | bus<br>0.5/1.0/2.0/4.0<br>(GTs: 3,853) | bicycle<br>0.5/1.0/2.0/4.0<br>(GTs: 3,768) | pedestrian<br>0.5/1.0/2.0/4.0<br>(GTs: 70,699) | traffic_cone<br>0.5/1.0/2.0/4.0<br>(GTs: 12,525) | barrier<br>0.5/1.0/2.0/4.0<br>(GTs: 2,009) |
+  | :---- | :---- | :---- | :---- | :---- | :---- | :---- | :---- |
+  | BEVFusion-LiDAR base/2.8.0 | 20,891 / 20,891 / 20,891 / 20,891 | 7,635 / 7,635 / 7,635 / 7,635 | 1,579 / 1,579 / 1,579 / 1,579 | 1,544 / 1,544 / 1,544 / 1,544 | 28,986 / 28,986 / 28,986 / 28,986 | 5,135 / 5,135 / 5,135 / 5,135 | 0 / 0 / 0 / 0 |
+
+  **optimal**
+
+  | Model version | car<br>0.5/1.0/2.0/4.0<br>(GTs: 50,954) | truck<br>0.5/1.0/2.0/4.0<br>(GTs: 18,624) | bus<br>0.5/1.0/2.0/4.0<br>(GTs: 3,853) | bicycle<br>0.5/1.0/2.0/4.0<br>(GTs: 3,768) | pedestrian<br>0.5/1.0/2.0/4.0<br>(GTs: 70,699) | traffic_cone<br>0.5/1.0/2.0/4.0<br>(GTs: 12,525) | barrier<br>0.5/1.0/2.0/4.0<br>(GTs: 2,009) |
+  | :---- | :---- | :---- | :---- | :---- | :---- | :---- | :---- |
+  | BEVFusion-LiDAR base/2.8.0 | 44,376 / 46,850 / 47,216 / 47,606 | 14,516 / 16,104 / 17,017 / 17,294 | 3,080 / 3,354 / 3,439 / 3,443 | 2,874 / 2,897 / 2,900 / 2,900 | 59,982 / 60,714 / 61,271 / 61,531 | 5,720 / 6,079 / 6,376 / 6,515 | 0 / 0 / 0 / 0 |
+  
+  </details>
+  
+  <details>
+  <summary> Eval Range: 50.0 - 90.0m </summary>
+  
+  **Mean TP error summary**
+
+  | Model version | mATE (recall @ 0.10) | mAOE (recall @ 0.10) | mASE (recall @ 0.10) | mAVE (recall @ 0.10) | mAAE (recall @ 0.10) | mATE (recall @ 0.40) | mAOE (recall @ 0.40) | mASE (recall @ 0.40) | mAVE (recall @ 0.40) | mAAE (recall @ 0.40) | mATE (optimal) | mAOE (optimal) | mASE (optimal) | mAVE (optimal) | mAAE (optimal) |
+  | :---- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
+  | BEVFusion-LiDAR base/2.8.0 | 0.3424 | 0.2851 | 0.3099 | 0.5197 | 1.0000 | 0.3636 | 0.2926 | 0.3147 | 0.5610 | 1.0000 | 0.2700 | 0.1826 | 0.2042 | 0.5180 | 1.0000 |
+
+  <summary><strong>Num match summary</strong></summary>
+
+  **recall 0.10**
+
+  | Model version | car<br>0.5/1.0/2.0/4.0<br>(GTs: 41,196) | truck<br>0.5/1.0/2.0/4.0<br>(GTs: 22,942) | bus<br>0.5/1.0/2.0/4.0<br>(GTs: 3,033) | bicycle<br>0.5/1.0/2.0/4.0<br>(GTs: 2,310) | pedestrian<br>0.5/1.0/2.0/4.0<br>(GTs: 36,881) | traffic_cone<br>0.5/1.0/2.0/4.0<br>(GTs: 7,183) | barrier<br>0.5/1.0/2.0/4.0<br>(GTs: 1,847) |
+  | :---- | :---- | :---- | :---- | :---- | :---- | :---- | :---- |
+  | BEVFusion-LiDAR base/2.8.0 | 4,531 / 4,531 / 4,531 / 4,531 | 2,523 / 2,523 / 2,523 / 2,523 | 333 / 333 / 333 / 333 | 254 / 254 / 254 / 254 | 4,056 / 4,056 / 4,056 / 4,056 | 790 / 790 / 790 / 790 | 0 / 0 / 0 / 0 |
+
+  **recall 0.40**
+
+  | Model version | car<br>0.5/1.0/2.0/4.0<br>(GTs: 41,196) | truck<br>0.5/1.0/2.0/4.0<br>(GTs: 22,942) | bus<br>0.5/1.0/2.0/4.0<br>(GTs: 3,033) | bicycle<br>0.5/1.0/2.0/4.0<br>(GTs: 2,310) | pedestrian<br>0.5/1.0/2.0/4.0<br>(GTs: 36,881) | traffic_cone<br>0.5/1.0/2.0/4.0<br>(GTs: 7,183) | barrier<br>0.5/1.0/2.0/4.0<br>(GTs: 1,847) |
+  | :---- | :---- | :---- | :---- | :---- | :---- | :---- | :---- |
+  | BEVFusion-LiDAR base/2.8.0 | 16,890 / 16,890 / 16,890 / 16,890 | 9,406 / 9,406 / 9,406 / 9,406 | 1,243 / 1,243 / 1,243 / 1,243 | 947 / 947 / 947 / 947 | 15,121 / 15,121 / 15,121 / 15,121 | 2,945 / 2,945 / 2,945 / 2,945 | 0 / 0 / 0 / 0 |
+
+  **optimal**
+
+  | Model version | car<br>0.5/1.0/2.0/4.0<br>(GTs: 41,196) | truck<br>0.5/1.0/2.0/4.0<br>(GTs: 22,942) | bus<br>0.5/1.0/2.0/4.0<br>(GTs: 3,033) | bicycle<br>0.5/1.0/2.0/4.0<br>(GTs: 2,310) | pedestrian<br>0.5/1.0/2.0/4.0<br>(GTs: 36,881) | traffic_cone<br>0.5/1.0/2.0/4.0<br>(GTs: 7,183) | barrier<br>0.5/1.0/2.0/4.0<br>(GTs: 1,847) |
+  | :---- | :---- | :---- | :---- | :---- | :---- | :---- | :---- |
+  | BEVFusion-LiDAR base/2.8.0 | 30,777 / 33,945 / 34,775 / 34,956 | 12,711 / 15,140 / 17,099 / 18,052 | 1,191 / 1,652 / 1,886 / 1,924 | 1,384 / 1,483 / 1,484 / 1,496 | 27,185 / 28,060 / 28,214 / 28,437 | 3,298 / 3,377 / 3,633 / 3,756 | 0 / 0 / 0 / 0 |
+
+  </details>
+  
+  <details>
+  <summary> Eval Range: 90.0 - 121.0m </summary>
+
+  | Model version | mATE (recall @ 0.10) | mAOE (recall @ 0.10) | mASE (recall @ 0.10) | mAVE (recall @ 0.10) | mAAE (recall @ 0.10) | mATE (recall @ 0.40) | mAOE (recall @ 0.40) | mASE (recall @ 0.40) | mAVE (recall @ 0.40) | mAAE (recall @ 0.40) | mATE (optimal) | mAOE (optimal) | mASE (optimal) | mAVE (optimal) | mAAE (optimal) |
+  | :---- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
+  | BEVFusion-LiDAR base/2.8.0 | 0.4063 | 0.3864 | 0.3484 | 0.5995 | 1.0000 | 0.5077 | 0.3923 | 0.4395 | 0.7535 | 1.0000 | 0.3267 | 0.2998 | 0.2415 | 0.5890 | 1.0000 |
+
+  <summary><strong>Num match summary</strong></summary>
+
+  **recall 0.10**
+
+  | Model version | car<br>0.5/1.0/2.0/4.0<br>(GTs: 17,510) | truck<br>0.5/1.0/2.0/4.0<br>(GTs: 14,707) | bus<br>0.5/1.0/2.0/4.0<br>(GTs: 2,997) | bicycle<br>0.5/1.0/2.0/4.0<br>(GTs: 566) | pedestrian<br>0.5/1.0/2.0/4.0<br>(GTs: 16,580) | traffic_cone<br>0.5/1.0/2.0/4.0<br>(GTs: 769) | barrier<br>0.5/1.0/2.0/4.0<br>(GTs: 566) |
+  | :---- | :---- | :---- | :---- | :---- | :---- | :---- | :---- |
+  | BEVFusion-LiDAR base/2.8.0 | 1,926 / 1,926 / 1,926 / 1,926 | 1,617 / 1,617 / 1,617 / 1,617 | 329 / 329 / 329 / 329 | 62 / 62 / 62 / 62 | 1,823 / 1,823 / 1,823 / 1,823 | 84 / 84 / 84 / 84 | 0 / 0 / 0 / 0 |
+
+  **recall 0.40**
+
+  | Model version | car<br>0.5/1.0/2.0/4.0<br>(GTs: 17,510) | truck<br>0.5/1.0/2.0/4.0<br>(GTs: 14,707) | bus<br>0.5/1.0/2.0/4.0<br>(GTs: 2,997) | bicycle<br>0.5/1.0/2.0/4.0<br>(GTs: 566) | pedestrian<br>0.5/1.0/2.0/4.0<br>(GTs: 16,580) | traffic_cone<br>0.5/1.0/2.0/4.0<br>(GTs: 769) | barrier<br>0.5/1.0/2.0/4.0<br>(GTs: 566) |
+  | :---- | :---- | :---- | :---- | :---- | :---- | :---- | :---- |
+  | BEVFusion-LiDAR base/2.8.0 | 7,179 / 7,179 / 7,179 / 7,179 | 6,029 / 6,029 / 6,029 / 6,029 | 1,228 / 1,228 / 1,228 / 1,228 | 232 / 232 / 232 / 232 | 6,797 / 6,797 / 6,797 / 6,797 | 0 / 0 / 0 / 0 | 0 / 0 / 0 / 0 |
+
+  **optimal**
+
+  | Model version | car<br>0.5/1.0/2.0/4.0<br>(GTs: 17,510) | truck<br>0.5/1.0/2.0/4.0<br>(GTs: 14,707) | bus<br>0.5/1.0/2.0/4.0<br>(GTs: 2,997) | bicycle<br>0.5/1.0/2.0/4.0<br>(GTs: 566) | pedestrian<br>0.5/1.0/2.0/4.0<br>(GTs: 16,580) | traffic_cone<br>0.5/1.0/2.0/4.0<br>(GTs: 769) | barrier<br>0.5/1.0/2.0/4.0<br>(GTs: 566) |
+  | :---- | :---- | :---- | :---- | :---- | :---- | :---- | :---- |
+  | BEVFusion-LiDAR base/2.8.0 | 10,800 / 12,644 / 13,151 / 13,260 | 5,665 / 8,075 / 9,757 / 10,776 | 1,062 / 1,422 / 1,542 / 1,587 | 221 / 245 / 257 / 261 | 11,283 / 11,409 / 11,480 / 11,627 | 167 / 177 / 127 / 133 | 0 / 0 / 0 / 0 |
+
+  </details>
+  
+  <details open>
+  <summary> Eval Range: 0.0 - 121.0m </summary>
+  
+  | Model version | mATE (recall @ 0.10) | mAOE (recall @ 0.10) | mASE (recall @ 0.10) | mAVE (recall @ 0.10) | mAAE (recall @ 0.10) | mATE (recall @ 0.40) | mAOE (recall @ 0.40) | mASE (recall @ 0.40) | mAVE (recall @ 0.40) | mAAE (recall @ 0.40) | mATE (optimal) | mAOE (optimal) | mASE (optimal) | mAVE (optimal) | mAAE (optimal) |
+  | :---- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
+  | BEVFusion-LiDAR base/2.8.0 | 0.3080 | 0.2997 | 0.3015 | 0.5162 | 1.0000 | 0.3316 | 0.3074 | 0.3083 | 0.5404 | 1.0000 | 0.2360 | 0.2001 | 0.1988 | 0.4973 | 1.0000 |
+
+  <summary><strong>Num match summary</strong></summary>
+
+  **recall 0.10**
+
+  | Model version | car<br>0.5/1.0/2.0/4.0<br>(GTs: 109,660) | truck<br>0.5/1.0/2.0/4.0<br>(GTs: 56,273) | bus<br>0.5/1.0/2.0/4.0<br>(GTs: 9,883) | bicycle<br>0.5/1.0/2.0/4.0<br>(GTs: 6,644) | pedestrian<br>0.5/1.0/2.0/4.0<br>(GTs: 124,160) | traffic_cone<br>0.5/1.0/2.0/4.0<br>(GTs: 20,477) | barrier<br>0.5/1.0/2.0/4.0<br>(GTs: 4,422) |
+  | :---- | :---- | :---- | :---- | :---- | :---- | :---- | :---- |
+  | BEVFusion-LiDAR base/2.8.0 | 12,062 / 12,062 / 12,062 / 12,062 | 6,190 / 6,190 / 6,190 / 6,190 | 1,087 / 1,087 / 1,087 / 1,087 | 730 / 730 / 730 / 730 | 13,657 / 13,657 / 13,657 / 13,657 | 2,252 / 2,252 / 2,252 / 2,252 | 0 / 0 / 0 / 0 |
+
+  **recall 0.40**
+
+  | Model version | car<br>0.5/1.0/2.0/4.0<br>(GTs: 109,660) | truck<br>0.5/1.0/2.0/4.0<br>(GTs: 56,273) | bus<br>0.5/1.0/2.0/4.0<br>(GTs: 9,883) | bicycle<br>0.5/1.0/2.0/4.0<br>(GTs: 6,644) | pedestrian<br>0.5/1.0/2.0/4.0<br>(GTs: 124,160) | traffic_cone<br>0.5/1.0/2.0/4.0<br>(GTs: 20,477) | barrier<br>0.5/1.0/2.0/4.0<br>(GTs: 4,422) |
+  | :---- | :---- | :---- | :---- | :---- | :---- | :---- | :---- |
+  | BEVFusion-LiDAR base/2.8.0 | 44,960 / 44,960 / 44,960 / 44,960 | 23,071 / 23,071 / 23,071 / 23,071 | 4,052 / 4,052 / 4,052 / 4,052 | 2,724 / 2,724 / 2,724 / 2,724 | 50,905 / 50,905 / 50,905 / 50,905 | 8,395 / 8,395 / 8,395 / 8,395 | 0 / 0 / 0 / 0 |
+
+  **optimal**
+
+  | Model version | car<br>0.5/1.0/2.0/4.0<br>(GTs: 109,660) | truck<br>0.5/1.0/2.0/4.0<br>(GTs: 56,273) | bus<br>0.5/1.0/2.0/4.0<br>(GTs: 9,883) | bicycle<br>0.5/1.0/2.0/4.0<br>(GTs: 6,644) | pedestrian<br>0.5/1.0/2.0/4.0<br>(GTs: 124,160) | traffic_cone<br>0.5/1.0/2.0/4.0<br>(GTs: 20,477) | barrier<br>0.5/1.0/2.0/4.0<br>(GTs: 4,422) |
+  | :---- | :---- | :---- | :---- | :---- | :---- | :---- | :---- |
+  | BEVFusion-LiDAR base/2.8.0 | 85,327 / 93,303 / 94,826 / 95,316 | 32,549 / 39,457 / 43,979 / 46,340 | 5,296 / 6,439 / 6,895 / 6,991 | 4,446 / 4,536 / 4,537 / 4,547 | 98,679 / 99,889 / 100,492 / 101,325 | 9,207 / 9,578 / 10,010 / 10,328 | 0 / 0 / 0 / 0 |
 
   </details>
 

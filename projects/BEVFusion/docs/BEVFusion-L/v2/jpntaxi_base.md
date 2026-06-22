@@ -25,10 +25,10 @@
 
   <details>
   <summary> Eval Range: 0.0 - 50.0m </summary>
-
-	| Model version | mAP | mAPH | car<br>(42,789) | truck<br>(17,259) | bus<br>(3,437) | bicycle<br>(2,681) | pedestrian<br>(57,948) |
-  | :---- | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
-  | BEVFusion-LiDAR jpntaxi_base/2.7.1 | 0.8862 | 0.8586 | 0.9397 | 0.8591 | 0.8839 | 0.8264 | 0.9218 |
+  
+  | Model version | mAP | mAPH | map_based_nds (recall @ 0.10) | map_based_nds (recall @ 0.40) | maph_based_nds (recall @ 0.10) | maph_based_nds (recall 0.40) | car<br>(50,954) | truck<br>(18,624) | bus<br>(3,853) | bicycle<br>(3,768) | pedestrian<br>(70,699) | traffic_cone<br>(12,525) | barrier<br>(2,009) |
+  | :---- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
+  | BEVFusion-LiDAR jpntaxi_base/2.8.1 | 0.6765 | 0.6414 | 0.6054 | 0.6011 | 0.5878 | 0.5835 | 0.9267 | 0.8595 | 0.8713 | 0.7844 | 0.9097 | 0.3843 | 0.0000 |
 
   </details>
 
@@ -58,6 +58,39 @@
   | BEVFusion-LiDAR jpntaxi_base/2.7.1 | 0.7805 | 0.7527 | 0.8730 | 0.7118 | 0.6785 | 0.7655 | 0.8739 |
 
   </details>
+
+### Mean TPError - JPNTaxi_gen2
+
+<details>
+  <summary> Eval Range: 0.0 - 50.0m </summary>
+  
+  | Model version | mATE (recall @ 0.10) | mAOE (recall @ 0.10) | mASE (recall @ 0.10) | mAVE (recall @ 0.10) | mAAE (recall @ 0.10) | mATE (recall @ 0.40) | mAOE (recall @ 0.40) | mASE (recall @ 0.40) | mAVE (recall @ 0.40) | mAAE (recall @ 0.40) | mATE (optimal) | mAOE (optimal) | mASE (optimal) | mAVE (optimal) | mAAE (optimal) |
+  | :---- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
+  | BEVFusion-LiDAR jpntaxi_base/2.8.1 | 0.2719 | 0.2964 | 0.2975 | 0.4627 | 1.0000 | 0.2842 | 0.3077 | 0.3000 | 0.4803 | 1.0000 | 0.1861 | 0.1991 | 0.1904 | 0.4301 | 1.0000 |
+
+<summary><strong>Num match summary</strong></summary>
+
+**recall 0.10**
+
+  | Model version | car<br>0.5/1.0/2.0/4.0<br>(GTs: 50,954) | truck<br>0.5/1.0/2.0/4.0<br>(GTs: 18,624) | bus<br>0.5/1.0/2.0/4.0<br>(GTs: 3,853) | bicycle<br>0.5/1.0/2.0/4.0<br>(GTs: 3,768) | pedestrian<br>0.5/1.0/2.0/4.0<br>(GTs: 70,699) | traffic_cone<br>0.5/1.0/2.0/4.0<br>(GTs: 12,525) | barrier<br>0.5/1.0/2.0/4.0<br>(GTs: 2,009) |
+  | :---- | :---- | :---- | :---- | :---- | :---- | :---- | :---- |
+  | BEVFusion-LiDAR jpntaxi_base/2.8.1 | 5,604 / 5,604 / 5,604 / 5,604 | 2,048 / 2,048 / 2,048 / 2,048 | 423 / 423 / 423 / 423 | 414 / 414 / 414 / 414 | 7,776 / 7,776 / 7,776 / 7,776 | 1,377 / 1,377 / 1,377 / 1,377 | 0 / 0 / 0 / 0 |
+
+**recall 0.40**
+
+  | Model version | car<br>0.5/1.0/2.0/4.0<br>(GTs: 50,954) | truck<br>0.5/1.0/2.0/4.0<br>(GTs: 18,624) | bus<br>0.5/1.0/2.0/4.0<br>(GTs: 3,853) | bicycle<br>0.5/1.0/2.0/4.0<br>(GTs: 3,768) | pedestrian<br>0.5/1.0/2.0/4.0<br>(GTs: 70,699) | traffic_cone<br>0.5/1.0/2.0/4.0<br>(GTs: 12,525) | barrier<br>0.5/1.0/2.0/4.0<br>(GTs: 2,009) |
+  | :---- | :---- | :---- | :---- | :---- | :---- | :---- | :---- |
+  | BEVFusion-LiDAR jpntaxi_base/2.8.1 | 20,891 / 20,891 / 20,891 / 20,891 | 7,635 / 7,635 / 7,635 / 7,635 | 1,579 / 1,579 / 1,579 / 1,579 | 1,544 / 1,544 / 1,544 / 1,544 | 28,986 / 28,986 / 28,986 / 28,986 | 5,135 / 5,135 / 5,135 / 5,135 | 0 / 0 / 0 / 0 |
+
+**optimal**
+
+  | Model version | car<br>0.5/1.0/2.0/4.0<br>(GTs: 50,954) | truck<br>0.5/1.0/2.0/4.0<br>(GTs: 18,624) | bus<br>0.5/1.0/2.0/4.0<br>(GTs: 3,853) | bicycle<br>0.5/1.0/2.0/4.0<br>(GTs: 3,768) | pedestrian<br>0.5/1.0/2.0/4.0<br>(GTs: 70,699) | traffic_cone<br>0.5/1.0/2.0/4.0<br>(GTs: 12,525) | barrier<br>0.5/1.0/2.0/4.0<br>(GTs: 2,009) |
+  | :---- | :---- | :---- | :---- | :---- | :---- | :---- | :---- |
+  | BEVFusion-LiDAR jpntaxi_base/2.8.1 | 44,532 / 46,751 / 47,578 / 47,681 | 14,348 / 16,107 / 17,107 / 17,466 | 3,000 / 3,436 / 3,542 / 3,547 | 2,845 / 2,913 / 2,876 / 2,876 | 60,539 / 61,514 / 62,277 / 62,441 | 6,486 / 6,824 / 7,125 / 7,398 | 0 / 0 / 0 / 0 |
+
+</details>
+
+
 
 ## Release
 
