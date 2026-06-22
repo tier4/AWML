@@ -1,17 +1,16 @@
 # learning rate
-# 1e-4 * sqrt(2) = 0.0001414
-lr = 1.4141e-4
-t_max = 8
-max_epochs = 30
+lr = 2.0e-4
+t_max = 3
+max_epochs = 50
 val_interval = 5
 
 train_gpu_size = 8
-test_batch_size = 2
-train_batch_size = 8
+test_batch_size = 4
+train_batch_size = 16
 
 param_scheduler = [
     # learning rate scheduler
-    # During the first (max_epochs * 0.4) epochs, learning rate increases from 0 to lr * 10
+    # During the first (max_epochs * 0.10) epochs, learning rate increases from 0 to lr * 10
     # during the next epochs, learning rate decreases from lr * 10 to
     # lr * 1e-4
     dict(
@@ -33,7 +32,7 @@ param_scheduler = [
         convert_to_iter_based=True,
     ),
     # momentum scheduler
-    # During the first (0.4 * max_epochs) epochs, momentum increases from 0 to 0.85 / 0.95
+    # During the first (0.10 * max_epochs) epochs, momentum increases from 0 to 0.85 / 0.95
     # during the next epochs, momentum increases from 0.85 / 0.95 to 1
     dict(
         type="CosineAnnealingMomentum",

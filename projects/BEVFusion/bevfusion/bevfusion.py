@@ -56,12 +56,10 @@ class BEVFusion(Base3DDetector):
         super().__init__(data_preprocessor=data_preprocessor, init_cfg=init_cfg)
 
         if voxelize_cfg is not None:
-            self.voxelize_reduce = voxelize_cfg.pop("voxelize_reduce")
             self.pts_voxel_layer = Voxelization(**voxelize_cfg)
             self.pts_voxel_encoder = MODELS.build(pts_voxel_encoder)
             self.pts_middle_encoder = MODELS.build(pts_middle_encoder)
         else:
-            self.voxelize_reduce = False
             self.pts_voxel_layer = None
             self.pts_voxel_encoder = None
             self.pts_middle_encoder = None
@@ -181,7 +179,7 @@ class BEVFusion(Base3DDetector):
         if not using_image_features:
             x = self.get_image_backbone_features(x)
 
-        with torch.cuda.amp.autocast(enabled=False):
+        with torch.amp.autocast("cuda", enabled=False):
             # with torch.autocast(device_type='cuda', dtype=torch.float32):
             x = self.view_transform(
                 x,
@@ -202,23 +200,18 @@ class BEVFusion(Base3DDetector):
     def extract_pts_feat(self, feats, coords, sizes, points=None) -> torch.Tensor:
         if points is not None:
             # NOTE(knzo25): training and normal inference
-            with torch.cuda.amp.autocast(enabled=False):
-                # with torch.autocast('cuda', enabled=False):
+            with torch.amp.autocast("cuda", enabled=False):
                 points = [point.float() for point in points]
                 feats, coords, sizes = self.voxelize(points)
                 batch_size = coords[-1, 0] + 1
         else:
-            # NOTE(knzo25): onnx inference. Voxelization happens outside the graph
-            with torch.cuda.amp.autocast(enabled=False):
-                # with torch.autocast('cuda', enabled=False):
-
+            # NOTE: (knzo25): onnx inference. Voxelization happens outside the graph
+            with torch.amp.autocast("cuda", enabled=False):
                 # NOTE(knzo25): onnx demmands this
                 # batch_size = coords[-1, 0] + 1
                 batch_size = 1
                 print("Run onnx point_eSpConvst")
-                assert self.voxelize_reduce
-                if self.voxelize_reduce:
-                    feats = feats.sum(dim=1, keepdim=False) / sizes.type_as(feats).view(-1, 1)
+        feats = self.pts_voxel_encoder(feats, sizes, coords)
         x = self.pts_middle_encoder(feats, coords, batch_size)
         return x
 
@@ -241,11 +234,8 @@ class BEVFusion(Base3DDetector):
 
         feats = torch.cat(feats, dim=0)
         coords = torch.cat(coords, dim=0)
-        if len(sizes) > 0:
-            sizes = torch.cat(sizes, dim=0)
-            if self.voxelize_reduce:
-                feats = feats.sum(dim=1, keepdim=False) / sizes.type_as(feats).view(-1, 1)
-                feats = feats.contiguous()
+        assert len(sizes) > 0, "No points in the voxel"
+        sizes = torch.cat(sizes, dim=0)
 
         return feats, coords, sizes
 

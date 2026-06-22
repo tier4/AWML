@@ -29,6 +29,9 @@ dataset_version_list = [
     "db_j6gen2_v7",
     "db_j6gen2_v8",
     "db_j6gen2_v9",
+    "db_j6gen2_v10",
+    "db_j6gen2_v11",
+    "db_j6gen2_v12",
     "db_largebus_v1",
     "db_largebus_v2",
     "db_largebus_v3",
@@ -146,6 +149,8 @@ name_mapping = {
     "traffic_cone": "traffic_cone",
     "trafficcone": "traffic_cone",
     "barrier": "barrier",
+    "other_vehicle": "car",
+    "other_pedestrian": "pedestrian",
 }
 
 class_names = ["car", "truck", "bus", "bicycle", "pedestrian", "traffic_cone", "barrier"]

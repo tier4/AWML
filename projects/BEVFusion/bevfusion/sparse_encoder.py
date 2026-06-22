@@ -1,4 +1,10 @@
 # Copyright (c) OpenMMLab. All rights reserved.
+
+import os
+from typing import Dict, Optional
+
+import numpy as np
+import torch
 from mmdet3d.models.layers import make_sparse_convmodule
 from mmdet3d.models.layers.spconv import IS_SPCONV2_AVAILABLE
 from mmdet3d.models.middle_encoders import SparseEncoder
@@ -9,8 +15,7 @@ if IS_SPCONV2_AVAILABLE:
 else:
     from mmcv.ops import SparseConvTensor
 
-import numpy as np
-import torch
+from .custom_sparse_conv_tensor import sparse_to_dense
 
 
 @MODELS.register_module()
@@ -24,6 +29,7 @@ class BEVFusionSparseEncoder(SparseEncoder):
     Args:
         in_channels (int): The number of input channels.
         sparse_shape (list[int]): The sparse shape of input tensor.
+        dense_output_shape (list[int]): The final shape of the dense output tensor.
         order (list[str], optional): Order of conv module.
             Defaults to ('conv', 'norm', 'act').
         norm_cfg (dict, optional): Config of normalization layer. Defaults to
@@ -47,10 +53,8 @@ class BEVFusionSparseEncoder(SparseEncoder):
     def __init__(
         self,
         in_channels,
-        aug_features_min_values,
-        aug_features_max_values,
-        num_aug_features,
         sparse_shape,
+        dense_output_shapes,
         order=("conv", "norm", "act"),
         norm_cfg=dict(type="BN1d", eps=1e-3, momentum=0.01),
         base_channels=16,
@@ -63,10 +67,8 @@ class BEVFusionSparseEncoder(SparseEncoder):
         super(SparseEncoder, self).__init__()
         assert block_type in ["conv_module", "basicblock"]
         self.sparse_shape = sparse_shape
+        self.dense_output_shapes = dense_output_shapes
         self.in_channels = in_channels
-        self.register_buffer("aug_features_min_values", torch.tensor(aug_features_min_values))
-        self.register_buffer("aug_features_max_values", torch.tensor(aug_features_max_values))
-        self.num_aug_features = num_aug_features
         self.order = order
         self.base_channels = base_channels
         self.output_channels = output_channels
@@ -76,10 +78,6 @@ class BEVFusionSparseEncoder(SparseEncoder):
         self.fp16_enabled = False
         self.return_middle_feats = return_middle_feats
         # Spconv init all weight on its own
-
-        if num_aug_features:
-            self.in_channels = in_channels * num_aug_features * 2
-            self.register_buffer("exponents", (2 ** torch.arange(0, num_aug_features).float()))
 
         assert isinstance(order, tuple) and len(order) == 3
         assert set(order) == {"conv", "norm", "act"}
@@ -140,16 +138,6 @@ class BEVFusionSparseEncoder(SparseEncoder):
                 output features. When self.return_middle_feats is True, the
                 module returns middle features.
         """
-
-        if self.num_aug_features:
-            num_points = voxel_features.shape[0]
-            x = (voxel_features - self.aug_features_min_values.view(1, -1)) / (
-                self.aug_features_max_values - self.aug_features_min_values
-            ).view(1, -1)
-            y = x.reshape(-1, 1) * np.pi * self.exponents.reshape(1, -1)
-            y = y.reshape(num_points, -1)
-            voxel_features = torch.cat([torch.cos(y), torch.sin(y)], dim=1)
-
         coors = coors.int()
         input_sp_tensor = SparseConvTensor(voxel_features, coors, self.sparse_shape, batch_size)
         x = self.conv_input(input_sp_tensor)
@@ -162,11 +150,15 @@ class BEVFusionSparseEncoder(SparseEncoder):
         # for detection head
         # [200, 176, 5] -> [200, 176, 2]
         out = self.conv_out(encode_features[-1])
-        spatial_features = out.dense()
 
-        N, C, H, W, D = spatial_features.shape
-        spatial_features = spatial_features.permute(0, 1, 4, 2, 3).contiguous()
-        spatial_features = spatial_features.view(N, C * D, H, W)
+        spatial_features = sparse_to_dense(out, batch_size, self.dense_output_shapes, self.output_channels)
+        spatial_features = spatial_features.permute(0, 4, 3, 1, 2).contiguous()
+        spatial_features = spatial_features.view(
+            batch_size,
+            self.output_channels * self.dense_output_shapes[2],
+            self.dense_output_shapes[0],
+            self.dense_output_shapes[1],
+        )
 
         if self.return_middle_feats:
             return spatial_features, encode_features

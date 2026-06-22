@@ -85,26 +85,31 @@ class TransFusionBBoxCoder(BaseBBoxCoder):
             final_box_preds = torch.cat([center, height, dim, rot, vel], dim=1).permute(0, 2, 1)
 
         predictions_dicts = []
-        for i in range(heatmap.shape[0]):
-            boxes3d = final_box_preds[i]
-            scores = final_scores[i]
-            labels = final_preds[i]
-            predictions_dict = {"bboxes": boxes3d, "scores": scores, "labels": labels}
-            predictions_dicts.append(predictions_dict)
-
-        if filter is False:
+        if not filter:
+            for i in range(heatmap.shape[0]):
+                boxes3d = final_box_preds[i]
+                scores = final_scores[i]
+                labels = final_preds[i]
+                predictions_dict = {"bboxes": boxes3d, "scores": scores, "labels": labels}
+                predictions_dicts.append(predictions_dict)
             return predictions_dicts
 
         # use score threshold
         if self.score_threshold is not None:
-            thresh_mask = final_scores > self.score_threshold
+            if isinstance(self.score_threshold, float):
+                thresh_mask = final_scores > self.score_threshold
+            elif isinstance(self.score_threshold, (list, tuple)):
+                score_threshold = final_scores.new_tensor(self.score_threshold)
+                thresh_mask = final_scores > score_threshold[final_preds]
+            else:
+                raise ValueError("score_threshold must be a float or list")
 
+        predictions_dicts = []
         if self.post_center_range is not None:
             self.post_center_range = torch.tensor(self.post_center_range, device=heatmap.device)
             mask = (final_box_preds[..., :3] >= self.post_center_range[:3]).all(2)
             mask &= (final_box_preds[..., :3] <= self.post_center_range[3:]).all(2)
 
-            predictions_dicts = []
             for i in range(heatmap.shape[0]):
                 cmask = mask[i, :]
                 if self.score_threshold:
@@ -114,7 +119,6 @@ class TransFusionBBoxCoder(BaseBBoxCoder):
                 scores = final_scores[i, cmask]
                 labels = final_preds[i, cmask]
                 predictions_dict = {"bboxes": boxes3d, "scores": scores, "labels": labels}
-
                 predictions_dicts.append(predictions_dict)
         else:
             raise NotImplementedError(

@@ -1,10 +1,10 @@
 _base_ = [
-    "./bevfusion_lidar_voxel_second_secfpn_30e_8xb8_jpntaxi_base_120m.py",
+    "./bevfusion_lidar_voxel_second_secfpn_30e_8xb16_j6gen2_base_120m.py",
 ]
 
 # user setting
-experiment_group_name = "bevfusion_lidar_intensity/jpntaxi_base/" + _base_.dataset_type
-experiment_name = "lidar_voxel_second_secfpn_30e_8xb8_jpntaxi_base_120m_t4metric_v2"
+experiment_group_name = "bevfusion_lidar_intensity/j6gen2_base/" + _base_.dataset_type
+experiment_name = "lidar_voxel_second_secfpn_30e_8xb16_j6gen2_base_120m_t4metric_v2"
 work_dir = "work_dirs/" + experiment_group_name + "/" + experiment_name
 
 # Add evaluator configs
@@ -39,7 +39,7 @@ val_evaluator = dict(
     testing_statistics_parquet_path=testing_statistics_parquet_path,
     validation_statistics_parquet_path=validation_statistics_parquet_path,
     output_dir="validation",
-    dataset_name="jpntaxi_base",
+    dataset_name="j6gen2_base",
     perception_evaluator_configs=perception_evaluator_configs,
     critical_object_filter_config=None,
     frame_pass_fail_config=frame_pass_fail_config,
@@ -50,6 +50,7 @@ val_evaluator = dict(
     name_mapping={{_base_.name_mapping}},
     experiment_name=experiment_name,
     experiment_group_name=_base_.experiment_group_name,
+    min_num_points=2,
 )
 
 test_evaluator = dict(
@@ -61,7 +62,7 @@ test_evaluator = dict(
     testing_statistics_parquet_path=testing_statistics_parquet_path,
     validation_statistics_parquet_path=validation_statistics_parquet_path,
     output_dir="testing",
-    dataset_name="jpntaxi_base",
+    dataset_name="j6gen2_base",
     perception_evaluator_configs=perception_evaluator_configs,
     critical_object_filter_config=None,
     frame_pass_fail_config=frame_pass_fail_config,
@@ -72,4 +73,5 @@ test_evaluator = dict(
     name_mapping={{_base_.name_mapping}},
     experiment_name=experiment_name,
     experiment_group_name=_base_.experiment_group_name,
+    min_num_points=2,
 )
