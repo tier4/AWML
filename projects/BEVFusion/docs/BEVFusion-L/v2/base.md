@@ -728,6 +728,9 @@
 - Purse custom LayerNorm in mmdeploy to support ONNX LayerNorm ops (purge_mmdeploy_symbolics).
 - Add two classes: `traffic_cone` and `barrier` to the model.
 - Do not max-pooling of `bicycle`.
+- Filter 3D bboxes in the train set by distance (< 60m, >= 3) and (60m <= x < 130m, >= 2). 
+- Filter 3D bboxes in the test set by number of points (>= 2).
+
 
 </details>
 

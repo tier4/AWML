@@ -221,7 +221,7 @@
 
   </details>
 
-  </details>
+</details>
 
 ## Datasets
 
@@ -569,6 +569,8 @@
 ## Release
 
 ### BEVFusion-LiDAR J6Gen2_base/2.8.1
+
+<details>
 <summary> Changes  </summary>
 
 - Finetune from `BEVFusion-LiDAR base/2.8.0` with j6gen2 base dataset and intensity.
@@ -594,8 +596,8 @@
 <summary> Training configs </summary>
 
 - [Config file path](https://github.com/KSeangTan/AWML/blob/3d5e2fa3df7ad61d9ae773a3ea3f418f4916e05b/projects/BEVFusion/configs/t4dataset/BEVFusion-L/bevfusion_lidar_voxel_second_secfpn_30e_8xb16_j6gen2_base_120m.py)
-- Train time: NVIDIA H200 140GB * 8 * 30 epochs = 1 day
-- Batch size: 8*8 = 64
+- Train time: NVIDIA H200 140GB * 8 * 30 epochs = 20 hours
+- Batch size: 8*16 = 128
 - Training Dataset (frames: 63,813):
   - j6gen2: db_j6gen2_v1 + db_j6gen2_v2 + db_j6gen2_v3 + db_j6gen2_v4 + db_j6gen2_v5 + db_j6gen2_v6 + db_j6gen2_v7 + db_j6gen2_v8 + db_j6gen2_v9 + db_j6gen2_v10 + db_j6gen2_v11 + db_j6gen2_v12 (51,208 frames)
   - largebus: db_largebus_v1 + db_largebus_v2 + db_largebus_v3 (12,605 frames)
@@ -1300,6 +1302,7 @@
 | traffic_cone | 5,782 / 6,632 / 6,752 / 7,077 | 0.190 / 0.231 / 0.284 / 0.453 | 0.370 / 0.381 / 0.379 / 0.385 | 0.662 / 0.674 / 0.674 / 0.676 | 0.032 / 0.033 / 0.033 / 0.033 | 1.000 / 1.000 / 1.000 / 1.000 |
 | barrier | 602 / 827 / 850 / 872 | 0.245 / 0.329 / 0.356 / 0.433 | 0.378 / 0.383 / 0.380 / 0.377 | 0.478 / 0.506 / 0.509 / 0.515 | 0.026 / 0.027 / 0.028 / 0.028 | 1.000 / 1.000 / 1.000 / 1.000 |
 
+</details>
 </details>
 
 ---
