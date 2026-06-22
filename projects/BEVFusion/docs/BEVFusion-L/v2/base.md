@@ -407,7 +407,7 @@
 
   <details>
   <summary> Eval Range: 50.0 - 90.0m </summary>
-  
+
   | Model version | mAP | mAPH | map_based_nds (recall @ 0.10) | map_based_nds (recall @ 0.40) | maph_based_nds (recall @ 0.10) | maph_based_nds (recall 0.40) | car<br>(10,929) | truck<br>(1,009) | bus<br>(141) | bicycle<br>(460) | pedestrian<br>(3,721) | traffic_cone<br>(4) | barrier<br>(0) |
   | :---- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
   | BEVFusion-LiDAR base/2.8.0 | 0.5080 | 0.4699 | 0.4842 | 0.4820 | 0.4652 | 0.4630 | 0.8284 | 0.6953 | 0.8101 | 0.5551 | 0.6672 | 0.0000 | 0.0000 |
@@ -436,7 +436,7 @@
 
   <details>
   <summary> Eval Range: 0.0 - 50.0m </summary>
-  
+
   | Model version | mATE (recall @ 0.10) | mAOE (recall @ 0.10) | mASE (recall @ 0.10) | mAVE (recall @ 0.10) | mAAE (recall @ 0.10) | mATE (recall @ 0.40) | mAOE (recall @ 0.40) | mASE (recall @ 0.40) | mAVE (recall @ 0.40) | mAAE (recall @ 0.40) | mATE (optimal) | mAOE (optimal) | mASE (optimal) | mAVE (optimal) | mAAE (optimal) |
   | :---- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
   | BEVFusion-LiDAR base/2.8.0 | 0.2738 | 0.4304 | 0.3040 | 0.3416 | 1.0000 | 0.3927 | 0.3902 | 0.3987 | 0.4730 | 1.0000 | 0.1903 | 0.3709 | 0.2019 | 0.2298 | 1.0000 |
@@ -594,9 +594,9 @@
   | BEVFusion-LiDAR base/2.8.0 | 0.5785 | 0.5444 | 0.5467 | 0.5405 | 0.5296 | 0.5234 | 0.8675 | 0.7091 | 0.6251 | 0.6924 | 0.8516 | 0.3040 | 0.0000 |
 
   </details>
-  
+
 - **Mean TPError**
-  
+
   <details>
   <summary> Eval Range: 0.0 - 50.0m </summary>
 
@@ -628,7 +628,7 @@
 
   <details>
   <summary> Eval Range: 50.0 - 90.0m </summary>
-  
+
   | Model version | mATE (recall @ 0.10) | mAOE (recall @ 0.10) | mASE (recall @ 0.10) | mAVE (recall @ 0.10) | mAAE (recall @ 0.10) | mATE (recall @ 0.40) | mAOE (recall @ 0.40) | mASE (recall @ 0.40) | mAVE (recall @ 0.40) | mAAE (recall @ 0.40) | mATE (optimal) | mAOE (optimal) | mASE (optimal) | mAVE (optimal) | mAAE (optimal) |
   | :---- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
   | BEVFusion-LiDAR base/2.8.0 | 0.3424 | 0.2851 | 0.3099 | 0.5197 | 1.0000 | 0.3636 | 0.2926 | 0.3147 | 0.5610 | 1.0000 | 0.2700 | 0.1826 | 0.2042 | 0.5180 | 1.0000 |
