@@ -721,6 +721,7 @@
 
 <details>
 <summary> Changes </summary>
+- Add datasets: `db_j6gen2_v10`, `db_j6gen2_v11`, and `db_j6gen2_v12`.
 - Update training batch size from `8` to `16` per gpu.
 - Update number of max points per voxel from `10` to `32`.
 - Implement 1D-flatten sparse to dense to reduce ONNX ops (projects/BEVFusion/bevfusion/custom_sparse_conv_tensor.py).
@@ -734,14 +735,14 @@
 <summary> Artifacts </summary>
 
 - Deployed onnx and ROS parameter files (for internal)
-  - [WebAuto]()
-  - [model-zoo]()
+  - [WebAuto](https://evaluation.ci.tier4.jp/evaluation/mlpackages/46f8188d-e3be-4f2f-b989-fd27002610d7/releases/6c8bc393-9cff-413c-bfc7-52c1fcd8ba8a?project_id=zWhWRzei)
+  - [model-zoo](https://download.autoware-ml-model-zoo.tier4.jp/autoware-ml/models/bevfusion/bevfusion-l/t4base/v2.8.0/deployment.zip)
   - [Google drive](https://drive.google.com/file/d/16dh2UQg4w46WQu0Dbmai9BtD43nz7hLv/view?usp=drive_link)
 - Logs (for internal)
-  - [model-zoo]()
+  - [model-zoo](https://download.autoware-ml-model-zoo.tier4.jp/autoware-ml/models/bevfusion/bevfusion-l/t4base/v2.8.0/logs.zip)
   - [Google drive](https://drive.google.com/file/d/1kQVufXiB_K9JYTL3DSUhGUIGW5fCbbwc/view?usp=drive_link)
 - Pytorch Best checkpoints:
-  - [model-zoo]()
+  - [model-zoo](https://download.autoware-ml-model-zoo.tier4.jp/autoware-ml/models/bevfusion/bevfusion-l/t4base/v2.8.0/best_epoch_47.zip)
   - [Google drive](https://drive.google.com/file/d/1wJjdG1dCbOjfmTCaOFWw9-2xNvlfYDza/view?usp=drive_link)
 
 </details>
@@ -750,13 +751,13 @@
 <summary> Training configs </summary>
 
 - [Config file path](https://github.com/KSeangTan/AWML/blob/179ca256a165fd483801bec0a2a95c24866edf70/projects/BEVFusion/configs/t4dataset/BEVFusion-L/bevfusion_lidar_voxel_second_secfpn_50e_8xb16_base_120m.py)
-- Train time: NVIDIA H200 80GB * 8 * 50 epochs ~= 4 days
+- Train time: NVIDIA H200 140GB * 8 * 50 epochs ~= 4 days
 - Batch size: 8*16 = 128
 - Training Dataset (frames: 151,478):
   - jpntaxi: db_jpntaxi_v1 + db_jpntaxi_v2 + db_jpntaxi_v4 (28,161 frames)
   - j6: db_gsm8_v1 + db_j6_v1 + db_j6_v2 + db_j6_v3 + db_j6_v5 (29,336 frames)
   - j6gen2: db_j6gen2_v1 + db_j6gen2_v2 + db_j6gen2_v3 + db_j6gen2_v4 + db_j6gen2_v5 + db_j6gen2_v6 + db_j6gen2_v7 + db_j6gen2_v8 + db_j6gen2_v9 + db_j6gen2_v10 + db_j6gen2_v11 + db_j6gen2_v12 (51,208 frames)
-  - largebus: db_largebus_v1 + db_largebus_v2 (12,605 frames)
+  - largebus: db_largebus_v1 + db_largebus_v2 + db_largebus_v3 (12,605 frames)
   - jpntaxi_gen2: db_jpntaxigen2_v1 + db_jpntaxigen2_v2 (30,168 frames)
 
 </details>
