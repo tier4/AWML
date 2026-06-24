@@ -1,6 +1,7 @@
 from mmcv.transforms import BaseTransform
 from mmdet3d.structures.ops import box_np_ops
 from mmengine.registry import TRANSFORMS
+import numpy as np
 
 
 @TRANSFORMS.register_module()
@@ -121,4 +122,64 @@ class ObjectRangeMinPointsFilter(BaseTransform):
         """str: Return a string that describes the module."""
         repr_str = self.__class__.__name__
         repr_str += f"(range_radius={self.range_radius}, min_num_points={self.min_num_points})"
+        return repr_str
+
+
+@TRANSFORMS.register_module()
+class ObjectRangeMinPointsByAnnoFilter(BaseTransform):
+    """Filter objects by BEV distance and precomputed ``num_lidar_pts`` in ann_info.
+
+    This variant does not require point clouds in the pipeline, so it works for
+    camera-only training as long as ``num_lidar_pts`` already exists in the info.pkl.
+
+    Args:
+        short_range_max: BEV radius threshold in meters. Objects with radius
+            <= this value use ``short_range_min_points``.
+        short_range_min_points: Minimum point count required in short range.
+        long_range_min_points: Minimum point count required in long range.
+    """
+
+    def __init__(
+        self,
+        short_range_max: float,
+        short_range_min_points: int,
+        long_range_min_points: int,
+    ) -> None:
+        self.short_range_max = float(short_range_max)
+        self.short_range_min_points = int(short_range_min_points)
+        self.long_range_min_points = int(long_range_min_points)
+
+    def transform(self, input_dict: dict) -> dict:
+        gt_bboxes_3d = input_dict["gt_bboxes_3d"]
+        gt_labels_3d = input_dict["gt_labels_3d"]
+
+        ann_info = input_dict.get("ann_info", {})
+        num_lidar_pts = ann_info.get("num_lidar_pts", input_dict.get("num_lidar_pts", None))
+        if num_lidar_pts is None:
+            raise KeyError(
+                "ObjectRangeMinPointsByAnnoFilter requires `num_lidar_pts` in ann_info or results, "
+                "but it was not found."
+            )
+
+        num_lidar_pts = np.asarray(num_lidar_pts)
+        boxes = gt_bboxes_3d.tensor.numpy()[:, :7]
+        bev_distance = np.linalg.norm(boxes[:, :2], axis=1)
+        min_required = np.where(
+            bev_distance <= self.short_range_max,
+            self.short_range_min_points,
+            self.long_range_min_points,
+        )
+        gt_bboxes_mask = num_lidar_pts >= min_required
+
+        input_dict["gt_bboxes_3d"] = gt_bboxes_3d[gt_bboxes_mask]
+        input_dict["gt_labels_3d"] = gt_labels_3d[gt_bboxes_mask]
+        return input_dict
+
+    def __repr__(self) -> str:
+        repr_str = self.__class__.__name__
+        repr_str += (
+            f"(short_range_max={self.short_range_max}, "
+            f"short_range_min_points={self.short_range_min_points}, "
+            f"long_range_min_points={self.long_range_min_points})"
+        )
         return repr_str
