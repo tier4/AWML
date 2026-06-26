@@ -80,9 +80,9 @@ class BEVLoadMultiViewImageFromFiles(LoadMultiViewImageFromFiles):
         """
         vehicle_type = results.get("vehicle_type", None)
         if vehicle_type is None:
-          camera_order = self.camera_orders[self.camera_order_types[0]]
+            camera_order = self.camera_orders[self.camera_order_types[0]]
         else:
-          camera_order = self.camera_orders[vehicle_type]
+            camera_order = self.camera_orders[vehicle_type]
 
         # TODO: consider split the multi-sweep part out of this pipeline
         # Derive the mask and transform for loading of multi-sweep data
