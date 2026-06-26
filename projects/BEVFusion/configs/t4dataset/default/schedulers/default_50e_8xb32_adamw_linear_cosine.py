@@ -6,7 +6,7 @@ val_interval = 5
 
 train_gpu_size = 8
 test_batch_size = 2
-train_batch_size = 8
+train_batch_size = 32
 
 param_scheduler = [
     # learning rate scheduler

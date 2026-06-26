@@ -1,7 +1,7 @@
 # Copyright (c) OpenMMLab. All rights reserved.
 import copy
 from pathlib import Path
-from typing import List, Optional, Tuple
+from typing import List, Optional, Tuple, Dict
 
 import matplotlib.pyplot as plt
 import mmcv
@@ -78,11 +78,11 @@ class BEVLoadMultiViewImageFromFiles(LoadMultiViewImageFromFiles):
                 - scale_factor (float): Scale factor.
                 - img_norm_cfg (dict): Normalization configuration of images.
         """
-				vehicle_type = results.get("vehicle_type", None)
-				if vehicle_type is None:
-					camera_order = self.camera_orders[self.camera_order_types[0]]
-				else:
-					camera_order = self.camera_orders[vehicle_type]
+        vehicle_type = results.get("vehicle_type", None)
+        if vehicle_type is None:
+          camera_order = self.camera_orders[self.camera_order_types[0]]
+        else:
+          camera_order = self.camera_orders[vehicle_type]
 
         # TODO: consider split the multi-sweep part out of this pipeline
         # Derive the mask and transform for loading of multi-sweep data

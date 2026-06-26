@@ -7,7 +7,12 @@ input_modality = dict(use_lidar=True, use_camera=True)
 
 # Image parameters
 image_size = [384, 768]  # Height, Width
-camera_order = ["CAM_FRONT", "CAM_FRONT_LEFT", "CAM_BACK_LEFT", "CAM_FRONT_RIGHT", "CAM_BACK_RIGHT"]
+camera_orders = {
+	"J6_erga_Gen2": ["CAM_FRONT", "CAM_FRONT_LEFT", "CAM_BACK_LEFT", "CAM_FRONT_RIGHT", "CAM_BACK_RIGHT"],
+	"J6_x2_Gen2": ["CAM_FRONT", "CAM_FRONT_LEFT", "CAM_BACK_LEFT", "CAM_FRONT_RIGHT", "CAM_BACK_RIGHT"],
+  "JPNTaxi_xx1_Gen2": ["CAM_FRONT_WIDE", "CAM_FRONT_LEFT_WIDE", "CAM_BACK_LEFT_WIDE", "CAM_FRONT_RIGHT_WIDE", "CAM_BACK_RIGHT_WIDE"],
+  "JPNTaxi_solio_Gen2": ["CAM_FRONT_WIDE", "CAM_FRONT_LEFT_WIDE", "CAM_BACK_LEFT_WIDE", "CAM_FRONT_RIGHT_WIDE", "CAM_BACK_RIGHT_WIDE"],
+}
 
 train_pipeline = [
     dict(
@@ -25,6 +30,13 @@ train_pipeline = [
         use_dim=_base_.point_load_dim,
         backend_args=_base_.backend_args,
     ),
+		dict(
+        type="PointsToMultiViewImageDepths",
+        img_shape=image_size,
+        num_cameras=5,
+        depth_bounds=[1.0, 120.0],
+        # visualize_dir="work_dirs/visualize_depths_6",
+    ),
     dict(
         type="LoadPointsFromMultiSweeps",
         sweeps_num=_base_.sweeps_num,
@@ -35,6 +47,7 @@ train_pipeline = [
         backend_args=_base_.backend_args,
         test_mode=False,
     ),
+    dict(type="PointsRangeFilter", point_cloud_range=_base_.point_cloud_range),
     dict(type="LoadAnnotations3D", with_bbox_3d=True, with_label_3d=True, with_attr_label=False),
     dict(
         type="ImageAug3D",
@@ -103,7 +116,7 @@ test_pipeline = [
         to_float32=True,
         color_type="color",
         backend_args=_base_.backend_args,
-        camera_order=camera_order,
+        camera_orders=camera_orders,
     ),
     dict(
         type="LoadPointsFromMultiSweeps",
@@ -148,4 +161,4 @@ test_pipeline = [
     ),
 ]
 
-filter_cfg = dict(filter_frames_with_camera_order=camera_order)
+filter_cfg = dict(filter_frames_with_camera_orders=camera_orders)

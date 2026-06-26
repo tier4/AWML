@@ -52,7 +52,7 @@ class T4Dataset(NuScenesDataset):
         if not self.filter_cfg:
             return self.data_list
 
-        filter_frames_with_camera_orders = self.filter_cfg.get("filter_frames_with_camera_order", None)
+        filter_frames_with_camera_orders = self.filter_cfg.get("filter_frames_with_camera_orders", None)
         if filter_frames_with_camera_orders is None:
             return self.data_list
 

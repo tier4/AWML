@@ -1,8 +1,8 @@
 _base_ = [
     "../../../../../autoware_ml/configs/detection3d/default_runtime.py",
-    "../../../../../autoware_ml/configs/detection3d/dataset/t4dataset/base.py",
+    "../../../../../autoware_ml/configs/detection3d/dataset/t4dataset/gen2_base.py",
     "../default/pipelines/cameras/default_camera_50m.py",
-    "../default/schedulers/default_50e_8xb16_adamw_linear_cosine.py",
+    "../default/schedulers/default_50e_8xb32_adamw_linear_cosine.py",
     "../default/default_misc.py",
 ]
 
@@ -12,7 +12,7 @@ custom_imports["imports"] += ["autoware_ml.detection3d.datasets.transforms"]
 
 # user setting
 data_root = "data/t4dataset/"
-info_directory_path = "info/kokseang_2_8_0/"
+info_directory_path = "info/kokseang_2_9_0/"
 
 # Dataset parameters
 train_dataloader = dict(
