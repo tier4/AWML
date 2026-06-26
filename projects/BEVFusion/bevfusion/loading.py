@@ -58,7 +58,7 @@ class BEVLoadMultiViewImageFromFiles(LoadMultiViewImageFromFiles):
         self.test_mode = test_mode
         self.set_default_scale = set_default_scale
         self.before_camera_info = dict()
-				self.camera_order_types = list(camera_orders.keys())
+        self.camera_order_types = list(camera_orders.keys())
 
     def transform(self, results: dict) -> Optional[dict]:
         """Call function to load multi-view image from files.
