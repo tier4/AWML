@@ -61,11 +61,11 @@ class T4Dataset(NuScenesDataset):
 					  vehicle_type = entry.get("vehicle_type", None)
 					  if vehicle_type is None:
 							  raise KeyError(f"Missing 'vehicle_type' in entry: {entry}")
-						
+
 						filter_frames_with_camera_order = filter_frames_with_camera_orders.get(vehicle_type, None)
 						if filter_frames_with_camera_order is None:
 								raise KeyError(f"Missing camera order for vehicle type '{vehicle_type}' in filter configuration.")
-						
+
             filtered = False
             for camera_order in filter_frames_with_camera_order:
                 if camera_order not in entry["images"]:

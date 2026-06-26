@@ -51,30 +51,30 @@ dataset_test_groups = {
 data_prefix = dict(
     pts="",
     CAM_FRONT="",
-		CAM_FRONT_WIDE="",
+    CAM_FRONT_WIDE="",
     CAM_FRONT_LEFT="",
     CAM_FRONT_LEFT_WIDE="",
     CAM_FRONT_RIGHT="",
     CAM_FRONT_RIGHT_WIDE="",
     CAM_BACK="",
     CAM_BACK_RIGHT="",
-		CAM_BACK_RIGHT_WIDE="",
+    CAM_BACK_RIGHT_WIDE="",
     CAM_BACK_LEFT="",
-		CAM_BACK_LEFT_WIDE="",
+    CAM_BACK_LEFT_WIDE="",
     sweeps="",
 )
 camera_types = {
     "CAM_FRONT",
-		"CAM_FRONT_WIDE",
+    "CAM_FRONT_WIDE",
     "CAM_FRONT_RIGHT",
-		"CAM_FRONT_RIGHT_WIDE",
+    "CAM_FRONT_RIGHT_WIDE",
     "CAM_FRONT_LEFT",
-		"CAM_FRONT_LEFT_WIDE",
+    "CAM_FRONT_LEFT_WIDE",
     "CAM_BACK",
     "CAM_BACK_LEFT",
-		"CAM_BACK_LEFT_WIDE",
+    "CAM_BACK_LEFT_WIDE",
     "CAM_BACK_RIGHT",
-		"CAM_BACK_RIGHT_WIDE",
+    "CAM_BACK_RIGHT_WIDE",
 }
 
 # class setting
