@@ -8,10 +8,22 @@ input_modality = dict(use_lidar=True, use_camera=True)
 # Image parameters
 image_size = [384, 768]  # Height, Width
 camera_orders = {
-	"J6_erga_Gen2": ["CAM_FRONT", "CAM_FRONT_LEFT", "CAM_BACK_LEFT", "CAM_FRONT_RIGHT", "CAM_BACK_RIGHT"],
-	"J6_x2_Gen2": ["CAM_FRONT", "CAM_FRONT_LEFT", "CAM_BACK_LEFT", "CAM_FRONT_RIGHT", "CAM_BACK_RIGHT"],
-  "JPNTaxi_xx1_Gen2": ["CAM_FRONT_WIDE", "CAM_FRONT_LEFT_WIDE", "CAM_BACK_LEFT_WIDE", "CAM_FRONT_RIGHT_WIDE", "CAM_BACK_RIGHT_WIDE"],
-  "JPNTaxi_solio_Gen2": ["CAM_FRONT_WIDE", "CAM_FRONT_LEFT_WIDE", "CAM_BACK_LEFT_WIDE", "CAM_FRONT_RIGHT_WIDE", "CAM_BACK_RIGHT_WIDE"],
+    "J6_erga_Gen2": ["CAM_FRONT", "CAM_FRONT_LEFT", "CAM_BACK_LEFT", "CAM_FRONT_RIGHT", "CAM_BACK_RIGHT"],
+    "J6_x2_Gen2": ["CAM_FRONT", "CAM_FRONT_LEFT", "CAM_BACK_LEFT", "CAM_FRONT_RIGHT", "CAM_BACK_RIGHT"],
+    "JPNTaxi_xx1_Gen2": [
+        "CAM_FRONT_WIDE",
+        "CAM_FRONT_LEFT_WIDE",
+        "CAM_BACK_LEFT_WIDE",
+        "CAM_FRONT_RIGHT_WIDE",
+        "CAM_BACK_RIGHT_WIDE",
+    ],
+    "JPNTaxi_solio_Gen2": [
+        "CAM_FRONT_WIDE",
+        "CAM_FRONT_LEFT_WIDE",
+        "CAM_BACK_LEFT_WIDE",
+        "CAM_FRONT_RIGHT_WIDE",
+        "CAM_BACK_RIGHT_WIDE",
+    ],
 }
 
 train_pipeline = [
