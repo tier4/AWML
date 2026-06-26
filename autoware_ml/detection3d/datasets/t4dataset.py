@@ -52,12 +52,20 @@ class T4Dataset(NuScenesDataset):
         if not self.filter_cfg:
             return self.data_list
 
-        filter_frames_with_camera_order = self.filter_cfg.get("filter_frames_with_camera_order", None)
-        if filter_frames_with_camera_order is None:
+        filter_frames_with_camera_orders = self.filter_cfg.get("filter_frames_with_camera_order", None)
+        if filter_frames_with_camera_orders is None:
             return self.data_list
 
         filtered_data_list = []
         for entry in tqdm.tqdm(self.data_list, desc="Filtering data"):
+					  vehicle_type = entry.get("vehicle_type", None)
+					  if vehicle_type is None:
+							  raise KeyError(f"Missing 'vehicle_type' in entry: {entry}")
+						
+						filter_frames_with_camera_order = filter_frames_with_camera_orders.get(vehicle_type, None)
+						if filter_frames_with_camera_order is None:
+								raise KeyError(f"Missing camera order for vehicle type '{vehicle_type}' in filter configuration.")
+						
             filtered = False
             for camera_order in filter_frames_with_camera_order:
                 if camera_order not in entry["images"]:

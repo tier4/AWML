@@ -37,7 +37,7 @@ class BEVLoadMultiViewImageFromFiles(LoadMultiViewImageFromFiles):
 
     def __init__(
         self,
-        camera_order: List[str],
+        camera_orders: Dict[str, List[str]],
         to_float32: bool = False,
         color_type: str = "unchanged",
         backend_args: Optional[dict] = None,
@@ -46,7 +46,7 @@ class BEVLoadMultiViewImageFromFiles(LoadMultiViewImageFromFiles):
         test_mode: bool = False,
         set_default_scale: bool = True,
     ) -> None:
-        self.camera_order = camera_order
+        self.camera_orders = camera_orders
         self.to_float32 = to_float32
         self.color_type = color_type
         self.backend_args = backend_args
@@ -58,6 +58,7 @@ class BEVLoadMultiViewImageFromFiles(LoadMultiViewImageFromFiles):
         self.test_mode = test_mode
         self.set_default_scale = set_default_scale
         self.before_camera_info = dict()
+				self.camera_order_types = list(camera_orders.keys()) 
 
     def transform(self, results: dict) -> Optional[dict]:
         """Call function to load multi-view image from files.
@@ -77,6 +78,12 @@ class BEVLoadMultiViewImageFromFiles(LoadMultiViewImageFromFiles):
                 - scale_factor (float): Scale factor.
                 - img_norm_cfg (dict): Normalization configuration of images.
         """
+				vehicle_type = results.get("vehicle_type", None)
+				if vehicle_type is None:
+					camera_order = self.camera_orders[self.camera_order_types[0]]
+				else:
+					camera_order = self.camera_orders[vehicle_type]
+
         # TODO: consider split the multi-sweep part out of this pipeline
         # Derive the mask and transform for loading of multi-sweep data
         if self.num_ref_frames > 0:
@@ -140,7 +147,7 @@ class BEVLoadMultiViewImageFromFiles(LoadMultiViewImageFromFiles):
 
         # to fill None data
         # for _ , cam_item in results['images'].items():
-        for camera_type in self.camera_order:
+        for camera_type in camera_order:
             if camera_type not in results["images"]:
                 continue
 
