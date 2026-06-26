@@ -4,7 +4,7 @@ _base_ = [
 ]
 
 experiment_group_name = "bevfusion_camera_2_8_0/gen2_base/" + _base_.dataset_type
-experiment_name = "bevfusion_camera_resnet50_fpn_lss_depthaware_50e_8xb16_gen2_base_50m"
+experiment_name = "bevfusion_camera_resnet50_fpn_lss_depthaware_50e_8xb32_gen2_base_50m"
 work_dir = "work_dirs/" + experiment_group_name + "/" + experiment_name
 
 # model parameter
