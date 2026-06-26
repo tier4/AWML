@@ -1,6 +1,6 @@
 # Dataset parameters
 backend_args = None
-num_workers = 8
+num_workers = 16
 input_modality = dict(use_lidar=True, use_camera=True)
 
 # range setting
@@ -84,8 +84,8 @@ train_pipeline = [
             "barrier",
         ],
     ),
-    dict(type="ObjectRangeMinPointsFilter", range_radius=[0, 60], min_num_points=2),
-    dict(type="ObjectRangeMinPointsFilter", range_radius=[60, 130], min_num_points=1),
+    dict(type="ObjectRangeMinPointsFilter", range_radius=[0, 60], min_num_points=3),
+    dict(type="ObjectRangeMinPointsFilter", range_radius=[60, 130], min_num_points=2),
     dict(type="PointShuffle"),
     dict(
         type="Pack3DDetInputs",

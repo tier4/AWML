@@ -16,7 +16,7 @@ backend_config = dict(
         dict(
             input_shapes=dict(
                 voxels=dict(
-                    min_shape=[1, 10, 4], opt_shape=[64000, 10, 4], max_shape=[256000, 10, 4]
+                    min_shape=[1, 32, 4], opt_shape=[64000, 32, 4], max_shape=[256000, 32, 4]
                 ),  # [M, maximum number of points, features] features=5 when using intensity
                 coors=dict(min_shape=[1, 3], opt_shape=[64000, 3], max_shape=[256000, 3]),
                 num_points_per_voxel=dict(min_shape=[1], opt_shape=[64000], max_shape=[256000]),
@@ -29,7 +29,7 @@ onnx_config = dict(
     type="onnx",
     export_params=True,
     keep_initializers_as_inputs=False,
-    opset_version=17,
+    opset_version=18,
     save_file="bevfusion_lidar.onnx",
     input_names=["voxels", "coors", "num_points_per_voxel"],
     output_names=["bbox_pred", "score", "label_pred"],
@@ -45,5 +45,5 @@ onnx_config = dict(
         },
     },
     input_shape=None,
-    verbose=True,
+    verbose=False,
 )

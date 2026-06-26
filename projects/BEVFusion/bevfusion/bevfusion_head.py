@@ -17,9 +17,6 @@ from mmengine.logging import print_log
 from mmengine.structures import InstanceData
 from torch import nn
 
-from .ops.topk.topk import topk
-
-
 def clip_sigmoid(x, eps=1e-4):
     y = torch.clamp(x.sigmoid_(), min=eps, max=1 - eps)
     return y
@@ -275,7 +272,6 @@ class BEVFusionHead(nn.Module):
         Returns:
             list[dict]: Output results for tasks.
         """
-        # batch_size = inputs.shape[0]
         fusion_feat = self.shared_conv(inputs)
 
         #################################
@@ -287,8 +283,8 @@ class BEVFusionHead(nn.Module):
         # query initialization
         #################################
         with torch.amp.autocast("cuda", enabled=False):
-            # with torch.autocast('cuda', enabled=False):
             dense_heatmap = self.heatmap_head(fusion_feat.float())
+
         heatmap = dense_heatmap.detach().sigmoid()
         if self.dense_heatmap_pooling_class_indices is not None:
             # Pooling
@@ -329,7 +325,7 @@ class BEVFusionHead(nn.Module):
         flattened_heatmap = heatmap.view(-1, self.num_classes * self.spatial_dim)
 
         # Use topk instead of argsort to avoid sorting the entire flattened heatmap.
-        top_proposals = topk(x=flattened_heatmap, k=self.num_proposals, dim=-1, sorted=False)
+        _, top_proposals = torch.topk(flattened_heatmap, k=self.num_proposals, dim=-1, largest=True, sorted=False)
 
         # 2. Calculate class and spatial indices
         # Use shape[-1] dynamically to handle grid sizes safely.
@@ -911,7 +907,6 @@ class BEVFusionHead(nn.Module):
 
                 # [BS, num_proposals]
                 layer_iou_weights = layer_bbox_weights[:, :, 0]
-                #   print(layer_ious.shape, ious.shape, layer_iou_weights.shape, "layer_ious.shape, ious.shape, layer_iou_weights.shape")
                 loss_dict[f"{prefix}_loss_iou"] = self.loss_iou(
                     layer_ious, ious, layer_iou_weights, avg_factor=max(num_pos, 1)
                 )

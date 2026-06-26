@@ -264,19 +264,12 @@ class BEVFusion(Base3DDetector):
         if points is not None:
             # NOTE(knzo25): training and normal inference
             with torch.amp.autocast("cuda", enabled=False):
-                # with torch.autocast('cuda', enabled=False):
                 points = [point.float() for point in points]
                 feats, coords, sizes = self.voxelize(points)
                 batch_size = coords[-1, 0] + 1
         else:
             # NOTE: (knzo25): onnx inference. Voxelization happens outside the graph
             with torch.amp.autocast("cuda", enabled=False):
-                # with torch.autocast('cuda', enabled=False):
-
-                # NOTE(knzo25): onnx demmands this
-                # batch_size = coords[-1, 0] + 1
-                # with torch.autocast('cuda', enabled=False):
-
                 # NOTE(knzo25): onnx demmands this
                 # batch_size = coords[-1, 0] + 1
                 batch_size = 1
@@ -306,10 +299,6 @@ class BEVFusion(Base3DDetector):
         coords = torch.cat(coords, dim=0)
         assert len(sizes) > 0, "No points in the voxel"
         sizes = torch.cat(sizes, dim=0)
-
-        # if self.voxelize_reduce:
-        #     feats = feats.sum(dim=1, keepdim=False) / sizes.type_as(feats).view(-1, 1)
-        #     feats = feats.contiguous()
 
         return feats, coords, sizes
 

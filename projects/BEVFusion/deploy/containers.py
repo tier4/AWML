@@ -46,7 +46,6 @@ class TrtBevFusionMainContainer(torch.nn.Module):
             coors = coors.flip(dims=[-1]).contiguous()  # [x, y, z]
             batch_coors = torch.zeros(num_points, 1).to(coors.device)
             coors = torch.cat([batch_coors, coors], dim=1).contiguous()
-
         batch_inputs_dict = {
             "voxels": {"voxels": voxels, "coors": coors, "num_points_per_voxel": num_points_per_voxel},
         }

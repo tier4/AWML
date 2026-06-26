@@ -1,10 +1,10 @@
 _base_ = [
-    "./bevfusion_lidar_voxel_second_secfpn_50e_8xb8_base_120m.py",
+    "./bevfusion_lidar_voxel_second_secfpn_50e_8xb16_base_120m.py",
 ]
 
 # user setting
 experiment_group_name = "bevfusion_lidar/base/" + _base_.dataset_type
-experiment_name = "lidar_voxel_second_secfpn_50e_8xb8_base_120m_t4metric_v2"
+experiment_name = "lidar_voxel_second_secfpn_50e_8xb16_base_120m_t4metric_v2"
 work_dir = "work_dirs/" + experiment_group_name + "/" + experiment_name
 
 # Add evaluator configs
@@ -50,6 +50,7 @@ val_evaluator = dict(
     name_mapping={{_base_.name_mapping}},
     experiment_name=experiment_name,
     experiment_group_name=_base_.experiment_group_name,
+    min_num_points=2,
 )
 
 test_evaluator = dict(
@@ -72,4 +73,5 @@ test_evaluator = dict(
     name_mapping={{_base_.name_mapping}},
     experiment_name=experiment_name,
     experiment_group_name=_base_.experiment_group_name,
+    min_num_points=2,
 )

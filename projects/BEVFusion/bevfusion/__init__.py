@@ -1,7 +1,7 @@
 from .bevfusion import BEVFusion
 from .bevfusion_head import BEVFusionHead, ConvFuser
 from .bevfusion_necks import GeneralizedLSSFPN
-from .bevfusion_voxel_encoder import BEVFusionVoxelFeatureNet, HardSimpleVoxelSinCosEncoder
+from .bevfusion_voxel_encoder import HardSimpleVoxelSinCosEncoder
 from .depth_lss import DepthLSSTransform, LSSTransform
 from .depth_lss_v2 import LSSTransformV2, LSSTransformV2DepthAware
 from .loading import BEVLoadMultiViewImageFromFiles, PointsToMultiViewImageDepths
@@ -37,7 +37,6 @@ __all__ = [
     "BEVFusionRemoveLiDARPoints",
     "TransFusionBBoxCoder",
     "HardSimpleVoxelSinCosEncoder",
-    "BEVFusionVoxelFeatureNet",
     "LSSTransformV2",
     "PointsToMultiViewImageDepths",
     "LSSTransformV2DepthAware",
