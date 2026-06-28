@@ -309,10 +309,8 @@ class T4Metric(NuScenesMetric):
                 directories.append(directory)
 
         if self.filter_frames_with_camera_orders is not None:
-            print_log(
-                f"Total filtered evaluation scenes: {filtered_scenes} with {self.filter_frames_with_camera_orders}"
-            )
-
+            print_log(f"Total filtered evaluation scenes: {filtered_scenes} with {self.filter_frames_with_camera_orders}", logger="current")
+        
         return scene_tokens, directories
 
     @staticmethod
