@@ -53,6 +53,7 @@ val_dataloader = dict(
         test_mode=True,
         box_type_3d="LiDAR",
         backend_args=_base_.backend_args,
+        filter_cfg=_base_.filter_cfg,
     ),
 )
 
@@ -73,6 +74,7 @@ test_dataloader = dict(
         test_mode=True,
         box_type_3d="LiDAR",
         backend_args=_base_.backend_args,
+        filter_cfg=_base_.filter_cfg,
     ),
 )
 
@@ -86,6 +88,7 @@ val_evaluator = dict(
     name_mapping=_base_.name_mapping,
     eval_class_range=_base_.eval_class_range,
     filter_attributes=_base_.filter_attributes,
+    filter_frames_with_camera_orders=_base_.camera_orders
 )
 
 test_evaluator = dict(
@@ -99,6 +102,7 @@ test_evaluator = dict(
     eval_class_range=_base_.eval_class_range,
     filter_attributes=_base_.filter_attributes,
     save_csv=True,
+    filter_frames_with_camera_orders=_base_.camera_orders
 )
 
 default_hooks = dict(
