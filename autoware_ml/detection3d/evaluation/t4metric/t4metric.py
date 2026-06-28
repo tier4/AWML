@@ -283,7 +283,7 @@ class T4Metric(NuScenesMetric):
             if directory not in directories:
                 scene_tokens.append(scene_token)
                 directories.append(directory)
-        
+
         return scene_tokens, directories
 
     @staticmethod
