@@ -87,8 +87,7 @@ val_evaluator = dict(
     class_names=_base_.class_names,
     name_mapping=_base_.name_mapping,
     eval_class_range=_base_.eval_class_range,
-    filter_attributes=_base_.filter_attributes,
-    filter_frames_with_camera_orders=_base_.camera_orders,
+    filter_attributes=_base_.filter_attributes
 )
 
 test_evaluator = dict(
@@ -101,8 +100,7 @@ test_evaluator = dict(
     name_mapping=_base_.name_mapping,
     eval_class_range=_base_.eval_class_range,
     filter_attributes=_base_.filter_attributes,
-    save_csv=True,
-    filter_frames_with_camera_orders=_base_.camera_orders,
+    save_csv=True
 )
 
 default_hooks = dict(

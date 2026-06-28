@@ -55,7 +55,6 @@ class T4Metric(NuScenesMetric):
         eval_class_range: Dict[str, int] = dict(),
         name_mapping: Optional[dict] = None,
         version: str = "",
-        filter_frames_with_camera_orders: Optional[Dict[str, List[str]]] = None,
     ) -> None:
         """
         Args:
@@ -138,8 +137,6 @@ class T4Metric(NuScenesMetric):
         self.filter_attributes = filter_attributes
         if self.filter_attributes is None:
             print_log("No attribute filtering is applied!")
-
-        self.filter_frames_with_camera_orders = filter_frames_with_camera_orders
 
         # load annotations
         self.data_infos = load(self.ann_file, backend_args=self.backend_args)["data_list"]
@@ -277,29 +274,8 @@ class T4Metric(NuScenesMetric):
         """
         scene_tokens = []
         directories = []
-        filtered_scenes = 0
         for info in data_infos:
             scene_token = info["scene_token"]
-            selected_camera_orders = None
-            if self.filter_frames_with_camera_orders is not None:
-                vehicle_type = info["vehicle_type"]
-                selected_camera_orders = self.filter_frames_with_camera_orders.get(vehicle_type, None)
-
-            if selected_camera_orders is not None:
-                filtered = False
-                for camera_order in selected_camera_orders:
-                    if camera_order not in info["images"]:
-                        filtered = True
-                        break
-
-                    if info["images"][camera_order]["img_path"] is None:
-                        filtered = True
-                        break
-
-                if filtered:
-                    filtered_scenes += 1
-                    continue
-
             # ['db_jpntaxi_v1', '3a13032b-6045-4db4-8632-9c52c3dd2fd9', '0', 'data', 'LIDAR_CONCAT', '98.pcd.bin']
             directory_list = info["lidar_points"]["lidar_path"].split("/")
             # 'db_jpntaxi_v1/3a13032b-6045-4db4-8632-9c52c3dd2fd9/0'
@@ -307,13 +283,7 @@ class T4Metric(NuScenesMetric):
             if directory not in directories:
                 scene_tokens.append(scene_token)
                 directories.append(directory)
-
-        if self.filter_frames_with_camera_orders is not None:
-            print_log(
-                f"Total filtered evaluation scenes: {filtered_scenes} with {self.filter_frames_with_camera_orders}",
-                logger="current",
-            )
-
+        
         return scene_tokens, directories
 
     @staticmethod
