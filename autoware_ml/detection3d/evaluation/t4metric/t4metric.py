@@ -287,7 +287,7 @@ class T4Metric(NuScenesMetric):
 
             if selected_camera_orders is not None:
                 filtered = False
-                for camera_order in filter_frames_with_camera_order:
+                for camera_order in selected_camera_orders:
                     if camera_order not in info["images"]:
                         filtered = True
                         break
