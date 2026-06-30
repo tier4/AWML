@@ -29,7 +29,7 @@ Read the deploy config in this order:
 | `evaluation` | No | Backend toggles, sample counts, optional `model_dir` / `engine_dir` for ONNX and TensorRT. |
 | `verification` | No | Scenarios per export mode and tolerance. |
 
-> The evaluation/verification dataset is taken from the **model config's** `test_dataloader.dataset` (its `ann_file` is the test info). There is no separate `runtime_io`/`info_file` in the deploy config.
+> The evaluation/verification dataset is taken from the **model config's** `test_dataloader.dataset` (its `ann_file` is the test info).
 
 ## Logging (`deploy_log_path`)
 
