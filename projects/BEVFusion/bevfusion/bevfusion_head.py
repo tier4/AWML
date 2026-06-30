@@ -13,6 +13,7 @@ from mmdet3d.registry import MODELS
 from mmdet3d.structures import xywhr2xyxyr
 from mmdet.models.task_modules import AssignResult, PseudoSampler, build_assigner, build_bbox_coder, build_sampler
 from mmdet.models.utils import multi_apply
+from mmengine.logging import print_log
 from mmengine.structures import InstanceData
 from torch import nn
 
@@ -62,6 +63,7 @@ class BEVFusionHead(nn.Module):
         norm_cfg=dict(type="BN1d"),
         bias="auto",
         # loss
+        loss_iou=None,
         loss_cls=dict(type="mmdet.GaussianFocalLoss", reduction="mean"),
         loss_bbox=dict(type="mmdet.L1Loss", reduction="mean"),
         loss_heatmap=dict(type="mmdet.GaussianFocalLoss", reduction="mean"),
@@ -69,6 +71,7 @@ class BEVFusionHead(nn.Module):
         train_cfg=None,
         test_cfg=None,
         bbox_coder=None,
+        partial_ignore_labels=None,
     ):
         super().__init__()
         self.class_names = class_names
@@ -82,13 +85,14 @@ class BEVFusionHead(nn.Module):
         self.nms_kernel_size = nms_kernel_size
         self.train_cfg = train_cfg
         self.test_cfg = test_cfg
-
         self.use_sigmoid_cls = loss_cls.get("use_sigmoid", False)
         if not self.use_sigmoid_cls:
             self.num_classes += 1
         self.loss_cls = MODELS.build(loss_cls)
+        self.loss_iou = MODELS.build(loss_iou) if loss_iou is not None else None
         self.loss_bbox = MODELS.build(loss_bbox)
         self.loss_heatmap = MODELS.build(loss_heatmap)
+        self.share_conv_out_channels = hidden_channel
 
         self.bbox_coder = build_bbox_coder(bbox_coder)
         self.sampling = False
@@ -154,7 +158,11 @@ class BEVFusionHead(nn.Module):
         # Position Embedding for Cross-Attention, which is re-used during training # noqa: E501
         x_size = self.test_cfg["grid_size"][0] // self.test_cfg["out_size_factor"]
         y_size = self.test_cfg["grid_size"][1] // self.test_cfg["out_size_factor"]
-        self.bev_pos = self.create_2D_grid(x_size, y_size)
+        self.spatial_dim = x_size * y_size
+        bev_pos = self.create_2D_grid(x_size, y_size)
+
+        # Register the bev_pos as a buffer so it moves to the GPU automatically.
+        self.register_buffer("bev_pos", bev_pos, persistent=False)  # (1, H * W, 2)
 
         self.img_feat_pos = None
         self.img_feat_collapsed_pos = None
@@ -173,11 +181,22 @@ class BEVFusionHead(nn.Module):
             self.dense_heatmap_exclude_pooling_classes = sorted(
                 list(set(self.class_name_to_indices.values()) - set(self.dense_heatmap_pooling_class_indices))
             )
+            # Pre-compute the correct order of the classes for the final local_max
+            heatmap_concat_order = (
+                self.dense_heatmap_pooling_class_indices + self.dense_heatmap_exclude_pooling_classes
+            )
+            local_concat_class_remapping = [heatmap_concat_order.index(i) for i in range(self.num_classes)]
         else:
             self.dense_heatmap_pooling_class_indices = None
             self.dense_heatmap_exclude_pooling_classes = None
+            local_concat_class_remapping = [i for i in range(self.num_classes)]
 
+        # Register the remapping as a buffer so it moves to the GPU automatically and gets saved in the state_dict.
+        self.register_buffer(
+            "local_concat_class_remapping", torch.tensor(local_concat_class_remapping), persistent=False
+        )
         self.local_heatmap_padding = self.nms_kernel_size // 2
+
         # NMS clusters
         self.nms_clusters = self.test_cfg.get("nms_clusters", [])
         # Add class indices for nms
@@ -185,6 +204,21 @@ class BEVFusionHead(nn.Module):
             cluster["class_indices"] = sorted(
                 [self.class_name_to_indices[class_name] for class_name in cluster["class_names"]]
             )
+
+        # If true, only compute loss for traffic cone and barrier when it's available in the frame
+        if partial_ignore_labels is not None:
+            assert (
+                loss_heatmap["reduction"] == "none"
+            ), "Loss reduction must be 'none' for partial traffic cone and barrier"
+            self.partial_ignore_labels = [
+                self.class_name_to_indices[class_name] for class_name in partial_ignore_labels
+            ]
+        else:
+            self.partial_ignore_labels = None
+
+        print_log(f"BEVFusionHead Partial ignore labels: {self.partial_ignore_labels}, dense heatmap pooling classes: \
+        {self.dense_heatmap_pooling_classes}, class_names: {self.class_names}, \
+        local_concat_class_remapping: {self.local_concat_class_remapping}", logger="current")
 
     def create_2D_grid(self, x_size, y_size):
         meshgrid = [[0, x_size - 1, x_size], [0, y_size - 1, y_size]]
@@ -232,24 +266,20 @@ class BEVFusionHead(nn.Module):
         Returns:
             list[dict]: Output results for tasks.
         """
-        batch_size = inputs.shape[0]
         fusion_feat = self.shared_conv(inputs)
 
         #################################
         # image to BEV
         #################################
-        fusion_feat_flatten = fusion_feat.view(batch_size, fusion_feat.shape[1], -1)  # [BS, C, H*W]
-        bev_pos = self.bev_pos.repeat(batch_size, 1, 1).to(fusion_feat.device)
+        fusion_feat_flatten = fusion_feat.view(-1, self.share_conv_out_channels, self.spatial_dim)  # [BS, C, H*W]
 
         #################################
         # query initialization
         #################################
-        with torch.cuda.amp.autocast(enabled=False):
-            # with torch.autocast('cuda', enabled=False):
+        with torch.amp.autocast("cuda", enabled=False):
             dense_heatmap = self.heatmap_head(fusion_feat.float())
+
         heatmap = dense_heatmap.detach().sigmoid()
-        local_max = torch.zeros_like(heatmap)
-        # equals to nms radius = voxel_size * out_size_factor * kenel_size
         if self.dense_heatmap_pooling_class_indices is not None:
             # Pooling
             selected_heatmap = heatmap[:, self.dense_heatmap_pooling_class_indices, :, :]
@@ -259,29 +289,44 @@ class BEVFusionHead(nn.Module):
                 stride=1,
                 padding=0,
             )
-            local_max[
-                :,
-                self.dense_heatmap_pooling_class_indices,
-                self.local_heatmap_padding : (-self.local_heatmap_padding),
-                self.local_heatmap_padding : (-self.local_heatmap_padding),
-            ] = local_max_inner
-            # Non-pooling classes
+
+            # 2. Restore spatial size using F.pad instead of slice mutation
+            local_max = F.pad(
+                local_max_inner,
+                (
+                    self.local_heatmap_padding,
+                    self.local_heatmap_padding,
+                    self.local_heatmap_padding,
+                    self.local_heatmap_padding,
+                ),
+                mode="constant",
+                value=0.0,
+            )
+
+            # 3. Any non-pooling classes
             if self.dense_heatmap_exclude_pooling_classes:
-                local_max[:, self.dense_heatmap_exclude_pooling_classes] = heatmap[
-                    :, self.dense_heatmap_exclude_pooling_classes
-                ]
+                excluded_local_max = heatmap[:, self.dense_heatmap_exclude_pooling_classes, :, :]
+                local_max = torch.cat([local_max, excluded_local_max], dim=1)
+                local_max = local_max[:, self.local_concat_class_remapping, :, :]
         else:
             local_max = heatmap
 
         heatmap = heatmap * (heatmap == local_max)
-        heatmap = heatmap.view(batch_size, heatmap.shape[1], -1)
+        # (BS, num_classes, H*W)
+        heatmap = heatmap.view(-1, self.num_classes, self.spatial_dim)
 
         # top num_proposals among all classes
-        top_proposals = heatmap.view(batch_size, -1).argsort(dim=-1, descending=True)[..., : self.num_proposals]
-        top_proposals_class = top_proposals // heatmap.shape[-1]
-        top_proposals_index = top_proposals % heatmap.shape[-1]
+        flattened_heatmap = heatmap.view(-1, self.num_classes * self.spatial_dim)
+
+        # Use topk instead of argsort to avoid sorting the entire flattened heatmap.
+        _, top_proposals = torch.topk(flattened_heatmap, k=self.num_proposals, dim=-1, largest=True, sorted=False)
+
+        # 2. Calculate class and spatial indices
+        # Use shape[-1] dynamically to handle grid sizes safely.
+        top_proposals_class = top_proposals // self.spatial_dim
+        top_proposals_index = top_proposals % self.spatial_dim
         query_feat = fusion_feat_flatten.gather(
-            index=top_proposals_index[:, None, :].expand(-1, fusion_feat_flatten.shape[1], -1),
+            index=top_proposals_index[:, None, :].expand(-1, self.share_conv_out_channels, -1),
             dim=-1,
         )
         self.query_labels = top_proposals_class
@@ -291,10 +336,8 @@ class BEVFusionHead(nn.Module):
         query_cat_encoding = self.class_encoding(one_hot.float())
         query_feat += query_cat_encoding
 
-        query_pos = bev_pos.gather(
-            index=top_proposals_index[:, None, :].permute(0, 2, 1).expand(-1, -1, bev_pos.shape[-1]),
-            dim=1,
-        )
+        # (B, N, 2)
+        query_pos = self.bev_pos.squeeze(0)[top_proposals_index]
         #################################
         # transformer decoder layer (Fusion feature as K,V)
         #################################
@@ -302,7 +345,9 @@ class BEVFusionHead(nn.Module):
         for i in range(self.num_decoder_layers):
             # Transformer Decoder Layer
             # :param query: B C Pq    :param query_pos: B Pq 3/6
-            query_feat = self.decoder[i](query_feat, key=fusion_feat_flatten, query_pos=query_pos, key_pos=bev_pos)
+            query_feat = self.decoder[i](
+                query_feat, key=fusion_feat_flatten, query_pos=query_pos, key_pos=self.bev_pos
+            )
 
             # Prediction
             res_layer = self.prediction_heads[i](query_feat)
@@ -369,8 +414,10 @@ class BEVFusionHead(nn.Module):
         for layer_id, preds_dict in enumerate(preds_dicts):
             batch_size = preds_dict[0]["heatmap"].shape[0]
             batch_score = preds_dict[0]["heatmap"][..., -self.num_proposals :].sigmoid()
-            # if self.loss_iou.loss_weight != 0:
-            #    batch_score = torch.sqrt(batch_score * preds_dict[0]['iou'][..., -self.num_proposals:].sigmoid()) # noqa: E501
+            if self.loss_iou is not None:
+                batch_score = torch.sqrt(
+                    batch_score * preds_dict[0]["iou"][..., -self.num_proposals :].sigmoid()
+                )  # noqa: E501
             one_hot = F.one_hot(self.query_labels, num_classes=self.num_classes).permute(0, 2, 1)
             batch_score = batch_score * preds_dict[0]["query_heatmap_score"] * one_hot
 
@@ -418,6 +465,7 @@ class BEVFusionHead(nn.Module):
                                     circle_nms(
                                         boxes_for_nms.detach().cpu().numpy(),
                                         nms_cluster["nms_threshold"],
+                                        post_max_size=nms_cluster["post_max_size"],
                                     )
                                 )
                             else:
@@ -456,7 +504,9 @@ class BEVFusionHead(nn.Module):
 
         return rets[0]
 
-    def get_targets(self, batch_gt_instances_3d: List[InstanceData], preds_dict: List[dict]):
+    def get_targets(
+        self, batch_gt_instances_3d: List[InstanceData], preds_dict: List[dict], batch_metadata: List[dict]
+    ):
         """Generate training targets.
         Args:
             batch_gt_instances_3d (List[InstanceData]):
@@ -500,6 +550,7 @@ class BEVFusionHead(nn.Module):
             batch_gt_instances_3d,
             list_of_pred_dict,
             np.arange(len(batch_gt_instances_3d)),
+            batch_metadata,
         )
         labels = torch.cat(res_tuple[0], dim=0)
         label_weights = torch.cat(res_tuple[1], dim=0)
@@ -509,6 +560,7 @@ class BEVFusionHead(nn.Module):
         num_pos = np.sum(res_tuple[5])
         matched_ious = np.mean(res_tuple[6])
         heatmap = torch.cat(res_tuple[7], dim=0)
+        heatmap_weights = torch.cat(res_tuple[8], dim=0)
         return (
             labels,
             label_weights,
@@ -518,9 +570,10 @@ class BEVFusionHead(nn.Module):
             num_pos,
             matched_ious,
             heatmap,
+            heatmap_weights,
         )
 
-    def get_targets_single(self, gt_instances_3d, preds_dict, batch_idx):
+    def get_targets_single(self, gt_instances_3d, preds_dict, batch_idx, metadata):
         """Generate training targets for a single sample.
         Args:
             gt_instances_3d (:obj:`InstanceData`): ground truth of instances.
@@ -554,7 +607,7 @@ class BEVFusionHead(nn.Module):
             vel = None
 
         boxes_dict = self.bbox_coder.decode(
-            score, rot, dim, center, height, vel
+            score, rot, dim, center, height, vel, filter=False
         )  # decode the prediction to real world metric bbox
         bboxes_tensor = boxes_dict[0]["bboxes"]
         gt_bboxes_tensor = gt_bboxes_3d.tensor.to(score.device)
@@ -616,7 +669,7 @@ class BEVFusionHead(nn.Module):
         ious = assign_result_ensemble.max_overlaps
         ious = torch.clamp(ious, min=0.0, max=1.0)
         labels = bboxes_tensor.new_zeros(num_proposals, dtype=torch.long)
-        label_weights = bboxes_tensor.new_zeros(num_proposals, dtype=torch.long)
+        label_weights = bboxes_tensor.new_zeros([num_proposals, self.num_classes], dtype=torch.long)
 
         if gt_labels_3d is not None:  # default label is -1
             labels += self.num_classes
@@ -671,6 +724,17 @@ class BEVFusionHead(nn.Module):
                 draw_heatmap_gaussian(heatmap[gt_labels_3d[idx]], center_int[[1, 0]], radius)
 
         mean_iou = ious[pos_inds].sum() / max(len(pos_inds), 1)
+        heatmap_weights = torch.ones_like(heatmap)
+
+        # Ignore labels for traffic cone and barrier
+        traffic_cone_barrier_status = metadata.get("traffic_cone_barrier_status", True)
+        if self.partial_ignore_labels is not None and not traffic_cone_barrier_status:
+            heatmap_weights[self.partial_ignore_labels] = 0.0  # Set to 0 to ignore these grids
+            if len(neg_inds) > 0:
+                # neg_inds [N] and column indices [K] must broadcast (not pair);
+                _cols = torch.as_tensor(self.partial_ignore_labels, device=label_weights.device, dtype=torch.long)
+                label_weights[neg_inds.unsqueeze(1), _cols.unsqueeze(0)] = 0.0
+
         return (
             labels[None],
             label_weights[None],
@@ -680,6 +744,7 @@ class BEVFusionHead(nn.Module):
             int(pos_inds.shape[0]),
             float(mean_iou),
             heatmap[None],
+            heatmap_weights[None],
         )
 
     def loss(self, batch_feats, batch_data_samples):
@@ -698,11 +763,13 @@ class BEVFusionHead(nn.Module):
             batch_input_metas.append(data_sample.metainfo)
             batch_gt_instances_3d.append(data_sample.gt_instances_3d)
         preds_dicts = self(batch_feats, batch_input_metas)
-        loss = self.loss_by_feat(preds_dicts, batch_gt_instances_3d)
+        loss = self.loss_by_feat(preds_dicts, batch_gt_instances_3d, batch_input_metas)
 
         return loss
 
-    def loss_by_feat(self, preds_dicts: Tuple[List[dict]], batch_gt_instances_3d: List[InstanceData], *args, **kwargs):
+    def loss_by_feat(
+        self, preds_dicts: Tuple[List[dict]], batch_gt_instances_3d: List[InstanceData], batch_input_metas
+    ):
         (
             labels,
             label_weights,
@@ -712,7 +779,8 @@ class BEVFusionHead(nn.Module):
             num_pos,
             matched_ious,
             heatmap,
-        ) = self.get_targets(batch_gt_instances_3d, preds_dicts[0])
+            heatmap_weights,
+        ) = self.get_targets(batch_gt_instances_3d, preds_dicts[0], batch_input_metas)
         if hasattr(self, "on_the_image_mask"):
             label_weights = label_weights * self.on_the_image_mask
             bbox_weights = bbox_weights * self.on_the_image_mask[:, :, None]
@@ -721,12 +789,33 @@ class BEVFusionHead(nn.Module):
         loss_dict = dict()
 
         # compute heatmap loss
-        loss_heatmap = self.loss_heatmap(
-            clip_sigmoid(preds_dict["dense_heatmap"]).float(),
-            heatmap.float(),
-            avg_factor=max(heatmap.eq(1).float().sum().item(), 1),
-        )
-        loss_dict["loss_heatmap"] = loss_heatmap
+        preds_dense_heatmap = clip_sigmoid(preds_dict["dense_heatmap"].float())
+        num_pos_dense_heatmap = max(heatmap.eq(1).float().sum().item(), 1)
+        if self.partial_ignore_labels is None:
+            loss_heatmap = self.loss_heatmap(
+                preds_dense_heatmap,
+                heatmap.float(),
+                avg_factor=num_pos_dense_heatmap,
+            )
+            loss_dict["loss_heatmap"] = loss_heatmap
+        else:
+            # When ignore labels is found, we compute the loss for each class
+            # heatmap focal loss
+            loss_heatmap_cls: torch.Tensor = self.loss_heatmap(
+                preds_dense_heatmap,
+                heatmap.float(),
+            )
+
+            # (Batch, num_classes, height, width) * (Batch, num_classes, height, width)
+            loss_heatmap_cls = loss_heatmap_cls * heatmap_weights.float()
+            loss_heatmap_cls = loss_heatmap_cls.sum((0, 2, 3)) / num_pos_dense_heatmap
+            # (Batch, num_classes)
+            for cls_i, class_name in enumerate(self.class_names):
+                loss_dict[f"loss_heatmap_{class_name}"] = loss_heatmap_cls[cls_i]
+
+            # Logging-only aggregate. Detach so it does not retain the autograd graph;
+            # the per-class `loss_heatmap_{class_name}` entries are what drive gradients.
+            loss_dict["total_dense_heatmap"] = loss_heatmap_cls.sum().detach()
 
         # compute loss for each layer
         for idx_layer in range(self.num_decoder_layers if self.auxiliary else 1):
@@ -742,7 +831,9 @@ class BEVFusionHead(nn.Module):
             layer_label_weights = label_weights[
                 ...,
                 idx_layer * self.num_proposals : (idx_layer + 1) * self.num_proposals,
-            ].reshape(-1)
+            ]
+            # (Batch*num_proposals, num_classes)
+            layer_label_weights = layer_label_weights.reshape(-1, self.num_classes)
             layer_score = preds_dict["heatmap"][
                 ...,
                 idx_layer * self.num_proposals : (idx_layer + 1) * self.num_proposals,
@@ -798,7 +889,21 @@ class BEVFusionHead(nn.Module):
 
             loss_dict[f"{prefix}_loss_cls"] = layer_loss_cls
             loss_dict[f"{prefix}_loss_bbox"] = layer_loss_bbox
-            # loss_dict[f'{prefix}_loss_iou'] = layer_loss_iou
+
+            # Output iou for iou-aware loss
+            if self.loss_iou is not None:
+                layer_ious = preds_dict["iou"][
+                    ...,
+                    idx_layer * self.num_proposals : (idx_layer + 1) * self.num_proposals,
+                ].squeeze(
+                    1
+                )  # [BS, num_proposals]
+
+                # [BS, num_proposals]
+                layer_iou_weights = layer_bbox_weights[:, :, 0]
+                loss_dict[f"{prefix}_loss_iou"] = self.loss_iou(
+                    layer_ious, ious, layer_iou_weights, avg_factor=max(num_pos, 1)
+                )
 
         loss_dict["matched_ious"] = layer_loss_cls.new_tensor(matched_ious)
 

@@ -54,6 +54,8 @@ class_mapping = {
     "unpainted": ignore_index,
 }
 num_classes = 26
+distance_ranges = [(0, 20), (20, 40), (40, 60), (60, 80), (80, 100.0), (100.0, 120.0)]
+metric_options = dict(distance_ranges=distance_ranges)
 
 # model settings
 model = dict(

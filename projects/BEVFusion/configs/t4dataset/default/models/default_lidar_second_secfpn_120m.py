@@ -1,25 +1,25 @@
 num_proposals = 500
-max_num_points = 10
+max_num_points = 32
 max_voxels = [120000, 160000]
+out_size_factor = 8
 
 model = dict(
     type="BEVFusion",
     voxelize_cfg=dict(
         max_num_points=max_num_points,
         max_voxels=max_voxels,
-        voxelize_reduce=True,
     ),
     data_preprocessor=dict(
         type="Det3DDataPreprocessor",
         pad_size_divisor=32,
     ),
-    pts_voxel_encoder=dict(type="HardSimpleVFE"),
+    pts_voxel_encoder=dict(
+        type="HardSimpleVoxelSinCosEncoder",
+        in_channels=4,
+    ),
     pts_middle_encoder=dict(
         type="BEVFusionSparseEncoder",
         in_channels=5,
-        aug_features_min_values=[],
-        aug_features_max_values=[],
-        num_aug_features=0,
         order=("conv", "norm", "act"),
         norm_cfg=dict(type="BN1d", eps=0.001, momentum=0.01),
         encoder_channels=((16, 16, 32), (32, 32, 64), (64, 64, 128), (128, 128)),
@@ -69,7 +69,7 @@ model = dict(
         ),
         train_cfg=dict(
             dataset="t4datasets",
-            out_size_factor=8,
+            out_size_factor=out_size_factor,
             gaussian_overlap=0.1,
             min_radius=2,
             pos_weight=-1,
@@ -84,21 +84,28 @@ model = dict(
         ),
         test_cfg=dict(
             dataset="t4datasets",
-            out_size_factor=8,
-            nms_type=None,  # Set to "circle" for circle_nms
+            out_size_factor=out_size_factor,
+            nms_type="circle",  # Set to "circle" for circle_nms
             # Set NMS for different clusters
             nms_clusters=[
-                dict(class_names=["car", "truck", "bus"], nms_threshold=0.5),  # It's radius if using circle_nms
-                dict(class_names=["bicycle"], nms_threshold=0.5),
-                dict(class_names=["pedestrian"], nms_threshold=0.175),
+                # Sqrt(0.25) = 0.50
+                dict(
+                    class_names=["car", "truck", "bus"], class_indices=[0, 1, 2], nms_threshold=0.25, post_max_size=300
+                ),  # It's radius if using circle_nms
+                dict(class_names=["bicycle"], class_indices=[3], nms_threshold=0.0, post_max_size=50),
+                dict(class_names=["pedestrian"], class_indices=[4], nms_threshold=0.0, post_max_size=100),
+                dict(class_names=["traffic_cone"], class_indices=[5], nms_threshold=0.0, post_max_size=100),
+                dict(class_names=["barrier"], class_indices=[6], nms_threshold=0.0, post_max_size=50),
             ],
         ),
-        dense_heatmap_pooling_classes=["car", "truck", "bus", "bicycle"],  # Use class indices for pooling
+        dense_heatmap_pooling_classes=["car", "truck", "bus", "barrier"],  # Use class indices for pooling
         common_heads=dict(center=[2, 2], height=[1, 2], dim=[3, 2], rot=[2, 2], vel=[2, 2]),
         bbox_coder=dict(
             type="TransFusionBBoxCoder",
             post_center_range=[-200.0, -200.0, -10.0, 200.0, 200.0, 10.0],
-            score_threshold=0.0,
+            # score_threshold=0.03,
+            # CAR, TRUCK, BUS, BICYCLE, PEDESTRIAN, TRAFFIC_CONE, BARRIER
+            score_threshold=[0.015, 0.010, 0.010, 0.020, 0.030, 0.040, 0.020],
             out_size_factor=8,
             code_size=10,
         ),
@@ -110,7 +117,10 @@ model = dict(
             reduction="mean",
             loss_weight=1.0,
         ),
-        loss_heatmap=dict(type="mmdet.GaussianFocalLoss", reduction="mean", loss_weight=1.0),
+        loss_iou=None,
+        loss_heatmap=dict(type="mmdet.GaussianFocalLoss", reduction="none", loss_weight=1.0),
         loss_bbox=dict(type="mmdet.L1Loss", reduction="mean", loss_weight=0.25),
+        # partial_
+        partial_ignore_labels=["traffic_cone", "barrier"],
     ),
 )

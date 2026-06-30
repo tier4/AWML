@@ -37,6 +37,7 @@ class CategoryAttributeAnalysisCallback(CategoryAnalysisCallback):
         print_log(f"Running {self.__class__.__name__}")
         for split_option in SplitOptions:
             dataset_category_counts = {}
+            dataset_frame_counts = {}
             for dataset_split_name, analysis_data in dataset_split_analysis_data.items():
                 split_name = dataset_split_name.split_name
                 if split_name != split_option:
@@ -47,7 +48,11 @@ class CategoryAttributeAnalysisCallback(CategoryAnalysisCallback):
                     remapping_classes=self.remapping_classes, category_name=self.category_name
                 )
 
+                dataset_frame_counts[dataset_name] = analysis_data.frames
+
             self._visualize_total_category_counts(
-                dataset_category_counts=dataset_category_counts, split_name=split_option.value
+                dataset_category_counts=dataset_category_counts,
+                dataset_frame_counts=dataset_frame_counts,
+                split_name=split_option.value,
             )
         print_log(f"Done running {self.__class__.__name__}")

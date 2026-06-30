@@ -1,6 +1,6 @@
 # Dataset parameters
 backend_args = None
-num_workers = 32
+num_workers = 16
 input_modality = dict(use_lidar=True, use_camera=True)
 
 # range setting
@@ -13,6 +13,8 @@ eval_class_range = {
     "bus": 120,
     "bicycle": 120,
     "pedestrian": 120,
+    "traffic_cone": 120,
+    "barrier": 120,
 }
 
 # LiDAR parameters
@@ -74,18 +76,15 @@ train_pipeline = [
         classes=[
             "car",
             "truck",
-            "construction_vehicle",
             "bus",
-            "trailer",
-            "barrier",
-            "motorcycle",
             "bicycle",
             "pedestrian",
             "traffic_cone",
+            "barrier",
         ],
     ),
-    dict(type="ObjectRangeMinPointsFilter", range_radius=[0, 60], min_num_points=2),
-    dict(type="ObjectRangeMinPointsFilter", range_radius=[60, 130], min_num_points=1),
+    dict(type="ObjectRangeMinPointsFilter", range_radius=[0, 60], min_num_points=3),
+    dict(type="ObjectRangeMinPointsFilter", range_radius=[60, 130], min_num_points=2),
     dict(type="PointShuffle"),
     dict(
         type="Pack3DDetInputs",
@@ -109,6 +108,9 @@ train_pipeline = [
             "img_aug_matrix",
             "lidar_aug_matrix",
             "timestamp",
+            "vehicle_type",
+            "city",
+            "traffic_cone_barrier_status",
         ],
     ),
 ]
@@ -166,6 +168,9 @@ test_pipeline = [
             "num_pts_feats",
             "num_views",
             "timestamp",
+            "vehicle_type",
+            "city",
+            "traffic_cone_barrier_status",
         ],
     ),
 ]

@@ -23,6 +23,12 @@ def parse_args():
         help="specify the root path of dataset",
     )
     parser.add_argument(
+        "--dataset_version_config_root",
+        type=str,
+        required=True,
+        help="specify the root path of dataset version config yaml files",
+    )
+    parser.add_argument(
         "-o",
         "--out_dir",
         type=str,
@@ -40,6 +46,7 @@ def main():
     print_log("Building AnalysisRunner...", logger="current")
     analysis_runner = AnalysisRunner(
         data_root_path=args.data_root_path,
+        dataset_version_config_root=args.dataset_version_config_root,
         config_path=args.config_path,
         out_path=args.out_dir,
     )

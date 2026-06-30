@@ -49,7 +49,7 @@ def setup_configs(
         # TODO(KokSeang): Remove this
         # Default voxelize_layer
         voxelize_cfg = dict(
-            max_num_points=10,
+            max_num_points=32,
             voxel_size=[0.17, 0.17, 0.2],
             point_cloud_range=[-122.4, -122.4, -3.0, 122.4, 122.4, 5.0],
             max_voxels=[120000, 160000],

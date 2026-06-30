@@ -18,8 +18,7 @@ info_test_statistics_file_name = "t4dataset_jpntaxi_base_statistics_test.parquet
 
 # dataset scene setting
 dataset_test_groups = {
-    "jpntaxi_gen2": ("t4dataset_jpntaxi_gen2_infos_test.pkl", False),
-    "jpntaxi_base": ("t4dataset_jpntaxi_base_infos_test.pkl", True),
+    "jpntaxi_gen2": ("t4dataset_jpntaxi_gen2_infos_test.pkl", True),
 }
 
 dataset_version_list = [
@@ -69,8 +68,8 @@ name_mapping = {
     "pedestrian.stroller": "pedestrian",
     "pedestrian.wheelchair": "pedestrian",
     "movable_object.barrier": "barrier",
-    "movable_object.debris": "debris",
-    "movable_object.pushable_pullable": "pushable_pullable",
+    "movable_object.debris": "barrier",
+    "movable_object.pushable_pullable": "barrier",
     "movable_object.trafficcone": "traffic_cone",
     "movable_object.traffic_cone": "traffic_cone",
     "animal": "animal",
@@ -91,7 +90,7 @@ name_mapping = {
     # DBv2.0 and DBv3.0
     "animal": "animal",
     "movable_object.barrier": "barrier",
-    "movable_object.pushable_pullable": "pushable_pullable",
+    "movable_object.pushable_pullable": "barrier",
     "movable_object.traffic_cone": "traffic_cone",
     "pedestrian.adult": "pedestrian",
     "pedestrian.child": "pedestrian",
@@ -121,6 +120,11 @@ name_mapping = {
     "semi_trailer": "trailer",
     "tractor_unit": "truck",
     "construction_vehicle": "truck",
+    "traffic_cone": "traffic_cone",
+    "trafficcone": "traffic_cone",
+    "barrier": "barrier",
+    "other_vehicle": "car",
+    "other_pedestrian": "pedestrian",
 }
 
 class_names = [
@@ -129,7 +133,10 @@ class_names = [
     "bus",
     "bicycle",
     "pedestrian",
+    "traffic_cone",
+    "barrier",
 ]
+
 num_class = len(class_names)
 metainfo = dict(classes=class_names)
 

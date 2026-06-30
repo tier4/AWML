@@ -27,6 +27,9 @@ dataset_version_list = [
     "db_j6gen2_v7",
     "db_j6gen2_v8",
     "db_j6gen2_v9",
+    "db_j6gen2_v10",
+    "db_j6gen2_v11",
+    "db_j6gen2_v12",
 ]
 
 dataset_test_groups = {
@@ -72,8 +75,8 @@ name_mapping = {
     "pedestrian.stroller": "pedestrian",
     "pedestrian.wheelchair": "pedestrian",
     "movable_object.barrier": "barrier",
-    "movable_object.debris": "debris",
-    "movable_object.pushable_pullable": "pushable_pullable",
+    "movable_object.debris": "barrier",
+    "movable_object.pushable_pullable": "barrier",
     "movable_object.trafficcone": "traffic_cone",
     "movable_object.traffic_cone": "traffic_cone",
     "animal": "animal",
@@ -94,7 +97,7 @@ name_mapping = {
     # DBv2.0 and DBv3.0
     "animal": "animal",
     "movable_object.barrier": "barrier",
-    "movable_object.pushable_pullable": "pushable_pullable",
+    "movable_object.pushable_pullable": "barrier",
     "movable_object.traffic_cone": "traffic_cone",
     "pedestrian.adult": "pedestrian",
     "pedestrian.child": "pedestrian",
@@ -124,6 +127,11 @@ name_mapping = {
     "semi_trailer": "trailer",
     "tractor_unit": "truck",
     "construction_vehicle": "truck",
+    "traffic_cone": "traffic_cone",
+    "trafficcone": "traffic_cone",
+    "barrier": "barrier",
+    "other_vehicle": "car",
+    "other_pedestrian": "pedestrian",
 }
 
 class_names = [
@@ -132,6 +140,8 @@ class_names = [
     "bus",
     "bicycle",
     "pedestrian",
+    "traffic_cone",
+    "barrier",
 ]
 num_class = len(class_names)
 metainfo = dict(classes=class_names)

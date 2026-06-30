@@ -15,21 +15,39 @@ from mmengine.config import Config
 from mmengine.logging import MMLogger
 
 
+class ExportModel(torch.nn.Module):
+    """Deployment wrapper that exposes probabilities as the model output."""
+
+    def __init__(self, model: torch.nn.Module) -> None:
+        super().__init__()
+        self.model = model
+
+    def forward(self, batch_inputs_dict: dict, data_samples: dict | None = None) -> torch.Tensor:
+        """Forward pass with softmax applied to logits.
+
+        Returns:
+            Tensor of shape (N, num_classes) with per-point class probabilities.
+        """
+        predictions = self.model(batch_inputs_dict)
+        return torch.softmax(predictions["seg_logit"], dim=-1)
+
+
 class TorchModel:
     """FRNet PyTorch model wrapper."""
 
     def __init__(self, model_cfg: Config, checkpoint_path: str) -> None:
         self.logger = MMLogger.get_current_instance()
         self.model = self._build_model(model_cfg.model, checkpoint_path)
+        self.export_model = ExportModel(self.model)
 
     def inference(self, batch_inputs_dict: dict) -> npt.NDArray[np.float32]:
-        """Forward pass, returns segmentation logits (N, num_classes)."""
+        """Forward pass, returns segmentation probabilities (N, num_classes)."""
         t_start = time()
-        predictions = self.model(batch_inputs_dict)
+        predictions = self.export_model(batch_inputs_dict)
         t_end = time()
         latency = np.round((t_end - t_start) * 1e3, 2)
         self.logger.info(f"Inference latency: {latency} ms")
-        return predictions["seg_logit"].cpu().detach().numpy()
+        return predictions.cpu().detach().numpy()
 
     @staticmethod
     def _build_model(model_cfg: dict, checkpoint_path: str) -> torch.nn.Module:

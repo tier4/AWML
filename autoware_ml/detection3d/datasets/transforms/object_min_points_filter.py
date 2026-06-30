@@ -34,6 +34,7 @@ class ObjectMinPointsFilter(BaseTransform):
         indices = box_np_ops.points_in_rbbox(
             points.tensor.numpy()[:, :3],
             gt_bboxes_3d.tensor.numpy()[:, :7],
+            origin=(0.5, 0.5, 0.0),  # Always assume it's center_x, center_y and bottom_z
         )
         num_points_in_gt = indices.sum(0)
         gt_bboxes_mask = num_points_in_gt >= self.min_num_points
@@ -107,6 +108,7 @@ class ObjectRangeMinPointsFilter(BaseTransform):
         indices = box_np_ops.points_in_rbbox(
             points.tensor.numpy()[:, :3],
             gt_bboxes_3d.tensor.numpy()[:, :7],
+            origin=(0.5, 0.5, 0.0),  # Always assume it's center_x, center_y and bottom_z
         )
 
         num_points_in_gt = indices.sum(0)

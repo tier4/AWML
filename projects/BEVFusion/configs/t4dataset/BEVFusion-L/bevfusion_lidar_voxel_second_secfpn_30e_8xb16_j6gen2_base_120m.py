@@ -1,9 +1,9 @@
 _base_ = [
     "../../../../../autoware_ml/configs/detection3d/default_runtime.py",
     "../../../../../autoware_ml/configs/detection3d/dataset/t4dataset/j6gen2_base.py",
-    "../default/pipelines/default_offline_lidar_intensity_120m.py",
+    "../default/pipelines/default_lidar_intensity_120m.py",
     "../default/models/default_lidar_second_secfpn_120m.py",
-    "../default/schedulers/default_30e_4xb8_adamw_cosine.py",
+    "../default/schedulers/default_30e_8xb16_adamw_cosine.py",
     "../default/default_misc.py",
 ]
 
@@ -15,8 +15,8 @@ custom_imports["imports"] += ["autoware_ml.detection3d.datasets.transforms"]
 data_root = "data/t4dataset/"
 info_directory_path = "info/user_name/"
 
-experiment_group_name = "bevfusion_lidar_intensity_offline/j6gen2_base/" + _base_.dataset_type
-experiment_name = "lidar_voxel_second_secfpn_30e_4xb8_j6gen2_base_120m"
+experiment_group_name = "bevfusion_lidar_intensity/j6gen2_base/" + _base_.dataset_type
+experiment_name = "lidar_voxel_second_secfpn_30e_8xb16_j6gen2_base_120m"
 work_dir = "work_dirs/" + experiment_group_name + "/" + experiment_name
 
 # model parameter
@@ -25,12 +25,29 @@ model = dict(
     voxelize_cfg=dict(
         point_cloud_range=_base_.point_cloud_range,
         voxel_size=_base_.voxel_size,
-        voxelize_reduce=True,
     ),
-    pts_voxel_encoder=dict(num_features=_base_.point_use_dim),
+    pts_voxel_encoder=dict(
+        in_channels=len(_base_.lidar_sweep_dims),
+        # min-max normalization for x, y, z, intensity, time_lag, where the max of time lag technically is two seeps (200 ms) here
+        min_norm_values=[
+            _base_.point_cloud_range[0],
+            _base_.point_cloud_range[1],
+            _base_.point_cloud_range[2],
+            0.0,
+            0.0,
+        ],
+        max_norm_values=[
+            _base_.point_cloud_range[3],
+            _base_.point_cloud_range[4],
+            _base_.point_cloud_range[5],
+            255.0,
+            0.2,
+        ],
+    ),
     pts_middle_encoder=dict(
-        in_channels=_base_.point_use_dim,
+        in_channels=50,
         sparse_shape=_base_.grid_size,
+        dense_output_shapes=_base_.sparse_dense_output_shapes,
     ),
     bbox_head=dict(
         class_names=_base_.class_names,  # Use class names to identify the correct class indices
@@ -47,6 +64,10 @@ model = dict(
         bbox_coder=dict(
             pc_range=_base_.point_cloud_range[0:2],
             voxel_size=_base_.voxel_size[0:2],
+        ),
+        partial_ignore_labels=["traffic_cone", "barrier"],
+        loss_heatmap=dict(
+            reduction="none",
         ),
     ),
 )
@@ -143,3 +164,4 @@ default_hooks = dict(
     checkpoint=dict(type="CheckpointHook", interval=1, max_keep_ckpts=3, save_best="NuScenes metric/T4Metric/mAP"),
 )
 log_processor = dict(window_size=50)
+load_from = None

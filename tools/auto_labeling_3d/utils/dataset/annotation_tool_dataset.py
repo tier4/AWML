@@ -109,6 +109,13 @@ class DeepenUniqueId:
 
         return unique_label_id
 
+    def assign_label_category_id(self, uuid: str, label: str) -> str:
+        """Return the stable label category associated with the UUID's unique ID
+        E.g. Car:1 -> Car, Truck:12 -> Truck
+        """
+        unique_label_id = self.assign_id(uuid, label)
+        return unique_label_id.rsplit(":", maxsplit=1)[0]
+
 
 @dataclass(frozen=True)
 class AnnotationToolDataset:
@@ -199,12 +206,14 @@ class DeepenDataset(AnnotationToolDataset):
             file_id: str = f"{idx}.pcd"
 
             for box_global in boxes_in_frame_global:
-                unique_label_id: str = id_generator.assign_id(box_global.uuid, str(box_global.semantic_label))
+                label_name = str(box_global.semantic_label.name)
+                unique_label_id: str = id_generator.assign_id(box_global.uuid, label_name)
+                label_category_id: str = id_generator.assign_label_category_id(box_global.uuid, label_name)
 
                 annotation_fields = DeepenAnnotationFields(
                     dataset_id=tool_id,
                     file_id=file_id,
-                    label_category_id=str(box_global.semantic_label),
+                    label_category_id=label_category_id,
                     label_id=unique_label_id,
                     label_type="3d_bbox",
                     attributes={"pseudo-label": "auto-labeled"},

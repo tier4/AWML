@@ -128,7 +128,6 @@ class VoxelDetection(_VoxelDetection):
         camera_mask, img, lidar2image, cam2image, camera2lidar, geom_feats, kept, ranks, indices = (
             self.extract_img_inputs(batch=batch, model=model, collate_data=collate_data)
         )
-
         inputs = [
             feats,
             coors,
