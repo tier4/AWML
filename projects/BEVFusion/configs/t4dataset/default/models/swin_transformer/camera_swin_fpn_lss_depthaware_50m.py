@@ -4,7 +4,7 @@ _base_ = [
 
 # Image network
 model = dict(
-	  view_transform=dict(
+    view_transform=dict(
         type="LSSTransformV2DepthAware",
         xbound=[-54.0, 54.0, 0.3],
         ybound=[-54.0, 54.0, 0.3],
