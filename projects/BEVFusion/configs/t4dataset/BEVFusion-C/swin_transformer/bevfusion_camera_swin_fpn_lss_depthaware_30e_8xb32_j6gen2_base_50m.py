@@ -1,10 +1,10 @@
 _base_ = [
-    "../default_bevfusion_camera_30e_8xb16_j6gen2_base_120m.py",
-    "../../default/models/swin_transformer/camera_swin_fpn_depthlss_120m.py",
+    "../default_bevfusion_camera_30e_8xb32_j6gen2_base_50m.py",
+    "../../default/models/swin_transformer/camera_swin_fpn_lss_depthaware_50m.py",
 ]
 
-experiment_group_name = "bevfusion_camera/base/" + _base_.dataset_type
-experiment_name = "bevfusion_camera_swin_fpn_depthlss_50e_8xb16_j6gen2_base_120m"
+experiment_group_name = "bevfusion_camera/j6gen2_base/" + _base_.dataset_type
+experiment_name = "bevfusion_camera_swin_fpn_lss_30e_8xb32_j6gen2_base_50m"
 work_dir = "work_dirs/" + experiment_group_name + "/" + experiment_name
 
 # model parameter
