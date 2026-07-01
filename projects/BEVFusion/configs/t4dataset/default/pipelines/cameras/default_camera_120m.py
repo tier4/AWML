@@ -130,7 +130,7 @@ test_pipeline = [
         backend_args=_base_.backend_args,
         camera_orders=camera_orders,
     ),
-		dict(
+    dict(
         type="LoadPointsFromFile",
         coord_type="LIDAR",
         load_dim=_base_.point_load_dim,

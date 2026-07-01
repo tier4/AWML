@@ -1,5 +1,5 @@
 _base_ = [
-	  "./bevfusion_camera_resnet50_fpn_lss_depthaware_30e_8xb32_j6gen2_base_50m.py",
+    "./bevfusion_camera_resnet50_fpn_lss_depthaware_30e_8xb32_j6gen2_base_50m.py",
 ]
 
 experiment_name = "bevfusion_camera_resnet50_fpn_lss_v2_depthaware_30e_8xb32_j6gen2_base_50m_t4metric_v2"
@@ -20,7 +20,7 @@ evaluator_metric_configs = dict(
     min_distance=[0.0],
     # bev maximum distance ranges for each range bucket, must be the same length as min_distance
     max_distance=[51.2],
-		min_point_numbers=0,
+    min_point_numbers=0,
     matching_class_agnostic_fps=False,
 )
 
