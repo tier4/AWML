@@ -1,5 +1,5 @@
 _base_ = [
-	  "./default_bevfusion_camera_30e_8xb32_j6gen2_base_50m.py",
+    "./default_bevfusion_camera_30e_8xb32_j6gen2_base_50m.py",
 ]
 
 experiment_name = "bevfusion_camera_resnet50_fpn_lss_v2_depthaware_30e_8xb32_j6gen2_base_50m_t4metric_v2"
