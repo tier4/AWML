@@ -53,7 +53,7 @@ val_dataloader = dict(
         test_mode=True,
         box_type_3d="LiDAR",
         backend_args=_base_.backend_args,
-		    filter_cfg=_base_.filter_cfg,
+        filter_cfg=_base_.filter_cfg,
     ),
 )
 
@@ -74,7 +74,7 @@ test_dataloader = dict(
         test_mode=True,
         box_type_3d="LiDAR",
         backend_args=_base_.backend_args,
-		    filter_cfg=_base_.filter_cfg,
+        filter_cfg=_base_.filter_cfg,
     ),
 )
 
