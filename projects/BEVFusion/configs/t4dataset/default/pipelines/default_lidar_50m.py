@@ -103,16 +103,6 @@ test_pipeline = [
         use_dim=point_load_dim,
         backend_args=backend_args,
     ),
-    dict(
-        type="LoadPointsFromMultiSweeps",
-        sweeps_num=sweeps_num,
-        load_dim=point_load_dim,
-        use_dim=lidar_sweep_dims,
-        pad_empty_sweeps=True,
-        remove_close=True,
-        backend_args=backend_args,
-        test_mode=True,
-    ),
     dict(type="PointsRangeFilter", point_cloud_range=point_cloud_range),
     dict(
         type="Pack3DDetInputs",

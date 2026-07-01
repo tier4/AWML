@@ -130,15 +130,12 @@ test_pipeline = [
         backend_args=_base_.backend_args,
         camera_orders=camera_orders,
     ),
-    dict(
-        type="LoadPointsFromMultiSweeps",
-        sweeps_num=_base_.sweeps_num,
+		dict(
+        type="LoadPointsFromFile",
+        coord_type="LIDAR",
         load_dim=_base_.point_load_dim,
-        use_dim=_base_.lidar_sweep_dims,
-        pad_empty_sweeps=True,
-        remove_close=True,
+        use_dim=_base_.point_load_dim,
         backend_args=_base_.backend_args,
-        test_mode=True,
     ),
     dict(
         type="ImageAug3D",
@@ -149,6 +146,7 @@ test_pipeline = [
         rand_flip=False,
         is_train=False,
     ),
+    dict(type="ObjectRangeFilter", point_cloud_range=_base_.point_cloud_range),
     dict(
         type="Pack3DDetInputs",
         keys=["img", "points", "gt_bboxes_3d", "gt_labels_3d"],
@@ -169,6 +167,7 @@ test_pipeline = [
             "timestamp",
             "vehicle_type",
             "city",
+            "traffic_cone_barrier_status",
         ],
     ),
 ]

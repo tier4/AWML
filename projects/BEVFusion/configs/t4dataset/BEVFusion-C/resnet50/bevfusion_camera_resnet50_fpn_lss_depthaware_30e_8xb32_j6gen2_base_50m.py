@@ -1,5 +1,5 @@
 _base_ = [
-    "../default_bevfusion_camera_30e_8xb16_j6gen2_base_50m.py",
+    "../default_bevfusion_camera_30e_8xb32_j6gen2_base_50m.py",
     "../../default/models/resnet50/camera_resnet50_fpn_lss_depthaware_50m.py",
 ]
 

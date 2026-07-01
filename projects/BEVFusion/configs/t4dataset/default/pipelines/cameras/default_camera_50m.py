@@ -123,6 +123,13 @@ test_pipeline = [
         backend_args=_base_.backend_args,
         camera_orders=camera_orders,
     ),
+		dict(
+        type="LoadPointsFromFile",
+        coord_type="LIDAR",
+        load_dim=_base_.point_load_dim,
+        use_dim=_base_.point_load_dim,
+        backend_args=_base_.backend_args,
+    ),
     dict(
         type="ImageAug3D",
         final_dim=image_size,
@@ -132,6 +139,7 @@ test_pipeline = [
         rand_flip=False,
         is_train=False,
     ),
+    dict(type="PointsRangeFilter", point_cloud_range=[-80.0, -80.0, -10.0, 80.0, 80.0, 10.0]),
     dict(
         type="Pack3DDetInputs",
         keys=["img", "points", "gt_bboxes_3d", "gt_labels_3d"],
