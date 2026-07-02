@@ -65,10 +65,10 @@ class DeviceSpec:
         """Return torch.device equivalent."""
         return torch.device(str(self))
 
-    def to_ort_provider(self) -> list[str]:
-        """Return ONNX Runtime execution providers for this device."""
+    def to_ort_provider(self) -> list[Union[str, tuple[str, dict]]]:
+        """Return ONNX Runtime execution providers for this device (honors CUDA index)."""
         if self.is_cuda:
-            return ["CUDAExecutionProvider", "CPUExecutionProvider"]
+            return [("CUDAExecutionProvider", {"device_id": self.index}), "CPUExecutionProvider"]
         return ["CPUExecutionProvider"]
 
     def __str__(self) -> str:
