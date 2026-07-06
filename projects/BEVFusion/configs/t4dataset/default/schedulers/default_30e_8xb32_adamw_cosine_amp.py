@@ -1,12 +1,12 @@
 # learning rate
-lr = 2.0e-4
+lr = 3.0e-4
 t_max = 3
 max_epochs = 30
 val_interval = 5
 
 train_gpu_size = 8
 test_batch_size = 4
-train_batch_size = 16
+train_batch_size = 32
 
 param_scheduler = [
     # learning rate scheduler
@@ -66,10 +66,22 @@ optimizer = dict(type="AdamW", lr=lr, weight_decay=0.01)
 clip_grad = dict(max_norm=15.0, norm_type=2)  # max norm of gradients upper bound to be 15.0 since amp is used
 
 optim_wrapper = dict(
-    type="OptimWrapper",
-    optimizer=dict(type="AdamW", lr=lr, weight_decay=0.01),
-    clip_grad=dict(max_norm=35, norm_type=2),
+    type="AmpOptimWrapper",
+    dtype="float16",
+    optimizer=optimizer,
+    clip_grad=clip_grad,
+    # Update it accordingly
+    loss_scale={
+        "init_scale": 2.0**10,  # intial_scale: 1024
+        "growth_interval": 1000,
+    },
 )
+
+# optim_wrapper = dict(
+#     type="OptimWrapper",
+#     optimizer=dict(type="AdamW", lr=lr, weight_decay=0.01),
+#     clip_grad=dict(max_norm=35, norm_type=2),
+# )
 
 auto_scale_lr = dict(enable=False, base_batch_size=train_gpu_size * train_batch_size)
 
