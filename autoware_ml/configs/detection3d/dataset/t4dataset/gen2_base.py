@@ -18,7 +18,7 @@ info_test_statistics_file_name = "t4dataset_gen2_base_statistics_test.parquet"
 
 # dataset scene setting
 dataset_version_list = [
-	  "db_jpntaxigen2_v1",
+    "db_jpntaxigen2_v1",
     "db_jpntaxigen2_v2",
     "db_j6gen2_v1",
     "db_j6gen2_v2",

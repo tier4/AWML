@@ -1,5 +1,4 @@
-import numpy as np 
-
+import numpy as np
 from mmcv.transforms import BaseTransform
 from mmdet3d.structures.ops import box_np_ops
 from mmengine.registry import TRANSFORMS
@@ -86,7 +85,7 @@ class ObjectRangeMinPointsFilter(BaseTransform):
                 keys are updated in the result dict.
         """
         gt_bboxes_3d = input_dict["gt_bboxes_3d"]
-        
+
         # Get radius of each bev center
         bbox_bev_centers = np.linalg.norm(gt_bboxes_3d.bev[:, :2])
         bev_radius_mask = (bbox_bev_centers >= self.range_radius[0]) and (bbox_bev_centers < self.range_radius[1])
