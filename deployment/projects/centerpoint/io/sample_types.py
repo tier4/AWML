@@ -1,43 +1,9 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Dict, TypedDict
+from typing import TypedDict
 
 import torch
-
-from deployment.io.base_data_loader import SampleData
-
-
-class CenterPointSample(SampleData):
-    """Structured payload after running the MMDet3D test pipeline for one frame.
-
-    Returned by :meth:`deployment.projects.centerpoint.io.data_loader.CenterPointDataLoader.load_sample`.
-    At runtime this is a plain ``dict``; use bracket access (e.g. ``sample["points"]``).
-
-    Attributes:
-        points: Point cloud tensor on CPU, shape ``[N, C]`` after pipeline.
-        metainfo: Per-sample metadata (e.g. lidar path, sample index) as a string-keyed dict.
-        ground_truth: Raw ``eval_ann_info`` from the detector data sample, for evaluation.
-    """
-
-    points: torch.Tensor
-    metainfo: Dict[str, object]
-    ground_truth: Dict[str, object]
-
-
-class CenterPointModelInput(TypedDict):
-    """Subset of a loaded sample passed into the CenterPoint network for inference.
-
-    Produced by :meth:`deployment.projects.centerpoint.io.data_loader.CenterPointDataLoader.preprocess`.
-    Excludes ``ground_truth``, which is only needed for eval/export wiring.
-
-    Attributes:
-        points: Point cloud tensor for the model forward.
-        metainfo: Metadata required by preprocessing or postprocessing.
-    """
-
-    points: torch.Tensor
-    metainfo: Dict[str, object]
 
 
 class VoxelDict(TypedDict):

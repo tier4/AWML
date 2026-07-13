@@ -3,13 +3,14 @@
 import logging
 import time
 from abc import ABC, abstractmethod
-from typing import Any, Dict, Mapping, Optional, Tuple
+from typing import Any, Dict, List, Mapping, Optional, Sequence, Tuple, Union
 
+import numpy as np
 import torch
 
 from deployment.config.enums import Backend
-from deployment.evaluation.evaluator_types import InferenceResult
 from deployment.primitives.device import DeviceSpec
+from deployment.primitives.evaluator_types import InferenceResult
 
 logger = logging.getLogger(__name__)
 
@@ -48,17 +49,60 @@ class BaseInferencePipeline(ABC):
         """Return torch.device converted from canonical DeviceSpec."""
         return self.device.to_torch_device()
 
+    def to_device_tensor(self, data: Union[torch.Tensor, np.ndarray]) -> torch.Tensor:
+        """Convert an array/tensor to a tensor on the pipeline's device."""
+        if isinstance(data, np.ndarray):
+            data = torch.from_numpy(data)
+        return data.to(self.torch_device)
+
+    def to_numpy(self, data: torch.Tensor, dtype: np.dtype = np.float32) -> np.ndarray:
+        """Convert a tensor to a contiguous numpy array of ``dtype``."""
+        arr = data.cpu().numpy().astype(dtype)
+        if not arr.flags["C_CONTIGUOUS"]:
+            arr = np.ascontiguousarray(arr)
+        return arr
+
+    @staticmethod
+    def order_outputs_by_config(
+        actual_names: Sequence[str],
+        expected_names: Sequence[str],
+        *,
+        strict: bool = True,
+    ) -> List[str]:
+        """Return output names in the config's declared order.
+
+        ONNX/TensorRT may report outputs in arbitrary order, but postprocess depends on the
+        exact order declared in the component config. This returns the config order.
+
+        Args:
+            actual_names: Output names reported by the runtime session/engine.
+            expected_names: Output names in the config's declared order.
+            strict: If True, raise when the two name sets differ (any missing/extra). If False,
+                return the expected names that are present (in order), then append any extras.
+
+        Raises:
+            ValueError: If ``strict`` and the name sets do not match exactly.
+        """
+        if strict:
+            expected_set, actual_set = set(expected_names), set(actual_names)
+            missing = expected_set - actual_set
+            extra = actual_set - expected_set
+            if missing or extra:
+                raise ValueError(
+                    f"Output name mismatch: missing={sorted(missing)}, extra={sorted(extra)}; "
+                    f"expected={sorted(expected_set)}, got={sorted(actual_set)}."
+                )
+            return list(expected_names)
+        ordered = [n for n in expected_names if n in actual_names]
+        ordered += [n for n in actual_names if n not in ordered]
+        return ordered
+
     @abstractmethod
-    def preprocess(self, input_data: Any) -> Tuple[Any, Dict[str, Any]]:
+    def preprocess(self, input_data: Any) -> Any:
         """Convert raw input into model-ready tensors/arrays.
 
         Returns:
-            A 2-tuple ``(model_input, preprocess_metadata)``:
-            - ``model_input``: Tensors or structure consumed by :meth:`run_model`.
-            - ``preprocess_metadata``: Dict merged into the ``metadata`` argument of
-              :meth:`infer` (together with any ``metadata`` passed by the caller) and
-              then passed to :meth:`postprocess`. Use an empty dict when nothing extra
-              is needed.
+            ``model_input``: Tensors or structure consumed by :meth:`run_model`.
         """
         raise NotImplementedError
 
@@ -71,7 +115,7 @@ class BaseInferencePipeline(ABC):
             - ``model_output``: Raw tensors or structure for :meth:`postprocess` (or
               returned as-is when ``infer(..., return_raw_outputs=True)``).
             - ``stage_latencies``: Per-substage timings in milliseconds; merged into
-              `~deployment.evaluation.evaluator_types.InferenceResult`
+              `~deployment.primitives.evaluator_types.InferenceResult`
               ``breakdown`` (e.g. ``voxel_encoder_ms``).
         """
         raise NotImplementedError
@@ -86,8 +130,8 @@ class BaseInferencePipeline(ABC):
 
         Args:
             model_output: Value returned by :meth:`run_model` (first element of its tuple).
-            metadata: Merged dict from ``infer(..., metadata=...)`` plus
-                ``preprocess_metadata`` from :meth:`preprocess`. May be empty.
+            metadata: Dict passed by the caller via ``infer(..., metadata=...)``.
+                May be empty.
         """
         raise NotImplementedError
 
@@ -99,11 +143,11 @@ class BaseInferencePipeline(ABC):
         Flow:
             1) preprocess(input_data)
             2) run_model(model_input)
-            3) postprocess(model_output, merged_metadata) unless `return_raw_outputs=True`
+            3) postprocess(model_output, metadata) unless `return_raw_outputs=True`
 
         Args:
             input_data: Raw input sample(s) in a project-defined format.
-            metadata: Optional auxiliary context merged with preprocess metadata.
+            metadata: Optional auxiliary context passed through to :meth:`postprocess`.
             return_raw_outputs: If True, skip `postprocess` and return raw model output.
 
         Returns:
@@ -114,11 +158,11 @@ class BaseInferencePipeline(ABC):
         try:
             # Preprocess
             start_time = time.perf_counter()
-            model_input, preprocess_metadata = self.preprocess(input_data)
+            model_input = self.preprocess(input_data)
             preprocess_time = time.perf_counter()
             latency_breakdown["preprocessing_ms"] = (preprocess_time - start_time) * 1000
-            # Build a new dict
-            metadata = {**(metadata or {}), **preprocess_metadata}
+            # Build a new dict from caller-provided metadata (passed to postprocess).
+            metadata = dict(metadata or {})
 
             # Run model
             model_start = time.perf_counter()

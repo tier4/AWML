@@ -14,7 +14,6 @@ from typing import Any, Callable, Optional
 
 from deployment.config.base import BaseDeploymentConfig
 from deployment.config.enums import Backend
-from deployment.export.contexts import ExportContext
 from deployment.export.pipelines.onnx_export_pipeline import OnnxExportPipeline
 from deployment.export.pipelines.tensorrt_export_pipeline import TensorRTExportPipeline
 from deployment.io.base_data_loader import BaseDataLoader
@@ -82,7 +81,7 @@ class ExportOrchestrator:
         self._onnx_pipeline = onnx_pipeline
         self._tensorrt_pipeline = tensorrt_pipeline
 
-    def run(self, context: Optional[ExportContext] = None) -> ExportResult:
+    def run(self) -> ExportResult:
         """
         Execute the complete export workflow.
 
@@ -92,23 +91,16 @@ class ExportOrchestrator:
         3. Exports to TensorRT if configured
         4. Resolves external artifact paths
 
-        Args:
-            context: Typed export context with parameters. If None, a default
-                     ExportContext is created.
-
         Returns:
             ExportResult containing model and artifact paths
         """
-        if context is None:
-            context = ExportContext()
-
         result = ExportResult()
 
         should_export_onnx = self.config.export_config.should_export_onnx
         should_export_trt = self.config.export_config.should_export_tensorrt
         external_onnx_path = self.config.export_config.onnx_path
 
-        pytorch_model = self._load_and_register_pytorch_model(self.config.checkpoint_path, context)
+        pytorch_model = self._load_and_register_pytorch_model(self.config.checkpoint_path)
         result.pytorch_model = pytorch_model
 
         if should_export_onnx:
@@ -141,13 +133,12 @@ class ExportOrchestrator:
         self._resolve_external_artifacts(result)
         return result
 
-    def _load_and_register_pytorch_model(self, checkpoint_path: str, context: ExportContext) -> Any:
+    def _load_and_register_pytorch_model(self, checkpoint_path: str) -> Any:
         """
         Load and register a PyTorch model from checkpoint.
 
         Args:
             checkpoint_path: Path to the PyTorch checkpoint
-            context: Export context with sample index
         Returns:
             Loaded PyTorch model
         Raises:
@@ -155,7 +146,7 @@ class ExportOrchestrator:
         """
         logger.info("\nLoading PyTorch model...")
         try:
-            pytorch_model = self._model_loader(checkpoint_path, context)
+            pytorch_model = self._model_loader(checkpoint_path)
             self.artifact_manager.register_artifact(Backend.PYTORCH, Artifact(path=checkpoint_path))
             return pytorch_model
         except Exception as e:

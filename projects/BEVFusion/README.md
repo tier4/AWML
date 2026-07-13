@@ -57,6 +57,24 @@ pip install spconv-cu120
 
 `AWML` will automatically select this implementation if the dependency is installed.
 
+#### For ONNX and TensorRT evaluation
+
+- If you need to use deployment, ONNX runtime, or TensorRT evaluation, please build the docker image first:
+
+```sh
+# Build the base autoware-ml image (if not already built)
+DOCKER_BUILDKIT=1 docker build -t autoware-ml .
+
+# Build the bevfusion-deployment image
+DOCKER_BUILDKIT=1 docker build -t bevfusion-deployment -f projects/BEVFusion/Dockerfile .
+```
+
+- Run the docker container:
+
+```sh
+docker run -it --rm --gpus all --shm-size=64g --name awml_deployment -p 6006:6006 -v $PWD/:/workspace -v $PWD/data:/workspace/data bevfusion-deployment
+```
+
 ### 2. Train
 #### 2.1. Train the LiDAR-only model first
 

@@ -11,10 +11,11 @@ from typing import Any, Dict
 
 from deployment.config.base import BaseDeploymentConfig
 from deployment.config.enums import Backend
-from deployment.evaluation.backend_verifier import BackendVerifier
-from deployment.evaluation.evaluator_types import ModelSpec
 from deployment.io.base_data_loader import BaseDataLoader
+from deployment.primitives.evaluator_types import ModelSpec
 from deployment.runtime.artifact_manager import ArtifactManager
+from deployment.verification.backend_verifier import BackendVerifier
+from deployment.verification.reporting import banner
 
 logger = logging.getLogger(__name__)
 
@@ -53,7 +54,7 @@ class VerificationOrchestrator:
 
     def run(self) -> Dict[str, Any]:
         """
-        Run verification on exported models using policy-based verification.
+        Run verification on exported models using scenario-based verification.
 
         Returns:
             Verification results dictionary
@@ -84,30 +85,30 @@ class VerificationOrchestrator:
 
         num_verify_samples = verification_cfg.num_verify_samples
         tolerance = verification_cfg.tolerance
-        logger.info("=" * 80)
+        logger.info(banner())
         logger.info("Running Verification (mode: %s)", export_mode.value)
-        logger.info("=" * 80)
+        logger.info(banner())
 
         all_results: Dict[str, Any] = {}
         total_passed = 0
         total_failed = 0
 
-        for i, policy in enumerate(scenarios):
-            ref_device = policy.ref_device
-            test_device = policy.test_device
+        for i, scenario in enumerate(scenarios):
+            ref_device = scenario.ref_device
+            test_device = scenario.test_device
 
             logger.info(
                 "\nScenario %s/%s: %s(%s) vs %s(%s)",
                 i + 1,
                 len(scenarios),
-                policy.ref_backend.value,
+                scenario.ref_backend.value,
                 ref_device,
-                policy.test_backend.value,
+                scenario.test_backend.value,
                 test_device,
             )
 
-            ref_artifact, ref_valid = self.artifact_manager.resolve_artifact(policy.ref_backend)
-            test_artifact, test_valid = self.artifact_manager.resolve_artifact(policy.test_backend)
+            ref_artifact, ref_valid = self.artifact_manager.resolve_artifact(scenario.ref_backend)
+            test_artifact, test_valid = self.artifact_manager.resolve_artifact(scenario.test_backend)
 
             if not ref_valid or not test_valid:
                 ref_path = ref_artifact.path if ref_artifact else None
@@ -121,8 +122,8 @@ class VerificationOrchestrator:
                 )
                 continue
 
-            reference_spec = ModelSpec(backend=policy.ref_backend, device=ref_device, artifact=ref_artifact)
-            test_spec = ModelSpec(backend=policy.test_backend, device=test_device, artifact=test_artifact)
+            reference_spec = ModelSpec(backend=scenario.ref_backend, device=ref_device, artifact=ref_artifact)
+            test_spec = ModelSpec(backend=scenario.test_backend, device=test_device, artifact=test_artifact)
 
             verification_results = self.verifier.run(
                 reference=reference_spec,
@@ -132,8 +133,14 @@ class VerificationOrchestrator:
                 tolerance=tolerance,
             )
 
-            policy_key = f"{policy.ref_backend.value}_{ref_device}_vs_{policy.test_backend.value}_{test_device}"
-            all_results[policy_key] = verification_results
+            scenario_key = f"{scenario.ref_backend.value}_{ref_device}_vs_{scenario.test_backend.value}_{test_device}"
+            all_results[scenario_key] = verification_results
+
+            # Surface a pre-inference failure (e.g. device validation) instead of silently
+            # counting the scenario as 0/0; BackendVerifier sets ``error`` in that case.
+            if "error" in verification_results:
+                logger.warning("Scenario %s could not run: %s", i + 1, verification_results["error"])
+                continue
 
             if "summary" in verification_results:
                 summary = verification_results["summary"]
@@ -142,25 +149,25 @@ class VerificationOrchestrator:
                 total_passed += passed
                 total_failed += failed
                 if failed == 0:
-                    logger.info("Scenario %s passed (%s comparisons)", i + 1, passed)
+                    logger.info("Scenario %s passed (%s samples)", i + 1, passed)
                 else:
                     logger.warning(
-                        "Scenario %s failed (%s/%s comparisons)",
+                        "Scenario %s failed (%s/%s samples)",
                         i + 1,
                         failed,
                         passed + failed,
                     )
 
-        logger.info("\n" + "=" * 80)
+        logger.info("\n" + banner())
         if total_failed == 0:
-            logger.info("All verifications passed! (%s total)", total_passed)
+            logger.info("All verification samples passed! (%s total)", total_passed)
         else:
             logger.warning(
-                "%s/%s verifications failed",
+                "%s/%s verification samples failed",
                 total_failed,
                 total_passed + total_failed,
             )
-        logger.info("=" * 80)
+        logger.info(banner())
 
         all_results["summary"] = {
             "passed": total_passed,

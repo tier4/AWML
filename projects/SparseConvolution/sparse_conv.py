@@ -63,10 +63,8 @@ class SparseConvolution(SparseConvolutionBase):
         act_beta: float = 0,
     ):
         # assert isinstance(input, SparseConvTensor)
-        is_int8 = input.is_quantized and weight.is_quantized
-        if is_int8:
-            raise NotImplementedError
-
+        # INT8 path is not implemented below (raises NotImplementedError); keep FP32/dequant path only.
+        is_int8 = False
         assert input.features.shape[1] == self.in_channels, "channel size mismatch"
         features = input.features
         indices = input.indices
@@ -75,8 +73,6 @@ class SparseConvolution(SparseConvolutionBase):
         bias_for_training = bias if training else None
         bias_for_infer = bias if not training else None
         output_add_scale = 0.0
-        if is_int8:
-            raise NotImplementedError
         if training:
             raise NotImplementedError
 
@@ -102,9 +98,13 @@ class SparseConvolution(SparseConvolutionBase):
             raise NotImplementedError
 
         indice_dict = input.indice_dict.copy()
-        # only support contiguous tensor for now
+        # only support contiguous tensor for now (indices non-contiguous → CUDA illegal access in merge_sort)
         if not features.is_contiguous():
             features = features.contiguous()
+        if not indices.is_contiguous():
+            indices = indices.contiguous()
+        if indices.dtype != torch.int32:
+            indices = indices.to(dtype=torch.int32)
         algo = self.algo
         if self.indice_key is not None:
             data = input.find_indice_pair(self.indice_key)
@@ -257,7 +257,8 @@ class SparseConvolution(SparseConvolutionBase):
                         if input.benchmark:
                             torch.cuda.synchronize()
                             t = time.time()
-                        with input._timer.namespace("gen_pairs"):
+                        _gen_ctx = input._timer.namespace("gen_pairs") if input._timer is not None else nullcontext()
+                        with _gen_ctx:
                             # we need to gen bwd indices for regular conv
                             # because it may be inversed.
                             try:
@@ -280,11 +281,22 @@ class SparseConvolution(SparseConvolutionBase):
                                     )
                                 )
                             except Exception as e:
-                                msg = "[Exception|implicit_gemm_pair]"
-                                msg += f"indices={indices.shape}," "bs={batch_size}," "ss={spatial_shape},"
-                                msg += f"algo={algo}," "ksize={self.kernel_size}," "stride={self.stride},"
-                                msg += f"padding={self.padding}," "dilation={self.dilation}," "subm={self.subm},"
-                                msg += f"transpose={self.transposed}"
+
+                                def _idx_shape_str() -> str:
+                                    try:
+                                        return str(tuple(int(s) for s in indices.shape))
+                                    except Exception:
+                                        return str(indices.shape)
+
+                                msg = (
+                                    f"[Exception|implicit_gemm_pair]indices_shape={_idx_shape_str()},"
+                                    f"bs={batch_size},ss={spatial_shape},algo={algo},"
+                                    f"ksize={self.kernel_size},stride={self.stride},"
+                                    f"padding={self.padding},dilation={self.dilation},"
+                                    f"subm={self.subm},transpose={self.transposed},"
+                                    f"indices_dtype={getattr(indices, 'dtype', None)},"
+                                    f"indices_device={getattr(indices, 'device', None)}"
+                                )
                                 print(msg, file=sys.stderr)
                                 spconv_save_debug_data(indices)
                                 raise e
@@ -351,7 +363,7 @@ class SparseConvolution(SparseConvolutionBase):
                         self.subm,
                         input._timer,
                         self.fp32_accum,
-                        None,
+                        bias_cur,
                         act_alpha,
                         act_beta,
                         act_type,
@@ -363,9 +375,6 @@ class SparseConvolution(SparseConvolutionBase):
                         output_add_scale,
                         output_dtype,
                     )
-
-                    if bias_cur is not None:
-                        out_features = out_features + bias_cur
 
         if bias_for_training is not None:
             out_features += bias_for_training

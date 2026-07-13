@@ -2,7 +2,6 @@
 Project registry for deployment bundles.
 
 Each deployment project registers an adapter that knows how to:
-- add its CLI args
 - construct data_loader / evaluator / runner
 - execute the deployment workflow
 
@@ -13,17 +12,24 @@ from __future__ import annotations
 
 import argparse
 from dataclasses import dataclass
-from typing import Callable, Dict, Tuple
+from typing import Callable, Dict
 
 
 @dataclass(frozen=True)
 class ProjectAdapter:
-    """Minimal adapter interface for a deployment project."""
+    """Minimal adapter interface for a deployment project.
+
+    Projects deliberately have no per-project CLI flags: everything that shapes the exported
+    artifact lives in the deploy config so it is versioned with the artifact and reproducible.
+    The CLI only carries invocation concerns (``deploy_cfg``, ``model_cfg``, ``--log-level``),
+    which ``deployment/cli/args.py`` adds to every subparser.
+
+    Required-component validation is the deploy config's job (each project's
+    ``*DeploymentConfig._validate_components``), so the adapter only maps a name to its ``run``.
+    """
 
     name: str
-    add_args: Callable[[argparse.ArgumentParser], None]
     run: Callable[[argparse.Namespace], int]
-    required_components: Tuple[str, ...] = ()
 
 
 class ProjectRegistry:
@@ -52,29 +58,6 @@ class ProjectRegistry:
 
     def list_projects(self) -> list[str]:
         return sorted(self._adapters.keys())
-
-    def validate_required_components(self, project_name: str, components_cfg) -> None:
-        """Validate required component keys for a registered project."""
-        adapter = self.get(project_name)
-        if not adapter.required_components:
-            return
-
-        missing = []
-        for component_name in adapter.required_components:
-            try:
-                components_cfg.get_component(component_name)
-            except KeyError:
-                missing.append(component_name)
-
-        if not missing:
-            return
-
-        available = sorted(list(components_cfg.component_names()))
-        missing_str = ", ".join(missing)
-        available_str = ", ".join(available)
-        raise KeyError(
-            f"{adapter.name} requires components [{missing_str}], " f"but available components are [{available_str}]."
-        )
 
 
 project_registry = ProjectRegistry()

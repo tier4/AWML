@@ -142,7 +142,7 @@ class CenterPointONNXInferencePipeline(CenterPointInferencePipeline):
         expected_output_names = [
             out.name for out in self._components_cfg.get_component("pts_backbone_neck_head").io.outputs
         ]
-        output_names = self.order_head_outputs(onnx_output_names, expected_output_names)
+        output_names = self.order_outputs_by_config(onnx_output_names, expected_output_names)
 
         # Run inference with ordered output names (ONNX Runtime returns outputs in the same order)
         outputs = self.backbone_head_session.run(output_names, {input_name: input_array})

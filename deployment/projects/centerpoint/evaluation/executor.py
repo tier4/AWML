@@ -3,21 +3,20 @@ CenterPoint backend executor.
 
 Implements the task-specific backend execution primitives (pipeline creation and
 input preparation) for CenterPoint, shared by the evaluator and the verification
-runner via `~deployment.evaluation.backend_executor.BackendExecutor`.
+runner via `~deployment.execution.backend_executor.BackendExecutor`.
 """
 
 import logging
-from typing import List, Mapping, Optional
+from typing import List, Optional
 
 from typing_extensions import override
 
 from deployment.config.enums import Backend
 from deployment.config.schema import ComponentsConfig
-from deployment.evaluation.backend_executor import BackendExecutor
-from deployment.evaluation.evaluator_types import InferenceInput, ModelSpec
+from deployment.execution.point_cloud_backend_executor import PointCloudBackendExecutor
 from deployment.inference.base_inference_pipeline import BaseInferencePipeline
-from deployment.io.base_data_loader import BaseDataLoader
 from deployment.primitives.device import DeviceSpec
+from deployment.primitives.evaluator_types import ModelSpec
 from deployment.projects.centerpoint.inference.onnx_inference_pipeline import CenterPointONNXInferencePipeline
 from deployment.projects.centerpoint.inference.pytorch_inference_pipeline import CenterPointPyTorchInferencePipeline
 from deployment.projects.centerpoint.inference.tensorrt_inference_pipeline import CenterPointTensorRTInferencePipeline
@@ -25,7 +24,7 @@ from deployment.projects.centerpoint.inference.tensorrt_inference_pipeline impor
 logger = logging.getLogger(__name__)
 
 
-class CenterPointExecutor(BackendExecutor):
+class CenterPointExecutor(PointCloudBackendExecutor):
     """Backend execution primitives for CenterPoint (pipeline creation, input prep).
 
     Args:
@@ -82,32 +81,3 @@ class CenterPointExecutor(BackendExecutor):
             )
 
         raise ValueError(f"Unsupported backend: {backend.value}")
-
-    @override
-    def prepare_input(
-        self,
-        sample: Mapping[str, object],
-        data_loader: BaseDataLoader,
-        device: DeviceSpec,
-    ) -> InferenceInput:
-        """Build InferenceInput from sample (points + metainfo).
-
-        Args:
-            sample: Dict with 'points' and 'metainfo'.
-            data_loader: Unused; kept for interface compatibility.
-            device: Unused; kept for interface compatibility.
-
-        Returns:
-            InferenceInput with data=points and metadata=metainfo.
-
-        Raises:
-            ValueError: If 'points' is missing from sample.
-            KeyError: If 'metainfo' is missing from sample.
-        """
-        if "points" not in sample:
-            raise ValueError(f"Expected 'points' in sample. Got keys: {list(sample.keys())}")
-        if "metainfo" not in sample:
-            raise KeyError("Sample must contain 'metainfo' for CenterPoint postprocess.")
-        points = sample["points"]
-        metadata = sample["metainfo"]
-        return InferenceInput(data=points, metadata=metadata)

@@ -141,11 +141,12 @@ where `frame-range` represents the range of frames to visualize.
 # Deploy for t4dataset (export + verification + evaluation)
 python -m deployment.cli.main centerpoint \
     deployment/projects/centerpoint/config/deploy_config.py \
-    projects/CenterPoint/configs/t4dataset/second_secfpn_2xb8_121m_base.py \
-    --rot-y-axis-reference
+    projects/CenterPoint/configs/t4dataset/second_secfpn_2xb8_121m_base.py
 ```
 
-where `rot_y_axis_reference` can be removed if we would like to use the original counterclockwise x-axis rotation system.
+Set `rot_y_axis_reference = True` in the deploy config to output the y-axis clockwise rotation
+system; keep it `False` (the default) for the original counterclockwise x-axis rotation system.
+This option lives in the deploy config (not a CLI flag) so it is versioned with the exported artifact.
 
 ## Troubleshooting
 ### Difference from original CenterPoint from mmdetection3d v1

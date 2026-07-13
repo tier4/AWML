@@ -6,15 +6,14 @@ registers the project with ``deployment.projects.registry`` when the package is 
 
 from __future__ import annotations
 
-from deployment.projects.centerpoint.cli import add_args
 from deployment.projects.centerpoint.entrypoint import run
 from deployment.projects.registry import ProjectAdapter, project_registry
 
+# Options that shape the exported graph (e.g. ``rot_y_axis_reference``) live in the deploy config
+# (see ``CenterPointDeploymentConfig``) so they are versioned with the artifact, not passed on the CLI.
 project_registry.register(
     ProjectAdapter(
         name="centerpoint",
-        add_args=add_args,
         run=run,
-        required_components=("pts_voxel_encoder", "pts_backbone_neck_head"),
     )
 )

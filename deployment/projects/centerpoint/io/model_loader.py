@@ -7,19 +7,23 @@ This module provides ONNX-compatible model building from MMEngine configs.
 from __future__ import annotations
 
 import copy
-from typing import Tuple
+import logging
 
 import torch
 from mmengine.config import Config
-from mmengine.registry import MODELS, init_default_scope
-from mmengine.runner import load_checkpoint
 
+from deployment.io.mmdet3d_model import build_mmdet3d_model
 from deployment.primitives.device import DeviceSpec
-from deployment.projects.centerpoint.export.onnx_models import (  # noqa: F401 - register MODELS
+
+# Imported for their side effect: registering CenterPoint's ONNX module variants into the
+# MMDet3D registries so ``MODELS.build`` can resolve them during export.
+from deployment.projects.centerpoint.export.onnx_models import (  # noqa: F401
     centerpoint_head_onnx,
     centerpoint_onnx,
     pillar_encoder_onnx,
 )
+
+logger = logging.getLogger(__name__)
 
 
 def create_onnx_model_cfg(
@@ -66,57 +70,31 @@ def create_onnx_model_cfg(
     return export_model_cfg
 
 
-def build_model_from_cfg(
+def build_centerpoint_model(
     model_cfg: Config,
     checkpoint_path: str,
     device: DeviceSpec,
+    *,
+    rot_y_axis_reference: bool = False,
 ) -> torch.nn.Module:
-    """Build a model from MMEngine config and load checkpoint weights.
+    """Build a CenterPoint model from config and load checkpoint weights (for export + reference eval).
+
+    Swaps the model config to CenterPoint's ONNX-friendly module variants, then builds and
+    loads it via the shared mmdet3d model core (mirrors :func:`build_bevfusion_model`).
 
     Args:
         model_cfg: MMEngine model configuration.
         checkpoint_path: Path to the checkpoint file.
         device: Target device specification.
-
-    Returns:
-        Loaded and initialized PyTorch model in eval mode.
-    """
-    # Importing onnx_models above triggers MODELS registration for ONNX variants.
-    init_default_scope("mmdet3d")
-
-    model_config = copy.deepcopy(model_cfg.model)
-    model = MODELS.build(model_config)
-    torch_device = device.to_torch_device()
-    model.to(torch_device)
-    load_checkpoint(model, checkpoint_path, map_location=torch_device)
-    model.eval()
-    model.cfg = model_cfg
-    return model
-
-
-def build_centerpoint_onnx_model(
-    base_model_cfg: Config,
-    checkpoint_path: str,
-    device: DeviceSpec,
-    rot_y_axis_reference: bool = False,
-) -> Tuple[torch.nn.Module, Config]:
-    """Build an ONNX-compatible CenterPoint model.
-
-    Convenience wrapper that creates ONNX config and builds the model.
-
-    Args:
-        base_model_cfg: Base MMEngine model configuration.
-        checkpoint_path: Path to the checkpoint file.
-        device: Target device specification.
         rot_y_axis_reference: Whether to use y-axis rotation reference.
 
     Returns:
-        Tuple of ``(model, export_model_cfg)``; the latter matches ``model.cfg``.
+        The loaded model; the export config it was built from is available as ``model.cfg``.
     """
     export_model_cfg = create_onnx_model_cfg(
-        base_model_cfg,
+        model_cfg,
         device=device,
         rot_y_axis_reference=rot_y_axis_reference,
     )
-    model = build_model_from_cfg(export_model_cfg, checkpoint_path, device=device)
-    return model, export_model_cfg
+
+    return build_mmdet3d_model(export_model_cfg, checkpoint_path, device)

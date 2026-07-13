@@ -63,6 +63,13 @@ export = dict(
     sample_idx=0,
 )
 
+# Output box rotation as sin(y), cos(x) relative to the y-axis in the exported head, matching the
+# ONNX-compatible output format expected by the runtime. Shapes the exported graph, so it lives in
+# the config (versioned with the artifact) rather than as a CLI flag.
+# - True  : y-axis-referenced rotation output
+# - False : keep the training-time rotation encoding (default)
+rot_y_axis_reference = False
+
 # ONNX Export Settings (shared across all components).
 onnx_config = dict(
     opset_version=17,
@@ -188,7 +195,7 @@ evaluation = dict(
 #   especially when FP16 is enabled.
 # ============================================================================
 verification = dict(
-    enabled=False,
+    enabled=True,
     # TODO(vividf): double check the tolerance value
     tolerance=1,
     num_verify_samples=1,

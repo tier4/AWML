@@ -20,8 +20,9 @@ from __future__ import annotations
 
 import logging
 from pathlib import Path
-from typing import Any, List, Optional, Type
+from typing import Any, Callable, List, Optional, Tuple, Type
 
+import onnx
 import torch
 
 from deployment.config.base import BaseDeploymentConfig
@@ -33,6 +34,11 @@ from deployment.io.base_data_loader import BaseDataLoader
 from deployment.primitives.artifacts import Artifact
 
 logger = logging.getLogger(__name__)
+
+# A pipeline-level finalize hook: called once after every component has been exported, with the
+# list of written ONNX paths, the output directory, and the deploy config. Used for cross-component
+# post-processing such as BEVFusion's split (sparse+dense) -> single merged ONNX merge.
+FinalizeHook = Callable[[List[str], Path, BaseDeploymentConfig], None]
 
 
 class OnnxExportPipeline:
@@ -50,6 +56,7 @@ class OnnxExportPipeline:
         sample_extractor: SampleExtractor,
         component_builder: ModelComponentBuilder,
         onnx_wrapper_cls: Type[BaseModelWrapper] = IdentityWrapper,
+        finalize: Optional[FinalizeHook] = None,
     ) -> None:
         """Initialize the pipeline.
 
@@ -59,10 +66,14 @@ class OnnxExportPipeline:
                 exportable components.
             onnx_wrapper_cls: Model wrapper applied before ONNX export (defaults
                 to ``IdentityWrapper`` for models needing no output reshaping).
+            finalize: Optional cross-component post-processing hook, called once after all
+                components are exported (see :data:`FinalizeHook`). ``None`` (the default) means
+                the exported per-component files are the final artifacts.
         """
         self.sample_extractor = sample_extractor
         self.component_builder = component_builder
         self._onnx_wrapper_cls = onnx_wrapper_cls
+        self._finalize = finalize
 
     def export(
         self,
@@ -99,6 +110,11 @@ class OnnxExportPipeline:
         logger.info("=" * 80)
 
         exported_paths = self._export_components(components, output_dir_path, config)
+
+        if self._finalize is not None:
+            logger.info("Running post-export finalize hook (%s)...", getattr(self._finalize, "__name__", "finalize"))
+            self._finalize(exported_paths, output_dir_path, config)
+
         self._log_summary(exported_paths)
 
         return Artifact(path=str(output_dir_path))
@@ -158,9 +174,38 @@ class OnnxExportPipeline:
                 logger.error("Failed to export %s", component.name, exc_info=True)
                 raise RuntimeError(f"{component.name} ONNX export failed") from exc
 
+            if component.post_transforms:
+                self._apply_post_transforms(output_path, component.post_transforms, component.name)
+
             exported_paths.append(str(output_path))
 
         return exported_paths
+
+    @staticmethod
+    def _apply_post_transforms(
+        output_path: Path,
+        transforms: Tuple[Callable[[onnx.ModelProto], onnx.ModelProto], ...],
+        component_name: str,
+    ) -> None:
+        """Load the exported ONNX, apply each graph transform in order, and save it back.
+
+        Args:
+            output_path: Path of the freshly exported ONNX file to transform in place.
+            transforms: Ordered graph transforms; each takes and returns an ``onnx.ModelProto``.
+            component_name: Component name, used only for logging.
+
+        Raises:
+            RuntimeError: If loading, transforming, or saving the ONNX fails.
+        """
+        try:
+            model_proto = onnx.load(str(output_path))
+            for transform in transforms:
+                model_proto = transform(model_proto)
+            onnx.save_model(model_proto, str(output_path))
+        except Exception as exc:
+            logger.error("Post-export transform failed for %s", component_name, exc_info=True)
+            raise RuntimeError(f"{component_name} ONNX post-export transform failed") from exc
+        logger.info("Applied %s post-export transform(s) to %s", len(transforms), output_path.name)
 
     def _build_onnx_exporter(self, config: BaseDeploymentConfig, component_name: str) -> ONNXExporter:
         """Create an ONNX exporter for the given component.

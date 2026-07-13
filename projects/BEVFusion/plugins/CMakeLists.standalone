@@ -1,0 +1,181 @@
+# Standalone CMakeLists to build autoware_tensorrt_plugins without ament/autoware_cmake.
+# Used by build_plugin_inside_container.sh inside BEVFusion Docker.
+# Expects: PLUGIN_SRC_DIR, TensorRT_ROOT (e.g. from pip: python -c "import tensorrt; print(tensorrt.__path__[0])")
+cmake_minimum_required(VERSION 3.14)
+project(autoware_tensorrt_plugins LANGUAGES CXX CUDA)
+
+set(PLUGIN_SRC_DIR "" CACHE PATH "Path to autoware_tensorrt_plugins source (with src/ and include/)")
+set(TensorRT_ROOT "" CACHE PATH "TensorRT root (e.g. pip site-packages/tensorrt)")
+set(TensorRT_INCLUDE_DIR "" CACHE PATH "Explicit include directory containing NvInferRuntime.h")
+set(TensorRT_EXTRA_HINT_DIRS "" CACHE STRING "Semicolon-separated extra directories to search TensorRT libs")
+set(NVINFER_LIBRARY "" CACHE FILEPATH "Explicit path to libnvinfer(.so*)")
+set(NVONNXPARSER_LIBRARY "" CACHE FILEPATH "Explicit path to libnvonnxparser(.so*)")
+
+if(NOT PLUGIN_SRC_DIR OR NOT EXISTS "${PLUGIN_SRC_DIR}/src")
+  message(FATAL_ERROR "PLUGIN_SRC_DIR must point to the plugin source tree (with src/). Set -DPLUGIN_SRC_DIR=...")
+endif()
+if(NOT TensorRT_ROOT OR NOT EXISTS "${TensorRT_ROOT}")
+  message(FATAL_ERROR "TensorRT_ROOT must point to TensorRT (e.g. pip path). Set -DTensorRT_ROOT=...")
+endif()
+
+add_compile_options(-Wno-deprecated-declarations)
+set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CUDA_STANDARD 17)
+
+# CUDA
+find_package(CUDA REQUIRED)
+set(CUDA_AVAIL ON)
+
+# TensorRT: pip wheels may only ship versioned libs (e.g. libnvinfer.so.10)
+# and not the unversioned symlink. Support both explicit paths and hint dirs.
+if(NOT TensorRT_INCLUDE_DIR)
+  find_path(TensorRT_INCLUDE_DIR
+    NAMES NvInferRuntime.h NvInfer.h
+    HINTS
+      "${TensorRT_ROOT}"
+      "${TensorRT_ROOT}/include"
+      ${TensorRT_EXTRA_HINT_DIRS}
+      /usr/include
+      /usr/include/x86_64-linux-gnu
+    PATH_SUFFIXES
+      include
+      include/x86_64-linux-gnu
+      x86_64-linux-gnu
+  )
+endif()
+if(NOT TensorRT_INCLUDE_DIR)
+  message(FATAL_ERROR
+    "TensorRT headers not found (NvInferRuntime.h / NvInfer.h).\n"
+    "  TensorRT_ROOT=${TensorRT_ROOT}\n"
+    "  TensorRT_INCLUDE_DIR=${TensorRT_INCLUDE_DIR}\n"
+    "  TensorRT_EXTRA_HINT_DIRS=${TensorRT_EXTRA_HINT_DIRS}"
+  )
+endif()
+set(TensorRT_INCLUDE_DIRS "${TensorRT_INCLUDE_DIR}")
+
+set(TRT_HINT_DIRS "${TensorRT_ROOT}" "${TensorRT_ROOT}/lib")
+if(TensorRT_EXTRA_HINT_DIRS)
+  list(APPEND TRT_HINT_DIRS ${TensorRT_EXTRA_HINT_DIRS})
+endif()
+list(REMOVE_DUPLICATES TRT_HINT_DIRS)
+
+if(NOT NVINFER_LIBRARY)
+  find_library(NVINFER_LIBRARY
+    NAMES
+      nvinfer
+      nvinfer.so.10 nvinfer.so.9 nvinfer.so.8
+      libnvinfer.so.10 libnvinfer.so.9 libnvinfer.so.8
+    HINTS ${TRT_HINT_DIRS}
+  )
+endif()
+if(NOT NVONNXPARSER_LIBRARY)
+  find_library(NVONNXPARSER_LIBRARY
+    NAMES
+      nvonnxparser
+      nvonnxparser.so.10 nvonnxparser.so.9 nvonnxparser.so.8
+      libnvonnxparser.so.10 libnvonnxparser.so.9 libnvonnxparser.so.8
+    HINTS ${TRT_HINT_DIRS}
+  )
+endif()
+if(NOT NVINFER_LIBRARY OR NOT NVONNXPARSER_LIBRARY)
+  message(FATAL_ERROR
+    "TensorRT libraries not found.\n"
+    "  NVINFER_LIBRARY=${NVINFER_LIBRARY}\n"
+    "  NVONNXPARSER_LIBRARY=${NVONNXPARSER_LIBRARY}\n"
+    "  TensorRT_ROOT=${TensorRT_ROOT}\n"
+    "  TensorRT_EXTRA_HINT_DIRS=${TensorRT_EXTRA_HINT_DIRS}\n"
+    "  TRT_HINT_DIRS=${TRT_HINT_DIRS}"
+  )
+endif()
+message(STATUS "TensorRT NVINFER: ${NVINFER_LIBRARY}")
+message(STATUS "TensorRT NVONNXPARSER: ${NVONNXPARSER_LIBRARY}")
+message(STATUS "TensorRT includes: ${TensorRT_INCLUDE_DIRS}")
+set(TRT_AVAIL ON)
+
+# spconv / cumm (from .deb installed in container)
+find_package(cumm QUIET)
+find_package(spconv QUIET)
+if(NOT cumm_FOUND OR NOT spconv_FOUND)
+  message(FATAL_ERROR "cumm and spconv required (install spconv_cpp .deb first). cumm_FOUND=${cumm_FOUND} spconv_FOUND=${spconv_FOUND}")
+endif()
+set(SPCONV_AVAIL ON)
+
+include_directories(
+  "${PLUGIN_SRC_DIR}/include"
+  "${PLUGIN_SRC_DIR}/src"
+  ${CUDA_INCLUDE_DIRS}
+  ${TensorRT_INCLUDE_DIRS}
+)
+add_definitions(-DTV_CUDA)
+
+# CUDA compile options (must be attached to targets so nvcc sees them)
+set(TRT_PLUGIN_CUDA_FLAGS
+  "--expt-relaxed-constexpr"
+  "--extended-lambda"
+  "-diag-suppress=1675"
+  "-gencode=arch=compute_75,code=sm_75"
+  "-gencode=arch=compute_86,code=sm_86"
+  "-gencode=arch=compute_87,code=sm_87"
+  "-gencode=arch=compute_89,code=sm_89"
+)
+if(CUDA_VERSION VERSION_GREATER_EQUAL "12.8")
+  list(APPEND TRT_PLUGIN_CUDA_FLAGS "-gencode=arch=compute_89,code=compute_89")
+endif()
+
+# cuda_ops (CUDA shared library; container has CUDA from base image)
+add_library(cuda_ops SHARED
+  "${PLUGIN_SRC_DIR}/src/argsort_ops/argsort.cu"
+  "${PLUGIN_SRC_DIR}/src/bev_ops/bev_pool_cuda.cu"
+  "${PLUGIN_SRC_DIR}/src/scatter_ops/segment_csr.cu"
+  "${PLUGIN_SRC_DIR}/src/unique_ops/unique.cu"
+  "${PLUGIN_SRC_DIR}/src/multi_scale_deform_attn_ops/ms_deform_attn_kernel.cu"
+  "${PLUGIN_SRC_DIR}/src/rotate_ops/rotate_kernel.cu"
+  "${PLUGIN_SRC_DIR}/src/select_and_pad_ops/select_and_pad_kernel.cu"
+)
+target_include_directories(cuda_ops PRIVATE ${CUDA_INCLUDE_DIRS} "${PLUGIN_SRC_DIR}/include" "${PLUGIN_SRC_DIR}/src")
+set_target_properties(cuda_ops PROPERTIES
+  POSITION_INDEPENDENT_CODE ON
+  CUDA_SEPARABLE_COMPILATION ON
+)
+target_compile_options(cuda_ops PRIVATE
+  $<$<COMPILE_LANGUAGE:CUDA>:${TRT_PLUGIN_CUDA_FLAGS}>
+)
+
+# Main plugin library
+add_library(${PROJECT_NAME} SHARED
+  "${PLUGIN_SRC_DIR}/src/argsort_plugin.cpp"
+  "${PLUGIN_SRC_DIR}/src/argsort_plugin_creator.cpp"
+  "${PLUGIN_SRC_DIR}/src/quick_cumsum_cuda_plugin.cpp"
+  "${PLUGIN_SRC_DIR}/src/quick_cumsum_cuda_plugin_creator.cpp"
+  "${PLUGIN_SRC_DIR}/src/get_indices_pairs_implicit_gemm_plugin_creator.cpp"
+  "${PLUGIN_SRC_DIR}/src/get_indices_pairs_implicit_gemm_plugin.cpp"
+  "${PLUGIN_SRC_DIR}/src/get_indices_pairs_plugin_creator.cpp"
+  "${PLUGIN_SRC_DIR}/src/get_indices_pairs_plugin.cpp"
+  "${PLUGIN_SRC_DIR}/src/implicit_gemm_plugin_creator.cpp"
+  "${PLUGIN_SRC_DIR}/src/implicit_gemm_plugin.cpp"
+  "${PLUGIN_SRC_DIR}/src/indice_conv_plugin_creator.cpp"
+  "${PLUGIN_SRC_DIR}/src/indice_conv_plugin.cpp"
+  "${PLUGIN_SRC_DIR}/src/multi_scale_deformable_attention_plugin.cpp"
+  "${PLUGIN_SRC_DIR}/src/multi_scale_deformable_attention_plugin_creator.cpp"
+  "${PLUGIN_SRC_DIR}/src/rotate_plugin.cpp"
+  "${PLUGIN_SRC_DIR}/src/rotate_plugin_creator.cpp"
+  "${PLUGIN_SRC_DIR}/src/segment_csr_plugin_creator.cpp"
+  "${PLUGIN_SRC_DIR}/src/segment_csr_plugin.cpp"
+  "${PLUGIN_SRC_DIR}/src/select_and_pad_plugin.cpp"
+  "${PLUGIN_SRC_DIR}/src/select_and_pad_plugin_creator.cpp"
+  "${PLUGIN_SRC_DIR}/src/unique_plugin.cpp"
+  "${PLUGIN_SRC_DIR}/src/unique_plugin_creator.cpp"
+  "${PLUGIN_SRC_DIR}/src/plugin_registration.cpp"
+  "${PLUGIN_SRC_DIR}/src/plugin_utils.cpp"
+)
+target_compile_definitions(${PROJECT_NAME} PRIVATE _GLIBCXX_USE_CXX11_ABI=1)
+target_compile_options(${PROJECT_NAME} PRIVATE
+  $<$<COMPILE_LANGUAGE:CUDA>:${TRT_PLUGIN_CUDA_FLAGS}>
+)
+target_link_libraries(${PROJECT_NAME} PRIVATE
+  ${NVINFER_LIBRARY}
+  ${NVONNXPARSER_LIBRARY}
+  CUDA::cudart
+  cuda_ops
+  spconv::spconv
+)

@@ -16,8 +16,7 @@ python -m deployment.cli.main <project_name> <deploy_cfg.py> <model_cfg.py> [--l
 # Example (CenterPoint)
 python -m deployment.cli.main centerpoint \
     deployment/projects/centerpoint/config/deploy_config.py \
-    <model_cfg.py> \
-    --rot-y-axis-reference
+    <model_cfg.py>
 ```
 
 ## What to read
@@ -46,12 +45,14 @@ deployment/
 ├── cli/           # Unified CLI
 ├── config/        # Typed deploy config schema
 ├── io/            # Data-loader base and sample types
-├── export/        # exporters/ (ONNX/TensorRT), pipelines/, ExportContext
+├── export/        # exporters/ (ONNX/TensorRT), pipelines/
 ├── inference/     # Shared inference pipeline base and GPU resource helpers
-├── evaluation/    # Evaluator, backend executor, verifier, output comparison
+├── execution/     # BackendExecutor primitives (shared by evaluation + verification)
+├── evaluation/    # Evaluators and metrics scoring
+├── verification/  # Cross-backend numerical comparison (BackendVerifier, OutputComparator)
 ├── metrics/       # Task metrics interfaces (3D/2D detection, classification)
 ├── runtime/       # BaseDeploymentRunner, orchestrators, ArtifactManager
-├── primitives/    # Cross-cutting leaf types: device (DeviceSpec), artifacts (path resolution)
+├── primitives/    # Cross-cutting leaf types: device (DeviceSpec), artifacts, evaluator_types
 ├── projects/      # Per-task bundles
 └── tests/         # CPU-only unit tests (pytest)
 ```

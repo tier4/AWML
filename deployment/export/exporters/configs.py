@@ -81,8 +81,11 @@ class TensorRTExportConfig:
         max_workspace_size: Workspace size in bytes.
         model_input: Per-input optimization-profile shapes. A single config already maps
             multiple named inputs via ``input_shapes``; None means no dynamic profile.
+        plugin_libraries: Custom TensorRT plugin ``.so`` paths to load before building
+            the engine (e.g. the BEVFusion spconv ImplicitGemm plugin). Empty by default.
     """
 
     precision_policy: PrecisionPolicy = PrecisionPolicy.AUTO
     max_workspace_size: int = 1 << 30
     model_input: Optional[TensorRTModelInputConfig] = None
+    plugin_libraries: Tuple[str, ...] = ()

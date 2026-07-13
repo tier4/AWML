@@ -54,12 +54,14 @@ flowchart TD
 | `deployment/cli/` | Unified CLI and shared argument helpers |
 | `deployment/config/` | Typed deployment config and schema |
 | `deployment/io/` | Data-loader base and sample types |
-| `deployment/export/` | ONNX/TensorRT exporters (`exporters/`), export pipeline bases (`pipelines/`), and the `ExportContext` base |
+| `deployment/export/` | ONNX/TensorRT exporters (`exporters/`) and export pipeline bases (`pipelines/`) |
 | `deployment/inference/` | Shared inference pipeline base and GPU resource helpers |
-| `deployment/evaluation/` | Base evaluator, backend executor, backend verifier, and output-comparison helpers |
+| `deployment/execution/` | `BackendExecutor` primitives (backend pipeline creation, input prep, device handling) — the shared stage that evaluation and verification both build on |
+| `deployment/evaluation/` | Base evaluator and task evaluators (`Detection3DEvaluator`) — metrics scoring |
+| `deployment/verification/` | Cross-backend numerical comparison (`BackendVerifier`, `OutputComparator`) — a peer stage to evaluation, not a form of it |
 | `deployment/metrics/` | Task metrics interfaces (3D/2D detection, classification) |
 | `deployment/runtime/` | Base runner, orchestrators, and artifact management |
-| `deployment/primitives/` | Cross-cutting leaf types used by every stage: `device` (`DeviceSpec`) and `artifacts` (path resolution) — not a pipeline stage |
+| `deployment/primitives/` | Cross-cutting leaf types used by every stage: `device` (`DeviceSpec`), `artifacts` (path resolution), and `evaluator_types` (shared value types: `InferenceInput`, `ModelSpec`, result dicts) — not a pipeline stage |
 | `deployment/projects/<project>/` | Project-specific entrypoint, runner, config, io, export, inference, evaluation, and optional contexts logic (see the project layout contract below) |
 
 ## Extension contract
@@ -111,16 +113,14 @@ implement. When you author a new project, walk this table top to bottom — ever
 
 | Project path (`projects/<project>/`) | Mirrors framework module | What to implement | Required |
 | --- | --- | --- | --- |
-| `__init__.py` | [`projects/registry.py`](../projects/registry.py) | Register a `ProjectAdapter` (`name`, `add_args`, `run`) | Required |
+| `__init__.py` | [`projects/registry.py`](../projects/registry.py) | Register a `ProjectAdapter` (`name`, `run`) | Required |
 | `entrypoint.py` | [`cli/`](../cli) + `projects/registry.py` | A `run(args)` that builds config, loader, evaluator, runner | Required |
-| `cli.py` | [`cli/args.py`](../cli/args.py) | `add_args(parser)` for project flags (may be a no-op) | Required |
-| `config/` | [`config/`](../config) | Deploy config consumed as `BaseDeploymentConfig` | Required |
+| `config/` | [`config/`](../config) | Deploy config consumed as `BaseDeploymentConfig` (subclass it to model project-specific keys as typed attributes) | Required |
 | `io/` | [`io/`](../io) | `BaseDataLoader` + `SampleData` subclasses | Required |
 | `inference/` | [`inference/`](../inference) | `BaseInferencePipeline` per backend (+ `GPUResourceMixin` for TensorRT) | Required |
-| `evaluation/` | [`evaluation/`](../evaluation) | `BaseEvaluator` + `BackendExecutor` subclasses | Required |
+| `evaluation/` | [`evaluation/`](../evaluation) + [`execution/`](../execution) | `evaluator.py` (a `BaseEvaluator`/`Detection3DEvaluator` subclass) + `executor.py` (a `BackendExecutor`/`PointCloudBackendExecutor` subclass); the executor base lives in `execution/`, its project subclass sits beside the evaluator here | Required |
 | `runner.py` | [`runtime/runner.py`](../runtime/runner.py) | Thin `BaseDeploymentRunner` subclass | Required |
 | `export/` | [`export/`](../export) | `ModelComponentBuilder` + `SampleExtractor` subclasses (in `export/pipelines/`); plus `export/onnx_models/` for export-time ONNX graph definitions | Optional |
-| `contexts.py` | [`export/contexts.py`](../export/contexts.py) | `ExportContext` subclass — only if you need extra context fields | Optional |
 
 Metrics are intentionally **not** a project directory. Metrics configs,
 interfaces, and the extractors that build a config from a model config are
@@ -134,9 +134,10 @@ introduce a genuinely new task, not a new model.
 
 Every stage directory mirrors its framework counterpart by the **same name**
 (`config`, `io`, `export`, `inference`, `evaluation`) — no exceptions. The only
-non-mirrored items are the wiring single-files: `entrypoint.py`, `cli.py`,
-`runner.py`, and `contexts.py`, which glue the project to `cli/`,
-`runtime/runner.py`, and `export/contexts.py`.
+non-mirrored items are the wiring single-files: `entrypoint.py` and `runner.py`,
+which glue the project to `cli/` and `runtime/runner.py`. Projects have no
+per-project CLI flags — everything that shapes the exported artifact lives in the
+deploy config, so the CLI carries only `deploy_cfg`, `model_cfg`, and `--log-level`.
 
 ### Pipeline naming
 

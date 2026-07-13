@@ -12,13 +12,9 @@ Supports:
 
 from __future__ import annotations
 
-import logging
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Mapping, Optional, Protocol, Union, runtime_checkable
-
-logger = logging.getLogger(__name__)
-
 
 # ============================================================================
 # Artifact Dataclass

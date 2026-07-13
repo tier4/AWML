@@ -25,11 +25,23 @@ class GPUResourceMixin(ABC):
     """
 
     _cleanup_called: bool = False
+    # Free the CUDA cache every N samples during long eval loops (GPU backends only).
+    _gpu_cleanup_interval: int = 10
 
     @abstractmethod
     def _release_gpu_resources(self) -> None:
         """Release backend-specific GPU resources owned by the instance."""
         raise NotImplementedError
+
+    def periodic_cleanup(self, sample_idx: int) -> None:
+        """Free the CUDA cache every ``_gpu_cleanup_interval`` samples during long eval loops.
+
+        Overrides the no-op :meth:`BaseInferencePipeline.periodic_cleanup` for every GPU-backed
+        pipeline that mixes in this class (TensorRT), so CUDA cache growth over a long evaluation
+        loop is bounded without each backend re-implementing the same guard.
+        """
+        if sample_idx > 0 and sample_idx % self._gpu_cleanup_interval == 0 and torch.cuda.is_available():
+            torch.cuda.empty_cache()
 
     def cleanup(self) -> None:
         """Release GPU resources once and clear CUDA caches (best effort)."""

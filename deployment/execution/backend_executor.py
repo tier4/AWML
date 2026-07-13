@@ -7,7 +7,7 @@ model input, and manage the reference PyTorch model's device placement.
 
 It is shared by both `~deployment.evaluation.base_evaluator.BaseEvaluator`
 (the evaluation loop) and
-`~deployment.evaluation.backend_verifier.BackendVerifier` (the
+`~deployment.verification.backend_verifier.BackendVerifier` (the
 reference/test verification loop), so neither has to depend on the other.
 """
 
@@ -18,10 +18,10 @@ from abc import ABC, abstractmethod
 from typing import Any, List, Mapping, Optional
 
 from deployment.config.enums import Backend
-from deployment.evaluation.evaluator_types import InferenceInput, ModelSpec
 from deployment.inference.base_inference_pipeline import BaseInferencePipeline
 from deployment.io.base_data_loader import BaseDataLoader
 from deployment.primitives.device import DeviceSpec
+from deployment.primitives.evaluator_types import InferenceInput, ModelSpec
 
 logger = logging.getLogger(__name__)
 
@@ -70,7 +70,7 @@ class BackendExecutor(ABC):
 
         Override when the backend's pipeline returns a sequence of tensors with known
         semantic names (e.g. detection heads). The names are forwarded to the
-        `~deployment.evaluation.output_comparator.OutputComparator` to label
+        `~deployment.verification.output_comparator.OutputComparator` to label
         positions in diagnostic paths.
 
         Returns:

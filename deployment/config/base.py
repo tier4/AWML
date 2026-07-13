@@ -51,8 +51,6 @@ class BaseDeploymentConfig:
         Args:
             deploy_cfg: MMEngine Config object containing deployment settings
         """
-        self._deploy_cfg = deploy_cfg
-
         checkpoint_path = deploy_cfg.get("checkpoint_path")
         self.checkpoint_path = self._validate_checkpoint_path(checkpoint_path)
         self.device_config = DeviceConfig.from_dict(deploy_cfg.get("devices", {}))
@@ -192,4 +190,5 @@ class BaseDeploymentConfig:
             precision_policy=self._tensorrt_config.precision_policy,
             max_workspace_size=self._tensorrt_config.max_workspace_size,
             model_input=model_input,
+            plugin_libraries=self._tensorrt_config.plugin_libraries,
         )

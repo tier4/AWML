@@ -59,14 +59,12 @@ class TensorDiffDetail:
         shape: NumPy shape of this tensor.
         max_diff: Max absolute difference on this tensor.
         mean_diff: Mean absolute difference on this tensor.
-        passed: Whether this tensor alone satisfies ``tolerance``.
     """
 
     path: str
     shape: Tuple[int, ...]
     max_diff: float
     mean_diff: float
-    passed: bool
 
 
 class OutputComparator:
@@ -160,7 +158,6 @@ class OutputComparator:
                     shape=tuple(int(x) for x in ref_np.shape),
                     max_diff=float("inf"),
                     mean_diff=float("inf"),
-                    passed=False,
                 )
             )
             return _fail(path, f"shape mismatch {ref_np.shape} vs {test_np.shape}")
@@ -180,7 +177,6 @@ class OutputComparator:
                 shape=tuple(int(x) for x in ref_np.shape),
                 max_diff=max_diff,
                 mean_diff=mean_diff,
-                passed=passed,
             )
         )
         return OutputDiffSummary(
@@ -202,7 +198,11 @@ class OutputComparator:
 
         for result in results:
             max_diff = max(max_diff, result.max_diff)
-            total_diff += result.mean_diff * result.num_elements
+            # Skip zero-element children (shape/type mismatches carry mean_diff=inf,
+            # num_elements=0): inf * 0 is nan and would poison the whole mean. The
+            # mismatch still surfaces via all_passed=False and max_diff=inf.
+            if result.num_elements:
+                total_diff += result.mean_diff * result.num_elements
             total_elements += result.num_elements
             if not result.passed and all_passed:
                 all_passed = False

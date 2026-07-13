@@ -7,8 +7,86 @@ try:
 except ImportError:
     linear_sum_assignment = None
 
+from mmdet3d.models import circle_nms
+from mmdet3d.models.layers import nms_bev
 from mmdet3d.registry import TASK_UTILS
+from mmdet3d.structures import xywhr2xyxyr
 from mmengine.structures import InstanceData
+
+
+def apply_cluster_nms(
+    boxes3d,
+    scores,
+    labels,
+    nms_type,
+    nms_clusters,
+    box_type_3d=None,
+    pre_max_size=None,
+    post_max_size=None,
+):
+    """Per-cluster NMS keep-filter shared by the detection head and the deployment postprocess.
+
+    Extracted verbatim from ``BEVFusionHead.predict_by_feat`` so both callers select the same
+    detections (single source of truth). For each cluster the boxes are kept as-is when the
+    cluster ``nms_threshold`` is 0, otherwise filtered with circle NMS (``nms_type == 'circle'``,
+    radius = ``nms_threshold``, capped at the cluster ``post_max_size``) or BEV IoU NMS.
+
+    Args:
+        boxes3d: Decoded boxes ``[M, >=7]`` (x, y, z, dx, dy, dz, yaw, ...).
+        scores: Per-box scores ``[M]``.
+        labels: Per-box class indices ``[M]``.
+        nms_type: ``'circle'`` for circle NMS, ``None`` to skip NMS, otherwise BEV IoU NMS.
+        nms_clusters: List of ``{class_indices, nms_threshold, post_max_size}`` dicts.
+        box_type_3d: Box class used only by the BEV IoU branch (ignored for circle NMS).
+        pre_max_size: ``test_cfg['pre_max_size']`` for the BEV IoU branch.
+        post_max_size: ``test_cfg['post_max_size']`` for the BEV IoU branch.
+
+    Returns:
+        Filtered ``(boxes3d, scores, labels)``.
+    """
+    if nms_type is None:
+        return boxes3d, scores, labels
+
+    keep_mask = torch.zeros_like(scores)
+    for nms_cluster in nms_clusters:
+        task_mask = torch.zeros_like(scores)
+        for cls_idx in nms_cluster["class_indices"]:
+            task_mask += labels == cls_idx
+        task_mask = task_mask.bool()
+        if nms_cluster["nms_threshold"] > 0:
+            if nms_type == "circle":
+                boxes_for_nms = torch.cat(
+                    [
+                        boxes3d[task_mask][:, :2],
+                        scores[:, None][task_mask],
+                    ],
+                    dim=1,
+                )
+                task_keep_indices = torch.tensor(
+                    circle_nms(
+                        boxes_for_nms.detach().cpu().numpy(),
+                        nms_cluster["nms_threshold"],
+                        post_max_size=nms_cluster["post_max_size"],
+                    )
+                )
+            else:
+                boxes_for_nms = xywhr2xyxyr(box_type_3d(boxes3d[task_mask][:, :7], 7).bev)
+                top_scores = scores[task_mask]
+                task_keep_indices = nms_bev(
+                    boxes_for_nms,
+                    top_scores,
+                    thresh=nms_cluster["nms_threshold"],
+                    pre_max_size=pre_max_size,
+                    post_max_size=post_max_size,
+                )
+        else:
+            task_keep_indices = torch.arange(task_mask.sum())
+        if task_keep_indices.shape[0] != 0:
+            keep_indices = torch.where(task_mask != 0)[0][task_keep_indices]
+            keep_mask[keep_indices] = 1
+    keep_mask = keep_mask.bool()
+
+    return boxes3d[keep_mask], scores[keep_mask], labels[keep_mask]
 
 
 @TASK_UTILS.register_module()

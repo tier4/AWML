@@ -17,25 +17,26 @@ from typing import List, Optional
 import torch
 
 from deployment.config.enums import Backend
-from deployment.evaluation.backend_executor import BackendExecutor
-from deployment.evaluation.evaluator_types import (
+from deployment.execution.backend_executor import BackendExecutor
+from deployment.inference.base_inference_pipeline import BaseInferencePipeline
+from deployment.io.base_data_loader import BaseDataLoader
+from deployment.primitives.device import DeviceSpec
+from deployment.primitives.evaluator_types import (
     ModelSpec,
     VerifyResultDict,
 )
-from deployment.evaluation.output_comparator import (
+from deployment.verification.output_comparator import (
     OutputComparator,
     OutputDiffSummary,
     TensorDiffDetail,
 )
-from deployment.inference.base_inference_pipeline import BaseInferencePipeline
-from deployment.io.base_data_loader import BaseDataLoader
-from deployment.primitives.device import DeviceSpec
+from deployment.verification.reporting import banner, format_verdict
 
 logger = logging.getLogger(__name__)
 
 
 def _fmt_finite_diff(value: float) -> str:
-    """Format a diff for logs; ``inf`` is spelled ``inf`` (not ``inf`` via ``%f`` quirks)."""
+    """Format a diff for logs: literal ``inf`` for infinities, else 6-decimal fixed-point."""
     return "inf" if math.isinf(value) else f"{value:.6f}"
 
 
@@ -177,9 +178,9 @@ class BackendVerifier:
         """
         executor = self._executor
 
-        logger.info("\n%s", "=" * 60)
+        logger.info("\n%s", banner())
         logger.info("Verifying sample %s", sample_idx)
-        logger.info("%s", "=" * 60)
+        logger.info("%s", banner())
 
         sample = data_loader.load_sample(sample_idx)
 
@@ -234,8 +235,7 @@ class BackendVerifier:
             )
         logger.info("  Overall Max difference: %s", _fmt_finite_diff(summary.max_diff))
         logger.info("  Overall Mean difference: %s", _fmt_finite_diff(summary.mean_diff))
-        verdict = "PASSED ✓" if summary.passed else "FAILED ✗"
-        logger.info("  %s verification %s", test_label, verdict)
+        logger.info("  %s verification %s", test_label, format_verdict(summary.passed))
 
     def _log_header(
         self,
@@ -247,46 +247,40 @@ class BackendVerifier:
         tolerance: float,
     ) -> None:
         """Emit a banner with models, devices, sample count and tolerance."""
-        logger.info("\n" + "=" * 60)
+        logger.info("\n" + banner())
         logger.info("Model Verification")
-        logger.info("=" * 60)
+        logger.info(banner())
         logger.info("Reference: %s on %s - %s", reference.backend.value, ref_device, reference.artifact.path)
         logger.info("Test: %s on %s - %s", test.backend.value, test_device, test.artifact.path)
         logger.info("Number of samples: %s", num_samples)
         logger.info("Tolerance: %s", tolerance)
-        logger.info("=" * 60)
+        logger.info(banner())
 
     def _log_sample_result(self, result: SampleVerificationResult) -> None:
         """Log a single sample's pass/fail verdict plus max/mean diff (and reason on fail)."""
-        if result.passed:
-            logger.info(
-                "  sample_%s PASSED ✓ (max_diff=%.6f, mean_diff=%.6f)",
-                result.sample_idx,
-                result.max_diff,
-                result.mean_diff,
-            )
-        else:
-            logger.warning(
-                "  sample_%s FAILED ✗ (max_diff=%.6f, mean_diff=%.6f) - %s",
-                result.sample_idx,
-                result.max_diff,
-                result.mean_diff,
-                result.reason or "no diagnostic",
-            )
+        log = logger.info if result.passed else logger.warning
+        suffix = "" if result.passed else f" - {result.reason or 'no diagnostic'}"
+        log(
+            "  sample_%s %s (max_diff=%.6f, mean_diff=%.6f)%s",
+            result.sample_idx,
+            format_verdict(result.passed),
+            result.max_diff,
+            result.mean_diff,
+            suffix,
+        )
 
     def _log_summary(self, sample_results: List[SampleVerificationResult]) -> None:
         """Log per-sample verdicts then an aggregate pass/fail counter."""
-        logger.info("\n" + "=" * 60)
+        logger.info("\n" + banner())
         logger.info("Verification Summary")
-        logger.info("=" * 60)
+        logger.info(banner())
 
         for r in sample_results:
-            status = "PASSED" if r.passed else "FAILED"
-            logger.info("  sample_%s: %s", r.sample_idx, status)
+            logger.info("  sample_%s: %s", r.sample_idx, format_verdict(r.passed))
 
         total = len(sample_results)
         passed = sum(1 for r in sample_results if r.passed)
         failed = total - passed
-        logger.info("=" * 60)
+        logger.info(banner())
         logger.info("Total: %s/%s passed, %s/%s failed", passed, total, failed, total)
-        logger.info("=" * 60)
+        logger.info(banner())

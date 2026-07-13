@@ -13,11 +13,14 @@ from __future__ import annotations
 
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
-from typing import Any, List
+from typing import TYPE_CHECKING, Any, Callable, List, Tuple
 
 import torch
 
 from deployment.config.schema import ComponentsConfig
+
+if TYPE_CHECKING:
+    import onnx
 
 
 @dataclass(frozen=True)
@@ -29,11 +32,17 @@ class ExportableComponent:
               config lookup, output filename, and logs.
         module: PyTorch module to export.
         sample_input: Sample input tensor for tracing.
+        post_transforms: Optional ONNX graph transforms applied (in order) to the exported
+            file after ``torch.onnx.export``. Each takes the loaded ``onnx.ModelProto`` and
+            returns the (possibly mutated) model. Empty for models needing no post-processing
+            (e.g. CenterPoint); used by BEVFusion for the TopK-constant fix and ImplicitGemm+ReLU
+            fusion.
     """
 
     name: str
     module: torch.nn.Module
     sample_input: Any
+    post_transforms: Tuple[Callable[["onnx.ModelProto"], "onnx.ModelProto"], ...] = ()
 
 
 class ModelComponentBuilder(ABC):

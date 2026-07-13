@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import numpy as np
 
-from deployment.evaluation.output_comparator import OutputComparator
+from deployment.verification.output_comparator import OutputComparator
 
 
 class TestOutputComparator:

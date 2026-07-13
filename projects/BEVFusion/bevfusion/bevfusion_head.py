@@ -6,16 +6,16 @@ import numpy as np
 import torch
 import torch.nn.functional as F
 from mmcv.cnn import ConvModule, build_conv_layer
-from mmdet3d.models import circle_nms, draw_heatmap_gaussian, gaussian_radius
+from mmdet3d.models import draw_heatmap_gaussian, gaussian_radius
 from mmdet3d.models.dense_heads.centerpoint_head import SeparateHead
-from mmdet3d.models.layers import nms_bev
 from mmdet3d.registry import MODELS
-from mmdet3d.structures import xywhr2xyxyr
 from mmdet.models.task_modules import AssignResult, PseudoSampler, build_assigner, build_bbox_coder, build_sampler
 from mmdet.models.utils import multi_apply
 from mmengine.logging import print_log
 from mmengine.structures import InstanceData
 from torch import nn
+
+from .utils import apply_cluster_nms
 
 
 def clip_sigmoid(x, eps=1e-4):
@@ -444,53 +444,19 @@ class BEVFusionHead(nn.Module):
                 boxes3d = temp[i]["bboxes"]
                 scores = temp[i]["scores"]
                 labels = temp[i]["labels"]
-                # adopt circle nms for different categories
-                if self.test_cfg["nms_type"] is not None:
-                    keep_mask = torch.zeros_like(scores)
-                    for nms_cluster in self.nms_clusters:
-                        task_mask = torch.zeros_like(scores)
-                        for cls_idx in nms_cluster["class_indices"]:
-                            task_mask += labels == cls_idx
-                        task_mask = task_mask.bool()
-                        if nms_cluster["nms_threshold"] > 0:
-                            if self.test_cfg["nms_type"] == "circle":
-                                boxes_for_nms = torch.cat(
-                                    [
-                                        boxes3d[task_mask][:, :2],
-                                        scores[:, None][task_mask],
-                                    ],
-                                    dim=1,
-                                )
-                                task_keep_indices = torch.tensor(
-                                    circle_nms(
-                                        boxes_for_nms.detach().cpu().numpy(),
-                                        nms_cluster["nms_threshold"],
-                                        post_max_size=nms_cluster["post_max_size"],
-                                    )
-                                )
-                            else:
-                                boxes_for_nms = xywhr2xyxyr(metas[i]["box_type_3d"](boxes3d[task_mask][:, :7], 7).bev)
-                                top_scores = scores[task_mask]
-                                task_keep_indices = nms_bev(
-                                    boxes_for_nms,
-                                    top_scores,
-                                    thresh=nms_cluster["nms_threshold"],
-                                    pre_max_size=self.test_cfg["pre_max_size"],
-                                    post_max_size=self.test_cfg["post_max_size"],
-                                )
-                        else:
-                            task_keep_indices = torch.arange(task_mask.sum())
-                        if task_keep_indices.shape[0] != 0:
-                            keep_indices = torch.where(task_mask != 0)[0][task_keep_indices]
-                            keep_mask[keep_indices] = 1
-                    keep_mask = keep_mask.bool()
-                    ret = dict(
-                        bboxes=boxes3d[keep_mask],
-                        scores=scores[keep_mask],
-                        labels=labels[keep_mask],
-                    )
-                else:  # no nms
-                    ret = dict(bboxes=boxes3d, scores=scores, labels=labels)
+                # adopt per-cluster nms for different categories (shared with the deployment
+                # postprocess via apply_cluster_nms so both select the same detections)
+                boxes3d, scores, labels = apply_cluster_nms(
+                    boxes3d,
+                    scores,
+                    labels,
+                    nms_type=self.test_cfg["nms_type"],
+                    nms_clusters=self.nms_clusters,
+                    box_type_3d=metas[i].get("box_type_3d"),
+                    pre_max_size=self.test_cfg.get("pre_max_size"),
+                    post_max_size=self.test_cfg.get("post_max_size"),
+                )
+                ret = dict(bboxes=boxes3d, scores=scores, labels=labels)
 
                 temp_instances = InstanceData()
                 temp_instances.bboxes_3d = metas[0]["box_type_3d"](ret["bboxes"], box_dim=ret["bboxes"].shape[-1])

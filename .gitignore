@@ -1,6 +1,10 @@
 # autoware-ml
 /data
 /work_dirs
+/deployment/graphify-out
+/graphify-out
+.gitignore
+CLAUDE.md
 
 *.bin
 *.onnx

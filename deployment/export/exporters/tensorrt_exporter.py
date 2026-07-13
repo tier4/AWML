@@ -10,6 +10,7 @@ import tensorrt as trt
 from deployment.config.enums import PrecisionPolicy
 from deployment.export.exporters.configs import TensorRTExportConfig
 from deployment.primitives.artifacts import Artifact
+from deployment.primitives.tensorrt_plugins import load_tensorrt_plugin_libraries
 
 logger = logging.getLogger(__name__)
 
@@ -57,6 +58,10 @@ class TensorRTExporter:
 
         # Initialize TensorRT
         trt_logger = trt.Logger(trt.Logger.WARNING)
+        # Load any custom plugin .so libraries (e.g. the BEVFusion spconv ImplicitGemm plugin)
+        # before the built-in plugin init, so their creators are registered for engine build.
+        # No-op when plugin_libraries is empty (e.g. CenterPoint).
+        load_tensorrt_plugin_libraries(self.config.plugin_libraries)
         trt.init_libnvinfer_plugins(trt_logger, "")
 
         builder = trt.Builder(trt_logger)

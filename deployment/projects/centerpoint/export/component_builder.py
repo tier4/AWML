@@ -10,8 +10,8 @@ import logging
 
 import torch
 
-from deployment.config.schema import ComponentsConfig
 from deployment.export.pipelines.component_builder import ExportableComponent, ModelComponentBuilder
+from deployment.projects.centerpoint.config.centerpoint_deployment_config import CenterPointDeploymentConfig
 from deployment.projects.centerpoint.export.onnx_models.centerpoint_onnx import CenterPointHeadONNX
 from deployment.projects.centerpoint.io.sample_types import CenterPointFeatureSample, compute_batch_size
 
@@ -28,14 +28,15 @@ class CenterPointComponentBuilder(ModelComponentBuilder):
 
     def __init__(
         self,
-        components_cfg: ComponentsConfig,
+        config: CenterPointDeploymentConfig,
     ) -> None:
         """Initialize CenterPoint component builder.
 
         Args:
-            components_cfg: Component config used to resolve export names.
+            config: CenterPoint deploy config supplying the component layout (mirrors
+                :class:`BEVFusionComponentBuilder`, which also takes its project deploy config).
         """
-        self._components_cfg = components_cfg
+        self._config = config
 
     def build_components(
         self,
@@ -53,13 +54,13 @@ class CenterPointComponentBuilder(ModelComponentBuilder):
         """
         logger.info("Extracting CenterPoint components for export...")
 
-        voxel_component = self._create_voxel_encoder_component(model, sample)
-        backbone_component = self._create_backbone_component(model, sample)
+        voxel_component = self._build_voxel_encoder_component(model, sample)
+        backbone_component = self._build_backbone_component(model, sample)
 
         logger.info("Extracted 2 components: pts_voxel_encoder, pts_backbone_neck_head")
         return [voxel_component, backbone_component]
 
-    def _create_voxel_encoder_component(
+    def _build_voxel_encoder_component(
         self,
         model: torch.nn.Module,
         sample: CenterPointFeatureSample,
@@ -73,14 +74,14 @@ class CenterPointComponentBuilder(ModelComponentBuilder):
         Returns:
             Exportable voxel encoder component.
         """
-        component_cfg = self._components_cfg.get_component("pts_voxel_encoder")
+        component_cfg = self._config.components_cfg.get_component("pts_voxel_encoder")
         return ExportableComponent(
             name=component_cfg.name,
             module=model.pts_voxel_encoder,
             sample_input=sample.input_features,
         )
 
-    def _create_backbone_component(
+    def _build_backbone_component(
         self,
         model: torch.nn.Module,
         sample: CenterPointFeatureSample,
@@ -95,9 +96,9 @@ class CenterPointComponentBuilder(ModelComponentBuilder):
             Exportable backbone/neck/head component.
         """
         backbone_input = self._prepare_backbone_input(model, sample)
-        backbone_module = self._create_backbone_module(model)
+        backbone_module = self._build_backbone_module(model)
 
-        component_cfg = self._components_cfg.get_component("pts_backbone_neck_head")
+        component_cfg = self._config.components_cfg.get_component("pts_backbone_neck_head")
         return ExportableComponent(
             name=component_cfg.name,
             module=backbone_module,
@@ -125,7 +126,7 @@ class CenterPointComponentBuilder(ModelComponentBuilder):
             spatial_features = model.pts_middle_encoder(voxel_features, coors, batch_size)
         return spatial_features
 
-    def _create_backbone_module(self, model: torch.nn.Module) -> torch.nn.Module:
+    def _build_backbone_module(self, model: torch.nn.Module) -> torch.nn.Module:
         """Wrap pts_backbone, pts_neck, and pts_bbox_head into one ONNX module.
 
         Args:

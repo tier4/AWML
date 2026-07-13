@@ -16,11 +16,8 @@ from typing import Any, Dict, Optional, Type
 from mmengine.config import Config
 
 from deployment.config.base import BaseDeploymentConfig
-from deployment.evaluation.backend_executor import BackendExecutor
-from deployment.evaluation.backend_verifier import BackendVerifier
 from deployment.evaluation.base_evaluator import BaseEvaluator
-from deployment.evaluation.output_comparator import OutputComparator
-from deployment.export.contexts import ExportContext
+from deployment.execution.backend_executor import BackendExecutor
 from deployment.export.exporters.model_wrappers import BaseModelWrapper
 from deployment.export.pipelines.component_builder import DefaultComponentBuilder
 from deployment.export.pipelines.onnx_export_pipeline import OnnxExportPipeline
@@ -31,6 +28,8 @@ from deployment.runtime.artifact_manager import ArtifactManager
 from deployment.runtime.evaluation_orchestrator import EvaluationOrchestrator
 from deployment.runtime.export_orchestrator import ExportOrchestrator
 from deployment.runtime.verification_orchestrator import VerificationOrchestrator
+from deployment.verification.backend_verifier import BackendVerifier
+from deployment.verification.output_comparator import OutputComparator
 
 logger = logging.getLogger(__name__)
 
@@ -94,16 +93,13 @@ class BaseDeploymentRunner:
         self.verification_orchestrator = VerificationOrchestrator(config, verifier, data_loader, self.artifact_manager)
         self.evaluation_orchestrator = EvaluationOrchestrator(config, evaluator, data_loader, self.artifact_manager)
 
-    def load_pytorch_model(self, checkpoint_path: str, context: ExportContext) -> Any:
+    def load_pytorch_model(self, checkpoint_path: str) -> Any:
         raise NotImplementedError(f"{self.__class__.__name__}.load_pytorch_model() must be implemented by subclasses.")
 
-    def run(self, context: Optional[ExportContext] = None) -> DeploymentResult:
-        if context is None:
-            context = ExportContext()
-
+    def run(self) -> DeploymentResult:
         results = DeploymentResult()
 
-        export_result = self.export_orchestrator.run(context)
+        export_result = self.export_orchestrator.run()
         results.pytorch_model = export_result.pytorch_model
         results.onnx_path = export_result.onnx_path
         results.tensorrt_path = export_result.tensorrt_path

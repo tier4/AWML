@@ -215,6 +215,49 @@ class BEVFusion(Base3DDetector):
         x = self.pts_middle_encoder(feats, coords, batch_size)
         return x
 
+    def _align_lidar_bev_to_head_grid(self, feats):
+        """Strictly validate pts_backbone+neck BEV maps against head grid resolution.
+
+        ``BEVFusionHead`` builds ``bev_pos`` from ``test_cfg['grid_size'] // out_size_factor``
+        (e.g. 1440//8 → 180). Heatmap/top-k indices assume ``H*W == len(bev_pos)``.
+
+        In strict mode, any mismatch is treated as an upstream contract error
+        (sparse tower stride/layout mismatch) and raises immediately instead of
+        silently applying pooling.
+        """
+        head = getattr(self, "bbox_head", None)
+        if head is None or not hasattr(head, "test_cfg") or head.test_cfg is None:
+            return feats
+        try:
+            grid = head.test_cfg["grid_size"]
+            osf = int(head.test_cfg["out_size_factor"])
+            gh = int(grid[0] // osf)
+            gw = int(grid[1] // osf)
+        except Exception:
+            return feats
+
+        def _assert_grid(t: Tensor, *, name: str) -> Tensor:
+            if t.dim() != 4:
+                raise AssertionError(f"{name}: expected 4D BEV tensor, got shape={tuple(t.shape)}")
+            _, _, h, w = t.shape
+            assert int(h) == gh and int(w) == gw, (
+                f"{name}: BEV shape mismatch, got (H,W)=({int(h)},{int(w)}), "
+                f"expected ({gh},{gw}) from bbox_head.test_cfg grid_size/out_size_factor."
+            )
+            return t
+
+        if isinstance(feats, Tensor):
+            return _assert_grid(feats, name="lidar_bev")
+        if isinstance(feats, (list, tuple)):
+            out = []
+            for idx, t in enumerate(feats):
+                if isinstance(t, Tensor):
+                    out.append(_assert_grid(t, name=f"lidar_bev[{idx}]"))
+                else:
+                    out.append(t)
+            return type(feats)(out)
+        return feats
+
     @torch.no_grad()
     def voxelize(self, points):
         feats, coords, sizes = [], [], []

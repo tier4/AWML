@@ -6,7 +6,7 @@ import torch
 from cumm import tensorview as tv
 from spconv import constants
 from spconv.algo import CONV_CPP
-from spconv.constants import SPCONV_DO_SORT, SPCONV_USE_DIRECT_TABLE, AllocKeys
+from spconv.constants import SPCONV_USE_DIRECT_TABLE, AllocKeys
 from spconv.core import ConvAlgo
 from spconv.core_cc.csrc.sparse.all import SpconvOps
 from spconv.core_cc.csrc.sparse.convops.spops import ConvGemmOps
@@ -16,6 +16,34 @@ from spconv.pytorch.cppcore import _TORCH_DTYPE_TO_TV, TorchAllocator, get_arch,
 from spconv.tools import CUDAKernelTimer
 from torch.autograd import Function
 from torch.onnx.symbolic_helper import _get_tensor_sizes
+
+# Controls `do_sort` on GetIndicePairsImplicitGemm (ONNX export + PyTorch
+# forward). Default True (pair-mask argsort on). Deploy CLIs (e.g. the BEVFusion
+# entrypoint) may flip this to False via `set_do_sort` before ONNX export. There
+# is deliberately no env-var fallback: the deploy_config is the single source of truth.
+_do_sort: bool = True
+
+
+def set_do_sort(value: bool) -> None:
+    """Set ``do_sort`` used at ONNX export and in the PyTorch forward path for
+    pair-mask argsort. Called by deploy CLIs from ``deploy_cfg.spconv_do_sort``."""
+    global _do_sort
+    _do_sort = bool(value)
+
+
+def _gemm_activation_to_onnx_int(act_type: Any) -> int:
+    """Map ``tv.gemm.Activation`` to its integer value (see cumm ``constants.h``)."""
+    if act_type is None:
+        return 0
+    if isinstance(act_type, int):
+        return int(act_type)
+    v = getattr(act_type, "value", None)
+    if v is not None:
+        return int(v)
+    try:
+        return int(act_type)
+    except Exception:
+        return 0
 
 
 class GetIndicePairs(Function):
@@ -107,7 +135,7 @@ class GetIndicePairs(Function):
         pair = alloc.allocated[AllocKeys.PairFwd]
         indice_num_per_loc = alloc.allocated[AllocKeys.IndiceNumPerLoc]
 
-        num_act_out = torch.tensor([num_act_out], dtype=torch.int32).to(out_inds.device)
+        num_act_out = torch.tensor([num_act_out], dtype=torch.int32, device=out_inds.device)
 
         return out_inds[:num_act_out], pair, indice_num_per_loc, num_act_out
 
@@ -212,7 +240,6 @@ class IndiceConvFunction(Function):
 
 
 class GetIndicePairsImplicitGemm(Function):
-
     @staticmethod
     def symbolic(
         g,
@@ -245,6 +272,7 @@ class GetIndicePairsImplicitGemm(Function):
             subm_i=subm,
             transpose_i=transpose,
             is_train_i=is_train,
+            do_sort_i=int(_do_sort),
             outputs=5,
         )
         indices_shape = _get_tensor_sizes(indices)
@@ -301,7 +329,7 @@ class GetIndicePairsImplicitGemm(Function):
 
         num_out_act_bound: int = -1
         direct_table: bool = SPCONV_USE_DIRECT_TABLE
-        do_sort = SPCONV_DO_SORT
+        do_sort = _do_sort
 
         stream = get_current_stream()
 
@@ -331,7 +359,7 @@ class GetIndicePairsImplicitGemm(Function):
             do_sort=do_sort,
         )
 
-        num_act_out = torch.tensor([num_act_out], dtype=torch.int32).to(indices.device)
+        num_act_out = torch.tensor([num_act_out], dtype=torch.int32, device=indices.device)
 
         mask_split_count = mask_tensor.dim(0)
         # NOTE(knzo25): we support only the simplest case
@@ -389,19 +417,20 @@ class ImplicitGemm(Function):
         output_add_scale: float,
         output_dtype: Optional[torch.dtype],
     ):
+        gemm_inputs = [features, filters, pair_fwd, pair_mask_fwd_splits, mask_argsort_fwd_splits]
+        if bias is not None:
+            # Optional 6th input for folded per-channel bias (C_out).
+            gemm_inputs.append(bias)
 
         output = g.op(
             "autoware::ImplicitGemm",
-            features,
-            filters,
-            pair_fwd,
-            pair_mask_fwd_splits,
-            mask_argsort_fwd_splits,
+            *gemm_inputs,
             is_train_i=is_train,
             is_subm_i=is_subm,
             fp32_accum_i=fp32_accum,
             act_alpha_f=act_alpha,
             act_beta_f=act_beta,
+            act_type_i=_gemm_activation_to_onnx_int(act_type),
             output_scale_f=output_scale,
             output_add_scale_f=output_add_scale,
             outputs=1,
@@ -444,10 +473,9 @@ class ImplicitGemm(Function):
         mask_argsort_fwd_splits = [mask_argsort_fwd_splits]
 
         assert fp32_accum is None, "fp32_accum is not supported"
-        assert bias is None, "bias is not supported"
         assert scale is None
         assert output_add is None
-        assert output_dtype is torch.float32
+        assert output_dtype == torch.float32, f"expected float32 output dtype, got {output_dtype!r}"
 
         # NOTE(knzo25): end of custom changes needed for deployment
 
@@ -463,13 +491,22 @@ class ImplicitGemm(Function):
         if output_dtype is None:
             output_dtype = features.dtype
 
-        alloc = TorchAllocator(features.device, features.dtype == torch.qint8)
+        is_features_qint8 = features.dtype == torch.qint8
+        alloc = TorchAllocator(features.device, is_features_qint8)
         features_tv = torch_tensor_to_tv(features)
         pair_fwd_tv = torch_tensor_to_tv(pair_fwd)
         pair_mask_fwd_splits_tv = [torch_tensor_to_tv(t, tv.uint32) for t in pair_mask_fwd_splits]
         mask_argsort_fwd_splits_tv = [torch_tensor_to_tv(t) for t in mask_argsort_fwd_splits]
 
         filters_tv = torch_tensor_to_tv(filters)
+        if bias is not None:
+            if not bias.is_contiguous():
+                bias = bias.contiguous()
+            assert bias.dim() == 1, f"bias must be 1D [C_out], got shape={tuple(bias.shape)}"
+            assert (
+                bias.shape[0] == filters.shape[0]
+            ), f"bias shape mismatch: bias.shape[0]={bias.shape[0]} vs C_out={filters.shape[0]}"
+            bias_tv = torch_tensor_to_tv(bias)
         mask = np.array([np.iinfo(np.uint32).max], dtype=np.uint32)
         mask_tv = tv.from_numpy(mask).clone()
         timer_cpp = tv.CUDAKernelTimer(False)

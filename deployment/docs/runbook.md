@@ -11,12 +11,6 @@ python -m deployment.cli.main centerpoint \
     <deploy_cfg.py> \
     <model_cfg.py> \
     [--log-level INFO]
-
-# CenterPoint-specific flag
-python -m deployment.cli.main centerpoint \
-    <deploy_cfg.py> \
-    <model_cfg.py> \
-    --rot-y-axis-reference
 ```
 
 ## Required inputs

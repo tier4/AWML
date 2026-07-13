@@ -12,16 +12,18 @@ full project-path → framework-module → base-class mapping.
 
 1. Create `deployment/projects/<project>/__init__.py` and register a `ProjectAdapter`.
 2. Add `entrypoint.py` to build `BaseDeploymentConfig`, the data loader, evaluator, and runner.
-3. Add `cli.py` exposing `add_args(parser)` for project flags (may be a no-op).
-4. Add `runner.py` as a thin `BaseDeploymentRunner` subclass.
-5. Add `configs/deploy_config.py` with the required deploy config sections described in [configuration.md](./configuration.md).
-6. Add `io/` and `evaluation/` for project-specific loading and evaluation logic (mirroring framework `io/` and `evaluation/`).
-7. In `entrypoint.py`, build the task metrics config from the shared `metrics/` (e.g. `extract_t4metric_v2_config` for 3D detection) and pass it to the evaluator — do **not** add a project `metrics/` directory.
-8. Add `inference/` with backend-specific inference pipelines (files `*_inference_pipeline.py`), and create them from the project's `BackendExecutor.create_pipeline`.
-9. Add a project `README.md` with the project-specific quick start and links back to shared docs.
+3. Add `runner.py` as a thin `BaseDeploymentRunner` subclass.
+4. Add `configs/deploy_config.py` with the required deploy config sections described in [configuration.md](./configuration.md).
+5. Add `io/` and `evaluation/` for project-specific loading and evaluation logic (mirroring framework `io/` and `evaluation/`).
+6. In `entrypoint.py`, build the task metrics config from the shared `metrics/` (e.g. `extract_t4metric_v2_config` for 3D detection) and pass it to the evaluator — do **not** add a project `metrics/` directory.
+7. Add `inference/` with backend-specific inference pipelines (files `*_inference_pipeline.py`), and create them from the project's `BackendExecutor.create_pipeline`.
+8. Add a project `README.md` with the project-specific quick start and links back to shared docs.
 
-Add `contexts.py` only when the project needs extra `ExportContext` fields, and
-`export/` only when the project needs multi-stage or multi-file export orchestration.
+Projects have no per-project CLI flags: any option that shapes the exported artifact (e.g.
+`rot_y_axis_reference`) belongs in the deploy config, modeled as a typed attribute on a
+project-specific `BaseDeploymentConfig` subclass so it is versioned with the artifact. The CLI
+carries only `deploy_cfg`, `model_cfg`, and `--log-level`. Add `export/` only when the project needs
+multi-stage or multi-file export orchestration.
 
 ## Implementation notes
 

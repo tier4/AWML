@@ -10,7 +10,6 @@ From the repository root:
 python -m deployment.cli.main centerpoint \
     deployment/projects/centerpoint/config/deploy_config.py \
     <path/to/your/model_config.py> \
-    --rot-y-axis-reference \
     [--log-level INFO]
 ```
 
@@ -19,14 +18,13 @@ Example:
 ```bash
 python -m deployment.cli.main centerpoint \
     deployment/projects/centerpoint/config/deploy_config.py \
-    projects/CenterPoint/configs/t4dataset/Centerpoint/second_secfpn_8xb16_121m_j6gen2_base_amp_t4metric_v2.py \
-    --rot-y-axis-reference
+    projects/CenterPoint/configs/t4dataset/Centerpoint/second_secfpn_8xb16_121m_j6gen2_base_amp_t4metric_v2.py
 ```
 
 ## What is project-specific here
 
 - Multi-component export with `pts_voxel_encoder` and `pts_backbone_neck_head`
-- CenterPoint-specific CLI flag `--rot-y-axis-reference`
+- The `rot_y_axis_reference` export option, set in the deploy config (see `CenterPointDeploymentConfig`)
 - CenterPoint evaluator, loaders, export pipelines, and backend inference pipelines
 
 ## Config file
@@ -53,14 +51,12 @@ CenterPoint classes are:
 | Path | Role |
 | --- | --- |
 | `__init__.py` | Registers the `centerpoint` `ProjectAdapter` |
-| `entrypoint.py` | Builds config, loader, evaluator, runner, and export context |
-| `cli.py` | Project-specific CLI flags (`--rot-y-axis-reference`) |
+| `entrypoint.py` | Builds config, loader, evaluator, and runner |
 | `runner.py` | `CenterPointDeploymentRunner` |
-| `config/` | Deploy config |
+| `config/` | Deploy config and `CenterPointDeploymentConfig` (typed deploy-config keys, e.g. `rot_y_axis_reference`) |
 | `io/` | Data loading and model loading helpers |
 | `evaluation/` | `CenterPointEvaluator` and `CenterPointExecutor` |
 | `inference/` | PyTorch, ONNX, and TensorRT inference pipelines |
-| `contexts.py` | `CenterPointExportContext` |
 | `export/` | CenterPoint export orchestration (builder, sample extractor, `onnx_models/`) |
 
 ## Shared docs

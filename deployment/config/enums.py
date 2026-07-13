@@ -7,10 +7,46 @@ No dependency on torch or mmengine. Safe to import from exporters, evaluators, C
 from __future__ import annotations
 
 from enum import Enum
-from typing import Optional, Union
+from typing import Optional, Type, TypeVar, Union
 
 # Constants
 DEFAULT_WORKSPACE_SIZE = 1 << 30  # 1 GB
+
+_E = TypeVar("_E", bound=Enum)
+
+
+def _enum_from_value(
+    enum_cls: Type[_E],
+    value: object,
+    *,
+    default: Optional[_E] = None,
+    label: Optional[str] = None,
+) -> _E:
+    """Normalize a string or enum member into ``enum_cls`` (shared by the config enums).
+
+    Matching is case-insensitive on the member ``value``. ``None`` returns ``default`` when
+    one is given (for optional config sections) and is otherwise an error, so every enum
+    parses identically instead of each hand-rolling its own ``from_value``.
+
+    Raises:
+        ValueError: If ``value`` is ``None`` without a default, or is an unknown string.
+        TypeError: If ``value`` is neither ``None``, a ``str``, nor an ``enum_cls`` member.
+    """
+    label = label or enum_cls.__name__
+    valid = [member.value for member in enum_cls]
+    if value is None:
+        if default is not None:
+            return default
+        raise ValueError(f"{label} is required; must be one of {valid}.")
+    if isinstance(value, enum_cls):
+        return value
+    if isinstance(value, str):
+        normalized = value.strip().lower()
+        for member in enum_cls:
+            if member.value == normalized:
+                return member
+        raise ValueError(f"Invalid {label} '{value}'. Must be one of {valid}.")
+    raise TypeError(f"{label} must be a string or {enum_cls.__name__}, got {type(value).__name__}.")
 
 
 class PrecisionPolicy(str, Enum):
@@ -29,16 +65,10 @@ class PrecisionPolicy(str, Enum):
     @classmethod
     def from_value(cls, value: Optional[Union[str, PrecisionPolicy]]) -> PrecisionPolicy:
         """Parse strings or enum members into PrecisionPolicy (defaults to AUTO)."""
-        if value is None:
-            return cls.AUTO
-        if isinstance(value, cls):
-            return value
-        if isinstance(value, str):
-            normalized = value.strip().lower()
-            for member in cls:
-                if member.value == normalized:
-                    return member
-        raise ValueError(f"Invalid precision_policy '{value}'. Must be one of {[m.value for m in cls]}.")
+        return _enum_from_value(cls, value, default=cls.AUTO, label="precision_policy")
+
+    def __str__(self) -> str:  # pragma: no cover - convenience for logging
+        return self.value
 
 
 class Backend(str, Enum):
@@ -50,29 +80,8 @@ class Backend(str, Enum):
 
     @classmethod
     def from_value(cls, value: Union[str, Backend]) -> Backend:
-        """
-        Normalize backend identifiers coming from configs or enums.
-
-        Args:
-            value: Backend as string or Backend enum
-
-        Returns:
-            Backend enum instance
-
-        Raises:
-            ValueError: If value cannot be mapped to a supported backend
-        """
-        if isinstance(value, cls):
-            return value
-
-        if isinstance(value, str):
-            normalized = value.strip().lower()
-            try:
-                return cls(normalized)
-            except ValueError as exc:
-                raise ValueError(f"Unsupported backend '{value}'. Expected one of {[b.value for b in cls]}.") from exc
-
-        raise TypeError(f"Backend must be a string or Backend enum, got {type(value)}")
+        """Normalize a backend identifier (string or enum) into a ``Backend`` member."""
+        return _enum_from_value(cls, value, label="backend")
 
     @property
     def requires_cuda(self) -> bool:
@@ -97,13 +106,7 @@ class ExportMode(str, Enum):
     @classmethod
     def from_value(cls, value: Optional[Union[str, ExportMode]]) -> ExportMode:
         """Parse strings or enum members into ExportMode (defaults to BOTH)."""
-        if value is None:
-            return cls.BOTH
-        if isinstance(value, cls):
-            return value
-        if isinstance(value, str):
-            normalized = value.strip().lower()
-            for member in cls:
-                if member.value == normalized:
-                    return member
-        raise ValueError(f"Invalid export mode '{value}'. Must be one of {[m.value for m in cls]}.")
+        return _enum_from_value(cls, value, default=cls.BOTH, label="export mode")
+
+    def __str__(self) -> str:  # pragma: no cover - convenience for logging
+        return self.value

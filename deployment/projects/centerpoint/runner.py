@@ -9,19 +9,18 @@ from typing import Optional
 
 import torch
 from mmengine.config import Config
+from typing_extensions import override
 
-from deployment.config.base import BaseDeploymentConfig
-from deployment.evaluation.backend_executor import BackendExecutor
-from deployment.export.contexts import ExportContext
+from deployment.evaluation.detection_3d_evaluator import Detection3DEvaluator
+from deployment.execution.backend_executor import BackendExecutor
 from deployment.export.pipelines.onnx_export_pipeline import OnnxExportPipeline
 from deployment.export.pipelines.tensorrt_export_pipeline import TensorRTExportPipeline
 from deployment.io.base_data_loader import BaseDataLoader
 from deployment.primitives.device import DeviceSpec
-from deployment.projects.centerpoint.contexts import CenterPointExportContext
-from deployment.projects.centerpoint.evaluation.evaluator import CenterPointEvaluator
+from deployment.projects.centerpoint.config.centerpoint_deployment_config import CenterPointDeploymentConfig
 from deployment.projects.centerpoint.export.component_builder import CenterPointComponentBuilder
 from deployment.projects.centerpoint.export.sample_extractor import CenterPointSampleExtractor
-from deployment.projects.centerpoint.io.model_loader import build_centerpoint_onnx_model
+from deployment.projects.centerpoint.io.model_loader import build_centerpoint_model
 from deployment.runtime.runner import BaseDeploymentRunner
 
 logger = logging.getLogger(__name__)
@@ -41,9 +40,9 @@ class CenterPointDeploymentRunner(BaseDeploymentRunner):
     def __init__(
         self,
         data_loader: BaseDataLoader,
-        evaluator: CenterPointEvaluator,
+        evaluator: Detection3DEvaluator,
         executor: BackendExecutor,
-        config: BaseDeploymentConfig,
+        config: CenterPointDeploymentConfig,
         model_cfg: Config,
         onnx_pipeline: Optional[OnnxExportPipeline] = None,
         tensorrt_pipeline: Optional[TensorRTExportPipeline] = None,
@@ -68,7 +67,7 @@ class CenterPointDeploymentRunner(BaseDeploymentRunner):
         if onnx_pipeline is None:
             onnx_pipeline = OnnxExportPipeline(
                 sample_extractor=CenterPointSampleExtractor(),
-                component_builder=CenterPointComponentBuilder(components_cfg=config.components_cfg),
+                component_builder=CenterPointComponentBuilder(config=config),
             )
         super().__init__(
             data_loader=data_loader,
@@ -80,36 +79,22 @@ class CenterPointDeploymentRunner(BaseDeploymentRunner):
             tensorrt_pipeline=tensorrt_pipeline,
         )
 
-    def load_pytorch_model(self, checkpoint_path: str, context: ExportContext) -> torch.nn.Module:
+    @override
+    def load_pytorch_model(self, checkpoint_path: str) -> torch.nn.Module:
         """Load and return the PyTorch model for export.
 
         Args:
             checkpoint_path: Path to the checkpoint file.
-            context: Export context with additional parameters.
 
         Returns:
             Loaded PyTorch model.
         """
-        rot_y_axis_reference = self._extract_rot_y_axis_reference(context)
+        rot_y_axis_reference = self.config.rot_y_axis_reference
         logger.info("Export option rot_y_axis_reference = %s", rot_y_axis_reference)
 
-        model, _ = build_centerpoint_onnx_model(
-            base_model_cfg=self.model_cfg,
+        return build_centerpoint_model(
+            model_cfg=self.model_cfg,
             checkpoint_path=checkpoint_path,
             device=DeviceSpec.from_value("cpu"),
             rot_y_axis_reference=rot_y_axis_reference,
         )
-        return model
-
-    def _extract_rot_y_axis_reference(self, context: ExportContext) -> bool:
-        """Extract rot_y_axis_reference from the export context.
-
-        Args:
-            context: Export context; must be a ``CenterPointExportContext``.
-
-        Returns:
-            Boolean value for rot_y_axis_reference.
-        """
-        if not isinstance(context, CenterPointExportContext):
-            raise TypeError(f"CenterPoint export requires a CenterPointExportContext, got {type(context).__name__}.")
-        return context.rot_y_axis_reference

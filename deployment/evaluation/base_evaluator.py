@@ -22,16 +22,16 @@ from typing import Any, Dict, List, Mapping
 import numpy as np
 from mmengine.config import Config
 
-from deployment.evaluation.backend_executor import BackendExecutor
-from deployment.evaluation.evaluator_types import (
+from deployment.execution.backend_executor import BackendExecutor
+from deployment.inference.base_inference_pipeline import BaseInferencePipeline
+from deployment.io.base_data_loader import BaseDataLoader
+from deployment.metrics.base_metrics_interface import BaseMetricsInterface
+from deployment.primitives.evaluator_types import (
     EvalResultDict,
     LatencyBreakdown,
     LatencyStats,
     ModelSpec,
 )
-from deployment.inference.base_inference_pipeline import BaseInferencePipeline
-from deployment.io.base_data_loader import BaseDataLoader
-from deployment.metrics.base_metrics_interface import BaseMetricsInterface
 
 logger = logging.getLogger(__name__)
 

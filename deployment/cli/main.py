@@ -2,7 +2,7 @@
 Single deployment entrypoint.
 
 Usage:
-    python -m deployment.cli.main <project> <deploy_cfg.py> <model_cfg.py> [project-specific args]
+    python -m deployment.cli.main <project> <deploy_cfg.py> <model_cfg.py> [--log-level LEVEL]
 """
 
 from __future__ import annotations
@@ -51,7 +51,7 @@ def build_parser() -> argparse.ArgumentParser:
 
     subparsers = parser.add_subparsers(dest="project", required=True)
 
-    # Discover projects and import them so they can contribute args.
+    # Discover and import project packages so they register their adapters.
     failed_projects: list[str] = []
     for project_name in _discover_project_packages():
         try:
@@ -61,14 +61,15 @@ def build_parser() -> argparse.ArgumentParser:
             failed_projects.append(f"- {project_name}: {e}\n{tb}")
             continue
 
+        # Only expose a subparser for projects that actually registered an adapter
+        # (get() raises KeyError if import ran but registration did not happen).
         try:
-            adapter = project_registry.get(project_name)
+            project_registry.get(project_name)
         except KeyError:
             continue
 
         sub = subparsers.add_parser(project_name, help=f"{project_name} deployment")
         parse_base_args(sub)  # adds deploy_cfg, model_cfg, --log-level
-        adapter.add_args(sub)
         sub.set_defaults(_adapter_name=project_name)
 
     if not project_registry.list_projects():
