@@ -1,16 +1,23 @@
 # learning rate
-lr = 1e-4
-t_max = 6
-max_epochs = 20
+lr = 2e-4
+t_max = 3
+max_epochs = 30
 val_interval = 1
 
 train_gpu_size = 8
 test_batch_size = 2
-train_batch_size = 8
+train_batch_size = 32
 
 param_scheduler = [
     # learning rate scheduler
-    dict(type="LinearLR", start_factor=1.0 / 3, begin=0, end=t_max, by_epoch=True),
+    dict(
+        type="LinearLR",
+        start_factor=1.0 / 3,
+        begin=0,
+        end=t_max,
+        by_epoch=True,
+        convert_to_iter_based=True,
+    ),
     dict(
         type="CosineAnnealingLR",
         T_max=(max_epochs - t_max),
@@ -51,8 +58,8 @@ test_cfg = dict()
 
 optim_wrapper = dict(
     type="OptimWrapper",
-    optimizer=dict(type="AdamW", lr=lr, weight_decay=0.01),
-    clip_grad=dict(max_norm=0.1, norm_type=2),
+    optimizer=dict(type="AdamW", lr=lr, weight_decay=1e-2),
+    clip_grad=dict(max_norm=5.0, norm_type=2),
 )
 
 auto_scale_lr = dict(enable=False, base_batch_size=train_gpu_size * train_batch_size)

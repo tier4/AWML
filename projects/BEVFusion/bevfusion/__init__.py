@@ -3,10 +3,17 @@ from .bevfusion_head import BEVFusionHead, ConvFuser
 from .bevfusion_necks import GeneralizedLSSFPN
 from .bevfusion_voxel_encoder import HardSimpleVoxelSinCosEncoder
 from .depth_lss import DepthLSSTransform, LSSTransform
-from .loading import BEVLoadMultiViewImageFromFiles
+from .depth_lss_v2 import LSSTransformV2, LSSTransformV2DepthAware
+from .loading import BEVLoadMultiViewImageFromFiles, PointsToMultiViewImageDepths
 from .sparse_encoder import BEVFusionSparseEncoder
 from .transformer import TransformerDecoderLayer
-from .transforms_3d import BEVFusionGlobalRotScaleTrans, BEVFusionRandomFlip3D, GridMask, ImageAug3D
+from .transforms_3d import (
+    BEVFusionGlobalRotScaleTrans,
+    BEVFusionRandomFlip3D,
+    BEVFusionRemoveLiDARPoints,
+    GridMask,
+    ImageAug3D,
+)
 from .utils import BBoxBEVL1Cost, HeuristicAssigner3D, HungarianAssigner3D, IoU3DCost, TransFusionBBoxCoder
 
 __all__ = [
@@ -27,6 +34,10 @@ __all__ = [
     "TransformerDecoderLayer",
     "BEVFusionRandomFlip3D",
     "BEVFusionGlobalRotScaleTrans",
+    "BEVFusionRemoveLiDARPoints",
     "TransFusionBBoxCoder",
     "HardSimpleVoxelSinCosEncoder",
+    "LSSTransformV2",
+    "PointsToMultiViewImageDepths",
+    "LSSTransformV2DepthAware",
 ]

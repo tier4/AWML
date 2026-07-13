@@ -1,23 +1,20 @@
 # Dataset parameters
 backend_args = None
-num_workers = 16
+num_workers = 4
 input_modality = dict(use_lidar=True, use_camera=False)
 
 # range setting
-point_cloud_range = [-122.4, -122.4, -3.0, 122.4, 122.4, 5.0]
-voxel_size = [0.17, 0.17, 0.2]
+point_cloud_range = [-54.0, -54.0, -3.0, 54.0, 54.0, 5.0]
+voxel_size = [0.075, 0.075, 0.2]
 grid_size = [1440, 1440, 41]
-# Sparse dense output shapes
-sparse_dense_output_shapes = [180, 180, 2]
-
 eval_class_range = {
-    "car": 120,
-    "truck": 120,
-    "bus": 120,
-    "bicycle": 120,
-    "pedestrian": 120,
-    "traffic_cone": 120,
-    "barrier": 120,
+    "car": 51.2,
+    "truck": 51.2,
+    "bus": 51.2,
+    "bicycle": 51.2,
+    "pedestrian": 51.2,
+    "traffic_cone": 51.2,
+    "barrier": 51.2,
 }
 
 # LiDAR parameters
@@ -105,16 +102,6 @@ test_pipeline = [
         load_dim=point_load_dim,
         use_dim=point_load_dim,
         backend_args=backend_args,
-    ),
-    dict(
-        type="LoadPointsFromMultiSweeps",
-        sweeps_num=sweeps_num,
-        load_dim=point_load_dim,
-        use_dim=lidar_sweep_dims,
-        pad_empty_sweeps=True,
-        remove_close=True,
-        backend_args=backend_args,
-        test_mode=True,
     ),
     dict(type="PointsRangeFilter", point_cloud_range=point_cloud_range),
     dict(

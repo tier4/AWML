@@ -262,8 +262,7 @@ class T4Metric(NuScenesMetric):
             "num_lidar_pts": num_lidar_pts,
         }
 
-    @staticmethod
-    def _get_scene_info(data_infos: List[dict]) -> Tuple[List[str], List[str]]:
+    def _get_scene_info(self, data_infos: List[dict]) -> Tuple[List[str], List[str]]:
         """Get scene tokens and directory names from data infos.
 
         Args:
@@ -284,6 +283,7 @@ class T4Metric(NuScenesMetric):
             if directory not in directories:
                 scene_tokens.append(scene_token)
                 directories.append(directory)
+
         return scene_tokens, directories
 
     @staticmethod

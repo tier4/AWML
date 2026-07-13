@@ -1,9 +1,8 @@
 _base_ = [
     "../../../../../autoware_ml/configs/detection3d/default_runtime.py",
     "../../../../../autoware_ml/configs/detection3d/dataset/t4dataset/j6gen2_base.py",
-    "../default/pipelines/default_camera_lidar_intensity_120m.py",
-    "../default/models/default_camera_swin_fpn_120m.py",
-    "../default/schedulers/default_30e_8xb8_adamw_linear_cosine.py",
+    "../default/pipelines/cameras/default_camera_50m.py",
+    "../default/schedulers/default_30e_8xb32_adamw_linear_cosine.py",
     "../default/default_misc.py",
 ]
 
@@ -13,35 +12,7 @@ custom_imports["imports"] += ["autoware_ml.detection3d.datasets.transforms"]
 
 # user setting
 data_root = "data/t4dataset/"
-info_directory_path = "info/user_name/"
-
-experiment_group_name = "bevfusion_camera/j6gen2_base/" + _base_.dataset_type
-experiment_name = "bevfusion_camera_swin_fpn_30e_8xb8_j6gen2_base_120m"
-work_dir = "work_dirs/" + experiment_group_name + "/" + experiment_name
-
-# model parameter
-model = dict(
-    type="BEVFusion",
-    view_transform=dict(image_size=_base_.image_size),
-    bbox_head=dict(
-        class_names=_base_.class_names,
-        in_channels=80,
-        train_cfg=dict(
-            point_cloud_range=_base_.point_cloud_range,
-            grid_size=_base_.grid_size,
-            voxel_size=_base_.voxel_size,
-        ),
-        test_cfg=dict(
-            grid_size=_base_.grid_size,
-            voxel_size=_base_.voxel_size[0:2],
-            pc_range=_base_.point_cloud_range[0:2],
-        ),
-        bbox_coder=dict(
-            pc_range=_base_.point_cloud_range[0:2],
-            voxel_size=_base_.voxel_size[0:2],
-        ),
-    ),
-)
+info_directory_path = "info/kokseang_2_9_0/"
 
 # Dataset parameters
 train_dataloader = dict(
@@ -82,6 +53,7 @@ val_dataloader = dict(
         test_mode=True,
         box_type_3d="LiDAR",
         backend_args=_base_.backend_args,
+        filter_cfg=_base_.filter_cfg,
     ),
 )
 
@@ -102,6 +74,7 @@ test_dataloader = dict(
         test_mode=True,
         box_type_3d="LiDAR",
         backend_args=_base_.backend_args,
+        filter_cfg=_base_.filter_cfg,
     ),
 )
 
@@ -135,3 +108,5 @@ default_hooks = dict(
     checkpoint=dict(type="CheckpointHook", interval=1, max_keep_ckpts=3, save_best="NuScenes metric/T4Metric/mAP"),
 )
 log_processor = dict(window_size=50)
+
+load_from = "work_dirs/bevfusion_camera_2_8_0/gen2_base/T4Dataset/bevfusion_camera_resnet50_fpn_lss_depthaware_50e_8xb32_gen2_base_50m/best_epoch_46.pth"

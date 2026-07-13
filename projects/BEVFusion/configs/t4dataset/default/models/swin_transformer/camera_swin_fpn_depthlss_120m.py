@@ -1,9 +1,15 @@
 _base_ = [
-    "./default_lidar_second_secfpn_120m.py",
+    "../default_lidar_second_secfpn_120m.py",
 ]
 
 # Image network
 model = dict(
+    # Remove all lidar related configs
+    voxelize_cfg=None,
+    pts_voxel_encoder=None,
+    pts_middle_encoder=None,
+    pts_neck=None,
+    pts_backbone=None,
     data_preprocessor=dict(
         type="Det3DDataPreprocessor",
         pad_size_divisor=32,
@@ -56,5 +62,4 @@ model = dict(
         dbound=[1.0, 130, 1.0],
         downsample=2,
     ),
-    fusion_layer=dict(type="ConvFuser", in_channels=[80, 256], out_channels=256, kernel_size=5, padding=2),
 )

@@ -1,9 +1,8 @@
 _base_ = [
     "../../../../../autoware_ml/configs/detection3d/default_runtime.py",
-    "../../../../../autoware_ml/configs/detection3d/dataset/t4dataset/jpntaxi_base.py",
-    "../default/pipelines/default_lidar_intensity_120m.py",
-    "../default/models/default_lidar_second_secfpn_120m.py",
-    "../default/schedulers/default_30e_8xb16_adamw_cosine.py",
+    "../../../../../autoware_ml/configs/detection3d/dataset/t4dataset/gen2_base.py",
+    "../default/pipelines/cameras/default_camera_50m.py",
+    "../default/schedulers/default_50e_8xb32_adamw_linear_cosine.py",
     "../default/default_misc.py",
 ]
 
@@ -13,64 +12,7 @@ custom_imports["imports"] += ["autoware_ml.detection3d.datasets.transforms"]
 
 # user setting
 data_root = "data/t4dataset/"
-info_directory_path = "info/kokseang_2_8_1/"
-
-experiment_group_name = "bevfusion_lidar_intensity/jpntaxi_base/" + _base_.dataset_type
-experiment_name = "lidar_voxel_second_secfpn_30e_8xb16_jpntaxi_base_120m"
-work_dir = "work_dirs/" + experiment_group_name + "/" + experiment_name
-
-# model parameter
-model = dict(
-    type="BEVFusion",
-    voxelize_cfg=dict(
-        point_cloud_range=_base_.point_cloud_range,
-        voxel_size=_base_.voxel_size,
-    ),
-    pts_voxel_encoder=dict(
-        in_channels=len(_base_.lidar_sweep_dims),
-        # min-max normalization for x, y, z, intensity, time_lag, where the max of time lag technically is two seeps (200 ms) here
-        min_norm_values=[
-            _base_.point_cloud_range[0],
-            _base_.point_cloud_range[1],
-            _base_.point_cloud_range[2],
-            0.0,
-            0.0,
-        ],
-        max_norm_values=[
-            _base_.point_cloud_range[3],
-            _base_.point_cloud_range[4],
-            _base_.point_cloud_range[5],
-            255.0,
-            0.2,
-        ],
-    ),
-    pts_middle_encoder=dict(
-        in_channels=50,
-        sparse_shape=_base_.grid_size,
-        dense_output_shapes=_base_.sparse_dense_output_shapes,
-    ),
-    bbox_head=dict(
-        class_names=_base_.class_names,  # Use class names to identify the correct class indices
-        train_cfg=dict(
-            point_cloud_range=_base_.point_cloud_range,
-            grid_size=_base_.grid_size,
-            voxel_size=_base_.voxel_size,
-        ),
-        test_cfg=dict(
-            grid_size=_base_.grid_size,
-            voxel_size=_base_.voxel_size[0:2],
-            pc_range=_base_.point_cloud_range[0:2],
-        ),
-        bbox_coder=dict(
-            pc_range=_base_.point_cloud_range[0:2],
-            voxel_size=_base_.voxel_size[0:2],
-        ),
-        partial_ignore_labels=["traffic_cone", "barrier"],
-        loss_heatmap=dict(
-            reduction="none",
-        ),
-    ),
-)
+info_directory_path = "info/kokseang_2_9_0/"
 
 # Dataset parameters
 train_dataloader = dict(
@@ -111,6 +53,7 @@ val_dataloader = dict(
         test_mode=True,
         box_type_3d="LiDAR",
         backend_args=_base_.backend_args,
+        filter_cfg=_base_.filter_cfg,
     ),
 )
 
@@ -131,6 +74,7 @@ test_dataloader = dict(
         test_mode=True,
         box_type_3d="LiDAR",
         backend_args=_base_.backend_args,
+        filter_cfg=_base_.filter_cfg,
     ),
 )
 
@@ -164,7 +108,3 @@ default_hooks = dict(
     checkpoint=dict(type="CheckpointHook", interval=1, max_keep_ckpts=3, save_best="NuScenes metric/T4Metric/mAP"),
 )
 log_processor = dict(window_size=50)
-
-load_from = (
-    "work_dirs/bevfusion_lidar_2_8_0/base/T4Dataset/lidar_voxel_second_secfpn_50e_8xb16_base_120m/best_epoch_47.pth"
-)

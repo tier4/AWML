@@ -1,62 +1,70 @@
-# Dataset parameters
-backend_args = None
-num_workers = 16
+## This config is for the camera_base only model, without lidar points
+
+_base_ = [
+    "../default_lidar_120m.py",
+]
 input_modality = dict(use_lidar=True, use_camera=True)
-
-# range setting
-point_cloud_range = [-122.4, -122.4, -3.0, 122.4, 122.4, 5.0]
-voxel_size = [0.17, 0.17, 0.2]
-grid_size = [1440, 1440, 41]
-eval_class_range = {
-    "car": 120,
-    "truck": 120,
-    "bus": 120,
-    "bicycle": 120,
-    "pedestrian": 120,
-    "traffic_cone": 120,
-    "barrier": 120,
-}
-
-# LiDAR parameters
-point_load_dim = 5  # x, y, z, intensity, ring_id
-point_use_dim = 5
-lidar_sweep_dims = [0, 1, 2, 3, 4]  # x, y, z, intensity, time_lag
-sweeps_num = 1
 
 # Image parameters
 image_size = [384, 768]  # Height, Width
-camera_order = ["CAM_FRONT", "CAM_FRONT_LEFT", "CAM_BACK_LEFT", "CAM_FRONT_RIGHT", "CAM_BACK_RIGHT"]
+camera_orders = {
+    "J6_erga_Gen2": ["CAM_FRONT", "CAM_FRONT_LEFT", "CAM_BACK_LEFT", "CAM_FRONT_RIGHT", "CAM_BACK_RIGHT"],
+    "J6_x2_Gen2": ["CAM_FRONT", "CAM_FRONT_LEFT", "CAM_BACK_LEFT", "CAM_FRONT_RIGHT", "CAM_BACK_RIGHT"],
+    "JPNTaxi_xx1_Gen2": [
+        "CAM_FRONT_WIDE",
+        "CAM_FRONT_LEFT_WIDE",
+        "CAM_BACK_LEFT_WIDE",
+        "CAM_FRONT_RIGHT_WIDE",
+        "CAM_BACK_RIGHT_WIDE",
+    ],
+    "JPNTaxi_solio_Gen2": [
+        "CAM_FRONT_WIDE",
+        "CAM_FRONT_LEFT_WIDE",
+        "CAM_BACK_LEFT_WIDE",
+        "CAM_FRONT_RIGHT_WIDE",
+        "CAM_BACK_RIGHT_WIDE",
+    ],
+}
 
 train_pipeline = [
     dict(
         type="BEVLoadMultiViewImageFromFiles",
         to_float32=True,
         color_type="color",
-        backend_args=backend_args,
+        backend_args=_base_.backend_args,
         camera_order=camera_order,
     ),
+    # We keep loading LiDAR points to make downstream BEV augmentation easier
     dict(
         type="LoadPointsFromFile",
         coord_type="LIDAR",
-        load_dim=point_load_dim,
-        use_dim=point_load_dim,
-        backend_args=backend_args,
+        load_dim=_base_.point_load_dim,
+        use_dim=_base_.point_load_dim,
+        backend_args=_base_.backend_args,
+    ),
+    dict(
+        type="PointsToMultiViewImageDepths",
+        img_shape=image_size,
+        num_cameras=5,
+        depth_bounds=[1.0, 120.0],
+        # visualize_dir="work_dirs/visualize_depths_6",
     ),
     dict(
         type="LoadPointsFromMultiSweeps",
-        sweeps_num=sweeps_num,
-        load_dim=point_load_dim,
-        use_dim=lidar_sweep_dims,
+        sweeps_num=_base_.sweeps_num,
+        load_dim=_base_.point_load_dim,
+        use_dim=_base_.lidar_sweep_dims,
         pad_empty_sweeps=True,
         remove_close=True,
-        backend_args=backend_args,
+        backend_args=_base_.backend_args,
         test_mode=False,
     ),
+    dict(type="PointsRangeFilter", point_cloud_range=_base_.point_cloud_range),
     dict(type="LoadAnnotations3D", with_bbox_3d=True, with_label_3d=True, with_attr_label=False),
     dict(
         type="ImageAug3D",
         final_dim=image_size,
-        resize_lim=[0.29, 0.35],
+        resize_lim=[0.28, 0.40],
         bot_pct_lim=[0.0, 0.0],
         rot_lim=[0.0, 0.0],
         rand_flip=True,
@@ -69,9 +77,9 @@ train_pipeline = [
         translation_std=[0.5, 0.5, 0.2],
     ),
     dict(type="BEVFusionRandomFlip3D"),
-    dict(type="PointsRangeFilter", point_cloud_range=point_cloud_range),
-    dict(type="ObjectRangeFilter", point_cloud_range=point_cloud_range),
-    dict(type="BEVFusionRemoveLiDARPoints"),
+    dict(type="ObjectRangeFilter", point_cloud_range=_base_.point_cloud_range),
+    dict(type="ObjectRangeMinPointsFilter", range_radius=[0, 60], min_num_points=3),
+    dict(type="ObjectRangeMinPointsFilter", range_radius=[60, 130], min_num_points=2),
     dict(
         type="ObjectNameFilter",
         classes=[
@@ -84,9 +92,6 @@ train_pipeline = [
             "barrier",
         ],
     ),
-    dict(type="ObjectRangeMinPointsFilter", range_radius=[0, 60], min_num_points=3),
-    dict(type="ObjectRangeMinPointsFilter", range_radius=[60, 130], min_num_points=2),
-    dict(type="PointShuffle"),
     dict(
         type="Pack3DDetInputs",
         keys=["points", "img", "gt_bboxes_3d", "gt_labels_3d", "gt_bboxes", "gt_labels"],
@@ -112,6 +117,7 @@ train_pipeline = [
             "vehicle_type",
             "city",
             "traffic_cone_barrier_status",
+            "gt_depths",
         ],
     ),
 ]
@@ -121,36 +127,26 @@ test_pipeline = [
         type="BEVLoadMultiViewImageFromFiles",
         to_float32=True,
         color_type="color",
-        backend_args=backend_args,
-        camera_order=camera_order,
+        backend_args=_base_.backend_args,
+        camera_orders=camera_orders,
     ),
     dict(
         type="LoadPointsFromFile",
         coord_type="LIDAR",
-        load_dim=point_load_dim,
-        use_dim=point_load_dim,
-        backend_args=backend_args,
-    ),
-    dict(
-        type="LoadPointsFromMultiSweeps",
-        sweeps_num=sweeps_num,
-        load_dim=point_load_dim,
-        use_dim=lidar_sweep_dims,
-        pad_empty_sweeps=True,
-        remove_close=True,
-        backend_args=backend_args,
-        test_mode=False,
+        load_dim=_base_.point_load_dim,
+        use_dim=_base_.point_load_dim,
+        backend_args=_base_.backend_args,
     ),
     dict(
         type="ImageAug3D",
         final_dim=image_size,
-        resize_lim=[0.32, 0.32],
+        resize_lim=[0.34, 0.34],
         bot_pct_lim=[0.0, 0.0],
         rot_lim=[0.0, 0.0],
         rand_flip=False,
         is_train=False,
     ),
-    dict(type="PointsRangeFilter", point_cloud_range=point_cloud_range),
+    dict(type="ObjectRangeFilter", point_cloud_range=_base_.point_cloud_range),
     dict(
         type="Pack3DDetInputs",
         keys=["img", "points", "gt_bboxes_3d", "gt_labels_3d"],
@@ -176,4 +172,4 @@ test_pipeline = [
     ),
 ]
 
-filter_cfg = dict(filter_frames_with_camera_order=camera_order)
+filter_cfg = dict(filter_frames_with_camera_orders=camera_orders)
