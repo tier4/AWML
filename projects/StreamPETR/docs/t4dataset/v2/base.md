@@ -14,6 +14,57 @@
 | StreamPETR base/2.5    | 45.00 | 61.7            | 41.7               | 60.7         | 16.7                 | 44.4                   |
 
 ## Release
+
+### StreamPETR base/2.7
+- Add traffic cone and barriers class
+<details>
+<summary> The link of data and evaluation result </summary>
+
+- Model
+
+  - Training Dataset (frames: 123,708):
+    - jpntaxi: db_jpntaxi_v1 + db_jpntaxi_v2 + db_jpntaxi_v4 (28,161 frames)
+    - j6: db_gsm8_v1 + db_j6_v1 + db_j6_v2 + db_j6_v3 + db_j6_v5 (29,336frames)
+    - j6gen2: db_j6gen2_v1 + db_j6gen2_v2 + db_j6gen2_v3 + db_j6gen2_v4 + db_j6gen2_v5 + db_j6gen2_v6 + db_j6gen2_v7 + db_j6gen2_v8 (43,968 frames)
+    - largebus: db_largebus_v1 + db_largebus_v2 (12,605 frames)
+    - jpntaxi_gen2: db_jpntaxigen2_v1 + db_jpntaxigen2_v2 (28,126 frames)
+
+  - [Config file path](https://github.com/tzhong518/AWML/blob/feat/streampetr_add_traffic_barrier/projects/StreamPETR/configs/t4dataset/t4_base_vov_flash_480x640_bev_2_8_traffic_barrier_base_partialignore.py)
+  - [Model Checkpoint](https://drive.google.com/file/d/1Okx2tCJDNkULEYCrvoiXVFwuYg6FtYzh/view?usp=drive_link)
+  - Deployed onnx and ROS parameter files (for internal)
+    - [WebAuto](https://evaluation.ci.tier4.jp/evaluation/mlpackages/28c2254f-2d62-417a-bcfa-d5872e331a34/releases/90e7b4e4-fa25-4cbf-8af2-ed167309568a?project_id=zWhWRzei&tab=items)
+    - model-zoo
+      - [simplify_extract_img_feat.onnx]()
+      - [simplify_position_embedding.onnx]()
+      - [simplify_pts_head_memory.onnx]()
+  - Logs (for internal)
+    - https://drive.google.com/drive/folders/13HyXBI6wob5-wmQOupyaEww-QWqVVzSW?usp=drive_link
+  - Train time: NVIDIA A00 80GB * 2 * 35 epochs = 2 days
+  - Batch size: 8*2 = 16
+
+- Evaluation
+   - Datasets :
+      - jpntaxi: db_jpntaxi_v1 + db_jpntaxi_v2 + db_jpntaxi_v4 
+      - j6: db_gsm8_v1 + db_j6_v1 + db_j6_v2 + db_j6_v3 + db_j6_v5 
+      - j6gen2: db_j6gen2_v1 + db_j6gen2_v2 + db_j6gen2_v3 + db_j6gen2_v4 + db_j6gen2_v5 + db_j6gen2_v6 (1,943 frames)
+      - largebus: db_largebus_v1 + db_largebus_v2
+      - jpntaxi_gen2: db_jpntaxigen2_v1 + db_jpntaxigen2_v2 
+  - Total mAP (eval range = 50m): 0.398
+
+| class_name   | mAP  | AP@0.5m | AP@1.0m | AP@2.0m | AP@4.0m |
+| ---- | ---- | ---- | ---- | ---- | ---- |
+| car          | 63.0 | 25.8    | 58.4    | 80.5    | 87.5    |
+| truck        | 47.4 | 9.9     | 36.3    | 64.1    | 79.3    |
+| bus          | 58.5 | 18.2    | 52.8    | 77.5    | 85.4    |
+| bicycle      | 42.2 | 10.9    | 32.5    | 57.0    | 68.3    |
+| pedestrian   | 39.3 | 7.8     | 29.2    | 52.9    | 67.2    |
+| traffic_cone | 17.8 | 2.8     | 13.0    | 23.6    | 31.6    |
+| barrier      | 10.7 | 3.7     | 10.5    | 13.8    | 14.8    |
+
+Total mAP: 0.398
+</details>
+
+
 ### StreamPETR base/2.5
 - Train more data with:
     - `db_largebus_v1`
