@@ -9,11 +9,7 @@ from torch.nn import functional as F
 
 
 @weighted_loss
-def bce_with_logits_loss(
-    pred: Tensor,
-    target: Tensor,
-    pos_weight: Optional[Tensor] = None
-) -> Tensor:
+def bce_with_logits_loss(pred: Tensor, target: Tensor, pos_weight: Optional[Tensor] = None) -> Tensor:
     """ """
 
     losses = F.binary_cross_entropy_with_logits(
