@@ -2,8 +2,8 @@
 from typing import Optional, Union
 
 import torch.nn as nn
-from mmdet.models.losses.utils import weight_reduce_loss, weighted_loss
 from mmdet3d.registry import MODELS
+from mmdet.models.losses.utils import weight_reduce_loss, weighted_loss
 from torch import Tensor
 from torch.nn import functional as F
 
@@ -12,20 +12,19 @@ from torch.nn import functional as F
 def bce_with_logits_loss(
     pred: Tensor,
     target: Tensor,
-    weight: Tensor, 
-    reduction: str = 'mean',
+    weight: Tensor,
+    reduction: str = "mean",
     avg_factor: Optional[int] = None,
-    pos_weight: Optional[Tensor] = None
+    pos_weight: Optional[Tensor] = None,
 ) -> Tensor:
-    """
-    """
-    
+    """ """
+
     losses = F.binary_cross_entropy_with_logits(
-      pred,
-      target,
-      None, # Always None since the weight will be used in the weighted_loss wrapper
-      pos_weight=pos_weight,
-      reduction='none', # Always none since the reduction will happen in the weighted_loss wrapper
+        pred,
+        target,
+        None,  # Always None since the weight will be used in the weighted_loss wrapper
+        pos_weight=pos_weight,
+        reduction="none",  # Always none since the reduction will happen in the weighted_loss wrapper
     )
     return losses
 
@@ -34,12 +33,7 @@ def bce_with_logits_loss(
 class CustomBCEWithLogitsLoss(nn.Module):
     """BCEWithLogitsLoss"""
 
-    def __init__(
-        self,
-        weight=None, 
-        reduction='mean', 
-        pos_weight=None
-    ) -> None:
+    def __init__(self, weight=None, reduction="mean", pos_weight=None) -> None:
         super().__init__()
         self.weight = weight
         self.reduction = reduction
@@ -80,11 +74,6 @@ class CustomBCEWithLogitsLoss(nn.Module):
         reduction = reduction_override if reduction_override else self.reduction
 
         losses = bce_with_logits_loss(
-          pred,
-          target,
-          weight, 
-          reduction=reduction, 
-          avg_factor=avg_factor,
-          pos_weight=self.pos_weight
+            pred, target, weight, reduction=reduction, avg_factor=avg_factor, pos_weight=self.pos_weight
         )
         return losses
