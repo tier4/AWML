@@ -12,10 +12,7 @@ from torch.nn import functional as F
 def bce_with_logits_loss(
     pred: Tensor,
     target: Tensor,
-    weight: Tensor,
-    reduction: str = "mean",
-    avg_factor: Optional[int] = None,
-    pos_weight: Optional[Tensor] = None,
+    pos_weight: Optional[Tensor] = None
 ) -> Tensor:
     """ """
 
