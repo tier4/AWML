@@ -12,14 +12,7 @@ from torch.nn import BCEWithLogitsLoss
 class BCEWithLogitsLoss(nn.Module):
     """BCEWithLogitsLoss"""
 
-    def __init__(
-        self,
-				weight=None, 
-				size_average=None, 
-				reduce=None, 
-				reduction='mean', 
-				pos_weight=None
-    ) -> None:
+    def __init__(self, weight=None, size_average=None, reduce=None, reduction="mean", pos_weight=None) -> None:
         super().__init__()
         self.alpha = alpha
         self.gamma = gamma
