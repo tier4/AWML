@@ -2,8 +2,8 @@ _base_ = [
     "../../../../../autoware_ml/configs/detection3d/default_runtime.py",
     "../../../../../autoware_ml/configs/detection3d/dataset/t4dataset/gen1_base.py",
     "../default/pipelines/default_lidar_120m.py",
-    "../default/models/default_lidar_second_secfpn_smooth_l1_120m.py",
-    "../default/schedulers/default_30e_8xb24_adamw_cosine_amp.py",
+    "../default/models/default_lidar_second_secfpn_120m_iou_pred.py",
+    "../default/schedulers/default_30e_8xb24_adamw_cosine.py",
     "../default/default_misc.py",
 ]
 
@@ -16,7 +16,7 @@ data_root = "data/t4dataset/"
 info_directory_path = "info/kokseang_2_9_0/"
 
 experiment_group_name = "bevfusion_lidar_2_9_0/gen1_base/" + _base_.dataset_type
-experiment_name = "lidar_voxel_second_secfpn_30e_8xb24_gen1_base_smooth_l1_120m_amp"
+experiment_name = "lidar_voxel_second_secfpn_30e_8xb24_gen1_base_120m_iou_pred"
 work_dir = "work_dirs/" + experiment_group_name + "/" + experiment_name
 
 # model parameter
@@ -152,5 +152,3 @@ default_hooks = dict(
     checkpoint=dict(type="CheckpointHook", interval=1, max_keep_ckpts=3, save_best="NuScenes metric/T4Metric/mAP"),
 )
 log_processor = dict(window_size=50)
-
-# activation_checkpointing = ["pts_backbone"]

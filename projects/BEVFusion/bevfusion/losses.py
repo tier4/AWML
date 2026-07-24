@@ -3,30 +3,52 @@ from typing import Optional, Union
 
 import torch.nn as nn
 from mmdet.models.losses.utils import weight_reduce_loss, weighted_loss
-from mmdet.registry import MODELS
+from mmdet3d.registry import MODELS
 from torch import Tensor
-from torch.nn import BCEWithLogitsLoss
+from torch.nn import functional as F
 
 
-@MODELS.register_module(force=True)
-class BCEWithLogitsLoss(nn.Module):
+@weighted_loss
+def bce_with_logits_loss(
+    pred: Tensor,
+    target: Tensor,
+    weight: Tensor, 
+    reduction: str = 'mean',
+    avg_factor: Optional[int] = None,
+    pos_weight: Optional[Tensor] = None
+) -> Tensor:
+    """
+    """
+    
+    losses = F.binary_cross_entropy_with_logits(
+      pred,
+      target,
+      None, # Always None since the weight will be used in the weighted_loss wrapper
+      pos_weight=pos_weight,
+      reduction='none', # Always none since the reduction will happen in the weighted_loss wrapper
+    )
+    return losses
+
+
+@MODELS.register_module()
+class CustomBCEWithLogitsLoss(nn.Module):
     """BCEWithLogitsLoss"""
 
-    def __init__(self, weight=None, size_average=None, reduce=None, reduction="mean", pos_weight=None) -> None:
+    def __init__(
+        self,
+        weight=None, 
+        reduction='mean', 
+        pos_weight=None
+    ) -> None:
         super().__init__()
-        self.alpha = alpha
-        self.gamma = gamma
+        self.weight = weight
         self.reduction = reduction
-        self.loss_weight = loss_weight
         self.pos_weight = pos_weight
-        self.neg_weight = neg_weight
 
     def forward(
         self,
         pred: Tensor,
         target: Tensor,
-        pos_inds: Optional[Tensor] = None,
-        pos_labels: Optional[Tensor] = None,
         weight: Optional[Tensor] = None,
         avg_factor: Optional[Union[int, float]] = None,
         reduction_override: Optional[str] = None,
@@ -56,31 +78,13 @@ class BCEWithLogitsLoss(nn.Module):
         """
         assert reduction_override in (None, "none", "mean", "sum")
         reduction = reduction_override if reduction_override else self.reduction
-        if pos_inds is not None:
-            assert pos_labels is not None
-            # Only used by centernet update version
-            loss_reg = self.loss_weight * gaussian_focal_loss_with_pos_inds(
-                pred,
-                target,
-                pos_inds,
-                pos_labels,
-                alpha=self.alpha,
-                gamma=self.gamma,
-                pos_weight=self.pos_weight,
-                neg_weight=self.neg_weight,
-                reduction=reduction,
-                avg_factor=avg_factor,
-            )
-        else:
-            loss_reg = self.loss_weight * gaussian_focal_loss(
-                pred,
-                target,
-                weight,
-                alpha=self.alpha,
-                gamma=self.gamma,
-                pos_weight=self.pos_weight,
-                neg_weight=self.neg_weight,
-                reduction=reduction,
-                avg_factor=avg_factor,
-            )
-        return loss_reg
+
+        losses = bce_with_logits_loss(
+          pred,
+          target,
+          weight, 
+          reduction=reduction, 
+          avg_factor=avg_factor,
+          pos_weight=self.pos_weight
+        )
+        return losses
