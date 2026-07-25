@@ -26,9 +26,9 @@ def bce_with_logits_loss(pred: Tensor, target: Tensor, pos_weight: Optional[Tens
 class CustomBCEWithLogitsLoss(nn.Module):
     """BCEWithLogitsLoss"""
 
-    def __init__(self, weight=None, reduction="mean", pos_weight=None) -> None:
+    def __init__(self, loss_weight=None, reduction="mean", pos_weight=None) -> None:
         super().__init__()
-        self.weight = weight
+        self.loss_weight = weight
         self.reduction = reduction
         self.pos_weight = pos_weight
 
@@ -66,7 +66,7 @@ class CustomBCEWithLogitsLoss(nn.Module):
         assert reduction_override in (None, "none", "mean", "sum")
         reduction = reduction_override if reduction_override else self.reduction
 
-        losses = bce_with_logits_loss(
+        losses = self.loss_weight * bce_with_logits_loss(
             pred, target, weight, reduction=reduction, avg_factor=avg_factor, pos_weight=self.pos_weight
         )
         return losses
