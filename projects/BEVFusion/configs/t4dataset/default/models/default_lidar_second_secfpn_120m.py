@@ -118,6 +118,7 @@ model = dict(
             loss_weight=1.0,
         ),
         loss_iou=None,
+        loss_bev_corners=None,
         loss_heatmap=dict(type="mmdet.GaussianFocalLoss", reduction="none", loss_weight=1.0),
         loss_bbox=dict(type="mmdet.L1Loss", reduction="mean", loss_weight=0.25),
         # partial_

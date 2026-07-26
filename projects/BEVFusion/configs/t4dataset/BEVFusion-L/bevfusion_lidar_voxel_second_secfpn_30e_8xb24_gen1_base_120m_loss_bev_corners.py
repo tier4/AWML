@@ -2,7 +2,7 @@ _base_ = [
     "../../../../../autoware_ml/configs/detection3d/default_runtime.py",
     "../../../../../autoware_ml/configs/detection3d/dataset/t4dataset/gen1_base.py",
     "../default/pipelines/default_lidar_120m.py",
-    "../default/models/default_lidar_second_secfpn_120m_iou_pred.py",
+    "../default/models/default_lidar_second_secfpn_120m.py",
     "../default/schedulers/default_30e_8xb24_adamw_cosine.py",
     "../default/default_misc.py",
 ]
@@ -16,7 +16,7 @@ data_root = "data/t4dataset/"
 info_directory_path = "info/kokseang_2_9_0/"
 
 experiment_group_name = "bevfusion_lidar_2_9_0/gen1_base/" + _base_.dataset_type
-experiment_name = "lidar_voxel_second_secfpn_30e_8xb24_gen1_base_120m_iou_pred_3_0"
+experiment_name = "lidar_voxel_second_secfpn_30e_8xb24_gen1_base_120m_loss_bev_corners"
 work_dir = "work_dirs/" + experiment_group_name + "/" + experiment_name
 
 # model parameter
@@ -57,6 +57,18 @@ model = dict(
         loss_heatmap=dict(
             reduction="none",
         ),
+        loss_bev_corners=dict(
+            _delete_=True,
+            type="BEVCornerLoss",
+            out_size_factor=_base_.out_size_factor, 
+            voxel_size=_base_.voxel_size[0:2],
+            pc_range=_base_.point_cloud_range[0:2],
+            gt_diagonal_norm=True,
+            cone_label_index=5,
+            barrier_label_index=6,
+            loss_weight=0.25, 
+            reduction="mean"
+        )
     ),
 )
 
