@@ -60,15 +60,15 @@ model = dict(
         loss_bev_corners=dict(
             _delete_=True,
             type="BEVCornerLoss",
-            out_size_factor=_base_.out_size_factor, 
+            out_size_factor=_base_.out_size_factor,
             voxel_size=_base_.voxel_size[0:2],
             pc_range=_base_.point_cloud_range[0:2],
             gt_diagonal_norm=True,
             cone_label_index=5,
             barrier_label_index=6,
-            loss_weight=0.25, 
-            reduction="mean"
-        )
+            loss_weight=0.25,
+            reduction="mean",
+        ),
     ),
 )
 

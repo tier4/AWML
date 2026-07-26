@@ -4,7 +4,7 @@ from .bevfusion_necks import GeneralizedLSSFPN
 from .bevfusion_voxel_encoder import HardSimpleVoxelSinCosEncoder
 from .depth_lss import DepthLSSTransform, LSSTransform
 from .loading import BEVLoadMultiViewImageFromFiles
-from .losses import CustomBCEWithLogitsLoss, BEVCornerLoss
+from .losses import BEVCornerLoss, CustomBCEWithLogitsLoss
 from .sparse_encoder import BEVFusionSparseEncoder
 from .transformer import TransformerDecoderLayer
 from .transforms_3d import BEVFusionGlobalRotScaleTrans, BEVFusionRandomFlip3D, GridMask, ImageAug3D
@@ -31,5 +31,5 @@ __all__ = [
     "TransFusionBBoxCoder",
     "HardSimpleVoxelSinCosEncoder",
     "CustomBCEWithLogitsLoss",
-    "BEVCornerLoss"
+    "BEVCornerLoss",
 ]
