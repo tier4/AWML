@@ -6,6 +6,7 @@ from mmdet3d.registry import MODELS
 from mmdet.models.losses.utils import weight_reduce_loss, weighted_loss
 from torch import Tensor
 from torch.nn import functional as F
+import torch 
 
 
 @weighted_loss
@@ -151,7 +152,7 @@ class BEVCornerLoss(nn.Module):
 
         row1 = torch.cat([rot_cos, rot_sin], dim=-1)
         row2 = torch.cat([-rot_sin, rot_cos], dim=-1)  # (B, N, 2)
-        rotation_matrix_tranpose = torch.stack([row1, row2], dim=-2)  # (B, N, 2, 2)
+        rotation_matrix_transpose = torch.stack([row1, row2], dim=-2)  # (B, N, 2, 2)
 
         if self.cone_label_index is not None:
             cone_mask = (labels == self.cone_label_index)[..., None, None]  # [B, N, 1, 1]
@@ -176,7 +177,7 @@ class BEVCornerLoss(nn.Module):
         corners = torch.stack([x4, y4], dim=-1)  # (B, N, 4, 2)
 
         # (B * N, 4, 2) @ (B * N, 2, 2) -> (B * N, 4, 2)
-        rotated = torch.bmm(corners.view([-1, 4, 2]), rotation_matrix_tranpose.view([-1, 2, 2]))
+        rotated = torch.bmm(corners.view([-1, 4, 2]), rotation_matrix_transpose.view([-1, 2, 2]))
         rotated = rotated.view([batch_size, -1, 4, 2])  # (B * N, 4, 2) -> (B, N, 4, 2)
         # Translation
         rotated[..., 0] += center_x
