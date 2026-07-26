@@ -203,8 +203,14 @@ class BEVCornerLoss(nn.Module):
         assert reduction_override in (None, "none", "mean", "sum")
         reduction = reduction_override if reduction_override else self.reduction
 
-        preds_corners, _ = self._convert_to_bev_corners(bboxes=preds_tensor, labels=labels)
-        gts_corners, gt_diagonal_values = self._convert_to_bev_corners(bboxes=gts_bboxes, labels=labels)
+        preds_corners, _ = self._convert_to_bev_corners(
+            bboxes=preds_bboxes, 
+            labels=labels
+        )
+        gts_corners, gt_diagonal_values = self._convert_to_bev_corners(
+            bboxes=gts_bboxes, 
+            labels=labels
+        )
         if self.gt_diagonal_norm:
             norm_values = gt_diagonal_values
         else:
