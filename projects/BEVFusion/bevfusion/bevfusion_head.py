@@ -906,17 +906,13 @@ class BEVFusionHead(nn.Module):
                 loss_dict[f"{prefix}_loss_iou"] = self.loss_iou(
                     layer_ious, ious, layer_iou_weights, avg_factor=max(num_pos, 1)
                 )
-           
+
             # loss_bev_corners
             if self.loss_bev_corners is not None:
                 # [BS, num_proposals]
                 layer_bbox_bev_corners_weight = layer_bbox_weights[:, :, 0]
                 loss_bev_corners = self.loss_bev_corners(
-                    preds, 
-                    layer_bbox_targets, 
-                    layer_labels, 
-                    layer_bbox_bev_corners_weight, 
-                    avg_factor=max(num_pos, 1)
+                    preds, layer_bbox_targets, layer_labels, layer_bbox_bev_corners_weight, avg_factor=max(num_pos, 1)
                 )
                 loss_dict[f"{prefix}_loss_bev_corners"] = loss_bev_corners
 
