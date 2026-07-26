@@ -187,6 +187,7 @@ class BEVCornerLoss(nn.Module):
         return rotated, lw_diagonal
 
     def forward(
+        self,
         preds_bboxes: Tensor,
         gts_bboxes: Tensor,
         labels: Tensor,
