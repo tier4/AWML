@@ -7,6 +7,7 @@ dataset_version_list = [
     "db_tlr_v5",
     "db_tlr_v6",
     "db_tlr_v7",
+    "db_tlr_semseg_v1",
 ]
 
 classes = (
@@ -55,4 +56,29 @@ class_mappings = {
     "yellow_straight_left": "SKIP_CLASS",
     "yellow_straight_right": "SKIP_CLASS",
     "yellow_straight_left_right": "SKIP_CLASS",
+    # Skip the following semantic TLR if present
+    "traffic_light_back": "SKIP_CLASS",
+    "crosswalk_light_back": "SKIP_CLASS",
+    # Bulb boxes
+    "red_bulb": "SKIP_CLASS",
+    "green_bulb": "SKIP_CLASS",
+    "yellow_bulb": "SKIP_CLASS",
+    "red_left_arrow_bulb": "SKIP_CLASS",
+    "red_right_arrow_bulb": "SKIP_CLASS",
+    "red_straight_arrow_bulb": "SKIP_CLASS",
+    "red_up_left_arrow_bulb": "SKIP_CLASS",
+    "red_up_right_arrow_bulb": "SKIP_CLASS",
+    "red_arrow_unknown_bulb": "SKIP_CLASS",
+    "green_left_arrow_bulb": "SKIP_CLASS",
+    "green_right_arrow_bulb": "SKIP_CLASS",
+    "green_straight_arrow_bulb": "SKIP_CLASS",
+    "green_up_left_arrow_bulb": "SKIP_CLASS",
+    "green_up_right_arrow_bulb": "SKIP_CLASS",
+    "green_arrow_unknown_bulb": "SKIP_CLASS",
+    "yellow_left_arrow_bulb": "SKIP_CLASS",
+    "yellow_right_arrow_bulb": "SKIP_CLASS",
+    "yellow_straight_arrow_bulb": "SKIP_CLASS",
+    "yellow_up_left_arrow_bulb": "SKIP_CLASS",
+    "yellow_up_right_arrow_bulb": "SKIP_CLASS",
+    "yellow_arrow_unknown_bulb": "SKIP_CLASS",
 }
