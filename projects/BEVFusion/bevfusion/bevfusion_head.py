@@ -6,6 +6,7 @@ import numpy as np
 import torch
 import torch.nn.functional as F
 from mmcv.cnn import ConvModule, build_conv_layer
+from mmcv.ops.diff_iou_rotated import oriented_box_intersection_2d
 from mmdet3d.models import circle_nms, draw_heatmap_gaussian, gaussian_radius
 from mmdet3d.models.dense_heads.centerpoint_head import SeparateHead
 from mmdet3d.models.layers import nms_bev
@@ -15,9 +16,8 @@ from mmdet.models.task_modules import AssignResult, PseudoSampler, build_assigne
 from mmdet.models.utils import multi_apply
 from mmengine.logging import print_log
 from mmengine.structures import InstanceData
-from mmcv.ops.diff_iou_rotated import oriented_box_intersection_2d
-from torch import nn
-from torch import Tensor
+from torch import Tensor, nn
+
 
 def clip_sigmoid(x, eps=1e-4):
     y = torch.clamp(x.sigmoid_(), min=eps, max=1 - eps)
@@ -893,11 +893,11 @@ class BEVFusionHead(nn.Module):
 
             loss_dict[f"{prefix}_loss_cls"] = layer_loss_cls
             loss_dict[f"{prefix}_loss_bbox"] = layer_loss_bbox
-            
+
             if self.loss_iou is not None or self.loss_iou_preds is not None:
                 layer_iou_labels = layer_labels.view(preds.shape[0], preds.shape[1])
                 ious = self._compute_ious(
-                    preds, 
+                    preds,
                     layer_bbox_targets,
                     layer_iou_labels,
                 )
@@ -906,27 +906,25 @@ class BEVFusionHead(nn.Module):
             if self.loss_iou is not None:
                 # [BS, num_proposals]
                 layer_iou_weights = layer_bbox_weights[:, :, 0]
-                loss_dict[f"{prefix}_loss_iou"] = self.loss_iou(
-                    ious,
-                    layer_iou_weights, 
-                    avg_factor=max(num_pos, 1)
-                )
+                loss_dict[f"{prefix}_loss_iou"] = self.loss_iou(ious, layer_iou_weights, avg_factor=max(num_pos, 1))
 
         loss_dict["matched_ious"] = layer_loss_cls.new_tensor(matched_ious)
 
         return loss_dict
-    
-    def _convert_to_bev_corners(
-        self, 
-        bboxes: Tensor, 
-        labels: Tensor, 
-        is_gt: bool = False) -> Tensor:
+
+    def _convert_to_bev_corners(self, bboxes: Tensor, labels: Tensor, is_gt: bool = False) -> Tensor:
         """
         bboxes (B, num_proposal, 10)
         """
         batch_size = bboxes.shape[0]
-        center_x = bboxes[:, :, 0] * self.bbox_coder.out_size_factor * self.bbox_coder.voxel_size[0] + self.bbox_coder.pc_range[0]
-        center_y = bboxes[:, :, 1] * self.bbox_coder.out_size_factor * self.bbox_coder.voxel_size[1] + self.bbox_coder.pc_range[1]
+        center_x = (
+            bboxes[:, :, 0] * self.bbox_coder.out_size_factor * self.bbox_coder.voxel_size[0]
+            + self.bbox_coder.pc_range[0]
+        )
+        center_y = (
+            bboxes[:, :, 1] * self.bbox_coder.out_size_factor * self.bbox_coder.voxel_size[1]
+            + self.bbox_coder.pc_range[1]
+        )
         lw = bboxes[:, :, 3:5].exp()
         rot_sin = bboxes[:, :, 6:7]
         rot_cos = bboxes[:, :, 7:8]
@@ -971,26 +969,19 @@ class BEVFusionHead(nn.Module):
         # Diagonal values, (B, N,)
         # lw_diagonal = torch.sqrt(lw[:, :, 0].square() + lw[:, :, 1].square() + 1e-6)
         return rotated, lw
-    
+
     def _compute_ious(
-        self, 
-        preds: Tensor, 
+        self,
+        preds: Tensor,
         layer_bbox_targets: Tensor,
         layer_iou_labels: Tensor,
     ) -> Tensor:
-        """
-        """
-        pred_bboxes_corners, pred_bboxes_lw = self._convert_to_bev_corners(
-            preds,
-            layer_iou_labels,
-            is_gt=False
-        )
+        """ """
+        pred_bboxes_corners, pred_bboxes_lw = self._convert_to_bev_corners(preds, layer_iou_labels, is_gt=False)
         gt_bboxes_corners, gt_bboxes_lw = self._convert_to_bev_corners(
-            layer_bbox_targets,
-            layer_iou_labels,
-            is_gt=True
+            layer_bbox_targets, layer_iou_labels, is_gt=True
         )
-        intersection, _ = oriented_box_intersection_2d(pred_bboxes_corners, gt_bboxes_corners)  # (B, N)    
+        intersection, _ = oriented_box_intersection_2d(pred_bboxes_corners, gt_bboxes_corners)  # (B, N)
         area1 = pred_bboxes_lw[:, :, 0] * pred_bboxes_lw[:, :, 1]
         area2 = gt_bboxes_lw[:, :, 0] * gt_bboxes_lw[:, :, 1]
         union = area1 + area2 - intersection

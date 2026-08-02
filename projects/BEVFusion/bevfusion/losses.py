@@ -31,10 +31,10 @@ class RotatedBEVIOULoss(nn.Module):
         super().__init__()
         self.loss_weight = loss_weight
         self.reduction = reduction
-    
+
     def forward(
         self,
-        ious: Tensor, 
+        ious: Tensor,
         weight: Tensor,
         avg_factor: Optional[Union[int, float]] = None,
         reduction_override: Optional[str] = None,
@@ -49,7 +49,7 @@ class RotatedBEVIOULoss(nn.Module):
         targets = torch.ones_like(iou)
 
         losses = iou_loss(
-            ious, 
+            ious,
             targets,
             weight,
             reduction=reduction,
