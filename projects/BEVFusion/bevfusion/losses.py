@@ -3,18 +3,20 @@ from typing import Optional, Union
 
 import torch
 import torch.nn as nn
+from mmcv.ops.diff_iou_rotated import oriented_box_intersection_2d
 from mmdet3d.registry import MODELS
 from mmdet.models.losses.utils import weight_reduce_loss, weighted_loss
-from mmcv.ops.diff_iou_rotated import oriented_box_intersection_2d
 from torch import Tensor
 from torch.nn import functional as F
+
 
 @weighted_loss
 def iou_loss(pred: Tensor, target: Tensor) -> Tensor:
     """ """
 
-    losses = target - pred 
+    losses = target - pred
     return losses
+
 
 @MODELS.register_module()
 class RotatedBEVIOULoss(nn.Module):
@@ -32,7 +34,7 @@ class RotatedBEVIOULoss(nn.Module):
         loss_weight=1.0,
         reduction="mean",
     ) -> None:
-        
+
         super().__init__()
         self.loss_weight = loss_weight
         self.reduction = reduction
@@ -42,14 +44,10 @@ class RotatedBEVIOULoss(nn.Module):
         self.cone_label_index = cone_label_index
         self.barrier_label_index = barrier_label_index
         self.num_orientation_bins = num_orientation_bins
-        self.orientation_bin_offset = orientation_bin_offset 
+        self.orientation_bin_offset = orientation_bin_offset
         self.bin_size = 2 * torch.pi / self.num_orientation_bins
-    
-    def _convert_to_bev_corners(
-        self, 
-        bboxes: Tensor, 
-        labels: Tensor, 
-        is_gt: bool = False) -> Tensor:
+
+    def _convert_to_bev_corners(self, bboxes: Tensor, labels: Tensor, is_gt: bool = False) -> Tensor:
         """
         bboxes (B, num_proposal, 10)
         """
@@ -117,11 +115,13 @@ class RotatedBEVIOULoss(nn.Module):
         """
         assert reduction_override in (None, "none", "mean", "sum")
         reduction = reduction_override if reduction_override else self.reduction
-        
-        preds_corners, preds_length_width = self._convert_to_bev_corners(bboxes=preds_bboxes, labels=labels, is_gt=False)
+
+        preds_corners, preds_length_width = self._convert_to_bev_corners(
+            bboxes=preds_bboxes, labels=labels, is_gt=False
+        )
         gts_corners, gts_length_width = self._convert_to_bev_corners(bboxes=gts_bboxes, labels=labels, is_gt=True)
 
-        intersection, _ = oriented_box_intersection_2d(preds_corners, gts_corners)  # (B, N)    
+        intersection, _ = oriented_box_intersection_2d(preds_corners, gts_corners)  # (B, N)
         area1 = preds_length_width[:, :, 0] * preds_length_width[:, :, 1]
         area2 = gts_length_width[:, :, 0] * gts_length_width[:, :, 1]
         union = area1 + area2 - intersection
@@ -129,11 +129,10 @@ class RotatedBEVIOULoss(nn.Module):
         targets = torch.ones_like(iou)
 
         losses = iou_loss(
-            iou, 
+            iou,
             targets,
             weight,
             reduction=reduction,
             avg_factor=avg_factor,
         )
         return self.loss_weight * losses
-    
