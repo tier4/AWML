@@ -64,7 +64,6 @@ class BEVFusionHead(nn.Module):
         bias="auto",
         # loss
         loss_iou=None,
-        loss_bev_corners=None,
         loss_cls=dict(type="mmdet.GaussianFocalLoss", reduction="mean"),
         loss_bbox=dict(type="mmdet.L1Loss", reduction="mean"),
         loss_heatmap=dict(type="mmdet.GaussianFocalLoss", reduction="mean"),
@@ -91,7 +90,6 @@ class BEVFusionHead(nn.Module):
             self.num_classes += 1
         self.loss_cls = MODELS.build(loss_cls)
         self.loss_iou = MODELS.build(loss_iou) if loss_iou is not None else None
-        self.loss_bev_corners = MODELS.build(loss_bev_corners) if loss_bev_corners is not None else None
         self.loss_bbox = MODELS.build(loss_bbox)
         self.loss_heatmap = MODELS.build(loss_heatmap)
         self.share_conv_out_channels = hidden_channel
@@ -894,27 +892,12 @@ class BEVFusionHead(nn.Module):
 
             # Output iou for iou-aware loss
             if self.loss_iou is not None:
-                layer_ious = preds_dict["iou"][
-                    ...,
-                    idx_layer * self.num_proposals : (idx_layer + 1) * self.num_proposals,
-                ].squeeze(
-                    1
-                )  # [BS, num_proposals]
-
                 # [BS, num_proposals]
                 layer_iou_weights = layer_bbox_weights[:, :, 0]
+                layer_iou_labels = layer_labels.view(preds.shape[0], preds.shape[1])
                 loss_dict[f"{prefix}_loss_iou"] = self.loss_iou(
-                    layer_ious, ious, layer_iou_weights, avg_factor=max(num_pos, 1)
+                    preds, layer_bbox_targets, layer_iou_labels, layer_iou_weights, avg_factor=max(num_pos, 1)
                 )
-
-            # loss_bev_corners
-            if self.loss_bev_corners is not None:
-                # [BS, num_proposals]
-                layer_bbox_bev_corners_weight = layer_bbox_weights[:, :, 0]
-                loss_bev_corners = self.loss_bev_corners(
-                    preds, layer_bbox_targets, layer_labels, layer_bbox_bev_corners_weight, avg_factor=max(num_pos, 1)
-                )
-                loss_dict[f"{prefix}_loss_bev_corners"] = loss_bev_corners
 
         loss_dict["matched_ious"] = layer_loss_cls.new_tensor(matched_ious)
 
