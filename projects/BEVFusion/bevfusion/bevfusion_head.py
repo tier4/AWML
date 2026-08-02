@@ -15,8 +15,9 @@ from mmdet.models.task_modules import AssignResult, PseudoSampler, build_assigne
 from mmdet.models.utils import multi_apply
 from mmengine.logging import print_log
 from mmengine.structures import InstanceData
+from mmcv.ops.diff_iou_rotated import oriented_box_intersection_2d
 from torch import nn
-
+from torch import Tensor
 
 def clip_sigmoid(x, eps=1e-4):
     y = torch.clamp(x.sigmoid_(), min=eps, max=1 - eps)
@@ -64,6 +65,7 @@ class BEVFusionHead(nn.Module):
         bias="auto",
         # loss
         loss_iou=None,
+        loss_iou_preds=None,
         loss_cls=dict(type="mmdet.GaussianFocalLoss", reduction="mean"),
         loss_bbox=dict(type="mmdet.L1Loss", reduction="mean"),
         loss_heatmap=dict(type="mmdet.GaussianFocalLoss", reduction="mean"),
@@ -90,6 +92,7 @@ class BEVFusionHead(nn.Module):
             self.num_classes += 1
         self.loss_cls = MODELS.build(loss_cls)
         self.loss_iou = MODELS.build(loss_iou) if loss_iou is not None else None
+        self.loss_iou_preds = MODELS.build(loss_iou_preds) if loss_iou_preds is not None else None
         self.loss_bbox = MODELS.build(loss_bbox)
         self.loss_heatmap = MODELS.build(loss_heatmap)
         self.share_conv_out_channels = hidden_channel
@@ -219,6 +222,7 @@ class BEVFusionHead(nn.Module):
         print_log(f"BEVFusionHead Partial ignore labels: {self.partial_ignore_labels}, dense heatmap pooling classes: \
         {self.dense_heatmap_pooling_classes}, class_names: {self.class_names}, \
         local_concat_class_remapping: {self.local_concat_class_remapping}", logger="current")
+        self.cone_class_index = self.class_name_to_indices.get("traffic_cone", None)
 
     def create_2D_grid(self, x_size, y_size):
         meshgrid = [[0, x_size - 1, x_size], [0, y_size - 1, y_size]]
@@ -414,9 +418,9 @@ class BEVFusionHead(nn.Module):
         for layer_id, preds_dict in enumerate(preds_dicts):
             batch_size = preds_dict[0]["heatmap"].shape[0]
             batch_score = preds_dict[0]["heatmap"][..., -self.num_proposals :].sigmoid()
-            if self.loss_iou is not None:
+            if self.loss_iou_preds is not None:
                 batch_score = torch.sqrt(
-                    batch_score * preds_dict[0]["iou"][..., -self.num_proposals :].sigmoid()
+                    batch_score * preds_dict[0]["iou_preds"][..., -self.num_proposals :].sigmoid()
                 )  # noqa: E501
             one_hot = F.one_hot(self.query_labels, num_classes=self.num_classes).permute(0, 2, 1)
             batch_score = batch_score * preds_dict[0]["query_heatmap_score"] * one_hot
@@ -889,16 +893,106 @@ class BEVFusionHead(nn.Module):
 
             loss_dict[f"{prefix}_loss_cls"] = layer_loss_cls
             loss_dict[f"{prefix}_loss_bbox"] = layer_loss_bbox
+            
+            if self.loss_iou is not None or self.loss_iou_preds is not None:
+                layer_iou_labels = layer_labels.view(preds.shape[0], preds.shape[1])
+                ious = self._compute_ious(
+                    preds, 
+                    layer_bbox_targets,
+                    layer_iou_labels,
+                )
 
             # Output iou for iou-aware loss
             if self.loss_iou is not None:
                 # [BS, num_proposals]
                 layer_iou_weights = layer_bbox_weights[:, :, 0]
-                layer_iou_labels = layer_labels.view(preds.shape[0], preds.shape[1])
                 loss_dict[f"{prefix}_loss_iou"] = self.loss_iou(
-                    preds, layer_bbox_targets, layer_iou_labels, layer_iou_weights, avg_factor=max(num_pos, 1)
+                    ious,
+                    layer_iou_weights, 
+                    avg_factor=max(num_pos, 1)
                 )
 
         loss_dict["matched_ious"] = layer_loss_cls.new_tensor(matched_ious)
 
         return loss_dict
+    
+    def _convert_to_bev_corners(
+        self, 
+        bboxes: Tensor, 
+        labels: Tensor, 
+        is_gt: bool = False) -> Tensor:
+        """
+        bboxes (B, num_proposal, 10)
+        """
+        batch_size = bboxes.shape[0]
+        center_x = bboxes[:, :, 0] * self.bbox_coder.out_size_factor * self.bbox_coder.voxel_size[0] + self.bbox_coder.pc_range[0]
+        center_y = bboxes[:, :, 1] * self.bbox_coder.out_size_factor * self.bbox_coder.voxel_size[1] + self.bbox_coder.pc_range[1]
+        lw = bboxes[:, :, 3:5].exp()
+        rot_sin = bboxes[:, :, 6:7]
+        rot_cos = bboxes[:, :, 7:8]
+        if not is_gt:
+            norm_rotation = torch.sqrt(rot_sin.square() + rot_cos.square() + 1e-6)
+            rot_sin = rot_sin / norm_rotation
+            rot_cos = rot_cos / norm_rotation
+
+        row1 = torch.cat([rot_cos, rot_sin], dim=-1)
+        row2 = torch.cat([-rot_sin, rot_cos], dim=-1)  # (B, N, 2)
+        rotation_matrix_transpose = torch.stack([row1, row2], dim=-2)  # (B, N, 2, 2)
+
+        if self.cone_class_index is not None:
+            cone_mask = (labels == self.cone_class_index)[..., None, None]  # [B, N, 1, 1]
+
+            identity = torch.eye(
+                2,
+                device=rotation_matrix_transpose.device,
+                dtype=rotation_matrix_transpose.dtype,
+            ).view(1, 1, 2, 2)
+
+            rotation_matrix_transpose = torch.where(
+                cone_mask,
+                identity,
+                rotation_matrix_transpose,
+            )
+
+        x4 = lw.new_tensor([0.5, -0.5, -0.5, 0.5]).to(lw.device)
+        x4 = x4 * lw[:, :, 0].unsqueeze(-1)  # (B, N, 4)
+        y4 = lw.new_tensor([0.5, 0.5, -0.5, -0.5]).to(lw.device)
+        y4 = y4 * lw[:, :, 1].unsqueeze(-1)  # (B, N, 4)
+        # (top right, top left, bottom left, bottom right)
+        corners = torch.stack([x4, y4], dim=-1)  # (B, N, 4, 2)
+
+        # (B * N, 4, 2) @ (B * N, 2, 2) -> (B * N, 4, 2)
+        rotated = torch.bmm(corners.view([-1, 4, 2]), rotation_matrix_transpose.view([-1, 2, 2]))
+        rotated = rotated.view([batch_size, -1, 4, 2])  # (B * N, 4, 2) -> (B, N, 4, 2)
+        # Translation
+        rotated[..., 0] += center_x.unsqueeze(-1)
+        rotated[..., 1] += center_y.unsqueeze(-1)
+
+        # Diagonal values, (B, N,)
+        # lw_diagonal = torch.sqrt(lw[:, :, 0].square() + lw[:, :, 1].square() + 1e-6)
+        return rotated, lw
+    
+    def _compute_ious(
+        self, 
+        preds: Tensor, 
+        layer_bbox_targets: Tensor,
+        layer_iou_labels: Tensor,
+    ) -> Tensor:
+        """
+        """
+        pred_bboxes_corners, pred_bboxes_lw = self._convert_to_bev_corners(
+            preds,
+            layer_iou_labels,
+            is_gt=False
+        )
+        gt_bboxes_corners, gt_bboxes_lw = self._convert_to_bev_corners(
+            layer_bbox_targets,
+            layer_iou_labels,
+            is_gt=True
+        )
+        intersection, _ = oriented_box_intersection_2d(pred_bboxes_corners, gt_bboxes_corners)  # (B, N)    
+        area1 = pred_bboxes_lw[:, :, 0] * pred_bboxes_lw[:, :, 1]
+        area2 = gt_bboxes_lw[:, :, 0] * gt_bboxes_lw[:, :, 1]
+        union = area1 + area2 - intersection
+        ious = intersection / (union + 1e-8)
+        return ious
