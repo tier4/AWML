@@ -117,9 +117,13 @@ def get_lidar_sweeps_info(
             lidar2sensor[:3, :3] = rot.T
             lidar2sensor[:3, 3:4] = -1 * np.matmul(rot.T, trans.reshape(3, 1))
 
-            lidar2ego = np.eye(4)
-            lidar2ego[:3, :3] = rot
-            lidar2ego[:3, 3] = trans
+            # lidar2ego must be the sweep frame's mounting extrinsic, not the
+            # sweep->key transform; consumers composing ego poses with this
+            # field would otherwise apply ego motion twice.
+            lidar2ego = convert_quaternion_to_matrix(
+                quaternion=v1_sweep["sensor2ego_rotation"],
+                translation=v1_sweep["sensor2ego_translation"],
+            )
             lidar_path = v1_sweep["data_path"]
 
             mmengine.check_file_exist(lidar_path)
