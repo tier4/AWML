@@ -11,7 +11,6 @@ import numpy as np
 import torch
 from mmdet3d.registry import METRICS
 from mmdet3d.structures import LiDARInstance3DBoxes
-from mmdet3d.structures.ops import box_np_ops
 from mmengine.dist import get_world_size
 from mmengine.evaluator import BaseMetric
 from mmengine.logging import MessageHub, MMLogger
@@ -438,11 +437,10 @@ class T4MetricV2(BaseMetric):
             # Skip processing if result pickle already exists
             return
 
-        batch_points = data_batch["inputs"]["points"]
-        for data_sample, points in zip(data_samples, batch_points):
+        for data_sample in data_samples:
             current_time = data_sample["timestamp"]
             scene_id = self._parse_scene_id(data_sample["lidar_path"])
-            frame_ground_truth = self._parse_ground_truth_from_sample(current_time, data_sample, points)
+            frame_ground_truth = self._parse_ground_truth_from_sample(current_time, data_sample)
             perception_frame = self._parse_predictions_from_sample(current_time, data_sample, frame_ground_truth)
             self._save_perception_frame(scene_id, data_sample["sample_idx"], perception_frame)
 
@@ -1384,7 +1382,7 @@ class T4MetricV2(BaseMetric):
         except ValueError:
             return _UNKNOWN
 
-    def _parse_ground_truth_from_sample(self, time: float, data_sample: Dict[str, Any], points) -> FrameGroundTruth:
+    def _parse_ground_truth_from_sample(self, time: float, data_sample: Dict[str, Any]) -> FrameGroundTruth:
         """Parses ground truth objects from the given data sample.
 
         Args:
@@ -1415,10 +1413,10 @@ class T4MetricV2(BaseMetric):
         num_lidar_pts: np.ndarray = eval_info.get("num_lidar_pts", np.array([]))
 
         if self.min_num_points > 0 and len(bboxes):
-            points_cpu = points.cpu().numpy()
-            indices = box_np_ops.points_in_rbbox(points_cpu[:, :3], bboxes[:, :7])
-            num_points_in_gt = indices.sum(0)
-            bboxes_mask = num_points_in_gt >= self.min_num_points
+            # Filter by the annotation's keyframe point count (nuScenes/Waymo convention)
+            # so the evaluation GT set stays independent of the model input pipeline
+            # (sweep count, remove_close, range filter).
+            bboxes_mask = num_lidar_pts >= self.min_num_points
             bboxes = bboxes[bboxes_mask]
             gt_labels_3d = gt_labels_3d[bboxes_mask]
             num_lidar_pts = num_lidar_pts[bboxes_mask]
