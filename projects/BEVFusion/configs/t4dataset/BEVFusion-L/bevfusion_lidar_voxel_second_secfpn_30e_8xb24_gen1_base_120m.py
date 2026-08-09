@@ -60,7 +60,7 @@ model = dict(
         loss_iou=dict(
             _delete_=True,
             type="RotatedBEVIOULoss",
-            loss_weight=0.20,
+            loss_weight=0.10,
             reduction="mean",
         ),
     ),

@@ -877,6 +877,16 @@ class BEVFusionHead(nn.Module):
                 preds = torch.cat([layer_center, layer_height, layer_dim, layer_rot, layer_vel], dim=1).permute(
                     0, 2, 1
                 )  # [BS, num_proposals, code_size]
+            
+            if "iou_preds" in preds_dict.keys():
+                layer_iou_preds = preds_dict["iou_preds"][
+                    ...,
+                    idx_layer * self.num_proposals : (idx_layer + 1) * self.num_proposals,
+                ]
+                layer_iou_preds = layer_iou_preds.squeeze(1)
+            else:
+                layer_iou_preds = None
+
             code_weights = self.train_cfg.get("code_weights", None)
             layer_bbox_weights = bbox_weights[
                 :,

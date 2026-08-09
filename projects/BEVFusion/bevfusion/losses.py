@@ -46,7 +46,7 @@ class RotatedBEVIOULoss(nn.Module):
         """
         assert reduction_override in (None, "none", "mean", "sum")
         reduction = reduction_override if reduction_override else self.reduction
-        targets = torch.ones_like(iou)
+        targets = torch.ones_like(ious)
 
         losses = iou_loss(
             ious,
