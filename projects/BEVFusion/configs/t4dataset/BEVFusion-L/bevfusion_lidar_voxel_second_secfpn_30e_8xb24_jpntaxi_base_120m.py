@@ -13,9 +13,9 @@ custom_imports["imports"] += ["autoware_ml.detection3d.datasets.transforms"]
 
 # user setting
 data_root = "data/t4dataset/"
-info_directory_path = "info/kokseang_2_9_0/"
+info_directory_path = "info/user_name/"
 
-experiment_group_name = "bevfusion_lidar_intensity_2_9_1/jpntaxi_base/" + _base_.dataset_type
+experiment_group_name = "bevfusion_lidar/jpntaxi_base/" + _base_.dataset_type
 experiment_name = "lidar_voxel_second_secfpn_30e_8xb24_jpntaxi_base_120m_iou_loss"
 work_dir = "work_dirs/" + experiment_group_name + "/" + experiment_name
 
@@ -164,4 +164,4 @@ default_hooks = dict(
     checkpoint=dict(type="CheckpointHook", interval=1, max_keep_ckpts=3, save_best="NuScenes metric/T4Metric/mAP"),
 )
 log_processor = dict(window_size=50)
-load_from = "work_dirs/bevfusion_lidar_intensity_2_9_0/gen2_base/T4Dataset/lidar_voxel_second_secfpn_50e_8xb24_gen2_base_120m_iou_loss_more_epochs/epoch_50.pth"
+load_from = None
