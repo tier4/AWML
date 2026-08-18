@@ -633,30 +633,38 @@
 <details>
 <summary> Changes  </summary>
 
-- Finetune from `BEVFusion-LiDAR gen2_base/2.8.2` with j6gen2 base dataset and intensity.
+- Finetune from `BEVFusion-LiDAR gen2_base/2.8.2` with j6gen2 base dataset and intensity, where `gen2_base` is finetuned from `gen1_base`.
+- Update the training batch size from `16` to `24`.
+- Add `RotatedBEVIOULoss` with the small weight: `0.10`.
 </details>
 
 <details>
 <summary> Artifacts </summary>
 
 - Deployed onnx and ROS parameter files (for internal)
-  - [WebAuto]()
-  - [model-zoo]()
-  - [Google drive]()
+  - [WebAuto](https://evaluation.ci.tier4.jp/evaluation/mlpackages/46f8188d-e3be-4f2f-b989-fd27002610d7/releases/8338373d-b716-4e5b-96ce-369416dc607c?project_id=zWhWRzei)
+  - [model-zoo](https://download.autoware-ml-model-zoo.tier4.jp/autoware-ml/models/bevfusion/bevfusion-l/j6gen2_base/v2.8.2/deployment.zip)
+  - [Google drive](https://drive.google.com/file/d/163A76vsc2MbknUvAth4i-vwrH4HkwHwL/view?usp=drive_link)
 - Logs (for internal)
-  - [model-zoo]()
-  - [Google drive]()
+  - [model-zoo](https://download.autoware-ml-model-zoo.tier4.jp/autoware-ml/models/bevfusion/bevfusion-l/j6gen2_base/v2.8.2/logs.zip)
+  - [Google drive](https://drive.google.com/file/d/1DxASlXdVr14cnPAB1WLZeFNRPF4tkGtS/view?usp=drive_link)
 - Pytorch Best checkpoints:
-  - [model-zoo]()
-  - [Google drive]()
-
+  - [model-zoo](https://download.autoware-ml-model-zoo.tier4.jp/autoware-ml/models/bevfusion/bevfusion-l/j6gen2_base/v2.8.2/best_epoch_50.pth)
+  - [Google drive](https://drive.google.com/file/d/1rkZSiB9x4GOFVz8AMqxcV5XVF4NESjVB/view?usp=drive_link)
+- Pretraining weights:
+  - Gen2_base
+      - [model-zoo](https://download.autoware-ml-model-zoo.tier4.jp/autoware-ml/models/bevfusion/bevfusion-l/gen2_base/v2.8.2/best_epoch_50.pth)
+      - [Google drive](https://drive.google.com/file/d/1rkKiMiwzR91_k-rxC1fdS8K1mxtxcXw2/view?usp=drive_link)
+  - Gen1_base
+      - [model-zoo](https://drive.google.com/file/d/1rMvCuOYIrxam7jKRvSL2fdURakHLuL8O/view?usp=drive_link)
+      - [Google drive](https://download.autoware-ml-model-zoo.tier4.jp/autoware-ml/models/bevfusion/bevfusion-l/gen2_base/v2.8.2/best_epoch_25.pth)
 </details>
 
 <details>
 <summary> Training configs </summary>
 
-- [Config file path]()
-- Train time: NVIDIA H200 140GB * 8 * 50 epochs = 39 hours
+- [Config file path](https://github.com/tier4/AWML/projects/BEVFusion/configs/t4dataset/BEVFusion-L/bevfusion_lidar_voxel_second_secfpn_50e_8xb24_j6gen2_base_120m.py)
+- Train time: NVIDIA H200 140GB * 8 * 50 epochs ~= 40 hours
 - Batch size: 8*24 = 192
 - Training Dataset (frames: 63,813):
   - j6gen2: db_j6gen2_v1 + db_j6gen2_v2 + db_j6gen2_v3 + db_j6gen2_v4 + db_j6gen2_v5 + db_j6gen2_v6 + db_j6gen2_v7 + db_j6gen2_v8 + db_j6gen2_v9 + db_j6gen2_v10 + db_j6gen2_v11 + db_j6gen2_v12 (51,208 frames)
