@@ -231,7 +231,7 @@
       - [Google drive](https://drive.google.com/file/d/1rkKiMiwzR91_k-rxC1fdS8K1mxtxcXw2/view?usp=drive_link)
   - Gen1_base
       - [model-zoo](https://drive.google.com/file/d/1rMvCuOYIrxam7jKRvSL2fdURakHLuL8O/view?usp=drive_link)
-      - [Google drive](https://download.autoware-ml-model-zoo.tier4.jp/autoware-ml/models/bevfusion/bevfusion-l/gen2_base/v2.8.2/best_epoch_25.pth)
+      - [Google drive](https://download.autoware-ml-model-zoo.tier4.jp/autoware-ml/models/bevfusion/bevfusion-l/gen1_base/v2.8.2/best_epoch_25.pth)
 
 </details>
 
