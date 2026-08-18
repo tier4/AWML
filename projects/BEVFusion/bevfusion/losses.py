@@ -3,11 +3,9 @@ from typing import Optional, Union
 
 import torch
 import torch.nn as nn
-from mmcv.ops.diff_iou_rotated import oriented_box_intersection_2d
 from mmdet3d.registry import MODELS
-from mmdet.models.losses.utils import weight_reduce_loss, weighted_loss
+from mmdet.models.losses.utils import weighted_loss
 from torch import Tensor
-from torch.nn import functional as F
 
 
 @weighted_loss
