@@ -1,3 +1,4 @@
+import numpy as np
 from mmcv.transforms import BaseTransform
 from mmdet3d.structures.ops import box_np_ops
 from mmengine.registry import TRANSFORMS
@@ -85,17 +86,9 @@ class ObjectRangeMinPointsFilter(BaseTransform):
         """
         gt_bboxes_3d = input_dict["gt_bboxes_3d"]
 
-        # ---- radius of each box center in BEV ----
-        # (xmin, ymin, xmax, ymax)
-        lower_bev_range = [-self.range_radius[1], -self.range_radius[1], -self.range_radius[0], -self.range_radius[0]]
-        upper_bev_range = [self.range_radius[0], self.range_radius[0], self.range_radius[1], self.range_radius[1]]
-
-        # ---- lower/upper bound for radius ----
-        lower_mask = gt_bboxes_3d.in_range_bev(lower_bev_range)  # e.g. min_radius = 5m
-        upper_mask = gt_bboxes_3d.in_range_bev(upper_bev_range)  # e.g. max_radius = 70m
-        bev_radius_mask = (lower_mask | upper_mask).numpy().astype(bool)  # final mask
-
-        # Out of range gt masks are all valid
+        # Get radius of each bev center
+        bbox_bev_centers = np.linalg.norm(gt_bboxes_3d.bev[:, :2], axis=1)
+        bev_radius_mask = (bbox_bev_centers >= self.range_radius[0]) and (bbox_bev_centers < self.range_radius[1])
         out_of_range_gt_masks = ~bev_radius_mask
 
         points = input_dict["points"]

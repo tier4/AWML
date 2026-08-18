@@ -1,12 +1,12 @@
 # learning rate
 lr = 2.0e-4
-t_max = 3
+t_max = 5
 max_epochs = 50
 val_interval = 5
 
 train_gpu_size = 8
 test_batch_size = 4
-train_batch_size = 16
+train_batch_size = 24
 
 param_scheduler = [
     # learning rate scheduler

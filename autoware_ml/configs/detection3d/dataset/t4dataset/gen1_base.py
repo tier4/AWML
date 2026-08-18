@@ -8,33 +8,16 @@ custom_imports = dict(
 
 # dataset type setting
 dataset_type = "T4Dataset"
-info_train_file_name = "t4dataset_base_infos_train.pkl"
-info_val_file_name = "t4dataset_base_infos_val.pkl"
-info_test_file_name = "t4dataset_base_infos_test.pkl"
+info_train_file_name = "t4dataset_gen1_base_infos_train.pkl"
+info_val_file_name = "t4dataset_gen1_base_infos_val.pkl"
+info_test_file_name = "t4dataset_gen1_base_infos_test.pkl"
 
-info_train_statistics_file_name = "t4dataset_base_statistics_train.parquet"
-info_val_statistics_file_name = "t4dataset_base_statistics_val.parquet"
-info_test_statistics_file_name = "t4dataset_base_statistics_test.parquet"
+info_train_statistics_file_name = "t4dataset_gen1_base_statistics_train.parquet"
+info_val_statistics_file_name = "t4dataset_gen1_base_statistics_val.parquet"
+info_test_statistics_file_name = "t4dataset_gen1_base_statistics_test.parquet"
 
 # dataset scene setting
 dataset_version_list = [
-    "db_jpntaxigen2_v1",
-    "db_jpntaxigen2_v2",
-    "db_j6gen2_v1",
-    "db_j6gen2_v2",
-    "db_j6gen2_v3",
-    "db_j6gen2_v4",
-    "db_j6gen2_v5",
-    "db_j6gen2_v6",
-    "db_j6gen2_v7",
-    "db_j6gen2_v8",
-    "db_j6gen2_v9",
-    "db_j6gen2_v10",
-    "db_j6gen2_v11",
-    "db_j6gen2_v12",
-    "db_largebus_v1",
-    "db_largebus_v2",
-    "db_largebus_v3",
     "db_jpntaxi_v1",
     "db_jpntaxi_v2",
     "db_jpntaxi_v4",
@@ -48,11 +31,7 @@ dataset_version_list = [
 # TODO (KokSeang): This will be removed to avoid repetitive computation
 # Dataset set, test info files, and enable/disable evaluation of prefix
 dataset_test_groups = {
-    "j6gen2_base": ("t4dataset_j6gen2_base_infos_test.pkl", False),
-    "j6gen2": ("t4dataset_j6gen2_infos_test.pkl", False),
-    "largebus": ("t4dataset_largebus_infos_test.pkl", False),
-    "jpntaxi_gen2": ("t4dataset_jpntaxi_gen2_infos_test.pkl", False),
-    "base": ("t4dataset_base_infos_test.pkl", True),
+    "gen1_base": ("t4dataset_gen1_base_infos_test.pkl", True),
 }
 
 # dataset format setting

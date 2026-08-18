@@ -8,13 +8,13 @@ custom_imports = dict(
 
 # dataset type setting
 dataset_type = "T4Dataset"
-info_train_file_name = "t4dataset_base_infos_train.pkl"
-info_val_file_name = "t4dataset_base_infos_val.pkl"
-info_test_file_name = "t4dataset_base_infos_test.pkl"
+info_train_file_name = "t4dataset_gen2_base_infos_train.pkl"
+info_val_file_name = "t4dataset_gen2_base_infos_val.pkl"
+info_test_file_name = "t4dataset_gen2_base_infos_test.pkl"
 
-info_train_statistics_file_name = "t4dataset_base_statistics_train.parquet"
-info_val_statistics_file_name = "t4dataset_base_statistics_val.parquet"
-info_test_statistics_file_name = "t4dataset_base_statistics_test.parquet"
+info_train_statistics_file_name = "t4dataset_gen2_base_statistics_train.parquet"
+info_val_statistics_file_name = "t4dataset_gen2_base_statistics_val.parquet"
+info_test_statistics_file_name = "t4dataset_gen2_base_statistics_test.parquet"
 
 # dataset scene setting
 dataset_version_list = [
@@ -35,24 +35,12 @@ dataset_version_list = [
     "db_largebus_v1",
     "db_largebus_v2",
     "db_largebus_v3",
-    "db_jpntaxi_v1",
-    "db_jpntaxi_v2",
-    "db_jpntaxi_v4",
-    "db_gsm8_v1",
-    "db_j6_v1",
-    "db_j6_v2",
-    "db_j6_v3",
-    "db_j6_v5",
 ]
 
-# TODO (KokSeang): This will be removed to avoid repetitive computation
-# Dataset set, test info files, and enable/disable evaluation of prefix
 dataset_test_groups = {
-    "j6gen2_base": ("t4dataset_j6gen2_base_infos_test.pkl", False),
-    "j6gen2": ("t4dataset_j6gen2_infos_test.pkl", False),
     "largebus": ("t4dataset_largebus_infos_test.pkl", False),
-    "jpntaxi_gen2": ("t4dataset_jpntaxi_gen2_infos_test.pkl", False),
-    "base": ("t4dataset_base_infos_test.pkl", True),
+    "j6gen2": ("t4dataset_j6gen2_infos_test.pkl", False),
+    "j6gen2_base": ("t4dataset_j6gen2_base_infos_test.pkl", True),
 }
 
 # dataset format setting
@@ -66,6 +54,7 @@ data_prefix = dict(
     CAM_BACK_LEFT="",
     sweeps="",
 )
+
 camera_types = {
     "CAM_FRONT",
     "CAM_FRONT_RIGHT",
@@ -153,7 +142,16 @@ name_mapping = {
     "other_pedestrian": "pedestrian",
 }
 
-class_names = ["car", "truck", "bus", "bicycle", "pedestrian", "traffic_cone", "barrier"]
+
+class_names = [
+    "car",
+    "truck",
+    "bus",
+    "bicycle",
+    "pedestrian",
+    "traffic_cone",
+    "barrier",
+]
 num_class = len(class_names)
 metainfo = dict(classes=class_names)
 
@@ -184,7 +182,6 @@ camera_panels = [
     "data/CAM_BACK_RIGHT",
 ]
 
-# Add filter attributes
 filter_attributes = [
     ("vehicle.bicycle", "vehicle_state.parked"),
     ("vehicle.bicycle", "cycle_state.without_rider"),

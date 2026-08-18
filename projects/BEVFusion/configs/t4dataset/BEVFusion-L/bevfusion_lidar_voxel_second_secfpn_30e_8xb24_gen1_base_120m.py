@@ -1,9 +1,9 @@
 _base_ = [
     "../../../../../autoware_ml/configs/detection3d/default_runtime.py",
-    "../../../../../autoware_ml/configs/detection3d/dataset/t4dataset/base.py",
+    "../../../../../autoware_ml/configs/detection3d/dataset/t4dataset/gen1_base.py",
     "../default/pipelines/default_lidar_120m.py",
     "../default/models/default_lidar_second_secfpn_120m.py",
-    "../default/schedulers/default_50e_8xb16_adamw_cosine.py",
+    "../default/schedulers/default_30e_8xb24_adamw_cosine.py",
     "../default/default_misc.py",
 ]
 
@@ -15,8 +15,8 @@ custom_imports["imports"] += ["autoware_ml.detection3d.datasets.transforms"]
 data_root = "data/t4dataset/"
 info_directory_path = "info/user_name/"
 
-experiment_group_name = "bevfusion_lidar/base/" + _base_.dataset_type
-experiment_name = "lidar_voxel_second_secfpn_50e_8xb16_base_120m"
+experiment_group_name = "bevfusion_lidar/gen1_base/" + _base_.dataset_type
+experiment_name = "lidar_voxel_second_secfpn_30e_8xb24_gen1_base_120m"
 work_dir = "work_dirs/" + experiment_group_name + "/" + experiment_name
 
 # model parameter
@@ -56,6 +56,12 @@ model = dict(
         partial_ignore_labels=["traffic_cone", "barrier"],
         loss_heatmap=dict(
             reduction="none",
+        ),
+        loss_iou=dict(
+            _delete_=True,
+            type="RotatedBEVIOULoss",
+            loss_weight=0.10,
+            reduction="mean",
         ),
     ),
 )
