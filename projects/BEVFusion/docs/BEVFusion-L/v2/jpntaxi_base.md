@@ -207,7 +207,7 @@
 <details>
 <summary> Changes  </summary>
 
-- Finetune from `BEVFusion-LiDAR gen2_base/2.8.2` with j6gen2 base dataset and intensity, where `gen2_base` is finetuned from `gen1_base`.
+- Finetune from `BEVFusion-LiDAR gen2_base/2.8.2` with jpntaxi_base base dataset and intensity, where `gen2_base` is finetuned from `gen1_base`.
 - Update the training batch size from `16` to `24`.
 - Add `RotatedBEVIOULoss` with the small weight: `0.10`.
 </details>
