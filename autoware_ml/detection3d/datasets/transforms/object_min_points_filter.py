@@ -87,7 +87,7 @@ class ObjectRangeMinPointsFilter(BaseTransform):
         gt_bboxes_3d = input_dict["gt_bboxes_3d"]
 
         # Get radius of each bev center
-        bbox_bev_centers = np.linalg.norm(gt_bboxes_3d.bev[:, :2])
+        bbox_bev_centers = np.linalg.norm(gt_bboxes_3d.bev[:, :2], axis=1)
         bev_radius_mask = (bbox_bev_centers >= self.range_radius[0]) and (bbox_bev_centers < self.range_radius[1])
         out_of_range_gt_masks = ~bev_radius_mask
 
