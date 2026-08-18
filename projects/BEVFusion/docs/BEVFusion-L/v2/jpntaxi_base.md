@@ -238,7 +238,7 @@
 <details>
 <summary> Training configs </summary>
 
-- [Config file path](https://github.com/tier4/AWML/projects/BEVFusion/configs/t4dataset/BEVFusion-L/bevfusion_lidar_voxel_second_secfpn_30e_8xb24_jpntaxi_base_120m.py)
+- [Config file path](https://github.com/tier4/AWML/blob/main/projects/BEVFusion/configs/t4dataset/BEVFusion-L/bevfusion_lidar_voxel_second_secfpn_30e_8xb24_jpntaxi_base_120m.py)
 - Train time: NVIDIA H200 140GB * 8 * 30 epochs ~= 24 hours
 - Batch size: 24*8 = 192
 - Training Dataset (frames: 58,068):
