@@ -45,7 +45,7 @@ dataset_version_list = [
     "db_j6_v5",
 ]
 
-# TODO (KokSeang): This will be removed to avoid repeatitive computation
+# TODO (KokSeang): This will be removed to avoid repetitive computation
 # Dataset set, test info files, and enable/disable evaluation of prefix
 dataset_test_groups = {
     "j6gen2_base": ("t4dataset_j6gen2_base_infos_test.pkl", False),
