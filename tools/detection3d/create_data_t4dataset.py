@@ -105,6 +105,7 @@ def get_info(
     traffic_cone_barrier_status: str,
     city: Optional[str] = None,
     vehicle_type: Optional[str] = None,
+    max_future_sweeps: int = 0,
 ) -> Dict[str, Any]:
     lidar_token = get_lidar_token(sample)
     if lidar_token is None:
@@ -157,6 +158,7 @@ def get_info(
             pose_record,
             sd_record,
             max_sweeps,
+            max_future_sweeps=max_future_sweeps,
         ),
         get_annotations(
             t4,
@@ -231,6 +233,14 @@ def parse_args():
         type=int,
         required=True,
         help="specify sweeps of lidar per example",
+    )
+    parser.add_argument(
+        "--max_future_sweeps",
+        type=int,
+        default=0,
+        help="number of future (next-frame) lidar sweeps per example; "
+        "when > 0, past and future sweeps are merged into lidar_sweeps sorted by |time lag|, "
+        "each entry carrying a signed frame_offset (+k past / -k future)",
     )
     parser.add_argument(
         "-o",
@@ -321,7 +331,9 @@ def main():
                         continue
                 elif len(dataset_scene_info) == 2:
                     t4_dataset_id, t4_dataset_version_id = dataset_scene_info
-                    city = vehicle_type = None
+                    # Old-format scene ids carry no metadata; reset all three so a value
+                    # from a previous 5-part scene id cannot leak across loop iterations.
+                    city = vehicle_type = traffic_cone_barrier_status = None
                 else:
                     raise ValueError(
                         "Invalid scene_id format. should be : {t4_dataset_id}/{t4_dataset_version_id}/{city:optional}/{vehicle_type:optional}"
@@ -342,7 +354,15 @@ def main():
                 for i in range(0, len(t4.sample), sample_steps):
                     sample = t4.sample[i]
                     info = get_info(
-                        cfg, t4, sample, i, args.max_sweeps, traffic_cone_barrier_status, city, vehicle_type
+                        cfg,
+                        t4,
+                        sample,
+                        i,
+                        args.max_sweeps,
+                        traffic_cone_barrier_status,
+                        city,
+                        vehicle_type,
+                        max_future_sweeps=args.max_future_sweeps,
                     )
                     if info is None:
                         continue

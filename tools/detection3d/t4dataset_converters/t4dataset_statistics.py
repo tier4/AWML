@@ -19,7 +19,9 @@ class T4DatasetSceneMetadata:
 
     @property
     def frame_prefix(self) -> str:
-        return self.location + "/" + self.vehicle_type
+        # Old-format (2-part) scene ids carry no location/vehicle metadata;
+        # mirror the _UNKNOWN fallback used by _get_bucket_name.
+        return (self.location or "unknown") + "/" + (self.vehicle_type or "unknown")
 
 
 class T4DatasetStatistics:

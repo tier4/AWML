@@ -75,6 +75,74 @@ def _velocity_clip(velocity: NDArray, max_speed: float = 50.0) -> NDArray:
     return velocity
 
 
+def _collect_sweeps(
+    t4: Tier4,
+    sd_rec: SampleData,
+    direction: str,
+    max_count: int,
+    l2e_t,
+    l2e_r_mat,
+    e2g_t,
+    e2g_r_mat,
+    num_features: int,
+) -> List[Dict[str, Any]]:
+    """Walk the sample_data chain in one direction and build sweep entries.
+
+    Args:
+        direction: "prev" collects past sweeps, "next" collects future sweeps.
+
+    Returns:
+        Sweep entries ordered closest-first (increasing |dt| from the key frame).
+    """
+    sweeps = []
+    while len(sweeps) < max_count:
+        sweep_token = getattr(sd_rec, direction)
+        if sweep_token == "":
+            break
+        sweep = get_single_lidar_sweep()
+        v1_sweep = obtain_sensor2top(
+            t4,
+            sweep_token,
+            l2e_t,
+            l2e_r_mat,
+            e2g_t,
+            e2g_r_mat,
+            "lidar",
+        )
+
+        sweep["timestamp"] = v1_sweep["timestamp"] / 1e6
+        sweep["sample_data_token"] = v1_sweep["sample_data_token"]
+        sweep["ego2global"] = convert_quaternion_to_matrix(
+            quaternion=v1_sweep["ego2global_rotation"],
+            translation=v1_sweep["ego2global_translation"],
+        )
+
+        rot = v1_sweep["sensor2lidar_rotation"]
+        trans = v1_sweep["sensor2lidar_translation"]
+        lidar2sensor = np.eye(4)
+        lidar2sensor[:3, :3] = rot.T
+        lidar2sensor[:3, 3:4] = -1 * np.matmul(rot.T, trans.reshape(3, 1))
+
+        lidar2ego = np.eye(4)
+        lidar2ego[:3, :3] = rot
+        lidar2ego[:3, 3] = trans
+        lidar_path = v1_sweep["data_path"]
+
+        mmengine.check_file_exist(lidar_path)
+        lidar_path = parse_lidar_path(lidar_path)
+
+        sweep["lidar_points"] = dict(
+            lidar_path=lidar_path,
+            lidar2ego=lidar2ego,
+            num_pts_feats=num_features,
+            lidar2sensor=lidar2sensor.astype(np.float32).tolist(),
+        )
+
+        sweeps.append(sweep)
+        sd_rec = t4.get("sample_data", sweep_token)
+    return sweeps
+
+
 def get_lidar_sweeps_info(
     t4: Tier4,
     cs_record: CalibratedSensor,
@@ -82,6 +150,7 @@ def get_lidar_sweeps_info(
     sd_rec: SampleData,
     max_sweeps: int,
     num_features: int = 5,
+    max_future_sweeps: int = 0,
 ):
     l2e_r = cs_record.rotation
     l2e_t = cs_record.translation
@@ -90,54 +159,28 @@ def get_lidar_sweeps_info(
     l2e_r_mat = l2e_r.rotation_matrix
     e2g_r_mat = e2g_r.rotation_matrix
 
-    sweeps = []
-    while len(sweeps) < max_sweeps:
-        if not sd_rec.prev == "":
-            sweep = get_single_lidar_sweep()
-            v1_sweep = obtain_sensor2top(
-                t4,
-                sd_rec.prev,
-                l2e_t,
-                l2e_r_mat,
-                e2g_t,
-                e2g_r_mat,
-                "lidar",
-            )
+    past_sweeps = _collect_sweeps(
+        t4, sd_rec, "prev", max_sweeps, l2e_t, l2e_r_mat, e2g_t, e2g_r_mat, num_features
+    )
+    if max_future_sweeps <= 0:
+        # Past-only output stays byte-identical to the historical schema:
+        # no frame_offset field, prev-walk order (closest-first).
+        return dict(lidar_sweeps=past_sweeps)
 
-            sweep["timestamp"] = v1_sweep["timestamp"] / 1e6
-            sweep["sample_data_token"] = v1_sweep["sample_data_token"]
-            sweep["ego2global"] = convert_quaternion_to_matrix(
-                quaternion=v1_sweep["ego2global_rotation"],
-                translation=v1_sweep["ego2global_translation"],
-            )
-
-            rot = v1_sweep["sensor2lidar_rotation"]
-            trans = v1_sweep["sensor2lidar_translation"]
-            lidar2sensor = np.eye(4)
-            lidar2sensor[:3, :3] = rot.T
-            lidar2sensor[:3, 3:4] = -1 * np.matmul(rot.T, trans.reshape(3, 1))
-
-            lidar2ego = np.eye(4)
-            lidar2ego[:3, :3] = rot
-            lidar2ego[:3, 3] = trans
-            lidar_path = v1_sweep["data_path"]
-
-            mmengine.check_file_exist(lidar_path)
-            lidar_path = parse_lidar_path(lidar_path)
-
-            sweep["lidar_points"] = dict(
-                lidar_path=lidar_path,
-                lidar2ego=lidar2ego,
-                num_pts_feats=num_features,
-                lidar2sensor=lidar2sensor.astype(np.float32).tolist(),
-            )
-
-            sweeps.append(sweep)
-            sd_rec = t4.get("sample_data", sd_rec.prev)
-        else:
-            break
-
-    return dict(lidar_sweeps=sweeps)
+    future_sweeps = _collect_sweeps(
+        t4, sd_rec, "next", max_future_sweeps, l2e_t, l2e_r_mat, e2g_t, e2g_r_mat, num_features
+    )
+    # frame_offset: +k = k frames in the past, -k = k frames in the future.
+    # Only written in bidirectional mode so past-only pkls keep the legacy schema.
+    for offset, sweep in enumerate(past_sweeps, start=1):
+        sweep["frame_offset"] = offset
+    for offset, sweep in enumerate(future_sweeps, start=1):
+        sweep["frame_offset"] = -offset
+    # Closest-first merge: consumers taking the first N sweeps (mmdet3d test_mode,
+    # prefix-slice loaders) get the nearest N regardless of direction.
+    key_timestamp = sd_rec.timestamp / 1e6
+    merged = sorted(past_sweeps + future_sweeps, key=lambda s: abs(key_timestamp - s["timestamp"]))
+    return dict(lidar_sweeps=merged)
 
 
 def extract_tier4_data(
